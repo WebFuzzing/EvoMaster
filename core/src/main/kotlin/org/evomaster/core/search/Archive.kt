@@ -35,7 +35,7 @@ class Archive<T> where T : Individual {
 
         for ((k, v) in ei.fitness.getViewOfData()) {
 
-            val current = map[k] ?: mutableListOf()
+            val current = map.getOrPut(k, {mutableListOf()})
 
             if (current.isEmpty()) {
                 /*
@@ -83,7 +83,7 @@ class Archive<T> where T : Individual {
 
     private fun isCovered(target: Int): Boolean {
 
-        val current = map[target] ?: mutableListOf()
+        val current = map.getOrPut(target, {mutableListOf()})
         if (current.size != 1) {
             return false
         }

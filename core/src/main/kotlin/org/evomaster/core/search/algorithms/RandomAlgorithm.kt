@@ -9,6 +9,9 @@ class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
     @Inject
     private lateinit var sampler : Sampler<T>
 
+    @Inject
+    private lateinit var ff : FitnessFunction<T>
+
 
     override fun search(iterations: Int): Solution<T> {
 
@@ -18,11 +21,10 @@ class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
 
             val individual = sampler.sampleAtRandom()
 
-            //archive.addIfNeeded() //TODO fitness function
+            archive.addIfNeeded(ff.calculateCoverage(individual))
         }
 
         return archive.extractSolution()
     }
-
 
 }
