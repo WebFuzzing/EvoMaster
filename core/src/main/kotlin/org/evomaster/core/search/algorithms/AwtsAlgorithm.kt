@@ -1,5 +1,6 @@
 package org.evomaster.core.search.algorithms
 
+import org.evomaster.core.search.Archive
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.SearchAlgorithm
 import org.evomaster.core.search.Solution
@@ -10,19 +11,30 @@ import org.evomaster.core.search.Solution
 class AwtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
 
-    private var archive : MutableList<T> = mutableListOf()
-
-    private var evaluated = 0
-
-
 
     override fun search(iterations: Int): Solution<T> {
 
-        while(evaluated < iterations){
+        val archive = Archive<T>(randomness)
+
+        //start from a random individual
+        archive.addIfNeeded(ff.calculateCoverage(sampler.sampleAtRandom()))
+
+        val randomP = 0.2 //TODO parameter
+
+        for(i in 1 until iterations){
+
+            var individual : T
+            if(randomness.nextBoolean(randomP))
+                individual = sampler.sampleAtRandom()
+            else
+                individual = archive.sampleIndividual()
+
+            //TODO mutate
 
 
+            archive.addIfNeeded(ff.calculateCoverage(individual))
         }
 
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return archive.extractSolution()
     }
 }

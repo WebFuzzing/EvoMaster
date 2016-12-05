@@ -14,14 +14,12 @@ class ArchiveTest{
 
     @BeforeEach
     fun init(){
-        archive = Archive<OneMaxIndividual>()
+        archive = Archive<OneMaxIndividual>(Randomness(42))
         ff =  OneMaxFitness()
     }
 
     @Test
     fun testEmpty(){
-
-        val archive = Archive<OneMaxIndividual>()
 
         val solution = archive.extractSolution()
 

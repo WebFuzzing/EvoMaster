@@ -1,7 +1,7 @@
 package org.evomaster.core.search
 
 
-class Archive<T> where T : Individual {
+class Archive<T>(val randomness: Randomness) where T : Individual {
 
     /**
      * Key -> id of the target
@@ -27,6 +27,27 @@ class Archive<T> where T : Individual {
         return Solution(overall, uniques.toMutableList())
     }
 
+    fun sampleIndividual() : T {
+
+        if(map.isEmpty()){
+            throw IllegalStateException("Empty archive")
+        }
+
+        var toChooseFrom = map.keys.filter { k -> ! isCovered(k) }
+        if(toChooseFrom.isEmpty()){
+            //this means all current targets are covered
+            toChooseFrom = map.keys.toList()
+        }
+
+        val chosenTarget = randomness.choose(toChooseFrom)
+        val candidates = map[chosenTarget] ?: emptyList<EvaluatedIndividual<T>>()
+        assert(candidates.size > 0)
+
+        val chosen = randomness.choose(candidates)
+
+        return chosen.individual.copy() as T
+    }
+
 
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
@@ -34,6 +55,14 @@ class Archive<T> where T : Individual {
         var added = false
 
         for ((k, v) in ei.fitness.getViewOfData()) {
+
+            if(v == 0.0){
+                /*
+                    No point adding an individual with no impact
+                    on a given target
+                 */
+                continue
+            }
 
             val current = map.getOrPut(k, {mutableListOf()})
 

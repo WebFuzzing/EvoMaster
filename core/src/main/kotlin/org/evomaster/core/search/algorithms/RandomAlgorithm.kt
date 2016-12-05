@@ -6,16 +6,11 @@ import org.evomaster.core.search.*
 
 class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
 
-    @Inject
-    private lateinit var sampler : Sampler<T>
-
-    @Inject
-    private lateinit var ff : FitnessFunction<T>
 
 
     override fun search(iterations: Int): Solution<T> {
 
-        val archive = Archive<T>()
+        val archive = Archive<T>(randomness)
 
         for(i in 1..iterations){
 
