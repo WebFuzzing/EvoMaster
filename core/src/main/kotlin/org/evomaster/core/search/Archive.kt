@@ -27,7 +27,9 @@ class Archive<T>(val randomness: Randomness) where T : Individual {
         return Solution(overall, uniques.toMutableList())
     }
 
-    fun sampleIndividual() : T {
+    fun isEmpty() = map.isEmpty()
+
+    fun sampleIndividual() : EvaluatedIndividual<T> {
 
         if(map.isEmpty()){
             throw IllegalStateException("Empty archive")
@@ -45,7 +47,7 @@ class Archive<T>(val randomness: Randomness) where T : Individual {
 
         val chosen = randomness.choose(candidates)
 
-        return chosen.individual.copy() as T
+        return chosen.copy()
     }
 
 
@@ -81,10 +83,16 @@ class Archive<T>(val randomness: Randomness) where T : Individual {
                     be that new individual covers it as well,
                     and it is better?
                  */
-                if (FitnessValue.isMaxValue(v) &&
-                        copy.fitness.computeFitnessScore() >
-                                current[0].fitness.computeFitnessScore()
-                ) {
+                val maxed = FitnessValue.isMaxValue(v)
+
+                val copyf = copy.fitness.computeFitnessScore()
+                val currf = current[0].fitness.computeFitnessScore()
+
+                val betterScore =  copyf > currf
+                val equalButShorter = (copyf == currf) &&
+                        (copy.individual.size() < current[0].individual.size())
+
+                if (maxed && (betterScore || equalButShorter)) {
                     current[0] = copy
                     added = true
                 }
@@ -100,7 +108,10 @@ class Archive<T>(val randomness: Randomness) where T : Individual {
 
             val limit = 10 //TODO config
             if(current.size == limit){
-                current.sortBy { c -> c.fitness.getHeuristic(k) }
+                current.sortBy {
+                    //TODO also by size
+                    c -> c.fitness.getHeuristic(k)
+                }
                 current.removeAt(0)
             }
             current.add(copy)

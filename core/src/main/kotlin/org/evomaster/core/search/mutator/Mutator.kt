@@ -1,10 +1,7 @@
 package org.evomaster.core.search.mutator
 
 import com.google.inject.Inject
-import org.evomaster.core.search.Archive
-import org.evomaster.core.search.FitnessFunction
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Randomness
+import org.evomaster.core.search.*
 
 
 abstract class Mutator<T> where T : Individual{
@@ -19,13 +16,20 @@ abstract class Mutator<T> where T : Individual{
     abstract fun mutate(individual: T) : T
 
 
-    fun mutate(upToNTimes: Int, individual: T, archive: Archive<T>) : Int{
+    fun mutate(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>) : Int{
 
-        var mutated = individual
+        var current = individual
 
         for(i in 0 until upToNTimes){
-            mutated = mutate(mutated)
-            archive.addIfNeeded(ff.calculateCoverage(mutated))
+            val mutated = ff.calculateCoverage(mutate(current.individual))
+
+            if(current.fitness.subsumes(mutated.fitness)){
+                continue
+            }
+
+            archive.addIfNeeded(mutated)
+
+            current = mutated
         }
 
         return upToNTimes

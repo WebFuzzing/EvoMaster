@@ -31,4 +31,7 @@ class OneMaxIndividual(val n: Int) : Individual() {
         return listOf()
     }
 
+    override fun size() : Int {
+        return n
+    }
 }

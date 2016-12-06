@@ -8,5 +8,7 @@ abstract class Individual{
     abstract fun copy() : Individual
 
     abstract fun genes() : List<out Gene>
+
+    abstract fun size() : Int
 }
 
