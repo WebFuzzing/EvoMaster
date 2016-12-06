@@ -11,6 +11,7 @@
 
     <modules>
         <module>core</module>
+        <module>clientJava</module>
     </modules>
 
     <licenses>
