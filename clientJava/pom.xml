@@ -15,6 +15,18 @@
     <modules>
         <module>controller</module>
         <module>controllerApi</module>
+        <module>instrumentation</module>
+        <module>clientUtil</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.evomaster.clientJava</groupId>
+                <artifactId>clientUtil</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>

@@ -1,4 +1,4 @@
-package org.evomaster.controller;
+package org.evomaster.clientJava.controller;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -26,11 +26,13 @@ public abstract class RestController {
      *
      * @return the URL of base path of the running SUT
      */
-    public abstract String startSUT();
+    public abstract String startSut();
+
+    public abstract String startInstrumentedSut();
 
     public abstract boolean isSutRunning();
 
-    public abstract void stopSUT();
+    public abstract void stopSut();
 
     /**
      * A possible (likely inefficient) way to implement this would be to

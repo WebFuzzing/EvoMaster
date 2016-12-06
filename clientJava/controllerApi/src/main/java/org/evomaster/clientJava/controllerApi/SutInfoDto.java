@@ -1,4 +1,4 @@
-package org.evomaster.controllerapi;
+package org.evomaster.clientJava.controllerApi;
 
 public class SutInfoDto {
 
