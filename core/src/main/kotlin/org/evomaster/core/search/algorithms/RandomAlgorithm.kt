@@ -1,6 +1,5 @@
 package org.evomaster.core.search.algorithms
 
-import com.google.inject.Inject
 import org.evomaster.core.search.*
 
 

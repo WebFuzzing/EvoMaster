@@ -39,7 +39,7 @@ class Randomness {
             throw IllegalArgumentException("Min $min is bigger than max $max")
         }
 
-        return (min as Long + Math.random() * (max as Long - min + 1)) as Int
+        return (min.toLong() + Math.random() * (max.toLong() - min + 1)).toInt()
     }
 
     fun <T> choose(list: List<T>): T {
