@@ -27,8 +27,22 @@ public class InstrumentingClassLoader extends ClassLoader {
     private final ClassLoader classLoader;
     private final Map<String, Class<?>> classes;
 
-    public InstrumentingClassLoader() {
-        instrumentator = new Instrumentator();
+    /**
+     * Classloader needed to bootstrap the execution of your application.
+     * This is needed because it will apply bytecode instrumentation to keep
+     * track of which parts of the code is executed, and to inject heuristics
+     * to help the generation of test cases that maximize coverage
+     *
+     * @param packagePrefixesToCover: a "," separated list of package prefixes or class names.
+     *                              For example, "com.foo.,com.bar.Bar".
+     *                              Note: be careful of using something as generate as "com."
+     *                              or "org.", as most likely ALL your third-party libraries
+     *                              would be instrumented as well, which could have a severe
+     *                              impact on performance
+     * @throws IllegalArgumentException if {@code packagePrefixesToCover} is invalid
+     */
+    public InstrumentingClassLoader(String packagePrefixesToCover)throws IllegalArgumentException {
+        instrumentator = new Instrumentator(packagePrefixesToCover);
         classLoader = InstrumentingClassLoader.class.getClassLoader();
         classes = new LinkedHashMap<>();
     }
@@ -49,30 +63,31 @@ public class InstrumentingClassLoader extends ClassLoader {
         if (result != null) {
             return result;
         } else {
-            Class<?> instrumentedClass = instrumentClass(name);
+            ClassName className = new ClassName(name);
+            Class<?> instrumentedClass = instrumentClass(className);
             return instrumentedClass;
         }
     }
 
-    private Class<?> instrumentClass(String fullyQualifiedTargetClass) throws ClassNotFoundException {
-        String className = fullyQualifiedTargetClass.replace('.', '/');
+    private Class<?> instrumentClass(ClassName className) throws ClassNotFoundException {
 
-        try (InputStream is = classLoader.getResourceAsStream(className + ".class")) {
+        try (InputStream is = classLoader.getResourceAsStream(className.getAsResourcePath())) {
 
             if (is == null) {
-                throw new ClassNotFoundException("Failed to find resource file for "+fullyQualifiedTargetClass);
+                throw new ClassNotFoundException(
+                        "Failed to find resource file for "+className.getAsResourcePath());
             }
 
             byte[] byteBuffer = instrumentator.transformBytes(this, className, new ClassReader(is));
-            createPackageDefinition(fullyQualifiedTargetClass);
+            createPackageDefinition(className.getFullNameWithDots());
 
-            Class<?> result = defineClass(fullyQualifiedTargetClass, byteBuffer, 0, byteBuffer.length);
-            classes.put(fullyQualifiedTargetClass, result);
+            Class<?> result = defineClass(className.getFullNameWithDots(), byteBuffer, 0, byteBuffer.length);
+            classes.put(className.getFullNameWithDots(), result);
 
-            debug("Loaded class: " + fullyQualifiedTargetClass);
+            debug("Loaded class: " + className.getFullNameWithDots());
             return result;
         } catch (Throwable t) {
-            error("Error while loading class " + fullyQualifiedTargetClass, t);
+            error("Error while loading class " + className.getFullNameWithDots(), t);
             throw new ClassNotFoundException(t.getMessage(), t);
         }
     }

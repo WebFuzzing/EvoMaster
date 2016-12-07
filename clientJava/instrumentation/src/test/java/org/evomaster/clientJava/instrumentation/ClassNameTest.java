@@ -7,19 +7,20 @@ import java.io.InputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class InstrumentingClassLoaderTest {
+public class ClassNameTest {
 
     @Test
     public void checkLoadClass() throws IOException {
 
+        ClassName className = new ClassName(this.getClass().getName());
+
         InputStream is =
                 this.getClass().getClassLoader().getResourceAsStream(
-                        InstrumentingClassLoaderTest.class.getName()
-                        .replace(".","/")
-                        + ".class"
+                        className.getAsResourcePath()
                 );
 
         assertNotNull(is);
         is.close();
     }
+
 }
