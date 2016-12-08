@@ -1,5 +1,7 @@
 package org.evomaster.clientJava.instrumentation.staticState;
 
+import org.evomaster.clientJava.instrumentation.ClassName;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,9 +20,15 @@ public class ExecutionTracer {
      */
 
     /**
-     * Identifier for line coverage objectives
+     * Prefix identifier for line coverage objectives
      */
     public static final String LINE = "Line";
+
+    /**
+     * Prefix identifier for branch coverage objectives
+     */
+    public static final String BRANCH = "Branch";
+
 
     /**
      * Key -> the unique id of the coverage objective
@@ -34,6 +42,7 @@ public class ExecutionTracer {
     public static void resetState() {
         objectiveCoverage.clear();
     }
+
 
     public static Map<String, Double> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
@@ -79,14 +88,56 @@ public class ExecutionTracer {
 
 
     public static final String EXECUTED_LINE_METHOD_NAME = "executedLine";
-    public static final String EXECUTED_LINE_DESCRIPTOR = "(Ljava/lang/String;Ljava/lang/String;I)V";
+    public static final String EXECUTED_LINE_DESCRIPTOR = "(Ljava/lang/String;I)V";
 
     /**
      * Report on the fact that a given line has been executed.
      */
-    public static void executedLine(String className, String fullMethodName, int line) {
+    public static void executedLine(String className, int line) {
 
-        String id = LINE + "_" + line + "_at_" + className + "::" + fullMethodName;
+        String id = LINE + "_" + line + "_at_" + ClassName.get(className).getFullNameWithDots();
         updateObjective(id, 1d);
+    }
+
+
+    //---- branch-jump methods --------------------------
+
+    public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = "executingBranchJump";
+
+    public static final String JUMP_DESC_1_VALUE = "(IILjava/lang/String;II)V";
+
+    public static void executingBranchJump(
+            int value, int opcode, String className, int line, int branchId) {
+
+    }
+
+    public static final String JUMP_DESC_2_VALUES = "(IIILjava/lang/String;II)V";
+
+    public static void executingBranchJump(
+            int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
+
+    }
+
+    public static final String JUMP_DESC_OBJECTS =
+            "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;II)V";
+
+    public static void executingBranchJump(
+            Object first, Object second, int opcode, String className, int line, int branchId) {
+
+    }
+
+    public static final String JUMP_DESC_NULL =
+            "(Ljava/lang/Object;ILjava/lang/String;II)V";
+
+    public static void executingBranchJump(
+            Object obj, int opcode, String className, int line, int branchId) {
+
+    }
+
+
+    private static String getUniqueBranchId(String className, int line, int branchId) {
+
+        return BRANCH + "_at_line_"+line+"_position_"+branchId+"_at_" +
+                ClassName.get(className).getFullNameWithDots();
     }
 }

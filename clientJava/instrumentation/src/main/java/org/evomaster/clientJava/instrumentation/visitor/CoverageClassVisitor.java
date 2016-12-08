@@ -9,11 +9,11 @@ import org.objectweb.asm.MethodVisitor;
  * Add instrumentations to keep track of which statements/lines
  * are covered during test execution
  */
-public class LineCovClassVisitor extends ClassVisitor {
+public class CoverageClassVisitor extends ClassVisitor {
 
     private final String bytecodeClassName;
 
-    public LineCovClassVisitor(ClassVisitor cv, ClassName className){
+    public CoverageClassVisitor(ClassVisitor cv, ClassName className) {
         super(Constants.ASM, cv);
         bytecodeClassName = className.getBytecodeName();
     }
@@ -35,7 +35,7 @@ public class LineCovClassVisitor extends ClassVisitor {
             https://docs.oracle.com/javase/tutorial/java/generics/bridgeMethods.html
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
          */
-        if(Constants.isMethodSyntheticOrBridge(methodAccess)){
+        if (Constants.isMethodSyntheticOrBridge(methodAccess)) {
             return mv;
         }
 
@@ -46,11 +46,22 @@ public class LineCovClassVisitor extends ClassVisitor {
             In such cases, using them in coverage score would be very misleading,
             as only the first test executed would cover them
          */
-        if(name.equals(Constants.CLASS_INIT_METHOD)){
+        if (name.equals(Constants.CLASS_INIT_METHOD)) {
             return mv;
         }
 
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
+
+
+
+        /*
+                TODO: besides branch coverage, we will also need
+                one for exceptions. This is tricky: the line that
+                throws the exception should be marked as 0.5 for
+                line coverage, and a new objective for thrown
+                exception at that line should be created.
+                But maybe not needed for a first prototype version...
+         */
 
         return mv;
     }

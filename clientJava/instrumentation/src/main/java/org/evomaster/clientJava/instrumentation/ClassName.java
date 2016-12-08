@@ -23,6 +23,10 @@ public class ClassName {
         return new ClassName(klass);
     }
 
+    public static ClassName get(String name) {
+        return new ClassName(name);
+    }
+
     public ClassName(Class<?> klass){
         this(Objects.requireNonNull(klass).getName());
     }

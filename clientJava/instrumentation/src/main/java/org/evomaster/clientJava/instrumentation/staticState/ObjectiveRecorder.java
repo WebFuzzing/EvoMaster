@@ -37,9 +37,16 @@ public class ObjectiveRecorder {
             new ConcurrentHashMap<>(65536);
 
     /**
-     * Counter used to generate unique numeric ids
+     * Counter used to generate unique numeric ids for idMapping
      */
-    private static final AtomicInteger idCounter = new AtomicInteger(0);
+    private static final AtomicInteger idMappingCounter = new AtomicInteger(0);
+
+    /**
+     * Counter used to get unique ids, where the number ordering and continuity
+     * is not important. In other words, if an entity gets "n", that does not
+     * mean that its next call will get "n+1", just a value "k" with "k!=n"
+     */
+    private static final AtomicInteger counter = new AtomicInteger(0);
 
     /**
      * It will be the EvoMaster process that does ask the SUT controller
@@ -62,8 +69,13 @@ public class ObjectiveRecorder {
     public static void reset(){
         maxObjectiveCoverage.clear();
         idMapping.clear();
-        idCounter.set(0);
+        idMappingCounter.set(0);
         firstTimeEncountered.clear();
+        counter.set(0);
+    }
+
+    public static int getAUniqueId(){
+        return counter.getAndIncrement();
     }
 
     /**
@@ -77,7 +89,7 @@ public class ObjectiveRecorder {
             throw new IllegalArgumentException("Invalid value "+value +" out of range [0,1]");
         }
 
-        idMapping.computeIfAbsent(id, k -> idCounter.getAndIncrement());
+        idMapping.computeIfAbsent(id, k -> idMappingCounter.getAndIncrement());
 
         if(! maxObjectiveCoverage.containsKey(id)){
             firstTimeEncountered.add(id);

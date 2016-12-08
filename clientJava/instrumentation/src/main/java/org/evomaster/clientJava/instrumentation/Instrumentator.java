@@ -1,7 +1,7 @@
 package org.evomaster.clientJava.instrumentation;
 
 
-import org.evomaster.clientJava.instrumentation.visitor.LineCovClassVisitor;
+import org.evomaster.clientJava.instrumentation.visitor.CoverageClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -56,16 +56,7 @@ public class Instrumentator {
 
         if(canInstrumentForCoverage(className)){
 
-            cv = new LineCovClassVisitor(cv, className);
-
-            /*
-                TODO: besides branch coverage, we will also need
-                one for exceptions. This is tricky: the line that
-                throws the exception should be marked as 0.5 for
-                line coverage, and a new objective for thrown
-                exception at that line should be created.
-                But maybe not needed for a first prototype version...
-             */
+            cv = new CoverageClassVisitor(cv, className);
 
         } else {
             /*
