@@ -11,11 +11,14 @@ public class LineCovMethodVisitor extends MethodVisitor {
 
     private final String className;
     private final String methodName;
-    /*
+
+    /**
         method name + descriptor
+        <br>
         The descriptor defines input/output types
      */
     private final String fullMethodName;
+
 
     public LineCovMethodVisitor(MethodVisitor mv,
                                 String className,

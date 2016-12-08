@@ -58,6 +58,15 @@ public class Instrumentator {
 
             cv = new LineCovClassVisitor(cv, className);
 
+            /*
+                TODO: besides branch coverage, we will also need
+                one for exceptions. This is tricky: the line that
+                throws the exception should be marked as 0.5 for
+                line coverage, and a new objective for thrown
+                exception at that line should be created.
+                But maybe not needed for a first prototype version...
+             */
+
         } else {
             /*
                 For "now" we only instrument classes that will directly

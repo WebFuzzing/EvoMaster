@@ -26,25 +26,25 @@ public class LineCovTCTest {
                         .newInstance();
 
         ExecutionTracer.resetState();
-        assertEquals(0, ExecutionTracer.getInternalReferenceToObjectiveCoverage().size());
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
         tc.classify(-1, 0 , 0);
-        int a = ExecutionTracer.getInternalReferenceToObjectiveCoverage().size();
+        int a = ExecutionTracer.getNumberOfObjectives();
         //at least one line should had been covered
         assertTrue(a > 0);
 
         tc.classify(-1, 0 , 0);
-        int b = ExecutionTracer.getInternalReferenceToObjectiveCoverage().size();
+        int b = ExecutionTracer.getNumberOfObjectives();
         //nothing new should had been covered
         assertEquals(a, b);
 
         tc.classify(1, 1 , 1);
-        int c = ExecutionTracer.getInternalReferenceToObjectiveCoverage().size();
+        int c = ExecutionTracer.getNumberOfObjectives();
         //new lines have been covered
         assertTrue(c > b);
 
         tc.classify(1, 2 , 2);
-        int d = ExecutionTracer.getInternalReferenceToObjectiveCoverage().size();
+        int d = ExecutionTracer.getNumberOfObjectives();
         //new lines have been covered
         assertTrue(d > c);
     }
@@ -60,10 +60,10 @@ public class LineCovTCTest {
                         .newInstance();
 
         ExecutionTracer.resetState();
-        assertEquals(0, ExecutionTracer.getInternalReferenceToObjectiveCoverage().size());
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
         tc.classify(-1, 0, 0);
-        int a = ExecutionTracer.getInternalReferenceToObjectiveCoverage().size();
+        int a = ExecutionTracer.getNumberOfObjectives();
 
         //as not instrumented, nothing should had been reported covered
         assertEquals(0, a);
