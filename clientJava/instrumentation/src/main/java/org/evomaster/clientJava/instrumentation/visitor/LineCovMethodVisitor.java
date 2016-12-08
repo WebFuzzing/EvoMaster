@@ -46,24 +46,30 @@ public class LineCovMethodVisitor extends MethodVisitor {
             Here we push 3 elements on the stack, which
             are used to uniquely identify the line.
             Then, we do a call to ExecutionTracer that
-            will pull these 3 elements as input parameters.
+            will pop these 3 elements as input parameters.
          */
 
         this.visitLdcInsn(className);
         this.visitLdcInsn(fullMethodName);
         this.visitLdcInsn(line);
 
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC,
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
                 ClassName.get(ExecutionTracer.class).getBytecodeName(),
                 ExecutionTracer.EXECUTED_LINE_METHOD_NAME,
                 ExecutionTracer.EXECUTED_LINE_DESCRIPTOR,
-                false); //ExecutionTracer is not an interface
+                ExecutionTracer.class.isInterface()); //false
     }
 
 
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
-        int addedInstructions = 3;
-        super.visitMaxs(Math.max(addedInstructions, maxStack), maxLocals);
+        /*
+            we pushed 3 values on the stack, so we need to tell ASM
+            that this instrumented method should have a frame for at
+            least 3 elements
+         */
+        int maxElementsAddedOnStackFrame = 3;
+        super.visitMaxs(Math.max(maxElementsAddedOnStackFrame, maxStack), maxLocals);
     }
 }
