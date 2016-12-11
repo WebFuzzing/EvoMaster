@@ -124,7 +124,7 @@ public class BranchCovMethodVisitor extends MethodVisitor {
                 break;
             default:
                 /*
-                    not so interesting to handle switch statements (at
+                    NOTE: not so interesting to handle switch statements (at
                     least for the moment...), as
                     quite complex and not so super common anyway...
                  */

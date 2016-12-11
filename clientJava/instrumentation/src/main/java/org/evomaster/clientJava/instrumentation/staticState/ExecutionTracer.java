@@ -1,6 +1,8 @@
 package org.evomaster.clientJava.instrumentation.staticState;
 
 import org.evomaster.clientJava.instrumentation.ClassName;
+import org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps;
+import org.evomaster.clientJava.instrumentation.heuristic.Truthness;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,7 +84,18 @@ public class ExecutionTracer {
         if (value < 0d || value > 1d) {
             throw new IllegalArgumentException("Invalid value " + value + " out of range [0,1]");
         }
-        objectiveCoverage.put(id, value);
+
+        /*
+            In the same execution, a target could be reached several times,
+            so we should keep track of the best value found so far
+         */
+        if(objectiveCoverage.containsKey(id)){
+            double previous = objectiveCoverage.get(id);
+            objectiveCoverage.put(id, Math.max(value, previous));
+        } else {
+            objectiveCoverage.put(id, value);
+        }
+
         ObjectiveRecorder.update(id, value);
     }
 
@@ -102,42 +115,63 @@ public class ExecutionTracer {
 
     //---- branch-jump methods --------------------------
 
-    public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = "executingBranchJump";
-
-    public static final String JUMP_DESC_1_VALUE = "(IILjava/lang/String;II)V";
-
-    public static void executingBranchJump(
-            int value, int opcode, String className, int line, int branchId) {
-
+    private static void updateBranch(String id, Truthness t){
+        updateObjective(id+"_trueBranch", t.getOfTrue());
+        updateObjective(id+"_falseBranch", t.getOfFalse());
     }
-
-    public static final String JUMP_DESC_2_VALUES = "(IIILjava/lang/String;II)V";
-
-    public static void executingBranchJump(
-            int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
-
-    }
-
-    public static final String JUMP_DESC_OBJECTS =
-            "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;II)V";
-
-    public static void executingBranchJump(
-            Object first, Object second, int opcode, String className, int line, int branchId) {
-
-    }
-
-    public static final String JUMP_DESC_NULL =
-            "(Ljava/lang/Object;ILjava/lang/String;II)V";
-
-    public static void executingBranchJump(
-            Object obj, int opcode, String className, int line, int branchId) {
-
-    }
-
 
     private static String getUniqueBranchId(String className, int line, int branchId) {
 
         return BRANCH + "_at_line_"+line+"_position_"+branchId+"_at_" +
                 ClassName.get(className).getFullNameWithDots();
+    }
+
+
+    public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = "executingBranchJump";
+
+
+    public static final String JUMP_DESC_1_VALUE = "(IILjava/lang/String;II)V";
+    public static void executingBranchJump(
+            int value, int opcode, String className, int line, int branchId) {
+
+        String id = getUniqueBranchId(className, line, branchId);
+        Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);
+
+        updateBranch(id, t);
+    }
+
+
+    public static final String JUMP_DESC_2_VALUES = "(IIILjava/lang/String;II)V";
+    public static void executingBranchJump(
+            int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
+
+        String id = getUniqueBranchId(className, line, branchId);
+        //TODO: make sure the order is correct, as possible issue with JVM stack
+        Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);
+
+        updateBranch(id, t);
+    }
+
+    public static final String JUMP_DESC_OBJECTS =
+            "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;II)V";
+    public static void executingBranchJump(
+            Object first, Object second, int opcode, String className, int line, int branchId) {
+
+        String id = getUniqueBranchId(className, line, branchId);
+        Truthness t = HeuristicsForJumps.getForObjectComparison(first, second, opcode);
+
+        updateBranch(id, t);
+    }
+
+
+    public static final String JUMP_DESC_NULL =
+            "(Ljava/lang/Object;ILjava/lang/String;II)V";
+    public static void executingBranchJump(
+            Object obj, int opcode, String className, int line, int branchId) {
+
+        String id = getUniqueBranchId(className, line, branchId);
+        Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
+
+        updateBranch(id, t);
     }
 }
