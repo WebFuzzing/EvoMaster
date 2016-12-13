@@ -14,7 +14,7 @@ class ArchiveTest{
 
     @BeforeEach
     fun init(){
-        archive = Archive<OneMaxIndividual>(Randomness(42))
+        archive = Archive<OneMaxIndividual>()
         ff =  OneMaxFitness()
     }
 

@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import com.google.inject.*
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.onemax.OneMaxIndividual
@@ -21,11 +22,13 @@ class MioAlgorithmOnOneMaxTest {
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
         val sampler = injector.getInstance(OneMaxSampler::class.java)
+        val config = injector.getInstance(EMConfig::class.java)
+        config.maxFitnessEvaluations = 1000
 
         val n = 20
         sampler.n = n
 
-        val solution = mio.search(1000)
+        val solution = mio.search()
 
         Assertions.assertEquals(n.toDouble(), solution.overall.computeFitnessScore(), 0.001);
         Assertions.assertEquals(1, solution.individuals.size)

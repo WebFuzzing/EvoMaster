@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import com.google.inject.*
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.onemax.OneMaxIndividual
 import org.evomaster.core.search.onemax.OneMaxModule
@@ -18,7 +19,10 @@ class RandomSearchTest {
         val rs = injector.getInstance(Key.get(
                 object : TypeLiteral<RandomAlgorithm<OneMaxIndividual>>() {}))
 
-        val solution = rs.search(1000)
+        val config = injector.getInstance(EMConfig::class.java)
+        config.maxFitnessEvaluations = 1000
+
+        val solution = rs.search()
 
         assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001);
         assertEquals(1, solution.individuals.size)
