@@ -13,31 +13,26 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     private lateinit var mutator : Mutator<T>
 
 
-    override fun search(iterations: Int): Solution<T> {
+    override fun search(): Solution<T> {
 
-        val randomP = 0.2 //TODO parameter, adaptive
-        //TODO parameter for shrinking, adaptive
-        val archive = Archive<T>(randomness)
+        time.startSearch()
 
-        var counter = 0
+        while(time.shouldContinueSearch()){
 
-        while(counter < iterations){
+            val randomP = apc.getProbRandomSampling()
 
             if(archive.isEmpty() || randomness.nextBoolean(randomP)) {
                 archive.addIfNeeded(ff.calculateCoverage(sampler.sampleAtRandom()))
-                counter++
+                time.newEvaluation()
 
                 continue
             }
 
             var ei = archive.sampleIndividual()
 
-            val nMutations = 1 //TODO parameter
-            val left = iterations - counter
-            val limit = Math.min(nMutations, left)
+            val nMutations = apc.getNumberOfMutations()
 
-            var evaluated = mutator.mutate(limit, ei, archive)
-            counter += evaluated
+            mutator.mutateAndSave(nMutations, ei, archive)
         }
 
         return archive.extractSolution()

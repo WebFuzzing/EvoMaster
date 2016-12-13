@@ -7,15 +7,17 @@ class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
 
 
 
-    override fun search(iterations: Int): Solution<T> {
+    override fun search(): Solution<T> {
 
-        val archive = Archive<T>(randomness)
+        time.startSearch()
 
-        for(i in 1..iterations){
+
+        while(time.shouldContinueSearch()){
 
             val individual = sampler.sampleAtRandom()
 
             archive.addIfNeeded(ff.calculateCoverage(individual))
+            time.newEvaluation()
         }
 
         return archive.extractSolution()

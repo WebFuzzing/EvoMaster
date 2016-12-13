@@ -14,7 +14,16 @@ abstract class SearchAlgorithm<T> where T : Individual{
     @Inject
     protected lateinit var randomness : Randomness
 
+    @Inject
+    protected lateinit var time : SearchTimeController
 
-    abstract fun search(iterations: Int) : Solution<T>
+    @Inject
+    protected lateinit var archive: Archive<T>
+
+    @Inject
+    protected lateinit var apc: AdaptiveParameterControl
+
+
+    abstract fun search() : Solution<T>
 
 }

@@ -1,7 +1,16 @@
 package org.evomaster.core.search
 
+import com.google.inject.Inject
 
-class Archive<T>(val randomness: Randomness) where T : Individual {
+
+class Archive<T>() where T : Individual {
+
+    @Inject
+    private lateinit var randomness: Randomness
+
+    @Inject
+    private lateinit var apc: AdaptiveParameterControl
+
 
     /**
      * Key -> id of the target
@@ -106,7 +115,7 @@ class Archive<T>(val randomness: Randomness) where T : Individual {
                 continue
             }
 
-            val limit = 10 //TODO config
+            val limit = apc.getArchiveTargetLimit()
             if(current.size == limit){
                 current.sortBy {
                     //TODO also by size
