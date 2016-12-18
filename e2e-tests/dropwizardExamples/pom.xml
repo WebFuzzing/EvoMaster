@@ -3,24 +3,43 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.evomaster.clientJava</groupId>
-        <artifactId>clientJava</artifactId>
+        <groupId>org.evomaster</groupId>
+        <artifactId>e2e-tests</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>instrumentation</artifactId>
+    <artifactId>dropwizardExamples</artifactId>
     <packaging>jar</packaging>
 
 
     <dependencies>
+
         <dependency>
             <groupId>org.evomaster.clientJava</groupId>
-            <artifactId>clientUtil</artifactId>
+            <artifactId>controller</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.ow2.asm</groupId>
-            <artifactId>asm</artifactId>
+            <groupId>org.evomaster</groupId>
+            <artifactId>core</artifactId>
+            <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster.clientJava</groupId>
+            <artifactId>instrumentation</artifactId>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-core</artifactId>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-stdlib</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
@@ -29,17 +48,18 @@
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-surefire-provider</artifactId>
         </dependency>
+
     </dependencies>
 
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <groupId>org.jetbrains.kotlin</groupId>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
+                <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

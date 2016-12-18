@@ -12,6 +12,7 @@
     <modules>
         <module>core</module>
         <module>clientJava</module>
+        <module>e2e-tests</module>
     </modules>
 
     <licenses>
@@ -35,11 +36,35 @@
     <dependencyManagement>
         <dependencies>
 
+            <!-- Internal Modules -->
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster.clientJava</groupId>
+                <artifactId>controller</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.evomaster.clientJava</groupId>
                 <artifactId>controllerApi</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.evomaster.clientJava</groupId>
+                <artifactId>instrumentation</artifactId>
+                <version>${project.version}</version>
+                <type>jar</type>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster.clientJava</groupId>
+                <artifactId>instrumentation</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.jetbrains.kotlin</groupId>
@@ -109,6 +134,8 @@
     <build>
         <pluginManagement>
             <plugins>
+
+                <!-- To run integration tests -->
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.19</version>
@@ -120,6 +147,8 @@
                         </dependency>
                     </dependencies>
                 </plugin>
+
+                <!-- To compile Kotlin code -->
                 <plugin>
                     <artifactId>kotlin-maven-plugin</artifactId>
                     <groupId>org.jetbrains.kotlin</groupId>
@@ -147,6 +176,8 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <!-- To compile Java code -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -179,31 +210,23 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <!-- To create Jar files for tests -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.0.2</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>test-jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
             </plugins>
         </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.jetbrains.kotlin</groupId>
-                <artifactId>kotlin-maven-plugin</artifactId>
-                <version>${kotlin.version}</version>
-                <executions>
-                    <execution>
-                        <id>compile</id>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>test-compile</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>test-compile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 
 

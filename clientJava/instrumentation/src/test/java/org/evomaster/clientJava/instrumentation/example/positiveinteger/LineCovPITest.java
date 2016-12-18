@@ -1,8 +1,8 @@
-package org.evomaster.clientJava.instrumentation.example.triangle;
+package org.evomaster.clientJava.instrumentation.example.positiveinteger;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
+import org.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -10,44 +10,40 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class LineCovTCTest {
+public class LineCovPITest {
 
-    @BeforeAll @AfterAll
-    public static void reset(){
+    @BeforeAll
+    @AfterAll
+    public static void reset() {
         ExecutionTracer.resetState();
     }
 
     @Test
-    public void testLineCov() throws Exception{
+    public void testLineCov() throws Exception {
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("org.foo");
 
-        TriangleClassification tc =  (TriangleClassification)
-                cl.loadClass(TriangleClassificationImpl.class.getName())
+        PositiveInteger pi = (PositiveInteger)
+                cl.loadClass(PositiveIntegerImp.class.getName())
                         .newInstance();
 
         ExecutionTracer.resetState();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
-        tc.classify(-1, 0 , 0);
+        pi.isPositive(2);
         int a = ExecutionTracer.getNumberOfObjectives();
         //at least one line should had been covered
         assertTrue(a > 0);
 
-        tc.classify(-1, 0 , 0);
+        pi.isPositive(3);
         int b = ExecutionTracer.getNumberOfObjectives();
         //nothing new should had been covered
         assertEquals(a, b);
 
-        tc.classify(1, 1 , 1);
+        pi.isPositive(-4);
         int c = ExecutionTracer.getNumberOfObjectives();
         //new lines have been covered
         assertTrue(c > b);
-
-        tc.classify(1, 2 , 2);
-        int d = ExecutionTracer.getNumberOfObjectives();
-        //new lines have been covered
-        assertTrue(d > c);
     }
 
 
@@ -56,17 +52,15 @@ public class LineCovTCTest {
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("org.invalid");
 
-        TriangleClassification tc = (TriangleClassification)
-                cl.loadClass(TriangleClassificationImpl.class.getName())
+        PositiveInteger pi = (PositiveInteger)
+                cl.loadClass(PositiveIntegerImp.class.getName())
                         .newInstance();
 
         ExecutionTracer.resetState();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
-        tc.classify(-1, 0, 0);
-        int a = ExecutionTracer.getNumberOfObjectives();
+        pi.isPositive(2);
 
-        //as not instrumented, nothing should had been reported covered
-        assertEquals(0, a);
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives());
     }
 }
