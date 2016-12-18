@@ -1,5 +1,8 @@
 package org.evomaster.clientJava.controller;
 
+import org.evomaster.clientJava.clientUtil.SimpleLogger;
+import org.evomaster.clientJava.controller.internal.EMControllerApplication;
+
 /**
  * Abstract class used to connect to the EvoMaster process, and
  * that is responsible to start/stop/restart the tested application,
@@ -10,15 +13,27 @@ public abstract class RestController {
     private int controllerPort = 40100;
     private String controllerHost = "localhost";
 
+    private final EMControllerApplication controllerServer = new EMControllerApplication(this);
+
     /**
      * Start the controller as a RESTful server.
      * Use the setters of this class to change the default
      * port and host
      */
     public boolean startTheControllerServer(){
-        //TODO
 
-        return false;
+        try {
+            controllerServer.run();
+        } catch (Exception e) {
+            SimpleLogger.error("Failed to start controller server", e);
+            return false;
+        }
+
+        return true;
+    }
+
+    public boolean stopTheControllerServer(){
+        return controllerServer.stopJetty();
     }
 
     /**
