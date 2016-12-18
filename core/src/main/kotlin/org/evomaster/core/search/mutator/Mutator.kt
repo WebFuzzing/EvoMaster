@@ -15,8 +15,10 @@ abstract class Mutator<T> where T : Individual{
     @Inject
     protected lateinit var time : SearchTimeController
 
-
-    abstract fun mutate(individual: T) : T
+    /**
+     * @return a mutated copy
+     */
+    protected abstract fun mutate(individual: T) : T
 
 
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>) : Int{

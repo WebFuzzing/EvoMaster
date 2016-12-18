@@ -60,6 +60,9 @@ class Archive<T>() where T : Individual {
     }
 
 
+    /**
+     * @return true if the new individual was added to the archive
+     */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
         val copy = ei.copy()
@@ -116,6 +119,7 @@ class Archive<T>() where T : Individual {
             }
 
             val limit = apc.getArchiveTargetLimit()
+            //TODO dynamic limit
             if(current.size == limit){
                 current.sortBy {
                     //TODO also by size
