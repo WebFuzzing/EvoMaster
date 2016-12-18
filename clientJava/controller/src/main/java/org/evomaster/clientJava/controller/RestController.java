@@ -23,10 +23,28 @@ public abstract class RestController {
     public boolean startTheControllerServer(){
 
         try {
-            controllerServer.run();
+            controllerServer.run("server");
         } catch (Exception e) {
             SimpleLogger.error("Failed to start controller server", e);
             return false;
+        }
+
+        /*
+            Again, very ugly code...
+            starting to think if should just get rid off Dropwizard,
+            and use directly Jackson with Jetty
+         */
+
+        try {
+            Thread.sleep(3_000);
+        } catch (InterruptedException e) {
+        }
+
+        while(! controllerServer.getJettyServer().isStarted()){
+            try {
+                Thread.sleep(1_000);
+            } catch (InterruptedException e) {
+            }
         }
 
         return true;
@@ -35,6 +53,15 @@ public abstract class RestController {
     public boolean stopTheControllerServer(){
         return controllerServer.stopJetty();
     }
+
+    /**
+     *
+     * @return the actual port in use (eg, if it was an ephemeral 0)
+     */
+    public int getControllerServerJettyPort(){
+        return controllerServer.getJettyPort();
+    }
+
 
     /**
      * Start a new instance of the SUT

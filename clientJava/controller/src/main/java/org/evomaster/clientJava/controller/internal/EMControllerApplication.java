@@ -5,6 +5,7 @@ import io.dropwizard.jetty.HttpConnectorFactory;
 import io.dropwizard.lifecycle.ServerLifecycleListener;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.Environment;
+import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.RestController;
@@ -33,6 +34,7 @@ public class EMControllerApplication extends Application<EMControllerConfigurati
     public void run(EMControllerConfiguration configuration, Environment environment) throws Exception {
 
         environment.jersey().setUrlPattern("/controller/api/*");
+        environment.jersey().register(new EMController(restController));
 
         /*
             very ugly code, but does not seem that Dropwizard gives you any alternative :(
@@ -47,6 +49,20 @@ public class EMControllerApplication extends Application<EMControllerConfigurati
                 .getAdminConnectors().get(0)).setPort(0);
 
         environment.lifecycle().addServerLifecycleListener(server -> jettyServer = server);
+    }
+
+    /**
+     * Return the actual port used by Jetty.
+     * Note: if you chose port 0, then that is treated as
+     * an ephemeral one, ie Jetty will bind to any available one
+     * @return
+     */
+    public int getJettyPort(){
+        return ((AbstractNetworkConnector)jettyServer.getConnectors()[0]).getLocalPort();
+    }
+
+    public Server getJettyServer(){
+        return jettyServer;
     }
 
     public boolean stopJetty(){
