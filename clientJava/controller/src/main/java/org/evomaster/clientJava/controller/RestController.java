@@ -18,7 +18,9 @@ public abstract class RestController {
     /**
      * Start the controller as a RESTful server.
      * Use the setters of this class to change the default
-     * port and host
+     * port and host.
+     * <br>
+     * This method is blocking.
      */
     public boolean startTheControllerServer(){
 
@@ -32,8 +34,11 @@ public abstract class RestController {
         /*
             Again, very ugly code...
             starting to think if should just get rid off Dropwizard,
-            and use directly Jackson with Jetty
+            and use directly Jackson with Jetty, eg
+
+            http://nikgrozev.com/2014/10/16/rest-with-embedded-jetty-and-jersey-in-a-single-jar-step-by-step/
          */
+
 
         try {
             Thread.sleep(3_000);
@@ -64,12 +69,22 @@ public abstract class RestController {
 
 
     /**
-     * Start a new instance of the SUT
+     * Start a new instance of the SUT.
+     * <br>
+     * This method must be blocking.
      *
      * @return the URL of base path of the running SUT
      */
     public abstract String startSut();
 
+    /**
+     * Start a new instance of the SUT, where EvoMaster
+     * bytecode instrumentation should be on.
+     * <br>
+     * This method must be blocking.
+     *
+     * @return
+     */
     public abstract String startInstrumentedSut();
 
     public abstract boolean isSutRunning();
@@ -77,11 +92,26 @@ public abstract class RestController {
     public abstract void stopSut();
 
     /**
+     * a "," separated list of package prefixes or class names.
+     * For example, "com.foo.,com.bar.Bar".
+     * Note: be careful of using something as generate as "com."
+     * or "org.", as most likely ALL your third-party libraries
+     * would be instrumented as well, which could have a severe
+     * impact on performance
+     * @return
+     */
+    public abstract String getPackagePrefixesToCover();
+
+    /**
      * A possible (likely inefficient) way to implement this would be to
      * call #stopSUT followed by #startSUT
      */
     public abstract void resetStateOfSUT();
 
+    /**
+     * Provide the URL of where the swagger.json can be found
+     * @return
+     */
     public abstract String getUrlOfSwaggerJSON();
 
 

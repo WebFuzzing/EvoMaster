@@ -22,6 +22,10 @@
             <groupId>org.evomaster.clientJava</groupId>
             <artifactId>controllerApi</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster.clientJava</groupId>
+            <artifactId>instrumentation</artifactId>
+        </dependency>
 
         <!-- TODO: recall to shade it -->
         <dependency>

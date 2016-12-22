@@ -2,7 +2,6 @@ package org.evomaster.clientJava.controller.internal;
 
 import io.dropwizard.Application;
 import io.dropwizard.jetty.HttpConnectorFactory;
-import io.dropwizard.lifecycle.ServerLifecycleListener;
 import io.dropwizard.server.DefaultServerFactory;
 import io.dropwizard.setup.Environment;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
@@ -54,7 +53,7 @@ public class EMControllerApplication extends Application<EMControllerConfigurati
     /**
      * Return the actual port used by Jetty.
      * Note: if you chose port 0, then that is treated as
-     * an ephemeral one, ie Jetty will bind to any available one
+     * an ephemeral one, ie Jetty will bind to any available port
      * @return
      */
     public int getJettyPort(){

@@ -42,6 +42,11 @@ public class RestControllerTest {
         }
 
         @Override
+        public String getPackagePrefixesToCover() {
+            return null;
+        }
+
+        @Override
         public void resetStateOfSUT() {
 
         }
