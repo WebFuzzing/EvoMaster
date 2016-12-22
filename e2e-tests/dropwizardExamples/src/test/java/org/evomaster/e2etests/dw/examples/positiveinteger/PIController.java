@@ -34,7 +34,7 @@ public class PIController extends RestController{
             }
         }
 
-        return null;
+        return "http://localhost:"+application.getJettyPort();
     }
 
     @Override

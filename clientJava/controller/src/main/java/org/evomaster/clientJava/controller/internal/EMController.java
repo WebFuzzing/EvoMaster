@@ -17,6 +17,7 @@ import javax.ws.rs.*;
 public class EMController {
 
     private final RestController restController;
+    private String baseUrlOfSUT;
 
     public EMController(RestController restController) {
         this.restController = restController;
@@ -26,11 +27,12 @@ public class EMController {
     @Path("/infoSUT")
     @GET
     @Produces(Formats.JSON_V1)
-    public SutInfoDto getSutInfo(){
+    public SutInfoDto getSutInfo() {
 
         SutInfoDto dto = new SutInfoDto();
         dto.swaggerJsonUrl = restController.getUrlOfSwaggerJSON();
         dto.isSutRunning = restController.isSutRunning();
+        dto.baseUrlOfSUT = baseUrlOfSUT;
 
         return dto;
     }
@@ -38,27 +40,28 @@ public class EMController {
 
     @Path("/startSUT")
     @POST
-    public void startSut(){
+    public void startSut() {
 
-        if(restController.isSutRunning()){
+        if (restController.isSutRunning()) {
             throw new WebApplicationException(400);
         }
 
-        restController.startInstrumentedSut();
+        baseUrlOfSUT = restController.startInstrumentedSut();
     }
 
 
     @Path("/stopSUT")
     @POST
-    public void stopSut(){
+    public void stopSut() {
 
         restController.stopSut();
+        baseUrlOfSUT = null;
     }
 
 
     @Path("/resetSUT")
     @POST
-    public void resetSUT(){
+    public void resetSUT() {
 
         restController.resetStateOfSUT();
     }

@@ -73,7 +73,7 @@ public abstract class RestController {
      * <br>
      * This method must be blocking.
      *
-     * @return the URL of base path of the running SUT
+     * @return the base URL of the running SUT, eg "http://localhost:8080"
      */
     public abstract String startSut();
 
