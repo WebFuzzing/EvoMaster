@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.EMControllerApplication;
+import org.evomaster.clientJava.controllerApi.ControllerConstants;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -10,7 +11,8 @@ import org.evomaster.clientJava.controller.internal.EMControllerApplication;
  */
 public abstract class RestController {
 
-    private int controllerPort = 40100;
+
+    private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = "localhost";
 
     private final EMControllerApplication controllerServer = new EMControllerApplication(this);
@@ -22,7 +24,7 @@ public abstract class RestController {
      * <br>
      * This method is blocking.
      */
-    public boolean startTheControllerServer(){
+    public boolean startTheControllerServer() {
 
         try {
             controllerServer.run("server");
@@ -45,7 +47,7 @@ public abstract class RestController {
         } catch (InterruptedException e) {
         }
 
-        while(! controllerServer.getJettyServer().isStarted()){
+        while (!controllerServer.getJettyServer().isStarted()) {
             try {
                 Thread.sleep(1_000);
             } catch (InterruptedException e) {
@@ -55,15 +57,14 @@ public abstract class RestController {
         return true;
     }
 
-    public boolean stopTheControllerServer(){
+    public boolean stopTheControllerServer() {
         return controllerServer.stopJetty();
     }
 
     /**
-     *
      * @return the actual port in use (eg, if it was an ephemeral 0)
      */
-    public int getControllerServerJettyPort(){
+    public int getControllerServerJettyPort() {
         return controllerServer.getJettyPort();
     }
 
@@ -98,6 +99,7 @@ public abstract class RestController {
      * or "org.", as most likely ALL your third-party libraries
      * would be instrumented as well, which could have a severe
      * impact on performance
+     *
      * @return
      */
     public abstract String getPackagePrefixesToCover();
@@ -110,6 +112,7 @@ public abstract class RestController {
 
     /**
      * Provide the URL of where the swagger.json can be found
+     *
      * @return
      */
     public abstract String getUrlOfSwaggerJSON();

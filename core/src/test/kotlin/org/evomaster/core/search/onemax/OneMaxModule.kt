@@ -42,6 +42,6 @@ class OneMaxModule : AbstractModule(){
 
     @Provides @Singleton
     fun randomnessProvider() : Randomness {
-        return Randomness(42)
+        return Randomness()
     }
 }

@@ -5,10 +5,16 @@ class Randomness {
 
     private val random = java.util.Random()
 
-    constructor(seed: Long) {
-        random.setSeed(seed)
+    /**
+     * A negative value means the current CPU time clock is used instead
+     */
+    fun updateSeed(seed: Long) {
+        if(seed < 0 ){
+            random.setSeed(System.currentTimeMillis())
+        } else {
+            random.setSeed(seed)
+        }
     }
-
 
     fun nextBoolean() = random.nextBoolean()
 
