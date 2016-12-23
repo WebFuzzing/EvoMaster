@@ -1,6 +1,12 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Solution
+import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.service.Randomness
 
 
 class Archive<T>() where T : Individual {

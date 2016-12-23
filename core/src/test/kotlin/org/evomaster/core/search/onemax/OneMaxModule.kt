@@ -3,8 +3,9 @@ package org.evomaster.core.search.onemax
 import com.google.inject.*
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.*
-import org.evomaster.core.search.mutator.Mutator
+import org.evomaster.core.search.service.Mutator
 import org.evomaster.core.search.mutator.RandomMutator
+import org.evomaster.core.search.service.*
 
 
 class OneMaxModule : AbstractModule(){

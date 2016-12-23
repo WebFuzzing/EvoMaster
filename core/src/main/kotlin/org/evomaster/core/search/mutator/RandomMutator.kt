@@ -4,6 +4,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.service.Mutator
 
 
 class RandomMutator<T> : Mutator<T>() where T: Individual {

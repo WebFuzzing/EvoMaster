@@ -1,4 +1,4 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig

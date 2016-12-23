@@ -2,7 +2,8 @@ package org.evomaster.core.search.algorithms
 
 import com.google.inject.Inject
 import org.evomaster.core.search.*
-import org.evomaster.core.search.mutator.Mutator
+import org.evomaster.core.search.service.Mutator
+import org.evomaster.core.search.service.SearchAlgorithm
 
 /**
  * Massive Independent Objective (MIO) Algorithm

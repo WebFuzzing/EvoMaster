@@ -1,11 +1,9 @@
 package org.evomaster.core
 
 import com.google.inject.AbstractModule
-import com.google.inject.Provides
-import com.google.inject.Singleton
-import org.evomaster.core.search.AdaptiveParameterControl
-import org.evomaster.core.search.Randomness
-import org.evomaster.core.search.SearchTimeController
+import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchTimeController
 
 
 class BaseModule : AbstractModule() {

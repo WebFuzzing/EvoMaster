@@ -1,9 +1,11 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.core.search.*
+import org.evomaster.core.search.service.Randomness
 
 
-abstract class SearchAlgorithm<T> where T : Individual{
+abstract class SearchAlgorithm<T> where T : Individual {
 
     @Inject
     protected lateinit var sampler : Sampler<T>

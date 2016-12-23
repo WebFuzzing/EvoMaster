@@ -1,6 +1,7 @@
 package org.evomaster.core.search.mutator
 
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.Mutator
 
 /*
     TODO variant of AVM, see recent McMinn and code at:

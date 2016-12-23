@@ -1,9 +1,11 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.service
+
+import java.util.*
 
 
 class Randomness {
 
-    private val random = java.util.Random()
+    private val random = Random()
 
     /**
      * A negative value means the current CPU time clock is used instead

@@ -22,6 +22,7 @@ class Main{
             val injector: Injector = Guice.createInjector(* arrayOf<Module>(
                    BaseModule()))
 
+            //TODO update EMConfig
             //TODO update seed
 
             //TODO check algorithm

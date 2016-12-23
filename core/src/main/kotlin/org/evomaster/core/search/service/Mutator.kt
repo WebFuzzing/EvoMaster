@@ -1,10 +1,14 @@
-package org.evomaster.core.search.mutator
+package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.search.*
+import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchTimeController
 
 
-abstract class Mutator<T> where T : Individual{
+abstract class Mutator<T> where T : Individual {
 
     @Inject
     protected lateinit var randomness : Randomness

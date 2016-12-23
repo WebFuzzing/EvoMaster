@@ -1,6 +1,6 @@
 package org.evomaster.core.search.onemax
 
-import org.evomaster.core.search.Sampler
+import org.evomaster.core.search.service.Sampler
 
 
 class OneMaxSampler : Sampler<OneMaxIndividual>(){

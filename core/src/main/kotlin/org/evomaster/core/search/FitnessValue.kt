@@ -24,7 +24,7 @@ class FitnessValue {
     private val targets : MutableMap<Int,Double> = mutableMapOf()
 
 
-    fun copy() : FitnessValue{
+    fun copy() : FitnessValue {
         val copy = FitnessValue()
         copy.targets.putAll(this.targets)
         return copy

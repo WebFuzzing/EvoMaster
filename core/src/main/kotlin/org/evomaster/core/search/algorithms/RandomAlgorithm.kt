@@ -1,6 +1,7 @@
 package org.evomaster.core.search.algorithms
 
 import org.evomaster.core.search.*
+import org.evomaster.core.search.service.SearchAlgorithm
 
 
 class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {

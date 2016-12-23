@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.onemax.OneMaxFitness
 import org.evomaster.core.search.onemax.OneMaxIndividual
+import org.evomaster.core.search.service.Archive
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach

@@ -1,7 +1,7 @@
 package org.evomaster.core.search.onemax
 
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.FitnessFunction
+import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.FitnessValue
 
 
