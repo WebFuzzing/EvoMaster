@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import com.google.inject.*
+import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.onemax.OneMaxIndividual
@@ -11,7 +12,8 @@ import org.junit.jupiter.api.Test
 
 class RandomSearchTest {
 
-    val injector: Injector = Guice.createInjector(* arrayOf<Module>(OneMaxModule()))
+    val injector: Injector = Guice.createInjector(* arrayOf<Module>(
+            OneMaxModule(), BaseModule()))
 
     @Test
     fun testRandomSearch(){

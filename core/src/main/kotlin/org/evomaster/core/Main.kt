@@ -3,6 +3,8 @@ package org.evomaster.core
 import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Module
+import org.evomaster.core.search.LoggingUtil
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -14,18 +16,23 @@ class Main{
         @JvmStatic
         fun main(args : Array<String>) {
 
-            val parser = EMConfig.getOptionParser()
-            val options = parser.parse(*args)
+            try {
+                val parser = EMConfig.getOptionParser()
+                val options = parser.parse(*args)
 
-            //TODO check problem type
+                //TODO check problem type
 
-            val injector: Injector = Guice.createInjector(* arrayOf<Module>(
-                   BaseModule()))
+                val injector: Injector = Guice.createInjector(* arrayOf<Module>(
+                        BaseModule()))
 
-            //TODO update EMConfig
-            //TODO update seed
+                //TODO update EMConfig
+                //TODO update seed
 
-            //TODO check algorithm
+                //TODO check algorithm
+            } catch (e: Exception){
+                LoggingUtil.getInfoLogger()
+                        .error("ERROR: EvoMaster process terminated abruptly. Message: "+e.message, e)
+            }
         }
 
     }

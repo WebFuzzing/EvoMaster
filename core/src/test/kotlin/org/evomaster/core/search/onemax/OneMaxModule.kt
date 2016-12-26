@@ -29,20 +29,5 @@ class OneMaxModule : AbstractModule(){
         bind(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
             .asEagerSingleton()
 
-        //TODO this will need refactoring
-
-        bind(EMConfig::class.java)
-            .asEagerSingleton()
-
-        bind(SearchTimeController::class.java)
-            .asEagerSingleton()
-
-        bind(AdaptiveParameterControl::class.java)
-            .asEagerSingleton()
-    }
-
-    @Provides @Singleton
-    fun randomnessProvider() : Randomness {
-        return Randomness()
     }
 }

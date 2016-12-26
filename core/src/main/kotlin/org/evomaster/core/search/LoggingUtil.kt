@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
@@ -12,6 +13,8 @@ class LoggingUtil {
         /**
          * Logger used to provide expected info to the user
          */
-        fun getInfoLogger() = LoggerFactory.getLogger("info_logger");
+        fun getInfoLogger(): Logger =
+                LoggerFactory.getLogger("info_logger") ?:
+                        throw IllegalStateException("Failed to init logger")
     }
 }
