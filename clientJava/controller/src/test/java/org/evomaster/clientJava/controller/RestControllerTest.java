@@ -112,9 +112,7 @@ public class RestControllerTest {
     @Test
     public void testStartRest(){
 
-        given().post("/startSUT")
-                .then()
-                .statusCode(204);
+        restController.startInstrumentedSut();
 
         assertTrue(restController.isSutRunning());
 

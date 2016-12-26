@@ -4,9 +4,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 
 
-class RestIndividual : Individual(){
-
-    private val actions : List<RestAction> = mutableListOf()
+class RestIndividual(val actions : MutableList<RestAction>) : Individual(){
 
 
     override fun copy(): Individual {

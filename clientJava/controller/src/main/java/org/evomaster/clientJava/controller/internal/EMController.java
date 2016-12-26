@@ -1,10 +1,13 @@
 package org.evomaster.clientJava.controller.internal;
 
 import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.SutInfoDto;
+import org.evomaster.clientJava.controllerApi.SutRunDto;
 
 import javax.ws.rs.*;
+import java.util.Objects;
 
 /**
  * Note: usually a RESTful webservice would be stateless.
@@ -20,11 +23,11 @@ public class EMController {
     private String baseUrlOfSUT;
 
     public EMController(RestController restController) {
-        this.restController = restController;
+        this.restController = Objects.requireNonNull(restController);
     }
 
 
-    @Path("/infoSUT")
+    @Path(ControllerConstants.INFO_SUT_PATH)
     @GET
     @Produces(Formats.JSON_V1)
     public SutInfoDto getSutInfo() {
@@ -38,31 +41,38 @@ public class EMController {
     }
 
 
-    @Path("/startSUT")
-    @POST
-    public void startSut() {
+    @Path(ControllerConstants.RUN_SUT_PATH)
+    @PUT
+    @Consumes(Formats.JSON_V1)
+    public void runSut(SutRunDto dto) {
 
-        if (restController.isSutRunning()) {
-            throw new WebApplicationException(400);
+        if(dto.run == null){
+            throw new WebApplicationException("Invalid JSON: 'run' field is required", 400);
         }
 
-        baseUrlOfSUT = restController.startInstrumentedSut();
-    }
+        boolean newlyStarted = false;
 
+        if(dto.run){
+            if (! restController.isSutRunning()) {
+                baseUrlOfSUT = restController.startInstrumentedSut();
+                newlyStarted = true;
+            }
+        } else {
+            if (restController.isSutRunning()) {
+                restController.stopSut();
+                baseUrlOfSUT = null;
+            }
+        }
 
-    @Path("/stopSUT")
-    @POST
-    public void stopSut() {
+        if(dto.resetState != null && dto.resetState){
+            if(! dto.run){
+                throw new WebApplicationException(
+                        "Invalid JSON: cannot reset state and stop service at same time");
+            }
 
-        restController.stopSut();
-        baseUrlOfSUT = null;
-    }
-
-
-    @Path("/resetSUT")
-    @POST
-    public void resetSUT() {
-
-        restController.resetStateOfSUT();
+            if(! newlyStarted) { //no point resetting if fresh start
+                restController.resetStateOfSUT();
+            }
+        }
     }
 }

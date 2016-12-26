@@ -5,8 +5,10 @@ import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import org.evomaster.clientJava.controller.EmbeddedStarter;
+import org.evomaster.clientJava.controller.RestController;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.SutInfoDto;
+import org.evomaster.core.problem.rest.RemoteController;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,11 +18,13 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PIManualTest {
 
     private static EmbeddedStarter embeddedStarter;
     private static String baseUrl;
+    private static RemoteController remoteController;
 
     @BeforeAll
     public static void initClass() {
@@ -31,16 +35,12 @@ public class PIManualTest {
 
         int port = embeddedStarter.getControllerServerJettyPort();
 
-        given().post("http://localhost:" + port + "/controller/api/startSUT")
-                .then()
-                .statusCode(204);
+        remoteController = new RemoteController("localhost", port);
+        boolean started = remoteController.startSUT();
+        assertTrue(started);
 
-        SutInfoDto dto = given()
-                .accept(Formats.JSON_V1)
-                .get("http://localhost:" + port + "/controller/api/infoSUT")
-                .then()
-                .statusCode(200)
-                .extract().as(SutInfoDto.class);
+        SutInfoDto dto = remoteController.getInfo();
+        assertNotNull(dto);
 
         baseUrl = dto.baseUrlOfSUT;
         assertNotNull(baseUrl);
@@ -49,35 +49,23 @@ public class PIManualTest {
     @AfterAll
     public static void tearDown() {
 
-        int port = embeddedStarter.getControllerServerJettyPort();
-
-        given().post("http://localhost:" + port + "/controller/api/stopSUT")
-                .then()
-                .statusCode(204);
+        boolean stopped = remoteController.stopSUT();
+        assertTrue(stopped);
     }
+
 
     @BeforeEach
     public void initTest() {
 
-        int port = embeddedStarter.getControllerServerJettyPort();
-
-        given().post("http://localhost:" + port + "/controller/api/resetSUT")
-                .then()
-                .statusCode(204);
+        boolean reset = remoteController.resetSUT();
+        assertTrue(reset);
     }
 
 
     @Test
     public void testSwaggerJSON() {
 
-        int port = embeddedStarter.getControllerServerJettyPort();
-
-        SutInfoDto dto = given()
-                .accept(Formats.JSON_V1)
-                .get("http://localhost:" + port + "/controller/api/infoSUT")
-                .then()
-                .statusCode(200)
-                .extract().as(SutInfoDto.class);
+        SutInfoDto dto = remoteController.getInfo();
 
         String swaggerJson = given().accept(Formats.JSON_V1)
                 .get(dto.swaggerJsonUrl)

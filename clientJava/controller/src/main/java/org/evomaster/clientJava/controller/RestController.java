@@ -13,7 +13,7 @@ public abstract class RestController {
 
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
-    private String controllerHost = "localhost";
+    private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
     private final EMControllerApplication controllerServer = new EMControllerApplication(this);
 

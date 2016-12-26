@@ -90,6 +90,8 @@ class EMConfig {
     @Min(0.0) @Max(65535.0)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
+    @Cfg("Host name or IP address of where the SUT REST controller is listening o")
+    var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)

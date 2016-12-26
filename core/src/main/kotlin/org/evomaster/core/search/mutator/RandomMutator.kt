@@ -27,6 +27,8 @@ class RandomMutator<T> : Mutator<T>() where T: Individual {
                     continue
                 }
 
+                //TODO rather call randomize
+
                 var k: Int
                 if (gene is IntegerGene) {
                     k = randomness.nextInt(gene.min, gene.max, gene.value)

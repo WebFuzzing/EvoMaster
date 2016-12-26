@@ -1,0 +1,26 @@
+<configuration>
+
+    <appender name="REGULAR_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="INFO_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+    <root level="warn">
+        <appender-ref ref="REGULAR_STDOUT" />
+    </root>
+
+    <!-- Logger used to provide expected info to the user -->
+    <logger name="info_logger" level="INFO" additivity="false">
+        <appender-ref ref="INFO_STDOUT" />
+    </logger>
+
+
+</configuration>

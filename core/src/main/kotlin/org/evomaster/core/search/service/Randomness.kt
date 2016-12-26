@@ -50,11 +50,28 @@ class Randomness {
         return (min.toLong() + Math.random() * (max.toLong() - min + 1)).toInt()
     }
 
+
     fun <T> choose(list: List<T>): T {
         if (list.isEmpty()) {
             throw IllegalArgumentException("Empty list to choose from")
         }
         val index = random.nextInt(list.size)
         return list[index]
+    }
+
+
+    fun <K,V> choose(map: Map<K,V>): V {
+        if (map.isEmpty()) {
+            throw IllegalArgumentException("Empty map to choose from")
+        }
+        val index = random.nextInt(map.size)
+        var i = 0
+
+        val iter = map.values.iterator()
+        while(iter.hasNext() && i<index){
+            iter.next()
+            i++
+        }
+        return iter.next()
     }
 }

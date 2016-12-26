@@ -8,6 +8,7 @@ import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controllerApi.ControllerConstants;
 
 public class EMControllerApplication extends Application<EMControllerConfiguration> {
 
@@ -32,7 +33,7 @@ public class EMControllerApplication extends Application<EMControllerConfigurati
     @Override
     public void run(EMControllerConfiguration configuration, Environment environment) throws Exception {
 
-        environment.jersey().setUrlPattern("/controller/api/*");
+        environment.jersey().setUrlPattern(ControllerConstants.BASE_PATH+"/*");
         environment.jersey().register(new EMController(restController));
 
         /*

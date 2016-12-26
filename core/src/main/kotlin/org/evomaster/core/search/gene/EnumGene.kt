@@ -1,5 +1,7 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.service.Randomness
+
 
 class EnumGene<T>(
         name: String,
@@ -25,5 +27,16 @@ class EnumGene<T>(
         //recall: "values" is immutable
         val copy = EnumGene<T>(name, values, index)
         return copy
+    }
+
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+
+        val k = if (forceNewValue) {
+            randomness.nextInt(0, values.size-1, index)
+        } else {
+            randomness.nextInt(0, values.size-1)
+        }
+
+        index = k
     }
 }

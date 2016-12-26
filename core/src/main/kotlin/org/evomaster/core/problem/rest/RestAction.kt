@@ -1,6 +1,6 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.problem.Action
+import org.evomaster.core.search.Action
 
 
 interface RestAction : Action {

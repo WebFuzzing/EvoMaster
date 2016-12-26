@@ -1,5 +1,7 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.service.Randomness
+
 
 /**
  * A building block representing one part of an Individual.
@@ -16,4 +18,6 @@ abstract class Gene(val name: String) {
     abstract fun copy() : Gene
 
     open fun isMutable() = true
+
+    abstract fun randomize(randomness: Randomness, forceNewValue: Boolean)
 }
