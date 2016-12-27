@@ -67,6 +67,16 @@ class Archive<T>() where T : Individual {
 
 
     /**
+     * Get all known targets that are not fully covered
+     *
+     * @return a list of ids
+     */
+    fun notCoveredTargets() : Set<Int>{
+
+        return map.keys.filter { k -> ! isCovered(k) }.toSet()
+    }
+
+    /**
      * @return true if the new individual was added to the archive
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {

@@ -39,8 +39,9 @@ class RestPath(val path: String) {
 
         val queries = params.filter { p -> p is QueryParam }
         if(queries.size > 0){
-            resolvedPath += "?"
-            queries.forEach { q -> resolvedPath += q.name+"="+q.gene.getValueAsString() }
+            resolvedPath += "?" +
+                    queries.map { q -> q.name+"="+q.gene.getValueAsString() }
+                    .joinToString("&")
         }
 
         return resolvedPath

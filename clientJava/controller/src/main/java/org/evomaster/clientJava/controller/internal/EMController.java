@@ -6,8 +6,8 @@ import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 
 import javax.ws.rs.*;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Note: usually a RESTful webservice would be stateless.
@@ -92,9 +92,14 @@ public class EMController {
         ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
+
     @Path(ControllerConstants.TARGETS_PATH)
     @GET
-    public TargetsResponseDto getTargets(TargetsRequestDto request){
+    @Produces(Formats.JSON_V1)
+    public TargetsResponseDto getTargets(
+            @QueryParam("ids")
+            @DefaultValue("")
+            String idList){
 
         //TODO: this works only if SUT runs on same process
 
@@ -102,10 +107,21 @@ public class EMController {
 
         Map<String, Double> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
+        Set<Integer> ids;
+
+        try {
+            ids = Arrays.asList(idList.split(",")).stream()
+                    .filter(s -> !s.trim().isEmpty())
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toSet());
+        }catch (NumberFormatException e){
+            throw new WebApplicationException("Invalid parameter 'ids': "+e.getMessage(), e);
+        }
+
         /*
             First, add info for all targets requested by EM
          */
-        request.ids.stream().forEach(id ->{
+        ids.stream().forEach(id ->{
 
             String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
             double val = objectives.getOrDefault(descriptiveId, 0d);
@@ -119,7 +135,7 @@ public class EMController {
         });
 
         /*
-         *  If new targets were found, we add them even if no requested by EM
+         *  If new targets were found, we add them even if not requested by EM
          */
         ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
 

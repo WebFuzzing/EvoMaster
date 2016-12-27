@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.clientJava.controllerApi.ControllerConstants
 import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.clientJava.controllerApi.SutRunDto
+import org.evomaster.clientJava.controllerApi.TargetsResponseDto
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
@@ -26,7 +27,7 @@ class RemoteController(val host: String, val port: Int) {
     private val client: Client = ClientBuilder.newClient()
 
 
-    private fun getTarget(): WebTarget {
+    private fun getWebTarget(): WebTarget {
 
         return client.target("http://$host:$port" + ControllerConstants.BASE_PATH)
     }
@@ -37,7 +38,7 @@ class RemoteController(val host: String, val port: Int) {
 
     fun getInfo(): SutInfoDto? {
 
-        val response = getTarget()
+        val response = getWebTarget()
                 .path(ControllerConstants.INFO_SUT_PATH)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
@@ -60,12 +61,12 @@ class RemoteController(val host: String, val port: Int) {
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
 
-        val response = getTarget()
+        val response = getWebTarget()
                 .path(ControllerConstants.RUN_SUT_PATH)
                 .request()
                 .put(Entity.json(SutRunDto(run, reset)))
 
-        val success = response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)
+        val success = wasSuccess(response)
 
         if (!success) {
             log.warn("Failed to change running state of the SUT. HTTP status: {}", response.status)
@@ -81,4 +82,28 @@ class RemoteController(val host: String, val port: Int) {
 
     fun resetSUT() = changeState(true, true)
 
+
+    fun getTargetCoverage(ids: Set<Int>) : TargetsResponseDto?{
+
+        val queryParam = ids.joinToString(",")
+
+        val response = getWebTarget()
+                .path(ControllerConstants.TARGETS_PATH)
+                .queryParam("ids", queryParam)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get()
+
+        val success = wasSuccess(response)
+
+        if (!success) {
+            log.warn("Failed to change running state of the SUT. HTTP status: {}", response.status)
+            return null
+        }
+
+        return response.readEntity(TargetsResponseDto::class.java)
+    }
+
+    fun wasSuccess(response: Response?) : Boolean{
+        return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
+    }
 }

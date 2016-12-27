@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
@@ -92,8 +93,30 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             }
         })
 
-        //TODO retrieve coverage
+        /*
+            We cannot request all non-covered targets, because:
+            1) performance hit
+            2) might not be possible to have a too long URL
+         */
+        val ids = randomness.choose(archive.notCoveredTargets(), 100)
 
-        throw Exception("TODO")
+
+        val dto = rc.getTargetCoverage(ids) ?:
+                throw IllegalStateException("Cannot retrieve coverage")
+
+        val fv = FitnessValue()
+
+        dto.targets.forEach { t ->
+
+            t?.descriptiveId.apply {
+                idMapper.addMapping(t.id, t.descriptiveId)
+            }
+
+            fv.updateTarget(t.id, t.value)
+        }
+
+        //TODO need to store the HTTP response for assertions
+
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual)
     }
 }

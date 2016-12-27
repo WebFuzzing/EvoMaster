@@ -11,6 +11,14 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var configuration: EMConfig
 
+    @Inject
+    protected lateinit var archive: Archive<T>
+
+    @Inject
+    protected lateinit var idMapper: IdMapper
+
+    @Inject
+    protected lateinit var randomness : Randomness
 
     abstract fun calculateCoverage(individual: T) : EvaluatedIndividual<T>
 

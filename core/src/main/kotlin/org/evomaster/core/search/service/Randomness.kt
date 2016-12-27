@@ -59,6 +59,33 @@ class Randomness {
         return list[index]
     }
 
+    /**
+     * Randomly choose (without replacement) up to n values from the list
+     */
+    fun <T> choose(list: List<T>, n: Int): List<T>{
+        if(list.size <= n){
+            return list
+        }
+
+        val selection: MutableList<T> = mutableListOf()
+        selection.addAll(list)
+        Collections.shuffle(selection, random)
+
+        return selection.subList(0, n)
+    }
+
+    fun <T> choose(set: Set<T>, n: Int): Set<T>{
+        if(set.size <= n){
+            return set
+        }
+
+        val selection: MutableList<T> = mutableListOf()
+        selection.addAll(set)
+        Collections.shuffle(selection, random)
+
+        return selection.subList(0, n).toSet()
+    }
+
 
     fun <K,V> choose(map: Map<K,V>): V {
         if (map.isEmpty()) {
