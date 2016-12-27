@@ -20,4 +20,6 @@ abstract class Gene(val name: String) {
     open fun isMutable() = true
 
     abstract fun randomize(randomness: Randomness, forceNewValue: Boolean)
+
+    abstract fun getValueAsString() : String
 }

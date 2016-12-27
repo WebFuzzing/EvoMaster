@@ -22,6 +22,11 @@ import javax.ws.rs.core.Response
 class RestSampler : Sampler<RestIndividual>() {
 
 
+    /*
+        FIXME: this is a workaround for Guice, as it
+        does not support @PostConstruct :(
+        should really switch to CDI Weld or Spring
+     */
     var initialized = false
         private set
 

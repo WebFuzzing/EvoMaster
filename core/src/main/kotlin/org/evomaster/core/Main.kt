@@ -22,6 +22,10 @@ class Main{
 
                 //TODO check problem type
 
+                /*
+                    TODO: Guice does not, and will not, support @PostConstruct
+                 */
+
                 val injector: Injector = Guice.createInjector(* arrayOf<Module>(
                         BaseModule()))
 

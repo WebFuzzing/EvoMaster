@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.Gene
 
 class RestIndividual(val actions : MutableList<RestAction>) : Individual(){
 
+    //TODO
 
     override fun copy(): Individual {
         throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -15,7 +16,5 @@ class RestIndividual(val actions : MutableList<RestAction>) : Individual(){
         throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun size(): Int {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun size() = actions.size
 }

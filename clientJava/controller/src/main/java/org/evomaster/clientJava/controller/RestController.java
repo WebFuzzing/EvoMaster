@@ -3,6 +3,7 @@ package org.evomaster.clientJava.controller;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.EMControllerApplication;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
+import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -53,6 +54,15 @@ public abstract class RestController {
             } catch (InterruptedException e) {
             }
         }
+
+        /*
+            TODO: this works ONLY if SUT is running on same process
+
+            TODO: should add REST call from EM to do this reset, eg
+                  "initiliazeForNewSearch", at the beginning of each
+                  new search
+         */
+        ObjectiveRecorder.reset();
 
         return true;
     }

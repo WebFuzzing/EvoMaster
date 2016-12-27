@@ -16,7 +16,5 @@ interface  Action {
      */
     fun seeGenes() : List<out Gene>
 
-    fun execute()
-
     fun copy() : Action
 }

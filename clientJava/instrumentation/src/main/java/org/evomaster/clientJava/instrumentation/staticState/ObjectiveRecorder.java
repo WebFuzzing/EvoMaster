@@ -1,8 +1,6 @@
 package org.evomaster.clientJava.instrumentation.staticState;
 
-import java.util.Map;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +19,7 @@ public class ObjectiveRecorder {
      * Value -> heuristic [0,1], where 1 means covered.
      *          Only the highest value found so far is kept.
      */
-    private static final Map<String, Double> maxObjectiveCoverage =
+    private static final Map<Integer, Double> maxObjectiveCoverage =
             new ConcurrentHashMap<>(65536);
 
     /**
@@ -35,6 +33,10 @@ public class ObjectiveRecorder {
      */
     private static Map<String, Integer> idMapping =
             new ConcurrentHashMap<>(65536);
+
+    private static Map<Integer, String> reversedIdMapping =
+            new ConcurrentHashMap<>(65536);
+
 
     /**
      * Counter used to generate unique numeric ids for idMapping
@@ -69,10 +71,22 @@ public class ObjectiveRecorder {
     public static void reset(){
         maxObjectiveCoverage.clear();
         idMapping.clear();
+        reversedIdMapping.clear();
         idMappingCounter.set(0);
         firstTimeEncountered.clear();
         counter.set(0);
     }
+
+    public static List<String> getTargetsSeenFirstTime(){
+
+        return Collections.unmodifiableList(new ArrayList<>(firstTimeEncountered));
+    }
+
+
+    public static void clearFirstTimeEncountered(){
+        firstTimeEncountered.clear();
+    }
+
 
     public static int getAUniqueId(){
         return counter.getAndIncrement();
@@ -80,19 +94,20 @@ public class ObjectiveRecorder {
 
     /**
      *
-     * @param id of the objective/target
+     * @param descriptiveId of the objective/target
      * @param value of the coverage heuristic, in [0,1]
      */
-    public static void update(String id, double value){
-        Objects.requireNonNull(id);
+    public static void update(String descriptiveId, double value){
+
+        Objects.requireNonNull(descriptiveId);
         if(value < 0d || value > 1){
             throw new IllegalArgumentException("Invalid value "+value +" out of range [0,1]");
         }
 
-        idMapping.computeIfAbsent(id, k -> idMappingCounter.getAndIncrement());
+        int id = getMappedId(descriptiveId);
 
         if(! maxObjectiveCoverage.containsKey(id)){
-            firstTimeEncountered.add(id);
+            firstTimeEncountered.add(descriptiveId);
             maxObjectiveCoverage.put(id, value);
 
         } else {
@@ -102,5 +117,23 @@ public class ObjectiveRecorder {
                 maxObjectiveCoverage.put(id, value);
             }
         }
+    }
+
+    public static int getMappedId(String descriptiveId){
+
+        int id = idMapping.computeIfAbsent(descriptiveId, k -> idMappingCounter.getAndIncrement());
+        reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
+
+        return id;
+    }
+
+    public static String getDescriptiveId(int id){
+
+        String descriptiveId = reversedIdMapping.get(id);
+        if(descriptiveId == null){
+            throw new IllegalArgumentException("Id '"+id+"' is not mapped");
+        }
+
+        return descriptiveId;
     }
 }

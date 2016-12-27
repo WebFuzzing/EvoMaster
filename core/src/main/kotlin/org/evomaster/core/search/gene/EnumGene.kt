@@ -39,4 +39,8 @@ class EnumGene<T>(
 
         index = k
     }
+
+    override fun getValueAsString() : String{
+        return "\"" + values[index].toString() + "\"";
+    }
 }

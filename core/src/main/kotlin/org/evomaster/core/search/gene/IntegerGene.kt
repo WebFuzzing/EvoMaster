@@ -30,4 +30,8 @@ class IntegerGene(
 
         value = k
     }
+
+    override fun getValueAsString() : String{
+        return value.toString()
+    }
 }

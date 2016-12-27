@@ -19,4 +19,8 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name){
 
         value = k
     }
+
+    override fun getValueAsString() : String{
+        return value.toString()
+    }
 }

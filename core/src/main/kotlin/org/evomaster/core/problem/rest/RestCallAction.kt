@@ -20,10 +20,6 @@ class RestCallAction(
         return "$verb:$path"
     }
 
-    override fun execute() {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
     override fun seeGenes(): List<out Gene> {
         throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
