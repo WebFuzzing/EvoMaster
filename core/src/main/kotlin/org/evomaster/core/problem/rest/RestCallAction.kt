@@ -21,7 +21,8 @@ class RestCallAction(
     }
 
     override fun seeGenes(): List<out Gene> {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        return parameters.map(Param::gene)
     }
 
 

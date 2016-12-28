@@ -87,6 +87,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 val response = invocation.invoke()
 
                 //TODO objectives for response, eg status
+                // likely we ll need to use negative ids
 
             } else {
                 throw IllegalStateException("Cannot handle: " + a.javaClass)
@@ -108,7 +109,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         dto.targets.forEach { t ->
 
-            t?.descriptiveId.apply {
+            if(t.descriptiveId != null) {
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 

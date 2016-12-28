@@ -6,14 +6,14 @@ import org.evomaster.core.search.gene.Gene
 
 class RestIndividual(val actions : MutableList<RestAction>) : Individual(){
 
-    //TODO
 
     override fun copy(): Individual {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+         return RestIndividual(actions.map { a -> a.copy() as RestAction} as MutableList<RestAction>)
     }
 
-    override fun genes(): List<out Gene> {
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun seeGenes(): List<out Gene> {
+
+        return actions.flatMap(RestAction::seeGenes)
     }
 
     override fun size() = actions.size

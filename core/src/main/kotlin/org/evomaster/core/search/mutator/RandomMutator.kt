@@ -13,7 +13,7 @@ class RandomMutator<T> : Mutator<T>() where T: Individual {
 
         val copy = individual.copy() as T
 
-        val genes = copy.genes().filter(Gene::isMutable)
+        val genes = copy.seeGenes().filter(Gene::isMutable)
 
         var mutated = false
 
