@@ -26,7 +26,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
-        <kotlin.version>1.0.5-3</kotlin.version>
+        <kotlin.version>1.0.6</kotlin.version>
         <junit.jupiter.version>5.0.0-M3</junit.jupiter.version>
         <junit.platform.version>1.0.0-M3</junit.platform.version>
         <dropwizard.version>1.0.3</dropwizard.version>
