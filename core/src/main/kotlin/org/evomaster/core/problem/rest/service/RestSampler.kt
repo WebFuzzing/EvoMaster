@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Sampler
+import javax.annotation.PostConstruct
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -21,20 +22,8 @@ import javax.ws.rs.core.Response
 
 class RestSampler : Sampler<RestIndividual>() {
 
-
-    /*
-        FIXME: this is a workaround for Guice, as it
-        does not support @PostConstruct :(
-        should really switch to CDI Weld or Spring
-     */
-    var initialized = false
-        private set
-
-
-    fun initialize() {
-        if (initialized) {
-            return
-        }
+    @PostConstruct
+    private fun initialize() {
 
         val rc = RemoteController(configuration.sutControllerHost, configuration.sutControllerPort)
 
@@ -50,8 +39,6 @@ class RestSampler : Sampler<RestIndividual>() {
         createActions(swagger)
 
         rc.close()
-
-        initialized = true
     }
 
 
@@ -193,8 +180,6 @@ class RestSampler : Sampler<RestIndividual>() {
 
 
     override fun sampleAtRandom(): RestIndividual {
-
-        initialize() // make sure the action cluster was initialized
 
         //TODO: for now, we just consider one single action per individual
 

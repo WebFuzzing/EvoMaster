@@ -9,6 +9,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -16,13 +17,6 @@ import javax.ws.rs.client.Entity
 
 class RestFitness : FitnessFunction<RestIndividual>() {
 
-    /*
-        FIXME: this is a workaround for Guice, as it
-        does not support @PostConstruct :(
-        should really switch to CDI Weld or Spring
-     */
-    var initialized = false
-        private set
 
     private val client: Client = ClientBuilder.newClient()
 
@@ -31,10 +25,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     private lateinit var infoDto: SutInfoDto
 
 
-    fun initialize() {
-        if (initialized) {
-            return
-        }
+    @PostConstruct
+    private fun initialize() {
 
         rc = RemoteController(configuration.sutControllerHost, configuration.sutControllerPort)
 
@@ -44,14 +36,10 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         infoDto = rc.getInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
-
-        initialized = true
     }
 
 
     override fun calculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual> {
-
-        initialize()
 
         rc.resetSUT()
 

@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import com.google.inject.*
+import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
@@ -14,8 +15,9 @@ import org.junit.jupiter.api.Test
 
 class MioAlgorithmOnOneMaxTest {
 
-    val injector: Injector = Guice.createInjector(* arrayOf<Module>(
-            OneMaxModule(), BaseModule()))
+    val injector: Injector = LifecycleInjector.builder()
+                    .withModules(* arrayOf<Module>(OneMaxModule(),BaseModule()))
+                    .build().createInjector()
 
     @Test
     fun testMIO(){

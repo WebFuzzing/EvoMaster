@@ -3,6 +3,7 @@ package org.evomaster.core
 import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Module
+import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.search.LoggingUtil
 import org.slf4j.LoggerFactory
 
@@ -22,12 +23,9 @@ class Main{
 
                 //TODO check problem type
 
-                /*
-                    TODO: Guice does not, and will not, support @PostConstruct
-                 */
-
-                val injector: Injector = Guice.createInjector(* arrayOf<Module>(
-                        BaseModule()))
+                val injector: Injector = LifecycleInjector.builder()
+                        .withModules(* arrayOf<Module>(BaseModule()))
+                        .build().createInjector()
 
                 //TODO update EMConfig
                 //TODO update seed
