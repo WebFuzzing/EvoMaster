@@ -1,7 +1,7 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Solution
+
 
 
 class TestCaseWriter {
