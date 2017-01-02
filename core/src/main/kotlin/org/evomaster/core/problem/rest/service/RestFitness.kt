@@ -1,11 +1,9 @@
 package org.evomaster.core.problem.rest.service
 
 import org.evomaster.clientJava.controllerApi.SutInfoDto
-import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RemoteController
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
@@ -43,40 +41,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         rc.resetSUT()
 
+        val actionResults : MutableList<ActionResult> = mutableListOf()
+
         //run the test
         individual.actions.forEach({ a ->
             if (a is RestCallAction) {
-
-                val baseUrl = infoDto.baseUrlOfSUT
-                val path = a.path.resolve(a.parameters)
-
-                var builder = client.target(baseUrl + "/" + path).request()
-
-                /*
-                    TODO: need to handle also other formats, not just JSON
-                 */
-                val body = a.parameters.find { p -> p is BodyParam }
-                val bodyEntity = if (body != null) {
-                    Entity.json(body.gene.getValueAsString())
-                } else {
-                    Entity.json("")
-                }
-
-                val invocation = when (a.verb) {
-                    HttpVerb.GET -> builder.buildGet()
-                    HttpVerb.POST -> builder.buildPost(bodyEntity)
-                    HttpVerb.PUT -> builder.buildPut(bodyEntity)
-                    HttpVerb.DELETE -> builder.buildDelete()
-                    HttpVerb.OPTIONS -> builder.build("OPTIONS")
-                    HttpVerb.PATCH -> builder.build("PATCH")
-                    HttpVerb.HEAD -> builder.build("HEAD")
-                }
-
-                val response = invocation.invoke()
-
-                //TODO objectives for response, eg status
-                // likely we ll need to use negative ids
-
+                handleRestCall(a, actionResults)
             } else {
                 throw IllegalStateException("Cannot handle: " + a.javaClass)
             }
@@ -104,8 +74,53 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             fv.updateTarget(t.id, t.value)
         }
 
-        //TODO need to store the HTTP response for assertions
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual)
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+    }
+
+
+    private fun handleRestCall(a: RestCallAction, actionResults: MutableList<ActionResult>) {
+        val baseUrl = infoDto.baseUrlOfSUT
+        val path = a.path.resolve(a.parameters)
+
+        var builder = client.target(baseUrl + "/" + path).request()
+
+        /*
+                    TODO: need to handle also other formats, not just JSON
+                 */
+        val body = a.parameters.find { p -> p is BodyParam }
+        val bodyEntity = if (body != null) {
+            Entity.json(body.gene.getValueAsString())
+        } else {
+            Entity.json("")
+        }
+
+        val invocation = when (a.verb) {
+            HttpVerb.GET -> builder.buildGet()
+            HttpVerb.POST -> builder.buildPost(bodyEntity)
+            HttpVerb.PUT -> builder.buildPut(bodyEntity)
+            HttpVerb.DELETE -> builder.buildDelete()
+            HttpVerb.OPTIONS -> builder.build("OPTIONS")
+            HttpVerb.PATCH -> builder.build("PATCH")
+            HttpVerb.HEAD -> builder.build("HEAD")
+        }
+
+        val response = invocation.invoke()
+
+        val rcr = RestCallResult()
+        rcr.setStatusCode(response.status)
+
+        if(response.hasEntity()){
+            if(response.mediaType != null){
+                rcr.setBodyType(response.mediaType)
+            }
+            val body = response.readEntity(String::class.java)
+            rcr.setBody(body)
+        }
+
+        actionResults.add(rcr)
+
+        //TODO objectives for response, eg status
+        // likely we ll need to use negative ids
     }
 }

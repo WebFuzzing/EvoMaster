@@ -4,7 +4,7 @@ import com.google.inject.Guice
 import com.google.inject.Injector
 import com.google.inject.Module
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.core.search.LoggingUtil
+import org.evomaster.core.LoggingUtil
 import org.slf4j.LoggerFactory
 
 

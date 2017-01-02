@@ -1,4 +1,4 @@
-package org.evomaster.core.search
+package org.evomaster.core
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
