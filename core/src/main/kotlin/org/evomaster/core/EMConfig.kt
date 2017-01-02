@@ -3,6 +3,7 @@ package org.evomaster.core
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.clientJava.controllerApi.ControllerConstants
+import org.evomaster.core.output.OutputFormat
 
 
 /**
@@ -82,8 +83,12 @@ class EMConfig {
     var problemType = ProblemType.REST
 
 
+    @Cfg("Specify in which format the tests should be outputted")
+    var outputFormat = OutputFormat.JAVA_JUNIT_5
+
+
     @Cfg("The seed for the random generator used during the search. " +
-            "A negative value means the CPU clock time will be rather used")
+            "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
 
     @Cfg("TCP port of where the SUT REST controller is listening on")

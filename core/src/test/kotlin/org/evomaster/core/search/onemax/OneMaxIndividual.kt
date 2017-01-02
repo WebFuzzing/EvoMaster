@@ -1,5 +1,6 @@
 package org.evomaster.core.search.onemax
 
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
@@ -46,5 +47,9 @@ class OneMaxIndividual(val n: Int) : Individual() {
 
     override fun size() : Int {
         return n
+    }
+
+    override fun seeActions(): List<out Action> {
+        return listOf()
     }
 }

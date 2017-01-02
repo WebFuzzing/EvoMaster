@@ -10,5 +10,7 @@ abstract class Individual{
     abstract fun seeGenes() : List<out Gene>
 
     abstract fun size() : Int
+
+    abstract fun seeActions() : List<out Action>
 }
 
