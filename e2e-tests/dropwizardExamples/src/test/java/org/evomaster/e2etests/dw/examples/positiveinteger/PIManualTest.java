@@ -20,46 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class PIManualTest {
-
-    private static EmbeddedStarter embeddedStarter;
-    private static String baseUrl;
-    private static RemoteController remoteController;
-
-    @BeforeAll
-    public static void initClass() {
-
-        PIController controller = new PIController();
-        embeddedStarter = new EmbeddedStarter(controller);
-        embeddedStarter.start();
-
-        int port = embeddedStarter.getControllerServerJettyPort();
-
-        remoteController = new RemoteController("localhost", port);
-        boolean started = remoteController.startSUT();
-        assertTrue(started);
-
-        SutInfoDto dto = remoteController.getInfo();
-        assertNotNull(dto);
-
-        baseUrl = dto.baseUrlOfSUT;
-        assertNotNull(baseUrl);
-    }
-
-    @AfterAll
-    public static void tearDown() {
-
-        boolean stopped = remoteController.stopSUT();
-        assertTrue(stopped);
-    }
-
-
-    @BeforeEach
-    public void initTest() {
-
-        boolean reset = remoteController.resetSUT();
-        assertTrue(reset);
-    }
+public class PIManualTest extends PITestBase{
 
 
     @Test

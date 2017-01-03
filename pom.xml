@@ -29,12 +29,21 @@
         <kotlin.version>1.0.6</kotlin.version>
         <junit.jupiter.version>5.0.0-M3</junit.jupiter.version>
         <junit.platform.version>1.0.0-M3</junit.platform.version>
-        <dropwizard.version>1.0.3</dropwizard.version>
-        <swagger-version>1.5.10</swagger-version>
+        <dropwizard.version>1.0.5</dropwizard.version>
+        <swagger-version>1.5.12</swagger-version>
     </properties>
 
 
     <dependencyManagement>
+
+        <!--
+            Use
+
+            mvn versions:display-dependency-updates
+
+            to check for new versions
+        -->
+
         <dependencies>
 
             <!-- Internal Modules -->
@@ -80,7 +89,25 @@
             </dependency>
 
 
+            <!--
+                TODO: few issues with Jackson, which is brought in by
+                Dropwizard, Swagger and Governator.
+                Should include it on its own, and do <exclude> on
+                those libraries.
+                Same for hibernate-validator
+            -->
+
             <!-- Misc -->
+            <dependency>
+                <groupId>javax.el</groupId>
+                <artifactId>javax.el-api</artifactId>
+                <version>2.2.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>5.2.4.Final</version>
+            </dependency>
             <dependency> <!-- For dependency injection -->
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
@@ -90,6 +117,17 @@
                 <groupId>com.netflix.governator</groupId>
                 <artifactId>governator</artifactId>
                 <version>1.15.10</version>
+                <exclusions>
+                    <!--It looks like it uses quite a few old versions -->
+                    <exclusion>
+                        <groupId>org.hibernate</groupId>
+                        <artifactId>hibernate-validator</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency> <!-- For bytecode instrumentation -->
                 <groupId>org.ow2.asm</groupId>
@@ -143,6 +181,12 @@
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-jaxrs</artifactId>
                 <version>${swagger-version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.swagger</groupId>
@@ -158,7 +202,7 @@
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-parser</artifactId>
-                <version>1.0.24</version>
+                <version>1.0.25</version>
             </dependency>
 
 
