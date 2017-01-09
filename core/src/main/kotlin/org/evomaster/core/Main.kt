@@ -32,9 +32,19 @@ class Main {
             }
         }
 
+        @JvmStatic
+        fun initAndRun(args: Array<String>) : Solution<*>{
+
+            val injector = init(args)
+
+            val solution = run(injector)
+
+            return solution
+        }
 
         fun run(injector: Injector) : Solution<*>{
-            //TODO check algorithm
+
+            //TODO check algorithm and problem type
             val mio = injector.getInstance(Key.get(
                     object : TypeLiteral<MioAlgorithm<RestIndividual>>() {}))
 
@@ -46,24 +56,12 @@ class Main {
 
         fun init(args: Array<String>) : Injector{
 
-            val parser = EMConfig.getOptionParser()
-            val options = parser.parse(*args)
-
-            //TODO check problem type
-            val problemModule: AbstractModule = RestModule()
-
             val injector: Injector = LifecycleInjector.builder()
                     .withModules(* arrayOf<Module>(
-                            BaseModule(),
-                            problemModule
+                            BaseModule(args),
+                            RestModule()
                     ))
                     .build().createInjector()
-
-            //TODO update EMConfig
-            val config = injector.getInstance(EMConfig::class.java)
-
-            val randomness = injector.getInstance(Randomness::class.java)
-            randomness.updateSeed(config.seed)
 
             return injector
         }

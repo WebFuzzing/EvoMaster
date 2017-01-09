@@ -16,13 +16,13 @@ public class TriangleClassificationImpl implements TriangleClassification{
 
         int max = Math.max(a, Math.max(b,c));
 
-        if( (max == a && max -b -c > 0 ) ||
-                (max == b && max -a -c > 0 ) ||
-                (max == c && max -a -b > 0 ) ){
+        if( (max == a && max -b -c >= 0 ) ||
+                (max == b && max -a -c >= 0 ) ||
+                (max == c && max -a -b >= 0 ) ){
             return Classification.NOT_A_TRIANGLE;
         }
 
-        if(a==b || b==c || a==b){
+        if(a==b || b==c || a==c){
             return Classification.ISOSCELES;
         } else {
             return Classification.SCALENE;

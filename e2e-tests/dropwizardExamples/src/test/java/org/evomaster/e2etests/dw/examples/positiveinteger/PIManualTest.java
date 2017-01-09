@@ -4,14 +4,8 @@ import com.foo.rest.examples.positiveinteger.PostDto;
 import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
-import org.evomaster.clientJava.controller.EmbeddedStarter;
-import org.evomaster.clientJava.controller.RestController;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.SutInfoDto;
-import org.evomaster.core.problem.rest.RemoteController;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -46,7 +40,7 @@ public class PIManualTest extends PITestBase{
         given().contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .body(new PostDto(5))
-                .post(baseUrl + "/api/pi")
+                .post(baseUrlOfSut + "/api/pi")
                 .then()
                 .statusCode(200)
                 .body("isPositive", is(true));
@@ -54,7 +48,7 @@ public class PIManualTest extends PITestBase{
         given().contentType(ContentType.JSON)
                 .accept(ContentType.JSON)
                 .body(new PostDto(-5))
-                .post(baseUrl + "/api/pi")
+                .post(baseUrlOfSut + "/api/pi")
                 .then()
                 .statusCode(200)
                 .body("isPositive", is(false));
@@ -64,13 +58,13 @@ public class PIManualTest extends PITestBase{
     public void testGet() {
 
         given().accept(ContentType.JSON)
-                .get(baseUrl + "/api/pi/4")
+                .get(baseUrlOfSut + "/api/pi/4")
                 .then()
                 .statusCode(200)
                 .body("isPositive", is(true));
 
         given().accept(ContentType.JSON)
-                .get(baseUrl + "/api/pi/-4")
+                .get(baseUrlOfSut + "/api/pi/-4")
                 .then()
                 .statusCode(200)
                 .body("isPositive", is(false));

@@ -5,17 +5,16 @@ import org.evomaster.core.search.service.Randomness
 
 class IntegerGene(
         name: String,
+        var value: Int = 0,
         /** Inclusive */
-        val min: Int,
+        val min: Int = Int.MIN_VALUE,
         /** Inclusive */
-        val max: Int,
-        var value: Int
+        val max: Int = Int.MAX_VALUE
 ) : Gene(name) {
 
-    constructor(name: String) : this(name, Int.MIN_VALUE, Int.MAX_VALUE, 0)
 
     override fun copy(): Gene {
-        val copy = IntegerGene(name, min, max, value)
+        val copy = IntegerGene(name, value, min, max)
         return copy
     }
 

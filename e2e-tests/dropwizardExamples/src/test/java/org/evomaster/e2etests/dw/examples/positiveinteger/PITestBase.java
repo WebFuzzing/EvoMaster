@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public abstract class PITestBase {
 
     protected static EmbeddedStarter embeddedStarter;
-    protected static String baseUrl;
+    protected static String baseUrlOfSut;
     protected static RemoteController remoteController;
     protected static int controllerPort;
 
@@ -33,8 +33,8 @@ public abstract class PITestBase {
         SutInfoDto dto = remoteController.getInfo();
         assertNotNull(dto);
 
-        baseUrl = dto.baseUrlOfSUT;
-        assertNotNull(baseUrl);
+        baseUrlOfSut = dto.baseUrlOfSUT;
+        assertNotNull(baseUrlOfSut);
     }
 
     @AfterAll

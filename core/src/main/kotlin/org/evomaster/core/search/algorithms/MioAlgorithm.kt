@@ -23,6 +23,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             val randomP = apc.getProbRandomSampling()
 
             if(archive.isEmpty() || randomness.nextBoolean(randomP)) {
+
                 archive.addIfNeeded(ff.calculateCoverage(sampler.sampleAtRandom()))
                 time.newEvaluation()
 

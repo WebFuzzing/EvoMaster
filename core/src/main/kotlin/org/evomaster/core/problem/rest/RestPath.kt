@@ -51,15 +51,20 @@ class RestPath(val path: String) {
     fun getPathParamNames() : List<String>{
 
         val list : MutableList<String> = mutableListOf()
-        var open = -1
+
+        var open = -2
 
         for(i in 0 until path.length){
             if(path[i] == '{'){
                 open = i
             }
             if(path[i]== '}'){
-                open = -1
+                if(open < 0){
+                    throw IllegalArgumentException("Closing } was not matched by opening {")
+                }
+
                 list.add(path.substring(open+1, i))
+                open = -2
             }
         }
 

@@ -1,18 +1,20 @@
 package org.evomaster.core
 
 import com.google.inject.AbstractModule
+import com.google.inject.Provides
+import com.google.inject.Singleton
+import joptsimple.OptionSet
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 
 
-class BaseModule : AbstractModule() {
+class BaseModule(val args: Array<String>) : AbstractModule() {
+
+    constructor() : this(emptyArray())
 
     override fun configure() {
-
-        bind(EMConfig::class.java)
-                .asEagerSingleton()
 
         bind(SearchTimeController::class.java)
                 .asEagerSingleton()
@@ -25,5 +27,16 @@ class BaseModule : AbstractModule() {
 
         bind(IdMapper::class.java)
                 .asEagerSingleton()
+    }
+
+    @Provides @Singleton
+    fun getEMConfig() : EMConfig{
+        val config = EMConfig()
+
+        val parser = EMConfig.getOptionParser()
+        val options = parser.parse(*args)
+
+        config.updateProperties(options)
+        return config
     }
 }

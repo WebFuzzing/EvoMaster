@@ -1,11 +1,20 @@
 package org.evomaster.core.search.service
 
+import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import java.util.*
 
 
 class Randomness {
 
+    @Inject
+    protected lateinit var configuration: EMConfig
+
     private val random = Random()
+
+    private fun init(){
+        updateSeed(configuration.seed)
+    }
 
     /**
      * A negative value means the current CPU time clock is used instead

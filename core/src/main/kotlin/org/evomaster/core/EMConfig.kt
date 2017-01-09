@@ -4,6 +4,10 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.clientJava.controllerApi.ControllerConstants
 import org.evomaster.core.output.OutputFormat
+import kotlin.reflect.KCallable
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KProperty
+import kotlin.reflect.jvm.javaType
 
 
 /**
@@ -18,20 +22,38 @@ class EMConfig {
          */
         fun getOptionParser(): OptionParser {
 
+            val defaultInstance = EMConfig()
+
             var parser = OptionParser()
 
-            EMConfig::class.members
-                    .filter {
-                        m -> m.annotations.any {
-                            a -> a.annotationClass.equals(Cfg::class)
-                        }
-                    }
-                    .forEach { m ->
-                        //TODO default values
-                        parser.accepts(m.name).withRequiredArg()
+            getConfigurationProperties().forEach { m ->
+                        /*
+                            Note: here we could use typing in the options,
+                            instead of converting everything to string.
+                            But it looks bit cumbersome to do it in Kotlin,
+                            at least for them moment
+
+                            TODO: do documentation
+                         */
+                        parser.accepts(m.name)
+                                .withRequiredArg()
+                                .defaultsTo("" + m.call(defaultInstance))
                     }
 
             return parser
+        }
+
+        private fun getConfigurationProperties(): List<KMutableProperty<*>> {
+            return EMConfig::class.members
+                    .filter { m -> m is KMutableProperty }
+                    .map{ m -> m as KMutableProperty }
+                    .filter {
+                        m ->
+                        m.annotations.any {
+                            a ->
+                            a.annotationClass.equals(Cfg::class)
+                        }
+                    }
         }
     }
 
@@ -41,10 +63,48 @@ class EMConfig {
      *
      * @return whether the update was successful. An update might
      *         fail if constraints are violated
+     *
+     * @throws IllegalArgumentException if there are constraint violations
      */
-    fun updateProperties(options: OptionSet) : Boolean{
+    fun updateProperties(options: OptionSet): Boolean {
 
-        //TODO
+        getConfigurationProperties().forEach { m ->
+
+            val opt = options.valueOf(m.name)?.toString() ?:
+                    throw IllegalArgumentException("Value not found for property ${m.name}")
+
+            val returnType = m.returnType.javaType as Class<*>
+
+            //TODO: ugly checks. But not sure yet if can be made better in Kotlin
+
+            try {
+                if (Integer.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, Integer.parseInt(opt))
+
+                } else if (java.lang.Long.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, java.lang.Long.parseLong(opt))
+
+                } else if (java.lang.Double.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, java.lang.Double.parseDouble(opt))
+
+                }  else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
+                    m.setter.call(this, opt)
+
+                } else if (returnType.isEnum) {
+                    var valueOfMethod = returnType.getDeclaredMethod("valueOf",
+                            java.lang.String::class.java)
+                    m.setter.call(this, valueOfMethod.invoke(null, opt))
+
+                } else {
+                    throw IllegalStateException("BUG: cannot handle type " + returnType)
+                }
+            } catch (e: Exception){
+                throw IllegalArgumentException("Failed to handle property ${m.name}", e)
+            }
+
+            //TODO constraint checks, eg Min/Max
+        }
+
         return true
     }
 
@@ -67,7 +127,7 @@ class EMConfig {
     //------------------------------------------------------------------------
     //--- properties
 
-    enum class Algorithm{
+    enum class Algorithm {
         MIO, RANDOM
     }
 
@@ -75,7 +135,7 @@ class EMConfig {
     var algorithm = Algorithm.MIO
 
 
-    enum class ProblemType{
+    enum class ProblemType {
         REST
     }
 
