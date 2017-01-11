@@ -1,0 +1,4 @@
+//list of classes/packages to include regardless of skipList.
+//this is useful when you want to ban a domain org.foo but still allow
+//some of its subpackages, like org.foo.bar
+

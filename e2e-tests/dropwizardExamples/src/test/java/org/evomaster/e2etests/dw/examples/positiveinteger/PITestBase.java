@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.dw.examples.positiveinteger;
 
+import com.foo.rest.examples.positiveinteger.PIController;
 import org.evomaster.clientJava.controller.EmbeddedStarter;
 import org.evomaster.clientJava.controllerApi.SutInfoDto;
 import org.evomaster.core.problem.rest.RemoteController;
@@ -41,6 +42,8 @@ public abstract class PITestBase {
     public static void tearDown() {
 
         boolean stopped = remoteController.stopSUT();
+        stopped = embeddedStarter.stop() && stopped;
+
         assertTrue(stopped);
     }
 

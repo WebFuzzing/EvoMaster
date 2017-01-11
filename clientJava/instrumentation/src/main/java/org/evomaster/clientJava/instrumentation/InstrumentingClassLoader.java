@@ -8,6 +8,7 @@ import java.util.Map;
 
 import static org.evomaster.clientJava.clientUtil.SimpleLogger.debug;
 import static org.evomaster.clientJava.clientUtil.SimpleLogger.error;
+import static org.evomaster.clientJava.clientUtil.SimpleLogger.warn;
 
 
 /**
@@ -19,7 +20,18 @@ import static org.evomaster.clientJava.clientUtil.SimpleLogger.error;
  * a bug in this library.
  * <br>
  * This is needed ONLY when the test cases are generated, and not
- * when they are run
+ * when they are run.
+ * <br>
+ * Note: this class loader can only be used during testing of EM.
+ * For user controllers, we have to use a Java Agent that can intercept
+ * ALL class loading.
+ * The problem is that there are some packages we cannot instrument (eg javax.)
+ * otherwise it becomes a nightmare to handle. But those packages could
+ * use reflection to load classes that we do instrument.
+ * In the moment we delegate to super classloader for those packages, we are
+ * screwed, as some classes could be loaded twice.
+ * An example is in javax.validation.Validation which can re-load hibernate
+ * classes by searching for "default providers".
  */
 public class InstrumentingClassLoader extends ClassLoader {
 
@@ -51,12 +63,7 @@ public class InstrumentingClassLoader extends ClassLoader {
     public Class<?> loadClass(String name) throws ClassNotFoundException {
 
         if (!ClassesToExclude.checkIfCanInstrument(name)) {
-            Class<?> result = findLoadedClass(name);
-            if (result != null) {
-                return result;
-            }
-            result = classLoader.loadClass(name);
-            return result;
+            return loadNonInstrumented(name);
         }
 
         Class<?> result = classes.get(name);
@@ -65,8 +72,22 @@ public class InstrumentingClassLoader extends ClassLoader {
         } else {
             ClassName className = new ClassName(name);
             Class<?> instrumentedClass = instrumentClass(className);
+
+            if(instrumentedClass == null){
+                return loadNonInstrumented(name);
+            }
+
             return instrumentedClass;
         }
+    }
+
+    private Class<?> loadNonInstrumented(String name) throws ClassNotFoundException {
+        Class<?> result = findLoadedClass(name);
+        if (result != null) {
+            return result;
+        }
+        result = classLoader.loadClass(name);
+        return result;
     }
 
     private Class<?> instrumentClass(ClassName className) throws ClassNotFoundException {
@@ -74,8 +95,8 @@ public class InstrumentingClassLoader extends ClassLoader {
         try (InputStream is = classLoader.getResourceAsStream(className.getAsResourcePath())) {
 
             if (is == null) {
-                throw new ClassNotFoundException(
-                        "Failed to find resource file for "+className.getAsResourcePath());
+                warn("Failed to find resource file for "+className.getAsResourcePath());
+                return null;
             }
 
             byte[] byteBuffer = instrumentator.transformBytes(this, className, new ClassReader(is));

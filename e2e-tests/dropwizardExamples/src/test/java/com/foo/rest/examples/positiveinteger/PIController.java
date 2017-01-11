@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.dw.examples.positiveinteger;
+package com.foo.rest.examples.positiveinteger;
 
 import com.foo.rest.examples.positiveinteger.PIApplication;
 import org.evomaster.clientJava.controller.RestController;

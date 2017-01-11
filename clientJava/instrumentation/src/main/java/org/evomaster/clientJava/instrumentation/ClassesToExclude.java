@@ -11,14 +11,26 @@ import java.util.List;
 public class ClassesToExclude {
 
     private static final List<String> excludedClasses;
+    private static final List<String> includedClasses;
+
 
     static  {
-
-        List<String> list = new ArrayList<>();
 
         InputStream excludedClassesStream =
                 ClassesToExclude.class.getClassLoader()
                         .getResourceAsStream("skipInstrumentationList.txt");
+
+        excludedClasses = getNotCommentedLines(excludedClassesStream);
+
+        InputStream includedClassesStream =
+                ClassesToExclude.class.getClassLoader()
+                        .getResourceAsStream("keepInstrumentationList.txt");
+
+        includedClasses = getNotCommentedLines(includedClassesStream);
+    }
+
+    private static List<String> getNotCommentedLines(InputStream excludedClassesStream) {
+        List<String> list = new ArrayList<>();
 
         try(BufferedReader br = new BufferedReader(new InputStreamReader(excludedClassesStream))){
 
@@ -33,7 +45,7 @@ public class ClassesToExclude {
             throw new RuntimeException(e);
         }
 
-        excludedClasses = Collections.unmodifiableList(list);
+        return Collections.unmodifiableList(list);
     }
 
     public static List<String> getPackagePrefixesShouldNotBeInstrumented() {
@@ -41,8 +53,15 @@ public class ClassesToExclude {
     }
 
     public static boolean checkIfCanInstrument(String className) {
-        for (String s : getPackagePrefixesShouldNotBeInstrumented()) {
+        outer: for (String s : excludedClasses) {
             if (className.startsWith(s)) {
+
+                for(String k : includedClasses){
+                    if(className.startsWith(k)){
+                        continue outer;
+                    }
+                }
+
                 return false;
             }
         }

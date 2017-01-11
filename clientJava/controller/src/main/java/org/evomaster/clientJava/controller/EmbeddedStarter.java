@@ -15,14 +15,20 @@ public class EmbeddedStarter {
 
     public EmbeddedStarter(RestController restController) {
 
-        InstrumentingClassLoader cl = new InstrumentingClassLoader(
-                restController.getPackagePrefixesToCover());
+        this.restController = restController;
 
-        try {
-            this.restController = cl.loadClass(restController.getClass().getName()).newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        /*
+            FIXME: this cannot work. We need an Agent
+         */
+
+//        InstrumentingClassLoader cl = new InstrumentingClassLoader(
+//                restController.getPackagePrefixesToCover());
+//
+//        try {
+//            this.restController = cl.loadClass(restController.getClass().getName()).newInstance();
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
     }
 
     public boolean start() {
