@@ -33,7 +33,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             throw IllegalStateException("Cannot communicate with remote REST controller")
         }
 
-        infoDto = rc.getInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
+        infoDto = rc.getSutInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
     }
 
 

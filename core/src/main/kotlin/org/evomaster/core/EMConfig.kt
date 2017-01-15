@@ -155,12 +155,14 @@ class EMConfig {
     var createTests = true
 
     @Cfg("The path directory of where the generated test classes should be saved to")
+    //TODO check if can be created
     var outputFolder = "src/em"
 
 
     @Cfg("The name of generated file with the test cases, without file type extension. " +
             "In JVM languages, if the name contains '.', folders will be created to represent " +
             "the given package structure")
+    //TODO constrain of no spaces or weird characters, eg use regular expression
     var testSuiteFileName = "EvoMasterTests"
 
 

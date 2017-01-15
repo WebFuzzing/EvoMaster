@@ -20,7 +20,7 @@ public class PIManualTest extends PITestBase{
     @Test
     public void testSwaggerJSON() {
 
-        SutInfoDto dto = remoteController.getInfo();
+        SutInfoDto dto = remoteController.getSutInfo();
 
         String swaggerJson = given().accept(Formats.JSON_V1)
                 .get(dto.swaggerJsonUrl)

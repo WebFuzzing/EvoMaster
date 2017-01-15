@@ -31,7 +31,7 @@ public abstract class PITestBase {
         boolean started = remoteController.startSUT();
         assertTrue(started);
 
-        SutInfoDto dto = remoteController.getInfo();
+        SutInfoDto dto = remoteController.getSutInfo();
         assertNotNull(dto);
 
         baseUrlOfSut = dto.baseUrlOfSUT;

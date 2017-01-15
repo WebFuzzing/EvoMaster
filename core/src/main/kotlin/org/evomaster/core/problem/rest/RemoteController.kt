@@ -1,9 +1,6 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.clientJava.controllerApi.ControllerConstants
-import org.evomaster.clientJava.controllerApi.SutInfoDto
-import org.evomaster.clientJava.controllerApi.SutRunDto
-import org.evomaster.clientJava.controllerApi.TargetsResponseDto
+import org.evomaster.clientJava.controllerApi.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.ws.rs.client.Client
@@ -36,7 +33,7 @@ class RemoteController(val host: String, val port: Int) {
         client.close()
     }
 
-    fun getInfo(): SutInfoDto? {
+    fun getSutInfo(): SutInfoDto? {
 
         val response = getWebTarget()
                 .path(ControllerConstants.INFO_SUT_PATH)
@@ -58,6 +55,27 @@ class RemoteController(val host: String, val port: Int) {
         return dto
     }
 
+    fun getControllerInfo() : ControllerInfoDto? {
+
+        val response = getWebTarget()
+                .path(ControllerConstants.CONTROLLER_INFO)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get()
+
+        if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
+            log.warn("Failed to connect to remote RestController. HTTP status: {}", response.status)
+            return null
+        }
+
+        val dto = try {
+            response.readEntity(ControllerInfoDto::class.java)
+        } catch (e: Exception) {
+            log.warn("Failed to parse the controller info dto", e)
+            null
+        }
+
+        return dto
+    }
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
 
@@ -106,4 +124,5 @@ class RemoteController(val host: String, val port: Int) {
     fun wasSuccess(response: Response?) : Boolean{
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
     }
+
 }

@@ -13,4 +13,6 @@ public class ControllerConstants {
     public static final String RUN_SUT_PATH = "/runSUT";
 
     public static final String TARGETS_PATH = "/targets";
+
+    public static final String CONTROLLER_INFO = "/controllerInfo";
 }

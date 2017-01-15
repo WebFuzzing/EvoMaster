@@ -12,32 +12,47 @@ class TestSuiteWriter {
 
     companion object {
 
+        private val indent = "    "
+        private val controller = "controller"
+        private val baseUrlOfSut = "baseUrlOfSut"
+
+
         fun writeTests(
                 solution: Solution<*>,
                 format: OutputFormat,
                 outputFolder: String,
-                testSuiteFileName: String){
+                testSuiteFileName: String,
+                controllerName: String){
 
             val name = TestSuiteFileName(testSuiteFileName)
 
-            val content = convertToCompilableTestCode(solution, format, name)
+            val content = convertToCompilableTestCode(solution, format, name, controllerName)
             saveToDisk(content, format, outputFolder, name)
         }
+
 
 
         fun convertToCompilableTestCode(
                 solution: Solution<*>,
                 format: OutputFormat,
-                testSuiteFileName: TestSuiteFileName)
+                testSuiteFileName: TestSuiteFileName,
+                controllerName: String)
                 : String {
-
-
-            //TODO name for each test, can start with just a counter
-
 
             val buffer = StringBuilder(2048)
 
             header(format, testSuiteFileName, buffer)
+
+            beforeAfterMethods(format, controllerName, buffer)
+
+            val tests = TestSuiteOrganizer.sortTests(solution)
+
+            for(test in tests){
+                newLines(2,buffer)
+
+                val lines = TestCaseWriter.convertToCompilableTestCode(format, test)
+                lines.forEach { l -> buffer.append("    $l\n") }
+            }
 
             footer(buffer)
 
@@ -82,9 +97,63 @@ class TestSuiteWriter {
 
             if(format.isJavaOrKotlin()){
                 defineClass(format, name, buffer)
+                newLine(buffer)
             }
         }
 
+
+        private fun beforeAfterMethods(format: OutputFormat,
+                                       controllerName: String,
+                                       buffer: StringBuilder){
+
+            //TODO check format
+
+            newLine(buffer)
+            //TODO controllerName package in the imports
+            methodLine("private static $controllerName $controller = new $controllerName();", buffer)
+            methodLine("private static String $baseUrlOfSut;", buffer)
+            newLines(2, buffer)
+
+
+            methodLine("@BeforeAll", buffer)
+            methodLine("public static void initClass() {", buffer)
+            blockLine("boolean started = $controller.startSUT();", buffer)
+            blockLine("assertTrue(started);", buffer)
+            newLine(buffer)
+            blockLine("SutInfoDto dto = remoteController.getSutInfo();",buffer)
+            blockLine("assertNotNull(dto);", buffer)
+            newLine(buffer)
+            blockLine("baseUrlOfSut = dto.baseUrlOfSUT;",buffer)
+            blockLine("assertNotNull(baseUrlOfSut);", buffer)
+            methodLine("}", buffer)
+            newLines(2, buffer)
+
+
+            methodLine("@AfterAll", buffer)
+            methodLine("public static void tearDown() {", buffer)
+            blockLine("boolean stopped = $controller.stopSUT();", buffer)
+            blockLine("assertTrue(stopped);", buffer)
+            methodLine("}", buffer)
+            newLines(2, buffer)
+
+
+            methodLine("@BeforeEach", buffer)
+            methodLine("public void initTest() {", buffer)
+            blockLine("boolean reset = $controller.resetSUT();", buffer)
+            blockLine("assertTrue(reset);", buffer)
+            methodLine("}", buffer)
+            newLines(2, buffer)
+        }
+
+
+        private fun methodLine(line: String, buffer: StringBuilder){
+            buffer.append(indent + line)
+            newLine(buffer)
+        }
+
+        private fun blockLine(line: String, buffer: StringBuilder){
+            methodLine(indent + line, buffer)
+        }
 
         private fun footer(buffer: StringBuilder){
 

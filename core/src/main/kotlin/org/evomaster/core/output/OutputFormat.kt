@@ -25,4 +25,6 @@ enum class OutputFormat {
     fun isJavaOrKotlin() = isJava() || isKotlin()
 
     fun isJUnit5() = this.name.endsWith("junit_5", true)
+
+    fun isJUnit() = this.name.contains("_junit_", true)
 }

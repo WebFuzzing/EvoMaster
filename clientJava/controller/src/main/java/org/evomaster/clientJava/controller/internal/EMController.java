@@ -40,6 +40,17 @@ public class EMController {
         return dto;
     }
 
+    @Path(ControllerConstants.CONTROLLER_INFO)
+    @GET
+    @Produces(Formats.JSON_V1)
+    public ControllerInfoDto getControllerInfoDto(){
+
+        ControllerInfoDto dto = new ControllerInfoDto();
+        dto.fullName = restController.getClass().getName();
+
+        return dto;
+    }
+
 
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT

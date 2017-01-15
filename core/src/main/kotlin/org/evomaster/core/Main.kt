@@ -2,7 +2,9 @@ package org.evomaster.core
 
 import com.google.inject.*
 import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.clientJava.controllerApi.ControllerInfoDto
 import org.evomaster.core.output.TestSuiteWriter
+import org.evomaster.core.problem.rest.RemoteController
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
@@ -34,9 +36,11 @@ class Main {
 
             val injector = init(args)
 
+            val controllerInfo = checkConnection(injector)
+
             val solution = run(injector)
 
-            writeTests(injector, solution)
+            writeTests(injector, solution, controllerInfo)
 
             return solution
         }
@@ -65,8 +69,24 @@ class Main {
             return solution
         }
 
+        fun checkConnection(injector: Injector) : ControllerInfoDto{
 
-        fun writeTests(injector: Injector, solution: Solution<*>){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            val rc = RemoteController(config.sutControllerHost, config.sutControllerPort)
+
+            val dto = rc.getControllerInfo() ?:
+                    throw IllegalStateException("Cannot retrieve Remote Controller info from "
+                    + config.sutControllerHost+":"+config.sutControllerPort)
+
+
+            //TODO check if the type of controller does match the output format
+
+            return dto
+        }
+
+
+        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto){
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -78,7 +98,8 @@ class Main {
                     solution,
                     config.outputFormat,
                     config.outputFolder,
-                    config.testSuiteFileName
+                    config.testSuiteFileName,
+                    controllerInfoDto.fullName
             )
         }
     }
