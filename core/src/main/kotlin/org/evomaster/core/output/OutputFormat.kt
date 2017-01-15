@@ -5,7 +5,7 @@ package org.evomaster.core.output
  */
 enum class OutputFormat {
 
-    JAVA_JUNIT_5
+    JAVA_JUNIT_5;
 
     /*
         TODO:
@@ -16,4 +16,13 @@ enum class OutputFormat {
         and in the future, also support other languages,
         eg JavaScript
      */
+
+
+    fun isJava() = this.name.startsWith("java", true)
+
+    fun isKotlin() = this.name.startsWith("kotlin", true)
+
+    fun isJavaOrKotlin() = isJava() || isKotlin()
+
+    fun isJUnit5() = this.name.endsWith("junit_5", true)
 }

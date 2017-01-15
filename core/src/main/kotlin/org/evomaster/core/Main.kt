@@ -2,6 +2,7 @@ package org.evomaster.core
 
 import com.google.inject.*
 import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
@@ -20,11 +21,7 @@ class Main {
 
             try {
 
-                val injector = init(args)
-
-                val solution = run(injector)
-
-                //TODO write results on disk
+                initAndRun(args)
 
             } catch (e: Exception) {
                 LoggingUtil.getInfoLogger()
@@ -39,16 +36,7 @@ class Main {
 
             val solution = run(injector)
 
-            return solution
-        }
-
-        fun run(injector: Injector) : Solution<*>{
-
-            //TODO check algorithm and problem type
-            val mio = injector.getInstance(Key.get(
-                    object : TypeLiteral<MioAlgorithm<RestIndividual>>() {}))
-
-            val solution = mio.search()
+            writeTests(injector, solution)
 
             return solution
         }
@@ -64,6 +52,34 @@ class Main {
                     .build().createInjector()
 
             return injector
+        }
+
+        fun run(injector: Injector) : Solution<*>{
+
+            //TODO check algorithm and problem type
+            val mio = injector.getInstance(Key.get(
+                    object : TypeLiteral<MioAlgorithm<RestIndividual>>() {}))
+
+            val solution = mio.search()
+
+            return solution
+        }
+
+
+        fun writeTests(injector: Injector, solution: Solution<*>){
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if(! config.createTests){
+                return
+            }
+
+            TestSuiteWriter.writeTests(
+                    solution,
+                    config.outputFormat,
+                    config.outputFolder,
+                    config.testSuiteFileName
+            )
         }
     }
 }

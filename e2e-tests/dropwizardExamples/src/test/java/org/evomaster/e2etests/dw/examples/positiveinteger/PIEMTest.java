@@ -35,8 +35,10 @@ public class PIEMTest extends PITestBase {
     public void testRunEM(){
 
         String[] args = new String[]{
+                "--createTests", "false",
                 "--seed", "42",
-                "--sutControllerPort", "" + controllerPort
+                "--sutControllerPort", "" + controllerPort,
+                "--maxFitnessEvaluations", "20"
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
@@ -48,5 +50,21 @@ public class PIEMTest extends PITestBase {
 
         assertTrue(solution.getIndividuals().stream().anyMatch(
                 ind -> hasAtLeastOne(ind, HttpVerb.POST, 200)));
+    }
+
+
+    @Test
+    public void testCreateTest() {
+
+        String[] args = new String[]{
+                "--createTests", "true",
+                "--seed", "42",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxFitnessEvaluations", "20"
+        };
+
+       Main.initAndRun(args);
+
+       //TODO check file
     }
 }

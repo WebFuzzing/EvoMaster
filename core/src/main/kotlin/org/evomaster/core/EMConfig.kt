@@ -87,7 +87,10 @@ class EMConfig {
                 } else if (java.lang.Double.TYPE.isAssignableFrom(returnType)) {
                     m.setter.call(this, java.lang.Double.parseDouble(opt))
 
-                }  else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
+                } else if (java.lang.Boolean.TYPE.isAssignableFrom(returnType)) {
+                    m.setter.call(this, java.lang.Boolean.parseBoolean(opt))
+
+                } else if (java.lang.String::class.java.isAssignableFrom(returnType)) {
                     m.setter.call(this, opt)
 
                 } else if (returnType.isEnum) {
@@ -145,6 +148,20 @@ class EMConfig {
 
     @Cfg("Specify in which format the tests should be outputted")
     var outputFormat = OutputFormat.JAVA_JUNIT_5
+
+
+    @Cfg("Specify if test classes should be created as output of the tool. " +
+            "Usually, you would put it to 'false' only when debugging EvoMaster itself")
+    var createTests = true
+
+    @Cfg("The path directory of where the generated test classes should be saved to")
+    var outputFolder = "src/em"
+
+
+    @Cfg("The name of generated file with the test cases, without file type extension. " +
+            "In JVM languages, if the name contains '.', folders will be created to represent " +
+            "the given package structure")
+    var testSuiteFileName = "EvoMasterTests"
 
 
     @Cfg("The seed for the random generator used during the search. " +
