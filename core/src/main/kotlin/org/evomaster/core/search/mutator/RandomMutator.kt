@@ -27,18 +27,8 @@ class RandomMutator<T> : Mutator<T>() where T: Individual {
                     continue
                 }
 
-                //TODO rather call randomize
+                gene.randomize(randomness, true)
 
-                var k: Int
-                if (gene is IntegerGene) {
-                    k = randomness.nextInt(gene.min, gene.max, gene.value)
-                    gene.value = k
-                } else if (gene is EnumGene<*>) {
-                    k = randomness.nextInt(0, gene.values.size - 1, gene.index)
-                    gene.index = k
-                } else {
-                    throw IllegalStateException("Unrecognized type: " + gene.javaClass)
-                }
                 mutated = true
             }
         }

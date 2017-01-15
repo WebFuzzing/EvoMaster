@@ -9,11 +9,14 @@ class RestCallResult : ActionResult {
     constructor() : super()
     private constructor(other: ActionResult) : super(other)
 
-    private val STATUS_CODE = "STATUS_CODE"
-    private val BODY = "BODY"
-    private val BODY_TYPE = "BODY_TYPE"
+    companion object {
+        val STATUS_CODE = "STATUS_CODE"
+        val BODY = "BODY"
+        val BODY_TYPE = "BODY_TYPE"
+    }
 
-    override fun copy() : ActionResult{
+
+    override fun copy(): ActionResult {
         return RestCallResult(this)
     }
 
@@ -26,18 +29,18 @@ class RestCallResult : ActionResult {
         addResultValue(STATUS_CODE, code.toString())
     }
 
-    fun getStatusCode() : Int? = getResultValue(STATUS_CODE)?.toInt()
+    fun getStatusCode(): Int? = getResultValue(STATUS_CODE)?.toInt()
 
 
     fun setBody(body: String) = addResultValue(BODY, body)
-    fun getBody() : String? = getResultValue(BODY)
+    fun getBody(): String? = getResultValue(BODY)
 
     fun setBodyType(bodyType: MediaType) = addResultValue(BODY_TYPE, bodyType.toString())
-    fun getBodyType() : MediaType? {
+    fun getBodyType(): MediaType? {
         val res = getResultValue(BODY_TYPE)
-        if(res != null){
+        if (res != null) {
             return MediaType.valueOf(res)
-        } else{
+        } else {
             return null
         }
     }

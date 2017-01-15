@@ -22,4 +22,20 @@ class RestIndividual(val actions: MutableList<RestAction>) : Individual() {
         return actions
     }
 
+
+    fun getIndexOfHttpCalls(verb: HttpVerb) : List<Int>{
+
+        val indices : MutableList<Int> = mutableListOf()
+
+        for(i in 0..actions.lastIndex){
+            if(actions[i] is RestCallAction){
+                val action = actions[i] as RestCallAction
+                if(action.verb == verb){
+                    indices.add(i)
+                }
+            }
+        }
+
+        return indices
+    }
 }

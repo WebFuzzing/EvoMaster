@@ -24,7 +24,7 @@ class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
 
         fields.map { f ->
             """
-            |"${f.name}"=${f.getValueAsString()}
+            "${f.name}":${f.getValueAsString()}
             """
         }.joinTo(buffer, ",")
 
