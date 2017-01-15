@@ -36,6 +36,9 @@ public abstract class PITestBase {
 
         baseUrlOfSut = dto.baseUrlOfSUT;
         assertNotNull(baseUrlOfSut);
+
+        System.out.println("Remote controller running on port "+ controllerPort);
+        System.out.println("SUT listening on "+baseUrlOfSut);
     }
 
     @AfterAll

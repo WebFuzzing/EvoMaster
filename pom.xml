@@ -134,6 +134,11 @@
                 <artifactId>asm</artifactId>
                 <version>5.1</version>
             </dependency>
+            <dependency> <!-- To attach instrumenting JavaAgent at runtime -->
+                <groupId>com.ea.agentloader</groupId>
+                <artifactId>ea-agent-loader</artifactId>
+                <version>1.0.2</version>
+            </dependency>
             <dependency> <!-- Used to handle terminal/console inputs -->
                 <groupId>net.sf.jopt-simple</groupId>
                 <artifactId>jopt-simple</artifactId>

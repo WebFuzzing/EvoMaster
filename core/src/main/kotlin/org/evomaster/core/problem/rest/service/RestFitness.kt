@@ -80,10 +80,16 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
 
     private fun handleRestCall(a: RestCallAction, actionResults: MutableList<ActionResult>) {
-        val baseUrl = infoDto.baseUrlOfSUT
-        val path = a.path.resolve(a.parameters)
 
-        var builder = client.target(baseUrl + "/" + path).request()
+        val path = a.path.resolve(a.parameters)
+        assert(path.startsWith("/"))
+
+        var baseUrl = infoDto.baseUrlOfSUT
+        if(baseUrl.endsWith("/")){
+            baseUrl = baseUrl.substring(0, baseUrl.length-1)
+        }
+
+        val builder = client.target(baseUrl + path).request()
 
         /*
                     TODO: need to handle also other formats, not just JSON

@@ -13,6 +13,19 @@ class RestPath(val path: String) {
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
     }
 
+
+    /**
+     * Return a resolved path (starting with "/") based on input parameters.
+     * For example:
+     *
+     * foo/bar/{id}
+     *
+     * will be resolved into
+     *
+     * /foo/bar/5
+     *
+     * if the input params have a variable called "id" with value 5
+     */
     fun resolve(params: List<out Param>) : String {
 
         val pathParamNames = getPathParamNames()
@@ -37,6 +50,12 @@ class RestPath(val path: String) {
             resolvedPath = resolvedPath.replace("{$n}", value)
         }
 
+        //make sure to remove unnecessary repeated /
+        resolvedPath = resolvedPath.replace("//","/")
+        if(! resolvedPath.startsWith("/")){
+            resolvedPath = "/" + resolvedPath
+        }
+
         val queries = params.filter { p -> p is QueryParam }
         if(queries.size > 0){
             resolvedPath += "?" +
@@ -48,7 +67,7 @@ class RestPath(val path: String) {
     }
 
 
-    fun getPathParamNames() : List<String>{
+    private fun getPathParamNames() : List<String>{
 
         val list : MutableList<String> = mutableListOf()
 

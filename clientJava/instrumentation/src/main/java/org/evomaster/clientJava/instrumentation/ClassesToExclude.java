@@ -52,7 +52,10 @@ public class ClassesToExclude {
         return excludedClasses;
     }
 
-    public static boolean checkIfCanInstrument(String className) {
+    public static boolean checkIfCanInstrument(ClassName cn) {
+
+        String className = cn.getFullNameWithDots();
+
         outer: for (String s : excludedClasses) {
             if (className.startsWith(s)) {
 

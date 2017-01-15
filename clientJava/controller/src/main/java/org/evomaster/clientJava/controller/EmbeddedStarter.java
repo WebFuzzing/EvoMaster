@@ -1,5 +1,7 @@
 package org.evomaster.clientJava.controller;
 
+import com.ea.agentloader.AgentLoader;
+import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 
 import java.lang.reflect.Method;
@@ -10,17 +12,23 @@ import java.lang.reflect.Method;
  */
 public class EmbeddedStarter {
 
+    static {
+        AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "com.");
+    }
+
+    //NOTE: following could be refactored, since we init JavaAgent
     private final Object restController;
 
 
     public EmbeddedStarter(RestController restController) {
 
         this.restController = restController;
+        InstrumentingAgent.changePackagesToInstrument(restController.getPackagePrefixesToCover());
 
         /*
-            FIXME: this cannot work. We need an Agent
+            Note: following cannot work. We need an Agent.
+            See InstrumentingClassLoader for more discussion on this problem
          */
-
 //        InstrumentingClassLoader cl = new InstrumentingClassLoader(
 //                restController.getPackagePrefixesToCover());
 //
