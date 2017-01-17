@@ -20,6 +20,7 @@ public class PIController extends RestController{
             application.run("server");
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
 
         try {

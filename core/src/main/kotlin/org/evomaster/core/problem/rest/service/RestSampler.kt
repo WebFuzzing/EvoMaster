@@ -83,7 +83,7 @@ class RestSampler : Sampler<RestIndividual>() {
                 //TODO: see http://swagger.io/specification/
 
                 var gene = getGene(name, p.getType(), p.getFormat())
-                if (!p.getRequired()) {
+                if (!p.required) {
                     gene = OptionalGene(name, gene)
                 }
 

@@ -20,4 +20,17 @@ where T : Individual {
                 results.map(ActionResult::copy)
                 )
     }
+
+    fun evaluatedActions() : List<EvaluatedAction>{
+
+        val list: MutableList<EvaluatedAction> = mutableListOf()
+
+        val actions = individual.seeActions()
+
+        (0..actions.size-1).forEach { i ->
+            list.add(EvaluatedAction(actions[i], results[i]))
+        }
+
+        return list
+    }
 }

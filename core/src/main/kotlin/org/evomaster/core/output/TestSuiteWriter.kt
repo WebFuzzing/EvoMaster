@@ -50,7 +50,7 @@ class TestSuiteWriter {
             for(test in tests){
                 newLines(2,buffer)
 
-                val lines = TestCaseWriter.convertToCompilableTestCode(format, test)
+                val lines = TestCaseWriter.convertToCompilableTestCode(format, test, baseUrlOfSut)
                 lines.forEach { l -> buffer.append("    $l\n") }
             }
 
@@ -91,7 +91,13 @@ class TestSuiteWriter {
                 addImport("org.junit.jupiter.api.AfterAll", buffer, format)
                 addImport("org.junit.jupiter.api.BeforeAll", buffer, format)
                 addImport("org.junit.jupiter.api.BeforeEach", buffer, format)
+                addImport("org.junit.jupiter.api.Test", buffer, format)
             }
+
+            //TODO check if those are used
+            addImport("static io.restassured.RestAssured.given", buffer, format)
+            addImport("static org.hamcrest.core.Is.is", buffer, format)
+            addImport("static org.junit.jupiter.api.Assertions.*", buffer, format)
 
             newLines(2, buffer)
 
@@ -117,13 +123,7 @@ class TestSuiteWriter {
 
             methodLine("@BeforeAll", buffer)
             methodLine("public static void initClass() {", buffer)
-            blockLine("boolean started = $controller.startSUT();", buffer)
-            blockLine("assertTrue(started);", buffer)
-            newLine(buffer)
-            blockLine("SutInfoDto dto = remoteController.getSutInfo();",buffer)
-            blockLine("assertNotNull(dto);", buffer)
-            newLine(buffer)
-            blockLine("baseUrlOfSut = dto.baseUrlOfSUT;",buffer)
+            blockLine("baseUrlOfSut = $controller.startSut();",buffer)
             blockLine("assertNotNull(baseUrlOfSut);", buffer)
             methodLine("}", buffer)
             newLines(2, buffer)
@@ -131,16 +131,14 @@ class TestSuiteWriter {
 
             methodLine("@AfterAll", buffer)
             methodLine("public static void tearDown() {", buffer)
-            blockLine("boolean stopped = $controller.stopSUT();", buffer)
-            blockLine("assertTrue(stopped);", buffer)
+            blockLine("$controller.stopSut();", buffer)
             methodLine("}", buffer)
             newLines(2, buffer)
 
 
             methodLine("@BeforeEach", buffer)
             methodLine("public void initTest() {", buffer)
-            blockLine("boolean reset = $controller.resetSUT();", buffer)
-            blockLine("assertTrue(reset);", buffer)
+            blockLine("$controller.resetStateOfSUT();", buffer)
             methodLine("}", buffer)
             newLines(2, buffer)
         }
