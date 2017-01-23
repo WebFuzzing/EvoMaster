@@ -31,6 +31,7 @@
         <junit.platform.version>1.0.0-M3</junit.platform.version>
         <dropwizard.version>1.0.5</dropwizard.version>
         <swagger-version>1.5.12</swagger-version>
+        <springboot.version>1.4.3.RELEASE</springboot.version>
     </properties>
 
 
@@ -180,6 +181,14 @@
                 <version>${dropwizard.version}</version>
                 <scope>test</scope>
             </dependency>
+
+            <!-- Spring -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot</artifactId>
+                <version>${springboot.version}</version>
+            </dependency>
+
 
             <!-- Swagger -->
             <dependency>

@@ -14,6 +14,7 @@
 
     <modules>
         <module>dropwizardExamples</module>
+        <module>springExamples</module>
     </modules>
 
 </project>
