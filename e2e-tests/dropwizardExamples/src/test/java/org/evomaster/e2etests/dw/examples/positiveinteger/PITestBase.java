@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.dw.examples.positiveinteger;
 
-import com.foo.rest.examples.positiveinteger.PIController;
+import com.foo.rest.examples.dw.positiveinteger.PIController;
 import org.evomaster.clientJava.controller.EmbeddedStarter;
 import org.evomaster.clientJava.controllerApi.SutInfoDto;
 import org.evomaster.core.problem.rest.RemoteController;

@@ -1,4 +1,4 @@
-package com.foo.rest.examples.positiveinteger;
+package com.foo.rest.examples.dw.positiveinteger;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

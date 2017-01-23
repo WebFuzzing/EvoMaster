@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.dw.examples.positiveinteger;
 
-import com.foo.rest.examples.positiveinteger.PostDto;
+import com.foo.rest.examples.dw.positiveinteger.PostDto;
 import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;

@@ -1,6 +1,5 @@
-package com.foo.rest.examples.positiveinteger;
+package com.foo.rest.examples.dw.positiveinteger;
 
-import com.foo.rest.examples.positiveinteger.PIApplication;
 import org.evomaster.clientJava.controller.RestController;
 
 public class PIController extends RestController{

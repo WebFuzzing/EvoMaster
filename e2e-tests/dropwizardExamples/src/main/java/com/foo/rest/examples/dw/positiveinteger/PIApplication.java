@@ -1,4 +1,4 @@
-package com.foo.rest.examples.positiveinteger;
+package com.foo.rest.examples.dw.positiveinteger;
 
 import io.dropwizard.Application;
 import io.dropwizard.jetty.HttpConnectorFactory;
@@ -42,7 +42,7 @@ public class PIApplication extends Application<PIConfiguration> {
         beanConfig.setSchemes(new String[]{"http"});
         //beanConfig.setHost("localhost:8080");
         beanConfig.setBasePath("/api");
-        beanConfig.setResourcePackage("com.foo.rest.examples.positiveinteger");
+        beanConfig.setResourcePackage("com.foo.rest.examples.dw.positiveinteger");
         beanConfig.setScan(true);
         environment.jersey().register(new io.swagger.jaxrs.listing.ApiListingResource());
         environment.jersey().register(new io.swagger.jaxrs.listing.SwaggerSerializers());
