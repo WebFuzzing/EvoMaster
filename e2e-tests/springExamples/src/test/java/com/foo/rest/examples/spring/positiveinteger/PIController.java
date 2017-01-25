@@ -2,9 +2,7 @@ package com.foo.rest.examples.spring.positiveinteger;
 
 import org.evomaster.clientJava.controller.RestController;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.context.embedded.AnnotationConfigEmbeddedWebApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.web.context.support.StandardServletEnvironment;
 
 import java.util.Map;
 

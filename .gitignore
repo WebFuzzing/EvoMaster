@@ -16,3 +16,4 @@ hs_err_pid*
 /.idea/
 *.iml
 /e2e-tests/dropwizardExamples/src/em/
+/e2e-tests/springExamples/src/em/
