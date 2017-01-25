@@ -32,6 +32,7 @@
         <dropwizard.version>1.0.5</dropwizard.version>
         <swagger-version>1.5.12</swagger-version>
         <springboot.version>1.4.3.RELEASE</springboot.version>
+        <springfox.version>2.6.1</springfox.version>
     </properties>
 
 
@@ -192,6 +193,16 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <version>${springboot.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger2</artifactId>
+                <version>${springfox.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-spring-web</artifactId>
+                <version>${springfox.version}</version>
             </dependency>
 
 

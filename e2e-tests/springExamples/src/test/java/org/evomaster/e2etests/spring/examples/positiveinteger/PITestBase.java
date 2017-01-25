@@ -22,43 +22,40 @@ public abstract class PITestBase {
     public static void initClass() throws Exception {
 
         PIController controller = new PIController();
-        baseUrlOfSut = controller.startSut(); //TODO
 
-        Thread.sleep(5_000);
+        embeddedStarter = new EmbeddedStarter(controller);
+        embeddedStarter.start();
 
-//        embeddedStarter = new EmbeddedStarter(controller);
-//        embeddedStarter.start();
-//
-//        controllerPort = embeddedStarter.getControllerServerJettyPort();
-//
-//        remoteController = new RemoteController("localhost", controllerPort);
-//        boolean started = remoteController.startSUT();
-//        assertTrue(started);
-//
-//        SutInfoDto dto = remoteController.getSutInfo();
-//        assertNotNull(dto);
-//
-//        baseUrlOfSut = dto.baseUrlOfSUT;
-//        assertNotNull(baseUrlOfSut);
-//
-//        System.out.println("Remote controller running on port "+ controllerPort);
+        controllerPort = embeddedStarter.getControllerServerJettyPort();
+
+        remoteController = new RemoteController("localhost", controllerPort);
+        boolean started = remoteController.startSUT();
+        assertTrue(started);
+
+        SutInfoDto dto = remoteController.getSutInfo();
+        assertNotNull(dto);
+
+        baseUrlOfSut = dto.baseUrlOfSUT;
+        assertNotNull(baseUrlOfSut);
+
+        System.out.println("Remote controller running on port "+ controllerPort);
         System.out.println("SUT listening on "+baseUrlOfSut);
     }
 
     @AfterAll
     public static void tearDown() {
-//
-//        boolean stopped = remoteController.stopSUT();
-//        stopped = embeddedStarter.stop() && stopped;
-//
-//        assertTrue(stopped);
+
+        boolean stopped = remoteController.stopSUT();
+        stopped = embeddedStarter.stop() && stopped;
+
+        assertTrue(stopped);
     }
 
 
     @BeforeEach
     public void initTest() {
 
-//        boolean reset = remoteController.resetSUT();
-//        assertTrue(reset);
+        boolean reset = remoteController.resetSUT();
+        assertTrue(reset);
     }
 }

@@ -62,6 +62,6 @@ public class PIController  extends RestController {
 
     @Override
     public String getUrlOfSwaggerJSON() {
-        return "TODO";
+        return "http://localhost:"+getSutPort()+"/v2/api-docs";
     }
 }

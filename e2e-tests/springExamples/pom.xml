@@ -33,6 +33,20 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-swagger2</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.swagger</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>io.springfox</groupId>
+            <artifactId>springfox-spring-web</artifactId>
+        </dependency>
 
         <!--<dependency>-->
             <!--<groupId>io.swagger</groupId>-->
@@ -42,10 +56,10 @@
             <!--<groupId>io.swagger</groupId>-->
             <!--<artifactId>swagger-hibernate-validations</artifactId>-->
         <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>io.swagger</groupId>-->
-            <!--<artifactId>swagger-parser</artifactId>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>io.swagger</groupId>
+            <artifactId>swagger-parser</artifactId>
+        </dependency>
 
 
         <dependency>

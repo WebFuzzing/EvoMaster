@@ -1,10 +1,13 @@
 package com.foo.rest.examples.spring.positiveinteger;
 
 
-//@ApiModel
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel
 public class PostDto {
 
-//    @ApiModelProperty("Value to check")
+    @ApiModelProperty("Value to check")
     public Integer value;
 
 

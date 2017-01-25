@@ -16,22 +16,22 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class PIManualTest extends PITestBase{
 
 
-//    @Test
-//    public void testSwaggerJSON() {
-//
-//        SutInfoDto dto = remoteController.getSutInfo();
-//
-//        String swaggerJson = given().accept(Formats.JSON_V1)
-//                .get(dto.swaggerJsonUrl)
-//                .then()
-//                .statusCode(200)
-//                .extract().asString();
-//
-//        Swagger swagger = new SwaggerParser().parse(swaggerJson);
-//
-//        assertEquals("/api", swagger.getBasePath());
-//        assertEquals(2, swagger.getPaths().size());
-//    }
+    @Test
+    public void testSwaggerJSON() {
+
+        SutInfoDto dto = remoteController.getSutInfo();
+
+        String swaggerJson = given().accept(Formats.JSON_V1)
+                .get(dto.swaggerJsonUrl)
+                .then()
+                .statusCode(200)
+                .extract().asString();
+
+        Swagger swagger = new SwaggerParser().parse(swaggerJson);
+
+        assertEquals("/", swagger.getBasePath());
+        assertEquals(2, swagger.getPaths().size());
+    }
 
     @Test
     public void testPost() {
