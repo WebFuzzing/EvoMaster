@@ -79,10 +79,15 @@ class RemoteController(val host: String, val port: Int) {
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
 
-        val response = getWebTarget()
-                .path(ControllerConstants.RUN_SUT_PATH)
-                .request()
-                .put(Entity.json(SutRunDto(run, reset)))
+        val response = try {
+            getWebTarget()
+                    .path(ControllerConstants.RUN_SUT_PATH)
+                    .request()
+                    .put(Entity.json(SutRunDto(run, reset)))
+        }catch (e: Exception){
+            log.warn("Failed to connect to SUT: ${e.message}")
+            return false
+        }
 
         val success = wasSuccess(response)
 
