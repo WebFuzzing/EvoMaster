@@ -1,6 +1,9 @@
 package org.evomaster.core
 
-import com.google.inject.*
+import com.google.inject.Injector
+import com.google.inject.Key
+import com.google.inject.Module
+import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.ControllerInfoDto
 import org.evomaster.core.output.TestSuiteWriter
@@ -9,7 +12,6 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.service.Randomness
 
 
 /**
@@ -23,6 +25,18 @@ class Main {
 
             try {
 
+                var parser = try {
+                    EMConfig.validateOptions(args)
+                } catch (e: Exception) {
+                    LoggingUtil.getInfoLogger().error("Invalid parameter settings: " + e.message)
+                    return
+                }
+
+                if (parser.parse(*args).has("help")) {
+                    parser.printHelpOn(System.out)
+                    return
+                }
+
                 initAndRun(args)
 
             } catch (e: Exception) {
@@ -32,7 +46,7 @@ class Main {
         }
 
         @JvmStatic
-        fun initAndRun(args: Array<String>) : Solution<*>{
+        fun initAndRun(args: Array<String>): Solution<*> {
 
             val injector = init(args)
 
@@ -46,7 +60,7 @@ class Main {
         }
 
 
-        fun init(args: Array<String>) : Injector{
+        fun init(args: Array<String>): Injector {
 
             val injector: Injector = LifecycleInjector.builder()
                     .withModules(* arrayOf<Module>(
@@ -58,7 +72,7 @@ class Main {
             return injector
         }
 
-        fun run(injector: Injector) : Solution<*>{
+        fun run(injector: Injector): Solution<*> {
 
             //TODO check algorithm and problem type
             val mio = injector.getInstance(Key.get(
@@ -69,7 +83,7 @@ class Main {
             return solution
         }
 
-        fun checkConnection(injector: Injector) : ControllerInfoDto{
+        fun checkConnection(injector: Injector): ControllerInfoDto {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -77,7 +91,7 @@ class Main {
 
             val dto = rc.getControllerInfo() ?:
                     throw IllegalStateException("Cannot retrieve Remote Controller info from "
-                    + config.sutControllerHost+":"+config.sutControllerPort)
+                            + config.sutControllerHost + ":" + config.sutControllerPort)
 
 
             //TODO check if the type of controller does match the output format
@@ -86,11 +100,11 @@ class Main {
         }
 
 
-        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto){
+        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if(! config.createTests){
+            if (!config.createTests) {
                 return
             }
 

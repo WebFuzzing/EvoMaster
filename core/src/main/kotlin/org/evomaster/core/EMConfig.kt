@@ -17,6 +17,22 @@ import kotlin.reflect.jvm.javaType
 class EMConfig {
 
     companion object {
+
+        fun validateOptions(args: Array<String>): OptionParser{
+
+            val config = EMConfig()
+
+            val parser = EMConfig.getOptionParser()
+            val options = parser.parse(*args)
+
+            if(!options.has("help")) {
+                config.updateProperties(options)
+            }
+
+            return parser
+        }
+
+
         /**
          * Get all available "console options" for the annotated properties
          */
@@ -25,6 +41,8 @@ class EMConfig {
             val defaultInstance = EMConfig()
 
             var parser = OptionParser()
+
+            parser.accepts("help").forHelp()
 
             getConfigurationProperties().forEach { m ->
                         /*
@@ -163,7 +181,7 @@ class EMConfig {
             "In JVM languages, if the name contains '.', folders will be created to represent " +
             "the given package structure")
     //TODO constrain of no spaces or weird characters, eg use regular expression
-    var testSuiteFileName = "EvoMasterTests"
+    var testSuiteFileName = "EvoMasterTest"
 
 
     @Cfg("The seed for the random generator used during the search. " +
