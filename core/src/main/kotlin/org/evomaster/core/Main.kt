@@ -28,7 +28,9 @@ class Main {
                 var parser = try {
                     EMConfig.validateOptions(args)
                 } catch (e: Exception) {
-                    LoggingUtil.getInfoLogger().error("Invalid parameter settings: " + e.message)
+                    LoggingUtil.getInfoLogger().error(
+                            "Invalid parameter settings: " + e.message +
+                                    "\nUse --help to see the available options")
                     return
                 }
 

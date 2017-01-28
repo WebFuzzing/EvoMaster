@@ -31,7 +31,7 @@
         <junit.platform.version>1.0.0-M3</junit.platform.version>
         <dropwizard.version>1.0.5</dropwizard.version>
         <swagger-version>1.5.12</swagger-version>
-        <springboot.version>1.4.3.RELEASE</springboot.version>
+        <springboot.version>1.4.4.RELEASE</springboot.version>
         <springfox.version>2.6.1</springfox.version>
     </properties>
 
