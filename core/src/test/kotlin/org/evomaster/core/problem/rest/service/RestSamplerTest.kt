@@ -22,6 +22,18 @@ internal class RestSamplerTest{
 
     @Disabled("This is a bug in Swagger Core, reported at https://github.com/swagger-api/swagger-core/issues/2100")
     @Test
+    fun testFeaturesServicesNull(){
+
+        val swagger = SwaggerParser().read("/features_service_null.json")
+
+        val sampler = RestSampler()
+        sampler.createActions(swagger)
+
+        val actions = sampler.seeAvailableActions()
+        assertEquals(18, actions.size)
+    }
+
+    @Test
     fun testFeaturesServices(){
 
         val swagger = SwaggerParser().read("/features_service.json")

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -11,6 +12,7 @@ import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
+import javax.ws.rs.core.MediaType
 
 
 class RestFitness : FitnessFunction<RestIndividual>() {
@@ -92,14 +94,19 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val builder = client.target(baseUrl + path).request()
 
         /*
-                    TODO: need to handle also other formats, not just JSON
-                 */
+           TODO: need to handle also other formats, not just JSON
+           and forms
+         */
         val body = a.parameters.find { p -> p is BodyParam }
-        val bodyEntity = if (body != null) {
-            Entity.json(body.gene.getValueAsString())
-        } else {
-            Entity.json("")
+        val forms = a.parameters.filter { p -> p is FormParam }.map { p -> p.gene.getValueAsString()}
+                .joinToString("&")
+
+        val bodyEntity = when{
+            body != null ->  Entity.json(body.gene.getValueAsString())
+            ! forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            else -> Entity.json("") //FIXME
         }
+
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()

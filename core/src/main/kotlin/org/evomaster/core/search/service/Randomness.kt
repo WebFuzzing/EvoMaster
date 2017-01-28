@@ -48,6 +48,8 @@ class Randomness {
         return k
     }
 
+    fun nextLong() = random.nextLong()
+
     fun nextInt(min: Int, max: Int): Int {
         if (min == max) {
             return min

@@ -8,10 +8,7 @@ import io.swagger.models.parameters.BodyParameter
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Sampler
 import javax.annotation.PostConstruct
@@ -91,7 +88,7 @@ class RestSampler : Sampler<RestIndividual>() {
                     "query" -> params.add(QueryParam(name, gene))
                     "path" -> params.add(PathParam(name, gene))
                     "header" -> throw IllegalStateException("TODO header")
-                    "formData" -> throw IllegalStateException("TODO formData")
+                    "formData" -> params.add(FormParam(name, gene))
                     else -> throw IllegalStateException("Unrecognized: " + p.getIn())
                 }
 
@@ -143,10 +140,12 @@ class RestSampler : Sampler<RestIndividual>() {
         //first check for format
         when (format) {
             "int32" -> return IntegerGene(name)
+            "int64" -> return LongGene(name)
         }
 
         when (type) {
             "boolean" -> return BooleanGene(name)
+            "string" -> return StringGene(name)
         }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")
