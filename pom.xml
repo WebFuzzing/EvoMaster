@@ -17,7 +17,7 @@
 
     <licenses>
         <license>
-            <name> GNU Lesser General Public License (LGPL), version 3</name>
+            <name>GNU Lesser General Public License (LGPL), version 3</name>
             <url>http://www.gnu.org/licenses/lgpl-3.0.en.html</url>
             <distribution>repo</distribution>
         </license>
@@ -290,7 +290,9 @@
                     <executions>
                         <execution>
                             <id>compile</id>
-                            <goals> <goal>compile</goal> </goals>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
                             <configuration>
                                 <sourceDirs>
                                     <sourceDir>${project.basedir}/src/main/kotlin</sourceDir>
@@ -300,7 +302,9 @@
                         </execution>
                         <execution>
                             <id>test-compile</id>
-                            <goals> <goal>test-compile</goal> </goals>
+                            <goals>
+                                <goal>test-compile</goal>
+                            </goals>
                             <configuration>
                                 <sourceDirs>
                                     <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
@@ -335,12 +339,16 @@
                         <execution>
                             <id>java-compile</id>
                             <phase>compile</phase>
-                            <goals> <goal>compile</goal> </goals>
+                            <goals>
+                                <goal>compile</goal>
+                            </goals>
                         </execution>
                         <execution>
                             <id>java-test-compile</id>
                             <phase>test-compile</phase>
-                            <goals> <goal>testCompile</goal> </goals>
+                            <goals>
+                                <goal>testCompile</goal>
+                            </goals>
                         </execution>
                     </executions>
                 </plugin>
@@ -357,6 +365,13 @@
                             </goals>
                         </execution>
                     </executions>
+                </plugin>
+
+                <!-- To create self-executable uber/fat jars -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.6</version>
                 </plugin>
 
             </plugins>
