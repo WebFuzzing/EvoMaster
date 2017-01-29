@@ -8,4 +8,11 @@ public class ControllerInfoDto {
      * will instantiate and start the controller directly
      */
     public String fullName;
+
+
+    /**
+     * Whether the system under test is running with instrumentation
+     * to collect data about its execution
+     */
+    public Boolean isInstrumentationOn;
 }

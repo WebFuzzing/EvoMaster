@@ -47,6 +47,7 @@ public class EMController {
 
         ControllerInfoDto dto = new ControllerInfoDto();
         dto.fullName = restController.getClass().getName();
+        dto.isInstrumentationOn = restController.isInstrumentationActivated();
 
         return dto;
     }

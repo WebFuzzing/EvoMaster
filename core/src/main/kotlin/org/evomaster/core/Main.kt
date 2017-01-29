@@ -41,6 +41,8 @@ class Main {
 
                 initAndRun(args)
 
+                LoggingUtil.getInfoLogger().info("EvoMaster process has completed successfully")
+
             } catch (e: Exception) {
                 LoggingUtil.getInfoLogger()
                         .error("ERROR: EvoMaster process terminated abruptly. Message: " + e.message, e)
@@ -69,7 +71,8 @@ class Main {
                             BaseModule(args),
                             RestModule()
                     ))
-                    .build().createInjector()
+                    .build()
+                    .createInjector()
 
             return injector
         }
@@ -80,10 +83,12 @@ class Main {
             val mio = injector.getInstance(Key.get(
                     object : TypeLiteral<MioAlgorithm<RestIndividual>>() {}))
 
+            LoggingUtil.getInfoLogger().info("Starting to generate test cases")
             val solution = mio.search()
 
             return solution
         }
+
 
         fun checkConnection(injector: Injector): ControllerInfoDto {
 
@@ -95,6 +100,9 @@ class Main {
                     throw IllegalStateException("Cannot retrieve Remote Controller info from "
                             + config.sutControllerHost + ":" + config.sutControllerPort)
 
+            if(! dto.isInstrumentationOn){
+                LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
+            }
 
             //TODO check if the type of controller does match the output format
 
@@ -109,6 +117,11 @@ class Main {
             if (!config.createTests) {
                 return
             }
+
+            val n = solution.individuals.size
+            val tests = if(n == 1) "1 test" else "$n tests"
+
+            LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             TestSuiteWriter.writeTests(
                     solution,

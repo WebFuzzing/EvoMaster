@@ -19,6 +19,9 @@ public class InstrumentingAgent {
      */
     private static Instrumentator instrumentator;
 
+    private static boolean active = false;
+
+
     /**
      * Actual method that is going to be called when the JavaAgent is started
      * @param agentArgs in this case, the {@code packagePrefixesToCover}
@@ -27,6 +30,11 @@ public class InstrumentingAgent {
     public static void agentmain(String agentArgs, Instrumentation inst) {
         instrumentator = new Instrumentator(agentArgs);
         inst.addTransformer(new TransformerForTests());
+        active = true;
+    }
+
+    public static boolean isActive(){
+        return active;
     }
 
 

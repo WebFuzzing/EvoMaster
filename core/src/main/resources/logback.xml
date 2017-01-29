@@ -8,7 +8,7 @@
 
     <appender name="INFO_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%msg%n</pattern>
+            <pattern>* %msg%n</pattern>
         </encoder>
     </appender>
 

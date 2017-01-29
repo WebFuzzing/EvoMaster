@@ -3,6 +3,7 @@ package org.evomaster.clientJava.controller;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.EMControllerApplication;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
+import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 
 /**
@@ -93,10 +94,30 @@ public abstract class RestController {
      * bytecode instrumentation should be on.
      * <br>
      * This method must be blocking.
+     * <br>
+     * Note: by default, this method does not do any instrumentation,
+     * and just call {@code startSut()}. When the SUT is run on the
+     * same process (ie embedded), use {@code EmbeddedStarter}.
+     * This method needs to be overwritten only when the SUT is
+     * started in a new process.
      *
+     * @return the base URL of the running SUT, eg "http://localhost:8080"
+     */
+    public String startInstrumentedSut(){
+        return startSut();
+    }
+
+    /**
+     * Check if bytecode instrumentation is on.
+     * <br>
+     * This method needs to be overwritten if SUT is started in
+     * a new process.
      * @return
      */
-    public abstract String startInstrumentedSut();
+    public boolean isInstrumentationActivated(){
+        return InstrumentingAgent.isActive();
+    }
+
 
     public abstract boolean isSutRunning();
 
