@@ -12,6 +12,8 @@
         </encoder>
     </appender>
 
+    <!-- Avoid annoying and pointless WARN messages from Governator -->
+    <logger name="com.netflix.governator.lifecycle.ClasspathScanner" level="ERROR" />
 
     <root level="warn">
         <appender-ref ref="REGULAR_STDOUT" />

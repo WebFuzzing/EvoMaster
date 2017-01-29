@@ -100,7 +100,7 @@ class Main {
                     throw IllegalStateException("Cannot retrieve Remote Controller info from "
                             + config.sutControllerHost + ":" + config.sutControllerPort)
 
-            if(! dto.isInstrumentationOn){
+            if(! (dto.isInstrumentationOn ?: false)){
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
             }
 
