@@ -55,6 +55,8 @@ class RestPath(val path: String) {
 
         //make sure to remove unnecessary repeated /
         resolvedPath = resolvedPath.replace("//","/")
+        resolvedPath = resolvedPath.replace("//","/")
+
         if(! resolvedPath.startsWith("/")){
             resolvedPath = "/" + resolvedPath
         }
