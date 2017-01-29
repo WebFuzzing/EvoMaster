@@ -13,6 +13,9 @@ class RestPath(val path: String) {
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
     }
 
+    override fun toString(): String {
+        return path
+    }
 
     /**
      * Return a resolved path (starting with "/") based on input parameters.

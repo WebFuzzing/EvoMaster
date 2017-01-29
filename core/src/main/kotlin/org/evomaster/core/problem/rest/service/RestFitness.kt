@@ -76,8 +76,33 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             fv.updateTarget(t.id, t.value)
         }
 
+        //TODO objectives for response, eg status
+        // likely we ll need to use negative ids
+
+        handleResponseTargets(fv, individual.actions, actionResults)
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+    }
+
+    /**
+     * Create local targets for each HTTP status code in each
+     * API entry point
+     */
+    private fun handleResponseTargets(
+            fv: FitnessValue,
+            actions: MutableList<RestAction>,
+            actionResults: MutableList<ActionResult>) {
+
+        (0..actions.size-1)
+                .filter { actions[it] is RestCallAction }
+                .filter { actionResults[it] is RestCallResult}
+                .forEach {
+                    val status = (actionResults[it] as RestCallResult)
+                            .getStatusCode() ?: -1
+                    val desc = "$status:${actions[it].getName()}"
+                    val id = idMapper.handleLocalTarget(desc)
+                    fv.updateTarget(id, 1.0)
+                }
     }
 
 
@@ -132,8 +157,5 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         actionResults.add(rcr)
-
-        //TODO objectives for response, eg status
-        // likely we ll need to use negative ids
     }
 }

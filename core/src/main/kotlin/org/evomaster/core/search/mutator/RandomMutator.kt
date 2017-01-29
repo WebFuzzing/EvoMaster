@@ -15,6 +15,10 @@ class RandomMutator<T> : Mutator<T>() where T: Individual {
 
         val genes = copy.seeGenes().filter(Gene::isMutable)
 
+        if(genes.isEmpty()){
+            return copy
+        }
+
         var mutated = false
 
         while(! mutated) { //no point in returning a copy that is not mutated
