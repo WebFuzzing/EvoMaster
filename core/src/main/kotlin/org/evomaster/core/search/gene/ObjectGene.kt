@@ -3,7 +3,7 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.Randomness
 
 
-class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
+open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
 
     override fun copy(): Gene {
         return ObjectGene(name, fields.map(Gene::copy))
@@ -22,7 +22,9 @@ class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         val buffer = StringBuffer()
         buffer.append("{")
 
-        fields.map { f ->
+        fields.filter {
+            f -> f !is CycleObjectGene
+        }.map { f ->
             """
             "${f.name}":${f.getValueAsString()}
             """

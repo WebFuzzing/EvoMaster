@@ -5,12 +5,17 @@ import io.swagger.models.Operation
 import io.swagger.models.Swagger
 import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
+import io.swagger.models.properties.ArrayProperty
+import io.swagger.models.properties.Property
+import io.swagger.models.properties.RefProperty
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Sampler
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -18,6 +23,10 @@ import javax.ws.rs.core.Response
 
 
 class RestSampler : Sampler<RestIndividual>() {
+
+    companion object {
+        val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
+    }
 
     @PostConstruct
     private fun initialize() {
@@ -63,9 +72,10 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
 
-
-    private fun extractParams(o: Map.Entry<HttpMethod, Operation>, swagger: Swagger)
-            : MutableList<Param> {
+    private fun extractParams(
+            o: Map.Entry<HttpMethod, Operation>,
+            swagger: Swagger
+    ): MutableList<Param> {
 
         val params: MutableList<Param> = mutableListOf()
 
@@ -73,16 +83,22 @@ class RestSampler : Sampler<RestIndividual>() {
 
             val name = p.name ?: "undefined"
 
-
             if (p is AbstractSerializableParameter<*>) {
                 //TODO: int64, double and float, and constraints
                 //TODO: format is optional, but type is mandatory
                 //TODO: see http://swagger.io/specification/
 
-                var gene = getGene(name, p.getType(), p.getFormat())
+                val type = p.getType() ?: run {
+                    log.warn("Missing/invalid type in Swagger file. Using default 'string'")
+                    "string"
+                }
+
+                var gene = getGene(name, type, p.getFormat(), swagger)
                 if (!p.required) {
                     gene = OptionalGene(name, gene)
                 }
+
+                //TODO could exploit "x-example" if available in Swagger
 
                 when (p.`in`) {
                     "query" -> params.add(QueryParam(name, gene))
@@ -95,28 +111,64 @@ class RestSampler : Sampler<RestIndividual>() {
             } else if (p is BodyParameter) {
 
                 val ref = p.schema.reference
-                val classDef = ref.substring(ref.lastIndexOf("/") + 1)
 
-                val model = swagger.definitions[classDef] ?:
-                        throw IllegalStateException("No $classDef among the object definitions")
-
-                val fields: MutableList<Gene> = mutableListOf()
-
-                model.properties.entries.forEach { o ->
-                    fields.add(getGene(o.key, o.value.type, o.value.format))
-                }
-
-                params.add(BodyParam(ObjectGene("body", fields)))
+                params.add(BodyParam(
+                        getObjectGene("body", ref, swagger)))
             }
         }
 
         return params
     }
 
+    private fun getObjectGene(name: String,
+                              reference: String,
+                              swagger: Swagger,
+                              history: MutableList<String> = mutableListOf()
+    ): ObjectGene {
+
+        if (history.contains(reference)) {
+            return CycleObjectGene("Cycle for: $reference")
+        }
+        history.add(reference)
+
+        //token after last /
+        val classDef = reference.substring(reference.lastIndexOf("/") + 1)
+
+        val model = swagger.definitions[classDef] ?:
+                throw IllegalStateException("No $classDef among the object definitions")
+
+        //TODO referenced types might not necessarily objects???
+
+        val fields: MutableList<Gene> = mutableListOf()
+
+        model.properties.entries.forEach { o ->
+            val gene = getGene(
+                    o.key,
+                    o.value.type,
+                    o.value.format,
+                    swagger,
+                    o.value,
+                    history)
+
+            if(gene !is CycleObjectGene) {
+                fields.add(gene)
+            }
+        }
+
+        return ObjectGene(name, fields)
+    }
+
     /**
      * type is mandatory, whereas format is optional
      */
-    private fun getGene(name: String, type: String, format: String?): Gene {
+    private fun getGene(
+            name: String,
+            type: String,
+            format: String?,
+            swagger: Swagger,
+            property: Property? = null,
+            history: MutableList<String> = mutableListOf()
+    ): Gene {
 
         /*
         http://swagger.io/specification/#dataTypeFormat
@@ -144,8 +196,38 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         when (type) {
+            "integer" -> return IntegerGene(name)
             "boolean" -> return BooleanGene(name)
             "string" -> return StringGene(name)
+            "ref" -> {
+                if (property == null) {
+                    //TODO somehow will need to handle it
+                    throw IllegalStateException("Cannot handle ref out of a property")
+                }
+                val rp = property as RefProperty
+                return getObjectGene(rp.simpleRef, rp.`$ref`, swagger, history)
+            }
+            "array" -> {
+                if (property == null) {
+                    //TODO somehow will need to handle it
+                    throw IllegalStateException("Cannot handle array out of a property")
+                }
+                val ap = property as ArrayProperty
+                val items = ap.items
+                val template = getGene(
+                        name + "_item",
+                        items.type,
+                        items.format,
+                        swagger,
+                        items,
+                        history)
+
+                if(template is CycleObjectGene){
+                    return CycleObjectGene("<array> ${template.name}")
+                }
+
+                return ArrayGene(name, template)
+            }
         }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")

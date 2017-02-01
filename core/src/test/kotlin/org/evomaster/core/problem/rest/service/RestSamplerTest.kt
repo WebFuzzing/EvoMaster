@@ -44,4 +44,17 @@ internal class RestSamplerTest{
         val actions = sampler.seeAvailableActions()
         assertEquals(18, actions.size)
     }
+
+    @Test
+    fun testScoutApi(){
+
+        val swagger = SwaggerParser().read("/scout-api.json")
+
+        val sampler = RestSampler()
+        sampler.createActions(swagger)
+
+        val actions = sampler.seeAvailableActions()
+        assertEquals(49, actions.size)
+    }
+
 }
