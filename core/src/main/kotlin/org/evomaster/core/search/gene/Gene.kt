@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
  * A building block representing one part of an Individual.
  * The terms "gene" comes from the evolutionary algorithm literature
  */
-abstract class Gene(val name: String) {
+abstract class Gene(var name: String) {
 
     init{
         if(name.isBlank()){

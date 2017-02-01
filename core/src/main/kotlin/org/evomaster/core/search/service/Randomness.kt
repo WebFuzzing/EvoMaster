@@ -33,6 +33,10 @@ class Randomness {
 
     fun nextInt() = random.nextInt()
 
+    fun nextDouble() = random.nextDouble()
+
+    fun nextFloat() = random.nextFloat()
+
     fun nexInt(bound: Int) = random.nextInt(bound)
 
     fun nextInt(min: Int, max: Int, exclude: Int): Int {

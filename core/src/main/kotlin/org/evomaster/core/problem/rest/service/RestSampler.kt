@@ -5,9 +5,7 @@ import io.swagger.models.Operation
 import io.swagger.models.Swagger
 import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
-import io.swagger.models.properties.ArrayProperty
-import io.swagger.models.properties.Property
-import io.swagger.models.properties.RefProperty
+import io.swagger.models.properties.*
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.core.problem.rest.*
@@ -89,7 +87,7 @@ class RestSampler : Sampler<RestIndividual>() {
                 //TODO: see http://swagger.io/specification/
 
                 val type = p.getType() ?: run {
-                    log.warn("Missing/invalid type in Swagger file. Using default 'string'")
+                    log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
                     "string"
                 }
 
@@ -139,9 +137,11 @@ class RestSampler : Sampler<RestIndividual>() {
 
         //TODO referenced types might not necessarily objects???
 
+        //TODO need to handle additionalProperties
+
         val fields: MutableList<Gene> = mutableListOf()
 
-        model.properties.entries.forEach { o ->
+        model.properties?.entries?.forEach { o ->
             val gene = getGene(
                     o.key,
                     o.value.type,
@@ -193,6 +193,11 @@ class RestSampler : Sampler<RestIndividual>() {
         when (format) {
             "int32" -> return IntegerGene(name)
             "int64" -> return LongGene(name)
+            "double" -> return DoubleGene(name)
+            "float"  -> return FloatGene(name)
+            else -> if(format!=null) {
+                log.warn("Unhandled format '$format'")
+            }
         }
 
         when (type) {
@@ -227,6 +232,49 @@ class RestSampler : Sampler<RestIndividual>() {
                 }
 
                 return ArrayGene(name, template)
+            }
+            "object" ->{
+                if (property == null) {
+                    //TODO somehow will need to handle it
+                    throw IllegalStateException("Cannot handle array out of a property")
+                }
+                if(property is MapProperty){
+                    val ap = property.additionalProperties
+                    val template = getGene(
+                            name + "_map",
+                            ap.type,
+                            ap.format,
+                            swagger,
+                            ap,
+                            history)
+
+                    if(template is CycleObjectGene){
+                        return CycleObjectGene("<map> ${template.name}")
+                    }
+
+                    return MapGene(name, template)
+                }
+                if(property is ObjectProperty){
+
+                    //TODO refactor the copy&paste
+                    val fields: MutableList<Gene> = mutableListOf()
+
+                    property.properties.entries.forEach { o ->
+                        val gene = getGene(
+                                o.key,
+                                o.value.type,
+                                o.value.format,
+                                swagger,
+                                o.value,
+                                history)
+
+                        if(gene !is CycleObjectGene) {
+                            fields.add(gene)
+                        }
+                    }
+
+                    return ObjectGene(name, fields)
+                }
             }
         }
 
