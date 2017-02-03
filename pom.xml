@@ -226,6 +226,17 @@
                 <version>${dropwizard.version}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-jetty</artifactId>
+                <version>${dropwizard.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
             <!-- Spring -->
             <dependency>
