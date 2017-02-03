@@ -29,12 +29,13 @@
         <kotlin.version>1.0.6</kotlin.version>
         <junit.jupiter.version>5.0.0-M3</junit.jupiter.version>
         <junit.platform.version>1.0.0-M3</junit.platform.version>
-        <dropwizard.version>1.0.5</dropwizard.version>
+        <dropwizard.version>1.0.6</dropwizard.version>
         <swagger-version>1.5.12</swagger-version>
-        <springboot.version>1.4.4.RELEASE</springboot.version>
+        <springboot.version>1.5.1.RELEASE</springboot.version>
         <springfox.version>2.6.1</springfox.version>
         <jetty.version>9.4.1.v20170120</jetty.version>
         <jersey.version>2.25</jersey.version>
+        <javax.el.version>2.2.4</javax.el.version>
     </properties>
 
 
@@ -97,12 +98,17 @@
             <dependency>
                 <groupId>javax.el</groupId>
                 <artifactId>javax.el-api</artifactId>
-                <version>2.2.4</version>
+                <version>${javax.el.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.web</groupId>
+                <artifactId>javax.el</artifactId>
+                <version>${javax.el.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.2.4.Final</version>
+                <version>5.4.0.Final</version>
             </dependency>
             <dependency> <!-- For dependency injection -->
                 <groupId>com.google.inject</groupId>
