@@ -1,10 +1,18 @@
 package org.evomaster.clientJava.controller;
 
+import org.eclipse.jetty.server.AbstractNetworkConnector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
-import org.evomaster.clientJava.controller.internal.EMControllerApplication;
+import org.evomaster.clientJava.controller.internal.EMController;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
+
+import java.net.InetSocketAddress;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -17,43 +25,36 @@ public abstract class RestController {
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
-    private final EMControllerApplication controllerServer = new EMControllerApplication(this);
+    private Server controllerServer;
 
     /**
      * Start the controller as a RESTful server.
      * Use the setters of this class to change the default
      * port and host.
      * <br>
-     * This method is blocking.
+     * This method is blocking until the server is initialized.
      */
     public boolean startTheControllerServer() {
 
+
+        controllerServer = new Server(InetSocketAddress.createUnresolved(
+                getControllerHost(), getControllerPort()));
+
+        ResourceConfig config = new ResourceConfig();
+        config.register(new EMController(this));
+
+        ServletHolder servlet = new ServletHolder(new ServletContainer(config));
+
+        ServletContextHandler context = new ServletContextHandler(controllerServer,
+                ControllerConstants.BASE_PATH + "/*");
+        context.addServlet(servlet, "/*");
+
+
         try {
-            controllerServer.run("server");
+            controllerServer.start();
         } catch (Exception e) {
-            SimpleLogger.error("Failed to start controller server", e);
-            return false;
-        }
-
-        /*
-            Again, very ugly code...
-            starting to think if should just get rid off Dropwizard,
-            and use directly Jackson with Jetty, eg
-
-            http://nikgrozev.com/2014/10/16/rest-with-embedded-jetty-and-jersey-in-a-single-jar-step-by-step/
-         */
-
-
-        try {
-            Thread.sleep(3_000);
-        } catch (InterruptedException e) {
-        }
-
-        while (!controllerServer.getJettyServer().isStarted()) {
-            try {
-                Thread.sleep(1_000);
-            } catch (InterruptedException e) {
-            }
+            SimpleLogger.error("Failed to start Jetty: " + e.getMessage());
+            controllerServer.destroy();
         }
 
         /*
@@ -69,14 +70,20 @@ public abstract class RestController {
     }
 
     public boolean stopTheControllerServer() {
-        return controllerServer.stopJetty();
+        try {
+            controllerServer.stop();
+            return true;
+        } catch (Exception e) {
+            SimpleLogger.error(e.toString());
+            return false;
+        }
     }
 
     /**
      * @return the actual port in use (eg, if it was an ephemeral 0)
      */
     public int getControllerServerJettyPort() {
-        return controllerServer.getJettyPort();
+        return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();
     }
 
 
@@ -103,7 +110,7 @@ public abstract class RestController {
      *
      * @return the base URL of the running SUT, eg "http://localhost:8080"
      */
-    public String startInstrumentedSut(){
+    public String startInstrumentedSut() {
         return startSut();
     }
 
@@ -112,9 +119,10 @@ public abstract class RestController {
      * <br>
      * This method needs to be overwritten if SUT is started in
      * a new process.
+     *
      * @return
      */
-    public boolean isInstrumentationActivated(){
+    public boolean isInstrumentationActivated() {
         return InstrumentingAgent.isActive();
     }
 

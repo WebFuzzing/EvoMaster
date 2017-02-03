@@ -33,6 +33,8 @@
         <swagger-version>1.5.12</swagger-version>
         <springboot.version>1.4.4.RELEASE</springboot.version>
         <springfox.version>2.6.1</springfox.version>
+        <jetty.version>9.4.1.v20170120</jetty.version>
+        <jersey.version>2.25</jersey.version>
     </properties>
 
 
@@ -91,20 +93,6 @@
             </dependency>
 
 
-            <!--
-                TODO: few issues with Jackson, which is brought in by
-                Dropwizard, Swagger and Governator.
-                Should include it on its own, and do <exclude> on
-                those libraries.
-                Same for hibernate-validator
-            -->
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-json-jackson</artifactId>
-                <version>2.25</version>
-            </dependency>
-
-
             <!-- Misc -->
             <dependency>
                 <groupId>javax.el</groupId>
@@ -152,11 +140,7 @@
                 <artifactId>jopt-simple</artifactId>
                 <version>6.0-alpha-1</version>
             </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.core</groupId>
-                <artifactId>jersey-client</artifactId>
-                <version>2.25</version>
-            </dependency>
+
 
             <!-- Logging -->
             <dependency>
@@ -169,6 +153,60 @@
                 <artifactId>logback-classic</artifactId>
                 <version>1.1.9</version>
             </dependency>
+
+
+            <!-- Jetty -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
+            <!-- Jersey -->
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-servlet-core</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId>
+                <artifactId>jersey-container-jetty-http</artifactId>
+                <version>${jersey.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.jetty</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!--
+                 TODO: few issues with Jackson, which is brought in by
+                 Dropwizard, Swagger and Governator.
+                 Should include it on its own, and do <exclude> on
+                 those libraries.
+                 Same for hibernate-validator
+             -->
+            <dependency>
+                <groupId>org.glassfish.jersey.media</groupId>
+                <artifactId>jersey-media-json-jackson</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+
 
 
             <!-- DropWizard -->

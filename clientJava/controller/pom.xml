@@ -26,16 +26,37 @@
             <groupId>org.evomaster.clientJava</groupId>
             <artifactId>instrumentation</artifactId>
         </dependency>
+
+        <!-- TODO recall to shade the following, if possible -->
         <dependency>
             <groupId>com.ea.agentloader</groupId>
             <artifactId>ea-agent-loader</artifactId>
         </dependency>
-
-        <!-- TODO: recall to shade it -->
         <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-core</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-jetty-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+        </dependency>
+
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
