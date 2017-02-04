@@ -293,7 +293,7 @@ class RestSampler : Sampler<RestIndividual>() {
                 .get()
 
         if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            throw IllegalStateException("Cannot retrieve Swagger JSON data")
+            throw IllegalStateException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
         }
 
         val json = response.readEntity(String::class.java)

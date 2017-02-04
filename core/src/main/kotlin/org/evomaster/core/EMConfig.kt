@@ -165,7 +165,7 @@ class EMConfig {
 
 
     @Cfg("Specify in which format the tests should be outputted")
-    var outputFormat = OutputFormat.JAVA_JUNIT_5
+    var outputFormat = OutputFormat.JAVA_JUNIT_4
 
 
     @Cfg("Specify if test classes should be created as output of the tool. " +

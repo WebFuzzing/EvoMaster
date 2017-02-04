@@ -10,8 +10,6 @@ class TestCaseWriter {
 
     companion object {
 
-        val indent = "    ";
-
         fun convertToCompilableTestCode(
                 format: OutputFormat,
                 test: TestCase,

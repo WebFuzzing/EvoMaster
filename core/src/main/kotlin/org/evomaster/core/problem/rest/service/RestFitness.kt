@@ -8,6 +8,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
@@ -27,6 +28,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     @PostConstruct
     private fun initialize() {
+
+        //workaround bug in Jersey client
+        client.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
 
         rc = RemoteController(configuration.sutControllerHost, configuration.sutControllerPort)
 

@@ -25,10 +25,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         fields.filter {
             f -> f !is CycleObjectGene
         }.map { f ->
-            """
-            "${f.name}":${f.getValueAsString()}
-            """
-        }.joinTo(buffer, ",")
+            "\"${f.name}\":${f.getValueAsString()}"
+        }.joinTo(buffer, ", ")
 
         buffer.append("}")
 

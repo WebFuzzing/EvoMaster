@@ -92,12 +92,20 @@ class TestSuiteWriter {
                 addImport("org.junit.jupiter.api.BeforeAll", buffer, format)
                 addImport("org.junit.jupiter.api.BeforeEach", buffer, format)
                 addImport("org.junit.jupiter.api.Test", buffer, format)
+                addImport("static org.junit.jupiter.api.Assertions.*", buffer, format)
+            }
+            if(format.isJUnit4()){
+                addImport("org.junit.AfterClass", buffer, format)
+                addImport("org.junit.BeforeClass", buffer, format)
+                addImport("org.junit.Before", buffer, format)
+                addImport("org.junit.Test", buffer, format)
+                addImport("static org.junit.Assert.*", buffer, format)
             }
 
             //TODO check if those are used
             addImport("static io.restassured.RestAssured.given", buffer, format)
             addImport("static org.hamcrest.core.Is.is", buffer, format)
-            addImport("static org.junit.jupiter.api.Assertions.*", buffer, format)
+
 
             newLines(2, buffer)
 
@@ -120,8 +128,10 @@ class TestSuiteWriter {
             methodLine("private static String $baseUrlOfSut;", buffer)
             newLines(2, buffer)
 
-
-            methodLine("@BeforeAll", buffer)
+            when{
+                format.isJUnit4() -> methodLine("@BeforeClass", buffer)
+                format.isJUnit5() -> methodLine("@BeforeAll", buffer)
+            }
             methodLine("public static void initClass() {", buffer)
             blockLine("baseUrlOfSut = $controller.startSut();",buffer)
             blockLine("assertNotNull(baseUrlOfSut);", buffer)
@@ -129,14 +139,20 @@ class TestSuiteWriter {
             newLines(2, buffer)
 
 
-            methodLine("@AfterAll", buffer)
+            when{
+                format.isJUnit4() -> methodLine("@AfterClass", buffer)
+                format.isJUnit5() -> methodLine("@AfterAll", buffer)
+            }
             methodLine("public static void tearDown() {", buffer)
             blockLine("$controller.stopSut();", buffer)
             methodLine("}", buffer)
             newLines(2, buffer)
 
 
-            methodLine("@BeforeEach", buffer)
+            when{
+                format.isJUnit4() -> methodLine("@Before", buffer)
+                format.isJUnit5() -> methodLine("@BeforeEach", buffer)
+            }
             methodLine("public void initTest() {", buffer)
             blockLine("$controller.resetStateOfSUT();", buffer)
             methodLine("}", buffer)
