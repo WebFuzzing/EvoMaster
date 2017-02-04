@@ -29,6 +29,8 @@ class Main {
 
             try {
 
+                printLogo()
+
                 /*
                     Before running anything, check if the input
                     configurations are valid
@@ -55,6 +57,21 @@ class Main {
                 LoggingUtil.getInfoLogger()
                         .error("ERROR: EvoMaster process terminated abruptly. Message: " + e.message, e)
             }
+        }
+
+        private fun printLogo(){
+
+            LoggingUtil.getInfoLogger().info(
+                    """
+ _____          ___  ___          _
+|  ___|         |  \/  |         | |
+| |____   _____ | .  . | __ _ ___| |_ ___ _ __
+|  __\ \ / / _ \| |\/| |/ _` / __| __/ _ \ '__|
+| |___\ V / (_) | |  | | (_| \__ \ ||  __/ |
+\____/ \_/ \___/\_|  |_/\__,_|___/\__\___|_|
+
+                    """
+            )
         }
 
         @JvmStatic
