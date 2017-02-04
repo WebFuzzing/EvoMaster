@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
@@ -51,14 +52,20 @@ class Statistics {
         return list
     }
 
+
     private fun errors5xx(solution: Solution<*>): Int {
 
+        //count the distinct number of API paths for which we have a 5xx
         return solution.individuals
-                .filter { i ->
-                    i.results.any {
-                        a ->
-                        a is RestCallResult && a.hasErrorCode()
-                    }
-                }.count()
+                .flatMap { i -> i.evaluatedActions() }
+                .filter {
+                    ea ->
+                    ea.result is RestCallResult && ea.result.hasErrorCode()
+                }
+                .map {
+                    ea -> ea.action.getName()
+                }
+                .distinct()
+                .count()
     }
 }
