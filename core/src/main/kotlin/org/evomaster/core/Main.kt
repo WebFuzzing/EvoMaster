@@ -20,11 +20,18 @@ import org.evomaster.core.search.algorithms.MioAlgorithm
 class Main {
     companion object {
 
+        /**
+         * Main entry point of the EvoMaster application
+         */
         @JvmStatic
         fun main(args: Array<String>) {
 
             try {
 
+                /*
+                    Before running anything, check if the input
+                    configurations are valid
+                 */
                 var parser = try {
                     EMConfig.validateOptions(args)
                 } catch (e: Exception) {
