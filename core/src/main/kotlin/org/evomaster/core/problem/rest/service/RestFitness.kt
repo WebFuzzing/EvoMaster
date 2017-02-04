@@ -123,8 +123,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val builder = client.target(baseUrl + path).request()
 
         /*
-           TODO: need to handle also other formats, not just JSON
-           and forms
+            TODO: need to handle "accept" of returned resource
+         */
+
+        /*
+           TODO: need to handle also other formats in the body,
+           not just JSON and forms
          */
         val body = a.parameters.find { p -> p is BodyParam }
         val forms = a.parameters.filter { p -> p is FormParam }.map { p -> p.gene.getValueAsString()}

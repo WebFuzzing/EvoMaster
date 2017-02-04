@@ -59,6 +59,7 @@ class TestCaseWriter {
             lines.add("            " + list[list.lastIndex] + ";")
         }
 
+
         private fun restAssureMethods(
                 call: RestCallAction,
                 res: RestCallResult,
@@ -67,9 +68,14 @@ class TestCaseWriter {
 
             val list: MutableList<String> = mutableListOf()
 
-            res.getBodyType()?.let {
-                list.add(".accept(\"$it\")")
-            }
+            /*
+             *  Note: using the type in result body is wrong:
+             *  if you request a JSON but make an error, you might
+             *  get back a text/plain with an explanation
+             *
+             *  TODO: get the type from the REST call
+             */
+            list.add(".accept(\"*/*\")")
 
             call.parameters.find { p -> p is BodyParam }
                     ?.let {
