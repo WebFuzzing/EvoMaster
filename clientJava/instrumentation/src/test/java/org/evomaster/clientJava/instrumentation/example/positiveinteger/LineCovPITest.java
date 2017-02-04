@@ -15,7 +15,7 @@ public class LineCovPITest {
     @BeforeAll
     @AfterAll
     public static void reset() {
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
     }
 
     @Test
@@ -27,7 +27,7 @@ public class LineCovPITest {
                 cl.loadClass(PositiveIntegerImp.class.getName())
                         .newInstance();
 
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
         pi.isPositive(2);
@@ -56,7 +56,7 @@ public class LineCovPITest {
                 cl.loadClass(PositiveIntegerImp.class.getName())
                         .newInstance();
 
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
         pi.isPositive(2);

@@ -41,7 +41,7 @@ public class ExecutionTracer {
             new ConcurrentHashMap<>(65536);
 
 
-    public static void resetState() {
+    public static void reset() {
         objectiveCoverage.clear();
     }
 

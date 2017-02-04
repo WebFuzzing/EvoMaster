@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.inject.Inject
 import io.swagger.models.HttpMethod
 import io.swagger.models.Operation
 import io.swagger.models.Swagger
@@ -11,6 +12,7 @@ import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -26,10 +28,12 @@ class RestSampler : Sampler<RestIndividual>() {
         val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
     }
 
+    @Inject
+    protected lateinit var rc: RemoteController
+
+
     @PostConstruct
     private fun initialize() {
-
-        val rc = RemoteController(configuration.sutControllerHost, configuration.sutControllerPort)
 
         val started = rc.startSUT()
         if (!started) {
@@ -41,8 +45,6 @@ class RestSampler : Sampler<RestIndividual>() {
         val swagger = getSwagger(infoDto)
 
         createActions(swagger)
-
-        rc.close()
     }
 
 

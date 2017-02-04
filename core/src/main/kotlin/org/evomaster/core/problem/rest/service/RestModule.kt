@@ -32,5 +32,7 @@ class RestModule : AbstractModule(){
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})
                 .asEagerSingleton()
 
+        bind(RemoteController::class.java)
+                .asEagerSingleton()
     }
 }

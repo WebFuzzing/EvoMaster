@@ -1,8 +1,12 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.core.problem.rest.service
 
+import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.*
+import org.evomaster.core.EMConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import javax.annotation.PostConstruct
+import javax.annotation.PreDestroy
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -15,19 +19,40 @@ import javax.ws.rs.core.Response
  * Class used to communicate with the remote RestController that does
  * handle the SUT
  */
-class RemoteController(val host: String, val port: Int) {
+class RemoteController() {
 
     companion object {
         val log : Logger = LoggerFactory.getLogger(RemoteController::class.java)
     }
 
+    lateinit var host: String
+    var port: Int = 0
+
+    @Inject
+    private lateinit var config : EMConfig
+
     private val client: Client = ClientBuilder.newClient()
 
+    constructor(host: String, port: Int) : this(){
+        this.host = host
+        this.port = port
+    }
+
+    @PostConstruct
+    private fun initialize(){
+        host = config.sutControllerHost
+        port = config.sutControllerPort
+    }
+
+    @PreDestroy
+    private fun preDestroy(){
+        close()
+    }
 
     private fun getWebTarget(): WebTarget {
-
         return client.target("http://$host:$port" + ControllerConstants.BASE_PATH)
     }
+
 
     fun close(){
         client.close()
@@ -106,7 +131,24 @@ class RemoteController(val host: String, val port: Int) {
     fun resetSUT() = changeState(true, true)
 
 
-    fun getTargetCoverage(ids: Set<Int>) : TargetsResponseDto?{
+    fun startANewSearch(): Boolean{
+
+        val response = getWebTarget()
+                .path(ControllerConstants.NEW_SEARCH)
+                .request()
+                .post(Entity.entity("{\"newSearch\"=true}", MediaType.APPLICATION_JSON_TYPE))
+
+        val success = wasSuccess(response)
+
+        if (!success) {
+            log.warn("Failed to inform SUT of new search. HTTP status: {}", response.status)
+            return false
+        }
+
+        return true
+    }
+
+    fun getTargetCoverage(ids: Set<Int> = setOf()) : TargetsResponseDto?{
 
         val queryParam = ids.joinToString(",")
 

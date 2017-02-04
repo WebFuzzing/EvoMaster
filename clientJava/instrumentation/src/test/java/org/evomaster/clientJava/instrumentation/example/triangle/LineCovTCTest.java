@@ -14,7 +14,7 @@ public class LineCovTCTest {
 
     @BeforeAll @AfterAll
     public static void reset(){
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
     }
 
     @Test
@@ -26,7 +26,7 @@ public class LineCovTCTest {
                 cl.loadClass(TriangleClassificationImpl.class.getName())
                         .newInstance();
 
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
         tc.classify(-1, 0 , 0);
@@ -60,7 +60,7 @@ public class LineCovTCTest {
                 cl.loadClass(TriangleClassificationImpl.class.getName())
                         .newInstance();
 
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
         tc.classify(-1, 0, 0);

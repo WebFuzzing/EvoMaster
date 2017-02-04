@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.positiveinteger;
 import com.foo.rest.examples.spring.positiveinteger.PIController;
 import org.evomaster.clientJava.controller.EmbeddedStarter;
 import org.evomaster.clientJava.controllerApi.SutInfoDto;
-import org.evomaster.core.problem.rest.RemoteController;
+import org.evomaster.core.problem.rest.service.RemoteController;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;

@@ -23,7 +23,7 @@ public class TCinstrumentedTest extends TriangleClassificationTestBase {
 
     @BeforeEach
     public void init(){
-        ExecutionTracer.resetState();
+        ExecutionTracer.reset();
         assertEquals(0 , ExecutionTracer.getNumberOfObjectives());
     }
 

@@ -7,7 +7,7 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.ControllerInfoDto
 import org.evomaster.core.output.TestSuiteWriter
-import org.evomaster.core.problem.rest.RemoteController
+import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
@@ -62,6 +62,8 @@ class Main {
 
             val injector = init(args)
 
+            //FIXME: check already done in @PostConstruct of some beans,
+            // need to use lifecycle phase "start"
             val controllerInfo = checkConnection(injector)
 
             val solution = run(injector)
@@ -76,6 +78,8 @@ class Main {
 
         fun init(args: Array<String>): Injector {
 
+            //TODO check problem type
+
             val injector: Injector = LifecycleInjector.builder()
                     .withModules(* arrayOf<Module>(
                             BaseModule(args),
@@ -89,7 +93,12 @@ class Main {
 
         fun run(injector: Injector): Solution<*> {
 
-            //TODO check algorithm and problem type
+            //TODO check problem type
+            val rc = injector.getInstance(RemoteController::class.java)
+            rc.startANewSearch()
+
+
+            //TODO check algorithm
             val mio = injector.getInstance(Key.get(
                     object : TypeLiteral<MioAlgorithm<RestIndividual>>() {}))
 
@@ -102,13 +111,11 @@ class Main {
 
         fun checkConnection(injector: Injector): ControllerInfoDto {
 
-            val config = injector.getInstance(EMConfig::class.java)
-
-            val rc = RemoteController(config.sutControllerHost, config.sutControllerPort)
+            val rc = injector.getInstance(RemoteController::class.java)
 
             val dto = rc.getControllerInfo() ?:
-                    throw IllegalStateException("Cannot retrieve Remote Controller info from "
-                            + config.sutControllerHost + ":" + config.sutControllerPort)
+                    throw IllegalStateException(
+                            "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
 
             if(! (dto.isInstrumentationOn ?: false)){
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")

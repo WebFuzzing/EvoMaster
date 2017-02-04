@@ -6,7 +6,10 @@ import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 
 import javax.ws.rs.*;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -43,7 +46,7 @@ public class EMController {
     @Path(ControllerConstants.CONTROLLER_INFO)
     @GET
     @Produces(Formats.JSON_V1)
-    public ControllerInfoDto getControllerInfoDto(){
+    public ControllerInfoDto getControllerInfoDto() {
 
         ControllerInfoDto dto = new ControllerInfoDto();
         dto.fullName = restController.getClass().getName();
@@ -52,56 +55,64 @@ public class EMController {
         return dto;
     }
 
+    @Path(ControllerConstants.NEW_SEARCH)
+    @POST
+    public void newSearch(){
+        ExecutionTracer.reset();
+        ObjectiveRecorder.reset();
+    }
 
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT
     @Consumes(Formats.JSON_V1)
     public void runSut(SutRunDto dto) {
 
-        if(dto.run == null){
+        if (dto.run == null) {
             throw new WebApplicationException("Invalid JSON: 'run' field is required", 400);
         }
 
         boolean newlyStarted = false;
 
-        if(dto.run){
-            if (! restController.isSutRunning()) {
-                baseUrlOfSUT = restController.startInstrumentedSut();
-                newlyStarted = true;
+        synchronized (this) {
+            if (dto.run) {
+                if (!restController.isSutRunning()) {
+                    baseUrlOfSUT = restController.startInstrumentedSut();
+                    newlyStarted = true;
+                }
+            } else {
+                if (restController.isSutRunning()) {
+                    restController.stopSut();
+                    baseUrlOfSUT = null;
+                }
             }
-        } else {
-            if (restController.isSutRunning()) {
-                restController.stopSut();
-                baseUrlOfSUT = null;
+
+            if (dto.resetState != null && dto.resetState) {
+                if (!dto.run) {
+                    throw new WebApplicationException(
+                            "Invalid JSON: cannot reset state and stop service at same time");
+                }
+
+                if (!newlyStarted) { //no point resetting if fresh start
+                    restController.resetStateOfSUT();
+                }
+
+                /*
+                 Note: it should be fine but, if for any reason EM did not do
+                 a GET on the targets, then all those newly encountered targets
+                 would be lost, as EM will have no way to ask for them later, unless
+                 we explicitly say to return ALL targets
+                 */
+                ObjectiveRecorder.clearFirstTimeEncountered();
             }
+
+            /*
+              Each time we start/stop/reset the SUT, we need to make sure
+              to reset the collection of bytecode info.
+
+              TODO: this works ONLY if SUT is running on same process
+             */
+            ExecutionTracer.reset();
         }
-
-        if(dto.resetState != null && dto.resetState){
-            if(! dto.run){
-                throw new WebApplicationException(
-                        "Invalid JSON: cannot reset state and stop service at same time");
-            }
-
-            if(! newlyStarted) { //no point resetting if fresh start
-                restController.resetStateOfSUT();
-            }
-        }
-
-        /*
-            Each time we start/stop/reset the SUT, we need to make sure
-            to reset the collection of bytecode info.
-
-            TODO: this works ONLY if SUT is running on same process
-         */
-        ExecutionTracer.resetState();
-
-        /*
-            Note: it should be fine but, if for any reason EM did not do
-            a GET on the targets, then all those newly encountered targets
-            would be lost, as EM will have no way to ask for them later, unless
-            we explicitly say to return ALL targets
-         */
-        ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
 
@@ -111,7 +122,7 @@ public class EMController {
     public TargetsResponseDto getTargets(
             @QueryParam("ids")
             @DefaultValue("")
-            String idList){
+                    String idList) {
 
         //TODO: this works only if SUT runs on same process
 
@@ -126,14 +137,14 @@ public class EMController {
                     .filter(s -> !s.trim().isEmpty())
                     .map(Integer::parseInt)
                     .collect(Collectors.toSet());
-        }catch (NumberFormatException e){
-            throw new WebApplicationException("Invalid parameter 'ids': "+e.getMessage(), e);
+        } catch (NumberFormatException e) {
+            throw new WebApplicationException("Invalid parameter 'ids': " + e.getMessage(), e);
         }
 
         /*
             First, add info for all targets requested by EM
          */
-        ids.stream().forEach(id ->{
+        ids.stream().forEach(id -> {
 
             String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
             double val = objectives.getOrDefault(descriptiveId, 0d);

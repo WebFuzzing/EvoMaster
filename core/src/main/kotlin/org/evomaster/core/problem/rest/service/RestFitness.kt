@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -8,6 +9,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.problem.rest.service.RemoteController
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
@@ -19,9 +21,10 @@ import javax.ws.rs.core.MediaType
 class RestFitness : FitnessFunction<RestIndividual>() {
 
 
-    private val client: Client = ClientBuilder.newClient()
-
+    @Inject
     private lateinit var rc: RemoteController
+
+    private val client: Client = ClientBuilder.newClient()
 
     private lateinit var infoDto: SutInfoDto
 
@@ -31,8 +34,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         //workaround bug in Jersey client
         client.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-
-        rc = RemoteController(configuration.sutControllerHost, configuration.sutControllerPort)
 
         val started = rc.startSUT()
         if (!started) {
@@ -79,9 +80,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
             fv.updateTarget(t.id, t.value)
         }
-
-        //TODO objectives for response, eg status
-        // likely we ll need to use negative ids
 
         handleResponseTargets(fv, individual.actions, actionResults)
 

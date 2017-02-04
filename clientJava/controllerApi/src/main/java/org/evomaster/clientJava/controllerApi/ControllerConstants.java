@@ -15,4 +15,6 @@ public class ControllerConstants {
     public static final String TARGETS_PATH = "/targets";
 
     public static final String CONTROLLER_INFO = "/controllerInfo";
+
+    public static final String NEW_SEARCH = "/newSearch";
 }
