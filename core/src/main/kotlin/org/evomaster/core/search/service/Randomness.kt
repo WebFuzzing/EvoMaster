@@ -37,7 +37,7 @@ class Randomness {
 
     fun nextFloat() = random.nextFloat()
 
-    fun nexInt(bound: Int) = random.nextInt(bound)
+    fun nextInt(bound: Int) = random.nextInt(bound)
 
     fun nextInt(min: Int, max: Int, exclude: Int): Int {
 
@@ -52,8 +52,6 @@ class Randomness {
         return k
     }
 
-    fun nextLong() = random.nextLong()
-
     fun nextInt(min: Int, max: Int): Int {
         if (min == max) {
             return min
@@ -65,6 +63,28 @@ class Randomness {
         return (min.toLong() + Math.random() * (max.toLong() - min + 1)).toInt()
     }
 
+
+    fun nextLong() = random.nextLong()
+
+
+    fun nextWordString(min: Int = 0, max: Int = 10) : String {
+
+        val n = nextInt(min, max)
+
+        val chars = CharArray(n)
+        (0..n-1).forEach {
+            chars[it] = nextWordChar()
+        }
+
+        return kotlin.text.String(chars)
+    }
+
+    fun nextWordChar() : Char{
+
+        val characters =
+                "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+        return characters[random.nextInt(characters.length)]
+    }
 
     fun <T> choose(list: List<T>): T {
         if (list.isEmpty()) {

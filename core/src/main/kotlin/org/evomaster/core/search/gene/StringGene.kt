@@ -21,14 +21,8 @@ class StringGene (
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
-//        val k = if (forceNewValue) {
-//            randomness.nextInt(min, max, value)
-//        } else {
-//            randomness.nextInt(min, max)
-//        }
-//
-//        value = k
-        //TODO
+        //TODO much more would need to be done here to handle strings...
+        value = randomness.nextWordString(minLength,maxLength)
     }
 
     override fun getValueAsString() : String{

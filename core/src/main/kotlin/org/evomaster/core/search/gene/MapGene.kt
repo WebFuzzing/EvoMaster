@@ -31,7 +31,7 @@ where T : Gene {
         //maybe not so important here to complicate code to enable forceNewValue
 
         elements.clear()
-        val n = randomness.nexInt(maxSize)
+        val n = randomness.nextInt(maxSize)
         (0..n - 1).forEach {
             val gene = template.copy() as T
             gene.randomize(randomness, false)
