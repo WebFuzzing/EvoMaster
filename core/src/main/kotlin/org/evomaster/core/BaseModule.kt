@@ -4,10 +4,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
 import joptsimple.OptionSet
-import org.evomaster.core.search.service.AdaptiveParameterControl
-import org.evomaster.core.search.service.IdMapper
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.SearchTimeController
+import org.evomaster.core.search.service.*
 
 
 class BaseModule(val args: Array<String>) : AbstractModule() {
@@ -26,6 +23,9 @@ class BaseModule(val args: Array<String>) : AbstractModule() {
                 .asEagerSingleton()
 
         bind(IdMapper::class.java)
+                .asEagerSingleton()
+
+        bind(Statistics::class.java)
                 .asEagerSingleton()
     }
 

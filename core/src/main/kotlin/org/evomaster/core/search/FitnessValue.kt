@@ -46,6 +46,11 @@ class FitnessValue {
         return targets.values.sum()
     }
 
+    fun coveredTargets() : Int {
+
+        return targets.values.filter { t -> t == MAX_VALUE }.count()
+    }
+
     fun coverTarget(id: Int){
         updateTarget(id, MAX_VALUE)
     }

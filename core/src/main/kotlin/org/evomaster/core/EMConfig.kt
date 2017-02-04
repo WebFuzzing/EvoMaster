@@ -52,6 +52,7 @@ class EMConfig {
                             at least for them moment
 
                             TODO: do documentation
+                            TODO: groups and ordering
                          */
                         parser.accepts(m.name)
                                 .withRequiredArg()
@@ -230,5 +231,13 @@ class EMConfig {
     @Min(1.0)
     var maxFitnessEvaluations = 1000;
 
+    @Cfg("Whether or not writing statistics of the search process. " +
+            "This is only needed when running experiments with different parameter settings")
+    var writeStatistics = false
 
+    @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
+    var statisticsFile = "statistics.csv"
+
+    @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
+    var statisticsColumnId = "Foo"
 }

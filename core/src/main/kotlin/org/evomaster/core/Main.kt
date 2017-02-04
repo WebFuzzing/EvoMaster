@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.service.Statistics
 
 
 /**
@@ -66,6 +67,8 @@ class Main {
             val solution = run(injector)
 
             writeTests(injector, solution, controllerInfo)
+
+            writeStatistics(injector, solution)
 
             return solution
         }
@@ -137,6 +140,19 @@ class Main {
                     config.testSuiteFileName,
                     controllerInfoDto.fullName
             )
+        }
+
+        fun writeStatistics(injector: Injector, solution: Solution<*>){
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.writeStatistics) {
+                return
+            }
+
+            val statistics = injector.getInstance(Statistics::class.java)
+
+            statistics.writeStatistics(solution)
         }
     }
 }

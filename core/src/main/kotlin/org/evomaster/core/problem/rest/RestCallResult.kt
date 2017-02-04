@@ -31,6 +31,7 @@ class RestCallResult : ActionResult {
 
     fun getStatusCode(): Int? = getResultValue(STATUS_CODE)?.toInt()
 
+    fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 
     fun setBody(body: String) = addResultValue(BODY, body)
     fun getBody(): String? = getResultValue(BODY)
