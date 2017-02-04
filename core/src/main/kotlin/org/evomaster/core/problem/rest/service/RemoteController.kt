@@ -17,7 +17,9 @@ import javax.ws.rs.core.Response
 
 /**
  * Class used to communicate with the remote RestController that does
- * handle the SUT
+ * handle the SUT.
+ *
+ * TODO: this will be needed to move to different module, as not specific to REST
  */
 class RemoteController() {
 
