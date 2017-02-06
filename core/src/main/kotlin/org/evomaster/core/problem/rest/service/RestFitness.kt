@@ -11,6 +11,8 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.problem.rest.service.RemoteController
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
@@ -20,6 +22,9 @@ import javax.ws.rs.core.MediaType
 
 class RestFitness : FitnessFunction<RestIndividual>() {
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
+    }
 
     @Inject
     private lateinit var rc: RemoteController
@@ -158,8 +163,13 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             if(response.mediaType != null){
                 rcr.setBodyType(response.mediaType)
             }
-            val body = response.readEntity(String::class.java)
-            rcr.setBody(body)
+            try{
+                val body = response.readEntity(String::class.java)
+                rcr.setBody(body)
+            } catch (e: Exception){
+                log.warn("Failed to parse HTTP response: ${e.message}")
+            }
+
         }
 
         actionResults.add(rcr)
