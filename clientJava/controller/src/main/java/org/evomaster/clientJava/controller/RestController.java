@@ -59,12 +59,10 @@ public abstract class RestController {
 
         /*
             TODO: this works ONLY if SUT is running on same process
-
-            TODO: should add REST call from EM to do this reset, eg
-                  "initiliazeForNewSearch", at the beginning of each
-                  new search
          */
         ObjectiveRecorder.reset();
+
+        SimpleLogger.info("Started controller server on: "+controllerServer.getURI());
 
         return true;
     }
