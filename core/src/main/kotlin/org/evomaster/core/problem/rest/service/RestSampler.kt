@@ -289,10 +289,14 @@ class RestSampler : Sampler<RestIndividual>() {
         val swaggerURL = infoDto.swaggerJsonUrl ?:
                 throw IllegalStateException("Cannot retrieve Swagger URL")
 
-        val response = ClientBuilder.newClient()
-                .target(swaggerURL)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get()
+        val response = try {
+            ClientBuilder.newClient()
+                    .target(swaggerURL)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get()
+        } catch (e: Exception){
+            throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
+        }
 
         if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
             throw IllegalStateException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
