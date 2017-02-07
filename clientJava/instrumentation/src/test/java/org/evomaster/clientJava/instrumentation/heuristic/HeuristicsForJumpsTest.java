@@ -7,6 +7,13 @@ import static org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJu
 import static org.junit.jupiter.api.Assertions.*;
 import static org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps.*;
 
+
+/**
+ * The calculation of branch distances is a tricky business, so it
+ * is paramount that it is fully tested in details.
+ * If something goes wrong, it would be very difficult to find
+ * out with system tests.
+ */
 public class HeuristicsForJumpsTest {
 
 
@@ -181,4 +188,341 @@ public class HeuristicsForJumpsTest {
             assertEquals(gt.getOfFalse(), le.getOfTrue(), 0.001);
         }
     }
+
+
+    @Test
+    public void test_IF_ICMPEQ_pos(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness t = getForValueComparison(5, 5, code);
+        assertTrue(t.isTrue());
+        assertFalse(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPEQ_neg(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness t = getForValueComparison(-8, -8, code);
+        assertTrue(t.isTrue());
+        assertFalse(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPEQ_0(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness t = getForValueComparison(0, 0, code);
+        assertTrue(t.isTrue());
+        assertFalse(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPEQ_dif(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness t = getForValueComparison(2, 4, code);
+        assertFalse(t.isTrue());
+        assertTrue(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPEQ_dif_incr(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness a = getForValueComparison(3, 5, code);
+        assertTrue(a.isFalse());
+
+        Truthness b = getForValueComparison(7, 8, code);
+        assertTrue(b.isFalse());
+
+        assertTrue(b.getOfTrue() > a.getOfTrue());
+    }
+
+    @Test
+    public void test_IF_ICMPEQ_dif_spec(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness a = getForValueComparison(-3, 5, code);
+        assertTrue(a.isFalse());
+
+        Truthness b = getForValueComparison(-1, 6, code);
+        assertTrue(b.isFalse());
+
+        assertTrue(b.getOfTrue() > a.getOfTrue());
+    }
+
+    @Test
+    public void test_IF_ICMPEQ_dif_negPos(){
+        // x == y
+        int code = Opcodes.IF_ICMPEQ;
+
+        Truthness a = getForValueComparison(-3, -50, code);
+        assertTrue(a.isFalse());
+
+        Truthness b = getForValueComparison(10, 6, code);
+        assertTrue(b.isFalse());
+
+        assertTrue(b.getOfTrue() > a.getOfTrue());
+    }
+
+
+    @Test
+    public void test_IF_ICMPNE_eq(){
+        //val != 0
+
+        int[] values = new int[]{-10, -2, 0, 3, 4444};
+        for(int val: values){
+
+            Truthness ne = getForValueComparison(val, val, Opcodes.IF_ICMPNE);
+            Truthness eq = getForValueComparison(val, val, Opcodes.IF_ICMPEQ);
+
+            //their values should be inverted
+            assertEquals(ne.getOfTrue(), eq.getOfFalse(), 0.001);
+            assertEquals(ne.getOfFalse(), eq.getOfTrue(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IF_ICMPNE_diff(){
+        //val != 0
+
+        int x = 1;
+
+        int[] values = new int[]{-10, -2, 0, 3, 4444};
+        for(int val: values){
+
+            Truthness ne = getForValueComparison(val, x, Opcodes.IF_ICMPNE);
+            Truthness eq = getForValueComparison(val, x, Opcodes.IF_ICMPEQ);
+
+            //their values should be inverted
+            assertEquals(ne.getOfTrue(), eq.getOfFalse(), 0.001);
+            assertEquals(ne.getOfFalse(), eq.getOfTrue(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IF_ICMPLT_true(){
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        Truthness t = getForValueComparison(4, 6, code);
+        assertTrue(t.isTrue());
+        assertFalse(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPLT_false(){
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        Truthness t = getForValueComparison(6, 4, code);
+        assertFalse(t.isTrue());
+        assertTrue(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPLT_pos_true(){
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        Truthness a = getForValueComparison(4, 6, code);
+        assertFalse(a.isFalse());
+
+        Truthness b = getForValueComparison(1, 5, code);
+        assertFalse(b.isFalse());
+
+        assertTrue(a.getOfFalse() > b.getOfFalse());
+    }
+
+    @Test
+    public void test_IF_ICMPLT_neg_true(){
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        Truthness a = getForValueComparison(-8, -6, code);
+        assertFalse(a.isFalse());
+
+        Truthness b = getForValueComparison(-100, -5, code);
+        assertFalse(b.isFalse());
+
+        assertTrue(a.getOfFalse() > b.getOfFalse());
+    }
+
+
+    @Test
+    public void test_IF_ICMPLT_pos_false(){
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        Truthness a = getForValueComparison(10, 6, code);
+        assertFalse(a.isTrue());
+
+        Truthness b = getForValueComparison(222, 5, code);
+        assertFalse(b.isTrue());
+
+        assertTrue(a.getOfTrue() > b.getOfTrue());
+    }
+
+    @Test
+    public void test_IF_ICMPLT_neg_false(){
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        Truthness a = getForValueComparison(-6, -10, code);
+        assertFalse(a.isTrue());
+
+        Truthness b = getForValueComparison(-5, -222, code);
+        assertFalse(b.isTrue());
+
+        assertTrue(a.getOfTrue() > b.getOfTrue());
+    }
+
+    @Test
+    public void test_IF_ICMPLT_0() {
+        // x < y
+        int code = Opcodes.IF_ICMPLT;
+
+        int[] values = new int[]{-5, -2, 0, 3, 7};
+        for(int val : values){
+
+            Truthness lt = getForSingleValueJump(val, Opcodes.IFLT);
+            Truthness cmp = getForValueComparison(val, 0, Opcodes.IF_ICMPLT);
+
+            //should be the same
+            assertEquals(lt.getOfTrue(), cmp.getOfTrue(), 0.001);
+            assertEquals(lt.getOfFalse(), cmp.getOfFalse(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IF_ICMPGE() {
+        // x >= y
+        int y = 1;
+
+        int[] values = new int[]{-5, -2, 0, 3, 7};
+        for(int val : values){
+
+            Truthness lt = getForValueComparison(val, y, Opcodes.IF_ICMPLT);
+            Truthness ge = getForValueComparison(val, y, Opcodes.IF_ICMPGE);
+
+            //should be the inverted
+            assertEquals(lt.getOfTrue(), ge.getOfFalse(), 0.001);
+            assertEquals(lt.getOfFalse(), ge.getOfTrue(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IF_ICMPLE() {
+        // x <= y  implies  ! (y < x)
+        int y = 1;
+
+        int[] values = new int[]{-5, -2, 0, 3, 7};
+        for(int val : values){
+
+            Truthness le = getForValueComparison(val, y, Opcodes.IF_ICMPLE);
+            Truthness lt = getForValueComparison(y, val, Opcodes.IF_ICMPLT).invert();
+
+            //should be the same
+            assertEquals(lt.getOfTrue(), le.getOfTrue(), 0.001);
+            assertEquals(lt.getOfFalse(), le.getOfFalse(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IF_ICMPGT() {
+        // x > y  implies  y < x
+        int y = 1;
+
+        int[] values = new int[]{-5, -2, 0, 3, 7};
+        for(int val : values){
+
+            Truthness gt = getForValueComparison(val, y, Opcodes.IF_ICMPGT);
+            Truthness lt = getForValueComparison(y, val, Opcodes.IF_ICMPLT);
+
+            //should be the same
+            assertEquals(lt.getOfTrue(), gt.getOfTrue(), 0.001);
+            assertEquals(lt.getOfFalse(), gt.getOfFalse(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IF_ACMPEQ_true(){
+        // x == y
+        int code = Opcodes.IF_ACMPEQ;
+
+        Truthness t = getForObjectComparison("a", "a", code);
+        assertTrue(t.isTrue());
+        assertFalse(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ACMPEQ_false(){
+        // x == y
+        int code = Opcodes.IF_ACMPEQ;
+
+        Object a = new Object();
+        Integer b = 5;
+
+        Truthness t = getForObjectComparison(a, b, code);
+        assertFalse(t.isTrue());
+        assertTrue(t.isFalse());
+    }
+
+    @Test
+    public void test_IF_ACMPNE(){
+        // x != y
+
+        Object x = "a";
+        Object[] values = new Object[]{new Object(), x, "foo", 5};
+        for(Object val: values){
+
+            Truthness eq = getForObjectComparison(x, val, Opcodes.IF_ACMPEQ);
+            Truthness ne = getForObjectComparison(x, val, Opcodes.IF_ACMPNE);
+
+            //should be inverted
+            assertEquals(eq.getOfTrue(), ne.getOfFalse(), 0.001);
+            assertEquals(eq.getOfFalse(), ne.getOfTrue(), 0.001);
+        }
+    }
+
+
+    @Test
+    public void test_IFNULL(){
+        // x == null
+
+        Object[] values = new Object[]{null, new Object(), "foo", 5};
+        for(Object val: values){
+
+            Truthness eq = getForObjectComparison(val, null, Opcodes.IF_ACMPEQ);
+            Truthness nu = getForNullComparison(val, Opcodes.IFNULL);
+
+            //should be equivalent
+            assertEquals(eq.getOfTrue(), nu.getOfTrue(), 0.001);
+            assertEquals(eq.getOfFalse(), nu.getOfFalse(), 0.001);
+        }
+    }
+
+    @Test
+    public void test_IFNONNULL(){
+        // x != null
+
+        Object[] values = new Object[]{null, new Object(), "foo", 5};
+        for(Object val: values){
+
+            Truthness nn = getForNullComparison(val, Opcodes.IFNONNULL);
+            Truthness nu = getForNullComparison(val, Opcodes.IFNULL);
+
+            //should be inverted
+            assertEquals(nn.getOfFalse(), nu.getOfTrue(), 0.001);
+            assertEquals(nn.getOfTrue(), nu.getOfFalse(), 0.001);
+        }
+    }
+
 }
