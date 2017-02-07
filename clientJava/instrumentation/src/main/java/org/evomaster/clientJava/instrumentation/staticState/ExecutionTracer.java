@@ -5,7 +5,9 @@ import org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.clientJava.instrumentation.heuristic.Truthness;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * Methods of this class will be injected in the SUT to
@@ -30,6 +32,17 @@ public class ExecutionTracer {
      * Prefix identifier for branch coverage objectives
      */
     public static final String BRANCH = "Branch";
+
+    /**
+     * Tag used in a branch id to specify it is for the "true"/then branch
+     */
+    public static final String TRUE_BRANCH = "_trueBranch";
+
+    /**
+     * Tag used in a branch id to specify it is for the "false"/else branch
+     */
+    public static final String FALSE_BRANCH = "_falseBranch";
+
 
 
     /**
@@ -58,6 +71,13 @@ public class ExecutionTracer {
         return objectiveCoverage.size();
     }
 
+    public static int getNumberOfObjectives(String prefix) {
+        return (int) objectiveCoverage
+                .entrySet().stream()
+                .filter(e -> prefix == null || e.getKey().startsWith(prefix))
+                .count();
+    }
+
     /**
      * Note: only the objectives encountered so far can have
      * been recorded. So, this is a relative value, not based
@@ -72,13 +92,22 @@ public class ExecutionTracer {
      */
     public static int getNumberOfNonCoveredObjectives(String prefix) {
 
-        return (int) objectiveCoverage
+        return getNonCoveredObjectives(prefix).size();
+    }
+
+    public static Set<String> getNonCoveredObjectives(String prefix){
+
+        return  objectiveCoverage
                 .entrySet().stream()
                 .filter(e -> prefix == null || e.getKey().startsWith(prefix))
                 .filter(e -> e.getValue() < 1)
-                .count();
+                .map(e -> e.getKey())
+                .collect(Collectors.toSet());
     }
 
+    public static Double getValue(String id){
+        return objectiveCoverage.get(id);
+    }
 
     private static void updateObjective(String id, double value) {
         if (value < 0d || value > 1d) {
@@ -116,8 +145,18 @@ public class ExecutionTracer {
     //---- branch-jump methods --------------------------
 
     private static void updateBranch(String id, Truthness t){
-        updateObjective(id+"_trueBranch", t.getOfTrue());
-        updateObjective(id+"_falseBranch", t.getOfFalse());
+
+        /*
+            Note: when we have
+            if(x > 0){}
+
+            the "jump" to "else" brnach is done if that is false.
+            So, the actual evaluated condition is the negation, ie
+            x <= 0
+         */
+
+        updateObjective(id+FALSE_BRANCH, t.getOfTrue());
+        updateObjective(id+TRUE_BRANCH, t.getOfFalse());
     }
 
     private static String getUniqueBranchId(String className, int line, int branchId) {

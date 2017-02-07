@@ -49,7 +49,7 @@ public class HeuristicsForJumps {
         switch (opcode) {
             case Opcodes.IF_ICMPEQ: // ie, a == b
                 return new Truthness(
-                        Truthness.normalizeValue(Math.abs(a - b)),
+                        1d - Truthness.normalizeValue(Math.abs(a - b)),
                         a != b ? 1d : 0d
                 );
 
@@ -58,8 +58,8 @@ public class HeuristicsForJumps {
 
             case Opcodes.IF_ICMPLT: // ie, a < b
                 return new Truthness(
-                        a < b ? 1d : Truthness.normalizeValue(1d + a - b),
-                        a >= b ? 1d : Truthness.normalizeValue(1d + b - a)
+                        a < b ? 1d : 1d / (1.1d + a - b) ,
+                        a >= b ? 1d : 1d / (1.1d + b - a)
                 );
 
             case Opcodes.IF_ICMPGE: // ie, a >= b  ->  ! (a < b)

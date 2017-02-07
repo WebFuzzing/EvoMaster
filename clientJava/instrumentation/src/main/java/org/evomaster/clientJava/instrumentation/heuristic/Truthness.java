@@ -55,11 +55,18 @@ public class Truthness {
         return ofTrue;
     }
 
+    public boolean isTrue(){
+        return ofTrue == 1d;
+    }
 
     /**
      * @return a value in [0,1], where 1 means the expression evaluated to false
      */
     public double getOfFalse() {
         return ofFalse;
+    }
+
+    public boolean isFalse(){
+        return ofFalse == 1d;
     }
 }
