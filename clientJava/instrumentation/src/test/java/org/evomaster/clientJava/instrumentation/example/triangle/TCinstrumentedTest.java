@@ -2,7 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.triangle;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
+import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -14,7 +14,7 @@ public class TCinstrumentedTest extends TriangleClassificationTestBase {
     @Override
     protected TriangleClassification getInstance() throws Exception {
 
-        InstrumentingClassLoader cl = new InstrumentingClassLoader("org.foo");
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         return (TriangleClassification)
                 cl.loadClass(TriangleClassificationImpl.class.getName())

@@ -1,4 +1,4 @@
-package org.foo.somedifferentpackage.examples.triangle;
+package com.foo.somedifferentpackage.examples.triangle;
 
 import org.evomaster.clientJava.instrumentation.example.triangle.TriangleClassification;
 

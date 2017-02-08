@@ -2,7 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.positiveinteger;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ public class LineCovPITest {
     @Test
     public void testLineCov() throws Exception {
 
-        InstrumentingClassLoader cl = new InstrumentingClassLoader("org.foo");
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         PositiveInteger pi = (PositiveInteger)
                 cl.loadClass(PositiveIntegerImp.class.getName())

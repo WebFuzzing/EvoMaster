@@ -2,7 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.positiveinteger;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -15,7 +15,7 @@ public class PIinstrumentedTest extends PositiveIntegerTestBase {
     @Override
     protected PositiveInteger getInstance() throws Exception {
 
-        InstrumentingClassLoader cl = new InstrumentingClassLoader("org.foo");
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         return (PositiveInteger)
                 cl.loadClass(PositiveIntegerImp.class.getName())

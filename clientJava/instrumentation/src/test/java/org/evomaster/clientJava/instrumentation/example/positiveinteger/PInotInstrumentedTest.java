@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.instrumentation.example.positiveinteger;
 
-import org.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 
 public class PInotInstrumentedTest extends PositiveIntegerTestBase {
 

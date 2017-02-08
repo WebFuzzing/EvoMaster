@@ -1,7 +1,7 @@
 package org.evomaster.clientJava.instrumentation.example.triangle;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
-import org.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
+import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 
 public class TCthirdPartyTest extends TriangleClassificationTestBase {
 

@@ -1,4 +1,4 @@
-package org.foo.somedifferentpackage.examples.branches;
+package com.foo.somedifferentpackage.examples.branches;
 
 import org.evomaster.clientJava.instrumentation.example.branches.Branches;
 

@@ -1,4 +1,4 @@
-package org.foo.somedifferentpackage.examples.positiveinteger;
+package com.foo.somedifferentpackage.examples.positiveinteger;
 
 import org.evomaster.clientJava.instrumentation.example.positiveinteger.PositiveInteger;
 

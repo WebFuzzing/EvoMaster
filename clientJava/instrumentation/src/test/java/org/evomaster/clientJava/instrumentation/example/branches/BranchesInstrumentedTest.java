@@ -1,12 +1,9 @@
 package org.evomaster.clientJava.instrumentation.example.branches;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
-import org.evomaster.clientJava.instrumentation.example.positiveinteger.PositiveInteger;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
-import org.foo.somedifferentpackage.examples.branches.BranchesImp;
-import org.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
-import org.junit.jupiter.api.AfterEach;
+import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +16,7 @@ public class BranchesInstrumentedTest {
 
     protected Branches getInstance() throws Exception {
 
-        InstrumentingClassLoader cl = new InstrumentingClassLoader("org.foo");
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         return (Branches)
                 cl.loadClass(BranchesImp.class.getName()).newInstance();

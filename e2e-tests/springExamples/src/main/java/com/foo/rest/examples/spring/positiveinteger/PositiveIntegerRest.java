@@ -2,7 +2,7 @@ package com.foo.rest.examples.spring.positiveinteger;
 
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;

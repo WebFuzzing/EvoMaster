@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.instrumentation.example.triangle;
 
-import org.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
+import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 
 public class TCnotInstrumentedTest extends TriangleClassificationTestBase{
 

@@ -3,7 +3,7 @@ package com.foo.rest.examples.spring.branches;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.evomaster.clientJava.instrumentation.example.branches.Branches;
-import org.foo.somedifferentpackage.examples.branches.BranchesImp;
+import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;

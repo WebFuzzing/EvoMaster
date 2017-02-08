@@ -2,7 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.triangle;
 
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
+import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,7 +20,7 @@ public class LineCovTCTest {
     @Test
     public void testLineCov() throws Exception{
 
-        InstrumentingClassLoader cl = new InstrumentingClassLoader("org.foo");
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
         TriangleClassification tc =  (TriangleClassification)
                 cl.loadClass(TriangleClassificationImpl.class.getName())
