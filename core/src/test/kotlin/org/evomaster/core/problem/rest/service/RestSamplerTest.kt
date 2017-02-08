@@ -57,4 +57,16 @@ internal class RestSamplerTest{
         assertEquals(49, actions.size)
     }
 
+
+    @Test
+    fun testBranches(){
+
+        val swagger = SwaggerParser().read("/branches.json")
+
+        val sampler = RestSampler()
+        sampler.createActions(swagger)
+
+        val actions = sampler.seeAvailableActions()
+        assertEquals(3, actions.size)
+    }
 }

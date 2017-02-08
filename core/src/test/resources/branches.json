@@ -1,0 +1,190 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "1.0",
+    "title": "API"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "branches-rest",
+      "description": "Branches Rest"
+    }
+  ],
+  "paths": {
+    "/api/branches/eq": {
+      "post": {
+        "tags": [
+          "branches-rest"
+        ],
+        "summary": "Evaluate 'eq'",
+        "operationId": "eqUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "x and y inputs",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/BranchesPostDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BranchesResponseDto"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/branches/pos": {
+      "post": {
+        "tags": [
+          "branches-rest"
+        ],
+        "summary": "Evaluate 'pos'",
+        "operationId": "posUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "x and y inputs",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/BranchesPostDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BranchesResponseDto"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/branches/neg": {
+      "post": {
+        "tags": [
+          "branches-rest"
+        ],
+        "summary": "Evaluate 'neg'",
+        "operationId": "negUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "x and y inputs",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/BranchesPostDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/BranchesResponseDto"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BranchesResponseDto": {
+      "type": "object",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "value": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Result value"
+        }
+      }
+    },
+    "BranchesPostDto": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "format": "int32",
+          "description": "x value"
+        },
+        "y": {
+          "type": "integer",
+          "format": "int32",
+          "description": "y value"
+        }
+      }
+    }
+  }
+}

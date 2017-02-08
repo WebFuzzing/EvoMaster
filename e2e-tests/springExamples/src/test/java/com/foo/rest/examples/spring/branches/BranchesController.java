@@ -1,12 +1,13 @@
-package com.foo.rest.examples.spring.positiveinteger;
+package com.foo.rest.examples.spring.branches;
 
+import com.foo.rest.examples.spring.positiveinteger.PIApplication;
 import org.evomaster.clientJava.controller.RestController;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.Map;
 
-public class PIController  extends RestController {
+public class BranchesController extends RestController {
 
     private ConfigurableApplicationContext ctx;
 
@@ -18,7 +19,7 @@ public class PIController  extends RestController {
     @Override
     public String startSut() {
 
-        ctx = SpringApplication.run(PIApplication.class,
+        ctx = SpringApplication.run(BranchesApplication.class,
                 new String[]{"--server.port=0"});
 
 

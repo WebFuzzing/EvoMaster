@@ -17,6 +17,8 @@ class Archive<T>() where T : Individual {
     @Inject
     private lateinit var apc: AdaptiveParameterControl
 
+    @Inject
+    private lateinit var idMapper: IdMapper
 
     /**
      * Key -> id of the target
@@ -42,6 +44,7 @@ class Archive<T>() where T : Individual {
         return Solution(overall, uniques.toMutableList())
     }
 
+
     fun isEmpty() = map.isEmpty()
 
     fun sampleIndividual() : EvaluatedIndividual<T> {
@@ -65,6 +68,15 @@ class Archive<T>() where T : Individual {
         return chosen.copy()
     }
 
+    /**
+     * Useful for debugging
+     */
+    fun encounteredTargetDescriptions(): List<String>{
+
+        return map.entries
+                .map { e -> "${idMapper.getDescriptiveId(e.key)} : ${e.value}"}
+                .sorted()
+    }
 
     /**
      * Get all known targets that are not fully covered

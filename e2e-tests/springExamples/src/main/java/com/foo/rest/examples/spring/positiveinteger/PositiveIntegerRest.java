@@ -9,7 +9,7 @@ import javax.ws.rs.core.MediaType;
 
 @RestController
 @RequestMapping(path = "/api/pi")
-public class PositiveIntegerController {
+public class PositiveIntegerRest {
 
     @ApiOperation("Check if the given value is positive")
     @RequestMapping(

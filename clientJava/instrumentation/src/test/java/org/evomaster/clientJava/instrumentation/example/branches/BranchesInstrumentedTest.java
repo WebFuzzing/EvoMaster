@@ -62,7 +62,7 @@ public class BranchesInstrumentedTest {
 
 
     @Test
-    public void testPos(){
+    public void testPosX(){
 
         int res = evalPos(10, 0);
         //first branch should had been taken
@@ -91,5 +91,157 @@ public class BranchesInstrumentedTest {
         assertTrue(third > first);
     }
 
-    //TODO other cases
+    @Test
+    public void testPosY() {
+
+        int res;
+        res = evalPos(10, 0);
+        assertEquals(0, res);
+
+        res = evalPos(-5, 4);
+        assertEquals(1, res);
+
+        //seen 2 "if", but returned on the second "if"
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+
+        double first = ExecutionTracer.getValue(elseBranch);
+        assertTrue(first < 1d); // not covered
+
+        evalPos(-8, 8); //worse value, should have no impact
+        double second = ExecutionTracer.getValue(elseBranch);
+        assertTrue(second < 1d); // still not covered
+        assertEquals(first, second, 0.001);
+
+        evalPos(-8, 0); //better value, but still not covered
+        double third = ExecutionTracer.getValue(elseBranch);
+        assertTrue(third < 1d); // still not covered
+        assertTrue(third > second);
+
+        //all branches covered
+        res = evalPos(-89, -45);
+        assertEquals(2, res);
+
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+    }
+
+
+    @Test
+    public void testNegX(){
+
+        int res = evalNeg(-10, 0);
+        //first branch should had been taken
+        assertEquals(3, res);
+
+        //so far, seen only first "if", of which the else is not covered
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+
+        double first = ExecutionTracer.getValue(elseBranch);
+        assertTrue(first < 1d); // not covered
+
+
+        evalNeg(-15, 0); //worse value, should have no impact
+        double second = ExecutionTracer.getValue(elseBranch);
+        assertTrue(second < 1d); // still not covered
+        assertEquals(first, second, 0.001);
+
+        evalNeg(-8, 0); //better value
+        double third = ExecutionTracer.getValue(elseBranch);
+        assertTrue(third < 1d); // still not covered
+        assertTrue(third > first);
+    }
+
+
+    @Test
+    public void testNegY() {
+
+        int res;
+        res = evalNeg(-10, 0);
+        assertEquals(3, res);
+
+        res = evalNeg(5, -4);
+        assertEquals(4, res);
+
+        //seen 2 "if", but returned on the second "if"
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+
+        double first = ExecutionTracer.getValue(elseBranch);
+        assertTrue(first < 1d); // not covered
+
+        evalNeg(8, -8); //worse value, should have no impact
+        double second = ExecutionTracer.getValue(elseBranch);
+        assertTrue(second < 1d); // still not covered
+        assertEquals(first, second, 0.001);
+
+        evalNeg(8, 0); //better value, but still not covered
+        double third = ExecutionTracer.getValue(elseBranch);
+        assertTrue(third < 1d); // still not covered
+        assertTrue(third > second);
+
+        //all branches covered
+        res = evalNeg(89, 45);
+        assertEquals(5, res);
+
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+    }
+
+
+    @Test
+    public void testEq(){
+
+        int res;
+        res = evalEq(0, 0);
+        assertEquals(6, res);
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+
+        res = evalEq(2, 5);
+        assertEquals(7, res);
+
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+
+        res = evalEq(2, 0);
+        assertEquals(8, res);
+
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+    }
+
+    @Test
+    public void testAll(){
+
+        evalPos(1,1);
+        evalPos(-1, 1);
+        evalPos(-1, -1);
+
+        evalNeg(-1, -1);
+        evalNeg(1, -1);
+        evalNeg(1, 1);
+
+        evalEq(0, 0);
+        evalEq(4, 0);
+        evalEq(5, 5);
+
+        assertEquals(12, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+    }
+
 }
