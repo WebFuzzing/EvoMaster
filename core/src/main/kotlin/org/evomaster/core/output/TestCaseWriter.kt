@@ -2,6 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.search.EvaluatedAction
 
@@ -50,7 +51,7 @@ class TestCaseWriter {
             val call = evaluatedAction.action as RestCallAction
             val res = evaluatedAction.result as RestCallResult
 
-            val list = restAssureMethods(call, res, baseUrlOfSut)
+            val list = restAssuredMethods(call, res, baseUrlOfSut)
 
             lines.add("    given()" + list[0])
             (1..list.lastIndex - 1).forEach { i ->
@@ -60,13 +61,19 @@ class TestCaseWriter {
         }
 
 
-        private fun restAssureMethods(
+        private fun restAssuredMethods(
                 call: RestCallAction,
                 res: RestCallResult,
                 baseUrlOfSut: String)
                 : MutableList<String> {
 
             val list: MutableList<String> = mutableListOf()
+
+            if(call.auth !is NoAuth){
+                call.auth.headers.forEach { h ->
+                    list.add(".header(\"${h.name}\", \"${h.value}\") // ${call.auth.name}")
+                }
+            }
 
             /*
              *  Note: using the type in result body is wrong:

@@ -14,7 +14,13 @@ abstract class Sampler<T> where T : Individual {
     @Inject
     protected lateinit var configuration: EMConfig
 
-
+    /**
+     * Set of available actions that can be used to define a test case
+     *
+     * Key -> action name
+     *
+     * Value -> an action
+     */
     protected val actionCluster: MutableMap<String, Action> = mutableMapOf()
 
     abstract fun sampleAtRandom() : T

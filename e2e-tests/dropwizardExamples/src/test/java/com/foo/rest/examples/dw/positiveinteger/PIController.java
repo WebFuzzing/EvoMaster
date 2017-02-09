@@ -1,6 +1,9 @@
 package com.foo.rest.examples.dw.positiveinteger;
 
 import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
+
+import java.util.List;
 
 public class PIController extends RestController{
 
@@ -75,5 +78,10 @@ public class PIController extends RestController{
     @Override
     public String getUrlOfSwaggerJSON() {
         return "http://localhost:"+application.getJettyPort()+"/api/swagger.json";
+    }
+
+    @Override
+    public List<AuthenticationDto> getInfoForAuthentication() {
+        return null;
     }
 }

@@ -2,10 +2,13 @@ package org.evomaster.clientJava.controller;
 
 import io.restassured.RestAssured;
 import org.evomaster.clientJava.controllerApi.Formats;
+import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
@@ -54,6 +57,11 @@ public class RestControllerTest {
         @Override
         public String getUrlOfSwaggerJSON() {
             return SWAGGER_URL;
+        }
+
+        @Override
+        public List<AuthenticationDto> getInfoForAuthentication() {
+            return null;
         }
 
 

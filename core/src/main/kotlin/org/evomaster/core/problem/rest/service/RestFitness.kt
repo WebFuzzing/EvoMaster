@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.ActionResult
@@ -124,6 +125,17 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         val builder = client.target(baseUrl + path).request()
+
+        if(a.auth !is NoAuth){
+            a.auth.headers.forEach { h ->
+                builder.header(h.name, h.value)
+            }
+        }
+
+        /*
+            TODO: When handling headers, check that they do not
+            conflict with the auth ones
+         */
 
         /*
             TODO: need to handle "accept" of returned resource

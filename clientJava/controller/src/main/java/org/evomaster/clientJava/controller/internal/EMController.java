@@ -40,6 +40,7 @@ public class EMController {
         dto.swaggerJsonUrl = restController.getUrlOfSwaggerJSON();
         dto.isSutRunning = restController.isSutRunning();
         dto.baseUrlOfSUT = baseUrlOfSUT;
+        dto.infoForAuthentication = restController.getInfoForAuthentication();
 
         return dto;
     }

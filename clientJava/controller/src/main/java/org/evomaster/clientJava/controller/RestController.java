@@ -7,12 +7,14 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.EMController;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
+import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -153,6 +155,13 @@ public abstract class RestController {
      * @return
      */
     public abstract String getUrlOfSwaggerJSON();
+
+    /**
+     * Provide a list of valid authentication credentials, or {@code null} if
+     * none is necessary
+     * @return
+     */
+    public abstract List<AuthenticationDto> getInfoForAuthentication();
 
 
     public int getControllerPort() {

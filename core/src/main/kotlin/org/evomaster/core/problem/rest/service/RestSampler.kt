@@ -8,11 +8,14 @@ import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.properties.*
 import io.swagger.parser.SwaggerParser
+import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto
+import org.evomaster.clientJava.controllerApi.dto.HeaderDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.auth.AuthenticationHeader
+import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -29,7 +32,9 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     @Inject
-    protected lateinit var rc: RemoteController
+    private lateinit var rc: RemoteController
+
+    private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
 
     @PostConstruct
@@ -45,6 +50,38 @@ class RestSampler : Sampler<RestIndividual>() {
         val swagger = getSwagger(infoDto)
 
         createActions(swagger)
+
+        setupAuthentication(infoDto)
+    }
+
+
+    private fun setupAuthentication(infoDto: SutInfoDto) {
+
+        val info = infoDto.infoForAuthentication ?: return
+
+        info.forEach { i ->
+            if(i.name == null || i.name.isBlank()){
+                log.warn("Missing name in authentication info")
+                return@forEach
+            }
+
+            val headers: MutableList<AuthenticationHeader> = mutableListOf()
+
+             i.headers.forEach loop@ { h ->
+                val name = h.name?.trim()
+                val value = h.value?.trim()
+                if(name == null || value == null){
+                    log.warn("Invalid header in ${i.name}")
+                    return@loop
+                }
+
+                headers.add(AuthenticationHeader(name, value))
+            }
+
+            val auth = AuthenticationInfo(i.name.trim(), headers)
+
+            authentications.add(auth)
+        }
     }
 
 
@@ -84,9 +121,6 @@ class RestSampler : Sampler<RestIndividual>() {
             val name = p.name ?: "undefined"
 
             if (p is AbstractSerializableParameter<*>) {
-                //TODO: int64, double and float, and constraints
-                //TODO: format is optional, but type is mandatory
-                //TODO: see http://swagger.io/specification/
 
                 val type = p.getType() ?: run {
                     log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
@@ -152,7 +186,7 @@ class RestSampler : Sampler<RestIndividual>() {
                     o.value,
                     history)
 
-            if(gene !is CycleObjectGene) {
+            if (gene !is CycleObjectGene) {
                 fields.add(gene)
             }
         }
@@ -196,8 +230,8 @@ class RestSampler : Sampler<RestIndividual>() {
             "int32" -> return IntegerGene(name)
             "int64" -> return LongGene(name)
             "double" -> return DoubleGene(name)
-            "float"  -> return FloatGene(name)
-            else -> if(format!=null) {
+            "float" -> return FloatGene(name)
+            else -> if (format != null) {
                 log.warn("Unhandled format '$format'")
             }
         }
@@ -229,18 +263,18 @@ class RestSampler : Sampler<RestIndividual>() {
                         items,
                         history)
 
-                if(template is CycleObjectGene){
+                if (template is CycleObjectGene) {
                     return CycleObjectGene("<array> ${template.name}")
                 }
 
                 return ArrayGene(name, template)
             }
-            "object" ->{
+            "object" -> {
                 if (property == null) {
                     //TODO somehow will need to handle it
                     throw IllegalStateException("Cannot handle array out of a property")
                 }
-                if(property is MapProperty){
+                if (property is MapProperty) {
                     val ap = property.additionalProperties
                     val template = getGene(
                             name + "_map",
@@ -250,13 +284,13 @@ class RestSampler : Sampler<RestIndividual>() {
                             ap,
                             history)
 
-                    if(template is CycleObjectGene){
+                    if (template is CycleObjectGene) {
                         return CycleObjectGene("<map> ${template.name}")
                     }
 
                     return MapGene(name, template)
                 }
-                if(property is ObjectProperty){
+                if (property is ObjectProperty) {
 
                     //TODO refactor the copy&paste
                     val fields: MutableList<Gene> = mutableListOf()
@@ -270,7 +304,7 @@ class RestSampler : Sampler<RestIndividual>() {
                                 o.value,
                                 history)
 
-                        if(gene !is CycleObjectGene) {
+                        if (gene !is CycleObjectGene) {
                             fields.add(gene)
                         }
                     }
@@ -294,7 +328,7 @@ class RestSampler : Sampler<RestIndividual>() {
                     .target(swaggerURL)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
-        } catch (e: Exception){
+        } catch (e: Exception) {
             throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
         }
 
@@ -321,6 +355,15 @@ class RestSampler : Sampler<RestIndividual>() {
         val action = randomness.choose(actionCluster).copy()
 
         action.seeGenes().forEach { g -> g.randomize(randomness, false) }
+
+        if(authentications.size > 0 && action is RestCallAction){
+
+            if(randomness.nextDouble() < 0.9){
+                //if there is auth, should have high probability of using one,
+                //as without auth we would do little.
+                action.auth = randomness.choose(authentications)
+            }
+        }
 
         return RestIndividual(mutableListOf(action as RestAction))
     }
