@@ -44,7 +44,6 @@ public class ExecutionTracer {
     public static final String FALSE_BRANCH = "_falseBranch";
 
 
-
     /**
      * Key -> the unique id of the coverage objective
      * <br>
@@ -95,9 +94,9 @@ public class ExecutionTracer {
         return getNonCoveredObjectives(prefix).size();
     }
 
-    public static Set<String> getNonCoveredObjectives(String prefix){
+    public static Set<String> getNonCoveredObjectives(String prefix) {
 
-        return  objectiveCoverage
+        return objectiveCoverage
                 .entrySet().stream()
                 .filter(e -> prefix == null || e.getKey().startsWith(prefix))
                 .filter(e -> e.getValue() < 1)
@@ -105,7 +104,7 @@ public class ExecutionTracer {
                 .collect(Collectors.toSet());
     }
 
-    public static Double getValue(String id){
+    public static Double getValue(String id) {
         return objectiveCoverage.get(id);
     }
 
@@ -118,7 +117,7 @@ public class ExecutionTracer {
             In the same execution, a target could be reached several times,
             so we should keep track of the best value found so far
          */
-        if(objectiveCoverage.containsKey(id)){
+        if (objectiveCoverage.containsKey(id)) {
             double previous = objectiveCoverage.get(id);
             objectiveCoverage.put(id, Math.max(value, previous));
         } else {
@@ -137,39 +136,60 @@ public class ExecutionTracer {
      */
     public static void executedLine(String className, int line) {
 
-        String id = LINE + "_" + line + "_at_" + ClassName.get(className).getFullNameWithDots();
+        String id = LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line);
         updateObjective(id, 1d);
     }
 
 
     //---- branch-jump methods --------------------------
 
-    private static void updateBranch(String id, Truthness t){
+    private static void updateBranch(String id, Truthness t) {
 
         /*
             Note: when we have
             if(x > 0){}
 
-            the "jump" to "else" brnach is done if that is false.
+            the "jump" to "else" branch is done if that is false.
             So, the actual evaluated condition is the negation, ie
             x <= 0
          */
 
-        updateObjective(id+FALSE_BRANCH, t.getOfTrue());
-        updateObjective(id+TRUE_BRANCH, t.getOfFalse());
+        updateObjective(id + FALSE_BRANCH, t.getOfTrue());
+        updateObjective(id + TRUE_BRANCH, t.getOfFalse());
     }
 
     private static String getUniqueBranchId(String className, int line, int branchId) {
 
-        return BRANCH + "_at_line_"+line+"_position_"+branchId+"_at_" +
-                ClassName.get(className).getFullNameWithDots();
+        return BRANCH + "_at_" +
+                ClassName.get(className).getFullNameWithDots()
+                + "_at_line_" + padNumber(line) + "_position_" + branchId;
     }
 
+    private static String padNumber(int val){
+        if(val < 0){
+            throw new IllegalArgumentException("Negative number to pad");
+        }
+        if(val < 10){
+            return "0000" + val;
+        }
+        if(val < 100){
+            return "000" + val;
+        }
+        if(val < 1_000){
+            return "00" + val;
+        }
+        if(val < 10_000){
+            return "0" + val;
+        } else {
+            return ""+val;
+        }
+    }
 
     public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = "executingBranchJump";
 
 
     public static final String JUMP_DESC_1_VALUE = "(IILjava/lang/String;II)V";
+
     public static void executingBranchJump(
             int value, int opcode, String className, int line, int branchId) {
 
@@ -181,6 +201,7 @@ public class ExecutionTracer {
 
 
     public static final String JUMP_DESC_2_VALUES = "(IIILjava/lang/String;II)V";
+
     public static void executingBranchJump(
             int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
 
@@ -193,6 +214,7 @@ public class ExecutionTracer {
 
     public static final String JUMP_DESC_OBJECTS =
             "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;II)V";
+
     public static void executingBranchJump(
             Object first, Object second, int opcode, String className, int line, int branchId) {
 
@@ -205,6 +227,7 @@ public class ExecutionTracer {
 
     public static final String JUMP_DESC_NULL =
             "(Ljava/lang/Object;ILjava/lang/String;II)V";
+
     public static void executingBranchJump(
             Object obj, int opcode, String className, int line, int branchId) {
 
