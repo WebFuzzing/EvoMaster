@@ -64,6 +64,18 @@ class FitnessValue {
         targets[id] = value
     }
 
+
+    fun merge(other: FitnessValue){
+
+        other.targets.keys.forEach { t ->
+            val k = other.getHeuristic(t)
+            if(k > this.getHeuristic(t)){
+                this.updateTarget(t, k)
+            }
+        }
+    }
+
+
     fun subsumes(other: FitnessValue) : Boolean{
 
         if(this.targets.size < other.targets.size){

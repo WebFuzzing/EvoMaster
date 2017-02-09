@@ -21,6 +21,10 @@ where T : Individual {
                 )
     }
 
+    fun subsumes(other: EvaluatedIndividual<T>): Boolean{
+        return fitness.subsumes(other.fitness)
+    }
+
     fun evaluatedActions() : List<EvaluatedAction>{
 
         val list: MutableList<EvaluatedAction> = mutableListOf()

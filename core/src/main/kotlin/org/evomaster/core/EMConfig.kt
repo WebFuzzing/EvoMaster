@@ -240,4 +240,12 @@ class EMConfig {
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "Foo"
+
+    @Cfg("Define the population size in the search algorithms that use populations (eg, Genetic Algorithms)")
+    @Min(1.0)
+    var populationSize = 30
+
+    @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
+    @Min(1.0)
+    var maxSearchSuiteSize = 30
 }
