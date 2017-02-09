@@ -185,5 +185,10 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         actionResults.add(rcr)
+
+        if(response.status == 401 && a.auth !is NoAuth){
+            //this would likely be a misconfiguration in the SUT controller
+            log.warn("Got 401 although having auth for '${a.auth.name}'")
+        }
     }
 }
