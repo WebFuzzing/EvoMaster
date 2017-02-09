@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller.internal;
 
 import org.evomaster.clientJava.controller.RestController;
 import org.evomaster.clientJava.controllerApi.*;
+import org.evomaster.clientJava.controllerApi.dto.*;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 

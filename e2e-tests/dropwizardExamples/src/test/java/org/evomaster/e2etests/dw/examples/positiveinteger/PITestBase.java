@@ -2,7 +2,7 @@ package org.evomaster.e2etests.dw.examples.positiveinteger;
 
 import com.foo.rest.examples.dw.positiveinteger.PIController;
 import org.evomaster.clientJava.controller.EmbeddedStarter;
-import org.evomaster.clientJava.controllerApi.SutInfoDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.service.RemoteController;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

@@ -1,4 +1,4 @@
-package org.evomaster.clientJava.controllerApi;
+package org.evomaster.clientJava.controllerApi.dto;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -8,7 +8,7 @@ import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.properties.*
 import io.swagger.parser.SwaggerParser
-import org.evomaster.clientJava.controllerApi.SutInfoDto
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*

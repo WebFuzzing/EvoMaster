@@ -5,7 +5,7 @@ import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import org.evomaster.clientJava.controllerApi.Formats;
-import org.evomaster.clientJava.controllerApi.SutInfoDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;

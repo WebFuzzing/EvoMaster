@@ -2,6 +2,10 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.*
+import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.clientJava.controllerApi.dto.SutRunDto
+import org.evomaster.clientJava.controllerApi.dto.TargetsResponseDto
 import org.evomaster.core.EMConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

@@ -5,7 +5,7 @@ import com.google.inject.Key
 import com.google.inject.Module
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.clientJava.controllerApi.ControllerInfoDto
+import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.problem.rest.RestIndividual

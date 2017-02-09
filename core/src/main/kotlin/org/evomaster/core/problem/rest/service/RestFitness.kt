@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.clientJava.controllerApi.SutInfoDto
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
