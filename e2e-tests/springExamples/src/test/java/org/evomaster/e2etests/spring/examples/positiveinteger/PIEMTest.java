@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.spring.examples.positiveinteger;
 
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallResult;
@@ -30,14 +31,30 @@ public class PIEMTest extends PITestBase {
     }
 
     @Test
-    public void testRunEM(){
+    public void testMIO(){
+        testRunEM(EMConfig.Algorithm.MIO, 20);
+    }
+
+    @Test
+    public void testRand(){
+        testRunEM(EMConfig.Algorithm.RANDOM, 20);
+    }
+
+    @Test
+    public void testWTS(){
+        testRunEM(EMConfig.Algorithm.WTS, 2_000); // high value, just to check if no crash
+    }
+
+
+    private void testRunEM(EMConfig.Algorithm alg, int iterations){
 
         String[] args = new String[]{
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "20",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+                "--maxFitnessEvaluations", ""+iterations,
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--algorithm", alg.toString()
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);

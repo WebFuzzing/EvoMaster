@@ -12,6 +12,8 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.algorithms.RandomAlgorithm
+import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.Statistics
 
 
@@ -108,19 +110,29 @@ class Main {
             return injector
         }
 
+
         fun run(injector: Injector): Solution<*> {
 
             //TODO check problem type
             val rc = injector.getInstance(RemoteController::class.java)
             rc.startANewSearch()
 
+            val config = injector.getInstance(EMConfig::class.java)
 
-            //TODO check algorithm
-            val mio = injector.getInstance(Key.get(
-                    object : TypeLiteral<MioAlgorithm<RestIndividual>>() {}))
+            val key = when(config.algorithm) {
+                EMConfig.Algorithm.MIO -> Key.get(
+                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.RANDOM -> Key.get(
+                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.WTS -> Key.get(
+                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+            }
+
+            val imp = injector.getInstance(key)
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
-            val solution = mio.search()
+            val solution = imp.search()
 
             return solution
         }

@@ -150,7 +150,7 @@ class EMConfig {
     //--- properties
 
     enum class Algorithm {
-        MIO, RANDOM
+        MIO, RANDOM, WTS
     }
 
     @Cfg("The algorithm used to generate test cases")
