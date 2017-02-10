@@ -10,9 +10,6 @@ import org.evomaster.core.search.service.SearchAlgorithm
  */
 class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
-    @Inject
-    private lateinit var mutator : Mutator<T>
-
 
     override fun search(): Solution<T> {
 
@@ -34,7 +31,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             val nMutations = apc.getNumberOfMutations()
 
-            mutator.mutateAndSave(nMutations, ei, archive)
+            getMutatator().mutateAndSave(nMutations, ei, archive)
         }
 
         return archive.extractSolution()

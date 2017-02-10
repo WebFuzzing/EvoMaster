@@ -1,7 +1,11 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.*
+import org.evomaster.core.search.mutator.CombinedMutator
+import org.evomaster.core.search.mutator.GreedyMutator
+import org.evomaster.core.search.mutator.RandomMutator
 import org.evomaster.core.search.service.Randomness
 
 
@@ -25,6 +29,31 @@ abstract class SearchAlgorithm<T> where T : Individual {
     @Inject
     protected lateinit var apc: AdaptiveParameterControl
 
+    @Inject
+    protected lateinit var config: EMConfig
+
+
+    //following are private. shouldn't be accessed directly.
+    //rather use "getMutator"
+
+    @Inject
+    private lateinit var randomMutator: RandomMutator<T>
+
+    @Inject
+    private lateinit var greedyMutator: GreedyMutator<T>
+
+    @Inject
+    private lateinit var combinedMutator: CombinedMutator<T>
+
+
+    protected fun getMutatator() : Mutator<T>{
+        return when(config.mutator){
+            EMConfig.Mutators.RANDOM -> randomMutator
+            EMConfig.Mutators.GREEDY -> greedyMutator
+            EMConfig.Mutators.COMBINED -> combinedMutator
+            else -> throw IllegalStateException("Unrecognized mutator: ${config.mutator}")
+        }
+    }
 
     abstract fun search() : Solution<T>
 

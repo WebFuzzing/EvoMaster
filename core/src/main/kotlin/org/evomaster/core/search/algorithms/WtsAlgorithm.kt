@@ -23,11 +23,6 @@ import org.evomaster.core.search.service.SearchAlgorithm
  */
 class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
-    @Inject
-    private lateinit var config: EMConfig
-
-    @Inject
-    private lateinit var mutator: Mutator<T>
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
@@ -89,7 +84,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 val ind = wts.suite[i]
                 val nMutations = apc.getNumberOfMutations()
 
-                mutator.mutateAndSave(nMutations, ind, archive)
+                getMutatator().mutateAndSave(nMutations, ind, archive)
             }
         }
 
