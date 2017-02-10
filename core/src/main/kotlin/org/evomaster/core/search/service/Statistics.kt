@@ -12,7 +12,7 @@ import java.nio.file.Paths
 class Statistics {
 
     @Inject
-    private lateinit var configuration: EMConfig
+    private lateinit var config: EMConfig
 
     @Inject
     private lateinit var time: SearchTimeController
@@ -22,18 +22,23 @@ class Statistics {
 
     fun writeStatistics(solution: Solution<*>) {
 
-        val path = Paths.get(configuration.statisticsFile).toAbsolutePath()
-
-        Files.createDirectories(path.parent)
-        Files.deleteIfExists(path)
-        Files.createFile(path)
-
         val data = getData(solution)
         val headers = data.map { d -> d.header }.joinToString(",")
         val elements = data.map { d -> d.element }.joinToString(",")
 
-        path.toFile().appendText("$headers\n")
-        path.toFile().appendText("$elements\n")
+        val path = Paths.get(config.statisticsFile).toAbsolutePath()
+
+        Files.createDirectories(path.parent)
+
+        if(Files.exists(path) && config.appendToStatisticsFile){
+            path.toFile().appendText("$elements\n")
+        } else {
+            Files.deleteIfExists(path)
+            Files.createFile(path)
+
+            path.toFile().appendText("$headers\n")
+            path.toFile().appendText("$elements\n")
+        }
     }
 
     internal fun getData(solution: Solution<*>): List<Pair> {
@@ -50,8 +55,8 @@ class Statistics {
         list.add(Pair("maxReturnCodes", "" + codes.max()))
 
         //TODO reflection on all fields in EMConfig
-        list.add(Pair("id", configuration.statisticsColumnId))
-        list.add(Pair("algorithm", configuration.algorithm.name))
+        list.add(Pair("id", config.statisticsColumnId))
+        list.add(Pair("algorithm", config.algorithm.name))
 
         return list
     }

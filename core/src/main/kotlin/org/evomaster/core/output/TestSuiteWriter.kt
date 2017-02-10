@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -20,15 +21,14 @@ class TestSuiteWriter {
 
         fun writeTests(
                 solution: Solution<*>,
-                format: OutputFormat,
-                outputFolder: String,
-                testSuiteFileName: String,
-                controllerName: String){
+                controllerName: String,
+                config: EMConfig
+                ){
 
-            val name = TestSuiteFileName(testSuiteFileName)
+            val name = TestSuiteFileName(config.testSuiteFileName)
 
-            val content = convertToCompilableTestCode(solution, format, name, controllerName)
-            saveToDisk(content, format, outputFolder, name)
+            val content = convertToCompilableTestCode(solution, config.outputFormat, name, controllerName)
+            saveToDisk(content, config, name)
         }
 
 
@@ -62,11 +62,10 @@ class TestSuiteWriter {
 
 
         fun saveToDisk(testFileContent: String,
-                       format: OutputFormat,
-                       outputFolder: String,
+                       config: EMConfig,
                        testSuiteFileName: TestSuiteFileName){
 
-            val path = Paths.get(outputFolder, testSuiteFileName.getAsPath(format))
+            val path = Paths.get(config.outputFolder, testSuiteFileName.getAsPath(config.outputFormat))
 
             Files.createDirectories(path.parent)
             Files.deleteIfExists(path)

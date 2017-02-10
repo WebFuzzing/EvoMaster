@@ -18,3 +18,4 @@ hs_err_pid*
 /e2e-tests/dropwizardExamples/src/em/
 /e2e-tests/springExamples/src/em/
 /src/
+/private/

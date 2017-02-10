@@ -171,10 +171,8 @@ class Main {
 
             TestSuiteWriter.writeTests(
                     solution,
-                    config.outputFormat,
-                    config.outputFolder,
-                    config.testSuiteFileName,
-                    controllerInfoDto.fullName
+                    controllerInfoDto.fullName,
+                    config
             )
         }
 

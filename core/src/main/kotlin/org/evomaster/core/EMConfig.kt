@@ -246,6 +246,9 @@ class EMConfig {
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
     var statisticsFile = "statistics.csv"
 
+    @Cfg("Whether should add to an existing statistics file, instead of replacing it")
+    var appendToStatisticsFile = false
+
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "-"
 
