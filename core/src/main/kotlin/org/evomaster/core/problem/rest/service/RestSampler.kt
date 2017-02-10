@@ -358,7 +358,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
         if(authentications.size > 0 && action is RestCallAction){
 
-            if(randomness.nextDouble() < 0.9){
+            if(randomness.nextBoolean(0.9)){
                 //if there is auth, should have high probability of using one,
                 //as without auth we would do little.
                 action.auth = randomness.choose(authentications)

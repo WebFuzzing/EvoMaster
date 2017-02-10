@@ -22,7 +22,7 @@ abstract class Mutator<T> where T : Individual {
     /**
      * @return a mutated copy
      */
-    protected abstract fun mutate(individual: T) : T
+    abstract fun mutate(individual: T) : T
 
 
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>) : Int{

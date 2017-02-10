@@ -174,7 +174,7 @@ class EMConfig {
     }
 
     @Cfg("The type of mutator used when tests are evolved")
-    var mutator = Mutators.RANDOM
+    var mutator = Mutators.COMBINED
 
 
     @Cfg("Specify if test classes should be created as output of the tool. " +
@@ -247,7 +247,7 @@ class EMConfig {
     var statisticsFile = "statistics.csv"
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
-    var statisticsColumnId = "Foo"
+    var statisticsColumnId = "-"
 
     @Cfg("Define the population size in the search algorithms that use populations (eg, Genetic Algorithms)")
     @Min(1.0)
