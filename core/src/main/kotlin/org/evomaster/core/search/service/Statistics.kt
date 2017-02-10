@@ -45,6 +45,10 @@ class Statistics {
         list.add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
         list.add(Pair("errors5xx", "" + errors5xx(solution)))
 
+        val codes = codes(solution)
+        list.add(Pair("avgReturnCodes", "" + codes.average()))
+        list.add(Pair("maxReturnCodes", "" + codes.max()))
+
         //TODO reflection on all fields in EMConfig
         list.add(Pair("id", configuration.statisticsColumnId))
         list.add(Pair("algorithm", configuration.algorithm.name))
@@ -67,5 +71,24 @@ class Statistics {
                 }
                 .distinct()
                 .count()
+    }
+
+    private fun codes(solution: Solution<*>): List<Int>{
+
+        return solution.individuals
+                .flatMap { i -> i.evaluatedActions() }
+                .filter {
+                    ea -> ea.result is RestCallResult
+                }
+                .map { ea -> ea.action.getName() }
+                .distinct() //distinct names of actions, ie VERB:PATH
+                .map { name ->
+                    solution.individuals
+                            .flatMap { i -> i.evaluatedActions() }
+                            .filter{ ea -> ea.action.getName() == name}
+                            .map { ea -> (ea.result as RestCallResult).getStatusCode() }
+                            .distinct()
+                            .count()
+                }
     }
 }
