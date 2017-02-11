@@ -1,0 +1,36 @@
+package org.evomaster.core.search.gene
+
+import org.evomaster.core.search.service.Randomness
+
+/**
+ * Using RFC3339
+ *
+ * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
+ */
+class DateGene(
+        name: String,
+        //note: ranges deliberately include wrong values.
+        val year: IntegerGene = IntegerGene("year", 2016, 1900, 2100),
+        val month: IntegerGene = IntegerGene("month", 3, 0, 13),
+        val day: IntegerGene = IntegerGene("day", 12, 0, 32)
+) : Gene(name) {
+
+
+    override fun copy(): Gene = DateGene(name,
+            year.copy() as IntegerGene,
+            month.copy() as IntegerGene,
+            day.copy() as IntegerGene)
+
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+
+        year.randomize(randomness, forceNewValue)
+        month.randomize(randomness, forceNewValue)
+        day.randomize(randomness, forceNewValue)
+    }
+
+    override fun getValueAsString(): String {
+        return "${year.value}-${month.value}-${day.value}"
+    }
+
+
+}

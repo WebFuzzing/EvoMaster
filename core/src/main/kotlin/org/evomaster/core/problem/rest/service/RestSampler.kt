@@ -231,7 +231,6 @@ class RestSampler : Sampler<RestIndividual>() {
         dateTime	    string	date-time	As defined by date-time - RFC3339
         password	    string	password	Used to hint UIs the input needs to be obscured.
 
-        TODO all cases, and constraints
         */
 
         //first check for format
@@ -240,6 +239,11 @@ class RestSampler : Sampler<RestIndividual>() {
             "int64" -> return LongGene(name)
             "double" -> return DoubleGene(name)
             "float" -> return FloatGene(name)
+            "password" -> return StringGene(name) //nothing special to do, it is just a hint
+            "binary" -> return StringGene(name) //does it need to be treated specially?
+            "byte" -> return Base64StringGene(name)
+            "date" -> return DateGene(name)
+            "date-time" -> return DateTimeGene(name)
             else -> if (format != null) {
                 log.warn("Unhandled format '$format'")
             }

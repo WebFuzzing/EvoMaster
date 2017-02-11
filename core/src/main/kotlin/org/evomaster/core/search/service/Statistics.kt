@@ -57,6 +57,7 @@ class Statistics {
         //TODO reflection on all fields in EMConfig
         list.add(Pair("id", config.statisticsColumnId))
         list.add(Pair("algorithm", config.algorithm.name))
+        list.add(Pair("seed", "" + config.seed))
 
         return list
     }
