@@ -11,6 +11,7 @@ import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto
 import org.evomaster.clientJava.controllerApi.dto.HeaderDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -106,6 +107,14 @@ class RestSampler : Sampler<RestIndividual>() {
             }
         }
 
+        val n = actionCluster.size
+        if(n == 1) {
+            LoggingUtil.getInfoLogger()
+                    .info("There is only one RESTful API entry point defined in the Swagger configuration")
+        } else {
+            LoggingUtil.getInfoLogger()
+                    .info("There are $n RESTful API entry points defined in the Swagger configuration")
+        }
     }
 
 
