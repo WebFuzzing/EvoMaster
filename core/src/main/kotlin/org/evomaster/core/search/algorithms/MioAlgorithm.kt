@@ -22,7 +22,6 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             if(archive.isEmpty() || randomness.nextBoolean(randomP)) {
 
                 archive.addIfNeeded(ff.calculateCoverage(sampler.sampleAtRandom()))
-                time.newEvaluation()
 
                 continue
             }

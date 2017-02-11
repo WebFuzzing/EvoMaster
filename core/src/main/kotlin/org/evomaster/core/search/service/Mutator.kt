@@ -38,7 +38,6 @@ abstract class Mutator<T> where T : Individual {
             }
 
             val mutated = ff.calculateCoverage(mutate(current.individual))
-            time.newEvaluation()
 
             if(current.fitness.subsumes(mutated.fitness)){
                 continue

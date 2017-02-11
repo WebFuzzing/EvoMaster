@@ -21,7 +21,15 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var randomness : Randomness
 
+    @Inject
+    protected lateinit var time: SearchTimeController
 
-    abstract fun calculateCoverage(individual: T) : EvaluatedIndividual<T>
+    fun calculateCoverage(individual: T) : EvaluatedIndividual<T>{
+        val ei = doCalculateCoverage(individual)
+        time.newEvaluation()
+        return ei
+    }
+
+    protected abstract fun doCalculateCoverage(individual: T) : EvaluatedIndividual<T>
 
 }

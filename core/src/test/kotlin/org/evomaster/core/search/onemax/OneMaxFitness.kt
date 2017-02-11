@@ -7,7 +7,7 @@ import org.evomaster.core.search.FitnessValue
 
 class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
 
-    override fun calculateCoverage(individual: OneMaxIndividual)
+    override fun doCalculateCoverage(individual: OneMaxIndividual)
             : EvaluatedIndividual<OneMaxIndividual> {
 
         val fv = FitnessValue()

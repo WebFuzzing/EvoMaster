@@ -50,7 +50,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     }
 
 
-    override fun calculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual> {
+    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual> {
 
         rc.resetSUT()
 

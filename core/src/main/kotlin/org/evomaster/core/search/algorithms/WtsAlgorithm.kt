@@ -127,11 +127,11 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val n = config.populationSize
 
-        (1..n).forEach {
+        for(i in 1..n) {
             population.add(sampleSuite())
 
             if (!time.shouldContinueSearch()) {
-                return@forEach
+                break
             }
         }
     }
@@ -142,13 +142,13 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val wts = WtsEvalIndividual<T>(mutableListOf())
 
-        (1..n).forEach {
+        for(i in 1..n){
             val ind = ff.calculateCoverage(sampler.sampleAtRandom())
             archive.addIfNeeded(ind)
             wts.suite.add(ind)
 
             if (!time.shouldContinueSearch()) {
-                return@forEach
+                break
             }
         }
 
