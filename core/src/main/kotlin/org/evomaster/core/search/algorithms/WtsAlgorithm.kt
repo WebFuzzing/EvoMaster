@@ -46,7 +46,10 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 val x = selection()
                 val y = selection()
                 //x and y are copied
-                xover(x, y)
+
+                if(randomness.nextBoolean(config.xoverProbability)) {
+                    xover(x, y)
+                }
                 mutate(x)
                 mutate(y)
 
