@@ -1,7 +1,16 @@
 package org.evomaster.core.search
 
+import com.google.inject.Injector
+import com.google.inject.Key
+import com.google.inject.Module
+import com.google.inject.TypeLiteral
+import com.netflix.governator.guice.LifecycleInjector
+import org.evomaster.core.BaseModule
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.onemax.OneMaxFitness
 import org.evomaster.core.search.onemax.OneMaxIndividual
+import org.evomaster.core.search.onemax.OneMaxModule
 import org.evomaster.core.search.service.Archive
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -15,8 +24,15 @@ class ArchiveTest{
 
     @BeforeEach
     fun init(){
-        archive = Archive<OneMaxIndividual>()
-        ff =  OneMaxFitness()
+
+        val injector: Injector = LifecycleInjector.builder()
+                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+                .build().createInjector()
+
+
+        archive = injector.getInstance(Key.get(
+                object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
+        ff =  injector.getInstance(OneMaxFitness::class.java)
     }
 
     @Test
