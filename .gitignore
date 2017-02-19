@@ -19,3 +19,4 @@ hs_err_pid*
 /e2e-tests/springExamples/src/em/
 /src/
 /private/
+/statistics.csv
