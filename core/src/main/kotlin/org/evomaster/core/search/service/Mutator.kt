@@ -25,13 +25,16 @@ abstract class Mutator<T> where T : Individual {
     abstract fun mutate(individual: T) : T
 
 
-    fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>) : Int{
+    /**
+     * @param upToNTimes how many mutations will be applied. can be less if running out of time
+     * @param individual which will be mutated
+     * @param archive where to save newly mutated individuals (if needed, eg covering new targets)
+     */
+    fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>) {
 
         var current = individual
-        var counter = 0
 
         for(i in 0 until upToNTimes){
-            counter++
 
             if(! time.shouldContinueSearch()){
                 break
@@ -47,7 +50,5 @@ abstract class Mutator<T> where T : Individual {
 
             current = mutated
         }
-
-        return counter++
     }
 }

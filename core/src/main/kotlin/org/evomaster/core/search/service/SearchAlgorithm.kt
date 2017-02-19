@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.*
 import org.evomaster.core.search.mutator.CombinedMutator
-import org.evomaster.core.search.mutator.GreedyMutator
+import org.evomaster.core.search.mutator.StandardMutator
 import org.evomaster.core.search.mutator.RandomMutator
 import org.evomaster.core.search.service.Randomness
 
@@ -40,7 +40,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private lateinit var randomMutator: RandomMutator<T>
 
     @Inject
-    private lateinit var greedyMutator: GreedyMutator<T>
+    private lateinit var greedyMutator: StandardMutator<T>
 
     @Inject
     private lateinit var combinedMutator: CombinedMutator<T>

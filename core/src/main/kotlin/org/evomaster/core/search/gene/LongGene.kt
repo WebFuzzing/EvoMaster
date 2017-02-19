@@ -17,7 +17,12 @@ class LongGene (
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
-        var k = randomness.nextLong()
+        var k = if(randomness.nextBoolean()) {
+            randomness.nextLong()
+        } else {
+            randomness.nextInt() as Long
+        }
+
         while(k == value){
             k = randomness.nextLong()
         }

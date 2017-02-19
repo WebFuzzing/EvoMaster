@@ -86,12 +86,24 @@ class Randomness {
         return characters[random.nextInt(characters.length)]
     }
 
+    /**
+     * Choose a random element from the list, up to the element in the index position (exclusive).
+     * Ie, consider only the first "index" elements
+     */
+    fun <T> chooseUpTo(list: List<T>, index: Int): T {
+        if(index <= 0 || index > list.size){
+            throw IllegalArgumentException("Invalid index $index in list of size ${list.size}")
+        }
+
+        val index = random.nextInt(index)
+        return list[index]
+    }
+
     fun <T> choose(list: List<T>): T {
         if (list.isEmpty()) {
             throw IllegalArgumentException("Empty list to choose from")
         }
-        val index = random.nextInt(list.size)
-        return list[index]
+        return chooseUpTo(list, list.size)
     }
 
     /**

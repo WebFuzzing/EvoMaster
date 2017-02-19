@@ -14,7 +14,7 @@ class CombinedMutator  <T> : Mutator<T>() where T: Individual {
     private lateinit var randomMutator: RandomMutator<T>
 
     @Inject
-    private lateinit var greedyMutator: GreedyMutator<T>
+    private lateinit var greedyMutator: StandardMutator<T>
 
 
     override fun mutate(individual: T): T {

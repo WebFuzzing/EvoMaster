@@ -19,13 +19,18 @@ class RandomMutator<T> : Mutator<T>() where T: Individual {
             return copy
         }
 
+        /*
+            Probability 1/n that a gene is going to be mutated.
+            On average, 1 mutation per individual.
+            However, non-null probability of no modifications
+         */
+        val p = 1.0 / genes.size
+
         var mutated = false
 
         while(! mutated) { //no point in returning a copy that is not mutated
 
             for (gene in genes) {
-
-                val p = 1.0 / genes.size
 
                 if (!randomness.nextBoolean(p)) {
                     continue
