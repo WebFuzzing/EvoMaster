@@ -206,15 +206,15 @@ class EMConfig {
 
     @Cfg("Limit of number of individuals per target to keep in the archive")
     @Min(1.0)
-    var archiveTargetLimit = 10;
+    var archiveTargetLimit = 10
 
     @Cfg("Probability of sampling a new individual at random")
     @Min(0.0) @Max(1.0)
     var probOfRandomSampling = 0.5
 
-    @Cfg("The percentage of passed search before the probability of random sampling is reduced to 0")
+    @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @Min(0.0) @Max(1.0)
-    var decreasingRandomSampling = 0.5
+    var focusedSearchActivationTime = 0.5
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
     @Min(0.0)

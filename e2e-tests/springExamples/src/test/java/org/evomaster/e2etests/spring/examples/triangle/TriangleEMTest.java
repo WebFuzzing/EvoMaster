@@ -37,8 +37,7 @@ public class TriangleEMTest extends SpringTestBase {
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxFitnessEvaluations", "1000",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--archiveTargetLimit", "1"
+                "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);

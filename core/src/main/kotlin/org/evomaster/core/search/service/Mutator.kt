@@ -19,6 +19,10 @@ abstract class Mutator<T> where T : Individual {
     @Inject
     protected lateinit var time : SearchTimeController
 
+    @Inject
+    protected lateinit var apc: AdaptiveParameterControl
+
+
     /**
      * @return a mutated copy
      */

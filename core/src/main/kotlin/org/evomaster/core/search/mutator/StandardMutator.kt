@@ -71,8 +71,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         //check maximum range. no point in having a delta greater than such range
         val range: Long = gene.max.toLong() - gene.min.toLong()
+
+        val maxIndex = apc.getExploratoryValue(intpow2.size, 10).toInt()
+
         var n = 0
-        for (i in 0 until intpow2.size) {
+        for (i in 0 until maxIndex) {
             n = i
             if (intpow2[i] > range) {
                 break
@@ -92,7 +95,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         gene.value = when {
             res > gene.max -> gene.max
             res < gene.min -> gene.min
-            else -> gene.value + res.toInt()
+            else ->  res.toInt()
         }
     }
 }

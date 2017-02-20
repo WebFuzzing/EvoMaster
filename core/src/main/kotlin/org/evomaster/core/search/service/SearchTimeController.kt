@@ -40,4 +40,18 @@ class SearchTimeController {
 
         return false //TODO
     }
+
+    /**
+     * Return how much percentage [0,1] of search budget has been used so far
+     */
+    fun percentageUsedBudget() : Double{
+
+        if(configuration.stoppingCriterion.equals(
+                EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
+
+            return evaluatedIndividuals.toDouble() / configuration.maxFitnessEvaluations.toDouble()
+        } else {
+            return -1.0; //TODO
+        }
+    }
 }

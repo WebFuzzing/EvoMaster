@@ -29,9 +29,8 @@ class MioAlgorithmOnConstantTest {
                 object : TypeLiteral<MioAlgorithm<ConstantIndividual>>() {}))
 
         val config = injector.getInstance(EMConfig::class.java)
-        config.maxFitnessEvaluations = 10000
-        config.archiveTargetLimit = 1
-        config.probOfRandomSampling = 0.0
+        config.seed = 42
+        config.maxFitnessEvaluations = 100
 
         val solution = mio.search()
 
