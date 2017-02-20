@@ -1,8 +1,6 @@
 package com.foo.rest.examples.spring.triangle;
 
 
-import com.foo.rest.examples.spring.positiveinteger.ResponseDto;
-import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -18,7 +16,7 @@ import javax.ws.rs.core.MediaType;
 public class TriangleRest {
 
 
-    @ApiOperation("Check if the given value is positive")
+    @ApiOperation("Check the triangle type of the given three edges")
     @RequestMapping(
             value = "/{a}/{b}/{c}",
             method = RequestMethod.GET,
