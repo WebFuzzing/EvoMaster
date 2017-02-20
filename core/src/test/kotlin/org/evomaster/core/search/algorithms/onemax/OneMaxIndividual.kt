@@ -1,4 +1,4 @@
-package org.evomaster.core.search.onemax
+package org.evomaster.core.search.algorithms.onemax
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual

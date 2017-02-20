@@ -1,12 +1,12 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.algorithms
 
 import com.google.inject.*
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.RandomAlgorithm
-import org.evomaster.core.search.onemax.OneMaxIndividual
-import org.evomaster.core.search.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
+import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test
 class RandomSearchTest {
 
     val injector: Injector = LifecycleInjector.builder()
-            .withModules(* arrayOf<Module>(OneMaxModule(),BaseModule()))
+            .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
             .build().createInjector()
 
     @Test

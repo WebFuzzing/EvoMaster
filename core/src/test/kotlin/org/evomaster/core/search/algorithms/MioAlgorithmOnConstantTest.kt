@@ -1,4 +1,4 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.algorithms
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -8,8 +8,8 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.constant.ConstantIndividual
-import org.evomaster.core.search.constant.ConstantModule
+import org.evomaster.core.search.algorithms.constant.ConstantIndividual
+import org.evomaster.core.search.algorithms.constant.ConstantModule
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -30,7 +30,7 @@ class MioAlgorithmOnConstantTest {
 
         val config = injector.getInstance(EMConfig::class.java)
         config.seed = 42
-        config.maxFitnessEvaluations = 100
+        config.maxFitnessEvaluations = 200
 
         val solution = mio.search()
 

@@ -1,4 +1,4 @@
-package org.evomaster.core.search.constant
+package org.evomaster.core.search.algorithms.constant
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral

@@ -1,4 +1,4 @@
-package org.evomaster.core.search.constant
+package org.evomaster.core.search.algorithms.constant
 
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue

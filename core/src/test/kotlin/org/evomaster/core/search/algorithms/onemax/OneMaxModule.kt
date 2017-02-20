@@ -1,4 +1,4 @@
-package org.evomaster.core.search.onemax
+package org.evomaster.core.search.algorithms.onemax
 
 import com.google.inject.*
 import org.evomaster.core.EMConfig

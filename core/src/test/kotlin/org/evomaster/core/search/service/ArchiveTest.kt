@@ -1,4 +1,4 @@
-package org.evomaster.core.search
+package org.evomaster.core.search.service
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -8,9 +8,9 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.onemax.OneMaxFitness
-import org.evomaster.core.search.onemax.OneMaxIndividual
-import org.evomaster.core.search.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
+import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
+import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.service.Archive
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
