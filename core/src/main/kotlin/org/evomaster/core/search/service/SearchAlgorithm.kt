@@ -40,7 +40,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     private lateinit var randomMutator: RandomMutator<T>
 
     @Inject
-    private lateinit var greedyMutator: StandardMutator<T>
+    private lateinit var standardMutator: StandardMutator<T>
 
     @Inject
     private lateinit var combinedMutator: CombinedMutator<T>
@@ -49,7 +49,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     protected fun getMutatator() : Mutator<T>{
         return when(config.mutator){
             EMConfig.Mutators.RANDOM -> randomMutator
-            EMConfig.Mutators.GREEDY -> greedyMutator
+            EMConfig.Mutators.STANDARD -> standardMutator
             EMConfig.Mutators.COMBINED -> combinedMutator
             else -> throw IllegalStateException("Unrecognized mutator: ${config.mutator}")
         }

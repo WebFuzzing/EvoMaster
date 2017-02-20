@@ -92,6 +92,8 @@ class RestSampler : Sampler<RestIndividual>() {
 
         //TODO check Swagger version
 
+        //TODO check for when swagger.paths is null
+
         swagger.paths.forEach { e ->
 
             val restPath = RestPath((swagger.basePath ?: "") + "/" + e.key)

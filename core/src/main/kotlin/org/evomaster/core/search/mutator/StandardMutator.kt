@@ -3,12 +3,13 @@ package org.evomaster.core.search.mutator
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.service.Mutator
 
 
-class StandardMutator<T> : Mutator<T>() where T: Individual {
+class StandardMutator<T> : Mutator<T>() where T : Individual {
 
-    private val intpow2 = (0..30).map{ Math.pow(2.0, it.toDouble()).toInt()}
+    private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
 
     override fun mutate(individual: T): T {
@@ -16,7 +17,7 @@ class StandardMutator<T> : Mutator<T>() where T: Individual {
 
         val genes = copy.seeGenes().filter(Gene::isMutable)
 
-        if(genes.isEmpty()){
+        if (genes.isEmpty()) {
             return copy
         }
 
@@ -24,7 +25,7 @@ class StandardMutator<T> : Mutator<T>() where T: Individual {
 
         var mutated = false
 
-        while(! mutated) { //no point in returning a copy that is not mutated
+        while (!mutated) { //no point in returning a copy that is not mutated
 
             for (gene in genes) {
 
@@ -41,40 +42,57 @@ class StandardMutator<T> : Mutator<T>() where T: Individual {
         return copy
     }
 
-    private fun mutateGene(gene: Gene){
+    private fun mutateGene(gene: Gene) {
 
-        if(gene is IntegerGene){
+        when (gene) {
+            is IntegerGene -> handleIntegerGene(gene)
+            is OptionalGene -> handleOptionalGene(gene)
+            else ->
+                //TODO other cases
+                gene.randomize(randomness, true)
+        }
+    }
 
-            assert(gene.min < gene.max && gene.isMutable())
-
-            //check maximum range. no point in having a delta greater than such range
-            val range: Long = gene.max.toLong() - gene.min.toLong()
-            var n = 0
-            for(i in 0 until  intpow2.size){
-                n = i
-                if(intpow2[i] > range){
-                    break
-                }
-            }
-
-            //choose an i for 2^i modification
-            val delta = randomness.chooseUpTo(intpow2,n)
-            val sign = when(gene.value){
-                gene.max -> -1
-                gene.min -> +1
-                else -> randomness.choose(listOf(-1, +1))
-            }
-
-            val res : Long =  (gene.value.toLong()) + (sign * delta)
-
-            gene.value = when{
-                res > gene.max ->  gene.max
-                res < gene.min ->  gene.min
-                else -> res.toInt()
-            }
+    private fun handleOptionalGene(gene: OptionalGene){
+        if(! gene.isActive){
+            gene.isActive = true
         } else {
-            //TODO other cases
-            gene.randomize(randomness, true)
+
+            if(randomness.nextBoolean(0.1)){
+                gene.isActive = false
+            } else {
+                mutateGene(gene.gene)
+            }
+        }
+    }
+
+    private fun handleIntegerGene(gene: IntegerGene) {
+        assert(gene.min < gene.max && gene.isMutable())
+
+        //check maximum range. no point in having a delta greater than such range
+        val range: Long = gene.max.toLong() - gene.min.toLong()
+        var n = 0
+        for (i in 0 until intpow2.size) {
+            n = i
+            if (intpow2[i] > range) {
+                break
+            }
+        }
+
+        //choose an i for 2^i modification
+        val delta = randomness.chooseUpTo(intpow2, n)
+        val sign = when (gene.value) {
+            gene.max -> -1
+            gene.min -> +1
+            else -> randomness.choose(listOf(-1, +1))
+        }
+
+        val res: Long = (gene.value.toLong()) + (sign * delta)
+
+        gene.value = when {
+            res > gene.max -> gene.max
+            res < gene.min -> gene.min
+            else -> gene.value + res.toInt()
         }
     }
 }

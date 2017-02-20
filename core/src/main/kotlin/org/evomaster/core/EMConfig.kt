@@ -170,7 +170,7 @@ class EMConfig {
 
 
     enum class Mutators{
-        RANDOM, GREEDY, COMBINED
+        RANDOM, STANDARD, COMBINED
     }
 
     @Cfg("The type of mutator used when tests are evolved")
