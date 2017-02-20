@@ -29,6 +29,9 @@ class Randomness {
 
     fun nextBoolean() = random.nextBoolean()
 
+    /**
+     * Return true with probability P
+     */
     fun nextBoolean(p: Double) = random.nextDouble() < p
 
     fun nextInt() = random.nextInt()

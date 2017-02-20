@@ -21,13 +21,22 @@ class IntegerGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
-        val k = if (forceNewValue) {
-            randomness.nextInt(min, max, value)
-        } else {
-            randomness.nextInt(min, max)
-        }
+        val z = 1000
 
-        value = k
+        if(min < -z && max > z && randomness.nextBoolean()){
+            //if very large range, might want to sample small values any now and then
+            if (forceNewValue) {
+                value = randomness.nextInt(-z, z, value)
+            } else {
+                value = randomness.nextInt(-z, z)
+            }
+        } else {
+            if (forceNewValue) {
+                value = randomness.nextInt(min, max, value)
+            } else {
+                value = randomness.nextInt(min, max)
+            }
+        }
     }
 
     override fun getValueAsString() : String{

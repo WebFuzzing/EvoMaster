@@ -58,7 +58,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             gene.isActive = true
         } else {
 
-            if(randomness.nextBoolean(0.1)){
+            if(randomness.nextBoolean(0.01)){
                 gene.isActive = false
             } else {
                 mutateGene(gene.gene)
@@ -72,7 +72,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         //check maximum range. no point in having a delta greater than such range
         val range: Long = gene.max.toLong() - gene.min.toLong()
 
-        val maxIndex = apc.getExploratoryValue(intpow2.size, 10).toInt()
+        val maxIndex = apc.getExploratoryValue(intpow2.size, 10)
 
         var n = 0
         for (i in 0 until maxIndex) {

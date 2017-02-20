@@ -18,7 +18,7 @@ class AdaptiveParameterControl {
 
 
     fun getArchiveTargetLimit() : Int {
-        return Math.round(getExploratoryValue(config.archiveTargetLimit, 1)).toInt()
+        return getExploratoryValue(config.archiveTargetLimit, 1)
     }
 
     fun getProbRandomSampling(): Double {
@@ -26,11 +26,11 @@ class AdaptiveParameterControl {
     }
 
     fun getNumberOfMutations(): Int {
-        return Math.round(getExploratoryValue(config.startNumberOfMutations, config.endNumberOfMutations )).toInt()
+        return getExploratoryValue(config.startNumberOfMutations, config.endNumberOfMutations )
     }
 
-    fun getExploratoryValue(start: Int, end: Int) : Double{
-        return getExploratoryValue(start.toDouble(), end.toDouble())
+    fun getExploratoryValue(start: Int, end: Int) : Int{
+        return Math.round(getExploratoryValue(start.toDouble(), end.toDouble())).toInt()
     }
 
     /**
