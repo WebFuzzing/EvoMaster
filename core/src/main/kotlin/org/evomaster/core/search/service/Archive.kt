@@ -23,6 +23,7 @@ class Archive<T>() where T : Individual {
     /**
      * Key -> id of the target
      * <br>
+     *
      * Value -> sorted list of best individuals for that target
      * <br>
      */
@@ -108,10 +109,8 @@ class Archive<T>() where T : Individual {
 
             val current = map.getOrPut(k, {mutableListOf()})
 
+            //ind covers a new target?
             if (current.isEmpty()) {
-                /*
-                    ind covers a new target
-                 */
                 current.add(copy)
                 added = true
                 continue
@@ -146,17 +145,23 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
+            //handle regular case
+            current.sortBy {
+                c ->   c.fitness.getHeuristic(k)
+            }
             val limit = apc.getArchiveTargetLimit()
-            //TODO dynamic limit
-            if(current.size == limit){
-                current.sortBy {
-                    //TODO also by size
-                    c -> c.fitness.getHeuristic(k)
-                }
+            while(current.size > limit){
+                //remove worst, ie the one with lowest heuristic value
                 current.removeAt(0)
             }
-            current.add(copy)
-            added = true
+            val copyf = copy.fitness.computeFitnessScore()
+            val currf = current[0].fitness.computeFitnessScore()
+
+            if(copyf >= currf){
+                // replace worst element, if copy is not worse than it (but not necessarily better)
+                current[0] = copy
+                added = true
+            }
         }
 
         return added
