@@ -10,7 +10,6 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -28,7 +27,6 @@ public class TriangleEMTest extends SpringTestBase {
         SpringTestBase.initClass(new TriangleController());
     }
 
-    @Disabled("Need to fix some bugs")
     @Test
     public void testRunEM() {
 
@@ -36,7 +34,7 @@ public class TriangleEMTest extends SpringTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "1000",
+                "--maxFitnessEvaluations", "5000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
