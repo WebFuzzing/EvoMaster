@@ -330,7 +330,7 @@
         <pluginManagement>
             <plugins>
 
-                <!-- To run integration tests -->
+                <!-- To run unit tests -->
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.19</version>
@@ -341,6 +341,9 @@
                             <version>${junit.platform.version}</version>
                         </dependency>
                     </dependencies>
+                    <configuration>
+                        <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                    </configuration>
                 </plugin>
 
                 <!-- To compile Kotlin code -->

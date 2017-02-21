@@ -36,7 +36,7 @@ public class BranchesEMTest extends SpringTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "100",
+                "--maxFitnessEvaluations", "1000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
@@ -67,8 +67,8 @@ public class BranchesEMTest extends SpringTestBase {
         long n = responses.size();
 
         //FIXME: should be 9, but 2 branches requiring ==0 cannot be
-        //covered until we have local search or seeding
-        assertEquals(7, n);
+        //covered until we have "working" local search or seeding
+        assertTrue(n >= 7);
         //assertEquals(9, n);
     }
 }
