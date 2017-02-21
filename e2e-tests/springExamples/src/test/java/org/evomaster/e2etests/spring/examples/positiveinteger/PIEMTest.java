@@ -32,7 +32,7 @@ public class PIEMTest extends PITestBase {
 
     @Test
     public void testMIO(){
-        testRunEM(EMConfig.Algorithm.MIO, 20);
+        testRunEM(EMConfig.Algorithm.MIO, 100);
     }
 
     @Test
