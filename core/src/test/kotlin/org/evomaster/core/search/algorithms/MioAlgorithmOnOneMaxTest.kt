@@ -27,7 +27,8 @@ class MioAlgorithmOnOneMaxTest {
 
         val sampler = injector.getInstance(OneMaxSampler::class.java)
         val config = injector.getInstance(EMConfig::class.java)
-        config.maxFitnessEvaluations = 1000
+        config.seed = 42
+        config.maxFitnessEvaluations = 5000
 
         val n = 20
         sampler.n = n

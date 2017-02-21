@@ -128,6 +128,7 @@ class Archive<T>() where T : Individual {
                     partial, so this check on collateral coverage likely
                     will not be so effective
                  */
+                assert(current.size == 1) //if covered, should keep only one solution in buffer
 
                 val shorter = copy.individual.size() < current[0].individual.size()
                 val sameLengthButBetterScore = (copy.individual.size() == current[0].individual.size())
@@ -138,7 +139,7 @@ class Archive<T>() where T : Individual {
                  * Given two tests covering the same target, both with same length, then we prefer
                  * the one that has most collateral coverage
                  */
-                if (maxed && (shorter || sameLengthButBetterScore)) {
+                if (shorter || sameLengthButBetterScore) {
                     current[0] = copy
                     added = true
                 }
