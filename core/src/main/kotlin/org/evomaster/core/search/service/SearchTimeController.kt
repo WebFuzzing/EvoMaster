@@ -20,6 +20,8 @@ class SearchTimeController {
     var searchStarted = false
         private set
 
+    var lastImprovement = -1
+        private set
 
     fun startSearch(){
         searchStarted = true
@@ -29,6 +31,9 @@ class SearchTimeController {
         evaluatedIndividuals++
     }
 
+    fun newCoveredTarget(){
+        lastImprovement = evaluatedIndividuals
+    }
 
     fun shouldContinueSearch(): Boolean{
 

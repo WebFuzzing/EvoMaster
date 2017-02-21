@@ -48,6 +48,7 @@ class Statistics {
         list.add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
         list.add(Pair("generatedTests", "" + solution.individuals.size))
         list.add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
+        list.add(Pair("lastImprovement", "" + time.lastImprovement))
         list.add(Pair("errors5xx", "" + errors5xx(solution)))
 
         val codes = codes(solution)

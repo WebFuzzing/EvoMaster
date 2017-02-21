@@ -20,6 +20,9 @@ class Archive<T>() where T : Individual {
     @Inject
     private lateinit var idMapper: IdMapper
 
+    @Inject
+    private lateinit var time : SearchTimeController
+
     /**
      * Key -> id of the target
      * <br>
@@ -109,10 +112,15 @@ class Archive<T>() where T : Individual {
 
             val current = map.getOrPut(k, { mutableListOf() })
 
-            //ind covers a new target?
+            //ind does reach a new target?
             if (current.isEmpty()) {
                 current.add(copy)
                 added = true
+
+                if(isCovered(k)){
+                    time.newCoveredTarget()
+                }
+
                 continue
             }
 
@@ -150,6 +158,7 @@ class Archive<T>() where T : Individual {
                 current.clear() //remove all existing non-optimal solutions
                 current.add(copy)
                 added = true
+                time.newCoveredTarget()
                 continue
             }
 

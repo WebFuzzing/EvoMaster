@@ -20,7 +20,7 @@ class LongGene (
         var k = if(randomness.nextBoolean()) {
             randomness.nextLong()
         } else {
-            randomness.nextInt() as Long
+            randomness.nextInt().toLong()
         }
 
         while(k == value){
