@@ -30,16 +30,16 @@ class Archive<T>() where T : Individual {
     private val map = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
 
 
-    fun extractSolution() : Solution<T> {
+    fun extractSolution(): Solution<T> {
 
         val overall = FitnessValue()
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
 
         map.entries.forEach { e ->
-           if(isCovered(e.key)){
-               uniques.add(e.value[0])
-               overall.coverTarget(e.key)
-           }
+            if (isCovered(e.key)) {
+                uniques.add(e.value[0])
+                overall.coverTarget(e.key)
+            }
         }
 
         return Solution(overall, uniques.toMutableList())
@@ -48,14 +48,14 @@ class Archive<T>() where T : Individual {
 
     fun isEmpty() = map.isEmpty()
 
-    fun sampleIndividual() : EvaluatedIndividual<T> {
+    fun sampleIndividual(): EvaluatedIndividual<T> {
 
-        if(map.isEmpty()){
+        if (map.isEmpty()) {
             throw IllegalStateException("Empty archive")
         }
 
-        var toChooseFrom = map.keys.filter { k -> ! isCovered(k) }
-        if(toChooseFrom.isEmpty()){
+        var toChooseFrom = map.keys.filter { k -> !isCovered(k) }
+        if (toChooseFrom.isEmpty()) {
             //this means all current targets are covered
             toChooseFrom = map.keys.toList()
         }
@@ -72,10 +72,10 @@ class Archive<T>() where T : Individual {
     /**
      * Useful for debugging
      */
-    fun encounteredTargetDescriptions(): List<String>{
+    fun encounteredTargetDescriptions(): List<String> {
 
         return map.entries
-                .map { e -> "${idMapper.getDescriptiveId(e.key)} : size=${e.value.size}"}
+                .map { e -> "${idMapper.getDescriptiveId(e.key)} : size=${e.value.size}" }
                 .sorted()
     }
 
@@ -84,9 +84,9 @@ class Archive<T>() where T : Individual {
      *
      * @return a list of ids
      */
-    fun notCoveredTargets() : Set<Int>{
+    fun notCoveredTargets(): Set<Int> {
 
-        return map.keys.filter { k -> ! isCovered(k) }.toSet()
+        return map.keys.filter { k -> !isCovered(k) }.toSet()
     }
 
     /**
@@ -99,7 +99,7 @@ class Archive<T>() where T : Individual {
 
         for ((k, v) in ei.fitness.getViewOfData()) {
 
-            if(v == 0.0){
+            if (v == 0.0) {
                 /*
                     No point adding an individual with no impact
                     on a given target
@@ -107,7 +107,7 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
-            val current = map.getOrPut(k, {mutableListOf()})
+            val current = map.getOrPut(k, { mutableListOf() })
 
             //ind covers a new target?
             if (current.isEmpty()) {
@@ -116,29 +116,36 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
-            if (isCovered(k)) {
+            val maxed = FitnessValue.isMaxValue(v)
+
+            if (isCovered(k) && maxed) {
                 /*
                     Target is already covered. But could it
                     be that new individual covers it as well,
                     and it is better?
+
+                    Recall: during the search, the fitness score could be
+                    partial, so this check on collateral coverage likely
+                    will not be so effective
                  */
-                val maxed = FitnessValue.isMaxValue(v)
 
-                val copyf = copy.fitness.computeFitnessScore()
-                val currf = current[0].fitness.computeFitnessScore()
+                val shorter = copy.individual.size() < current[0].individual.size()
+                val sameLengthButBetterScore = (copy.individual.size() == current[0].individual.size())
+                        && (copy.fitness.computeFitnessScore() > current[0].fitness.computeFitnessScore())
 
-                val betterScore =  copyf > currf
-                val equalButShorter = (copyf == currf) &&
-                        (copy.individual.size() < current[0].individual.size())
-
-                if (maxed && (betterScore || equalButShorter)) {
+                /*
+                 * Once a target is covered, we check if can cover it with a new test that is shorter.
+                 * Given two tests covering the same target, both with same length, then we prefer
+                 * the one that has most collateral coverage
+                 */
+                if (maxed && (shorter || sameLengthButBetterScore)) {
                     current[0] = copy
                     added = true
                 }
                 continue
             }
 
-            if(FitnessValue.isMaxValue(v)){
+            if (maxed) {
                 current.clear() //remove all existing non-optimal solutions
                 current.add(copy)
                 added = true
@@ -147,17 +154,25 @@ class Archive<T>() where T : Individual {
 
             //handle regular case
             current.sortBy {
-                c ->   c.fitness.getHeuristic(k)
+                c ->
+                c.fitness.getHeuristic(k)
             }
             val limit = apc.getArchiveTargetLimit()
-            while(current.size > limit){
+            while (current.size > limit) {
                 //remove worst, ie the one with lowest heuristic value
                 current.removeAt(0)
             }
-            val copyf = copy.fitness.computeFitnessScore()
-            val currf = current[0].fitness.computeFitnessScore()
 
-            if(copyf >= currf){
+            if (current.size < limit) {
+                //we have space in the buffer, regardless of fitness
+                current.add(copy)
+                added = true
+                continue
+            }
+
+            val currh = current[0].fitness.getHeuristic(k)
+
+            if (v >= currh) {
                 // replace worst element, if copy is not worse than it (but not necessarily better)
                 current[0] = copy
                 added = true
@@ -169,7 +184,7 @@ class Archive<T>() where T : Individual {
 
     private fun isCovered(target: Int): Boolean {
 
-        val current = map.getOrPut(target, {mutableListOf()})
+        val current = map.getOrPut(target, { mutableListOf() })
         if (current.size != 1) {
             return false
         }

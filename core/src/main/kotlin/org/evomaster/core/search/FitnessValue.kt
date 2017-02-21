@@ -75,8 +75,18 @@ class FitnessValue {
         }
     }
 
-
-    fun subsumes(other: FitnessValue) : Boolean{
+    /**
+     * Check if current does subsume other.
+     * This means covering at least the same targets, and at least one better or
+     * one more.
+     *
+     * Note: during the search, we might not calculate all targets, eg once they
+     * are covered.
+     * So this check might always be false when comparing existing against a new one.
+     * With "strict" false, the check will ignore covered targets in the current, as
+     * likely the info for those will be missing in new individuals
+     */
+    fun subsumes(other: FitnessValue, strict: Boolean = true) : Boolean{
 
         if(this.targets.size < other.targets.size){
             //if less targets, cannot subsumes
@@ -86,6 +96,10 @@ class FitnessValue {
         var atLeastOneBetter = false
 
         for((k,v) in this.targets){
+
+            if(!strict && v==1.0){
+                continue
+            }
 
             val z = other.targets[k] ?: 0.0
             if(v < z){
