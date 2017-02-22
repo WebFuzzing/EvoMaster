@@ -85,9 +85,8 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             "mod" -> {
                 val i = randomness.nextInt(n)
                 val ind = wts.suite[i]
-                val nMutations = apc.getNumberOfMutations()
 
-                getMutatator().mutateAndSave(nMutations, ind, archive)
+                getMutatator().mutateAndSave(1, ind, archive)
             }
         }
 

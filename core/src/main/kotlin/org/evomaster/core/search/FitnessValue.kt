@@ -7,13 +7,13 @@ throughout the search
  */
 class FitnessValue {
 
-    companion object{
+    companion object {
 
         @JvmField
         val MAX_VALUE = 1.0
 
         @JvmStatic
-        fun isMaxValue(value : Double) = value == MAX_VALUE
+        fun isMaxValue(value: Double) = value == MAX_VALUE
     }
 
     /**
@@ -21,58 +21,78 @@ class FitnessValue {
      *  <br/>
      *  Value -> heuristic distance in [0,1], where 1 is for "covered"
      */
-    private val targets : MutableMap<Int,Double> = mutableMapOf()
+    private val targets: MutableMap<Int, Double> = mutableMapOf()
 
 
-    fun copy() : FitnessValue {
+    fun copy(): FitnessValue {
         val copy = FitnessValue()
         copy.targets.putAll(this.targets)
         return copy
     }
 
-    fun getViewOfData() : Map<Int, Double>{
+    fun getViewOfData(): Map<Int, Double> {
         return targets
     }
 
-    fun doesCover(target: Int) : Boolean{
+    fun doesCover(target: Int): Boolean {
         return targets[target] == MAX_VALUE
     }
 
-    fun getHeuristic(target: Int) : Double = targets[target] ?: 0.0
+    fun getHeuristic(target: Int): Double = targets[target] ?: 0.0
 
 
-    fun computeFitnessScore() : Double{
+    fun computeFitnessScore(): Double {
 
         return targets.values.sum()
     }
 
-    fun coveredTargets() : Int {
+    fun coveredTargets(): Int {
 
         return targets.values.filter { t -> t == MAX_VALUE }.count()
     }
 
-    fun coverTarget(id: Int){
+    fun coverTarget(id: Int) {
         updateTarget(id, MAX_VALUE)
     }
 
-    fun updateTarget(id: Int, value: Double){
+    fun updateTarget(id: Int, value: Double) {
 
-        if(value < 0 || value > MAX_VALUE){
-            throw IllegalArgumentException("Invalid value: "+value)
+        if (value < 0 || value > MAX_VALUE) {
+            throw IllegalArgumentException("Invalid value: " + value)
         }
 
         targets[id] = value
     }
 
 
-    fun merge(other: FitnessValue){
+    fun merge(other: FitnessValue) {
 
         other.targets.keys.forEach { t ->
             val k = other.getHeuristic(t)
-            if(k > this.getHeuristic(t)){
+            if (k > this.getHeuristic(t)) {
                 this.updateTarget(t, k)
             }
         }
+    }
+
+
+    fun subsumes(other: FitnessValue, targetSubset: Set<Int>): Boolean {
+
+        var atLeastOneBetter = false
+
+        for (k in targetSubset) {
+
+            val v = this.targets[k] ?: 0.0
+            val z = other.targets[k] ?: 0.0
+            if (v < z) {
+                return false
+            }
+            if (v > z) {
+                atLeastOneBetter = true
+            }
+        }
+
+        return atLeastOneBetter
     }
 
     /**
@@ -86,36 +106,36 @@ class FitnessValue {
      * With "strict" false, the check will ignore covered targets in the current, as
      * likely the info for those will be missing in new individuals
      */
-    fun subsumes(other: FitnessValue, strict: Boolean = true) : Boolean{
+    fun subsumes(other: FitnessValue, strict: Boolean = true): Boolean {
 
-        if(this.targets.size < other.targets.size){
+        if (this.targets.size < other.targets.size) {
             //if less targets, cannot subsumes
             return false
         }
 
         var atLeastOneBetter = false
 
-        for((k,v) in this.targets){
+        for ((k, v) in this.targets) {
 
-            if(!strict && v==1.0){
+            if (!strict && v == 1.0) {
                 continue
             }
 
             val z = other.targets[k] ?: 0.0
-            if(v < z){
+            if (v < z) {
                 return false
             }
-            if(v > z){
+            if (v > z) {
                 atLeastOneBetter = true
             }
         }
 
-        if(! atLeastOneBetter){
+        if (!atLeastOneBetter) {
             return false
         }
 
         val missing = other.targets.keys
-                .filter { k -> ! this.targets.containsKey(k) }
+                .filter { k -> !this.targets.containsKey(k) }
                 .size
 
         return missing == 0

@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.Statistics
@@ -126,6 +127,8 @@ class Main {
                         object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.WTS -> Key.get(
                         object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MOSA -> Key.get(
+                        object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
 

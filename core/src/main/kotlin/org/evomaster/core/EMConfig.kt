@@ -150,7 +150,7 @@ class EMConfig {
     //--- properties
 
     enum class Algorithm {
-        MIO, RANDOM, WTS
+        MIO, RANDOM, WTS, MOSA
     }
 
     @Cfg("The algorithm used to generate test cases")
@@ -263,4 +263,8 @@ class EMConfig {
     @Cfg("Probability of applying crossover operation (if any is used in the search algorithm)")
     @Min(0.0) @Max(1.0)
     var xoverProbability = 0.7
+
+    @Cfg("Number of elements to consider in a Tournament Selection (if any is used in the search algorithm)")
+    @Min(1.0)
+    var tournamentSize = 2
 }

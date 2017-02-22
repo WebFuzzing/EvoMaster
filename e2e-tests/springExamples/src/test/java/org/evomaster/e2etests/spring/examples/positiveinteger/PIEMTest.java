@@ -45,6 +45,11 @@ public class PIEMTest extends PITestBase {
         testRunEM(EMConfig.Algorithm.WTS, 2_000); // high value, just to check if no crash
     }
 
+    @Test
+    public void testMOSA(){
+        testRunEM(EMConfig.Algorithm.MOSA, 2_000); // high value, just to check if no crash
+    }
+
 
     private void testRunEM(EMConfig.Algorithm alg, int iterations){
 
