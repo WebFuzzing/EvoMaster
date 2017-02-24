@@ -13,6 +13,7 @@
         <module>core</module>
         <module>clientJava</module>
         <module>e2e-tests</module>
+        <module>experiments</module>
     </modules>
 
     <licenses>

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.mutator
 
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.OptionalGene
@@ -33,6 +34,10 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                     continue
                 }
 
+                if(gene is DisruptiveGene<*> && ! randomness.nextBoolean(gene.probability)){
+                   continue
+                }
+
                 mutateGene(gene)
 
                 mutated = true
@@ -45,6 +50,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutateGene(gene: Gene) {
 
         when (gene) {
+            is DisruptiveGene<*> -> mutateGene(gene.gene)
             is IntegerGene -> handleIntegerGene(gene)
             is OptionalGene -> handleOptionalGene(gene)
             else ->
@@ -52,6 +58,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 gene.randomize(randomness, true)
         }
     }
+
 
     private fun handleOptionalGene(gene: OptionalGene){
         if(! gene.isActive){
