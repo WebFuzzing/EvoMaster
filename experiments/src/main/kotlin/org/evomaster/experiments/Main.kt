@@ -15,6 +15,7 @@ import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.experiments.maxv.LinearIndividual
 import org.evomaster.experiments.maxv.LinearModule
 import org.evomaster.experiments.maxv.LinearProblemDefinition
+import java.util.*
 
 
 class Main {
@@ -33,28 +34,39 @@ class Main {
             val range = 1000
             val disruptiveP = 0.01
 
-            val mio = getMio(seed, budget, nTargets, range, disruptiveP)
-            val rand = getRand(seed, budget, nTargets, range, disruptiveP)
-            val mosa = getMosa(seed, budget, nTargets, range, disruptiveP)
-            val wts = getWts(seed, budget, nTargets, range, disruptiveP)
+            val optima = createOptima(nTargets, range, seed)
+
+            val mio = getMio(seed, budget, nTargets, range, disruptiveP, optima)
+            val rand = getRand(seed, budget, nTargets, range, disruptiveP, optima)
+            val mosa = getMosa(seed, budget, nTargets, range, disruptiveP, optima)
+            val wts = getWts(seed, budget, nTargets, range, disruptiveP, optima)
 
             val algs: List<SearchAlgorithm<LinearIndividual>> = listOf(rand, wts, mosa, mio)
 
-            println("algorithm,coverage")
+            println("algorithm,coverage,n,range,budget")
             algs.forEach { a ->
                 val sol = a.search()
                 val covered = sol.overall.coveredTargets()
-                val cov = covered.toDouble() / nTargets.toDouble()
+                val cov = 100.0 * ( covered.toDouble() / nTargets.toDouble())
 
-
+                println("${a.getType()},$cov,$nTargets,$range,$budget")
             }
         }
 
+        fun createOptima(n: Int, range: Int, seed: Long) : List<Int>{
+            val optima = mutableListOf<Int>()
+            val rand = Random(seed)
+            (1..n).forEach {
+                optima.add(rand.nextInt(range+1))
+            }
 
-        fun getMio(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double)
+            return optima
+        }
+
+        fun getMio(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double, optima: List<Int>)
                 : MioAlgorithm<LinearIndividual>{
 
-            val injector = getInjector(seed, budget, nTargets, range, disruptiveP)
+            val injector = getInjector(seed, budget, nTargets, range, disruptiveP, optima)
             val config = injector.getInstance(EMConfig::class.java)
             config.algorithm = EMConfig.Algorithm.MIO
 
@@ -62,10 +74,10 @@ class Main {
                     object : TypeLiteral<MioAlgorithm<LinearIndividual>>() {}))
         }
 
-        fun getRand(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double)
+        fun getRand(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double, optima: List<Int>)
                 : RandomAlgorithm<LinearIndividual>{
 
-            val injector = getInjector(seed, budget, nTargets, range, disruptiveP)
+            val injector = getInjector(seed, budget, nTargets, range, disruptiveP, optima)
             val config = injector.getInstance(EMConfig::class.java)
             config.algorithm = EMConfig.Algorithm.RANDOM
 
@@ -73,10 +85,10 @@ class Main {
                     object : TypeLiteral<RandomAlgorithm<LinearIndividual>>() {}))
         }
 
-        fun getMosa(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double)
+        fun getMosa(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double, optima: List<Int>)
                 : MosaAlgorithm<LinearIndividual>{
 
-            val injector = getInjector(seed, budget, nTargets, range, disruptiveP)
+            val injector = getInjector(seed, budget, nTargets, range, disruptiveP, optima)
             val config = injector.getInstance(EMConfig::class.java)
             config.algorithm = EMConfig.Algorithm.MOSA
 
@@ -84,10 +96,10 @@ class Main {
                     object : TypeLiteral<MosaAlgorithm<LinearIndividual>>() {}))
         }
 
-        fun getWts(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double)
+        fun getWts(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double, optima: List<Int>)
                 : WtsAlgorithm<LinearIndividual>{
 
-            val injector = getInjector(seed, budget, nTargets, range, disruptiveP)
+            val injector = getInjector(seed, budget, nTargets, range, disruptiveP, optima)
             val config = injector.getInstance(EMConfig::class.java)
             config.algorithm = EMConfig.Algorithm.WTS
 
@@ -95,7 +107,7 @@ class Main {
                     object : TypeLiteral<WtsAlgorithm<LinearIndividual>>() {}))
         }
 
-        fun getInjector(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double) : Injector{
+        fun getInjector(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double, optima: List<Int>) : Injector{
 
             val injector: Injector = LifecycleInjector.builder()
                     .withModules(* arrayOf<Module>(LinearModule(), BaseModule()))
@@ -109,6 +121,8 @@ class Main {
             lpd.nTargets = nTargets
             lpd.disruptiveP = disruptiveP
             lpd.range = range
+            lpd.optima.clear()
+            lpd.optima.addAll(optima)
 
             return injector
         }

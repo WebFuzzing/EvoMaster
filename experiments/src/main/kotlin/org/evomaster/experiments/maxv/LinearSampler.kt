@@ -20,6 +20,6 @@ class LinearSampler : Sampler<LinearIndividual>() {
         )
         ind.seeGenes().forEach { g -> g.randomize(randomness, false) }
 
-        throw UnsupportedOperationException("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return ind
     }
 }

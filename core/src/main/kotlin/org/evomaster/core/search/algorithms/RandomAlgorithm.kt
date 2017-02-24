@@ -1,11 +1,15 @@
 package org.evomaster.core.search.algorithms
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.SearchAlgorithm
 
 
 class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
 
+    override fun getType(): EMConfig.Algorithm {
+        return EMConfig.Algorithm.RANDOM
+    }
 
 
     override fun search(): Solution<T> {

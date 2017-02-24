@@ -26,6 +26,10 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     private val population: MutableList<WtsEvalIndividual<T>> = mutableListOf()
 
+    override fun getType(): EMConfig.Algorithm {
+        return EMConfig.Algorithm.WTS
+    }
+
 
     override fun search(): Solution<T> {
 

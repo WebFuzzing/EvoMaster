@@ -1,5 +1,6 @@
 package org.evomaster.core.search.algorithms
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
@@ -15,6 +16,10 @@ import kotlin.comparisons.thenBy
 class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
     private var population: MutableList<EvaluatedIndividual<T>> = mutableListOf()
+
+    override fun getType(): EMConfig.Algorithm {
+        return EMConfig.Algorithm.MOSA
+    }
 
     override fun search(): Solution<T> {
         time.startSearch()

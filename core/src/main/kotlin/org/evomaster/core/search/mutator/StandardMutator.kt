@@ -83,7 +83,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         var n = 0
         for (i in 0 until maxIndex) {
-            n = i
+            n = i + 1
             if (intpow2[i] > range) {
                 break
             }

@@ -17,10 +17,4 @@ class LinearProblemDefinition {
 
     var optima: MutableList<Int> = mutableListOf()
 
-    fun createOptima(){
-        optima.clear()
-        (1..nTargets).forEach {
-            optima.add(randomness.nextInt(range+1))
-        }
-    }
 }

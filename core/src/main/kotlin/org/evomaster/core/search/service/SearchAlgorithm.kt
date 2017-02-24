@@ -40,4 +40,5 @@ abstract class SearchAlgorithm<T> where T : Individual {
 
     abstract fun search() : Solution<T>
 
+    abstract fun getType() : EMConfig.Algorithm
 }
