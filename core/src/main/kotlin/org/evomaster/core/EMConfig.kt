@@ -169,14 +169,6 @@ class EMConfig {
     var outputFormat = OutputFormat.JAVA_JUNIT_4
 
 
-    enum class Mutators{
-        RANDOM, STANDARD, COMBINED
-    }
-
-    @Cfg("The type of mutator used when tests are evolved")
-    var mutator = Mutators.COMBINED
-
-
     @Cfg("Specify if test classes should be created as output of the tool. " +
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true

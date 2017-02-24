@@ -2,11 +2,10 @@ package org.evomaster.core.search.algorithms.constant
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.search.mutator.CombinedMutator
-import org.evomaster.core.search.mutator.RandomMutator
 import org.evomaster.core.search.mutator.StandardMutator
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Mutator
 import org.evomaster.core.search.service.Sampler
 
 /**
@@ -26,13 +25,9 @@ class ConstantModule : AbstractModule() {
                 .to(ConstantFitness::class.java)
                 .asEagerSingleton()
 
-        bind(object : TypeLiteral<RandomMutator<ConstantIndividual>>() {})
-                .asEagerSingleton()
 
-        bind(object : TypeLiteral<StandardMutator<ConstantIndividual>>() {})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<CombinedMutator<ConstantIndividual>>() {})
+        bind(object : TypeLiteral<Mutator<ConstantIndividual>>() {})
+                .to(object : TypeLiteral<StandardMutator<ConstantIndividual>>() {})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<ConstantIndividual>>() {})

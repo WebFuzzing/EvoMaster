@@ -38,7 +38,7 @@ public class PIEMTest extends PITestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "20",
+                "--maxFitnessEvaluations", "200",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 

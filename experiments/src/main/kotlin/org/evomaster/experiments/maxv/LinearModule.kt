@@ -2,8 +2,6 @@ package org.evomaster.experiments.maxv
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.search.mutator.CombinedMutator
-import org.evomaster.core.search.mutator.RandomMutator
 import org.evomaster.core.search.mutator.StandardMutator
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
@@ -23,20 +21,10 @@ class LinearModule : AbstractModule(){
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<LinearIndividual>>() {})
-                .to(object : TypeLiteral<RandomMutator<LinearIndividual>>() {})
+                .to(object : TypeLiteral<StandardMutator<LinearIndividual>>() {})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<LinearIndividual>>() {})
-                .asEagerSingleton()
-
-
-        bind(object : TypeLiteral<RandomMutator<LinearIndividual>>() {})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<StandardMutator<LinearIndividual>>() {})
-                .asEagerSingleton()
-
-        bind(object : TypeLiteral<CombinedMutator<LinearIndividual>>() {})
                 .asEagerSingleton()
 
 
