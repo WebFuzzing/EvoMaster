@@ -38,9 +38,9 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             while (nextPop.size < n) {
 
-                val x = selection()
+                var x = selection()
 
-                getMutatator().mutateAndSave(1, x, archive)
+                x = getMutatator().mutateAndSave(1, x, archive)
 
                 nextPop.add(x)
 

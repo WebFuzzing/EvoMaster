@@ -34,8 +34,8 @@ abstract class Mutator<T> where T : Individual {
      * @param individual which will be mutated
      * @param archive where to save newly mutated individuals (if needed, eg covering new targets)
      */
-    fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>) {
-
+    fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
+        : EvaluatedIndividual<T> {
         var current = individual
 
         for(i in 0 until upToNTimes){
@@ -54,5 +54,7 @@ abstract class Mutator<T> where T : Individual {
 
             current = mutated
         }
+
+        return current
     }
 }
