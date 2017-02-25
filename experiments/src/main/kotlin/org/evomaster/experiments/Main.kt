@@ -64,9 +64,11 @@ class Main {
 
             for (seed in 0 until repetitions) {
                 for (nTargets in listOf(1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
+
+                    val optima = createOptima(nTargets, range, seed.toLong())
+
                     for (problemType in problems) {
                         for(fsat in listOf(0.0, 0.2, 0.4, 0.6, 0.8, 1.0)) {
-                            val optima = createOptima(nTargets, range, seed.toLong())
 
                             runAlg(MIO, seed.toLong(), budget, nTargets, range, disruptiveP,
                                     optima, problemType, fsat, 50)
@@ -90,9 +92,11 @@ class Main {
 
             for (seed in 0 until repetitions) {
                 for (nTargets in listOf(1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
+
+                    val optima = createOptima(nTargets, range, seed.toLong())
+
                     for (problemType in problems) {
                         for(pSize in listOf(4,8,16,32,64,128)) {
-                            val optima = createOptima(nTargets, range, seed.toLong())
 
                             runAlg(MOSA, seed.toLong(), budget, nTargets, range, disruptiveP,
                                     optima, problemType, 0.5, pSize)
