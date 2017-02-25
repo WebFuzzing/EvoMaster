@@ -1,4 +1,4 @@
-package org.evomaster.experiments.maxv
+package org.evomaster.experiments.linear
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral

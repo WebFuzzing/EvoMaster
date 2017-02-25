@@ -1,4 +1,4 @@
-package org.evomaster.experiments.maxv
+package org.evomaster.experiments.linear
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual

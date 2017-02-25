@@ -1,4 +1,4 @@
-package org.evomaster.experiments.maxv
+package org.evomaster.experiments.linear
 
 import com.google.inject.Inject
 import org.evomaster.core.search.gene.DisruptiveGene
