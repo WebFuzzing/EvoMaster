@@ -250,7 +250,7 @@ class EMConfig {
 
     @Cfg("Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS")
     @Min(1.0)
-    var maxSearchSuiteSize = 30
+    var maxSearchSuiteSize = 50
 
     @Cfg("Probability of applying crossover operation (if any is used in the search algorithm)")
     @Min(0.0) @Max(1.0)
@@ -258,5 +258,5 @@ class EMConfig {
 
     @Cfg("Number of elements to consider in a Tournament Selection (if any is used in the search algorithm)")
     @Min(1.0)
-    var tournamentSize = 2
+    var tournamentSize = 10
 }
