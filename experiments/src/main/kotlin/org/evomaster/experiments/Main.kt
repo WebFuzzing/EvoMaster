@@ -31,19 +31,7 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-
-
-            /*
-
-                TODO larger budget for deceptive? maybe not
-
-                TODO "massive" number of objectives, e.g. 1k?  maybe not
-
-                TODO: then experiments on REST (included Triangle?)
-             */
-
             base()
-
         }
 
         fun printHeader(){

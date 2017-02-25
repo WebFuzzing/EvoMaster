@@ -13,14 +13,13 @@ public abstract class SpringController extends RestController {
     private ConfigurableApplicationContext ctx;
     private final Class<?> applicationClass;
 
+
+
     protected SpringController(Class<?> applicationClass){
        this.applicationClass = applicationClass;
+       super.setControllerPort(0);
     }
 
-    @Override
-    public int getControllerPort(){
-        return 0;
-    }
 
     @Override
     public String startSut() {
