@@ -202,7 +202,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     }
 
     private fun sampleIndividual(): EvaluatedIndividual<T> {
-        val ind = ff.calculateCoverage(sampler.sampleAtRandom())
+        val ind = ff.calculateCoverage(sampler.sample())
         archive.addIfNeeded(ind)
         return ind
     }

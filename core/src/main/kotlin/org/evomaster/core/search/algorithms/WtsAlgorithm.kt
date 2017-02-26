@@ -82,7 +82,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 wts.suite.removeAt(i)
             }
             "add" -> if(n < config.maxSearchSuiteSize){
-                val ind = ff.calculateCoverage(sampler.sampleAtRandom())
+                val ind = ff.calculateCoverage(sampler.sample())
                 archive.addIfNeeded(ind)
                 wts.suite.add(ind)
             }
@@ -149,7 +149,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         val wts = WtsEvalIndividual<T>(mutableListOf())
 
         for(i in 1..n){
-            val ind = ff.calculateCoverage(sampler.sampleAtRandom())
+            val ind = ff.calculateCoverage(sampler.sample())
             archive.addIfNeeded(ind)
             wts.suite.add(ind)
 

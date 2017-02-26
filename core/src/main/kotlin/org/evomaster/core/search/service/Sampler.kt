@@ -12,7 +12,7 @@ abstract class Sampler<T> where T : Individual {
     protected lateinit var randomness : Randomness
 
     @Inject
-    protected lateinit var configuration: EMConfig
+    protected lateinit var config: EMConfig
 
     /**
      * Set of available actions that can be used to define a test case
@@ -25,6 +25,24 @@ abstract class Sampler<T> where T : Individual {
 
     abstract fun sampleAtRandom() : T
 
+
+    /**
+     * Create a new individual. Usually each call to this method
+     * will create a new, different individual, but there is no
+     * hard guarantee
+     */
+    fun sample(): T{
+        if(randomness.nextBoolean(config.probOfSmartSampling)){
+            return smartSample()
+        } else {
+            return sampleAtRandom()
+        }
+    }
+
+    protected open fun smartSample() : T {
+        //unless this method is overridden, just sample at random
+        return sampleAtRandom()
+    }
 
     fun seeAvailableActions() : List<Action>{
 

@@ -259,4 +259,8 @@ class EMConfig {
     @Cfg("Number of elements to consider in a Tournament Selection (if any is used in the search algorithm)")
     @Min(1.0)
     var tournamentSize = 10
+
+    @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
+    @Min(0.0) @Max(1.0)
+    var probOfSmartSampling = 0.0 //TODO change once working
 }

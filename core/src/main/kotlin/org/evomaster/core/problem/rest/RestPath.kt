@@ -5,16 +5,70 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.*
 
 
-class RestPath(val path: String) {
+class RestPath(path: String) {
+
+    data class Token(val name: String, val isParameter: Boolean)
+
+    val tokens: List<Token>
+
+    init {
+        tokens = path.split("/").filter { s -> ! s.isBlank()}
+                .map { s ->
+                    val trimmed = s.trim()
+                    if(trimmed.startsWith("{")){
+                        if(! trimmed.endsWith("}")){
+                            throw IllegalArgumentException("Opening { was not matched by closing } in: $path")
+                        }
+                        Token(trimmed.substring(1, trimmed.lastIndex), true)
+                    } else {
+                        Token(trimmed, false)
+                    }
+                }
+    }
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
     }
 
     override fun toString(): String {
-        return path
+        return "/" + tokens.map { t -> t.name }.joinToString("/")
+    }
+
+    fun isEquivalent(other: RestPath) : Boolean{
+        if(this.tokens.size != other.tokens.size){
+            return false
+        }
+        for(i in 0 until tokens.size){
+            if(this.tokens[i] != other.tokens[i]){
+                return false;
+            }
+        }
+        return true
+    }
+
+
+    fun isLastElementAParameter(): Boolean{
+        if(tokens.isEmpty()){
+            return false
+        }
+        return tokens.last().isParameter
+    }
+
+    fun isDirectChildOf(other: RestPath): Boolean{
+        if(this.tokens.size  != 1 + other.tokens.size){
+            return false
+        }
+
+        for(i in 0 until other.tokens.size){
+            if(other.tokens[i] != this.tokens[i]){
+                return false
+            }
+        }
+
+        return true
     }
 
     /**
@@ -31,67 +85,40 @@ class RestPath(val path: String) {
      */
     fun resolve(params: List<out Param>) : String {
 
-        val pathParamNames = getPathParamNames()
+        var path = StringBuffer()
+        tokens.forEach { t ->
+            val value: String
 
-        var resolvedPath = path
-
-        pathParamNames.forEach { n ->
-
-            var p = params.find{p -> p is PathParam && p.name == n}
-            if(p == null){
-                log.warn("No path parameter for variable '$n'")
-
-                //this could happen if bug in Swagger
-                p = params.find{p -> p is QueryParam && p.name == n}
+            if(! t.isParameter){
+                value = t.name
+            } else {
+                var p = params.find{p -> p is PathParam && p.name == t.name}
                 if(p == null){
-                    throw IllegalArgumentException("Cannot resolve path parameter '$n'")
+                    log.warn("No path parameter for variable '${t.name}'")
+
+                    //this could happen if bug in Swagger
+                    p = params.find{p -> p is QueryParam && p.name == t.name}
+                    if(p == null){
+                        throw IllegalArgumentException("Cannot resolve path parameter '$${t.name}'")
+                    }
                 }
+
+                value = p.gene.getValueAsString()
             }
-
-            val value = p.gene.getValueAsString()
-
-            resolvedPath = resolvedPath.replace("{$n}", value)
+            path.append("/$value")
         }
 
-        //make sure to remove unnecessary repeated /
-        resolvedPath = resolvedPath.replace("//","/")
-        resolvedPath = resolvedPath.replace("//","/")
-
-        if(! resolvedPath.startsWith("/")){
-            resolvedPath = "/" + resolvedPath
-        }
 
         val queries = params.filter { p -> p is QueryParam }
         if(queries.size > 0){
-            resolvedPath += "?" +
+           path.append("?" +
                     queries.map { q -> q.name+"="+q.gene.getValueAsString() }
                     .joinToString("&")
+           )
         }
 
-        return resolvedPath
+        return path.toString()
     }
 
 
-    private fun getPathParamNames() : List<String>{
-
-        val list : MutableList<String> = mutableListOf()
-
-        var open = -2
-
-        for(i in 0 until path.length){
-            if(path[i] == '{'){
-                open = i
-            }
-            if(path[i]== '}'){
-                if(open < 0){
-                    throw IllegalArgumentException("Closing } was not matched by opening {")
-                }
-
-                list.add(path.substring(open+1, i))
-                open = -2
-            }
-        }
-
-        return list
-    }
 }

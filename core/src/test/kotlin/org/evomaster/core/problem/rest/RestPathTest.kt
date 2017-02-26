@@ -20,4 +20,66 @@ internal class RestPathTest{
         assertEquals("/api/foo/"+id, resolved)
     }
 
+    @Test
+    fun testExtraSlashes(){
+
+        val path = "/x/y/z"
+        val restPath = RestPath("//" + path)
+
+        val toS = restPath.toString()
+        assertEquals(path, toS)
+
+        val resolved = restPath.resolve(listOf())
+        assertEquals(path, resolved)
+    }
+
+    @Test
+    fun testEquivalent(){
+
+        val path = "/x/w"
+
+        val a = RestPath(path)
+        val b = RestPath(path)
+
+        assertTrue(a.isEquivalent(b))
+        assertTrue(b.isEquivalent(a))
+        assertTrue(a.isEquivalent(a))
+
+        val withParam = "/x/{w}"
+        val c = RestPath(withParam)
+        assertFalse(a.isEquivalent(c))
+    }
+
+    @Test
+    fun testLastIsParam(){
+
+        val a = RestPath("/x/w")
+        val b = RestPath("/x/{w}")
+        val c = RestPath("/x/{w}/y")
+        val d = RestPath("/x/{w}/y/{z}")
+
+        assertFalse(a.isLastElementAParameter())
+        assertTrue( b.isLastElementAParameter())
+        assertFalse(c.isLastElementAParameter())
+        assertTrue( d.isLastElementAParameter())
+    }
+
+    @Test
+    fun testDirectChild(){
+        val a = RestPath("/x/w")
+        val b = RestPath("/x/{w}")
+        val c = RestPath("/x/{w}/y")
+        val d = RestPath("/x/{w}/y/{z}")
+
+        assertFalse(a.isDirectChildOf(a))
+        assertFalse(a.isDirectChildOf(b))
+        assertFalse(a.isDirectChildOf(c))
+        assertFalse(a.isDirectChildOf(d))
+
+        assertFalse(c.isDirectChildOf(a))
+        assertTrue(c.isDirectChildOf(b))
+
+        assertFalse(d.isDirectChildOf(b))
+        assertTrue(d.isDirectChildOf(c))
+    }
 }

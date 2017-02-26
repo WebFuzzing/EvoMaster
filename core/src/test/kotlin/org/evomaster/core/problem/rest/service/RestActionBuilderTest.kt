@@ -1,21 +1,22 @@
 package org.evomaster.core.problem.rest.service
 
 import io.swagger.parser.SwaggerParser
+import org.evomaster.core.search.Action
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
-internal class RestSamplerTest{
+internal class RestActionBuilderTest {
 
     @Test
     fun testCreateActions(){
 
         val swagger = SwaggerParser().read("/positive_integer_swagger.json")
 
-        val sampler = RestSampler()
-        sampler.createActions(swagger)
+        val builder = RestActionBuilder()
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        builder.createActions(swagger, actions)
 
-        val actions = sampler.seeAvailableActions()
         assertEquals(2, actions.size)
     }
 
@@ -26,10 +27,10 @@ internal class RestSamplerTest{
 
         val swagger = SwaggerParser().read("/features_service_null.json")
 
-        val sampler = RestSampler()
-        sampler.createActions(swagger)
+        val builder = RestActionBuilder()
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        builder.createActions(swagger, actions)
 
-        val actions = sampler.seeAvailableActions()
         assertEquals(18, actions.size)
     }
 
@@ -38,10 +39,10 @@ internal class RestSamplerTest{
 
         val swagger = SwaggerParser().read("/features_service.json")
 
-        val sampler = RestSampler()
-        sampler.createActions(swagger)
+        val builder = RestActionBuilder()
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        builder.createActions(swagger, actions)
 
-        val actions = sampler.seeAvailableActions()
         assertEquals(18, actions.size)
     }
 
@@ -50,10 +51,10 @@ internal class RestSamplerTest{
 
         val swagger = SwaggerParser().read("/scout-api.json")
 
-        val sampler = RestSampler()
-        sampler.createActions(swagger)
+        val builder = RestActionBuilder()
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        builder.createActions(swagger, actions)
 
-        val actions = sampler.seeAvailableActions()
         assertEquals(49, actions.size)
     }
 
@@ -63,10 +64,10 @@ internal class RestSamplerTest{
 
         val swagger = SwaggerParser().read("/branches.json")
 
-        val sampler = RestSampler()
-        sampler.createActions(swagger)
+        val builder = RestActionBuilder()
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        builder.createActions(swagger, actions)
 
-        val actions = sampler.seeAvailableActions()
         assertEquals(3, actions.size)
     }
 }

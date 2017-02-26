@@ -1,22 +1,14 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import io.swagger.models.HttpMethod
-import io.swagger.models.Operation
 import io.swagger.models.Swagger
-import io.swagger.models.parameters.AbstractSerializableParameter
-import io.swagger.models.parameters.BodyParameter
-import io.swagger.models.properties.*
 import io.swagger.parser.SwaggerParser
-import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto
-import org.evomaster.clientJava.controllerApi.dto.HeaderDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
-import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
-import org.evomaster.core.problem.rest.param.*
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -37,6 +29,8 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
+    private val adHocInitialIndividuals: MutableList<RestAction> = mutableListOf()
+
 
     @PostConstruct
     private fun initialize() {
@@ -50,9 +44,11 @@ class RestSampler : Sampler<RestIndividual>() {
 
         val swagger = getSwagger(infoDto)
 
-        createActions(swagger)
+        RestActionBuilder().createActions(swagger, actionCluster)
 
         setupAuthentication(infoDto)
+
+        initAdHocInitialIndividuals()
     }
 
 
@@ -61,17 +57,17 @@ class RestSampler : Sampler<RestIndividual>() {
         val info = infoDto.infoForAuthentication ?: return
 
         info.forEach { i ->
-            if(i.name == null || i.name.isBlank()){
+            if (i.name == null || i.name.isBlank()) {
                 log.warn("Missing name in authentication info")
                 return@forEach
             }
 
             val headers: MutableList<AuthenticationHeader> = mutableListOf()
 
-             i.headers.forEach loop@ { h ->
+            i.headers.forEach loop@ { h ->
                 val name = h.name?.trim()
                 val value = h.value?.trim()
-                if(name == null || value == null){
+                if (name == null || value == null) {
                     log.warn("Invalid header in ${i.name}")
                     return@loop
                 }
@@ -83,253 +79,6 @@ class RestSampler : Sampler<RestIndividual>() {
 
             authentications.add(auth)
         }
-    }
-
-
-    internal fun createActions(swagger: Swagger) {
-
-        actionCluster.clear()
-
-        //TODO check Swagger version
-
-        //TODO check for when swagger.paths is null
-
-        swagger.paths.forEach { e ->
-
-            val restPath = RestPath((swagger.basePath ?: "") + "/" + e.key)
-
-            e.value.operationMap.forEach { o ->
-                val verb = HttpVerb.from(o.key)
-
-                val params = extractParams(o, swagger)
-
-                val action = RestCallAction(verb, restPath, params)
-
-                actionCluster.put(action.getName(), action)
-            }
-        }
-
-        val n = actionCluster.size
-        if(n == 1) {
-            LoggingUtil.getInfoLogger()
-                    .info("There is only one RESTful API entry point defined in the Swagger configuration")
-        } else {
-            LoggingUtil.getInfoLogger()
-                    .info("There are $n RESTful API entry points defined in the Swagger configuration")
-        }
-    }
-
-
-    private fun extractParams(
-            o: Map.Entry<HttpMethod, Operation>,
-            swagger: Swagger
-    ): MutableList<Param> {
-
-        val params: MutableList<Param> = mutableListOf()
-
-        o.value.parameters.forEach { p ->
-
-            val name = p.name ?: "undefined"
-
-            if (p is AbstractSerializableParameter<*>) {
-
-                val type = p.getType() ?: run {
-                    log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
-                    "string"
-                }
-
-                var gene = getGene(name, type, p.getFormat(), swagger)
-                if (!p.required) {
-                    gene = OptionalGene(name, gene)
-                }
-
-                //TODO could exploit "x-example" if available in Swagger
-
-                when (p.`in`) {
-                    "query" -> params.add(QueryParam(name, gene))
-                    "path" -> params.add(PathParam(name, gene))
-                    "header" -> throw IllegalStateException("TODO header")
-                    "formData" -> params.add(FormParam(name, gene))
-                    else -> throw IllegalStateException("Unrecognized: " + p.getIn())
-                }
-
-            } else if (p is BodyParameter) {
-
-                val ref = p.schema.reference
-
-                params.add(BodyParam(
-                        getObjectGene("body", ref, swagger)))
-            }
-        }
-
-        return params
-    }
-
-    private fun getObjectGene(name: String,
-                              reference: String,
-                              swagger: Swagger,
-                              history: MutableList<String> = mutableListOf()
-    ): ObjectGene {
-
-        if (history.contains(reference)) {
-            return CycleObjectGene("Cycle for: $reference")
-        }
-        history.add(reference)
-
-        //token after last /
-        val classDef = reference.substring(reference.lastIndexOf("/") + 1)
-
-        val model = swagger.definitions[classDef] ?:
-                throw IllegalStateException("No $classDef among the object definitions")
-
-        //TODO referenced types might not necessarily objects???
-
-        //TODO need to handle additionalProperties
-
-        val fields: MutableList<Gene> = mutableListOf()
-
-        model.properties?.entries?.forEach { o ->
-            val gene = getGene(
-                    o.key,
-                    o.value.type,
-                    o.value.format,
-                    swagger,
-                    o.value,
-                    history)
-
-            if (gene !is CycleObjectGene) {
-                fields.add(gene)
-            }
-        }
-
-        return ObjectGene(name, fields)
-    }
-
-    /**
-     * type is mandatory, whereas format is optional
-     */
-    private fun getGene(
-            name: String,
-            type: String,
-            format: String?,
-            swagger: Swagger,
-            property: Property? = null,
-            history: MutableList<String> = mutableListOf()
-    ): Gene {
-
-        /*
-        http://swagger.io/specification/#dataTypeFormat
-
-        Common Name	    type	format	Comments
-        integer	        integer	int32	signed 32 bits
-        long	        integer	int64	signed 64 bits
-        float	        number	float
-        double	        number	double
-        string	        string
-        byte	        string	byte	base64 encoded characters
-        binary	        string	binary	any sequence of octets
-        boolean	        boolean
-        date	        string	date	As defined by full-date - RFC3339
-        dateTime	    string	date-time	As defined by date-time - RFC3339
-        password	    string	password	Used to hint UIs the input needs to be obscured.
-
-        */
-
-        //first check for format
-        when (format) {
-            "int32" -> return IntegerGene(name)
-            "int64" -> return LongGene(name)
-            "double" -> return DoubleGene(name)
-            "float" -> return FloatGene(name)
-            "password" -> return StringGene(name) //nothing special to do, it is just a hint
-            "binary" -> return StringGene(name) //does it need to be treated specially?
-            "byte" -> return Base64StringGene(name)
-            "date" -> return DateGene(name)
-            "date-time" -> return DateTimeGene(name)
-            else -> if (format != null) {
-                log.warn("Unhandled format '$format'")
-            }
-        }
-
-        when (type) {
-            "integer" -> return IntegerGene(name)
-            "boolean" -> return BooleanGene(name)
-            "string" -> return StringGene(name)
-            "ref" -> {
-                if (property == null) {
-                    //TODO somehow will need to handle it
-                    throw IllegalStateException("Cannot handle ref out of a property")
-                }
-                val rp = property as RefProperty
-                return getObjectGene(rp.simpleRef, rp.`$ref`, swagger, history)
-            }
-            "array" -> {
-                if (property == null) {
-                    //TODO somehow will need to handle it
-                    throw IllegalStateException("Cannot handle array out of a property")
-                }
-                val ap = property as ArrayProperty
-                val items = ap.items
-                val template = getGene(
-                        name + "_item",
-                        items.type,
-                        items.format,
-                        swagger,
-                        items,
-                        history)
-
-                if (template is CycleObjectGene) {
-                    return CycleObjectGene("<array> ${template.name}")
-                }
-
-                return ArrayGene(name, template)
-            }
-            "object" -> {
-                if (property == null) {
-                    //TODO somehow will need to handle it
-                    throw IllegalStateException("Cannot handle array out of a property")
-                }
-                if (property is MapProperty) {
-                    val ap = property.additionalProperties
-                    val template = getGene(
-                            name + "_map",
-                            ap.type,
-                            ap.format,
-                            swagger,
-                            ap,
-                            history)
-
-                    if (template is CycleObjectGene) {
-                        return CycleObjectGene("<map> ${template.name}")
-                    }
-
-                    return MapGene(name, template)
-                }
-                if (property is ObjectProperty) {
-
-                    //TODO refactor the copy&paste
-                    val fields: MutableList<Gene> = mutableListOf()
-
-                    property.properties.entries.forEach { o ->
-                        val gene = getGene(
-                                o.key,
-                                o.value.type,
-                                o.value.format,
-                                swagger,
-                                o.value,
-                                history)
-
-                        if (gene !is CycleObjectGene) {
-                            fields.add(gene)
-                        }
-                    }
-
-                    return ObjectGene(name, fields)
-                }
-            }
-        }
-
-        throw IllegalArgumentException("Cannot handle combination $type/$format")
     }
 
 
@@ -367,19 +116,134 @@ class RestSampler : Sampler<RestIndividual>() {
 
         //TODO: for now, we just consider one single action per individual
 
-        val action = randomness.choose(actionCluster).copy()
+        val action = sampleRandomAction(0.05)
 
+        return RestIndividual(mutableListOf(action))
+    }
+
+
+    private fun randomizeActionGenes(action: Action) {
         action.seeGenes().forEach { g -> g.randomize(randomness, false) }
+    }
 
-        if(authentications.size > 0 && action is RestCallAction){
 
-            if(randomness.nextBoolean(0.9)){
-                //if there is auth, should have high probability of using one,
-                //as without auth we would do little.
-                action.auth = randomness.choose(authentications)
+    private fun sampleRandomAction(noAuthP: Double): RestAction {
+        val action = randomness.choose(actionCluster).copy() as RestAction
+        randomizeActionGenes(action)
+
+        if (action is RestCallAction) {
+            action.auth = getRandomAuth(noAuthP)
+        }
+
+        return action
+    }
+
+    private fun sampleRandomCallAction(noAuthP: Double): RestCallAction {
+        val action = randomness.choose(actionCluster.filter { a -> a.value is RestCallAction }).copy() as RestCallAction
+        randomizeActionGenes(action)
+        action.auth = getRandomAuth(noAuthP)
+
+        return action
+    }
+
+
+    private fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
+        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
+            return NoAuth()
+        } else {
+            //if there is auth, should have high probability of using one,
+            //as without auth we would do little.
+            return randomness.choose(authentications)
+        }
+    }
+
+    override fun smartSample(): RestIndividual {
+
+        /*
+            At the beginning, sample from this set, until it is empty
+         */
+        if (!adHocInitialIndividuals.isEmpty()) {
+            val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
+            return RestIndividual(mutableListOf(action))
+        }
+
+        val action = sampleRandomCallAction(0.0)
+
+        when (action.verb) {
+            HttpVerb.GET -> {
+                // get on a single resource, or a collection?
+                val path = action.path
+                val others = sameEndpoints(path)
+
+                val createActions = hasWithVerbs(others, listOf(HttpVerb.POST, HttpVerb.PUT))
+                if(! createActions.isEmpty()){
+                    //can try to create elements
+
+                    val chosen = randomness.choose(createActions)
+
+                    when(chosen.verb){
+                        HttpVerb.POST -> {
+                            //TODO
+                            if(!path.isLastElementAParameter()){
+                                /*
+                                    the endpoint might represent a collection.
+                                    Therefore, to properly test the GET, we might
+                                    need to be able to create many elements
+                                 */
+                            }
+                        }
+                        HttpVerb.PUT -> {
+                            //TODO
+                            randomizeActionGenes(chosen)
+                            chosen.auth = action.auth
+
+                            //TODO need to bind the paths
+                        }
+                    }
+                } else {
+                    // cannot create directly. check if other endpoints might
+                    //TODO
+                }
             }
         }
 
-        return RestIndividual(mutableListOf(action as RestAction))
+        return sampleAtRandom()
     }
+
+    private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
+        return actions.filter { a ->
+            verbs.contains(a.verb)
+        }
+    }
+
+    private fun sameEndpoints(path: RestPath): List<RestCallAction> {
+
+        return actionCluster.values.asSequence()
+                .filter { a -> a is RestCallAction && a.path.isEquivalent(path) }
+                .map { a -> a as RestCallAction }
+                .toList()
+    }
+
+    private fun initAdHocInitialIndividuals() {
+
+        //init first sampling with 1-action call per endpoint, for all auths
+
+        createSingleCallOnEachEndpoint(NoAuth())
+
+        authentications.forEach { auth ->
+            createSingleCallOnEachEndpoint(auth)
+        }
+    }
+
+    private fun createSingleCallOnEachEndpoint(auth: AuthenticationInfo) {
+        actionCluster.asSequence()
+                .filter { a -> a.value is RestCallAction }
+                .forEach { a ->
+                    val copy = a.value.copy() as RestCallAction
+                    copy.auth = auth
+                    randomizeActionGenes(copy)
+                    adHocInitialIndividuals.add(copy)
+                }
+    }
+
 }
