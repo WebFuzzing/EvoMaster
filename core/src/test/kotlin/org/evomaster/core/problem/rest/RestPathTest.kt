@@ -12,7 +12,7 @@ internal class RestPathTest{
     fun testResolvePathWithVariable(){
 
         val id = 5
-        val pathParam = PathParam("id", DisruptiveGene("", IntegerGene("id", id), 1.0))
+        val pathParam = PathParam("id", DisruptiveGene("d_", IntegerGene("id", id), 1.0))
 
         val path = "/api/foo/{id}"
         val restPath = RestPath(path)
