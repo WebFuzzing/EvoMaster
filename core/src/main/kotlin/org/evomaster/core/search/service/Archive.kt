@@ -78,7 +78,7 @@ class Archive<T>() where T : Individual {
     fun encounteredTargetDescriptions(): List<String> {
 
         return map.entries
-                .map { e -> "${idMapper.getDescriptiveId(e.key)} : size=${e.value.size}" }
+                .map { e -> "key ${e.key}: ${idMapper.getDescriptiveId(e.key)} , size=${e.value.size}" }
                 .sorted()
     }
 

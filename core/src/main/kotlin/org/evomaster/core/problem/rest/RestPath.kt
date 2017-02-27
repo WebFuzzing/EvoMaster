@@ -9,7 +9,16 @@ import org.slf4j.LoggerFactory
 
 class RestPath(path: String) {
 
-    data class Token(val name: String, val isParameter: Boolean)
+    data class Token(val name: String, val isParameter: Boolean){
+
+        override fun toString(): String {
+            if(isParameter){
+                return "{$name}"
+            } else {
+                return name
+            }
+        }
+    }
 
     val tokens: List<Token>
 
@@ -33,7 +42,7 @@ class RestPath(path: String) {
     }
 
     override fun toString(): String {
-        return "/" + tokens.map { t -> t.name }.joinToString("/")
+        return "/" + tokens.map { t -> t.toString() }.joinToString("/")
     }
 
     fun levels() = tokens.size

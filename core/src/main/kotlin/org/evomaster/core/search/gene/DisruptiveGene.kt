@@ -19,7 +19,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
     }
 
     override fun copy(): Gene {
-        return DisruptiveGene(name, gene, probability)
+        return DisruptiveGene(name, gene.copy(), probability)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {

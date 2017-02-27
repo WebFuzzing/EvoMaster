@@ -29,6 +29,10 @@ class RestCallAction(
         return parameters.map(Param::gene)
     }
 
+    override fun toString(): String {
+        return "$verb ${path.resolve(parameters)} , auth=${auth.name}"
+    }
+
     /**
      * Make sure that the path params are resolved to the same concrete values of "other".
      * Note: "this" can be just an ancestor of "other"
