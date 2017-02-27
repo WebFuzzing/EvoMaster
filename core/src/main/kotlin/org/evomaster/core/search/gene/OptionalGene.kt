@@ -16,6 +16,13 @@ class OptionalGene(name: String,
         return OptionalGene(name, gene.copy(), isActive)
     }
 
+    override fun copyValueFrom(other: Gene){
+        if(other !is OptionalGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.isActive = other.isActive
+        this.gene.copyValueFrom(other.gene)
+    }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 

@@ -43,4 +43,11 @@ class EnumGene<T>(
     override fun getValueAsString() : String{
         return "\"" + values[index].toString() + "\"";
     }
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is EnumGene<*>){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.index = other.index
+    }
 }

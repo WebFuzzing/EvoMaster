@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 
@@ -28,5 +29,18 @@ class RestCallAction(
         return parameters.map(Param::gene)
     }
 
+    fun bindToSamePathResolution(other: RestCallAction){
+        if(! this.path.isEquivalent(other.path)){
+            throw IllegalArgumentException("Cannot bind 2 different paths to the same path resolution: " +
+                    "${this.path} vs ${other.path}")
+        }
 
+        for(i in 0 until parameters.size){
+            val target = parameters[i]
+            if(target is PathParam){
+                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
+                parameters[i].gene.copyValueFrom(k.gene)
+            }
+        }
+    }
 }

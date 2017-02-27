@@ -28,4 +28,11 @@ class DisruptiveGene<out T>(name: String, val gene: T, val probability: Double) 
     }
 
     override fun isMutable() = probability > 0
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is DisruptiveGene<*>){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.gene.copyValueFrom(other.gene)
+    }
 }

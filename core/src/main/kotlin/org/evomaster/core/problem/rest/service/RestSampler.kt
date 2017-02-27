@@ -167,47 +167,122 @@ class RestSampler : Sampler<RestIndividual>() {
             return RestIndividual(mutableListOf(action))
         }
 
+        if (config.maxTestSize <= 1) {
+            return sampleAtRandom()
+        }
+
+
+        val test = mutableListOf<RestAction>()
+
         val action = sampleRandomCallAction(0.0)
 
         when (action.verb) {
-            HttpVerb.GET -> {
-                // get on a single resource, or a collection?
-                val path = action.path
-                val others = sameEndpoints(path)
+            HttpVerb.GET ->  handleSmartGet(action, test)
+            HttpVerb.POST -> return RestIndividual(mutableListOf(action))
+            HttpVerb.PUT -> handleSmartPut(action, test)
+            //TODO DELETE
+            //TODO PATCH
+        }
 
-                val createActions = hasWithVerbs(others, listOf(HttpVerb.POST, HttpVerb.PUT))
-                if(! createActions.isEmpty()){
-                    //can try to create elements
-
-                    val chosen = randomness.choose(createActions)
-
-                    when(chosen.verb){
-                        HttpVerb.POST -> {
-                            //TODO
-                            if(!path.isLastElementAParameter()){
-                                /*
-                                    the endpoint might represent a collection.
-                                    Therefore, to properly test the GET, we might
-                                    need to be able to create many elements
-                                 */
-                            }
-                        }
-                        HttpVerb.PUT -> {
-                            //TODO
-                            randomizeActionGenes(chosen)
-                            chosen.auth = action.auth
-
-                            //TODO need to bind the paths
-                        }
-                    }
-                } else {
-                    // cannot create directly. check if other endpoints might
-                    //TODO
-                }
-            }
+        if (!test.isEmpty()) {
+            return RestIndividual(test)
         }
 
         return sampleAtRandom()
+    }
+
+    private fun handleSmartPut(action: RestCallAction, test: MutableList<RestAction>) {
+
+        /*
+            A PUT might be used to update an existing resource, or to create a new one
+         */
+        if(randomness.nextBoolean()){
+            test.add(action)
+            return
+        }
+
+        //TODO creation with POST
+        val others = sameEndpoints(action.path)
+        val postOnSamePath = hasWithVerbs(others, listOf(HttpVerb.POST))
+        if(! postOnSamePath.isEmpty()){
+            //possible to do a direct POST on the resource
+            //TODO
+        } else {
+            //TODO need to find parent collection
+        }
+
+    }
+
+    private fun handleSmartGet(action: RestCallAction, test: MutableList<RestAction>) {
+
+        // get on a single resource, or a collection?
+        val path = action.path
+        val others = sameEndpoints(path)
+
+        val createActions = hasWithVerbs(others, listOf(HttpVerb.POST, HttpVerb.PUT))
+        if (!createActions.isEmpty()) {
+            //can try to create elements
+
+            val chosen = randomness.choose(createActions)
+
+            when (chosen.verb) {
+                HttpVerb.POST -> {
+                    if (!path.isLastElementAParameter()) {
+                        /*
+                            The endpoint might represent a collection.
+                            Therefore, to properly test the GET, we might
+                            need to be able to create many elements.
+
+                            TODO but what if there are other params in the path?
+                            eg, a collection inside another element. need to handle
+                            it as well
+                         */
+                        val k = 1 + randomness.nextInt(config.maxTestSize - 1)
+
+                        (0..k).forEach {
+                            val create = chosen.copy() as RestCallAction
+                            randomizeActionGenes(create)
+                            create.auth = action.auth
+                            create.bindToSamePathResolution(action)
+                            test.add(create)
+                        }
+                        test.add(action)
+                    } else {
+                        /*
+                           A POST on a ../{var} is weird, as one would rather expect
+                           a PUT there. However, could still be feasible
+                         */
+                        val create = chosen.copy() as RestCallAction
+                        randomizeActionGenes(create)
+                        create.auth = action.auth
+                        create.bindToSamePathResolution(action)
+                        test.add(create)
+                        test.add(action)
+                    }
+                }
+                HttpVerb.PUT -> {
+                    val create = chosen.copy() as RestCallAction
+                    randomizeActionGenes(create)
+                    create.auth = action.auth
+                    create.bindToSamePathResolution(action)
+                    test.add(create)
+                    test.add(action)
+                }
+            }
+        } else {
+            /*
+               Cannot create directly. Check if other endpoints might.
+               A typical case is something like
+
+               POST /elements
+               GET  /elements/{id}
+
+               Problems is that the {id} might not be known beforehand,
+               eg it would be the result of calling POST first, where the
+               path would be in the returned Location header.
+             */
+            //TODO
+        }
     }
 
     private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {

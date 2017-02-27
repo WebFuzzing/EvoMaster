@@ -13,9 +13,15 @@ import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class RestActionBuilder {
+
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
+    }
 
     fun createActions(swagger: Swagger, actionCluster: MutableMap<String, Action>) {
 
@@ -34,6 +40,8 @@ class RestActionBuilder {
 
                 val params = extractParams(o, swagger)
 
+                repairParams(params, restPath)
+
                 val action = RestCallAction(verb, restPath, params)
 
                 actionCluster.put(action.getName(), action)
@@ -47,6 +55,33 @@ class RestActionBuilder {
         } else {
             LoggingUtil.getInfoLogger()
                     .info("There are $n RESTful API entry points defined in the Swagger configuration")
+        }
+    }
+
+    /**
+     * Have seen some cases of (old?) Swagger wrongly marking path params as query params
+     */
+    private fun repairParams(params: MutableList<Param>, restPath: RestPath) {
+
+        restPath.getVariableNames().forEach { n ->
+
+            var p = params.find{p -> p is PathParam && p.name == n}
+            if(p == null){
+                log.warn("No path parameter for variable '$n'")
+
+                //this could happen if bug in Swagger
+                var fixed = false
+                for(i in 0 until params.size) {
+                    if(params[i] is QueryParam && params[i].name == n){
+                        params[i] = PathParam(params[i].name, params[i].gene)
+                        fixed = true
+                        break
+                    }
+                }
+                if (!fixed) {
+                    throw IllegalArgumentException("Cannot resolve path parameter '$n'")
+                }
+            }
         }
     }
 

@@ -24,4 +24,5 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
     override fun getValueAsString(): String {
         throw IllegalStateException("CycleObjectGene has no value")
     }
+
 }

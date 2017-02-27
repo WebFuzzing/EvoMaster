@@ -18,6 +18,12 @@ class IntegerGene(
         return copy
     }
 
+    override fun copyValueFrom(other: Gene){
+        if(other !is IntegerGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.value = other.value
+    }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 

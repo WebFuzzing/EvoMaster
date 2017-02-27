@@ -26,6 +26,13 @@ where T : Gene {
         )
     }
 
+    override fun copyValueFrom(other: Gene){
+        if(other !is MapGene<*>){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
+    }
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
         //maybe not so important here to complicate code to enable forceNewValue

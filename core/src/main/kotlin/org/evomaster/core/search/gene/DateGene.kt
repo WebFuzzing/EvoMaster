@@ -32,5 +32,12 @@ class DateGene(
         return "${year.value}-${month.value}-${day.value}"
     }
 
-
+    override fun copyValueFrom(other: Gene){
+        if(other !is DateGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.year.copyValueFrom(other.year)
+        this.month.copyValueFrom(other.month)
+        this.day.copyValueFrom(other.day)
+    }
 }

@@ -29,4 +29,12 @@ class DateTimeGene(
     override fun getValueAsString(): String {
         return "${date.getValueAsString()}T${time.getValueAsString()}"
     }
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is DateTimeGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.date.copyValueFrom(other.date)
+        this.time.copyValueFrom(other.time)
+    }
 }

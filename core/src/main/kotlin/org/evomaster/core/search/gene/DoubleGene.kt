@@ -19,4 +19,10 @@ class DoubleGene(name: String,
         return value.toString()
     }
 
+    override fun copyValueFrom(other: Gene){
+        if(other !is DoubleGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.value = other.value
+    }
 }

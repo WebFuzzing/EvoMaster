@@ -37,4 +37,13 @@ class TimeGene(
     override fun getValueAsString(): String {
         return "${hour.value}:${minute.value}:${second.value}Z"
     }
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is TimeGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.hour.copyValueFrom(other.hour)
+        this.minute.copyValueFrom(other.minute)
+        this.second.copyValueFrom(other.second)
+    }
 }

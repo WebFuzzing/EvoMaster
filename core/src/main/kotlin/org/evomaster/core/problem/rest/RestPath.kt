@@ -5,7 +5,6 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.*
 
 
 class RestPath(path: String) {
@@ -15,11 +14,11 @@ class RestPath(path: String) {
     val tokens: List<Token>
 
     init {
-        tokens = path.split("/").filter { s -> ! s.isBlank()}
+        tokens = path.split("/").filter { s -> !s.isBlank() }
                 .map { s ->
                     val trimmed = s.trim()
-                    if(trimmed.startsWith("{")){
-                        if(! trimmed.endsWith("}")){
+                    if (trimmed.startsWith("{")) {
+                        if (!trimmed.endsWith("}")) {
                             throw IllegalArgumentException("Opening { was not matched by closing } in: $path")
                         }
                         Token(trimmed.substring(1, trimmed.lastIndex), true)
@@ -29,7 +28,7 @@ class RestPath(path: String) {
                 }
     }
 
-    companion object{
+    companion object {
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
     }
 
@@ -37,12 +36,16 @@ class RestPath(path: String) {
         return "/" + tokens.map { t -> t.name }.joinToString("/")
     }
 
-    fun isEquivalent(other: RestPath) : Boolean{
-        if(this.tokens.size != other.tokens.size){
+    fun getVariableNames(): List<String> {
+        return tokens.filter { t -> t.isParameter }.map { t -> t.name }
+    }
+
+    fun isEquivalent(other: RestPath): Boolean {
+        if (this.tokens.size != other.tokens.size) {
             return false
         }
-        for(i in 0 until tokens.size){
-            if(this.tokens[i] != other.tokens[i]){
+        for (i in 0 until tokens.size) {
+            if (this.tokens[i] != other.tokens[i]) {
                 return false;
             }
         }
@@ -50,20 +53,20 @@ class RestPath(path: String) {
     }
 
 
-    fun isLastElementAParameter(): Boolean{
-        if(tokens.isEmpty()){
+    fun isLastElementAParameter(): Boolean {
+        if (tokens.isEmpty()) {
             return false
         }
         return tokens.last().isParameter
     }
 
-    fun isDirectChildOf(other: RestPath): Boolean{
-        if(this.tokens.size  != 1 + other.tokens.size){
+    fun isDirectChildOf(other: RestPath): Boolean {
+        if (this.tokens.size != 1 + other.tokens.size) {
             return false
         }
 
-        for(i in 0 until other.tokens.size){
-            if(other.tokens[i] != this.tokens[i]){
+        for (i in 0 until other.tokens.size) {
+            if (other.tokens[i] != this.tokens[i]) {
                 return false
             }
         }
@@ -83,25 +86,17 @@ class RestPath(path: String) {
      *
      * if the input params have a variable called "id" with value 5
      */
-    fun resolve(params: List<out Param>) : String {
+    fun resolve(params: List<out Param>): String {
 
         var path = StringBuffer()
         tokens.forEach { t ->
             val value: String
 
-            if(! t.isParameter){
+            if (!t.isParameter) {
                 value = t.name
             } else {
-                var p = params.find{p -> p is PathParam && p.name == t.name}
-                if(p == null){
-                    log.warn("No path parameter for variable '${t.name}'")
-
-                    //this could happen if bug in Swagger
-                    p = params.find{p -> p is QueryParam && p.name == t.name}
-                    if(p == null){
-                        throw IllegalArgumentException("Cannot resolve path parameter '$${t.name}'")
-                    }
-                }
+                var p = params.find { p -> p is PathParam && p.name == t.name } ?:
+                        throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
                 value = p.gene.getValueAsString()
             }
@@ -110,11 +105,11 @@ class RestPath(path: String) {
 
 
         val queries = params.filter { p -> p is QueryParam }
-        if(queries.size > 0){
-           path.append("?" +
-                    queries.map { q -> q.name+"="+q.gene.getValueAsString() }
-                    .joinToString("&")
-           )
+        if (queries.size > 0) {
+            path.append("?" +
+                    queries.map { q -> q.name + "=" + q.gene.getValueAsString() }
+                            .joinToString("&")
+            )
         }
 
         return path.toString()

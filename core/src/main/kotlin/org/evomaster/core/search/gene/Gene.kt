@@ -22,4 +22,6 @@ abstract class Gene(var name: String) {
     abstract fun randomize(randomness: Randomness, forceNewValue: Boolean)
 
     abstract fun getValueAsString() : String
+
+    abstract fun copyValueFrom(other: Gene)
 }

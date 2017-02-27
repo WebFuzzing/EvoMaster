@@ -18,4 +18,11 @@ class Base64StringGene(
     override fun getValueAsString(): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is Base64StringGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.data.copyValueFrom(other.data)
+    }
 }

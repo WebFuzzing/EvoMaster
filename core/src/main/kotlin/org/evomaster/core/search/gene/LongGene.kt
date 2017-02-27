@@ -33,4 +33,11 @@ class LongGene (
     override fun getValueAsString() : String{
         return value.toString()
     }
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is LongGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.value = other.value
+    }
 }

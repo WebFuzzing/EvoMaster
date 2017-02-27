@@ -9,6 +9,14 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         return ObjectGene(name, fields.map(Gene::copy))
     }
 
+    override fun copyValueFrom(other: Gene){
+        if(other !is ObjectGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        for(i in 0 until fields.size){
+            this.fields[i].copyValueFrom(other.fields[i])
+        }
+    }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 

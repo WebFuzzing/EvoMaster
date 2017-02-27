@@ -23,4 +23,11 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name){
     override fun getValueAsString() : String{
         return value.toString()
     }
+
+    override fun copyValueFrom(other: Gene){
+        if(other !is BooleanGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        this.value = other.value
+    }
 }
