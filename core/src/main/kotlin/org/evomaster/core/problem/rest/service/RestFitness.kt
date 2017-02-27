@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.clientJava.controllerApi.EMTestUtils
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -56,10 +57,13 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         val actionResults : MutableList<ActionResult> = mutableListOf()
 
+        //used for things like chaining "location" paths
+        val chainState = mutableMapOf<String,String>()
+
         //run the test
         individual.actions.forEach({ a ->
             if (a is RestCallAction) {
-                handleRestCall(a, actionResults)
+                handleRestCall(a, actionResults, chainState)
             } else {
                 throw IllegalStateException("Cannot handle: " + a.javaClass)
             }
@@ -114,17 +118,29 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     }
 
 
-    private fun handleRestCall(a: RestCallAction, actionResults: MutableList<ActionResult>) {
-
-        val path = a.path.resolve(a.parameters)
-        assert(path.startsWith("/"))
+    private fun handleRestCall(a: RestCallAction,
+                               actionResults: MutableList<ActionResult>,
+                               chainState : MutableMap<String,String>) {
 
         var baseUrl = infoDto.baseUrlOfSUT
         if(baseUrl.endsWith("/")){
             baseUrl = baseUrl.substring(0, baseUrl.length-1)
         }
 
-        val builder = client.target(baseUrl + path).request()
+
+        val location = "location"
+
+        val fullUri = if(a.locationChained && a.verb != HttpVerb.POST){
+            val locationHeader = chainState[location]
+                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+
+            EMTestUtils.resolveLocation(locationHeader, baseUrl + a.path.toString())!!
+        } else{
+            val path = a.path.resolve(a.parameters)
+            baseUrl + path
+        }
+
+        val builder = client.target(fullUri).request()
 
         if(a.auth !is NoAuth){
             a.auth.headers.forEach { h ->
@@ -189,6 +205,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         if(response.status == 401 && a.auth !is NoAuth){
             //this would likely be a misconfiguration in the SUT controller
             log.warn("Got 401 although having auth for '${a.auth.name}'")
+        }
+
+
+        if(a.locationChained && a.verb == HttpVerb.POST){
+            //save location for the following REST calls
+            chainState[location] = response.getHeaderString(location) ?: ""
         }
     }
 }

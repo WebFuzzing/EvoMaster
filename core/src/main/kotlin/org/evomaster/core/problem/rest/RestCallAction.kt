@@ -12,12 +12,18 @@ class RestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
         val parameters: List<out Param>,
-        var auth: AuthenticationInfo = NoAuth()
+        var auth: AuthenticationInfo = NoAuth(),
+        /**
+         * If true, it means that it will use the "location" header of last
+         * POST as path.
+         * If this call is a POST, just instruct to save the "location"
+         */
+        var locationChained: Boolean = false
 ) : RestAction{
 
 
     override fun copy(): Action {
-        return RestCallAction(verb, path, parameters.map(Param::copy), auth)
+        return RestCallAction(verb, path, parameters.map(Param::copy), auth, locationChained)
     }
 
     override fun getName(): String {

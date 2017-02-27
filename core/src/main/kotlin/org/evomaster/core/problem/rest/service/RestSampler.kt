@@ -320,7 +320,11 @@ class RestSampler : Sampler<RestIndividual>() {
                 test.add(secondPatch)
             }
 
-            //TODO need to make sure the path of the write is based on the location header of POST
+            test.forEach { t ->
+                (t as RestCallAction)
+                        .apply { locationChained = true }
+                        .let { preventPathParamMutation(it) }
+            }
 
             return
         }
@@ -411,7 +415,11 @@ class RestSampler : Sampler<RestIndividual>() {
             test.add(post)
             test.add(get)
 
-            //TODO need to make sure the path of PUT is based on the location header of POST
+            test.forEach { t ->
+                (t as RestCallAction)
+                        .apply { locationChained = true }
+                        .let { preventPathParamMutation(it) }
+            }
 
         }
     }
