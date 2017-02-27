@@ -3,16 +3,18 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import java.util.*
+import javax.annotation.PostConstruct
 
 
 class Randomness {
 
     @Inject
-    protected lateinit var configuration: EMConfig
+    private lateinit var configuration: EMConfig
 
     private val random = Random()
 
-    private fun init(){
+    @PostConstruct
+    private fun initialize(){
         updateSeed(configuration.seed)
     }
 
@@ -42,6 +44,7 @@ class Randomness {
 
     fun nextInt(bound: Int) = random.nextInt(bound)
 
+
     fun nextInt(min: Int, max: Int, exclude: Int): Int {
 
         if(min == max && max == exclude){
@@ -55,6 +58,9 @@ class Randomness {
         return k
     }
 
+    /**
+     * A random int between "min" and "max", both inclusive
+     */
     fun nextInt(min: Int, max: Int): Int {
         if (min == max) {
             return min

@@ -36,6 +36,8 @@ class RestPath(path: String) {
         return "/" + tokens.map { t -> t.name }.joinToString("/")
     }
 
+    fun levels() = tokens.size
+
     fun getVariableNames(): List<String> {
         return tokens.filter { t -> t.isParameter }.map { t -> t.name }
     }
@@ -46,7 +48,7 @@ class RestPath(path: String) {
         }
         for (i in 0 until tokens.size) {
             if (this.tokens[i] != other.tokens[i]) {
-                return false;
+                return false
             }
         }
         return true
@@ -65,7 +67,18 @@ class RestPath(path: String) {
             return false
         }
 
-        for (i in 0 until other.tokens.size) {
+        return other.isAncestorOf(this)
+    }
+
+    /**
+     * Prefix or same as "other"
+     */
+    fun isAncestorOf(other: RestPath) : Boolean{
+        if(this.tokens.size > other.tokens.size){
+            return false
+        }
+
+        for (i in 0 until this.tokens.size) {
             if (other.tokens[i] != this.tokens[i]) {
                 return false
             }

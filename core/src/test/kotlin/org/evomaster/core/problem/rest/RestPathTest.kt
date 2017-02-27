@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.IntegerGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -11,7 +12,7 @@ internal class RestPathTest{
     fun testResolvePathWithVariable(){
 
         val id = 5
-        val pathParam = PathParam("id", IntegerGene("id", id))
+        val pathParam = PathParam("id", DisruptiveGene("", IntegerGene("id", id), 1.0))
 
         val path = "/api/foo/{id}"
         val restPath = RestPath(path)

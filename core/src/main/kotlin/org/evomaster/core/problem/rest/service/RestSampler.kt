@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
@@ -114,11 +115,14 @@ class RestSampler : Sampler<RestIndividual>() {
 
     override fun sampleAtRandom(): RestIndividual {
 
-        //TODO: for now, we just consider one single action per individual
+        val actions = mutableListOf<RestAction>()
+        val n = randomness.nextInt(1, config.maxTestSize)
 
-        val action = sampleRandomAction(0.05)
+        (0 until n).forEach {
+            actions.add(sampleRandomAction(0.05))
+        }
 
-        return RestIndividual(mutableListOf(action))
+        return RestIndividual(actions)
     }
 
 
@@ -168,6 +172,12 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         if (config.maxTestSize <= 1) {
+            /*
+                Here we would have sequences of endpoint calls that are
+                somehow linked to each other, eg a DELETE on a resource
+                created with a POST.
+                If can have only one call, then just go random
+             */
             return sampleAtRandom()
         }
 
@@ -176,12 +186,26 @@ class RestSampler : Sampler<RestIndividual>() {
 
         val action = sampleRandomCallAction(0.0)
 
+        /*
+            TODO: so far, we only handle endpoints with a single path
+            parameter. would need to handle the cases in which we need
+            several POSTs on different ancestor resources.
+
+            TODO: each of these "smart" tests could end with a GET, to make
+            the test easier to read and verify the results (eg side-effects of
+            DELETE/PUT/PATCH operations).
+            But doing that as part of the tests could be inefficient (ie a lot
+            of GET calls).
+            Maybe that should be done as part of an "assertion generation" phase
+            (which would also be useful for creating checks on returned JSONs)
+         */
+
         when (action.verb) {
-            HttpVerb.GET ->  handleSmartGet(action, test)
-            HttpVerb.POST -> return RestIndividual(mutableListOf(action))
+            HttpVerb.GET -> handleSmartGet(action, test)
+            HttpVerb.POST -> handleSmartPost(action, test)
             HttpVerb.PUT -> handleSmartPut(action, test)
-            //TODO DELETE
-            //TODO PATCH
+            HttpVerb.DELETE -> handleSmartDelete(action, test)
+            HttpVerb.PATCH -> handleSmartPatch(action, test)
         }
 
         if (!test.isEmpty()) {
@@ -191,33 +215,123 @@ class RestSampler : Sampler<RestIndividual>() {
         return sampleAtRandom()
     }
 
-    private fun handleSmartPut(action: RestCallAction, test: MutableList<RestAction>) {
+    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>) {
+
+        assert(post.verb == HttpVerb.POST)
+
+        //as POST is used in all the others, maybe here we do not really need to handle it specially?
+        test.add(post)
+    }
+
+    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestAction>) {
+
+        assert(delete.verb == HttpVerb.DELETE)
+
+        createWriteOperationAfterAPost(delete, test)
+    }
+
+    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>) {
+
+        assert(patch.verb == HttpVerb.PATCH)
+
+        createWriteOperationAfterAPost(patch, test)
+    }
+
+    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>) {
+
+        assert(put.verb == HttpVerb.PUT)
 
         /*
             A PUT might be used to update an existing resource, or to create a new one
          */
-        if(randomness.nextBoolean()){
-            test.add(action)
+        if (randomness.nextBoolean(0.2)) {
+            /*
+                with low prob., let's just try the PUT on its own.
+                Recall we already add single calls on each endpoint at initialization
+             */
+            test.add(put)
             return
         }
 
-        //TODO creation with POST
-        val others = sameEndpoints(action.path)
-        val postOnSamePath = hasWithVerbs(others, listOf(HttpVerb.POST))
-        if(! postOnSamePath.isEmpty()){
-            //possible to do a direct POST on the resource
-            //TODO
-        } else {
-            //TODO need to find parent collection
-        }
-
+        createWriteOperationAfterAPost(put, test)
     }
 
-    private fun handleSmartGet(action: RestCallAction, test: MutableList<RestAction>) {
+    /**
+       Only for PUT, DELETE, PATCH
+     */
+    private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestAction>) {
+
+        assert(write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH)
+
+        val others = sameEndpoints(write.path)
+        val postOnSamePath = hasWithVerbs(others, listOf(HttpVerb.POST))
+
+        if (!postOnSamePath.isEmpty()) {
+            /*
+                possible to do a direct POST on the resource.
+                bit weird (ie, a PUT would make more sense), but possible
+             */
+
+            val template = postOnSamePath.first()
+            val post = createActionFor(template, write)
+
+            test.add(post)
+            test.add(write)
+
+            /*
+                make sure the paths are not mutated, otherwise the write might be
+                on different resource compared to POST
+             */
+            preventPathParamMutation(post)
+            preventPathParamMutation(write)
+
+            if(write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()){
+                /*
+                    As PATCH is not idempotent (in contrast to PUT), it can make sense to test
+                    two patches in sequence
+                 */
+                val secondPatch =  createActionFor(write, write)
+                preventPathParamMutation(secondPatch)
+                test.add(secondPatch)
+            }
+
+            return
+
+        } else {
+            //Need to find a POST on a parent collection resource
+            val template = chooseClosestAncestor(write.path, listOf(HttpVerb.POST))
+            if (template == null) {
+                //weird... write op but no POST in any ancestor?
+                test.add(write)
+                return
+            }
+
+            val post = createActionFor(template, write)
+
+            test.add(post)
+            test.add(write)
+
+            if(write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()){
+                /*
+                    As PATCH is not idempotent (in contrast to PUT), it can make sense to test
+                    two patches in sequence
+                 */
+                val secondPatch =  createActionFor(write, write)
+                test.add(secondPatch)
+            }
+
+            //TODO need to make sure the path of the write is based on the location header of POST
+
+            return
+        }
+    }
+
+    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>) {
+
+        assert(get.verb == HttpVerb.GET)
 
         // get on a single resource, or a collection?
-        val path = action.path
-        val others = sameEndpoints(path)
+        val others = sameEndpoints(get.path)
 
         val createActions = hasWithVerbs(others, listOf(HttpVerb.POST, HttpVerb.PUT))
         if (!createActions.isEmpty()) {
@@ -227,7 +341,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
             when (chosen.verb) {
                 HttpVerb.POST -> {
-                    if (!path.isLastElementAParameter()) {
+                    if (!get.path.isLastElementAParameter()) {
                         /*
                             The endpoint might represent a collection.
                             Therefore, to properly test the GET, we might
@@ -240,33 +354,30 @@ class RestSampler : Sampler<RestIndividual>() {
                         val k = 1 + randomness.nextInt(config.maxTestSize - 1)
 
                         (0..k).forEach {
-                            val create = chosen.copy() as RestCallAction
-                            randomizeActionGenes(create)
-                            create.auth = action.auth
-                            create.bindToSamePathResolution(action)
+                            val create = createActionFor(chosen, get)
+                            preventPathParamMutation(create)
                             test.add(create)
                         }
-                        test.add(action)
+                        preventPathParamMutation(get)
+                        test.add(get)
                     } else {
                         /*
                            A POST on a ../{var} is weird, as one would rather expect
                            a PUT there. However, could still be feasible
                          */
-                        val create = chosen.copy() as RestCallAction
-                        randomizeActionGenes(create)
-                        create.auth = action.auth
-                        create.bindToSamePathResolution(action)
+                        val create = createActionFor(chosen, get)
                         test.add(create)
-                        test.add(action)
+                        test.add(get)
+                        preventPathParamMutation(create)
+                        preventPathParamMutation(get)
                     }
                 }
                 HttpVerb.PUT -> {
-                    val create = chosen.copy() as RestCallAction
-                    randomizeActionGenes(create)
-                    create.auth = action.auth
-                    create.bindToSamePathResolution(action)
+                    val create = createActionFor(chosen, get)
                     test.add(create)
-                    test.add(action)
+                    test.add(get)
+                    preventPathParamMutation(create)
+                    preventPathParamMutation(get)
                 }
             }
         } else {
@@ -281,8 +392,77 @@ class RestSampler : Sampler<RestIndividual>() {
                eg it would be the result of calling POST first, where the
                path would be in the returned Location header.
              */
-            //TODO
+
+            val template = chooseClosestAncestor(get.path, listOf(HttpVerb.POST))
+            if (template == null) {
+                /*
+                    A GET with no POST in any ancestor.
+                    This could happen if the API is "read-only".
+
+                    TODO: In such case, would really need to handle things like
+                    direct creation of data in the DB (for example)
+                 */
+                test.add(get)
+                return
+            }
+
+            val post = createActionFor(template, get)
+
+            test.add(post)
+            test.add(get)
+
+            //TODO need to make sure the path of PUT is based on the location header of POST
+
         }
+    }
+
+    private fun preventPathParamMutation(action: RestCallAction) {
+        action.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
+    }
+
+    private fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
+        val res = template.copy() as RestCallAction
+        randomizeActionGenes(res)
+        res.auth = target.auth
+        res.bindToSamePathResolution(target)
+
+        return res
+    }
+
+
+    private fun chooseClosestAncestor(path: RestPath, verbs: List<HttpVerb>): RestCallAction? {
+
+        var others = sameOrAncestorEndpoints(path)
+        others = hasWithVerbs(others, verbs)
+
+        if (others.isEmpty()) {
+            return null
+        }
+
+        return chooseLongestPath(others)
+    }
+
+    /**
+     * Get all ancestor (same path prefix) endpoints that do at least one
+     * of the specified operations
+     */
+    private fun sameOrAncestorEndpoints(path: RestPath): List<RestCallAction> {
+        return actionCluster.values.asSequence()
+                .filter { a -> a is RestCallAction && a.path.isAncestorOf(path) }
+                .map { a -> a as RestCallAction }
+                .toList()
+    }
+
+    private fun chooseLongestPath(actions: List<RestCallAction>): RestCallAction {
+
+        if (actions.isEmpty()) {
+            throw IllegalArgumentException("Cannot choose from an empty collection")
+        }
+
+        val max = actions.asSequence().map { a -> a.path.levels() }.max()!!
+        val candidates = actions.filter { a -> a.path.levels() == max }
+
+        return randomness.choose(candidates)
     }
 
     private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {

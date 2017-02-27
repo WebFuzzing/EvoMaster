@@ -73,7 +73,7 @@ class RestActionBuilder {
                 var fixed = false
                 for(i in 0 until params.size) {
                     if(params[i] is QueryParam && params[i].name == n){
-                        params[i] = PathParam(params[i].name, params[i].gene)
+                        params[i] = PathParam(params[i].name, DisruptiveGene("d_", params[i].gene, 1.0))
                         fixed = true
                         break
                     }
@@ -113,7 +113,7 @@ class RestActionBuilder {
 
                 when (p.`in`) {
                     "query" -> params.add(QueryParam(name, gene))
-                    "path" -> params.add(PathParam(name, gene))
+                    "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
                     "header" -> throw IllegalStateException("TODO header")
                     "formData" -> params.add(FormParam(name, gene))
                     else -> throw IllegalStateException("Unrecognized: " + p.getIn())

@@ -29,9 +29,13 @@ class RestCallAction(
         return parameters.map(Param::gene)
     }
 
+    /**
+     * Make sure that the path params are resolved to the same concrete values of "other".
+     * Note: "this" can be just an ancestor of "other"
+     */
     fun bindToSamePathResolution(other: RestCallAction){
-        if(! this.path.isEquivalent(other.path)){
-            throw IllegalArgumentException("Cannot bind 2 different paths to the same path resolution: " +
+        if(! this.path.isAncestorOf(other.path)){
+            throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
         }
 
