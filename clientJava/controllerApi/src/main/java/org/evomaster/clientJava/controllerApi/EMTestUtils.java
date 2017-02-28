@@ -2,7 +2,8 @@ package org.evomaster.clientJava.controllerApi;
 
 /*
     Note: this class is in this module, as to make sure its exact same code
-    is used as well in the EvoMaster Core (eg, when making HTTP calls)
+    is used as well in the EvoMaster Core (eg, when making HTTP calls) and
+    the generated tests
  */
 
 import java.net.URI;
