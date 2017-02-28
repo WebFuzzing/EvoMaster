@@ -33,7 +33,7 @@ public class ConstantEMTest extends SpringTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "200",
+                "--maxFitnessEvaluations", "1000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
