@@ -16,6 +16,12 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun mutate(individual: T): T {
         val copy = individual.copy() as T
 
+        if(individual.canMutateStructure() && randomness.nextBoolean()){
+            //usually, either delete an action, or add a new random one
+            structureMutator.mutateStructure(copy)
+            return copy
+        }
+
         val genes = copy.seeGenes().filter(Gene::isMutable)
 
         if (genes.isEmpty()) {

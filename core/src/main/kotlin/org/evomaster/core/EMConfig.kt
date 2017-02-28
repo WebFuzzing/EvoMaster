@@ -266,5 +266,5 @@ class EMConfig {
 
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
     @Min(1.0)
-    var maxTestSize = 1 // 20 TODO change once working
+    var maxTestSize = 1 // 10 TODO change once working
 }

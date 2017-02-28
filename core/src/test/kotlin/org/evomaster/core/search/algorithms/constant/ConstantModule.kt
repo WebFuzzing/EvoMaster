@@ -2,11 +2,9 @@ package org.evomaster.core.search.algorithms.constant
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.search.mutator.EmptyStructureMutator
 import org.evomaster.core.search.mutator.StandardMutator
-import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.Mutator
-import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.*
 
 /**
  * Created by arcuri82 on 20-Feb-17.
@@ -33,5 +31,8 @@ class ConstantModule : AbstractModule() {
         bind(object : TypeLiteral<Archive<ConstantIndividual>>() {})
                 .asEagerSingleton()
 
+        bind(StructureMutator::class.java)
+                .to(EmptyStructureMutator::class.java)
+                .asEagerSingleton()
     }
 }

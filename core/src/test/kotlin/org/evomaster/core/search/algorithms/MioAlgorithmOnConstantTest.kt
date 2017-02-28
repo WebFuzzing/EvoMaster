@@ -10,6 +10,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.constant.ConstantIndividual
 import org.evomaster.core.search.algorithms.constant.ConstantModule
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -28,8 +29,10 @@ class MioAlgorithmOnConstantTest {
         val mio = injector.getInstance(Key.get(
                 object : TypeLiteral<MioAlgorithm<ConstantIndividual>>() {}))
 
+        val randomness = injector.getInstance(Randomness::class.java)
+        randomness.updateSeed(42)
+
         val config = injector.getInstance(EMConfig::class.java)
-        config.seed = 42
         config.maxFitnessEvaluations = 200
 
         val solution = mio.search()

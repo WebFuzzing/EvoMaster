@@ -4,10 +4,7 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.mutator.StandardMutator
-import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.Mutator
-import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.*
 
 
 class RestModule : AbstractModule(){
@@ -34,6 +31,8 @@ class RestModule : AbstractModule(){
                 .to(object : TypeLiteral<StandardMutator<RestIndividual>>(){})
                 .asEagerSingleton()
 
-
+        bind(StructureMutator::class.java)
+                .to(RestStructureMutator::class.java)
+                .asEagerSingleton()
     }
 }

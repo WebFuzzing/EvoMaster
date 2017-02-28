@@ -2,14 +2,12 @@ package org.evomaster.core.search.algorithms.onemax
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
+import org.evomaster.core.search.mutator.EmptyStructureMutator
 import org.evomaster.core.search.mutator.StandardMutator
-import org.evomaster.core.search.service.Archive
-import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.Mutator
-import org.evomaster.core.search.service.Sampler
+import org.evomaster.core.search.service.*
 
 
-class OneMaxModule : AbstractModule(){
+class OneMaxModule : AbstractModule() {
 
     override fun configure() {
         bind(object : TypeLiteral<Sampler<OneMaxIndividual>>() {})
@@ -28,7 +26,10 @@ class OneMaxModule : AbstractModule(){
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
-            .asEagerSingleton()
+                .asEagerSingleton()
 
+        bind(StructureMutator::class.java)
+                .to(EmptyStructureMutator::class.java)
+                .asEagerSingleton()
     }
 }

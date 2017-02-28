@@ -122,7 +122,7 @@ class RestSampler : Sampler<RestIndividual>() {
             actions.add(sampleRandomAction(0.05))
         }
 
-        return RestIndividual(actions)
+        return RestIndividual(actions, SampleType.RANDOM)
     }
 
 
@@ -131,7 +131,7 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
 
-    private fun sampleRandomAction(noAuthP: Double): RestAction {
+    fun sampleRandomAction(noAuthP: Double): RestAction {
         val action = randomness.choose(actionCluster).copy() as RestAction
         randomizeActionGenes(action)
 
@@ -168,7 +168,7 @@ class RestSampler : Sampler<RestIndividual>() {
          */
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            return RestIndividual(mutableListOf(action))
+            return RestIndividual(mutableListOf(action), SampleType.SMART)
         }
 
         if (config.maxTestSize <= 1) {
@@ -200,44 +200,50 @@ class RestSampler : Sampler<RestIndividual>() {
             (which would also be useful for creating checks on returned JSONs)
          */
 
-        when (action.verb) {
+        val sampleType = when (action.verb) {
             HttpVerb.GET -> handleSmartGet(action, test)
             HttpVerb.POST -> handleSmartPost(action, test)
             HttpVerb.PUT -> handleSmartPut(action, test)
             HttpVerb.DELETE -> handleSmartDelete(action, test)
             HttpVerb.PATCH -> handleSmartPatch(action, test)
+            else -> SampleType.RANDOM
         }
 
         if (!test.isEmpty()) {
-            return RestIndividual(test)
+            return RestIndividual(test, sampleType)
         }
 
         return sampleAtRandom()
     }
 
-    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>) {
+    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>) : SampleType {
 
         assert(post.verb == HttpVerb.POST)
 
         //as POST is used in all the others, maybe here we do not really need to handle it specially?
         test.add(post)
+        return SampleType.SMART
     }
 
-    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestAction>) {
+    private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(delete.verb == HttpVerb.DELETE)
 
         createWriteOperationAfterAPost(delete, test)
+
+        return SampleType.SMART
     }
 
-    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>) {
+    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>) : SampleType {
 
         assert(patch.verb == HttpVerb.PATCH)
 
         createWriteOperationAfterAPost(patch, test)
+
+        return SampleType.SMART
     }
 
-    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>) {
+    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>) : SampleType{
 
         assert(put.verb == HttpVerb.PUT)
 
@@ -250,10 +256,11 @@ class RestSampler : Sampler<RestIndividual>() {
                 Recall we already add single calls on each endpoint at initialization
              */
             test.add(put)
-            return
+            return SampleType.SMART
         }
 
         createWriteOperationAfterAPost(put, test)
+        return SampleType.SMART
     }
 
     /**
@@ -330,7 +337,7 @@ class RestSampler : Sampler<RestIndividual>() {
         }
     }
 
-    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>) {
+    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>) : SampleType{
 
         assert(get.verb == HttpVerb.GET)
 
@@ -364,6 +371,8 @@ class RestSampler : Sampler<RestIndividual>() {
                         }
                         preventPathParamMutation(get)
                         test.add(get)
+                        return SampleType.SMART_GET_COLLECTION
+
                     } else {
                         /*
                            A POST on a ../{var} is weird, as one would rather expect
@@ -374,6 +383,8 @@ class RestSampler : Sampler<RestIndividual>() {
                         test.add(get)
                         preventPathParamMutation(create)
                         preventPathParamMutation(get)
+
+                        return SampleType.SMART
                     }
                 }
                 HttpVerb.PUT -> {
@@ -382,6 +393,8 @@ class RestSampler : Sampler<RestIndividual>() {
                     test.add(get)
                     preventPathParamMutation(create)
                     preventPathParamMutation(get)
+
+                    return SampleType.SMART
                 }
             }
         } else {
@@ -407,7 +420,7 @@ class RestSampler : Sampler<RestIndividual>() {
                     direct creation of data in the DB (for example)
                  */
                 test.add(get)
-                return
+                return SampleType.SMART
             }
 
             val post = createActionFor(template, get)
@@ -421,14 +434,17 @@ class RestSampler : Sampler<RestIndividual>() {
                         .let { preventPathParamMutation(it) }
             }
 
+            return SampleType.SMART
         }
+
+        return SampleType.SMART
     }
 
     private fun preventPathParamMutation(action: RestCallAction) {
         action.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
     }
 
-    private fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
+    fun createActionFor(template: RestCallAction, target: RestCallAction): RestCallAction {
         val res = template.copy() as RestCallAction
         randomizeActionGenes(res)
         res.auth = target.auth

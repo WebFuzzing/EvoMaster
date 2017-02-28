@@ -5,11 +5,19 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 
 
-class RestIndividual(val actions: MutableList<RestAction>) : Individual() {
+class RestIndividual(val actions: MutableList<RestAction>, val sampleType: SampleType) : Individual() {
 
     override fun copy(): Individual {
-        return RestIndividual(actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>)
+        return RestIndividual(
+                actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+                sampleType)
     }
+
+    override fun canMutateStructure(): Boolean {
+        return sampleType == SampleType.RANDOM ||
+                sampleType == SampleType.SMART_GET_COLLECTION
+    }
+
 
     override fun seeGenes(): List<out Gene> {
 
@@ -23,14 +31,14 @@ class RestIndividual(val actions: MutableList<RestAction>) : Individual() {
     }
 
 
-    fun getIndexOfHttpCalls(verb: HttpVerb) : List<Int>{
+    fun getIndexOfHttpCalls(verb: HttpVerb): List<Int> {
 
-        val indices : MutableList<Int> = mutableListOf()
+        val indices: MutableList<Int> = mutableListOf()
 
-        for(i in 0..actions.lastIndex){
-            if(actions[i] is RestCallAction){
+        for (i in 0..actions.lastIndex) {
+            if (actions[i] is RestCallAction) {
                 val action = actions[i] as RestCallAction
-                if(action.verb == verb){
+                if (action.verb == verb) {
                     indices.add(i)
                 }
             }

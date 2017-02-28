@@ -22,6 +22,8 @@ abstract class Mutator<T> where T : Individual {
     @Inject
     protected lateinit var apc: AdaptiveParameterControl
 
+    @Inject
+    protected lateinit var structureMutator: StructureMutator
 
     /**
      * @return a mutated copy

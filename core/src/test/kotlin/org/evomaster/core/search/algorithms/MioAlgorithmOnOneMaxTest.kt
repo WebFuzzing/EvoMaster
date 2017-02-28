@@ -9,6 +9,7 @@ import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -25,10 +26,13 @@ class MioAlgorithmOnOneMaxTest {
         val mio = injector.getInstance(Key.get(
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
+        val randomness = injector.getInstance(Randomness::class.java)
+        randomness.updateSeed(42)
+
         val sampler = injector.getInstance(OneMaxSampler::class.java)
+
         val config = injector.getInstance(EMConfig::class.java)
-        config.seed = 42
-        config.maxFitnessEvaluations = 10000
+        config.maxFitnessEvaluations = 30000
 
         val n = 20
         sampler.n = n
