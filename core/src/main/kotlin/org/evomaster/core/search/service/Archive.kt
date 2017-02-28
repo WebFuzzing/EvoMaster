@@ -53,7 +53,7 @@ class Archive<T>() where T : Individual {
 
     fun sampleIndividual(): EvaluatedIndividual<T> {
 
-        if (map.isEmpty()) {
+        if (isEmpty()) {
             throw IllegalStateException("Empty archive")
         }
 
@@ -199,7 +199,7 @@ class Archive<T>() where T : Individual {
      */
     private fun sortAndShrinkIfNeeded(list: MutableList<EvaluatedIndividual<T>>, target: Int) {
 
-        list.sortedWith(compareBy<EvaluatedIndividual<T>>
+        list.sortWith(compareBy<EvaluatedIndividual<T>>
         { it.fitness.getHeuristic(target) }.thenBy { -it.individual.size() })
 
         val limit = apc.getArchiveTargetLimit()
