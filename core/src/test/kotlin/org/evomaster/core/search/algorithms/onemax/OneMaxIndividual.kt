@@ -12,7 +12,7 @@ class OneMaxIndividual(val n: Int) : Individual() {
 
     init {
         (0 until n).forEach {
-            list.add(EnumGene<Double>("$it", listOf(0.0, 0.5, 1.0), 0))
+            list.add(EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0))
         }
     }
 
@@ -34,11 +34,13 @@ class OneMaxIndividual(val n: Int) : Individual() {
     fun setValue(index: Int, value: Double){
         val gene = list[index]
         when(value){
-            0.0 -> gene.index = 0
-            0.5 -> gene.index = 1
-            1.0 -> gene.index = 2
+            0.0  -> gene.index = 0
+            0.25 -> gene.index = 1
+            0.5  -> gene.index = 2
+            0.75 -> gene.index = 3
+            1.0  -> gene.index = 4
+            else -> throw IllegalArgumentException("Invalid value $value")
         }
-
     }
 
     override fun seeGenes(): List<out Gene> {

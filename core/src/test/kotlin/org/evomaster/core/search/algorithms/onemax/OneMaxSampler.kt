@@ -11,7 +11,7 @@ class OneMaxSampler : Sampler<OneMaxIndividual>(){
 
         val sampled = OneMaxIndividual(n)
         (0 until n).forEach {
-            sampled.setValue(it, randomness.choose(listOf(0.0, 0.5, 1.0)))
+            sampled.setValue(it, randomness.choose(listOf(0.0, 0.25, 0.5, 0.75, 1.0)))
         }
 
         return sampled

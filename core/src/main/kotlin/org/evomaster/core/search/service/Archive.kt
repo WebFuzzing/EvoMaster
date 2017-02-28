@@ -1,12 +1,12 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.service.Randomness
+import kotlin.comparisons.compareBy
+import kotlin.comparisons.thenBy
 
 
 class Archive<T>() where T : Individual {
@@ -21,7 +21,7 @@ class Archive<T>() where T : Individual {
     private lateinit var idMapper: IdMapper
 
     @Inject
-    private lateinit var time : SearchTimeController
+    private lateinit var time: SearchTimeController
 
     /**
      * Key -> id of the target
@@ -64,8 +64,11 @@ class Archive<T>() where T : Individual {
         }
 
         val chosenTarget = randomness.choose(toChooseFrom)
-        val candidates = map[chosenTarget] ?: emptyList<EvaluatedIndividual<T>>()
-        assert(candidates.size > 0)
+        val candidates = map[chosenTarget] ?:
+            //should never happen, unless of bug
+            throw IllegalStateException("Target $chosenTarget has no candidate individual")
+
+        sortAndShrinkIfNeeded(candidates, chosenTarget)
 
         val chosen = randomness.choose(candidates)
 
@@ -117,7 +120,7 @@ class Archive<T>() where T : Individual {
                 current.add(copy)
                 added = true
 
-                if(isCovered(k)){
+                if (isCovered(k)) {
                     time.newCoveredTarget()
                 }
 
@@ -162,16 +165,11 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
-            //handle regular case
-            current.sortBy {
-                c ->
-                c.fitness.getHeuristic(k)
-            }
+
+            //handle regular case.
+            sortAndShrinkIfNeeded(current, k)
+
             val limit = apc.getArchiveTargetLimit()
-            while (current.size > limit) {
-                //remove worst, ie the one with lowest heuristic value
-                current.removeAt(0)
-            }
 
             if (current.size < limit) {
                 //we have space in the buffer, regardless of fitness
@@ -181,8 +179,10 @@ class Archive<T>() where T : Individual {
             }
 
             val currh = current[0].fitness.getHeuristic(k)
+            val currsize = current[0].individual.size()
+            val copySize = copy.individual.size()
 
-            if (v >= currh) {
+            if (v >= currh || (v == currh && copySize <= currsize)) {
                 // replace worst element, if copy is not worse than it (but not necessarily better)
                 current[0] = copy
                 added = true
@@ -192,9 +192,27 @@ class Archive<T>() where T : Individual {
         return added
     }
 
-    private fun isCovered(target: Int): Boolean {
+    /*
+       Ascending sort based on heuristics and, if same value, on negation of size.
+       Worst element will be the first, best the last.
+       Resize the list if needed
+     */
+    private fun sortAndShrinkIfNeeded(list: MutableList<EvaluatedIndividual<T>>, target: Int) {
 
-        val current = map.getOrPut(target, { mutableListOf() })
+        list.sortedWith(compareBy<EvaluatedIndividual<T>>
+        { it.fitness.getHeuristic(target) }.thenBy { -it.individual.size() })
+
+        val limit = apc.getArchiveTargetLimit()
+        while (list.size > limit) {
+            //remove worst, ie the one with lowest heuristic value
+            list.removeAt(0)
+        }
+    }
+
+    fun isCovered(target: Int): Boolean {
+
+        val current = map[target] ?: return false
+
         if (current.size != 1) {
             return false
         }
