@@ -34,9 +34,9 @@
         <swagger-version>1.5.12</swagger-version>
         <springboot.version>1.5.1.RELEASE</springboot.version>
         <springfox.version>2.6.1</springfox.version>
-        <jetty.version>9.4.1.v20170120</jetty.version>
+        <jetty.version>9.4.2.v20170220</jetty.version>
         <jersey.version>2.25</jersey.version>
-        <javax.el.version>2.2.4</javax.el.version>
+        <javax.el.version>2.2.5</javax.el.version>
     </properties>
 
 
@@ -119,7 +119,7 @@
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
                 <artifactId>governator</artifactId>
-                <version>1.15.10</version>
+                <version>1.15.11</version>
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>
@@ -153,12 +153,12 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.22</version>
+                <version>1.7.24</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.1.9</version>
+                <version>1.2.1</version>
             </dependency>
 
 
@@ -294,7 +294,7 @@
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-parser</artifactId>
-                <version>1.0.25</version>
+                <version>1.0.26</version>
             </dependency>
 
 
