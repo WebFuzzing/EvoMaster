@@ -15,20 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PIEMTest extends PITestBase {
 
-    private boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
-                                  HttpVerb verb,
-                                  int expectedStatusCode){
 
-        List<Integer> index = ind.getIndividual().getIndexOfHttpCalls(verb);
-        for(int i : index){
-            String statusCode = ind.getResults().get(i).getResultValue(
-                    RestCallResult.Companion.getSTATUS_CODE());
-            if(statusCode.equals(""+expectedStatusCode)){
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Test
     public void testMIO(){
@@ -66,11 +53,8 @@ public class PIEMTest extends PITestBase {
 
         assertTrue(solution.getIndividuals().size() >= 1);
 
-        assertTrue(solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, HttpVerb.GET, 200)));
-
-        assertTrue(solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, HttpVerb.POST, 200)));
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+        assertHasAtLeastOne(solution, HttpVerb.POST, 200);
     }
 
 

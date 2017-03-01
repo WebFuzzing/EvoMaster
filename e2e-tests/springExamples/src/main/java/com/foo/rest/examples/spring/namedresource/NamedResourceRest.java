@@ -1,6 +1,5 @@
 package com.foo.rest.examples.spring.namedresource;
 
-import org.springframework.boot.context.config.ResourceNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +24,7 @@ public class NamedResourceRest {
             consumes = MediaType.APPLICATION_JSON
     )
     public ResponseEntity create(@PathVariable("id") String id,
-                       @RequestBody NamedResourceDto dto){
+                                 @RequestBody NamedResourceDto dto) {
 
         data.put(id, dto.value);
 
@@ -38,9 +37,9 @@ public class NamedResourceRest {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public ResponseEntity<NamedResourceDto> get(@PathVariable("id") String id){
+    public ResponseEntity<NamedResourceDto> get(@PathVariable("id") String id) {
 
-        if(! data.containsKey(id)){
+        if (!data.containsKey(id)) {
             return ResponseEntity.notFound().build();
         } else {
             NamedResourceDto dto = new NamedResourceDto();
@@ -55,9 +54,9 @@ public class NamedResourceRest {
             value = "/{id}",
             method = RequestMethod.DELETE
     )
-    public ResponseEntity delete(@PathVariable("id") String id){
+    public ResponseEntity delete(@PathVariable("id") String id) {
 
-        if(! data.containsKey(id)){
+        if (!data.containsKey(id)) {
             return ResponseEntity.notFound().build();
         } else {
             data.remove(id);
@@ -71,9 +70,9 @@ public class NamedResourceRest {
             consumes = MediaType.APPLICATION_JSON
     )
     public ResponseEntity replace(@PathVariable("id") String id,
-                                  @RequestBody NamedResourceDto dto){
+                                  @RequestBody NamedResourceDto dto) {
 
-        if(! data.containsKey(id)){
+        if (!data.containsKey(id)) {
             //in this case, the PUT will create it
             data.put(id, dto.value);
             return ResponseEntity.status(201).build();
@@ -89,9 +88,9 @@ public class NamedResourceRest {
             consumes = MediaType.APPLICATION_JSON
     )
     public ResponseEntity update(@PathVariable("id") String id,
-                                  @RequestBody NamedResourceDto dto){
+                                 @RequestBody NamedResourceDto dto) {
 
-        if(! data.containsKey(id)){
+        if (!data.containsKey(id)) {
             return ResponseEntity.status(404).build();
         } else {
             data.put(id, dto.value);

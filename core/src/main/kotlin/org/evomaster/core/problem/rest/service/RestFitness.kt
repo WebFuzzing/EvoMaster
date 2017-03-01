@@ -138,6 +138,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         } else{
             val path = a.path.resolve(a.parameters)
             baseUrl + path
+        }.let {
+            /*
+                TODO this will be need to be done properly, and check if
+                it is or not a valid char
+             */
+            it.replace("\"","")
         }
 
         val builder = client.target(fullUri).request()
@@ -177,8 +183,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             HttpVerb.POST -> builder.buildPost(bodyEntity)
             HttpVerb.PUT -> builder.buildPut(bodyEntity)
             HttpVerb.DELETE -> builder.buildDelete()
+            HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
-            HttpVerb.PATCH -> builder.build("PATCH")
             HttpVerb.HEAD -> builder.build("HEAD")
         }
 

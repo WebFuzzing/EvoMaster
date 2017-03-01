@@ -26,7 +26,7 @@ class StringGene (
     }
 
     override fun getValueAsString() : String{
-        return value
+        return "\"$value\""
     }
 
     override fun copyValueFrom(other: Gene){

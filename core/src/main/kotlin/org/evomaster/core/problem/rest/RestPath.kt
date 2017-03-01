@@ -134,7 +134,8 @@ class RestPath(path: String) {
             )
         }
 
-        return path.toString()
+        //TODO check all cases for \" replacement, eg when it is fine
+        return path.toString().replace("\"","")
     }
 
 
