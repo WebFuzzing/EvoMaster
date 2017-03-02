@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.search.gene.OptionalGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -112,7 +113,7 @@ class RestPath(path: String) {
 
         var path = StringBuffer()
         tokens.forEach { t ->
-            val value: String
+            var value: String
 
             if (!t.isParameter) {
                 value = t.name
@@ -121,12 +122,24 @@ class RestPath(path: String) {
                         throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
                 value = p.gene.getValueAsString()
+                value = value.replace("\"","")
+
+                if(value.isBlank()){
+                    /*
+                        We should avoid having path params that are blank,
+                        as they would easily lead to useless 404/405 errors
+
+                        TODO handle this case better, eg avoid having blank in
+                        the first place
+                     */
+                    value = "1"
+                }
             }
             path.append("/$value")
         }
 
 
-        val queries = params.filter { p -> p is QueryParam }
+        val queries = params.filter { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive)}
         if (queries.size > 0) {
             path.append("?" +
                     queries.map { q -> q.name + "=" + q.gene.getValueAsString() }

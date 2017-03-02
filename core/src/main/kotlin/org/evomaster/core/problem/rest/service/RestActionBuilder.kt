@@ -105,7 +105,12 @@ class RestActionBuilder {
                 }
 
                 var gene = getGene(name, type, p.getFormat(), swagger)
-                if (!p.required) {
+                if (!p.required && p.`in` != "path") {
+                    /*
+                        Even if a "path" parameter might not be required, still
+                        do not use an optional for it. Otherwise, might
+                        end up in quite a few useless 405 errors
+                     */
                     gene = OptionalGene(name, gene)
                 }
 
@@ -116,7 +121,7 @@ class RestActionBuilder {
                     "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
                     "header" -> throw IllegalStateException("TODO header")
                     "formData" -> params.add(FormParam(name, gene))
-                    else -> throw IllegalStateException("Unrecognized: " + p.getIn())
+                    else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
                 }
 
             } else if (p is BodyParameter) {
