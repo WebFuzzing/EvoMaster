@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -10,6 +11,9 @@ import org.evomaster.core.search.EvaluatedAction
 class TestCaseWriter {
 
     companion object {
+
+        private val locationVarName = "location"
+
 
         fun convertToCompilableTestCode(
                 format: OutputFormat,
@@ -27,7 +31,15 @@ class TestCaseWriter {
                 format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
                 format.isKotlin() -> lines.add("fun ${test.name}()  {")
             }
-            lines.add("")
+
+            if (test.hasChainedLocations()) {
+                lines.add("")
+                when {
+                    format.isJava() -> lines.add(padding(4) + "String $locationVarName = \"\";")
+                    format.isKotlin() -> lines.add(padding(4) + "var $locationVarName = \"\"")
+                }
+            }
+
 
             test.test.evaluatedActions().forEach { a ->
                 when (a.action) {
@@ -41,23 +53,56 @@ class TestCaseWriter {
             return lines
         }
 
+        private fun padding(n: Int): String {
+            return when (n) {
+                1 -> " "
+                2 -> "  "
+                3 -> "   "
+                4 -> "    "
+                5 -> "     "
+                6 -> "      "
+                7 -> "       "
+                8 -> "        "
+                9 -> "         "
+                10 -> "          "
+                11 -> "           "
+                12 -> "            "
+                else -> throw IllegalArgumentException("Invalid n=$n")
+            }
+        }
 
         private fun handleRestCall(
                 evaluatedAction: EvaluatedAction,
                 lines: MutableList<String>,
                 baseUrlOfSut: String
         ) {
+            lines.add("")
 
             val call = evaluatedAction.action as RestCallAction
             val res = evaluatedAction.result as RestCallResult
 
             val list = restAssuredMethods(call, res, baseUrlOfSut)
 
-            lines.add("    given()" + list[0])
-            (1..list.lastIndex - 1).forEach { i ->
-                lines.add("            " + list[i])
+            var firstLine = padding(4)
+            if (call.locationChained && call.verb == HttpVerb.POST){
+                firstLine += "$locationVarName = "
             }
-            lines.add("            " + list[list.lastIndex] + ";")
+            firstLine += "given()" + list[0]
+            lines.add(firstLine)
+
+
+            (1..list.lastIndex - 1).forEach { i ->
+                lines.add(padding(12) + list[i])
+            }
+
+            if(call.locationChained && call.verb == HttpVerb.POST) {
+                lines.add(padding(12) + list[list.lastIndex] )
+                lines.add(padding(12) + ".extract().header(\"location\");")
+                lines.add("")
+                lines.add(padding(4) + "assertTrue(isValidURIorEmpty($locationVarName));")
+            } else {
+                lines.add(padding(12) + list[list.lastIndex]+ ";")
+            }
         }
 
 
@@ -69,7 +114,7 @@ class TestCaseWriter {
 
             val list: MutableList<String> = mutableListOf()
 
-            if(call.auth !is NoAuth){
+            if (call.auth !is NoAuth) {
                 call.auth.headers.forEach { h ->
                     list.add(".header(\"${h.name}\", \"${h.value}\") // ${call.auth.name}")
                 }
@@ -108,8 +153,17 @@ class TestCaseWriter {
                     }
 
             val verb = call.verb.name.toLowerCase()
-            val path = call.path.resolve(call.parameters)
-            list.add(".$verb($baseUrlOfSut + \"$path\")")
+            var callLine = ".$verb("
+            if(call.locationChained && call.verb != HttpVerb.POST){
+                callLine += "resolveLocation($locationVarName, $baseUrlOfSut + \"${call.path.toString()}\")"
+
+            } else {
+                val path = call.path.resolve(call.parameters)
+                callLine += "$baseUrlOfSut + \"$path\""
+            }
+            callLine += ")"
+            list.add(callLine)
+
 
             list.add(".then()")
             list.add(".statusCode(${res.getStatusCode()})")

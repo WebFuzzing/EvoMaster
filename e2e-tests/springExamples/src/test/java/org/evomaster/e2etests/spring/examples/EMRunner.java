@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples;
 
 import com.foo.rest.examples.spring.SpringController;
+import com.foo.rest.examples.spring.headerlocation.HeaderLocationController;
 import com.foo.rest.examples.spring.triangle.TriangleController;
 import org.evomaster.clientJava.controller.EmbeddedStarter;
 
@@ -16,7 +17,7 @@ public class EMRunner {
             port = Integer.parseInt(args[0]);
         }
 
-        SpringController controller = new TriangleController();
+        SpringController controller = new HeaderLocationController();
         controller.setControllerPort(port);
         EmbeddedStarter starter = new EmbeddedStarter(controller);
 

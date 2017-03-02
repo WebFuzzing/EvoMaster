@@ -110,6 +110,7 @@ class TestSuiteWriter {
             //TODO check if those are used
             addImport("static io.restassured.RestAssured.given", buffer, format)
             addImport("static org.hamcrest.core.Is.is", buffer, format)
+            addImport("static org.evomaster.clientJava.controllerApi.EMTestUtils.*", buffer, format)
 
             newLines(2, buffer)
 

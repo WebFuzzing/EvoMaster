@@ -1,24 +1,15 @@
 package org.evomaster.e2etests.spring.examples.headerlocation;
 
-import com.foo.rest.examples.spring.headerlocation.HeaderLocationController;
-import com.foo.rest.examples.spring.postcollection.PostCollectionController;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HLEMTest extends SpringTestBase{
+public class HLEMTest extends HLTestBase{
 
-    @BeforeAll
-    public static void initClass() throws Exception {
-
-        SpringTestBase.initClass(new HeaderLocationController());
-    }
 
     @Test
     public void testRunEM() {
