@@ -11,7 +11,6 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.problem.rest.service.RemoteController
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,6 +19,7 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 
 class RestFitness : FitnessFunction<RestIndividual>() {
@@ -215,6 +215,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
 
         if(a.locationChained && a.verb == HttpVerb.POST){
+
+            if(! response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
+                //TODO: should stop the test case, and execute the remaining actions
+            }
+
             //save location for the following REST calls
             chainState[location] = response.getHeaderString(location) ?: ""
         }

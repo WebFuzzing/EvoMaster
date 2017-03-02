@@ -97,4 +97,22 @@ public class SpringTestBase {
 
         assertTrue(ok, msg.toString());
     }
+
+    protected void assertNone(Solution<RestIndividual> solution,
+                                       HttpVerb verb,
+                                       int expectedStatusCode) {
+
+        boolean ok = solution.getIndividuals().stream().noneMatch(
+                ind -> hasAtLeastOne(ind, verb, expectedStatusCode));
+
+        StringBuffer msg = new StringBuffer("REST calls:\n");
+        if(!ok){
+            solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+                    .map(ea -> ea.getAction())
+                    .filter(a -> a instanceof RestCallAction)
+                    .forEach(a -> msg.append(a.toString() + "\n"));
+        }
+
+        assertTrue(ok, msg.toString());
+    }
 }
