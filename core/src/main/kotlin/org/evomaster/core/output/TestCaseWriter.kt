@@ -84,7 +84,7 @@ class TestCaseWriter {
             val list = restAssuredMethods(call, res, baseUrlOfSut)
 
             var firstLine = padding(4)
-            if (call.locationChained && call.verb == HttpVerb.POST){
+            if (call.isLocationChained() && call.verb == HttpVerb.POST){
                 firstLine += "$locationVarName = "
             }
             firstLine += "given()" + list[0]
@@ -95,7 +95,7 @@ class TestCaseWriter {
                 lines.add(padding(12) + list[i])
             }
 
-            if(call.locationChained && call.verb == HttpVerb.POST) {
+            if(call.isLocationChained() && call.verb == HttpVerb.POST) {
                 lines.add(padding(12) + list[list.lastIndex] )
                 lines.add(padding(12) + ".extract().header(\"location\");")
                 lines.add("")
@@ -154,7 +154,7 @@ class TestCaseWriter {
 
             val verb = call.verb.name.toLowerCase()
             var callLine = ".$verb("
-            if(call.locationChained && call.verb != HttpVerb.POST){
+            if(call.isLocationChained() && call.verb != HttpVerb.POST){
                 callLine += "resolveLocation($locationVarName, $baseUrlOfSut + \"${call.path.toString()}\")"
 
             } else {

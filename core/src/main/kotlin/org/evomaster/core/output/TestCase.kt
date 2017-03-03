@@ -18,7 +18,7 @@ class TestCase(val test: EvaluatedIndividual<*>, val name: String) {
      */
     fun hasChainedLocations() : Boolean{
         return test.individual.seeActions().any { a ->
-            a is RestCallAction && a.locationChained
+            a is RestCallAction && a.isLocationChained()
         }
     }
 }

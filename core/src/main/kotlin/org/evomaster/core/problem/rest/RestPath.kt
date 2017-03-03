@@ -10,10 +10,10 @@ import org.slf4j.LoggerFactory
 
 class RestPath(path: String) {
 
-    data class Token(val name: String, val isParameter: Boolean){
+    private data class Token(val name: String, val isParameter: Boolean) {
 
         override fun toString(): String {
-            if(isParameter){
+            if (isParameter) {
                 return "{$name}"
             } else {
                 return name
@@ -21,7 +21,7 @@ class RestPath(path: String) {
         }
     }
 
-    val tokens: List<Token>
+    private val tokens: List<Token>
 
     init {
         tokens = path.split("/").filter { s -> !s.isBlank() }
@@ -48,6 +48,10 @@ class RestPath(path: String) {
 
     fun levels() = tokens.size
 
+    /**
+     * Return ordered list of names of all the Path Parameter variables
+     * in this path
+     */
     fun getVariableNames(): List<String> {
         return tokens.filter { t -> t.isParameter }.map { t -> t.name }
     }
@@ -64,6 +68,12 @@ class RestPath(path: String) {
         return true
     }
 
+    fun lastElement(): String {
+        if (tokens.isEmpty()) {
+            return "root"
+        }
+        return tokens.last().name
+    }
 
     fun isLastElementAParameter(): Boolean {
         if (tokens.isEmpty()) {
@@ -83,8 +93,8 @@ class RestPath(path: String) {
     /**
      * Prefix or same as "other"
      */
-    fun isAncestorOf(other: RestPath) : Boolean{
-        if(this.tokens.size > other.tokens.size){
+    fun isAncestorOf(other: RestPath): Boolean {
+        if (this.tokens.size > other.tokens.size) {
             return false
         }
 
@@ -122,9 +132,9 @@ class RestPath(path: String) {
                         throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
                 value = p.gene.getValueAsString()
-                value = value.replace("\"","")
+                value = value.replace("\"", "")
 
-                if(value.isBlank()){
+                if (value.isBlank()) {
                     /*
                         We should avoid having path params that are blank,
                         as they would easily lead to useless 404/405 errors
@@ -139,7 +149,7 @@ class RestPath(path: String) {
         }
 
 
-        val queries = params.filter { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive)}
+        val queries = params.filter { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive) }
         if (queries.size > 0) {
             path.append("?" +
                     queries.map { q -> q.name + "=" + q.gene.getValueAsString() }
@@ -148,7 +158,7 @@ class RestPath(path: String) {
         }
 
         //TODO check all cases for \" replacement, eg when it is fine
-        return path.toString().replace("\"","")
+        return path.toString().replace("\"", "")
     }
 
 

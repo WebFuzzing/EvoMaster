@@ -131,7 +131,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         val location = "location"
 
-        val fullUri = if(a.locationChained && a.verb != HttpVerb.POST){
+        val fullUri = if(a.isLocationChained() && a.verb != HttpVerb.POST){
             val locationHeader = chainState[location]
                 ?: throw IllegalStateException("Call expected a missing chained 'location'")
 
@@ -228,7 +228,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
 
-        if(a.locationChained && a.verb == HttpVerb.POST){
+        if(a.isLocationChained() && a.verb == HttpVerb.POST){
 
             if(! response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
                 //TODO: should stop the test case, and execute the remaining actions

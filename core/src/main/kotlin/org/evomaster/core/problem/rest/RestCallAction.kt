@@ -14,16 +14,30 @@ class RestCallAction(
         val parameters: List<out Param>,
         var auth: AuthenticationInfo = NoAuth(),
         /**
-         * If true, it means that it will use the "location" header of last
-         * POST as path.
-         * If this call is a POST, just instruct to save the "location"
+         * If true, it means that it will
+         * instruct to save the "location" header of the HTTP response for future
+         * use by following calls. Typical case is to save the location of
+         * a resource generated with a POST
          */
-        var locationChained: Boolean = false
+        var saveLocation: Boolean = false,
+        /**
+         * Specify to use the "location" header of a
+         * previous POST as path. As there might be different
+         * POSTs creating different resources in the same test,
+         * need to specify an id.
+         *
+         * Note: it might well be that we save the location returned
+         * by a POST, where the POST itself might use a location for
+         * path coming from a previous POST
+         */
+        var locationId: String? = null
 ) : RestAction{
 
 
+    fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
+
     override fun copy(): Action {
-        return RestCallAction(verb, path, parameters.map(Param::copy), auth, locationChained)
+        return RestCallAction(verb, path, parameters.map(Param::copy), auth, saveLocation, locationId)
     }
 
     override fun getName(): String {

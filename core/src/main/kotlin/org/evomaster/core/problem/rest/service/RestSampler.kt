@@ -319,7 +319,10 @@ class RestSampler : Sampler<RestIndividual>() {
             val post = createActionFor(template, write)
 
             test.add(post)
+            post.saveLocation = true
+
             test.add(write)
+            write.locationId = post.path.lastElement()
 
             if(write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()){
                 /*
@@ -328,11 +331,11 @@ class RestSampler : Sampler<RestIndividual>() {
                  */
                 val secondPatch =  createActionFor(write, write)
                 test.add(secondPatch)
+                secondPatch.locationId = post.path.lastElement()
             }
 
             test.forEach { t ->
                 (t as RestCallAction)
-                        .apply { locationChained = true }
                         .let { preventPathParamMutation(it) }
             }
 
@@ -429,11 +432,13 @@ class RestSampler : Sampler<RestIndividual>() {
             val post = createActionFor(template, get)
 
             test.add(post)
+            post.saveLocation = true
+
             test.add(get)
+            get.locationId = post.path.lastElement()
 
             test.forEach { t ->
                 (t as RestCallAction)
-                        .apply { locationChained = true }
                         .let { preventPathParamMutation(it) }
             }
 
