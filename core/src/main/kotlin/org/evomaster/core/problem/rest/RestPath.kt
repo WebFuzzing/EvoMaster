@@ -56,6 +56,10 @@ class RestPath(path: String) {
         return tokens.filter { t -> t.isParameter }.map { t -> t.name }
     }
 
+    fun hasVariablePathParameters(): Boolean{
+        return tokens.any { t -> t.isParameter }
+    }
+
     fun isEquivalent(other: RestPath): Boolean {
         if (this.tokens.size != other.tokens.size) {
             return false

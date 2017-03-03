@@ -44,7 +44,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val infoDto = rc.getSutInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
 
         val swagger = getSwagger(infoDto)
-        if(swagger.paths == null){
+        if (swagger.paths == null) {
             log.warn("There is no endpoint definition in the retrieved Swagger file")
         }
 
@@ -219,7 +219,7 @@ class RestSampler : Sampler<RestIndividual>() {
         return sampleAtRandom()
     }
 
-    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>) : SampleType {
+    private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(post.verb == HttpVerb.POST)
 
@@ -237,7 +237,7 @@ class RestSampler : Sampler<RestIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>) : SampleType {
+    private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(patch.verb == HttpVerb.PATCH)
 
@@ -246,7 +246,7 @@ class RestSampler : Sampler<RestIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>) : SampleType{
+    private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(put.verb == HttpVerb.PUT)
 
@@ -267,7 +267,7 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     /**
-       Only for PUT, DELETE, PATCH
+    Only for PUT, DELETE, PATCH
      */
     private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestAction>) {
 
@@ -295,12 +295,12 @@ class RestSampler : Sampler<RestIndividual>() {
             preventPathParamMutation(post)
             preventPathParamMutation(write)
 
-            if(write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()){
+            if (write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()) {
                 /*
                     As PATCH is not idempotent (in contrast to PUT), it can make sense to test
                     two patches in sequence
                  */
-                val secondPatch =  createActionFor(write, write)
+                val secondPatch = createActionFor(write, write)
                 preventPathParamMutation(secondPatch)
                 test.add(secondPatch)
             }
@@ -308,30 +308,26 @@ class RestSampler : Sampler<RestIndividual>() {
             return
 
         } else {
-            //Need to find a POST on a parent collection resource
-            val template = chooseClosestAncestor(write.path, listOf(HttpVerb.POST))
-            if (template == null) {
-                //weird... write op but no POST in any ancestor?
-                test.add(write)
-                return
-            }
-
-            val post = createActionFor(template, write)
-
-            test.add(post)
-            post.saveLocation = true
 
             test.add(write)
-            write.locationId = post.path.lastElement()
 
-            if(write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()){
+            //Need to find a POST on a parent collection resource
+            var post = createResourceFor(write, test)
+
+            while(post != null && post.path.hasVariablePathParameters()){
+                post = createResourceFor(post, test)
+            }
+
+            if (write.verb == HttpVerb.PATCH &&
+                    config.maxTestSize >= test.size + 1 &&
+                    randomness.nextBoolean()) {
                 /*
                     As PATCH is not idempotent (in contrast to PUT), it can make sense to test
                     two patches in sequence
                  */
-                val secondPatch =  createActionFor(write, write)
+                val secondPatch = createActionFor(write, write)
                 test.add(secondPatch)
-                secondPatch.locationId = post.path.lastElement()
+                secondPatch.locationId = write.locationId
             }
 
             test.forEach { t ->
@@ -343,7 +339,7 @@ class RestSampler : Sampler<RestIndividual>() {
         }
     }
 
-    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>) : SampleType{
+    private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(get.verb == HttpVerb.GET)
 
@@ -416,8 +412,11 @@ class RestSampler : Sampler<RestIndividual>() {
                path would be in the returned Location header.
              */
 
-            val template = chooseClosestAncestor(get.path, listOf(HttpVerb.POST))
-            if (template == null) {
+            test.add(get)
+
+            var post = createResourceFor(get, test)
+
+            if(post == null){
                 /*
                     A GET with no POST in any ancestor.
                     This could happen if the API is "read-only".
@@ -425,17 +424,15 @@ class RestSampler : Sampler<RestIndividual>() {
                     TODO: In such case, would really need to handle things like
                     direct creation of data in the DB (for example)
                  */
-                test.add(get)
-                return SampleType.SMART
             }
 
-            val post = createActionFor(template, get)
-
-            test.add(post)
-            post.saveLocation = true
-
-            test.add(get)
-            get.locationId = post.path.lastElement()
+            while(post != null && post.path.hasVariablePathParameters()){
+                post = createResourceFor(post, test)
+                if(post == null){
+                    //TODO as above, would need direct SQL, although this
+                    //case should really be rare
+                }
+            }
 
             test.forEach { t ->
                 (t as RestCallAction)
@@ -446,6 +443,25 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         return SampleType.SMART
+    }
+
+
+    private fun createResourceFor(target: RestCallAction, test: MutableList<RestAction>)
+        : RestCallAction?{
+
+        if(test.size >= config.maxTestSize){
+            return null
+        }
+
+        val template = chooseClosestAncestor(target.path, listOf(HttpVerb.POST))
+            ?: return null
+
+        val post = createActionFor(template, target)
+        post.saveLocation = true
+        target.locationId = post.path.lastElement()
+        test.add(0, post)
+
+        return post
     }
 
     private fun preventPathParamMutation(action: RestCallAction) {
