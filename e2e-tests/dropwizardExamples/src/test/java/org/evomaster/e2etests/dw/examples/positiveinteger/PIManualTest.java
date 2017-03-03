@@ -6,12 +6,14 @@ import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Disabled
 public class PIManualTest extends PITestBase{
 
 

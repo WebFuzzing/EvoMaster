@@ -14,22 +14,8 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 public class PIEMTest extends PITestBase {
-
-    private boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
-                                  HttpVerb verb,
-                                  int expectedStatusCode){
-
-        List<Integer> index = ind.getIndividual().getIndexOfHttpCalls(verb);
-        for(int i : index){
-            String statusCode = ind.getResults().get(i).getResultValue(
-                    RestCallResult.Companion.getSTATUS_CODE());
-            if(statusCode.equals(""+expectedStatusCode)){
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Test
     public void testRunEM(){

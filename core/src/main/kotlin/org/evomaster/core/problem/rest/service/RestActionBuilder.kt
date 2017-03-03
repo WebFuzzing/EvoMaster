@@ -29,9 +29,7 @@ class RestActionBuilder {
 
         //TODO check Swagger version
 
-        //TODO check for when swagger.paths is null
-
-        swagger.paths.forEach { e ->
+        swagger?.paths.forEach { e ->
 
             val restPath = RestPath((swagger.basePath ?: "") + "/" + e.key)
 
@@ -48,13 +46,13 @@ class RestActionBuilder {
             }
         }
 
-        val n = actionCluster.size
-        if (n == 1) {
-            LoggingUtil.getInfoLogger()
-                    .info("There is only one RESTful API entry point defined in the Swagger configuration")
-        } else {
-            LoggingUtil.getInfoLogger()
-                    .info("There are $n RESTful API entry points defined in the Swagger configuration")
+        LoggingUtil.getInfoLogger().apply {
+            val n = actionCluster.size
+            when(n){
+                0 -> warn("There is _NO_ RESTful API entry point defined in the Swagger configuration")
+                1 -> info("There is only one RESTful API entry point defined in the Swagger configuration")
+                else -> info("There are $n RESTful API entry points defined in the Swagger configuration")
+            }
         }
     }
 

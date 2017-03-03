@@ -1,0 +1,40 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "0.0.1"
+  },
+  "basePath": "/api",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/": {
+      "post": {
+        "summary": "create",
+        "description": "",
+        "operationId": "post",
+        "parameters": [
+          {
+            "name": "x",
+            "in": "formData",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "y",
+            "in": "formData",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    }
+  }
+}

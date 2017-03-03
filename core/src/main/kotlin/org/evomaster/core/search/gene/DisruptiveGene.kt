@@ -39,4 +39,6 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         this.gene.copyValueFrom(other.gene)
         this.probability = other.probability
     }
+
+    override fun getVariableName() = gene.getVariableName()
 }

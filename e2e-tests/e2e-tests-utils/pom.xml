@@ -8,17 +8,12 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>springExamples</artifactId>
+    <artifactId>e2e-tests-utils</artifactId>
     <packaging>jar</packaging>
 
 
     <dependencies>
 
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>e2e-tests-utils</artifactId>
-            <type>test-jar</type>
-        </dependency>
         <dependency>
             <groupId>org.evomaster.clientJava</groupId>
             <artifactId>controller</artifactId>
@@ -33,45 +28,14 @@
             <artifactId>instrumentation</artifactId>
             <type>test-jar</type>
         </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.swagger</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-spring-web</artifactId>
-        </dependency>
-
-        <!--<dependency>-->
-            <!--<groupId>io.swagger</groupId>-->
-            <!--<artifactId>swagger-jaxrs</artifactId>-->
-        <!--</dependency>-->
-        <!--<dependency>-->
-            <!--<groupId>io.swagger</groupId>-->
-            <!--<artifactId>swagger-hibernate-validations</artifactId>-->
-        <!--</dependency>-->
         <dependency>
             <groupId>io.swagger</groupId>
             <artifactId>swagger-parser</artifactId>
         </dependency>
-
-
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
         </dependency>
-
         <dependency>
             <groupId>io.rest-assured</groupId>
             <artifactId>rest-assured</artifactId>
@@ -88,7 +52,6 @@
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-surefire-provider</artifactId>
         </dependency>
-
 
     </dependencies>
 

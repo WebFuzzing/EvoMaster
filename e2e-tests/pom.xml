@@ -13,8 +13,23 @@
 
 
     <modules>
+        <module>e2e-tests-utils</module>
         <module>dropwizardExamples</module>
         <module>springExamples</module>
     </modules>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>e2e-tests-utils</artifactId>
+                <version>${project.version}</version>
+                <scope>test</scope>
+                <type>test-jar</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
 
 </project>

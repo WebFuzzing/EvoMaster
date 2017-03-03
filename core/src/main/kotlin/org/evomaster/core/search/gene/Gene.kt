@@ -24,4 +24,9 @@ abstract class Gene(var name: String) {
     abstract fun getValueAsString() : String
 
     abstract fun copyValueFrom(other: Gene)
+
+    /**
+     * If this gene represents a variable, then return its name.
+     */
+    open fun getVariableName() = name
 }

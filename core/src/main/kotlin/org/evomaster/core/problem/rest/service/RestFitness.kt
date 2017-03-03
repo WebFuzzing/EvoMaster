@@ -14,6 +14,7 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URLEncoder
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
@@ -168,7 +169,20 @@ class RestFitness : FitnessFunction<RestIndividual>() {
            not just JSON and forms
          */
         val body = a.parameters.find { p -> p is BodyParam }
-        val forms = a.parameters.filter { p -> p is FormParam }.map { p -> p.gene.getValueAsString()}
+        val forms = a.parameters
+                .filter { p -> p is FormParam }
+                .map { p ->
+                    /*
+                        Note: in swagger the "consume" type might be missing.
+                        So, if for any reason there is a form param, then consider
+                        the body as an application/x-www-form-urlencoded
+
+                        see https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1
+                     */
+                    val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
+                    val value = URLEncoder.encode(p.gene.getValueAsString(), "UTF-8")
+                    "$name=$value"
+                }
                 .joinToString("&")
 
         val bodyEntity = when{

@@ -1,60 +1,18 @@
 package org.evomaster.e2etests.dw.examples.positiveinteger;
 
 import com.foo.rest.examples.dw.positiveinteger.PIController;
-import org.evomaster.clientJava.controller.EmbeddedStarter;
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
-import org.evomaster.core.problem.rest.service.RemoteController;
-import org.junit.jupiter.api.AfterAll;
+import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+@Disabled("DropWizard looks like it is keeping some static internal state, which screws the running of tests with different REST APIs")
+public abstract class PITestBase extends RestTestBase{
 
-public abstract class PITestBase {
-
-    protected static EmbeddedStarter embeddedStarter;
-    protected static String baseUrlOfSut;
-    protected static RemoteController remoteController;
-    protected static int controllerPort;
 
     @BeforeAll
-    public static void initClass() {
+    public static void initClass() throws Exception {
 
-        PIController controller = new PIController();
-        embeddedStarter = new EmbeddedStarter(controller);
-        embeddedStarter.start();
-
-        controllerPort = embeddedStarter.getControllerServerJettyPort();
-
-        remoteController = new RemoteController("localhost", controllerPort);
-        boolean started = remoteController.startSUT();
-        assertTrue(started);
-
-        SutInfoDto dto = remoteController.getSutInfo();
-        assertNotNull(dto);
-
-        baseUrlOfSut = dto.baseUrlOfSUT;
-        assertNotNull(baseUrlOfSut);
-
-        System.out.println("Remote controller running on port "+ controllerPort);
-        System.out.println("SUT listening on "+baseUrlOfSut);
+        RestTestBase.initClass(new PIController());
     }
 
-    @AfterAll
-    public static void tearDown() {
-
-        boolean stopped = remoteController.stopSUT();
-        stopped = embeddedStarter.stop() && stopped;
-
-        assertTrue(stopped);
-    }
-
-
-    @BeforeEach
-    public void initTest() {
-
-        boolean reset = remoteController.resetSUT();
-        assertTrue(reset);
-    }
 }

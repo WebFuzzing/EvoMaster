@@ -44,6 +44,9 @@ class RestSampler : Sampler<RestIndividual>() {
         val infoDto = rc.getSutInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
 
         val swagger = getSwagger(infoDto)
+        if(swagger.paths == null){
+            log.warn("There is no endpoint definition in the retrieved Swagger file")
+        }
 
         RestActionBuilder().createActions(swagger, actionCluster)
 
