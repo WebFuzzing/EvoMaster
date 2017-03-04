@@ -12,20 +12,20 @@ import org.evomaster.core.search.service.StructureMutator
 class RestStructureMutator : StructureMutator() {
 
     @Inject
-    private lateinit var sampler : RestSampler
+    private lateinit var sampler: RestSampler
 
 
     override fun mutateStructure(individual: Individual) {
-        if(individual !is RestIndividual){
+        if (individual !is RestIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
 
-        if(! individual.canMutateStructure()){
+        if (!individual.canMutateStructure()) {
             return // nothing to do
         }
 
-        when(individual.sampleType){
-            SampleType.RANDOM ->  mutateForRandomType(individual)
+        when (individual.sampleType) {
+            SampleType.RANDOM -> mutateForRandomType(individual)
 
             SampleType.SMART_GET_COLLECTION -> mutateForSmartGetCollection(individual)
 
@@ -37,23 +37,23 @@ class RestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun mutateForSmartGetCollection(ind: RestIndividual){
+    private fun mutateForSmartGetCollection(ind: RestIndividual) {
         /*
             recall: in this case, we have 1 or more POST on same
             collection, followed by a single GET
          */
 
-        (0 until ind.actions.size-1).forEach {
+        (0 until ind.actions.size - 1).forEach {
             val a = ind.actions[it]
-            assert(a is RestCallAction && a.verb == HttpVerb.POST)
+            assert(a !is RestCallAction || a.verb == HttpVerb.POST)
         }
-        assert({ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET}())
+        assert({ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET }())
 
-        if( (randomness.nextBoolean() && ind.actions.size > 2) ||
-                ind.actions.size == config.maxTestSize){
+        if ((randomness.nextBoolean() && ind.actions.size > 2) ||
+                ind.actions.size == config.maxTestSize) {
 
             //delete one POST, but NOT the GET
-            val chosen = randomness.nextInt(ind.actions.size-1)
+            val chosen = randomness.nextInt(ind.actions.size - 1)
             ind.actions.removeAt(chosen)
 
         } else {
@@ -65,14 +65,14 @@ class RestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun mutateForRandomType(ind: RestIndividual){
+    private fun mutateForRandomType(ind: RestIndividual) {
 
-        if(ind.actions.size == 1){
+        if (ind.actions.size == 1) {
             ind.actions.add(sampler.sampleRandomAction(0.05))
             return
         }
 
-        if(randomness.nextBoolean() || ind.actions.size == config.maxTestSize){
+        if (randomness.nextBoolean() || ind.actions.size == config.maxTestSize) {
 
             //delete one at random
             val chosen = randomness.nextInt(ind.actions.size)

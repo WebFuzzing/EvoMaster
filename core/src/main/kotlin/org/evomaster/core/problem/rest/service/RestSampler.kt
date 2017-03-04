@@ -312,11 +312,7 @@ class RestSampler : Sampler<RestIndividual>() {
             test.add(write)
 
             //Need to find a POST on a parent collection resource
-            var post = createResourceFor(write, test)
-
-            while(post != null && post.path.hasVariablePathParameters()){
-                post = createResourceFor(post, test)
-            }
+            createResourcesFor(write, test)
 
             if (write.verb == HttpVerb.PATCH &&
                     config.maxTestSize >= test.size + 1 &&
@@ -343,125 +339,107 @@ class RestSampler : Sampler<RestIndividual>() {
 
         assert(get.verb == HttpVerb.GET)
 
-        // get on a single resource, or a collection?
-        val others = sameEndpoints(get.path)
+        /*
+           A typical case is something like
 
-        val createActions = hasWithVerbs(others, listOf(HttpVerb.POST, HttpVerb.PUT))
-        if (!createActions.isEmpty()) {
-            //can try to create elements
+           POST /elements
+           GET  /elements/{id}
 
-            val chosen = randomness.choose(createActions)
+           Problems is that the {id} might not be known beforehand,
+           eg it would be the result of calling POST first, where the
+           path would be in the returned Location header.
 
-            when (chosen.verb) {
-                HttpVerb.POST -> {
-                    if (!get.path.isLastElementAParameter()) {
-                        /*
-                            The endpoint might represent a collection.
-                            Therefore, to properly test the GET, we might
-                            need to be able to create many elements.
+           However, we might even encounter cases like:
 
-                            TODO but what if there are other params in the path?
-                            eg, a collection inside another element. need to handle
-                            it as well
-                         */
-                        val k = 1 + randomness.nextInt(config.maxTestSize - 1)
+           POST /elements/{id}
+           GET  /elements/{id}
 
-                        (0..k).forEach {
-                            val create = createActionFor(chosen, get)
-                            preventPathParamMutation(create)
-                            test.add(create)
-                        }
-                        preventPathParamMutation(get)
-                        test.add(get)
-                        return SampleType.SMART_GET_COLLECTION
+           which is possible, although bit weird, as in such case it
+           would be better to have a PUT instead of a POST.
 
-                    } else {
-                        /*
-                           A POST on a ../{var} is weird, as one would rather expect
-                           a PUT there. However, could still be feasible
-                         */
-                        val create = createActionFor(chosen, get)
-                        test.add(create)
-                        test.add(get)
-                        preventPathParamMutation(create)
-                        preventPathParamMutation(get)
+           Note: we prefer a POST to create a resource, as that is the
+           most common case, and not all PUTs allow creation
+         */
 
-                        return SampleType.SMART
-                    }
-                }
-                HttpVerb.PUT -> {
-                    val create = createActionFor(chosen, get)
-                    test.add(create)
-                    test.add(get)
-                    preventPathParamMutation(create)
-                    preventPathParamMutation(get)
+        test.add(get)
 
-                    return SampleType.SMART
-                }
-            }
-        } else {
+        val created = createResourcesFor(get, test)
+
+        if (!created) {
             /*
-               Cannot create directly. Check if other endpoints might.
-               A typical case is something like
+                A GET with no POST in any ancestor.
+                This could happen if the API is "read-only".
 
-               POST /elements
-               GET  /elements/{id}
-
-               Problems is that the {id} might not be known beforehand,
-               eg it would be the result of calling POST first, where the
-               path would be in the returned Location header.
+                TODO: In such case, would really need to handle things like
+                direct creation of data in the DB (for example)
              */
+        }
 
-            test.add(get)
+        test.forEach { t ->
+            (t as RestCallAction)
+                    .let { preventPathParamMutation(it) }
+        }
 
-            var post = createResourceFor(get, test)
+        if (created &&
+                !get.path.isLastElementAParameter()) {
 
-            if(post == null){
+            val lastPost = test[test.size-2] as RestCallAction
+            assert(lastPost.verb == HttpVerb.POST)
+
+            val available = config.maxTestSize - test.size
+
+            if(lastPost.path.isEquivalent(get.path) && available > 0) {
                 /*
-                    A GET with no POST in any ancestor.
-                    This could happen if the API is "read-only".
-
-                    TODO: In such case, would really need to handle things like
-                    direct creation of data in the DB (for example)
+                 The endpoint might represent a collection.
+                 Therefore, to properly test the GET, we might
+                 need to be able to create many elements.
                  */
-            }
+                val k = 1 + randomness.nextInt(available)
 
-            while(post != null && post.path.hasVariablePathParameters()){
-                post = createResourceFor(post, test)
-                if(post == null){
-                    //TODO as above, would need direct SQL, although this
-                    //case should really be rare
+                (0 until k).forEach {
+                    val create = createActionFor(lastPost, get)
+                    preventPathParamMutation(create)
+                    create.locationId = lastPost.locationId
+
+                    //add just before the last GET
+                    test.add(test.size-1, create)
                 }
-            }
 
-            test.forEach { t ->
-                (t as RestCallAction)
-                        .let { preventPathParamMutation(it) }
+                return SampleType.SMART_GET_COLLECTION
             }
-
-            return SampleType.SMART
         }
 
         return SampleType.SMART
     }
 
 
-    private fun createResourceFor(target: RestCallAction, test: MutableList<RestAction>)
-        : RestCallAction?{
+    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>)
+            : Boolean {
 
-        if(test.size >= config.maxTestSize){
-            return null
+        if (test.size >= config.maxTestSize) {
+            return false
         }
 
         val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
-            ?: return null
+                ?: return false
 
         val post = createActionFor(template, target)
-        post.saveLocation = true
-        target.locationId = post.path.lastElement()
+
+        if (!post.path.isEquivalent(target.path)) {
+            post.saveLocation = true
+            target.locationId = post.path.lastElement()
+        }
+
         test.add(0, post)
 
-        return post
+        if (post.path.hasVariablePathParameters() &&
+                (!post.path.isLastElementAParameter()) ||
+                post.path.getVariableNames().size >= 2) {
+
+            return createResourcesFor(post, test)
+        }
+
+        return true
     }
 
     private fun preventPathParamMutation(action: RestCallAction) {
@@ -473,6 +451,7 @@ class RestSampler : Sampler<RestIndividual>() {
         randomizeActionGenes(res)
         res.auth = target.auth
         res.bindToSamePathResolution(target)
+//        res.locationId = target.locationId //TODO check
 
         return res
     }
@@ -483,7 +462,7 @@ class RestSampler : Sampler<RestIndividual>() {
     private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>): RestCallAction? {
 
         var others = sameOrAncestorEndpoints(target.path)
-        others = hasWithVerbs(others, verbs).filter { t ->  t.getName() != target.getName() }
+        others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
 
         if (others.isEmpty()) {
             return null
