@@ -129,10 +129,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
 
-        val location = "location"
-
-        val fullUri = if(a.isLocationChained() && a.verb != HttpVerb.POST){
-            val locationHeader = chainState[location]
+        val fullUri = if(a.locationId != null){
+            val locationHeader = chainState[locationName(a.locationId!!)]
                 ?: throw IllegalStateException("Call expected a missing chained 'location'")
 
             EMTestUtils.resolveLocation(locationHeader, baseUrl + a.path.toString())!!
@@ -228,14 +226,21 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
 
-        if(a.isLocationChained() && a.verb == HttpVerb.POST){
+        if(a.saveLocation){
 
             if(! response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
                 //TODO: should stop the test case, and execute the remaining actions
             }
 
+            //TODO check if there is name class for locations
+
             //save location for the following REST calls
-            chainState[location] = response.getHeaderString(location) ?: ""
+            chainState[locationName(a.path.lastElement())] =
+                    response.getHeaderString("location") ?: ""
         }
+    }
+
+    private fun locationName(id: String): String{
+        return "location_$id"
     }
 }

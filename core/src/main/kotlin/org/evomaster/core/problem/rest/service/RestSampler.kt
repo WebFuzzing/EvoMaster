@@ -453,7 +453,7 @@ class RestSampler : Sampler<RestIndividual>() {
             return null
         }
 
-        val template = chooseClosestAncestor(target.path, listOf(HttpVerb.POST))
+        val template = chooseClosestAncestor(target, listOf(HttpVerb.POST))
             ?: return null
 
         val post = createActionFor(template, target)
@@ -477,11 +477,13 @@ class RestSampler : Sampler<RestIndividual>() {
         return res
     }
 
+    /**
+     * Make sure that what returned is different from the target
+     */
+    private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>): RestCallAction? {
 
-    private fun chooseClosestAncestor(path: RestPath, verbs: List<HttpVerb>): RestCallAction? {
-
-        var others = sameOrAncestorEndpoints(path)
-        others = hasWithVerbs(others, verbs)
+        var others = sameOrAncestorEndpoints(target.path)
+        others = hasWithVerbs(others, verbs).filter { t ->  t.getName() != target.getName() }
 
         if (others.isEmpty()) {
             return null
