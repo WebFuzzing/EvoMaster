@@ -12,8 +12,6 @@ class TestCaseWriter {
 
     companion object {
 
-        private val locationVarName = "location"
-
 
         fun convertToCompilableTestCode(
                 format: OutputFormat,
@@ -34,10 +32,19 @@ class TestCaseWriter {
 
             if (test.hasChainedLocations()) {
                 lines.add("")
-                when {
-                    format.isJava() -> lines.add(padding(4) + "String $locationVarName = \"\";")
-                    format.isKotlin() -> lines.add(padding(4) + "var $locationVarName = \"\"")
-                }
+
+                test.test.individual.seeActions()
+                        .filterIsInstance(RestCallAction::class.java)
+                        .filter { a -> a.locationId != null}
+                        .map{ a-> a.locationId}
+                        .distinct()
+                        .forEach { id ->
+                            val name = locationVar(id!!)
+                            when {
+                                format.isJava() -> lines.add(padding(4) + "String $name = \"\";")
+                                format.isKotlin() -> lines.add(padding(4) + "var $name = \"\"")
+                            }
+                        }
             }
 
 
@@ -51,6 +58,11 @@ class TestCaseWriter {
             lines.add("}")
 
             return lines
+        }
+
+        private fun locationVar(id: String): String {
+            //TODO make sure name is syntactically valid
+            return "location_${id.trim().replace(" ", "_")}"
         }
 
         private fun padding(n: Int): String {
@@ -84,8 +96,8 @@ class TestCaseWriter {
             val list = restAssuredMethods(call, res, baseUrlOfSut)
 
             var firstLine = padding(4)
-            if (call.isLocationChained() && call.verb == HttpVerb.POST){
-                firstLine += "$locationVarName = "
+            if (call.saveLocation) {
+                firstLine += "${locationVar(call.path.lastElement())} = "
             }
             firstLine += "given()" + list[0]
             lines.add(firstLine)
@@ -95,13 +107,14 @@ class TestCaseWriter {
                 lines.add(padding(12) + list[i])
             }
 
-            if(call.isLocationChained() && call.verb == HttpVerb.POST) {
-                lines.add(padding(12) + list[list.lastIndex] )
+            if (call.saveLocation) {
+                lines.add(padding(12) + list[list.lastIndex])
                 lines.add(padding(12) + ".extract().header(\"location\");")
                 lines.add("")
-                lines.add(padding(4) + "assertTrue(isValidURIorEmpty($locationVarName));")
+                lines.add(padding(4) +
+                        "assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
             } else {
-                lines.add(padding(12) + list[list.lastIndex]+ ";")
+                lines.add(padding(12) + list[list.lastIndex] + ";")
             }
         }
 
@@ -154,8 +167,8 @@ class TestCaseWriter {
 
             val verb = call.verb.name.toLowerCase()
             var callLine = ".$verb("
-            if(call.isLocationChained() && call.verb != HttpVerb.POST){
-                callLine += "resolveLocation($locationVarName, $baseUrlOfSut + \"${call.path.toString()}\")"
+            if (call.locationId != null) {
+                callLine += "resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.path.toString()}\")"
 
             } else {
                 val path = call.path.resolve(call.parameters)

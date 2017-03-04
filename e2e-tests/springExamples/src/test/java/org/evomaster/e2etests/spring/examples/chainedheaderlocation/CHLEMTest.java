@@ -15,6 +15,7 @@ public class CHLEMTest extends CHLTestBase {
 
         String[] args = new String[]{
                 "--createTests", "false",
+                "--outputFormat", "JAVA_JUNIT_5",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxFitnessEvaluations", "1000",
