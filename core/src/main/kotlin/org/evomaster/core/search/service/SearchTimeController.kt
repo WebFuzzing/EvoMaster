@@ -23,7 +23,7 @@ class SearchTimeController {
     var searchStarted = false
         private set
 
-    var lastImprovement = -1
+    var lastActionImprovement = -1
         private set
 
     private var startTime = 0L
@@ -41,7 +41,7 @@ class SearchTimeController {
     }
 
     fun newCoveredTarget(){
-        lastImprovement = evaluatedIndividuals
+        lastActionImprovement = evaluatedActions
     }
 
     fun getElapsedSeconds() : Int{
