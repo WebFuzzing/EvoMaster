@@ -33,6 +33,7 @@ class RestCallAction(
         var locationId: String? = null
 ) : RestAction{
 
+    override fun shouldCountForFitnessEvaluations(): Boolean = true
 
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 

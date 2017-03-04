@@ -15,6 +15,7 @@ import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 
 
@@ -91,6 +92,13 @@ class Main {
             writeTests(injector, solution, controllerInfo)
 
             writeStatistics(injector, solution)
+
+            LoggingUtil.getInfoLogger().apply {
+                val stc = injector.getInstance(SearchTimeController::class.java)
+                info("Evaluated tests: ${stc.evaluatedIndividuals}")
+                info("Evaluated actions: ${stc.evaluatedActions}")
+                info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+            }
 
             return solution
         }

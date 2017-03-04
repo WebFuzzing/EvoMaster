@@ -17,4 +17,12 @@ interface  Action {
     fun seeGenes() : List<out Gene>
 
     fun copy() : Action
+
+    /**
+     * Some actions can be expensive, like doing an HTTP call.
+     * In those cases, a "longer" test would be more expensive to run.
+     * However, there might also be setup actions that are not expensive,
+     * eg like setting up a WireMock stub.
+     */
+    fun shouldCountForFitnessEvaluations(): Boolean
 }

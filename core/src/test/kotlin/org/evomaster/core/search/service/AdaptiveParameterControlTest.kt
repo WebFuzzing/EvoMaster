@@ -88,7 +88,7 @@ internal class AdaptiveParameterControlTest{
 
     private fun fakeEvaluation(n: Int){
         for(i in 0 until n){
-            time.newEvaluation()
+            time.newIndividualEvaluation()
         }
     }
 

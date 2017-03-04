@@ -26,7 +26,12 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     fun calculateCoverage(individual: T) : EvaluatedIndividual<T>{
         val ei = doCalculateCoverage(individual)
-        time.newEvaluation()
+
+        val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+
+        time.newActionEvaluation(maxOf(1, a))
+        time.newIndividualEvaluation()
+
         return ei
     }
 

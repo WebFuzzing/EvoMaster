@@ -17,22 +17,39 @@ class SearchTimeController {
     var evaluatedIndividuals = 0
         private set
 
+    var evaluatedActions = 0
+        private set
+
     var searchStarted = false
         private set
 
     var lastImprovement = -1
         private set
 
+    private var startTime = 0L
+
+
     fun startSearch(){
         searchStarted = true
+        startTime = System.currentTimeMillis()
     }
 
-    fun newEvaluation(){
-        evaluatedIndividuals++
+    fun newIndividualEvaluation() = evaluatedIndividuals++
+
+    fun newActionEvaluation(n: Int = 1) {
+        evaluatedActions += n
     }
 
     fun newCoveredTarget(){
         lastImprovement = evaluatedIndividuals
+    }
+
+    fun getElapsedSeconds() : Int{
+        if(!searchStarted){
+            return 0
+        }
+
+        return ((System.currentTimeMillis() - startTime) / 1000.0).toInt()
     }
 
     fun shouldContinueSearch(): Boolean{
@@ -40,7 +57,7 @@ class SearchTimeController {
         if(configuration.stoppingCriterion.equals(
                 EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
 
-            return evaluatedIndividuals < configuration.maxFitnessEvaluations
+            return evaluatedActions < configuration.maxFitnessEvaluations
         }
 
         return false //TODO
@@ -54,7 +71,7 @@ class SearchTimeController {
         if(configuration.stoppingCriterion.equals(
                 EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
 
-            return evaluatedIndividuals.toDouble() / configuration.maxFitnessEvaluations.toDouble()
+            return evaluatedActions.toDouble() / configuration.maxFitnessEvaluations.toDouble()
         } else {
             return -1.0; //TODO
         }
