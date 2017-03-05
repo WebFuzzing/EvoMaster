@@ -273,65 +273,26 @@ class RestSampler : Sampler<RestIndividual>() {
 
         assert(write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH)
 
-        val others = sameEndpoints(write.path)
-        val postOnSamePath = hasWithVerbs(others, listOf(HttpVerb.POST))
+        test.add(write)
 
-        if (!postOnSamePath.isEmpty()) {
+        //Need to find a POST on a parent collection resource
+        createResourcesFor(write, test)
+
+        if (write.verb == HttpVerb.PATCH &&
+                config.maxTestSize >= test.size + 1 &&
+                randomness.nextBoolean()) {
             /*
-                possible to do a direct POST on the resource.
-                bit weird (ie, a PUT would make more sense), but possible
+                As PATCH is not idempotent (in contrast to PUT), it can make sense to test
+                two patches in sequence
              */
+            val secondPatch = createActionFor(write, write)
+            test.add(secondPatch)
+            secondPatch.locationId = write.locationId
+        }
 
-            val template = postOnSamePath.first()
-            val post = createActionFor(template, write)
-
-            test.add(post)
-            test.add(write)
-
-            /*
-                make sure the paths are not mutated, otherwise the write might be
-                on different resource compared to POST
-             */
-            preventPathParamMutation(post)
-            preventPathParamMutation(write)
-
-            if (write.verb == HttpVerb.PATCH && config.maxTestSize >= 3 && randomness.nextBoolean()) {
-                /*
-                    As PATCH is not idempotent (in contrast to PUT), it can make sense to test
-                    two patches in sequence
-                 */
-                val secondPatch = createActionFor(write, write)
-                preventPathParamMutation(secondPatch)
-                test.add(secondPatch)
-            }
-
-            return
-
-        } else {
-
-            test.add(write)
-
-            //Need to find a POST on a parent collection resource
-            createResourcesFor(write, test)
-
-            if (write.verb == HttpVerb.PATCH &&
-                    config.maxTestSize >= test.size + 1 &&
-                    randomness.nextBoolean()) {
-                /*
-                    As PATCH is not idempotent (in contrast to PUT), it can make sense to test
-                    two patches in sequence
-                 */
-                val secondPatch = createActionFor(write, write)
-                test.add(secondPatch)
-                secondPatch.locationId = write.locationId
-            }
-
-            test.forEach { t ->
-                (t as RestCallAction)
-                        .let { preventPathParamMutation(it) }
-            }
-
-            return
+        test.forEach { t ->
+            (t as RestCallAction)
+                    .let { preventPathParamMutation(it) }
         }
     }
 
@@ -383,14 +344,19 @@ class RestSampler : Sampler<RestIndividual>() {
         if (created &&
                 !get.path.isLastElementAParameter()) {
 
-            val lastPost = test[test.size-2] as RestCallAction
+            val lastPost = test[test.size - 2] as RestCallAction
             assert(lastPost.verb == HttpVerb.POST)
 
             val available = config.maxTestSize - test.size
 
-            if(lastPost.path.isEquivalent(get.path) && available > 0) {
+            if (lastPost.path.isEquivalent(get.path) && available > 0) {
                 /*
-                 The endpoint might represent a collection.
+                 The endpoint might represent a collection, ie we
+                 can be in the case:
+
+                  POST /api/elements
+                  GET  /api/elements
+
                  Therefore, to properly test the GET, we might
                  need to be able to create many elements.
                  */
@@ -402,7 +368,7 @@ class RestSampler : Sampler<RestIndividual>() {
                     create.locationId = lastPost.locationId
 
                     //add just before the last GET
-                    test.add(test.size-1, create)
+                    test.add(test.size - 1, create)
                 }
 
                 return SampleType.SMART_GET_COLLECTION
@@ -451,7 +417,6 @@ class RestSampler : Sampler<RestIndividual>() {
         randomizeActionGenes(res)
         res.auth = target.auth
         res.bindToSamePathResolution(target)
-//        res.locationId = target.locationId //TODO check
 
         return res
     }
@@ -500,13 +465,6 @@ class RestSampler : Sampler<RestIndividual>() {
         }
     }
 
-    private fun sameEndpoints(path: RestPath): List<RestCallAction> {
-
-        return actionCluster.values.asSequence()
-                .filter { a -> a is RestCallAction && a.path.isEquivalent(path) }
-                .map { a -> a as RestCallAction }
-                .toList()
-    }
 
     private fun initAdHocInitialIndividuals() {
 
