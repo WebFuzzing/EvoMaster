@@ -35,13 +35,15 @@ class Archive<T>() where T : Individual {
 
     fun extractSolution(): Solution<T> {
 
-        val overall = FitnessValue()
+        val overall = FitnessValue(0.0)
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
 
         map.entries.forEach { e ->
             if (isCovered(e.key)) {
-                uniques.add(e.value[0])
+                val ind = e.value[0]
+                uniques.add(ind)
                 overall.coverTarget(e.key)
+                overall.size += ind.individual.size()
             }
         }
 
@@ -70,6 +72,7 @@ class Archive<T>() where T : Individual {
 
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
+        //TODO feedback-direceted sampling
         val chosen = randomness.choose(candidates)
 
         return chosen.copy()
@@ -93,6 +96,14 @@ class Archive<T>() where T : Individual {
     fun notCoveredTargets(): Set<Int> {
 
         return map.keys.filter { k -> !isCovered(k) }.toSet()
+    }
+
+    fun wouldReachNewTarget(ei: EvaluatedIndividual<T>): Boolean {
+
+        return ei.fitness.getViewOfData()
+                .filter { d -> d.value > 0.0 }
+                .map { d -> d.key }
+                .any { k ->  map[k]?.isEmpty() ?: true}
     }
 
     /**
@@ -119,6 +130,7 @@ class Archive<T>() where T : Individual {
             if (current.isEmpty()) {
                 current.add(copy)
                 added = true
+                time.newActionImprovement()
 
                 if (isCovered(k)) {
                     time.newCoveredTarget()
@@ -153,6 +165,7 @@ class Archive<T>() where T : Individual {
                 if (shorter || sameLengthButBetterScore) {
                     current[0] = copy
                     added = true
+                    time.newActionImprovement()
                 }
                 continue
             }
@@ -161,6 +174,7 @@ class Archive<T>() where T : Individual {
                 current.clear() //remove all existing non-optimal solutions
                 current.add(copy)
                 added = true
+                time.newActionImprovement()
                 time.newCoveredTarget()
                 continue
             }
@@ -169,18 +183,22 @@ class Archive<T>() where T : Individual {
             //handle regular case.
             sortAndShrinkIfNeeded(current, k)
 
-            val limit = apc.getArchiveTargetLimit()
+            val currh = current[0].fitness.getHeuristic(k)
+            val currsize = current[0].individual.size()
+            val copySize = copy.individual.size()
 
+            if(v > currh || (v==currh && copySize < currsize)){
+                time.newActionImprovement()
+            }
+
+            val limit = apc.getArchiveTargetLimit()
             if (current.size < limit) {
                 //we have space in the buffer, regardless of fitness
                 current.add(copy)
                 added = true
+
                 continue
             }
-
-            val currh = current[0].fitness.getHeuristic(k)
-            val currsize = current[0].individual.size()
-            val copySize = copy.individual.size()
 
             if (v >= currh || (v == currh && copySize <= currsize)) {
                 // replace worst element, if copy is not worse than it (but not necessarily better)

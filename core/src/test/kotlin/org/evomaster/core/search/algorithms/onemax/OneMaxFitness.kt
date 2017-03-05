@@ -10,7 +10,7 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
     override fun doCalculateCoverage(individual: OneMaxIndividual)
             : EvaluatedIndividual<OneMaxIndividual> {
 
-        val fv = FitnessValue()
+        val fv = FitnessValue(individual.size().toDouble())
 
         (0 until individual.n)
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }

@@ -5,7 +5,13 @@ As the number of targets is unknown, we cannot have
 a minimization problem, as new targets could be added
 throughout the search
  */
-class FitnessValue {
+class FitnessValue(var size: Double) {
+
+    init {
+        if(size < 0.0){
+            throw IllegalArgumentException("Invalid size value: $size")
+        }
+    }
 
     companion object {
 
@@ -25,7 +31,7 @@ class FitnessValue {
 
 
     fun copy(): FitnessValue {
-        val copy = FitnessValue()
+        val copy = FitnessValue(size)
         copy.targets.putAll(this.targets)
         return copy
     }
@@ -75,7 +81,17 @@ class FitnessValue {
         }
     }
 
-
+    /**
+     * Check if current does subsume [other].
+     * This means covering at least the same targets, and at least one better or
+     * one more.
+     *
+     * Recall: during the search, we might not calculate all targets, eg once they
+     * are covered.
+     *
+     * @param other, the one we compare to
+     * @param targetSubset, only calculate subsumpsion on these testing targets
+     */
     fun subsumes(other: FitnessValue, targetSubset: Set<Int>): Boolean {
 
         var atLeastOneBetter = false
@@ -87,57 +103,11 @@ class FitnessValue {
             if (v < z) {
                 return false
             }
-            if (v > z) {
+            if (v > z || (v==z && this.size < other.size)) {
                 atLeastOneBetter = true
             }
         }
 
         return atLeastOneBetter
-    }
-
-    /**
-     * Check if current does subsume other.
-     * This means covering at least the same targets, and at least one better or
-     * one more.
-     *
-     * Note: during the search, we might not calculate all targets, eg once they
-     * are covered.
-     * So this check might always be false when comparing existing against a new one.
-     * With "strict" false, the check will ignore covered targets in the current, as
-     * likely the info for those will be missing in new individuals
-     */
-    fun subsumes(other: FitnessValue, strict: Boolean = true): Boolean {
-
-        if (this.targets.size < other.targets.size) {
-            //if less targets, cannot subsumes
-            return false
-        }
-
-        var atLeastOneBetter = false
-
-        for ((k, v) in this.targets) {
-
-            if (!strict && v == 1.0) {
-                continue
-            }
-
-            val z = other.targets[k] ?: 0.0
-            if (v < z) {
-                return false
-            }
-            if (v > z) {
-                atLeastOneBetter = true
-            }
-        }
-
-        if (!atLeastOneBetter) {
-            return false
-        }
-
-        val missing = other.targets.keys
-                .filter { k -> !this.targets.containsKey(k) }
-                .size
-
-        return missing == 0
     }
 }

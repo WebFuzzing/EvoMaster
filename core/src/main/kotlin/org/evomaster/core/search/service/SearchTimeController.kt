@@ -41,8 +41,13 @@ class SearchTimeController {
     }
 
     fun newCoveredTarget(){
+        newActionImprovement()
+    }
+
+    fun newActionImprovement(){
         lastActionImprovement = evaluatedActions
     }
+
 
     fun getElapsedSeconds() : Int{
         if(!searchStarted){

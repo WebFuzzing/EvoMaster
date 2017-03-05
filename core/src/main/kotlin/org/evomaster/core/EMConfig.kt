@@ -214,7 +214,7 @@ class EMConfig {
 
     @Cfg("Number of applied mutations on sampled individuals, by the end of the search")
     @Min(0.0)
-    var endNumberOfMutations = 20
+    var endNumberOfMutations = 10
 
 
     enum class StoppingCriterion() {

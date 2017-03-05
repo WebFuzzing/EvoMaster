@@ -40,7 +40,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
                 var x = selection()
 
-                x = getMutatator().mutateAndSave(1, x, archive)
+                x = getMutatator().mutateAndSave(x, archive)
 
                 nextPop.add(x)
 

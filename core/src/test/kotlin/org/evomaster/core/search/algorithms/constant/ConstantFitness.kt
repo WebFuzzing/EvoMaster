@@ -22,7 +22,7 @@ class ConstantFitness : FitnessFunction<ConstantIndividual>() {
             1.0 - (distance / (1.0 + distance))
         }
 
-        val fv = FitnessValue()
+        val fv = FitnessValue(individual.size().toDouble())
         fv.updateTarget(0, h)
 
         return EvaluatedIndividual(fv, individual.copy() as ConstantIndividual, listOf())

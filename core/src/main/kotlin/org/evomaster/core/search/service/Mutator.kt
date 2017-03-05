@@ -38,7 +38,9 @@ abstract class Mutator<T> where T : Individual {
      */
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
         : EvaluatedIndividual<T> {
+
         var current = individual
+        var targets = archive.notCoveredTargets()
 
         for(i in 0 until upToNTimes){
 
@@ -48,15 +50,22 @@ abstract class Mutator<T> where T : Individual {
 
             val mutated = ff.calculateCoverage(mutate(current.individual))
 
-            if(current.fitness.subsumes(mutated.fitness, false)){
-                continue
+            val reachNew = archive.wouldReachNewTarget(mutated)
+
+            if(reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
+                archive.addIfNeeded(mutated)
+                current = mutated
             }
-
-            archive.addIfNeeded(mutated)
-
-            current = mutated
         }
 
         return current
+    }
+
+    fun mutateAndSave(individual: EvaluatedIndividual<T>, archive: Archive<T>)
+            : EvaluatedIndividual<T> {
+
+        val mutated = ff.calculateCoverage(mutate(individual.individual))
+        archive.addIfNeeded(mutated)
+        return mutated
     }
 }

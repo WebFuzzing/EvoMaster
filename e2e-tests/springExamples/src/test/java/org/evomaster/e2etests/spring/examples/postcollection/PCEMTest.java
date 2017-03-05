@@ -26,7 +26,7 @@ public class PCEMTest extends SpringTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "200",
+                "--maxFitnessEvaluations", "500",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 

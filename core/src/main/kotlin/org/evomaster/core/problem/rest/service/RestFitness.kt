@@ -81,7 +81,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val dto = rc.getTargetCoverage(ids) ?:
                 throw IllegalStateException("Cannot retrieve coverage")
 
-        val fv = FitnessValue()
+        val fv = FitnessValue(individual.size().toDouble())
 
         dto.targets.forEach { t ->
 

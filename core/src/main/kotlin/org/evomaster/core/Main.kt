@@ -97,6 +97,7 @@ class Main {
                 val stc = injector.getInstance(SearchTimeController::class.java)
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
+                info("Last action improvement: ${stc.lastActionImprovement}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
             }
 

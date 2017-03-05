@@ -90,7 +90,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 val i = randomness.nextInt(n)
                 val ind = wts.suite[i]
 
-                wts.suite[i] = getMutatator().mutateAndSave(1, ind, archive)
+                wts.suite[i] = getMutatator().mutateAndSave(ind, archive)
             }
         }
 

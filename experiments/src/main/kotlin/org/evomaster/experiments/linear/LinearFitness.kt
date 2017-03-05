@@ -14,7 +14,7 @@ class LinearFitness : FitnessFunction<LinearIndividual>() {
 
     override fun doCalculateCoverage(individual: LinearIndividual): EvaluatedIndividual<LinearIndividual> {
 
-        val fv = FitnessValue()
+        val fv = FitnessValue(individual.size().toDouble())
 
         val id = individual.id.gene.value
         val k = individual.k.value
