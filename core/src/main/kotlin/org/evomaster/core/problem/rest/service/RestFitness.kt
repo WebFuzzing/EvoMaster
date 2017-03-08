@@ -25,7 +25,7 @@ import javax.ws.rs.core.Response
 
 class RestFitness : FitnessFunction<RestIndividual>() {
 
-    companion object{
+    companion object {
         private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
     }
 
@@ -56,25 +56,33 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         rc.resetSUT()
 
-        val actionResults : MutableList<ActionResult> = mutableListOf()
+        val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //used for things like chaining "location" paths
-        val chainState = mutableMapOf<String,String>()
+        val chainState = mutableMapOf<String, String>()
 
         //run the test
-        individual.actions.forEach({ a ->
+        for (a in individual.actions) {
+
+            var ok = false
+
             if (a is RestCallAction) {
-                handleRestCall(a, actionResults, chainState)
+                ok = handleRestCall(a, actionResults, chainState)
             } else {
                 throw IllegalStateException("Cannot handle: " + a.javaClass)
             }
-        })
+
+            if(!ok){
+                break
+            }
+        }
 
         /*
             We cannot request all non-covered targets, because:
             1) performance hit
             2) might not be possible to have a too long URL
          */
+        //TODO prioritized list
         val ids = randomness.choose(archive.notCoveredTargets(), 100)
 
 
@@ -85,7 +93,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         dto.targets.forEach { t ->
 
-            if(t.descriptiveId != null) {
+            if (t.descriptiveId != null) {
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 
@@ -106,9 +114,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             actions: MutableList<RestAction>,
             actionResults: MutableList<ActionResult>) {
 
-        (0..actions.size-1)
+        (0 until actionResults.size)
                 .filter { actions[it] is RestCallAction }
-                .filter { actionResults[it] is RestCallResult}
+                .filter { actionResults[it] is RestCallResult }
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
                             .getStatusCode() ?: -1
@@ -119,22 +127,27 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     }
 
 
+    /**
+     * @return whether the call was OK. Eg, in some cases, we might want to stop
+     * the test at this action, and do not continue
+     */
     private fun handleRestCall(a: RestCallAction,
                                actionResults: MutableList<ActionResult>,
-                               chainState : MutableMap<String,String>) {
+                               chainState: MutableMap<String, String>)
+            : Boolean {
 
         var baseUrl = infoDto.baseUrlOfSUT
-        if(baseUrl.endsWith("/")){
-            baseUrl = baseUrl.substring(0, baseUrl.length-1)
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length - 1)
         }
 
 
-        val fullUri = if(a.locationId != null){
+        val fullUri = if (a.locationId != null) {
             val locationHeader = chainState[locationName(a.locationId!!)]
-                ?: throw IllegalStateException("Call expected a missing chained 'location'")
+                    ?: throw IllegalStateException("Call expected a missing chained 'location'")
 
             EMTestUtils.resolveLocation(locationHeader, baseUrl + a.path.toString())!!
-        } else{
+        } else {
             val path = a.path.resolve(a.parameters)
             baseUrl + path
         }.let {
@@ -142,12 +155,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 TODO this will be need to be done properly, and check if
                 it is or not a valid char
              */
-            it.replace("\"","")
+            it.replace("\"", "")
         }
 
         val builder = client.target(fullUri).request()
 
-        if(a.auth !is NoAuth){
+        if (a.auth !is NoAuth) {
             a.auth.headers.forEach { h ->
                 builder.header(h.name, h.value)
             }
@@ -183,9 +196,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 }
                 .joinToString("&")
 
-        val bodyEntity = when{
-            body != null ->  Entity.json(body.gene.getValueAsString())
-            ! forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        val bodyEntity = when {
+            body != null -> Entity.json(body.gene.getValueAsString())
+            !forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
             else -> Entity.json("") //FIXME
         }
 
@@ -205,14 +218,14 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val rcr = RestCallResult()
         rcr.setStatusCode(response.status)
 
-        if(response.hasEntity()){
-            if(response.mediaType != null){
+        if (response.hasEntity()) {
+            if (response.mediaType != null) {
                 rcr.setBodyType(response.mediaType)
             }
-            try{
+            try {
                 val body = response.readEntity(String::class.java)
                 rcr.setBody(body)
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
 
@@ -220,16 +233,21 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         actionResults.add(rcr)
 
-        if(response.status == 401 && a.auth !is NoAuth){
+        if (response.status == 401 && a.auth !is NoAuth) {
             //this would likely be a misconfiguration in the SUT controller
             log.warn("Got 401 although having auth for '${a.auth.name}'")
         }
 
 
-        if(a.saveLocation){
+        if (a.saveLocation) {
 
-            if(! response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-                //TODO: should stop the test case, and execute the remaining actions
+            if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
+                /*
+                    If this failed, and following actions require the "location" header
+                    of this call, there is no point whatsoever to continue evaluating
+                    the remaining calls
+                 */
+                return false
             }
 
             //TODO check if there is name class for locations
@@ -238,9 +256,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             chainState[locationName(a.path.lastElement())] =
                     response.getHeaderString("location") ?: ""
         }
+
+        return true
     }
 
-    private fun locationName(id: String): String{
+    private fun locationName(id: String): String {
         return "location_$id"
     }
 }

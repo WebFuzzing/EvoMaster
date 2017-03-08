@@ -33,7 +33,8 @@ class TestCaseWriter {
             if (test.hasChainedLocations()) {
                 lines.add("")
 
-                test.test.individual.seeActions()
+                test.test.evaluatedActions()
+                        .map { ea -> ea.action }
                         .filterIsInstance(RestCallAction::class.java)
                         .filter { a -> a.locationId != null}
                         .map{ a-> a.locationId}
