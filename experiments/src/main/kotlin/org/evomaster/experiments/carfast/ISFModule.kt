@@ -25,7 +25,7 @@ class ISFModule(val className: String) : AbstractModule(){
                 .asEagerSingleton()
 
         bind(StructureMutator::class.java)
-                .to(EmptyStructureMutator::class.java)
+                .to(ISFStructureMutator::class.java)
                 .asEagerSingleton()
 
 

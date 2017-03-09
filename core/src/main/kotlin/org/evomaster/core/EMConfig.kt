@@ -244,6 +244,10 @@ class EMConfig {
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "-"
 
+    @Cfg("Probability of applying a mutation that can change the structure of a test")
+    @Min(0.0) @Max(1.0)
+    var structureMutationProbability = 0.5
+
     @Cfg("Define the population size in the search algorithms that use populations (eg, Genetic Algorithms)")
     @Min(1.0)
     var populationSize = 30

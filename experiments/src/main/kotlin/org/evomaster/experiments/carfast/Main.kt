@@ -37,7 +37,8 @@ class Main {
                     "--maxFitnessEvaluations", "10000",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--writeStatistics", "true",
-                    "--appendToStatisticsFile", "true"
+                    "--appendToStatisticsFile", "true",
+                    "--structureMutationProbability", "0.01"
             )
 
             val algs = listOf("MIO","MOSA","WTS","RANDOM")

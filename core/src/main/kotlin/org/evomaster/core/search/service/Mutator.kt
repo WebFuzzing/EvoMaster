@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.*
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.FitnessFunction
@@ -24,6 +25,9 @@ abstract class Mutator<T> where T : Individual {
 
     @Inject
     protected lateinit var structureMutator: StructureMutator
+
+    @Inject
+    protected lateinit var config : EMConfig
 
     /**
      * @return a mutated copy

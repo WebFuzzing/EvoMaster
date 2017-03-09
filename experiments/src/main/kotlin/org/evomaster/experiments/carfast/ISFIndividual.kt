@@ -23,4 +23,6 @@ class ISFIndividual(var action: ISFAction) : Individual() {
     override fun seeActions(): List<out Action> {
         return listOf(action)
     }
+
+    override fun canMutateStructure() = true
 }
