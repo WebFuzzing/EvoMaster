@@ -1,4 +1,4 @@
-package org.evomaster.experiments
+package org.evomaster.experiments.linear
 
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -25,9 +25,6 @@ class Main {
 
     companion object {
 
-        /**
-         * Main entry point of the EvoMaster application
-         */
         @JvmStatic
         fun main(args: Array<String>) {
 
@@ -183,13 +180,13 @@ class Main {
 
 
             val alg = when (algType) {
-                EMConfig.Algorithm.MIO -> injector.getInstance(Key.get(
+                MIO -> injector.getInstance(Key.get(
                         object : TypeLiteral<MioAlgorithm<LinearIndividual>>() {}))
-                EMConfig.Algorithm.RANDOM -> injector.getInstance(Key.get(
+                RANDOM -> injector.getInstance(Key.get(
                         object : TypeLiteral<RandomAlgorithm<LinearIndividual>>() {}))
-                EMConfig.Algorithm.MOSA -> injector.getInstance(Key.get(
+                MOSA -> injector.getInstance(Key.get(
                         object : TypeLiteral<MosaAlgorithm<LinearIndividual>>() {}))
-                EMConfig.Algorithm.WTS -> injector.getInstance(Key.get(
+                WTS -> injector.getInstance(Key.get(
                         object : TypeLiteral<WtsAlgorithm<LinearIndividual>>() {}))
             }
             return Pair(injector, alg)

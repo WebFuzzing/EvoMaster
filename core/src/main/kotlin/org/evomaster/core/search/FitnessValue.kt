@@ -110,4 +110,41 @@ class FitnessValue(var size: Double) {
 
         return atLeastOneBetter
     }
+
+
+    @Deprecated("")
+    fun subsumes(other: FitnessValue, strict: Boolean = true): Boolean {
+
+        if (this.targets.size < other.targets.size) {
+            //if less targets, cannot subsumes
+            return false
+        }
+
+        var atLeastOneBetter = false
+
+        for ((k, v) in this.targets) {
+
+            if (!strict && v == 1.0) {
+                continue
+            }
+
+            val z = other.targets[k] ?: 0.0
+            if (v < z) {
+                return false
+            }
+            if (v > z) {
+                atLeastOneBetter = true
+            }
+        }
+
+        if (!atLeastOneBetter) {
+            return false
+        }
+
+        val missing = other.targets.keys
+                .filter { k -> !this.targets.containsKey(k) }
+                .size
+
+        return missing == 0
+    }
 }

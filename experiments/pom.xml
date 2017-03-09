@@ -25,6 +25,10 @@
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster.clientJava</groupId>
+            <artifactId>instrumentation</artifactId>
+        </dependency>
     </dependencies>
 
 

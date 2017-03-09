@@ -1,7 +1,7 @@
-package org.evomaster.experiments
+package org.evomaster.experiments.linear
 
 
-class TuningMIO {
+class TuningMOSA {
 
     companion object {
 
@@ -11,7 +11,7 @@ class TuningMIO {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            Main.tuningMIO()
+            Main.tuningMOSA()
         }
     }
 }
