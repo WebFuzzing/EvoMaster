@@ -95,9 +95,23 @@ class Randomness {
         return characters[random.nextInt(characters.length)]
     }
 
+
     /**
-     * Choose a random element from the list, up to the element in the index position (exclusive).
-     * Ie, consider only the first "index" elements
+     * Choose a value from the [list] based on its weight in the [weights] map.
+     * The highest the weight, the *less* chances to be selected.
+     * If an element [K] is not present in the map [weights], then
+     * its weight is 0.
+     * Note: as [K] is used as a key, make sure that [equals] and [hashCode]
+     * are well defined for it (eg, no problem if it is a [Int] or a [String])
+     */
+    fun <K,V> chooseProportionally(list: List<K>, weights: Map<K,V>): K {
+
+        throw IllegalStateException("Not implemented yet")
+    }
+
+    /**
+     * Choose a random element from the [list], up to the element in the index position (exclusive).
+     * Ie, consider only the first [index] elements
      */
     fun <T> chooseUpTo(list: List<T>, index: Int): T {
         if(index <= 0 || index > list.size){
@@ -116,7 +130,7 @@ class Randomness {
     }
 
     /**
-     * Randomly choose (without replacement) up to n values from the list
+     * Randomly choose (without replacement) up to [n] values from the [list]
      */
     fun <T> choose(list: List<T>, n: Int): List<T>{
         if(list.size <= n){

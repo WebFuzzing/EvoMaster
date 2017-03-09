@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -15,6 +16,9 @@ class Archive<T>() where T : Individual {
     private lateinit var randomness: Randomness
 
     @Inject
+    private lateinit var config: EMConfig
+
+    @Inject
     private lateinit var apc: AdaptiveParameterControl
 
     @Inject
@@ -25,12 +29,22 @@ class Archive<T>() where T : Individual {
 
     /**
      * Key -> id of the target
-     * <br>
      *
      * Value -> sorted list of best individuals for that target
-     * <br>
      */
     private val map = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
+
+    /**
+     * Key -> id of the target
+     *
+     * Value -> how often we sampled from the buffer for that target since
+     *          last fitness improvement.
+     *          Note: such counter will be reset when a fitness improvement
+     *          is obtained for that target is obtained.
+     *          This means that an infeasible / hard target will not get
+     *          its counter reset once the final local optima is reached
+     */
+    private val samplingCounter = mutableMapOf<Int,Int>()
 
 
     fun extractSolution(): Solution<T> {
@@ -53,6 +67,11 @@ class Archive<T>() where T : Individual {
 
     fun isEmpty() = map.isEmpty()
 
+    /**
+     * Get a copy of an individual in the archive.
+     * Different kinds of heuristics are used to choose
+     * the best "candidate" most useful for the search
+     */
     fun sampleIndividual(): EvaluatedIndividual<T> {
 
         if (isEmpty()) {
@@ -65,17 +84,38 @@ class Archive<T>() where T : Individual {
             toChooseFrom = map.keys.toList()
         }
 
-        val chosenTarget = randomness.choose(toChooseFrom)
+
+        val chosenTarget = if(config.feedbackDirectedSampling){
+            toChooseFrom.minBy { t -> samplingCounter.getOrDefault(t, 0) }!!
+        } else {
+            randomness.choose(toChooseFrom)
+        }
+
         val candidates = map[chosenTarget] ?:
             //should never happen, unless of bug
             throw IllegalStateException("Target $chosenTarget has no candidate individual")
 
+
+        incrementCounter(chosenTarget)
+
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
-        //TODO feedback-direceted sampling
         val chosen = randomness.choose(candidates)
 
         return chosen.copy()
+    }
+
+    /**
+     * update counter by 1
+     */
+    private fun incrementCounter(target: Int){
+        samplingCounter.putIfAbsent(target, 0)
+        val counter = samplingCounter[target]!!
+        samplingCounter.put(target, counter + 1)
+    }
+
+    private fun resetCounter(target: Int){
+        samplingCounter.put(target, 0)
     }
 
     /**
@@ -131,6 +171,7 @@ class Archive<T>() where T : Individual {
                 current.add(copy)
                 added = true
                 time.newActionImprovement()
+                resetCounter(k)
 
                 if (isCovered(k)) {
                     time.newCoveredTarget()
@@ -166,6 +207,7 @@ class Archive<T>() where T : Individual {
                     current[0] = copy
                     added = true
                     time.newActionImprovement()
+                    resetCounter(k)
                 }
                 continue
             }
@@ -175,6 +217,7 @@ class Archive<T>() where T : Individual {
                 current.add(copy)
                 added = true
                 time.newActionImprovement()
+                resetCounter(k)
                 time.newCoveredTarget()
                 continue
             }
@@ -189,6 +232,7 @@ class Archive<T>() where T : Individual {
 
             if(v > currh || (v==currh && copySize < currsize)){
                 time.newActionImprovement()
+                resetCounter(k)
             }
 
             val limit = apc.getArchiveTargetLimit()
