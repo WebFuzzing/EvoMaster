@@ -25,16 +25,16 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            //base(Triangle::class.java.name)
-            base(TP0::class.java.name)
+            base(Triangle::class.java.name, 5_000)
+            base(TP0::class.java.name, 100_000)
         }
 
-        fun base(className: String){
+        fun base(className: String, evaluations: Int){
 
             val args = arrayOf(
                     "--createTests", "false",
                     "--seed", "-1",
-                    "--maxFitnessEvaluations", "10000",
+                    "--maxFitnessEvaluations", "$evaluations",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--writeStatistics", "true",
                     "--appendToStatisticsFile", "true",
@@ -43,7 +43,8 @@ class Main {
 
             val algs = listOf("MIO","MOSA","WTS","RANDOM")
 
-            (0 until 30).forEach {
+            //TODO to 100 once MIO is finalized
+            (0 until 10).forEach {
                 algs.forEach { a ->
                     run(className, args.plus("--algorithm").plus(a).plus("--statisticsColumnId").plus(className))
                 }
