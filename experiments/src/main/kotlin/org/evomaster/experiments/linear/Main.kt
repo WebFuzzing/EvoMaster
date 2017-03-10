@@ -14,10 +14,6 @@ import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.SearchAlgorithm
-import org.evomaster.experiments.linear.LinearIndividual
-import org.evomaster.experiments.linear.LinearModule
-import org.evomaster.experiments.linear.LinearProblemDefinition
-import org.evomaster.experiments.linear.ProblemType
 import java.util.*
 
 
@@ -28,11 +24,46 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            base()
+//            base()
+            infeasible()
         }
 
-        fun printHeader(){
-            println("algorithm,coverage,n,range,budget,type,fsat,populationSize")
+        fun printHeader() {
+            println("algorithm,coverage,n,range,budget,type,fsat,populationSize,infeasible,fds")
+        }
+
+
+        fun infeasible() {
+
+            /*
+                Given x (eg 10) feasible targets, study impact of adding y (eg [1, 100]) infeasible targets.
+                Study MIO with and without FDS
+             */
+            printHeader()
+
+            val budget = 1000
+            val range = 1000
+            val disruptiveP = 0.01
+            val nTargets = 10
+            val problemType = ProblemType.GRADIENT
+
+            val repetitions = 100
+
+            for (seed in 0 until repetitions) {
+
+                val optima = createOptima(nTargets, range, seed.toLong())
+
+                for(inf in listOf(0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
+
+                    listOf(MIO, RANDOM, MOSA, WTS).forEach { a ->
+                        runAlg(a, seed.toLong(), budget, nTargets, range, disruptiveP,
+                                optima, problemType, 0.5, 50, inf, false)
+                    }
+
+                    runAlg(MIO, seed.toLong(), budget, nTargets, range, disruptiveP,
+                            optima, problemType, 0.5, 50, inf, true)
+                }
+            }
         }
 
         fun tuningMIO() {
@@ -53,7 +84,7 @@ class Main {
                     val optima = createOptima(nTargets, range, seed.toLong())
 
                     for (problemType in problems) {
-                        for(fsat in listOf(0.0, 0.2, 0.4, 0.6, 0.8, 1.0)) {
+                        for (fsat in listOf(0.0, 0.2, 0.4, 0.6, 0.8, 1.0)) {
 
                             runAlg(MIO, seed.toLong(), budget, nTargets, range, disruptiveP,
                                     optima, problemType, fsat, 50)
@@ -81,7 +112,7 @@ class Main {
                     val optima = createOptima(nTargets, range, seed.toLong())
 
                     for (problemType in problems) {
-                        for(pSize in listOf(4,8,16,32,64,128)) {
+                        for (pSize in listOf(4, 8, 16, 32, 64, 128)) {
 
                             runAlg(MOSA, seed.toLong(), budget, nTargets, range, disruptiveP,
                                     optima, problemType, 0.5, pSize)
@@ -106,7 +137,6 @@ class Main {
 
             for (seed in 0 until repetitions) {
                 for (nTargets in listOf(1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
-//                for(nTargets in listOf(1,2,3,4,5)){
 
                     val optima = createOptima(nTargets, range, seed.toLong())
 
@@ -117,10 +147,11 @@ class Main {
 
         fun runAlg(alg: EMConfig.Algorithm, seed: Long, budget: Int, nTargets: Int,
                    range: Int, disruptiveP: Double, optima: List<Int>, problemType: ProblemType,
-                   fsat: Double, populationSize: Int) {
+                   fsat: Double, populationSize: Int,
+                   infeasible: Int = 0, fds: Boolean = false) {
 
             val a = getAlg(alg, seed, budget, nTargets, range, disruptiveP,
-                    optima, problemType, fsat, populationSize)
+                    optima, problemType, fsat, populationSize, infeasible, fds)
 
             val manager = a.first.getInstance(LifecycleManager::class.java)
 
@@ -131,7 +162,8 @@ class Main {
             val covered = sol.overall.coveredTargets()
             val cov = 100.0 * (covered.toDouble() / nTargets.toDouble())
 
-            println("${a.second.getType()},$cov,$nTargets,$range,$budget,$problemType,$fsat,$populationSize")
+            println("${a.second.getType()},$cov,$nTargets,$range,$budget,$problemType,$fsat,$populationSize" +
+                    ",$infeasible,$fds")
         }
 
         fun runBase(seed: Long, budget: Int, nTargets: Int, range: Int, disruptiveP: Double,
@@ -155,7 +187,8 @@ class Main {
 
         fun getAlg(algType: EMConfig.Algorithm, seed: Long, budget: Int, nTargets: Int,
                    range: Int, disruptiveP: Double, optima: List<Int>, problemType: ProblemType,
-                   fsat: Double, populationSize: Int)
+                   fsat: Double, populationSize: Int,
+                   infeasible: Int = 0, fds: Boolean = false)
                 : Pair<Injector, SearchAlgorithm<LinearIndividual>> {
 
             val injector = LifecycleInjector.builder()
@@ -169,12 +202,14 @@ class Main {
             config.tournamentSize = 10 //as in MOSA paper
             config.focusedSearchActivationTime = fsat
             config.populationSize = populationSize
+            config.feedbackDirectedSampling = fds
 
             val lpd = injector.getInstance(LinearProblemDefinition::class.java)
             lpd.nTargets = nTargets
             lpd.disruptiveP = disruptiveP
             lpd.range = range
             lpd.problemType = problemType
+            lpd.infeasible = infeasible
             lpd.optima.clear()
             lpd.optima.addAll(optima)
 

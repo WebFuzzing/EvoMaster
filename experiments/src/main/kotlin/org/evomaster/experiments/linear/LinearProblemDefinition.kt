@@ -11,6 +11,8 @@ class LinearProblemDefinition {
 
     var nTargets = 1
 
+    var infeasible = 0
+
     var range = 1000
 
     var disruptiveP = 0.01

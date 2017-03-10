@@ -15,7 +15,7 @@ class LinearSampler : Sampler<LinearIndividual>() {
     override fun sampleAtRandom(): LinearIndividual {
 
         val ind = LinearIndividual(
-                DisruptiveGene("id", IntegerGene("id_value",0, 0, lpd.nTargets-1), lpd.disruptiveP),
+                DisruptiveGene("id", IntegerGene("id_value",0, -lpd.infeasible, lpd.nTargets-1), lpd.disruptiveP),
                 IntegerGene("k", 0, 0, lpd.range)
         )
         ind.seeGenes().forEach { g -> g.randomize(randomness, false) }
