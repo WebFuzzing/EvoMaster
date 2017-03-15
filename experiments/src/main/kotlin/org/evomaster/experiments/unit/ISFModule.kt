@@ -1,4 +1,4 @@
-package org.evomaster.experiments.carfast
+package org.evomaster.experiments.unit
 
 import com.google.inject.AbstractModule
 import com.google.inject.Provides
@@ -40,13 +40,4 @@ class ISFModule(val className: String) : AbstractModule(){
                 .asEagerSingleton()
     }
 
-//    @Provides @Singleton
-//    fun sampler(@Named("className") name: String): Sampler<ISFIndividual>{
-//        return ISFSampler(name)
-//    }
-//
-//    @Provides @Singleton
-//    fun fitness(): FitnessFunction<ISFIndividual>{
-//        return ISFFitness(className)
-//    }
 }

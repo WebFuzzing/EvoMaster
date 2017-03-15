@@ -1,4 +1,4 @@
-package org.evomaster.experiments.carfast
+package org.evomaster.experiments.unit
 
 import com.google.inject.Inject
 import com.google.inject.name.Named
@@ -8,6 +8,8 @@ import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.DoubleGene
+import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.service.FitnessFunction
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -35,7 +37,13 @@ class ISFFitness @Inject constructor(@Named("className") className: String) : Fi
             ExecutionTracer.reset()
             System.setOut(PrintStream(ByteArrayOutputStream()))
 
-            val parameters = individual.action.genes.map { g -> g.value }
+            val parameters = individual.action.genes.map { g ->
+                when(g){
+                    is IntegerGene -> g.value
+                    is DoubleGene -> g.value
+                    else -> throw IllegalStateException()
+                }
+            }
 
             val ins = kl.newInstance()
 
@@ -58,7 +66,7 @@ class ISFFitness @Inject constructor(@Named("className") className: String) : Fi
         return EvaluatedIndividual(fv, individual.copy() as ISFIndividual, listOf(ActionResult()))
     }
 
-    private fun invoke(m: Method, ins: Any, p: List<Int>){
+    private fun invoke(m: Method, ins: Any, p: List<Any>){
 
         when(p.size){
             0 -> m.invoke(ins)

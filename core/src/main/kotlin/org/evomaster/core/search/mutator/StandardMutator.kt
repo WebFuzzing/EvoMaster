@@ -1,11 +1,10 @@
 package org.evomaster.core.search.mutator
 
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Mutator
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 
 class StandardMutator<T> : Mutator<T>() where T : Individual {
@@ -58,8 +57,9 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         when (gene) {
             is DisruptiveGene<*> -> mutateGene(gene.gene)
-            is IntegerGene -> handleIntegerGene(gene)
             is OptionalGene -> handleOptionalGene(gene)
+            is IntegerGene -> handleIntegerGene(gene)
+            is DoubleGene -> handleDoubleGene(gene)
             else ->
                 //TODO other cases
                 gene.randomize(randomness, true)
@@ -80,12 +80,23 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
     }
 
-    private fun handleIntegerGene(gene: IntegerGene) {
-        assert(gene.min < gene.max && gene.isMutable())
+    private fun handleDoubleGene(gene: DoubleGene){
+        //TODO min/max for Double
 
-        //check maximum range. no point in having a delta greater than such range
-        val range: Long = gene.max.toLong() - gene.min.toLong()
+        gene.value = when(randomness.choose(listOf(0,1,2))){
+            //for small changes
+            0 -> gene.value + randomness.nextGaussian()
+            //for large jumps
+            1 -> gene.value + (getDelta() * randomness.nextGaussian())
+            //to reduce precision, ie chop off digits after the "."
+            2 -> BigDecimal(gene.value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
+            else -> throw IllegalStateException("Regression bug")
+        }
 
+    }
+
+
+    private fun getDelta(range: Long = Long.MAX_VALUE) : Int{
         val maxIndex = apc.getExploratoryValue(intpow2.size, 10)
 
         var n = 0
@@ -98,6 +109,20 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         //choose an i for 2^i modification
         val delta = randomness.chooseUpTo(intpow2, n)
+
+        return delta
+    }
+
+
+    private fun handleIntegerGene(gene: IntegerGene) {
+        assert(gene.min < gene.max && gene.isMutable())
+
+        //check maximum range. no point in having a delta greater than such range
+        val range: Long = gene.max.toLong() - gene.min.toLong()
+
+        //choose an i for 2^i modification
+        val delta = getDelta(range)
+
         val sign = when (gene.value) {
             gene.max -> -1
             gene.min -> +1

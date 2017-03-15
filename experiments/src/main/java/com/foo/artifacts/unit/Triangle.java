@@ -1,4 +1,4 @@
-package com.foo.artifacts.carfast;
+package com.foo.artifacts.unit;
 
 public class Triangle {
 

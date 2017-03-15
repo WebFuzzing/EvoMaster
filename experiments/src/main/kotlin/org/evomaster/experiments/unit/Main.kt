@@ -1,8 +1,6 @@
-package org.evomaster.experiments.carfast
+package org.evomaster.experiments.unit
 
-import com.foo.artifacts.carfast.TP0
-import com.foo.artifacts.carfast.TP1
-import com.foo.artifacts.carfast.Triangle
+import com.foo.artifacts.unit.*
 import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.Module
@@ -26,9 +24,11 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            base(Triangle::class.java.name, 5_000)
-            base(TP0::class.java.name, 100_000)
-            base(TP1::class.java.name, 200_000)
+            val n = 5_000
+
+            base(Expint::class.java.name, n)
+            base(Gammq::class.java.name, n)
+            base(Triangle::class.java.name, n)
         }
 
         fun base(className: String, evaluations: Int){

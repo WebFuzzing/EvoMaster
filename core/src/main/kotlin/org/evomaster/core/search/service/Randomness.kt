@@ -40,6 +40,8 @@ class Randomness {
 
     fun nextDouble() = random.nextDouble()
 
+    fun nextGaussian() = random.nextGaussian()
+
     fun nextFloat() = random.nextFloat()
 
     fun nextInt(bound: Int) = random.nextInt(bound)
