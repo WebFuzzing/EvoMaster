@@ -24,8 +24,8 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-//            base()
-            infeasible()
+            base()
+//            infeasible()
         }
 
         fun printHeader() {
@@ -87,7 +87,7 @@ class Main {
                         for (fsat in listOf(0.0, 0.2, 0.4, 0.6, 0.8, 1.0)) {
 
                             runAlg(MIO, seed.toLong(), budget, nTargets, range, disruptiveP,
-                                    optima, problemType, fsat, 50)
+                                    optima, problemType, fsat, 50, 0, true)
                         }
                     }
                 }
@@ -115,7 +115,7 @@ class Main {
                         for (pSize in listOf(4, 8, 16, 32, 64, 128)) {
 
                             runAlg(MOSA, seed.toLong(), budget, nTargets, range, disruptiveP,
-                                    optima, problemType, 0.5, pSize)
+                                    optima, problemType, 0.5, pSize, 0, false)
                         }
                     }
                 }
@@ -129,9 +129,9 @@ class Main {
             val budget = 1000
             val range = 1000
             val disruptiveP = 0.01
-//            val problemType = ProblemType.GRADIENT
+            val problemType = ProblemType.GRADIENT
 //            val problemType = ProblemType.PLATEAU
-            val problemType = ProblemType.DECEPTIVE
+//            val problemType = ProblemType.DECEPTIVE
 
             val repetitions = 100
 
@@ -139,6 +139,7 @@ class Main {
                 for (nTargets in listOf(1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
 
                     val optima = createOptima(nTargets, range, seed.toLong())
+
 
                     runBase(seed.toLong(), budget, nTargets, range, disruptiveP, optima, problemType, 0.5, 50)
                 }
@@ -148,7 +149,7 @@ class Main {
         fun runAlg(alg: EMConfig.Algorithm, seed: Long, budget: Int, nTargets: Int,
                    range: Int, disruptiveP: Double, optima: List<Int>, problemType: ProblemType,
                    fsat: Double, populationSize: Int,
-                   infeasible: Int = 0, fds: Boolean = false) {
+                   infeasible: Int, fds: Boolean) {
 
             val a = getAlg(alg, seed, budget, nTargets, range, disruptiveP,
                     optima, problemType, fsat, populationSize, infeasible, fds)
@@ -170,7 +171,8 @@ class Main {
                     optima: List<Int>, problemType: ProblemType, fsat: Double, populationSize: Int) {
 
             listOf(MIO, RANDOM, MOSA, WTS).forEach { a ->
-                runAlg(a, seed, budget, nTargets, range, disruptiveP, optima, problemType, fsat, populationSize)
+                runAlg(a, seed, budget, nTargets, range, disruptiveP,
+                        optima, problemType, fsat, populationSize, 0, true)
             }
         }
 
@@ -188,7 +190,7 @@ class Main {
         fun getAlg(algType: EMConfig.Algorithm, seed: Long, budget: Int, nTargets: Int,
                    range: Int, disruptiveP: Double, optima: List<Int>, problemType: ProblemType,
                    fsat: Double, populationSize: Int,
-                   infeasible: Int = 0, fds: Boolean = false)
+                   infeasible: Int, fds: Boolean)
                 : Pair<Injector, SearchAlgorithm<LinearIndividual>> {
 
             val injector = LifecycleInjector.builder()

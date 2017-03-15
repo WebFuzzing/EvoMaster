@@ -1,6 +1,7 @@
 package org.evomaster.experiments.carfast
 
 import com.foo.artifacts.carfast.TP0
+import com.foo.artifacts.carfast.TP1
 import com.foo.artifacts.carfast.Triangle
 import com.google.inject.Injector
 import com.google.inject.Key
@@ -27,6 +28,7 @@ class Main {
 
             base(Triangle::class.java.name, 5_000)
             base(TP0::class.java.name, 100_000)
+            base(TP1::class.java.name, 200_000)
         }
 
         fun base(className: String, evaluations: Int){
@@ -43,8 +45,7 @@ class Main {
 
             val algs = listOf("MIO","MOSA","WTS","RANDOM")
 
-            //TODO to 100 once MIO is finalized
-            (0 until 10).forEach {
+            (0 until 100).forEach {
                 algs.forEach { a ->
                     run(className, args.plus("--algorithm").plus(a).plus("--statisticsColumnId").plus(className))
                 }
