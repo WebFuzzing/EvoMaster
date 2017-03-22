@@ -230,7 +230,7 @@ class RestActionBuilder {
                     throw IllegalStateException("Cannot handle ref out of a property")
                 }
                 val rp = property as RefProperty
-                return getObjectGene(rp.simpleRef, rp.`$ref`, swagger, history)
+                return getObjectGene(name, rp.`$ref`, swagger, history)
             }
             "array" -> {
                 if (property == null) {
