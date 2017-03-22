@@ -155,10 +155,20 @@ class RestActionBuilder {
 
         //TODO need to handle additionalProperties
 
+        val fields = createFields(model.properties, swagger, history)
+
+        return ObjectGene(name, fields)
+    }
+
+    private fun createFields(properties: Map<String,Property>?,
+                             swagger: Swagger,
+                             history: MutableList<String> = mutableListOf())
+            : List<out Gene>{
+
         val fields: MutableList<Gene> = mutableListOf()
 
-        model.properties?.entries?.forEach { o ->
-            val gene = getGene(
+        properties?.entries?.forEach { o ->
+            var gene = getGene(
                     o.key,
                     o.value.type,
                     o.value.format,
@@ -167,12 +177,18 @@ class RestActionBuilder {
                     history)
 
             if (gene !is CycleObjectGene) {
+
+                if (o is AbstractProperty && !o.required) {
+                    gene = OptionalGene(gene.name, gene)
+                }
+
                 fields.add(gene)
             }
         }
 
-        return ObjectGene(name, fields)
+        return fields
     }
+
 
     /**
      * type is mandatory, whereas format is optional
@@ -258,6 +274,7 @@ class RestActionBuilder {
                     //TODO somehow will need to handle it
                     throw IllegalStateException("Cannot handle array out of a property")
                 }
+
                 if (property is MapProperty) {
                     val ap = property.additionalProperties
                     val template = getGene(
@@ -274,25 +291,10 @@ class RestActionBuilder {
 
                     return MapGene(name, template)
                 }
+
                 if (property is ObjectProperty) {
 
-                    //TODO refactor the copy&paste
-                    val fields: MutableList<Gene> = mutableListOf()
-
-                    property.properties.entries.forEach { o ->
-                        val gene = getGene(
-                                o.key,
-                                o.value.type,
-                                o.value.format,
-                                swagger,
-                                o.value,
-                                history)
-
-                        if (gene !is CycleObjectGene) {
-                            fields.add(gene)
-                        }
-                    }
-
+                    val fields= createFields( property.properties, swagger, history)
                     return ObjectGene(name, fields)
                 }
             }
