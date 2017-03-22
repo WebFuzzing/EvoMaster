@@ -12,7 +12,7 @@ class ArrayGene<T>(
 where T : Gene {
 
     init {
-        if(elements.size > maxSize){
+        if (elements.size > maxSize) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
@@ -22,15 +22,15 @@ where T : Gene {
         return ArrayGene<T>(name,
                 template.copy() as T,
                 maxSize,
-                elements.map{ e -> e.copy() as T}.toMutableList()
+                elements.map { e -> e.copy() as T }.toMutableList()
         )
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is ArrayGene<*>){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is ArrayGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
-        this.elements = other.elements.map{ e -> e.copy() as T}.toMutableList()
+        this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
@@ -39,7 +39,7 @@ where T : Gene {
 
         elements.clear()
         val n = randomness.nextInt(maxSize)
-        (0..n-1).forEach {
+        (0..n - 1).forEach {
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             elements.add(gene)
@@ -48,7 +48,7 @@ where T : Gene {
 
     override fun getValueAsString(): String {
         return "[" +
-                elements.map { Gene::getValueAsString }.joinToString { ", " } +
+                elements.map { g -> g.getValueAsString() }.joinToString(", ") +
                 "]";
     }
 }

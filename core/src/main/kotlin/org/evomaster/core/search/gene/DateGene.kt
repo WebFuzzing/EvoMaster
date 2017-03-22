@@ -29,7 +29,7 @@ class DateGene(
     }
 
     override fun getValueAsString(): String {
-        return "${year.value}-${month.value}-${day.value}"
+        return "\"${year.value}-${month.value}-${day.value}\""
     }
 
     override fun copyValueFrom(other: Gene){

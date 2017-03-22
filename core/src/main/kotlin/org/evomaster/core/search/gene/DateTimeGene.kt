@@ -27,7 +27,8 @@ class DateTimeGene(
     }
 
     override fun getValueAsString(): String {
-        return "${date.getValueAsString()}T${time.getValueAsString()}"
+        return "\"${date.getValueAsString().replace("\"","")}T" +
+                "${time.getValueAsString().replace("\"","")}\""
     }
 
     override fun copyValueFrom(other: Gene){
