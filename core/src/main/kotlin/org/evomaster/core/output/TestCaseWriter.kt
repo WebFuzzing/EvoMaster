@@ -97,7 +97,7 @@ class TestCaseWriter {
             val list = restAssuredMethods(call, res, baseUrlOfSut)
 
             var firstLine = padding(4)
-            if (call.saveLocation) {
+            if (call.saveLocation && !res.stopping) {
                 firstLine += "${locationVar(call.path.lastElement())} = "
             }
             firstLine += "given()" + list[0]
@@ -108,7 +108,7 @@ class TestCaseWriter {
                 lines.add(padding(12) + list[i])
             }
 
-            if (call.saveLocation) {
+            if (call.saveLocation && !res.stopping) {
                 lines.add(padding(12) + list[list.lastIndex])
                 lines.add(padding(12) + ".extract().header(\"location\");")
                 lines.add("")

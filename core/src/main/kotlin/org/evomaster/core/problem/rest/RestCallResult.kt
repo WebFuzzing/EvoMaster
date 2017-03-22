@@ -6,7 +6,7 @@ import javax.ws.rs.core.MediaType
 
 class RestCallResult : ActionResult {
 
-    constructor() : super()
+    constructor(stopping: Boolean = false) : super(stopping)
     private constructor(other: ActionResult) : super(other)
 
     companion object {

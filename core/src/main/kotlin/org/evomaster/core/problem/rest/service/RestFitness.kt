@@ -247,6 +247,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                     of this call, there is no point whatsoever to continue evaluating
                     the remaining calls
                  */
+                rcr.stopping = true
                 return false
             }
 
