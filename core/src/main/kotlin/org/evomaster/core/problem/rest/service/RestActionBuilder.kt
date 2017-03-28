@@ -29,7 +29,7 @@ class RestActionBuilder {
 
         //TODO check Swagger version
 
-        swagger?.paths.forEach { e ->
+        swagger.paths.forEach { e ->
 
             val restPath = RestPath((swagger.basePath ?: "") + "/" + e.key)
 
@@ -102,7 +102,7 @@ class RestActionBuilder {
                     "string"
                 }
 
-                var gene = getGene(name, type, p.getFormat(), swagger)
+                var gene = getGene(name, type, p.getFormat(), swagger, null, p)
                 if (!p.required && p.`in` != "path") {
                     /*
                         Even if a "path" parameter might not be required, still
@@ -148,8 +148,12 @@ class RestActionBuilder {
         //token after last /
         val classDef = reference.substring(reference.lastIndexOf("/") + 1)
 
-        val model = swagger.definitions[classDef] ?:
-                throw IllegalStateException("No $classDef among the object definitions")
+        val model = swagger.definitions[classDef]
+        if(model == null){
+            log.warn("No $classDef among the object definitions in the Swagger file")
+            return ObjectGene(name, listOf())
+        }
+
 
         //TODO referenced types might not necessarily objects???
 
@@ -174,6 +178,7 @@ class RestActionBuilder {
                     o.value.format,
                     swagger,
                     o.value,
+                    null,
                     history)
 
             if (gene !is CycleObjectGene) {
@@ -199,6 +204,7 @@ class RestActionBuilder {
             format: String?,
             swagger: Swagger,
             property: Property? = null,
+            parameter: AbstractSerializableParameter<*>? = null,
             history: MutableList<String> = mutableListOf()
     ): Gene {
 
@@ -249,18 +255,20 @@ class RestActionBuilder {
                 return getObjectGene(name, rp.`$ref`, swagger, history)
             }
             "array" -> {
-                if (property == null) {
-                    //TODO somehow will need to handle it
-                    throw IllegalStateException("Cannot handle array out of a property")
+
+                val items = when{
+                    property != null -> (property as ArrayProperty).items
+                    parameter != null -> parameter.getItems()
+                    else -> throw IllegalStateException("Failed to handle array")
                 }
-                val ap = property as ArrayProperty
-                val items = ap.items
+
                 val template = getGene(
                         name + "_item",
                         items.type,
                         items.format,
                         swagger,
                         items,
+                        null,
                         history)
 
                 if (template is CycleObjectGene) {
@@ -283,6 +291,7 @@ class RestActionBuilder {
                             ap.format,
                             swagger,
                             ap,
+                            null,
                             history)
 
                     if (template is CycleObjectGene) {

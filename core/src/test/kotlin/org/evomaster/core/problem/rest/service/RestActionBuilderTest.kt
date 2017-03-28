@@ -24,6 +24,18 @@ internal class RestActionBuilderTest {
     }
 
 
+    @Test
+    fun testOCVN(){
+
+        val swagger = SwaggerParser().read("/ocvn_1oc.json")
+
+        val builder = RestActionBuilder()
+        val actions: MutableMap<String, Action> = mutableMapOf()
+        builder.createActions(swagger, actions)
+
+        assertEquals(192, actions.size)
+    }
+
     @Disabled("This is a bug in Swagger Core, reported at https://github.com/swagger-api/swagger-core/issues/2100")
     @Test
     fun testFeaturesServicesNull(){
