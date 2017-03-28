@@ -226,7 +226,7 @@ class RestActionBuilder {
 
         */
 
-        //first check for format
+        //first check for "optional" format
         when (format) {
             "int32" -> return IntegerGene(name)
             "int64" -> return LongGene(name)
@@ -242,8 +242,13 @@ class RestActionBuilder {
             }
         }
 
+        /*
+            If a format is not defined, the type should default to
+            the JSON Schema definition
+         */
         when (type) {
             "integer" -> return IntegerGene(name)
+            "number" -> return DoubleGene(name)
             "boolean" -> return BooleanGene(name)
             "string" -> return StringGene(name)
             "ref" -> {

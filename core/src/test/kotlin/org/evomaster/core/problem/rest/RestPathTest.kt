@@ -1,8 +1,10 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -82,5 +84,113 @@ internal class RestPathTest{
 
         assertFalse(d.isDirectChildOf(b))
         assertTrue(d.isDirectChildOf(c))
+    }
+
+    @Test
+    fun testQueryInt(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", IntegerGene("a", 5))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=5", uri)
+    }
+
+    @Test
+    fun testQueryString(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", StringGene("a", "foo"))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=foo", uri)
+    }
+
+    @Test
+    fun testQueryCombination(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", IntegerGene("a", 5))
+        val b = QueryParam("b", StringGene("b", "foo"))
+
+        val uri = path.resolve(listOf(a,b))
+
+        assertEquals("/x?a=5&b=foo", uri)
+    }
+
+    @Test
+    fun testQueryEmptySpace(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", StringGene("a", "foo bar"))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=foo+bar", uri)
+    }
+
+    @Test
+    fun testQuerySquareBrackets(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", StringGene("a", "[foo]"))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=%5Bfoo%5D", uri)
+    }
+
+    @Test
+    fun testQueryAndEqual(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", StringGene("a", "foo &= bar"))
+        val b = QueryParam("b", StringGene("b", "z"))
+
+        val uri = path.resolve(listOf(a,b))
+
+        assertEquals("/x?a=foo+%26%3D+bar&b=z", uri)
+    }
+
+    @Test
+    fun testQueryQuotesAndUTF8(){
+
+        val path = RestPath("/x")
+
+        val a = QueryParam("a", StringGene("a", "\"A\" ± B"))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x?a=%22A%22+%C2%B1+B", uri)
+    }
+
+    @Test
+    fun testEscapeInPath(){
+
+        val path = RestPath("/x y")
+
+        val uri = path.resolve(listOf())
+
+        assertEquals("/x%20y", uri)
+    }
+
+    @Test
+    fun testEscapeInPathAndQuery(){
+
+        val path = RestPath("/x y")
+
+        val a = QueryParam("a", StringGene("a", "k w"))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x%20y?a=k+w", uri)
     }
 }

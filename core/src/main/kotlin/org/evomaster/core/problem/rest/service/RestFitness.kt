@@ -189,6 +189,19 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                         the body as an application/x-www-form-urlencoded
 
                         see https://www.w3.org/TR/html401/interact/forms.html#h-17.13.4.1
+                        Note: that is old HTML 4, still dealing with RFC 1738, from 1994...
+
+                        HTML 5.1 (November 2016) has these rules:
+                        https://www.w3.org/TR/html/sec-forms.html#urlencoded-form-data
+
+                        which unfortunately are unreadable...
+
+                        Regarding URLEncoder in Java 8, it refers to URIs from RFC 2396 from
+                        1998 (updating RFC 1738), which is obsoleted by RFC 3986 since 2005!!!
+
+                        Plus, x-www-form-urlencoded and encoding of URIs are not the same!!!
+
+                        REALLY: WTF?!?
                      */
                     val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
                     val value = URLEncoder.encode(p.gene.getValueAsString(), "UTF-8")

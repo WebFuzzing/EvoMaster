@@ -21,6 +21,13 @@ abstract class Gene(var name: String) {
 
     abstract fun randomize(randomness: Randomness, forceNewValue: Boolean)
 
+    /**
+     * Return the value as a printable string.
+     * Once printed, it would be equivalent to the actual value, eg
+     *
+     * 1 -> "1" -> printed as 1
+     * "foo" -> "\"foo\"" -> printed as "foo"
+     */
     abstract fun getValueAsString() : String
 
     abstract fun copyValueFrom(other: Gene)

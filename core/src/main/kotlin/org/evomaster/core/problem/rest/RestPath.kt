@@ -4,8 +4,11 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URLEncoder
 
 
 class RestPath(path: String) {
@@ -24,8 +27,18 @@ class RestPath(path: String) {
     private val tokens: List<Token>
 
     init {
+        if (path.contains("?") || path.contains("#")) {
+            throw IllegalArgumentException("The path contains invalid characters. " +
+                    "Are you sure you didn't pass a full URI?\n$path")
+        }
+
         tokens = path.split("/").filter { s -> !s.isBlank() }
                 .map { s ->
+                    /*
+                        TODO: technically, leading spaces are valid in a URI.
+                        Furthermore, need to check if things like /x-{id} are possible,
+                        and how Swagger handle endpoint encoding
+                     */
                     val trimmed = s.trim()
                     if (trimmed.startsWith("{")) {
                         if (!trimmed.endsWith("}")) {
@@ -56,7 +69,7 @@ class RestPath(path: String) {
         return tokens.filter { t -> t.isParameter }.map { t -> t.name }
     }
 
-    fun hasVariablePathParameters(): Boolean{
+    fun hasVariablePathParameters(): Boolean {
         return tokens.any { t -> t.isParameter }
     }
 
@@ -149,21 +162,50 @@ class RestPath(path: String) {
                     value = "1"
                 }
             }
+
             path.append("/$value")
         }
 
+        /*
+           reserved characters need to be encoded
+           https://tools.ietf.org/html/rfc3986#section-2.2
+
+           why not using URI also for Query part???
+           it seems unclear how to properly build it as a single string...
+         */
+        path = StringBuffer(URI(null,null,path.toString(),null,null).rawPath)
 
         val queries = params.filter { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive) }
         if (queries.size > 0) {
             path.append("?" +
-                    queries.map { q -> q.name + "=" + q.gene.getValueAsString() }
-                            .joinToString("&")
+                    queries.map { q ->
+
+                        val name = encode(q.name)
+                        val gene = q.gene
+                        val value = if (gene is StringGene) {
+                            //avoid the extra ""
+                            encode(gene.value)
+                        } else {
+                            encode(gene.getValueAsString())
+                        }
+                        "$name=$value"
+                    }.joinToString("&")
             )
         }
 
-        //TODO check all cases for \" replacement, eg when it is fine
-        return path.toString().replace("\"", "")
+        return path.toString()
     }
 
-
+    /**
+     * URIs query elements need to be encoded, eg space " " turns into a +,
+     * and other symbols get into the %XX hexadecimal format
+     *
+     * Encoding of query parameters can be quite tricky... good
+     * discussion is at:
+     * http://stackoverflow.com/questions/1547899/which-characters-make-a-url-invalid
+     * http://stackoverflow.com/questions/1634271/url-encoding-the-space-character-or-20
+     */
+    private fun encode(s: String): String {
+        return URLEncoder.encode(s, "UTF-8")
+    }
 }
