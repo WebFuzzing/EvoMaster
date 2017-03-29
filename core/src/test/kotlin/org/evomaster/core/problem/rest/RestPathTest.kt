@@ -193,4 +193,15 @@ internal class RestPathTest{
 
         assertEquals("/x%20y?a=k+w", uri)
     }
+
+    @Test
+    fun testPlus(){
+        val path = RestPath("/x + y")
+
+        val a = QueryParam("a", StringGene("a", "k + w"))
+
+        val uri = path.resolve(listOf(a))
+
+        assertEquals("/x%20+%20y?a=k+%2B+w", uri)
+    }
 }
