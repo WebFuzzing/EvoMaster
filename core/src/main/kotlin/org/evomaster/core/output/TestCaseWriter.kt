@@ -16,9 +16,9 @@ class TestCaseWriter {
                 format: OutputFormat,
                 test: TestCase,
                 baseUrlOfSut: String)
-                : List<String> {
+                : Lines {
 
-            val lines: MutableList<String> = mutableListOf()
+            val lines = Lines()
 
             if (format.isJUnit()) {
                 lines.add("@Test")
@@ -29,8 +29,11 @@ class TestCaseWriter {
                 format.isKotlin() -> lines.add("fun ${test.name}()  {")
             }
 
+            lines.indent()
+
             if (test.hasChainedLocations()) {
-                lines.add("")
+                lines.addEmpty()
+
 
                 test.test.evaluatedActions()
                         .map { ea -> ea.action }
@@ -41,8 +44,8 @@ class TestCaseWriter {
                         .forEach { id ->
                             val name = locationVar(id!!)
                             when {
-                                format.isJava() -> lines.add(padding(4) + "String $name = \"\";")
-                                format.isKotlin() -> lines.add(padding(4) + "var $name = \"\"")
+                                format.isJava() -> lines.add("String $name = \"\";")
+                                format.isKotlin() -> lines.add("var $name = \"\"")
                             }
                         }
             }
@@ -55,33 +58,25 @@ class TestCaseWriter {
                 }
             }
 
+            lines.deindent()
             lines.add("}")
 
             return lines
         }
+
 
         private fun locationVar(id: String): String {
             //TODO make sure name is syntactically valid
             return "location_${id.trim().replace(" ", "_")}"
         }
 
-        private fun padding(n: Int): String {
-
-            if(n < 0) {
-                throw IllegalArgumentException("Invalid n=$n")
-            }
-
-            val buffer = StringBuffer("")
-            (0..n).forEach { buffer.append(" ") }
-            return buffer.toString()
-        }
 
         private fun handleRestCall(
                 evaluatedAction: EvaluatedAction,
-                lines: MutableList<String>,
+                lines: Lines,
                 baseUrlOfSut: String
         ) {
-            lines.add("")
+            lines.addEmpty()
 
             val call = evaluatedAction.action as RestCallAction
             val res = evaluatedAction.result as RestCallResult
@@ -91,34 +86,39 @@ class TestCaseWriter {
             if(res.failedCall()){
                 addRestCallInTryCatch(call, lines, list, res)
             } else {
-                addRestCallLines(0, call, lines, list, res)
+                addRestCallLines(call, lines, list, res)
             }
         }
 
         private fun addRestCallInTryCatch(call: RestCallAction,
-                                          lines: MutableList<String>,
+                                          lines: Lines,
                                           ram: MutableList<String>,
                                           res: RestCallResult) {
 
-            lines.add(padding(4) + "try{")
-            addRestCallLines(4, call, lines, ram, res)
-            lines.add(padding(8) + "fail(\"Expected exception\");")
-            lines.add(padding(4) + "} catch(Exception e){")
+            lines.add("try{")
+            lines.indent()
+
+            addRestCallLines(call, lines, ram, res)
+            lines.add("fail(\"Expected exception\");")
+            lines.deindent()
+
+            lines.add("} catch(Exception e){")
             res.getErrorMessage()?.let {
-                lines.add(padding(8) + "//$it")
+                lines.indent()
+                lines.add("//$it")
+                lines.deindent()
             }
-            lines.add(padding(4) + "}")
+            lines.add("}")
         }
 
-        private fun addRestCallLines(indentation: Int,
-                                     call: RestCallAction,
-                                     lines: MutableList<String>,
+        private fun addRestCallLines(call: RestCallAction,
+                                     lines: Lines,
                                      /** RestAssured Methods */
                                      ram: MutableList<String>,
                                      res: RestCallResult) {
 
             //first handle the first line
-            var firstLine = padding(indentation + 4)
+            var firstLine = ""
             if (call.saveLocation && !res.stopping) {
                 firstLine += "${locationVar(call.path.lastElement())} = "
             }
@@ -126,21 +126,23 @@ class TestCaseWriter {
             lines.add(firstLine)
 
 
-            //then handle the lines between first and last (both excluded)
-            (1..ram.lastIndex - 1).forEach { i ->
-                lines.add(padding(indentation + 12) + ram[i])
+            lines.indent()
+            //then handle the lines after the first, till the last (included)
+            (1..ram.lastIndex).forEach { i ->
+                lines.add(ram[i])
             }
 
 
             //finally, handle the last line(s)
             if (call.saveLocation && !res.stopping) {
-                lines.add(padding(indentation + 12) + ram[ram.lastIndex])
-                lines.add(padding(indentation + 12) + ".extract().header(\"location\");")
-                lines.add("")
-                lines.add(padding(4) +
-                        "assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
+                lines.add(".extract().header(\"location\");")
+                lines.addEmpty()
+                lines.deindent()
+
+                lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
             } else {
-                lines.add(padding(indentation + 12) + ram[ram.lastIndex] + ";")
+                lines.append(";")
+                lines.deindent()
             }
         }
 
