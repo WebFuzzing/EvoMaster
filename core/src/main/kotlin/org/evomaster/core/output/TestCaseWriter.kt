@@ -126,7 +126,7 @@ class TestCaseWriter {
             lines.add(firstLine)
 
 
-            lines.indent()
+            lines.indent(2)
             //then handle the lines after the first, till the last (included)
             (1..ram.lastIndex).forEach { i ->
                 lines.add(ram[i])
@@ -137,12 +137,12 @@ class TestCaseWriter {
             if (call.saveLocation && !res.stopping) {
                 lines.add(".extract().header(\"location\");")
                 lines.addEmpty()
-                lines.deindent()
+                lines.deindent(2)
 
                 lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
             } else {
                 lines.append(";")
-                lines.deindent()
+                lines.deindent(2)
             }
         }
 
