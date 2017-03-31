@@ -4,6 +4,7 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.EvaluatedAction
 
 
@@ -81,24 +82,22 @@ class TestCaseWriter {
             val call = evaluatedAction.action as RestCallAction
             val res = evaluatedAction.result as RestCallResult
 
-            val list = restAssuredMethods(call, res, baseUrlOfSut)
-
             if(res.failedCall()){
-                addRestCallInTryCatch(call, lines, list, res)
+                addRestCallInTryCatch(call, lines, res, baseUrlOfSut)
             } else {
-                addRestCallLines(call, lines, list, res)
+                addRestCallLines(call, lines, res, baseUrlOfSut)
             }
         }
 
         private fun addRestCallInTryCatch(call: RestCallAction,
                                           lines: Lines,
-                                          ram: MutableList<String>,
-                                          res: RestCallResult) {
+                                          res: RestCallResult,
+                                          baseUrlOfSut: String) {
 
             lines.add("try{")
             lines.indent()
 
-            addRestCallLines(call, lines, ram, res)
+            addRestCallLines(call, lines, res, baseUrlOfSut)
             lines.add("fail(\"Expected exception\");")
             lines.deindent()
 
@@ -113,25 +112,20 @@ class TestCaseWriter {
 
         private fun addRestCallLines(call: RestCallAction,
                                      lines: Lines,
-                                     /** RestAssured Methods */
-                                     ram: MutableList<String>,
-                                     res: RestCallResult) {
+                                     res: RestCallResult,
+                                     baseUrlOfSut: String) {
 
             //first handle the first line
-            var firstLine = ""
-            if (call.saveLocation && !res.stopping) {
-                firstLine += "${locationVar(call.path.lastElement())} = "
-            }
-            firstLine += "given()" + ram[0]
-            lines.add(firstLine)
-
-
+            handleFirstLine(call, lines, res)
             lines.indent(2)
-            //then handle the lines after the first, till the last (included)
-            (1..ram.lastIndex).forEach { i ->
-                lines.add(ram[i])
-            }
 
+            handleAuth(call, lines)
+
+            handleBody(call, lines)
+
+            handleVerb(baseUrlOfSut, call, lines)
+
+            handleResponse(lines, res)
 
             //finally, handle the last line(s)
             if (call.saveLocation && !res.stopping) {
@@ -146,21 +140,87 @@ class TestCaseWriter {
             }
         }
 
+        private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult) {
+            lines.addEmpty()
+            if (call.saveLocation && !res.stopping) {
+                lines.append("${locationVar(call.path.lastElement())} = ")
+            }
+            lines.append("given()" + getAcceptHeader())
+        }
 
-        private fun restAssuredMethods(
-                call: RestCallAction,
-                res: RestCallResult,
-                baseUrlOfSut: String)
-                : MutableList<String> {
+        private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines) {
+            val verb = call.verb.name.toLowerCase()
+            lines.add(".$verb(")
+            if (call.locationId != null) {
+                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.path}\")")
 
-            val list: MutableList<String> = mutableListOf()
+            } else {
 
-            if (call.auth !is NoAuth) {
-                call.auth.headers.forEach { h ->
-                    list.add(".header(\"${h.name}\", \"${h.value}\") // ${call.auth.name}")
+                lines.append("$baseUrlOfSut + ")
+
+                if(call.path.numberOfUsableQueryParams(call.parameters) <= 1 ) {
+                    val uri = call.path.resolve(call.parameters)
+                    lines.append("\"$uri\"")
+                } else {
+                    //several query parameters. lets have them one per line
+                    val path = call.path.resolveOnlyPath(call.parameters)
+                    val elements = call.path.resolveOnlyQuery(call.parameters)
+
+                    lines.append("\"$path?\" + ")
+
+                    lines.indent()
+                    (0..elements.lastIndex-1).forEach{i -> lines.add("\"${elements[i]}&\" + ")}
+                    lines.add("\"${elements.last()}\"")
+                    lines.deindent()
                 }
             }
+            lines.append(")")
+        }
 
+        private fun handleResponse(lines: Lines, res: RestCallResult) {
+            if (!res.failedCall()) {
+                lines.add(".then()")
+                lines.add(".statusCode(${res.getStatusCode()})")
+
+                //TODO check on body
+            }
+        }
+
+        private fun handleBody(call: RestCallAction, lines: Lines) {
+            call.parameters.find { p -> p is BodyParam }
+                    ?.let {
+                        lines.add(".contentType(\"application/json\")")
+
+                        val body = it.gene.getValueAsString()
+
+                        val bodyLines = body.split("\n").map { s ->
+                            "\"" + s.trim().replace("\"", "\\\"") + "\""
+                        }
+
+                        if (bodyLines.size == 1) {
+                            lines.add(".body(" + bodyLines.first() + ")")
+                        } else {
+                            lines.add(".body(" + bodyLines.first() + " + ")
+                            lines.indent()
+                            (1..bodyLines.lastIndex - 1).forEach { i ->
+                                lines.add("${bodyLines[i]} + ")
+                            }
+                            lines.add("${bodyLines.last()})")
+                            lines.deindent()
+                        }
+
+                    }
+        }
+
+        private fun handleAuth(call: RestCallAction, lines: Lines) {
+            if (call.auth !is NoAuth) {
+                call.auth.headers.forEach { h ->
+                    lines.add(".header(\"${h.name}\", \"${h.value}\") // ${call.auth.name}")
+                }
+            }
+        }
+
+        private fun getAcceptHeader(): String{
             /*
              *  Note: using the type in result body is wrong:
              *  if you request a JSON but make an error, you might
@@ -168,50 +228,7 @@ class TestCaseWriter {
              *
              *  TODO: get the type from the REST call
              */
-            list.add(".accept(\"*/*\")")
-
-            call.parameters.find { p -> p is BodyParam }
-                    ?.let {
-                        list.add(".contentType(\"application/json\")")
-
-                        val body = it.gene.getValueAsString()
-
-                        val lines = body.split("\n").map { s ->
-                            "\"" + s.trim().replace("\"", "\\\"") + "\""
-                        }
-
-                        if (lines.size == 1) {
-                            list.add(".body(" + lines.first() + ")")
-                        } else {
-
-                            list.add(".body(" + lines.first() + " + ")
-                            (1..lines.lastIndex - 1).forEach { i ->
-                                list.add("      ${lines[i]} + ")
-                            }
-                            list.add("      ${lines.last()})")
-                        }
-
-                    }
-
-            val verb = call.verb.name.toLowerCase()
-            var callLine = ".$verb("
-            if (call.locationId != null) {
-                callLine += "resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.path.toString()}\")"
-
-            } else {
-                val path = call.path.resolve(call.parameters)
-                callLine += "$baseUrlOfSut + \"$path\""
-            }
-            callLine += ")"
-            list.add(callLine)
-
-            if(! res.failedCall()) {
-                list.add(".then()")
-                list.add(".statusCode(${res.getStatusCode()})")
-
-                //TODO check on body
-            }
-            return list
+            return ".accept(\"*/*\")"
         }
     }
 }

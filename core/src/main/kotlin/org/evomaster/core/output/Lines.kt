@@ -40,7 +40,7 @@ class Lines {
         if (times <= 0) {
             throw IllegalArgumentException("Invalid 'times' value: $times")
         }
-        (1..times).forEach { buffer.add("") }
+        (1..times).forEach { add("") }
     }
 
     fun append(token: String) {

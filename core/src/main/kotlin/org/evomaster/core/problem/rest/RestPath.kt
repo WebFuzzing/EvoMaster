@@ -59,6 +59,10 @@ class RestPath(path: String) {
         return "/" + tokens.map { t -> t.toString() }.joinToString("/")
     }
 
+    /**
+     * @return the number of distinct elements in the path, ie the
+     * hierarchy level
+     */
     fun levels() = tokens.size
 
     /**
@@ -138,6 +142,43 @@ class RestPath(path: String) {
      */
     fun resolve(params: List<out Param>): String {
 
+        var path = resolveOnlyPath(params)
+
+        val queries = resolveOnlyQuery(params)
+        if (queries.size > 0) {
+            path += "?" + queries.joinToString("&")
+        }
+
+        return path
+    }
+
+    private fun usableQueryParamsFunction(): (Param) -> Boolean{
+        return { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive) }
+    }
+
+    fun numberOfUsableQueryParams(params: List<out Param>): Int{
+        return params.filter(usableQueryParamsFunction()).size
+    }
+
+    fun resolveOnlyQuery(params: List<out Param>): List<String> {
+
+        return params
+                .filter(usableQueryParamsFunction())
+                .map { q ->
+                    val name = encode(q.name)
+                    val gene = q.gene
+                    val value = if (gene is StringGene) {
+                        //avoid the extra ""
+                        encode(gene.value)
+                    } else {
+                        encode(gene.getValueAsString())
+                    }
+                    "$name=$value"
+                }
+    }
+
+    fun resolveOnlyPath(params: List<out Param>): String {
+
         var path = StringBuffer()
         tokens.forEach { t ->
             var value: String
@@ -173,28 +214,11 @@ class RestPath(path: String) {
            why not using URI also for Query part???
            it seems unclear how to properly build it as a single string...
          */
-        path = StringBuffer(URI(null,null,path.toString(),null,null).rawPath)
-
-        val queries = params.filter { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive) }
-        if (queries.size > 0) {
-            path.append("?" +
-                    queries.map { q ->
-
-                        val name = encode(q.name)
-                        val gene = q.gene
-                        val value = if (gene is StringGene) {
-                            //avoid the extra ""
-                            encode(gene.value)
-                        } else {
-                            encode(gene.getValueAsString())
-                        }
-                        "$name=$value"
-                    }.joinToString("&")
-            )
-        }
+        path = StringBuffer(URI(null, null, path.toString(), null, null).rawPath)
 
         return path.toString()
     }
+
 
     /**
      * URIs query elements need to be encoded, eg space " " turns into a +,
