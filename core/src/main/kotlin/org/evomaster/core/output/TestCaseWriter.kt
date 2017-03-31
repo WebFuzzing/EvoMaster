@@ -1,6 +1,5 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -133,7 +132,7 @@ class TestCaseWriter {
             }
 
 
-            //finall, handle the last line(s)
+            //finally, handle the last line(s)
             if (call.saveLocation && !res.stopping) {
                 lines.add(padding(indentation + 12) + ram[ram.lastIndex])
                 lines.add(padding(indentation + 12) + ".extract().header(\"location\");")
