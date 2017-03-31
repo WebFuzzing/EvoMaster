@@ -67,21 +67,14 @@ class TestCaseWriter {
         }
 
         private fun padding(n: Int): String {
-            return when (n) {
-                1 -> " "
-                2 -> "  "
-                3 -> "   "
-                4 -> "    "
-                5 -> "     "
-                6 -> "      "
-                7 -> "       "
-                8 -> "        "
-                9 -> "         "
-                10 -> "          "
-                11 -> "           "
-                12 -> "            "
-                else -> throw IllegalArgumentException("Invalid n=$n")
+
+            if(n < 0) {
+                throw IllegalArgumentException("Invalid n=$n")
             }
+
+            val buffer = StringBuffer("")
+            (0..n).forEach { buffer.append(" ") }
+            return buffer.toString()
         }
 
         private fun handleRestCall(
@@ -96,26 +89,59 @@ class TestCaseWriter {
 
             val list = restAssuredMethods(call, res, baseUrlOfSut)
 
-            var firstLine = padding(4)
+            if(res.failedCall()){
+                addRestCallInTryCatch(call, lines, list, res)
+            } else {
+                addRestCallLines(0, call, lines, list, res)
+            }
+        }
+
+        private fun addRestCallInTryCatch(call: RestCallAction,
+                                          lines: MutableList<String>,
+                                          ram: MutableList<String>,
+                                          res: RestCallResult) {
+
+            lines.add(padding(4) + "try{")
+            addRestCallLines(4, call, lines, ram, res)
+            lines.add(padding(8) + "fail(\"Expected exception\");")
+            lines.add(padding(4) + "} catch(Exception e){")
+            res.getErrorMessage()?.let {
+                lines.add(padding(8) + "//$it")
+            }
+            lines.add(padding(4) + "}")
+        }
+
+        private fun addRestCallLines(indentation: Int,
+                                     call: RestCallAction,
+                                     lines: MutableList<String>,
+                                     /** RestAssured Methods */
+                                     ram: MutableList<String>,
+                                     res: RestCallResult) {
+
+            //first handle the first line
+            var firstLine = padding(indentation + 4)
             if (call.saveLocation && !res.stopping) {
                 firstLine += "${locationVar(call.path.lastElement())} = "
             }
-            firstLine += "given()" + list[0]
+            firstLine += "given()" + ram[0]
             lines.add(firstLine)
 
 
-            (1..list.lastIndex - 1).forEach { i ->
-                lines.add(padding(12) + list[i])
+            //then handle the lines between first and last (both excluded)
+            (1..ram.lastIndex - 1).forEach { i ->
+                lines.add(padding(indentation + 12) + ram[i])
             }
 
+
+            //finall, handle the last line(s)
             if (call.saveLocation && !res.stopping) {
-                lines.add(padding(12) + list[list.lastIndex])
-                lines.add(padding(12) + ".extract().header(\"location\");")
+                lines.add(padding(indentation + 12) + ram[ram.lastIndex])
+                lines.add(padding(indentation + 12) + ".extract().header(\"location\");")
                 lines.add("")
                 lines.add(padding(4) +
                         "assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
             } else {
-                lines.add(padding(12) + list[list.lastIndex] + ";")
+                lines.add(padding(indentation + 12) + ram[ram.lastIndex] + ";")
             }
         }
 
@@ -178,12 +204,12 @@ class TestCaseWriter {
             callLine += ")"
             list.add(callLine)
 
+            if(! res.failedCall()) {
+                list.add(".then()")
+                list.add(".statusCode(${res.getStatusCode()})")
 
-            list.add(".then()")
-            list.add(".statusCode(${res.getStatusCode()})")
-
-            //TODO check on body
-
+                //TODO check on body
+            }
             return list
         }
     }

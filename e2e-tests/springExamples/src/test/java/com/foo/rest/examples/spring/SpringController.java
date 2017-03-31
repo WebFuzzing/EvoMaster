@@ -52,6 +52,7 @@ public abstract class SpringController extends RestController {
     @Override
     public void stopSut() {
         ctx.stop();
+        ctx.close();
     }
 
     @Override

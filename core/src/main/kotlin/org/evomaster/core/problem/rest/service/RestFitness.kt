@@ -14,8 +14,10 @@ import org.evomaster.core.search.service.FitnessFunction
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.ProtocolException
 import java.net.URLEncoder
 import javax.annotation.PostConstruct
+import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -175,6 +177,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             TODO: need to handle "accept" of returned resource
          */
 
+
         /*
            TODO: need to handle also other formats in the body,
            not just JSON and forms
@@ -226,9 +229,23 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             HttpVerb.HEAD -> builder.build("HEAD")
         }
 
-        val response = invocation.invoke()
-
         val rcr = RestCallResult()
+        actionResults.add(rcr)
+
+        val response = try{
+            invocation.invoke()
+        } catch (e: ProcessingException){
+
+            //this can happen for example if call ends up in an infinite redirection loop
+            if(e.cause?.message?.contains("redirected too many") ?: false && e.cause is ProtocolException){
+                rcr.setInfiniteLoop(true)
+                rcr.setErrorMessage(e.cause!!.message!!)
+                return false
+            } else {
+                throw e
+            }
+        }
+
         rcr.setStatusCode(response.status)
 
         if (response.hasEntity()) {
@@ -243,8 +260,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             }
 
         }
-
-        actionResults.add(rcr)
 
         if (response.status == 401 && a.auth !is NoAuth) {
             //this would likely be a misconfiguration in the SUT controller
