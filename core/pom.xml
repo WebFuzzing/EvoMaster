@@ -113,6 +113,8 @@
                             <archive>
                                 <manifest>
                                     <mainClass>org.evomaster.core.Main</mainClass>
+                                    <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                                    <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
                                 </manifest>
                             </archive>
                             <finalName>evomaster</finalName>

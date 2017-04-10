@@ -7,8 +7,8 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
 import org.evomaster.core.output.TestSuiteWriter
-import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
@@ -34,6 +34,7 @@ class Main {
             try {
 
                 printLogo()
+                printVersion()
 
                 /*
                     Before running anything, check if the input
@@ -63,7 +64,7 @@ class Main {
             }
         }
 
-        private fun printLogo(){
+        private fun printLogo() {
 
             LoggingUtil.getInfoLogger().info(
                     """
@@ -76,6 +77,13 @@ class Main {
 
                     """
             )
+        }
+
+        private fun printVersion() {
+
+            val version = this.javaClass.`package`?.implementationVersion ?: "unknown"
+
+            LoggingUtil.getInfoLogger().info("EvoMaster version: $version")
         }
 
         @JvmStatic
@@ -129,7 +137,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            val key = when(config.algorithm) {
+            val key = when (config.algorithm) {
                 EMConfig.Algorithm.MIO -> Key.get(
                         object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.RANDOM -> Key.get(
@@ -158,7 +166,7 @@ class Main {
                     throw IllegalStateException(
                             "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
 
-            if(! (dto.isInstrumentationOn ?: false)){
+            if (!(dto.isInstrumentationOn ?: false)) {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
             }
 
@@ -177,7 +185,7 @@ class Main {
             }
 
             val n = solution.individuals.size
-            val tests = if(n == 1) "1 test" else "$n tests"
+            val tests = if (n == 1) "1 test" else "$n tests"
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
@@ -188,7 +196,7 @@ class Main {
             )
         }
 
-        fun writeStatistics(injector: Injector, solution: Solution<*>){
+        fun writeStatistics(injector: Injector, solution: Solution<*>) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
