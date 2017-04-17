@@ -4,7 +4,7 @@ import com.ea.agentloader.AgentLoader;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 
 /**
- * Class used to start the RestController when the SUT
+ * Class used to start the SutController when the SUT
  * is embedded, ie not starting on a separated process.
  */
 public class EmbeddedStarter {
