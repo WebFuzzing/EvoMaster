@@ -13,11 +13,14 @@ import java.lang.reflect.Method;
 public class EmbeddedStarter {
 
     static {
+        /*
+            note: just passing a valid "com." package at initialization, but that
+            ll be modified later
+         */
         AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "com.");
     }
 
-    //NOTE: following could be refactored, since we init JavaAgent
-    private final Object restController;
+    private final RestController restController;
 
 
     public EmbeddedStarter(RestController restController) {
@@ -41,32 +44,15 @@ public class EmbeddedStarter {
 
     public boolean start() {
 
-        try {
-            Method m = restController.getClass().getMethod("startTheControllerServer");
-            Boolean b = (Boolean) m.invoke(restController);
-            return b;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return restController.startTheControllerServer();
     }
 
     public boolean stop() {
-        try {
-            Method m = restController.getClass().getMethod("stopTheControllerServer");
-            Boolean b = (Boolean) m.invoke(restController);
-            return b;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+
+        return restController.stopTheControllerServer();
     }
 
     public int getControllerServerJettyPort(){
-        try {
-            Method m = restController.getClass().getMethod("getControllerServerJettyPort");
-            Integer port = (Integer) m.invoke(restController);
-            return port;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return restController.getControllerServerJettyPort();
     }
 }

@@ -10,6 +10,7 @@ import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
@@ -43,6 +44,7 @@ public abstract class RestController {
                 getControllerHost(), getControllerPort()));
 
         ResourceConfig config = new ResourceConfig();
+        config.register(JacksonFeature.class);
         config.register(new EMController(this));
 
         ServletHolder servlet = new ServletHolder(new ServletContainer(config));
