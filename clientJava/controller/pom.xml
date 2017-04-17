@@ -27,7 +27,7 @@
             <artifactId>instrumentation</artifactId>
         </dependency>
 
-        <!-- TODO recall to shade the following, if possible -->
+
         <dependency>
             <groupId>com.ea.agentloader</groupId>
             <artifactId>ea-agent-loader</artifactId>

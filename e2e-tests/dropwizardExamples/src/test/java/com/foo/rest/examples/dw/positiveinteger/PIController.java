@@ -1,11 +1,11 @@
 package com.foo.rest.examples.dw.positiveinteger;
 
-import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controller.SutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
 import java.util.List;
 
-public class PIController extends RestController{
+public class PIController extends SutController {
 
     private PIApplication application;
 

@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.utils;
 
 import org.evomaster.clientJava.controller.EmbeddedStarter;
-import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controller.SutController;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallAction;
@@ -25,7 +25,7 @@ public abstract class RestTestBase {
     protected static RemoteController remoteController;
     protected static int controllerPort;
 
-    protected static void initClass(RestController controller) throws Exception {
+    protected static void initClass(SutController controller) throws Exception {
 
         embeddedStarter = new EmbeddedStarter(controller);
         embeddedStarter.start();

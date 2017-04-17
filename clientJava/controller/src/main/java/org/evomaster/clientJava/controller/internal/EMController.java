@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.controller.internal;
 
-import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controller.SutController;
 import org.evomaster.clientJava.controllerApi.*;
 import org.evomaster.clientJava.controllerApi.dto.*;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
@@ -23,10 +23,10 @@ import java.util.stream.Collectors;
 @Path("")
 public class EMController {
 
-    private final RestController restController;
+    private final SutController restController;
     private String baseUrlOfSUT;
 
-    public EMController(RestController restController) {
+    public EMController(SutController restController) {
         this.restController = Objects.requireNonNull(restController);
     }
 

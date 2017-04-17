@@ -2,9 +2,6 @@ package org.evomaster.clientJava.controller;
 
 import com.ea.agentloader.AgentLoader;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
-import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
-
-import java.lang.reflect.Method;
 
 /**
  * Class used to start the RestController when the SUT
@@ -20,10 +17,10 @@ public class EmbeddedStarter {
         AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), "com.");
     }
 
-    private final RestController restController;
+    private final SutController restController;
 
 
-    public EmbeddedStarter(RestController restController) {
+    public EmbeddedStarter(SutController restController) {
 
         this.restController = restController;
         InstrumentingAgent.changePackagesToInstrument(restController.getPackagePrefixesToCover());

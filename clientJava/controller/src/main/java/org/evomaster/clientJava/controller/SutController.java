@@ -22,7 +22,7 @@ import java.util.List;
  * that is responsible to start/stop/restart the tested application,
  * ie the system under test (SUT)
  */
-public abstract class RestController {
+public abstract class SutController {
 
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;

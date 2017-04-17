@@ -1,12 +1,11 @@
 package com.foo.rest.examples.dw.simpleform;
 
-import com.foo.rest.examples.dw.positiveinteger.PIApplication;
-import org.evomaster.clientJava.controller.RestController;
+import org.evomaster.clientJava.controller.SutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
 import java.util.List;
 
-public class SFController extends RestController {
+public class SFController extends SutController {
 
     private SimpleFormApplication application;
 

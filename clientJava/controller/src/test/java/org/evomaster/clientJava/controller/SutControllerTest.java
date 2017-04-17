@@ -14,11 +14,11 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class RestControllerTest {
+public class SutControllerTest {
 
     private static final String SWAGGER_URL = "localhost:9999/swagger.json";
 
-    private static class FakeRestController extends RestController{
+    private static class FakeRestController extends SutController {
 
         public boolean running;
 
@@ -67,7 +67,7 @@ public class RestControllerTest {
 
     }
 
-    private static RestController restController = new FakeRestController();
+    private static SutController restController = new FakeRestController();
 
     @BeforeAll
     public static void initClass(){
