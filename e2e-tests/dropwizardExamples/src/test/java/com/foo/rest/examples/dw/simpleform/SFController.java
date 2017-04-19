@@ -1,17 +1,16 @@
 package com.foo.rest.examples.dw.simpleform;
 
-import org.evomaster.clientJava.controller.SutController;
+import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
 import java.util.List;
 
-public class SFController extends SutController {
+public class SFController extends EmbeddedSutController {
 
     private SimpleFormApplication application;
 
-    @Override
-    public int getControllerPort(){
-        return 0;
+    public SFController(){
+        setControllerPort(0);
     }
 
     @Override
@@ -38,11 +37,6 @@ public class SFController extends SutController {
         }
 
         return "http://localhost:"+application.getJettyPort();
-    }
-
-    @Override
-    public String startInstrumentedSut() {
-        return startSut();
     }
 
     @Override

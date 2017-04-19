@@ -1,15 +1,12 @@
-package org.evomaster.clientJava.controller;
+package org.evomaster.clientJava.controller.internal;
 
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
-import org.evomaster.clientJava.controller.internal.EMController;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
-import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -24,7 +21,6 @@ import java.util.List;
  */
 public abstract class SutController {
 
-
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
@@ -37,7 +33,7 @@ public abstract class SutController {
      * <br>
      * This method is blocking until the server is initialized.
      */
-    public boolean startTheControllerServer() {
+    public final boolean startTheControllerServer() {
 
 
         controllerServer = new Server(InetSocketAddress.createUnresolved(
@@ -61,17 +57,15 @@ public abstract class SutController {
             controllerServer.destroy();
         }
 
-        /*
-            TODO: this works ONLY if SUT is running on same process
-         */
-        ObjectiveRecorder.reset();
+        //just make sure we start from a clean state
+        newSearch();
 
-        SimpleLogger.info("Started controller server on: "+controllerServer.getURI());
+        SimpleLogger.info("Started controller server on: " + controllerServer.getURI());
 
         return true;
     }
 
-    public boolean stopTheControllerServer() {
+    public final boolean stopTheControllerServer() {
         try {
             controllerServer.stop();
             return true;
@@ -84,10 +78,33 @@ public abstract class SutController {
     /**
      * @return the actual port in use (eg, if it was an ephemeral 0)
      */
-    public int getControllerServerJettyPort() {
+    public final int getControllerServerJettyPort() {
         return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();
     }
 
+
+    public final int getControllerPort() {
+        return controllerPort;
+    }
+
+    public final void setControllerPort(int controllerPort) {
+        this.controllerPort = controllerPort;
+    }
+
+    public final String getControllerHost() {
+        return controllerHost;
+    }
+
+    public final void setControllerHost(String controllerHost) {
+        this.controllerHost = controllerHost;
+    }
+
+
+    /**
+     * Re-initialize all internal data to enable a completely new search phase
+     * which should be independent from previous ones
+     */
+    public abstract void newSearch();
 
     /**
      * Start a new instance of the SUT.
@@ -98,23 +115,6 @@ public abstract class SutController {
      */
     public abstract String startSut();
 
-    /**
-     * Start a new instance of the SUT, where EvoMaster
-     * bytecode instrumentation should be on.
-     * <br>
-     * This method must be blocking.
-     * <br>
-     * Note: by default, this method does not do any instrumentation,
-     * and just call {@code startSut()}. When the SUT is run on the
-     * same process (ie embedded), use {@code EmbeddedStarter}.
-     * This method needs to be overwritten only when the SUT is
-     * started in a new process.
-     *
-     * @return the base URL of the running SUT, eg "http://localhost:8080"
-     */
-    public String startInstrumentedSut() {
-        return startSut();
-    }
 
     /**
      * Check if bytecode instrumentation is on.
@@ -124,13 +124,17 @@ public abstract class SutController {
      *
      * @return
      */
-    public boolean isInstrumentationActivated() {
-        return InstrumentingAgent.isActive();
-    }
+    public abstract boolean isInstrumentationActivated();
 
-
+    /**
+     * Check if the system under test (SUT) is running
+     * @return
+     */
     public abstract boolean isSutRunning();
 
+    /**
+     * Stop the system under test
+     */
     public abstract void stopSut();
 
     /**
@@ -161,24 +165,9 @@ public abstract class SutController {
     /**
      * Provide a list of valid authentication credentials, or {@code null} if
      * none is necessary
+     *
      * @return
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
 
-
-    public int getControllerPort() {
-        return controllerPort;
-    }
-
-    public void setControllerPort(int controllerPort) {
-        this.controllerPort = controllerPort;
-    }
-
-    public String getControllerHost() {
-        return controllerHost;
-    }
-
-    public void setControllerHost(String controllerHost) {
-        this.controllerHost = controllerHost;
-    }
 }

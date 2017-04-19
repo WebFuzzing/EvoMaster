@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.controller.internal;
 
-import org.evomaster.clientJava.controller.SutController;
+import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.*;
 import org.evomaster.clientJava.controllerApi.dto.*;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
@@ -60,8 +60,7 @@ public class EMController {
     @Path(ControllerConstants.NEW_SEARCH)
     @POST
     public void newSearch(){
-        ExecutionTracer.reset();
-        ObjectiveRecorder.reset();
+        restController.newSearch();
     }
 
     @Path(ControllerConstants.RUN_SUT_PATH)
@@ -78,7 +77,7 @@ public class EMController {
         synchronized (this) {
             if (dto.run) {
                 if (!restController.isSutRunning()) {
-                    baseUrlOfSUT = restController.startInstrumentedSut();
+                    baseUrlOfSUT = restController.startSut();
                     newlyStarted = true;
                 }
             } else {

@@ -18,18 +18,12 @@ public class SutControllerTest {
 
     private static final String SWAGGER_URL = "localhost:9999/swagger.json";
 
-    private static class FakeRestController extends SutController {
+    private static class FakeRestController extends EmbeddedSutController {
 
         public boolean running;
 
         @Override
         public String startSut() {
-            running = true;
-            return null;
-        }
-
-        @Override
-        public String startInstrumentedSut() {
             running = true;
             return null;
         }
@@ -67,7 +61,7 @@ public class SutControllerTest {
 
     }
 
-    private static SutController restController = new FakeRestController();
+    private static EmbeddedSutController restController = new FakeRestController();
 
     @BeforeAll
     public static void initClass(){
@@ -107,7 +101,7 @@ public class SutControllerTest {
     @Test
     public void testStartDirect(){
 
-        restController.startInstrumentedSut();
+        restController.startSut();
         assertTrue(restController.isSutRunning());
 
         given().accept(Formats.JSON_V1)
@@ -120,7 +114,7 @@ public class SutControllerTest {
     @Test
     public void testStartRest(){
 
-        restController.startInstrumentedSut();
+        restController.startSut();
 
         assertTrue(restController.isSutRunning());
 

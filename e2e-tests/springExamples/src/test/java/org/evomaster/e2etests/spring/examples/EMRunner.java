@@ -2,8 +2,7 @@ package org.evomaster.e2etests.spring.examples;
 
 import com.foo.rest.examples.spring.SpringController;
 import com.foo.rest.examples.spring.headerlocation.HeaderLocationController;
-import com.foo.rest.examples.spring.triangle.TriangleController;
-import org.evomaster.clientJava.controller.EmbeddedStarter;
+import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 
 /**
  * Only used for manual debugging
@@ -19,7 +18,7 @@ public class EMRunner {
 
         SpringController controller = new HeaderLocationController();
         controller.setControllerPort(port);
-        EmbeddedStarter starter = new EmbeddedStarter(controller);
+        InstrumentedSutStarter starter = new InstrumentedSutStarter(controller);
 
         starter.start();
     }

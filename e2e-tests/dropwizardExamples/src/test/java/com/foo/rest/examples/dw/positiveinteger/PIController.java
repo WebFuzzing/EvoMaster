@@ -1,17 +1,16 @@
 package com.foo.rest.examples.dw.positiveinteger;
 
-import org.evomaster.clientJava.controller.SutController;
+import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
 import java.util.List;
 
-public class PIController extends SutController {
+public class PIController extends EmbeddedSutController {
 
     private PIApplication application;
 
-    @Override
-    public int getControllerPort(){
-        return 0;
+    public PIController(){
+        setControllerPort(0);
     }
 
     @Override
@@ -40,10 +39,6 @@ public class PIController extends SutController {
         return "http://localhost:"+application.getJettyPort();
     }
 
-    @Override
-    public String startInstrumentedSut() {
-        return startSut();
-    }
 
     @Override
     public boolean isSutRunning() {

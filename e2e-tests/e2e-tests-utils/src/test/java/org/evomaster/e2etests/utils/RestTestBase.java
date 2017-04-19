@@ -1,7 +1,7 @@
 package org.evomaster.e2etests.utils;
 
-import org.evomaster.clientJava.controller.EmbeddedStarter;
-import org.evomaster.clientJava.controller.SutController;
+import org.evomaster.clientJava.controller.InstrumentedSutStarter;
+import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallAction;
@@ -20,14 +20,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class RestTestBase {
 
-    protected static EmbeddedStarter embeddedStarter;
+    protected static InstrumentedSutStarter embeddedStarter;
     protected static String baseUrlOfSut;
     protected static RemoteController remoteController;
     protected static int controllerPort;
 
-    protected static void initClass(SutController controller) throws Exception {
+    protected static void initClass(EmbeddedSutController controller) throws Exception {
 
-        embeddedStarter = new EmbeddedStarter(controller);
+        embeddedStarter = new InstrumentedSutStarter(controller);
         embeddedStarter.start();
 
         controllerPort = embeddedStarter.getControllerServerJettyPort();

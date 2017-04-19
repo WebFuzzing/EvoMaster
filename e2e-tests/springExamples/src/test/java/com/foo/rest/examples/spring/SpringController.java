@@ -1,6 +1,6 @@
 package com.foo.rest.examples.spring;
 
-import org.evomaster.clientJava.controller.SutController;
+import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -8,7 +8,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.util.List;
 import java.util.Map;
 
-public abstract class SpringController extends SutController {
+public abstract class SpringController extends EmbeddedSutController {
 
     private ConfigurableApplicationContext ctx;
     private final Class<?> applicationClass;
@@ -37,12 +37,6 @@ public abstract class SpringController extends SutController {
                 .get("local.server.port");
     }
 
-
-
-    @Override
-    public String startInstrumentedSut() {
-        return startSut();
-    }
 
     @Override
     public boolean isSutRunning() {
