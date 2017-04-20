@@ -30,7 +30,7 @@ public abstract class RestTestBase {
         embeddedStarter = new InstrumentedSutStarter(controller);
         embeddedStarter.start();
 
-        controllerPort = embeddedStarter.getControllerServerJettyPort();
+        controllerPort = embeddedStarter.getControllerServerPort();
 
         remoteController = new RemoteController("localhost", controllerPort);
         boolean started = remoteController.startSUT();

@@ -69,7 +69,7 @@ public class SutControllerTest {
         restController.startTheControllerServer();
 
         RestAssured.baseURI = "http://localhost";
-        RestAssured.port = restController.getControllerServerJettyPort();
+        RestAssured.port = restController.getControllerServerPort();
         RestAssured.basePath = "/controller/api";
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
     }

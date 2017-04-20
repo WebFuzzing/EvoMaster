@@ -48,7 +48,7 @@ public class InstrumentedSutStarter {
         return sutController.stopTheControllerServer();
     }
 
-    public int getControllerServerJettyPort() {
-        return sutController.getControllerServerJettyPort();
+    public int getControllerServerPort() {
+        return sutController.getControllerServerPort();
     }
 }

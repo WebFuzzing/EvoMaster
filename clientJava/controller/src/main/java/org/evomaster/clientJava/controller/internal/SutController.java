@@ -80,7 +80,7 @@ public abstract class SutController {
     /**
      * @return the actual port in use (eg, if it was an ephemeral 0)
      */
-    public final int getControllerServerJettyPort() {
+    public final int getControllerServerPort() {
         return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();
     }
 
