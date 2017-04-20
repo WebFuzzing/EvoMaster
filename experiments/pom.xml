@@ -8,15 +8,20 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>experiments</artifactId>
+    <artifactId>evomaster-experiments</artifactId>
     <packaging>jar</packaging>
 
 
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>core</artifactId>
+            <artifactId>evomaster-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-instrumentation</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
@@ -24,10 +29,6 @@
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-reflect</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.evomaster.clientJava</groupId>
-            <artifactId>instrumentation</artifactId>
         </dependency>
     </dependencies>
 

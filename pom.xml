@@ -11,7 +11,7 @@
 
     <modules>
         <module>core</module>
-        <module>clientJava</module>
+        <module>client-java</module>
         <module>e2e-tests</module>
         <module>experiments</module>
     </modules>
@@ -56,28 +56,28 @@
             <!-- Internal Modules -->
             <dependency>
                 <groupId>org.evomaster</groupId>
-                <artifactId>core</artifactId>
+                <artifactId>evomaster-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.evomaster.clientJava</groupId>
-                <artifactId>controller</artifactId>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.evomaster.clientJava</groupId>
-                <artifactId>controllerApi</artifactId>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-controller-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.evomaster.clientJava</groupId>
-                <artifactId>instrumentation</artifactId>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-instrumentation</artifactId>
                 <version>${project.version}</version>
                 <type>jar</type>
             </dependency>
             <dependency>
-                <groupId>org.evomaster.clientJava</groupId>
-                <artifactId>instrumentation</artifactId>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-client-java-instrumentation</artifactId>
                 <version>${project.version}</version>
                 <type>test-jar</type>
             </dependency>

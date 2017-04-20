@@ -8,14 +8,14 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>core</artifactId>
+    <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
 
 
     <dependencies>
         <dependency>
-            <groupId>org.evomaster.clientJava</groupId>
-            <artifactId>controllerApi</artifactId>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller-api</artifactId>
         </dependency>
 
 
