@@ -1,11 +1,13 @@
 package org.evomaster.clientJava.instrumentation;
 
+import java.io.Serializable;
+
 /**
  * This represents the same data as in TargetInfoDto.
  * Here is replicated to have a clear distinction on how
  * such data is used
  */
-public class TargetInfo {
+public class TargetInfo implements Serializable{
 
     public final Integer id;
 

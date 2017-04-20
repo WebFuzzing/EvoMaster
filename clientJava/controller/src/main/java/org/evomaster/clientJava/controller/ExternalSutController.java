@@ -2,7 +2,9 @@ package org.evomaster.clientJava.controller;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
+import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
+import org.evomaster.clientJava.instrumentation.external.ServerController;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -28,6 +30,8 @@ public abstract class ExternalSutController extends SutController {
     private volatile Thread processKillHook;
     private volatile Thread outputPrinter;
     private volatile CountDownLatch latch;
+    private volatile ServerController serverController;
+
 
     /**
      * @return the input parameters with which the system under test
@@ -80,9 +84,21 @@ public abstract class ExternalSutController extends SutController {
         //we need a mechanism to wait until the SUT is ready
         latch = new CountDownLatch(1);
 
+
         List<String> command = new ArrayList<>();
         command.add("java");
-        //TODO instrumentation
+
+
+        if(instrumentation){
+            if(serverController == null){
+                serverController = new ServerController();
+            }
+            int port = serverController.startServer();
+            command.add("-D"+ InstrumentingAgent.EXTERNAL_PORT_PROP+"="+port);
+
+            //TODO agent
+        }
+
         command.add("-jar");
         command.add(getPathToExecutableJar());
 
@@ -119,6 +135,14 @@ public abstract class ExternalSutController extends SutController {
             return null;
         }
 
+        if(instrumentation && serverController != null){
+            boolean connected = serverController.waitForIncomingConnection();
+            if(!connected){
+                SimpleLogger.error("Could not establish connection to retrieve code metrics");
+                return null;
+            }
+        }
+
         return getBaseURL();
     }
 
@@ -129,32 +153,44 @@ public abstract class ExternalSutController extends SutController {
 
     @Override
     public void stopSut() {
+        if(serverController != null){
+            serverController.closeServer();
+        }
         killProcess();
     }
 
     @Override
     public final boolean isInstrumentationActivated() {
-        //TODO further check
-        return instrumentation;
+        return instrumentation && serverController != null && serverController.isConnectionOn();
     }
 
     @Override
     public final void newSearch() {
-        //TODO
+        if(isInstrumentationActivated()) {
+            serverController.resetForNewSearch();
+        }
     }
 
     @Override
     public final void newTest(){
-        //TODO
+        if(isInstrumentationActivated()) {
+            serverController.resetForNewTest();
+        }
     }
 
     @Override
     public final List<TargetInfo> getTargetInfos(Collection<Integer> ids){
-        //TODO
-        return null;
+        checkInstrumentation();
+        return serverController.getTargetInfos(ids);
     }
 
     //-----------------------------------------
+
+    private void checkInstrumentation(){
+        if(! isInstrumentationActivated()){
+            throw new IllegalStateException("Instrumentation is not active");
+        }
+    }
 
     private void validateJarPath() {
 

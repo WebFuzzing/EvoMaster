@@ -1,5 +1,6 @@
 package org.evomaster.clientJava.instrumentation;
 
+import org.evomaster.clientJava.instrumentation.external.AgentController;
 import org.objectweb.asm.ClassReader;
 
 import java.lang.instrument.ClassFileTransformer;
@@ -34,6 +35,11 @@ public class InstrumentingAgent {
         instrumentator = new Instrumentator(agentArgs);
         inst.addTransformer(new TransformerForTests());
         active = true;
+
+        String port = System.getProperty(EXTERNAL_PORT_PROP);
+        if(port != null){
+            AgentController.start(Integer.parseInt(port));
+        }
     }
 
     public static boolean isActive(){
