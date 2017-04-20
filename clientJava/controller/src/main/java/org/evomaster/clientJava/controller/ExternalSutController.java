@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
+import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -9,6 +10,7 @@ import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.CountDownLatch;
@@ -139,6 +141,17 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final void newSearch() {
         //TODO
+    }
+
+    @Override
+    public final void newTest(){
+        //TODO
+    }
+
+    @Override
+    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids){
+        //TODO
+        return null;
     }
 
     //-----------------------------------------

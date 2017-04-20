@@ -7,11 +7,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
+import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -107,6 +109,11 @@ public abstract class SutController {
     public abstract void newSearch();
 
     /**
+     * Re-initialize some internal data needed before running a new test
+     */
+    public abstract void newTest();
+
+    /**
      * Start a new instance of the SUT.
      * <br>
      * This method must be blocking.
@@ -170,4 +177,7 @@ public abstract class SutController {
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
 
+
+
+    public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 }

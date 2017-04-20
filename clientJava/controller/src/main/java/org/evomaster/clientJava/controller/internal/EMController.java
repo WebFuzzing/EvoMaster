@@ -1,14 +1,13 @@
 package org.evomaster.clientJava.controller.internal;
 
-import org.evomaster.clientJava.controller.EmbeddedSutController;
-import org.evomaster.clientJava.controllerApi.*;
+import org.evomaster.clientJava.controllerApi.ControllerConstants;
+import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.*;
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
 import java.util.Arrays;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -23,11 +22,11 @@ import java.util.stream.Collectors;
 @Path("")
 public class EMController {
 
-    private final SutController restController;
+    private final SutController sutController;
     private String baseUrlOfSUT;
 
-    public EMController(SutController restController) {
-        this.restController = Objects.requireNonNull(restController);
+    public EMController(SutController sutController) {
+        this.sutController = Objects.requireNonNull(sutController);
     }
 
 
@@ -37,10 +36,10 @@ public class EMController {
     public SutInfoDto getSutInfo() {
 
         SutInfoDto dto = new SutInfoDto();
-        dto.swaggerJsonUrl = restController.getUrlOfSwaggerJSON();
-        dto.isSutRunning = restController.isSutRunning();
+        dto.swaggerJsonUrl = sutController.getUrlOfSwaggerJSON();
+        dto.isSutRunning = sutController.isSutRunning();
         dto.baseUrlOfSUT = baseUrlOfSUT;
-        dto.infoForAuthentication = restController.getInfoForAuthentication();
+        dto.infoForAuthentication = sutController.getInfoForAuthentication();
 
         return dto;
     }
@@ -51,16 +50,16 @@ public class EMController {
     public ControllerInfoDto getControllerInfoDto() {
 
         ControllerInfoDto dto = new ControllerInfoDto();
-        dto.fullName = restController.getClass().getName();
-        dto.isInstrumentationOn = restController.isInstrumentationActivated();
+        dto.fullName = sutController.getClass().getName();
+        dto.isInstrumentationOn = sutController.isInstrumentationActivated();
 
         return dto;
     }
 
     @Path(ControllerConstants.NEW_SEARCH)
     @POST
-    public void newSearch(){
-        restController.newSearch();
+    public void newSearch() {
+        sutController.newSearch();
     }
 
     @Path(ControllerConstants.RUN_SUT_PATH)
@@ -76,13 +75,14 @@ public class EMController {
 
         synchronized (this) {
             if (dto.run) {
-                if (!restController.isSutRunning()) {
-                    baseUrlOfSUT = restController.startSut();
+                if (!sutController.isSutRunning()) {
+                    baseUrlOfSUT = sutController.startSut();
+                    sutController.newTest();
                     newlyStarted = true;
                 }
             } else {
-                if (restController.isSutRunning()) {
-                    restController.stopSut();
+                if (sutController.isSutRunning()) {
+                    sutController.stopSut();
                     baseUrlOfSUT = null;
                 }
             }
@@ -94,25 +94,10 @@ public class EMController {
                 }
 
                 if (!newlyStarted) { //no point resetting if fresh start
-                    restController.resetStateOfSUT();
+                    sutController.resetStateOfSUT();
+                    sutController.newTest();
                 }
-
-                /*
-                 Note: it should be fine but, if for any reason EM did not do
-                 a GET on the targets, then all those newly encountered targets
-                 would be lost, as EM will have no way to ask for them later, unless
-                 we explicitly say to return ALL targets
-                 */
-                ObjectiveRecorder.clearFirstTimeEncountered();
             }
-
-            /*
-              Each time we start/stop/reset the SUT, we need to make sure
-              to reset the collection of bytecode info.
-
-              TODO: this works ONLY if SUT is running on same process
-             */
-            ExecutionTracer.reset();
         }
     }
 
@@ -125,11 +110,7 @@ public class EMController {
             @DefaultValue("")
                     String idList) {
 
-        //TODO: this works only if SUT runs on same process
-
         TargetsResponseDto dto = new TargetsResponseDto();
-
-        Map<String, Double> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
         Set<Integer> ids;
 
@@ -142,34 +123,12 @@ public class EMController {
             throw new WebApplicationException("Invalid parameter 'ids': " + e.getMessage(), e);
         }
 
-        /*
-            First, add info for all targets requested by EM
-         */
-        ids.stream().forEach(id -> {
-
-            String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
-            double val = objectives.getOrDefault(descriptiveId, 0d);
-
+        List<TargetInfo> list = sutController.getTargetInfos(ids);
+        list.stream().forEach(t -> {
             TargetInfoDto info = new TargetInfoDto();
-            info.id = id;
-            info.value = val;
-            //NO descriptiveId here
-
-            dto.targets.add(info);
-        });
-
-        /*
-         *  If new targets were found, we add them even if not requested by EM
-         */
-        ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
-
-            double val = objectives.get(s);
-            int mappedId = ObjectiveRecorder.getMappedId(s);
-
-            TargetInfoDto info = new TargetInfoDto();
-            info.id = mappedId;
-            info.value = val;
-            info.descriptiveId = s;
+            info.id = t.id;
+            info.value = t.value;
+            info.descriptiveId = t.descriptiveId;
 
             dto.targets.add(info);
         });

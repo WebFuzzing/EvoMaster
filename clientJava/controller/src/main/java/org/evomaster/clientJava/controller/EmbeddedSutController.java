@@ -1,10 +1,12 @@
 package org.evomaster.clientJava.controller;
 
 import org.evomaster.clientJava.controller.internal.SutController;
+import org.evomaster.clientJava.instrumentation.InstrumentationController;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.evomaster.clientJava.instrumentation.TargetInfo;
 
+import java.util.Collection;
+import java.util.List;
 
 
 public abstract class EmbeddedSutController extends SutController {
@@ -16,8 +18,16 @@ public abstract class EmbeddedSutController extends SutController {
 
     @Override
     public final void newSearch(){
-        ExecutionTracer.reset();
-        ObjectiveRecorder.reset();
+        InstrumentationController.resetForNewSearch();
     }
 
+    @Override
+    public final void newTest(){
+        InstrumentationController.resetForNewTest();
+    }
+
+    @Override
+    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids){
+        return InstrumentationController.getTargetInfos(ids);
+    }
 }

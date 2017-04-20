@@ -12,6 +12,9 @@ import java.security.ProtectionDomain;
  */
 public class InstrumentingAgent {
 
+    public static final String EXTERNAL_PORT_PROP = "evomaster.javaagent.external.port";
+
+
     /**
      * WARN: static variable with dynamic state.
      * Forced to use it due to very special nature of how

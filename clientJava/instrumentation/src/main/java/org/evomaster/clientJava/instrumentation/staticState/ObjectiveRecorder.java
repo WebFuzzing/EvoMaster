@@ -127,6 +127,17 @@ public class ObjectiveRecorder {
         return id;
     }
 
+
+    public static Map<Integer, String> getDescriptiveIds(Collection<Integer> ids){
+
+        Map<Integer, String> map = new HashMap<>(ids.size());
+        for(Integer id: ids){
+            map.put(id, getDescriptiveId(id));
+        }
+
+        return map;
+    }
+
     public static String getDescriptiveId(int id){
 
         String descriptiveId = reversedIdMapping.get(id);
