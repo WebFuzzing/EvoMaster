@@ -1,0 +1,149 @@
+package org.evomaster.clientJava.controller.internal;
+
+import org.evomaster.clientJava.clientUtil.SimpleLogger;
+import org.evomaster.clientJava.controllerApi.ControllerConstants;
+import org.evomaster.clientJava.controllerApi.Formats;
+import org.evomaster.clientJava.controllerApi.dto.*;
+import org.evomaster.clientJava.instrumentation.TargetInfo;
+
+import javax.ws.rs.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Note: usually a RESTful webservice would be stateless.
+ * Here, however, we have state. Reason is that we need it,
+ * and the only client is the EvoMaster process. Furthermore,
+ * the code of the controller should be as simple as possible,
+ * as we might need to re-implement it in different languages.
+ */
+@Path("")
+public class EMController {
+
+    private final SutController sutController;
+    private String baseUrlOfSUT;
+
+    public EMController(SutController sutController) {
+        this.sutController = Objects.requireNonNull(sutController);
+    }
+
+
+    @Path(ControllerConstants.INFO_SUT_PATH)
+    @GET
+    @Produces(Formats.JSON_V1)
+    public SutInfoDto getSutInfo() {
+
+        SutInfoDto dto = new SutInfoDto();
+        dto.swaggerJsonUrl = sutController.getUrlOfSwaggerJSON();
+        dto.isSutRunning = sutController.isSutRunning();
+        dto.baseUrlOfSUT = baseUrlOfSUT;
+        dto.infoForAuthentication = sutController.getInfoForAuthentication();
+
+        return dto;
+    }
+
+    @Path(ControllerConstants.CONTROLLER_INFO)
+    @GET
+    @Produces(Formats.JSON_V1)
+    public ControllerInfoDto getControllerInfoDto() {
+
+        ControllerInfoDto dto = new ControllerInfoDto();
+        dto.fullName = sutController.getClass().getName();
+        dto.isInstrumentationOn = sutController.isInstrumentationActivated();
+
+        return dto;
+    }
+
+    @Path(ControllerConstants.NEW_SEARCH)
+    @POST
+    public void newSearch() {
+        sutController.newSearch();
+    }
+
+
+    @Path(ControllerConstants.RUN_SUT_PATH)
+    @PUT
+    @Consumes(Formats.JSON_V1)
+    public void runSut(SutRunDto dto) {
+
+        if (dto.run == null) {
+            throw new WebApplicationException("Invalid JSON: 'run' field is required", 400);
+        }
+
+        boolean newlyStarted = false;
+
+        synchronized (this) {
+            if (dto.run) {
+                if (!sutController.isSutRunning()) {
+                    baseUrlOfSUT = sutController.startSut();
+                    sutController.newTest();
+                    newlyStarted = true;
+                } else {
+                    //TODO as starting should be blocking, need to check
+                    //if initialized, and wait if not
+                }
+            } else {
+                if (sutController.isSutRunning()) {
+                    sutController.stopSut();
+                    baseUrlOfSUT = null;
+                }
+            }
+
+            if (dto.resetState != null && dto.resetState) {
+                if (!dto.run) {
+                    throw new WebApplicationException(
+                            "Invalid JSON: cannot reset state and stop service at same time");
+                }
+
+                if (!newlyStarted) { //no point resetting if fresh start
+                    sutController.resetStateOfSUT();
+                    sutController.newTest();
+                }
+            }
+        }
+    }
+
+
+    @Path(ControllerConstants.TARGETS_PATH)
+    @GET
+    @Produces(Formats.JSON_V1)
+    public TargetsResponseDto getTargets(
+            @QueryParam("ids")
+            @DefaultValue("")
+                    String idList) {
+
+        TargetsResponseDto dto = new TargetsResponseDto();
+
+        Set<Integer> ids;
+
+        try {
+            ids = Arrays.asList(idList.split(",")).stream()
+                    .filter(s -> !s.trim().isEmpty())
+                    .map(Integer::parseInt)
+                    .collect(Collectors.toSet());
+        } catch (NumberFormatException e) {
+            throw new WebApplicationException("Invalid parameter 'ids': " + e.getMessage(), e);
+        }
+
+        List<TargetInfo> list = sutController.getTargetInfos(ids);
+        if(list == null){
+            String msg = "Failed to collect target information for "+ids.size()+" ids";
+            SimpleLogger.error(msg);
+            throw new WebApplicationException(msg, 500);
+        }
+
+        list.stream().forEach(t -> {
+            TargetInfoDto info = new TargetInfoDto();
+            info.id = t.id;
+            info.value = t.value;
+            info.descriptiveId = t.descriptiveId;
+
+            dto.targets.add(info);
+        });
+
+        return dto;
+    }
+}

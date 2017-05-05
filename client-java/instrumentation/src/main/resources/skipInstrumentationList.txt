@@ -1,0 +1,27 @@
+//needed to be a file, because if in code then the
+//Shader plugin could modify them...
+//Note: be sure each package is ended with ".", otherwise you might ban more packages than you wanted
+apple.
+com.apple.
+com_cenqua_clover.
+com.cenqua.
+com.sun.
+com.vladium.emma.
+com.yourkit.
+java.
+javax.
+javafx.
+jdk.
+junit.framework.
+net.sourceforge.cobertura.
+org.apache.maven.
+org.apache.tools.ant.
+org.evomaster.
+org.jacoco.
+org.junit.
+org.pitest.
+org.powermock.
+org.xml.
+org.w3c.
+mockit.
+sun.
