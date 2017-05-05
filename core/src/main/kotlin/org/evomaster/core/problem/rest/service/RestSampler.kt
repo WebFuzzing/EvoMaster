@@ -13,6 +13,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.ConnectException
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -36,6 +37,8 @@ class RestSampler : Sampler<RestIndividual>() {
     @PostConstruct
     private fun initialize() {
 
+        log.debug("Initializing {}", RestSampler::class.simpleName)
+
         val started = rc.startSUT()
         if (!started) {
             throw IllegalStateException("Cannot communicate with remote REST controller")
@@ -53,6 +56,8 @@ class RestSampler : Sampler<RestIndividual>() {
         setupAuthentication(infoDto)
 
         initAdHocInitialIndividuals()
+
+        log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
 
 
@@ -91,14 +96,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val swaggerURL = infoDto.swaggerJsonUrl ?:
                 throw IllegalStateException("Cannot retrieve Swagger URL")
 
-        val response = try {
-            ClientBuilder.newClient()
-                    .target(swaggerURL)
-                    .request(MediaType.APPLICATION_JSON_TYPE)
-                    .get()
-        } catch (e: Exception) {
-            throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
-        }
+        val response = connectToSwagger(swaggerURL, 10)
 
         if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
             throw IllegalStateException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
@@ -113,6 +111,31 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         return swagger
+    }
+
+    private fun connectToSwagger(swaggerURL: String, attempts: Int): Response {
+
+        for(i in 0 until attempts){
+            try {
+                return ClientBuilder.newClient()
+                        .target(swaggerURL)
+                        .request(MediaType.APPLICATION_JSON_TYPE)
+                        .get()
+            } catch (e: Exception) {
+
+                if(e.cause is ConnectException) {
+                    /*
+                        Even if SUT is running, Swagger service might not be ready
+                        yet. So let's just wait a bit, and then retry
+                    */
+                    Thread.sleep(1_000)
+                } else {
+                    throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
+                }
+            }
+        }
+
+        throw IllegalStateException("Failed to connect to $swaggerURL")
     }
 
 

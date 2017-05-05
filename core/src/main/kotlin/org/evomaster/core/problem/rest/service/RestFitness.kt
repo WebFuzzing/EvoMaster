@@ -42,6 +42,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     @PostConstruct
     private fun initialize() {
 
+        log.debug("Initializing {}", RestFitness::class.simpleName)
+
         //workaround bug in Jersey client
         client.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
 
@@ -51,6 +53,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         infoDto = rc.getSutInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
+
+        log.debug("Done initializing {}", RestFitness::class.simpleName)
     }
 
 
