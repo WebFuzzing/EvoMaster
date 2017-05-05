@@ -94,7 +94,12 @@ class EMConfig {
 
             val returnType = m.returnType.javaType as Class<*>
 
-            //TODO: ugly checks. But not sure yet if can be made better in Kotlin
+            /*
+                TODO: ugly checks. But not sure yet if can be made better in Kotlin.
+                Could be improved with isSubtypeOf from 1.1?
+                http://stackoverflow.com/questions/41553647/kotlin-isassignablefrom-and-reflection-type-checks
+             */
+
 
             try {
                 if (Integer.TYPE.isAssignableFrom(returnType)) {
