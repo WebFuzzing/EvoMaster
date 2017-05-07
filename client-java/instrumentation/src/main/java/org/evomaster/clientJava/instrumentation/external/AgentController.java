@@ -30,6 +30,8 @@ public class AgentController {
             SimpleLogger.error("Failure in Java Agent: "+e.getMessage(), e);
         }
 
+        SimpleLogger.info("Connected to EvoMaster controller");
+
         thread = new Thread(() ->{
 
             while (! Thread.interrupted() && socket != null){

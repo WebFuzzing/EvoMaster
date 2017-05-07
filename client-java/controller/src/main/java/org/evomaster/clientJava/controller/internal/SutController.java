@@ -9,6 +9,7 @@ import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.logging.LoggingFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
@@ -44,6 +45,7 @@ public abstract class SutController {
         ResourceConfig config = new ResourceConfig();
         config.register(JacksonFeature.class);
         config.register(new EMController(this));
+        config.register(LoggingFeature.class);
 
         ServletHolder servlet = new ServletHolder(new ServletContainer(config));
 

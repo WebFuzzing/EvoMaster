@@ -32,13 +32,19 @@ public abstract class ExternalSutController extends SutController {
     private volatile Thread outputPrinter;
     private volatile CountDownLatch latch;
     private volatile ServerController serverController;
-
+    private volatile boolean initialized;
 
     /**
      * @return the input parameters with which the system under test
      * should be started
      */
     public abstract String[] getInputParameters();
+
+    /**
+     * @return the JVM parameters (eg -X and -D) with which the system
+     * under test should be started
+     */
+    public abstract String[] getJVMParameters();
 
     /**
      * @return the base URL of the running SUT, eg "http://localhost:8080".
@@ -73,6 +79,8 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public String startSut() {
 
+        initialized = false;
+
         validateJarPath();
 
         /*
@@ -104,6 +112,15 @@ public abstract class ExternalSutController extends SutController {
             command.add("-javaagent:"+jarPath+"="+getPackagePrefixesToCover());
         }
 
+        for(String s : getJVMParameters()){
+            if (s != null) {
+                String token = s.trim();
+                if (!token.isEmpty()) {
+                    command.add(token);
+                }
+            }
+        }
+
         command.add("-jar");
         command.add(getPathToExecutableJar());
 
@@ -115,6 +132,8 @@ public abstract class ExternalSutController extends SutController {
                 }
             }
         }
+
+        SimpleLogger.info("Going to start SUT with command:\n" + String.join(" ", command));
 
         // now start the process
         ProcessBuilder builder = new ProcessBuilder(command);
@@ -130,6 +149,14 @@ public abstract class ExternalSutController extends SutController {
         //this is not only needed for debugging, but also to check for when SUT is ready
         startExternalProcessPrinter();
 
+        if(instrumentation && serverController != null){
+            boolean connected = serverController.waitForIncomingConnection();
+            if(!connected){
+                SimpleLogger.error("Could not establish connection to retrieve code metrics");
+                return null;
+            }
+        }
+
         //need to block until server is ready
         long timeout = getMaxAwaitForInitializationInSeconds();
         try {
@@ -140,12 +167,11 @@ public abstract class ExternalSutController extends SutController {
             return null;
         }
 
-        if(instrumentation && serverController != null){
-            boolean connected = serverController.waitForIncomingConnection();
-            if(!connected){
-                SimpleLogger.error("Could not establish connection to retrieve code metrics");
-                return null;
-            }
+        if(! isSutRunning() || ! initialized){
+            SimpleLogger.error("SUT started but then terminated. Likely a possible misconfiguration");
+            //note: actual process might still be running due to Java Agent we started
+            stopSut();
+            return null;
         }
 
         return getBaseURL();
@@ -163,6 +189,7 @@ public abstract class ExternalSutController extends SutController {
             serverController.closeServer();
         }
         killProcess();
+        initialized = false;
     }
 
     @Override
@@ -245,11 +272,22 @@ public abstract class ExternalSutController extends SutController {
                         SimpleLogger.info("SUT: " + line);
 
                         if(line!=null && line.contains(getLogMessageOfInitializedServer())){
+                            initialized = true;
                             latch.countDown();
                         }
 
-                        line = scanner.nextLine();
+                        if(scanner.hasNext()) {
+                            line = scanner.nextLine();
+                        } else {
+                            break;
+                        }
                     }
+
+                    /*
+                        if we arrive here, it means the process has no more output.
+                        this could happen if it was started with some misconfiguration
+                     */
+                    latch.countDown();
 
                 } catch (Exception e) {
                     SimpleLogger.error(e.toString());

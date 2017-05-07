@@ -79,6 +79,10 @@ public class EMController {
             if (dto.run) {
                 if (!sutController.isSutRunning()) {
                     baseUrlOfSUT = sutController.startSut();
+                    if(baseUrlOfSUT == null){
+                        //there has been an internal failure in starting the SUT
+                        throw new WebApplicationException("Internal failure: cannot start SUT based on given configuration", 500);
+                    }
                     sutController.newTest();
                     newlyStarted = true;
                 } else {

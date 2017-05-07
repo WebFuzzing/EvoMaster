@@ -26,13 +26,21 @@ public class InstrumentingAgent {
 
     private static boolean active = false;
 
-
+    /**
+     * This is called to init the JavaAgent when starting a new JVM, eg
+     * the config of JavaAgent is passed by command line when the JVM starts.
+     *
+     * @param args
+     * @param inst
+     */
     public static void premain(String args, Instrumentation inst) {
         agentmain(args, inst);
     }
 
     /**
-     * Actual method that is going to be called when the JavaAgent is started
+     * Actual method that is going to be called when the JavaAgent is started.
+     * This is called to init the JavaAgent when attached to an already running JVM.
+     *
      * @param agentArgs in this case, the {@code packagePrefixesToCover}
      * @param inst
      */
