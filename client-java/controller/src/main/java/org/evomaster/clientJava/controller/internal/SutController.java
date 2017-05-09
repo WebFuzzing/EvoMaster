@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller.internal;
 
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
@@ -39,13 +40,19 @@ public abstract class SutController {
      */
     public final boolean startTheControllerServer() {
 
-        controllerServer = new Server(InetSocketAddress.createUnresolved(
-                getControllerHost(), getControllerPort()));
-
+        //Jersey
         ResourceConfig config = new ResourceConfig();
         config.register(JacksonFeature.class);
         config.register(new EMController(this));
         config.register(LoggingFeature.class);
+
+        //Jetty
+        controllerServer = new Server(InetSocketAddress.createUnresolved(
+                getControllerHost(), getControllerPort()));
+
+        ErrorHandler errorHandler = new ErrorHandler();
+        errorHandler.setShowStacks(true);
+        controllerServer.setErrorHandler(errorHandler);
 
         ServletHolder servlet = new ServletHolder(new ServletContainer(config));
 

@@ -69,44 +69,55 @@ public class EMController {
     @Consumes(Formats.JSON_V1)
     public void runSut(SutRunDto dto) {
 
-        if (dto.run == null) {
-            throw new WebApplicationException("Invalid JSON: 'run' field is required", 400);
-        }
+        try {
+            if (dto.run == null) {
+                throw new WebApplicationException("Invalid JSON: 'run' field is required", 400);
+            }
 
-        boolean newlyStarted = false;
+            boolean newlyStarted = false;
 
-        synchronized (this) {
-            if (dto.run) {
-                if (!sutController.isSutRunning()) {
-                    baseUrlOfSUT = sutController.startSut();
-                    if(baseUrlOfSUT == null){
-                        //there has been an internal failure in starting the SUT
-                        throw new WebApplicationException("Internal failure: cannot start SUT based on given configuration", 500);
+            synchronized (this) {
+                if (dto.run) {
+                    if (!sutController.isSutRunning()) {
+                        baseUrlOfSUT = sutController.startSut();
+                        if (baseUrlOfSUT == null) {
+                            //there has been an internal failure in starting the SUT
+                            throw new WebApplicationException("Internal failure: cannot start SUT based on given configuration", 500);
+                        }
+                        sutController.newTest();
+                        newlyStarted = true;
+                    } else {
+                        //TODO as starting should be blocking, need to check
+                        //if initialized, and wait if not
                     }
-                    sutController.newTest();
-                    newlyStarted = true;
                 } else {
-                    //TODO as starting should be blocking, need to check
-                    //if initialized, and wait if not
-                }
-            } else {
-                if (sutController.isSutRunning()) {
-                    sutController.stopSut();
-                    baseUrlOfSUT = null;
-                }
-            }
-
-            if (dto.resetState != null && dto.resetState) {
-                if (!dto.run) {
-                    throw new WebApplicationException(
-                            "Invalid JSON: cannot reset state and stop service at same time");
+                    if (sutController.isSutRunning()) {
+                        sutController.stopSut();
+                        baseUrlOfSUT = null;
+                    }
                 }
 
-                if (!newlyStarted) { //no point resetting if fresh start
-                    sutController.resetStateOfSUT();
-                    sutController.newTest();
+                if (dto.resetState != null && dto.resetState) {
+                    if (!dto.run) {
+                        throw new WebApplicationException(
+                                "Invalid JSON: cannot reset state and stop service at same time");
+                    }
+
+                    if (!newlyStarted) { //no point resetting if fresh start
+                        sutController.resetStateOfSUT();
+                        sutController.newTest();
+                    }
                 }
             }
+        }catch (RuntimeException e){
+            /*
+                FIXME: ideally, would not need to do a try/catch on each single endpoint,
+                as could configure Jetty/Jackson to log all errors.
+                But even after spending hours googling it, haven't managed to configure it
+             */
+
+            SimpleLogger.error("ERROR -> "+e.getMessage());
+            throw e;
         }
     }
 
