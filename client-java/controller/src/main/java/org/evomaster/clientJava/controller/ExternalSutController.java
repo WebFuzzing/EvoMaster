@@ -74,6 +74,18 @@ public abstract class ExternalSutController extends SutController {
      */
     public abstract long getMaxAwaitForInitializationInSeconds();
 
+    /**
+     * If the SUT needs some third-party processes (eg a non-embedded database),
+     * here they can be configured and started.
+     */
+    public abstract void preStart();
+
+    /**
+     * If the SUT needs some third-party processes (eg a non-embedded database),
+     * here we can shut them down once the SUT has been stopped.
+     */
+    public abstract void postStop();
+
     //-------------------------------------------------------------
 
     @Override
@@ -82,6 +94,8 @@ public abstract class ExternalSutController extends SutController {
         initialized = false;
 
         validateJarPath();
+
+        preStart();
 
         /*
             the following thread is important to make sure that the external process is killed
@@ -190,6 +204,8 @@ public abstract class ExternalSutController extends SutController {
         }
         killProcess();
         initialized = false;
+
+        postStop();
     }
 
     @Override

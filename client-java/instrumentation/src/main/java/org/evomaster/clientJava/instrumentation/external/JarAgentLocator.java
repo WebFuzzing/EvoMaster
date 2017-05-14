@@ -19,8 +19,12 @@ public class JarAgentLocator {
 
     public static String getAgentJarPath(){
 
-        String classPath = System.getProperty("java.class.path");
-        String jarFilePath = searchInAClassPath(classPath);
+        String jarFilePath = getFromProperty();
+
+        if(jarFilePath == null) {
+            String classPath = System.getProperty("java.class.path");
+            jarFilePath = searchInAClassPath(classPath);
+        }
 
         if(jarFilePath==null){
             jarFilePath = searchInCurrentClassLoaderIfUrlOne();
@@ -42,7 +46,7 @@ public class JarAgentLocator {
         }
 
         if(jarFilePath==null){
-            //TODO could check in ~/.m2
+            //TODO could check in ~/.m2, but issue in finding right version
         }
 
         return jarFilePath;
@@ -92,7 +96,19 @@ public class JarAgentLocator {
         return false;
     }
 
+    private static String getFromProperty(){
 
+        String path = System.getProperty("evomaster.instrumentation.jar.path");
+        if(path == null){
+            return null;
+        }
+        //if user specify a JAR path, but then it is invalid, then need to throw warning
+        if(! isAgentJar(path)){
+            throw new IllegalStateException("Specified instrumenting jar file is invalid");
+        }
+
+        return path;
+    }
 
     private static String searchInAClassPath(String classPath){
         String[] tokens = classPath.split(File.pathSeparator);
