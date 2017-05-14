@@ -113,6 +113,7 @@ class TestSuiteWriter {
             //TODO check if those are used
             addImport("static io.restassured.RestAssured.given", lines, format)
             addImport("static org.evomaster.clientJava.controllerApi.EMTestUtils.*", lines, format)
+            addImport("org.evomaster.clientJava.controller.SutHandler", lines, format)
             //addImport("static org.hamcrest.core.Is.is", lines, format)
 
             lines.addEmpty(2)
@@ -133,8 +134,7 @@ class TestSuiteWriter {
             //TODO check format
 
             lines.addEmpty()
-            //TODO controllerName package in the imports
-            lines.add("private static $controllerName $controller = new $controllerName();")
+            lines.add("private static SutHandler $controller = new $controllerName();")
             lines.add("private static String $baseUrlOfSut;")
             lines.addEmpty(2)
 
@@ -192,6 +192,10 @@ class TestSuiteWriter {
             }
 
             lines.append("class ${name.getClassName()} {")
+        }
+
+        private fun addImport(klass: Class<*>, lines: Lines, format: OutputFormat){
+            addImport(klass.name, lines, format)
         }
 
         private fun addImport(klass: String, lines: Lines, format: OutputFormat){

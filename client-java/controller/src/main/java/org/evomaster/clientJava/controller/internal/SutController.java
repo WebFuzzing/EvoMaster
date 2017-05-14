@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
+import org.evomaster.clientJava.controller.SutHandler;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
@@ -24,7 +25,7 @@ import java.util.Properties;
  * that is responsible to start/stop/restart the tested application,
  * ie the system under test (SUT)
  */
-public abstract class SutController {
+public abstract class SutController implements SutHandler{
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
@@ -122,15 +123,6 @@ public abstract class SutController {
      */
     public abstract void newTest();
 
-    /**
-     * Start a new instance of the SUT.
-     * <br>
-     * This method must be blocking.
-     *
-     * @return the base URL of the running SUT, eg "http://localhost:8080"
-     */
-    public abstract String startSut();
-
 
     /**
      * Check if bytecode instrumentation is on.
@@ -150,11 +142,6 @@ public abstract class SutController {
 
 
     /**
-     * Stop the system under test
-     */
-    public abstract void stopSut();
-
-    /**
      * a "," separated list of package prefixes or class names.
      * For example, "com.foo.,com.bar.Bar".
      * Note: be careful of using something as generate as "com."
@@ -166,11 +153,8 @@ public abstract class SutController {
      */
     public abstract String getPackagePrefixesToCover();
 
-    /**
-     * A possible (likely inefficient) way to implement this would be to
-     * call #stopSUT followed by #startSUT
-     */
-    public abstract void resetStateOfSUT();
+
+
 
     /**
      * Provide the URL of where the swagger.json can be found
