@@ -17,7 +17,7 @@ class Statistics {
     @Inject
     private lateinit var time: SearchTimeController
 
-    class Pair(val header: String, val element: String)
+    private class Pair(val header: String, val element: String)
 
 
     fun writeStatistics(solution: Solution<*>) {
@@ -41,7 +41,7 @@ class Statistics {
         }
     }
 
-    internal fun getData(solution: Solution<*>): List<Pair> {
+    private fun getData(solution: Solution<*>): List<Pair> {
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -57,14 +57,20 @@ class Statistics {
         list.add(Pair("avgReturnCodes", "" + codes.average()))
         list.add(Pair("maxReturnCodes", "" + codes.max()))
 
-        //TODO reflection on all fields in EMConfig
         list.add(Pair("id", config.statisticsColumnId))
-        list.add(Pair("algorithm", config.algorithm.name))
-        list.add(Pair("seed", "" + config.seed))
+        addConfig(list)
 
         return list
     }
 
+
+    private fun addConfig(list: MutableList<Pair>){
+
+        val properties = EMConfig.getConfigurationProperties()
+        properties.forEach{p ->
+            list.add(Pair(p.name, p.getter.call(config).toString()))
+        }
+    }
 
     private fun errors5xx(solution: Solution<*>): Int {
 

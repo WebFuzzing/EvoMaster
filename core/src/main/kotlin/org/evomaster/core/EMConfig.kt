@@ -62,10 +62,9 @@ class EMConfig {
             return parser
         }
 
-        private fun getConfigurationProperties(): List<KMutableProperty<*>> {
+        fun getConfigurationProperties(): List<KMutableProperty<*>> {
             return EMConfig::class.members
-                    .filter { m -> m is KMutableProperty }
-                    .map{ m -> m as KMutableProperty }
+                    .filterIsInstance(KMutableProperty::class.java)
                     .filter {
                         m ->
                         m.annotations.any {
