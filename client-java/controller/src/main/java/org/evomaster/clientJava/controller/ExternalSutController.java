@@ -135,6 +135,10 @@ public abstract class ExternalSutController extends SutController {
             }
         }
 
+        if(! command.stream().anyMatch(s -> s.startsWith("-Xmx"))){
+            command.add("-Xmx2048m");
+        }
+
         command.add("-jar");
         command.add(getPathToExecutableJar());
 
