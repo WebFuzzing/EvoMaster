@@ -83,6 +83,12 @@ public class JarAgentLocator {
                 }
 
                 Attributes attributes = manifest.getMainAttributes();
+
+                String premain = attributes.getValue("Premain-Class");
+                if(premain == null || premain.isEmpty()){
+                    return false;
+                }
+
                 String agentClass = attributes.getValue("Agent-Class");
                 String agent = InstrumentingAgent.class.getName(); // this is hardcoded in the pom.xml file
                 if(agentClass != null && agentClass.trim().equalsIgnoreCase(agent)){

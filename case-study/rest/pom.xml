@@ -11,6 +11,12 @@
     <artifactId>evomaster-case-study-rest</artifactId>
     <packaging>jar</packaging>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller</artifactId>
+        </dependency>
+    </dependencies>
     
 
 </project>
