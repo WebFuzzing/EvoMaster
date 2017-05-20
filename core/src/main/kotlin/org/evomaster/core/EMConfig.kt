@@ -230,10 +230,12 @@ class EMConfig {
     var stoppingCriterion = StoppingCriterion.FITNESS_EVALUATIONS
 
 
-    @Cfg("Maximum number of fitness evaluations for the search. " +
-            "Only applicable depending on the stopping criterion.")
+    @Cfg("""Maximum number of action evaluations for the search.
+            A fitness evaluation can be composed of 1 or more actions,
+            like for example REST calls or SQL setups.
+            Only applicable depending on the stopping criterion.""")
     @Min(1.0)
-    var maxFitnessEvaluations = 1000;
+    var maxActionEvaluations = 1000;
 
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")

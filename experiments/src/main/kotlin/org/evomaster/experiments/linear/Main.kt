@@ -200,7 +200,7 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             config.algorithm = algType
             config.seed = seed
-            config.maxFitnessEvaluations = budget
+            config.maxActionEvaluations = budget
             config.tournamentSize = 10 //as in MOSA paper
             config.focusedSearchActivationTime = fsat
             config.populationSize = populationSize

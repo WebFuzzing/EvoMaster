@@ -62,7 +62,7 @@ class SearchTimeController {
         if(configuration.stoppingCriterion.equals(
                 EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
 
-            return evaluatedActions < configuration.maxFitnessEvaluations
+            return evaluatedActions < configuration.maxActionEvaluations
         }
 
         return false //TODO
@@ -76,7 +76,7 @@ class SearchTimeController {
         if(configuration.stoppingCriterion.equals(
                 EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
 
-            return evaluatedActions.toDouble() / configuration.maxFitnessEvaluations.toDouble()
+            return evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()
         } else {
             return -1.0; //TODO
         }

@@ -4,7 +4,6 @@ import com.google.inject.*
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -24,7 +23,7 @@ class RandomSearchTest {
                 object : TypeLiteral<RandomAlgorithm<OneMaxIndividual>>() {}))
 
         val config = injector.getInstance(EMConfig::class.java)
-        config.maxFitnessEvaluations = 1000
+        config.maxActionEvaluations = 1000
 
         val solution = rs.search()
 

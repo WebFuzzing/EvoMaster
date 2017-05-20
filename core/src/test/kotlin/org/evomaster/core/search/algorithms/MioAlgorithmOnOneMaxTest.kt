@@ -4,8 +4,6 @@ import com.google.inject.*
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
@@ -32,7 +30,7 @@ class MioAlgorithmOnOneMaxTest {
         val sampler = injector.getInstance(OneMaxSampler::class.java)
 
         val config = injector.getInstance(EMConfig::class.java)
-        config.maxFitnessEvaluations = 30000
+        config.maxActionEvaluations = 30000
 
         val n = 20
         sampler.n = n

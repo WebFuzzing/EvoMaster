@@ -36,7 +36,7 @@ public class BranchesEMTest extends SpringTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "1000",
+                "--maxActionEvaluations", "1000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 

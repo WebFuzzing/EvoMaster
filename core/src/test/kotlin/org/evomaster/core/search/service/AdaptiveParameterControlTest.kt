@@ -45,7 +45,7 @@ internal class AdaptiveParameterControlTest{
     @Test
     fun testEnd(){
 
-        config.maxFitnessEvaluations = 10
+        config.maxActionEvaluations = 10
 
         fakeEvaluation(5) //kicks in focused search
         assertEquals(0.5, time.percentageUsedBudget(), 0.001)
@@ -64,7 +64,7 @@ internal class AdaptiveParameterControlTest{
 
     @Test
     fun testDuring(){
-        config.maxFitnessEvaluations = 10
+        config.maxActionEvaluations = 10
 
         val start = 30
         val end = 12

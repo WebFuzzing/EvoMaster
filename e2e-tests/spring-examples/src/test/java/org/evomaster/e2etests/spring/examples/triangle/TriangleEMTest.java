@@ -34,7 +34,7 @@ public class TriangleEMTest extends SpringTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "7000",
+                "--maxActionEvaluations", "7000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 

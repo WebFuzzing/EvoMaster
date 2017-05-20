@@ -18,7 +18,7 @@ public class CHLEMTest extends CHLTestBase {
                 "--outputFormat", "JAVA_JUNIT_5",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "1000",
+                "--maxActionEvaluations", "1000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 

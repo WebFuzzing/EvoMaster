@@ -36,7 +36,7 @@ class Main {
             val args = arrayOf(
                     "--createTests", "false",
                     "--seed", "-1",
-                    "--maxFitnessEvaluations", "$evaluations",
+                    "--maxActionEvaluations", "$evaluations",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--writeStatistics", "true",
                     "--appendToStatisticsFile", "true",

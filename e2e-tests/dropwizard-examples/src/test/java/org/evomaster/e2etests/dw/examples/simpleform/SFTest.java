@@ -26,7 +26,7 @@ public class SFTest extends RestTestBase{
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxFitnessEvaluations", "200",
+                "--maxActionEvaluations", "200",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
