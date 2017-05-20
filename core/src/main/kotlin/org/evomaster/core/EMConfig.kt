@@ -4,9 +4,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.clientJava.controllerApi.ControllerConstants
 import org.evomaster.core.output.OutputFormat
-import kotlin.reflect.KCallable
 import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty
 import kotlin.reflect.jvm.javaType
 
 
@@ -18,14 +16,14 @@ class EMConfig {
 
     companion object {
 
-        fun validateOptions(args: Array<String>): OptionParser{
+        fun validateOptions(args: Array<String>): OptionParser {
 
             val config = EMConfig()
 
             val parser = EMConfig.getOptionParser()
             val options = parser.parse(*args)
 
-            if(!options.has("help")) {
+            if (!options.has("help")) {
                 config.updateProperties(options)
             }
 
@@ -45,19 +43,19 @@ class EMConfig {
             parser.accepts("help").forHelp()
 
             getConfigurationProperties().forEach { m ->
-                        /*
-                            Note: here we could use typing in the options,
-                            instead of converting everything to string.
-                            But it looks bit cumbersome to do it in Kotlin,
-                            at least for them moment
+                /*
+                    Note: here we could use typing in the options,
+                    instead of converting everything to string.
+                    But it looks bit cumbersome to do it in Kotlin,
+                    at least for them moment
 
-                            TODO: do documentation
-                            TODO: groups and ordering
-                         */
-                        parser.accepts(m.name)
-                                .withRequiredArg()
-                                .defaultsTo("" + m.call(defaultInstance))
-                    }
+                    TODO: do documentation
+                    TODO: groups and ordering
+                 */
+                parser.accepts(m.name)
+                        .withRequiredArg()
+                        .defaultsTo("" + m.call(defaultInstance))
+            }
 
             return parser
         }
@@ -124,7 +122,7 @@ class EMConfig {
                 } else {
                     throw IllegalStateException("BUG: cannot handle type " + returnType)
                 }
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 throw IllegalArgumentException("Failed to handle property ${m.name}", e)
             }
 
@@ -178,14 +176,14 @@ class EMConfig {
     var createTests = true
 
     @Cfg("The path directory of where the generated test classes should be saved to")
-    //TODO check if can be created
+            //TODO check if can be created
     var outputFolder = "src/em"
 
 
     @Cfg("The name of generated file with the test cases, without file type extension. " +
             "In JVM languages, if the name contains '.', folders will be created to represent " +
             "the given package structure")
-    //TODO constrain of no spaces or weird characters, eg use regular expression
+            //TODO constrain of no spaces or weird characters, eg use regular expression
     var testSuiteFileName = "EvoMasterTest"
 
 
@@ -230,10 +228,10 @@ class EMConfig {
     var stoppingCriterion = StoppingCriterion.FITNESS_EVALUATIONS
 
 
-    @Cfg("""Maximum number of action evaluations for the search.
-            A fitness evaluation can be composed of 1 or more actions,
-            like for example REST calls or SQL setups.
-            Only applicable depending on the stopping criterion.""")
+    @Cfg("Maximum number of action evaluations for the search." +
+            " A fitness evaluation can be composed of 1 or more actions," +
+            " like for example REST calls or SQL setups." +
+            " Only applicable depending on the stopping criterion.")
     @Min(1.0)
     var maxActionEvaluations = 1000;
 

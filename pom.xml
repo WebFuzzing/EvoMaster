@@ -104,7 +104,7 @@
             </dependency>
 
 
-            <!-- Misc -->
+            <!-- Javax -->
             <dependency>
                 <groupId>javax.el</groupId>
                 <artifactId>javax.el-api</artifactId>
@@ -115,6 +115,14 @@
                 <artifactId>javax.el</artifactId>
                 <version>${javax.el.version}</version>
             </dependency>
+            <dependency>
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>2.0.1</version>
+            </dependency>
+
+
+            <!-- Misc -->
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>

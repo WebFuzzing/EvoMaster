@@ -83,6 +83,75 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
             </plugin>
+
+            <!--
+                As this library is going to be used and imported by the SUTs,
+                need to shade its dependencies to avoid the "Jar Hell".
+                This is particularly true for Jetty and Jersey.
+                Note: besides changing .class files, here we also need to
+                modify the content of META-INF/services, as that is used
+                for reflection by Jetty/Jersey.
+              -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>false</shadedArtifactAttached>
+                            <createDependencyReducedPom>true</createDependencyReducedPom>
+                            <!--<createSourcesJar>true</createSourcesJar>-->
+                            <minimizeJar>false</minimizeJar>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
+                            <relocations>
+                                <relocation>
+                                    <pattern>com</pattern>
+                                    <shadedPattern>shaded.com</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javax.ws.</pattern>
+                                    <shadedPattern>shaded.javax.ws.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>javassist</pattern>
+                                    <shadedPattern>shaded.javassist</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>jersey</pattern>
+                                    <shadedPattern>shaded.jersey</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.aopalliance</pattern>
+                                    <shadedPattern>shaded.org.aopalliance</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.eclipse</pattern>
+                                    <shadedPattern>shaded.org.eclipse</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.glassfish</pattern>
+                                    <shadedPattern>shaded.org.glassfish</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.jvnet</pattern>
+                                    <shadedPattern>shaded.org.jvnet</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.objectweb</pattern>
+                                    <shadedPattern>shaded.org.objectweb</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
         </plugins>
     </build>
 
