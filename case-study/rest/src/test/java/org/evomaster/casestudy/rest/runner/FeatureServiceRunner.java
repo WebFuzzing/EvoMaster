@@ -10,6 +10,8 @@ public class FeatureServiceRunner extends ExternalSutController {
 
     public static void main(String[] args) {
 
+        RunnerUtils.initInstrumentationJarLocation();
+
         int controllerPort = 40100;
         if (args.length > 0) {
             controllerPort = Integer.parseInt(args[0]);
