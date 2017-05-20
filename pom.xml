@@ -20,6 +20,7 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>experiments</module>
+        <module>case-study</module>
     </modules>
 
     <licenses>
