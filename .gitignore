@@ -22,3 +22,14 @@ hs_err_pid*
 /src/
 /private/
 /statistics.csv
+/e2e-tests/spring-examples/src/em/
+case-study/rest/target/
+client-java/client-util/target/
+client-java/controller-api/target/
+client-java/controller/target/
+client-java/instrumentation/target/
+core/target/
+e2e-tests/dropwizard-examples/target/
+e2e-tests/e2e-tests-utils/target/
+e2e-tests/spring-examples/target/
+experiments/target/
