@@ -28,7 +28,7 @@ public class EMTestUtils {
      */
     public static String resolveLocation(String locationHeader, String expectedTemplate){
 
-        URI locationURI = null;
+        URI locationURI;
         try{
             locationURI = URI.create(locationHeader);
         } catch (Exception e){
@@ -67,7 +67,7 @@ public class EMTestUtils {
         }
 
 
-        URI targetURI = null;
+        URI targetURI;
 
         try {
             if (locationURI.isAbsolute() || locationURI.getHost() != null) {

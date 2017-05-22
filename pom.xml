@@ -151,8 +151,8 @@
             </dependency>
             <dependency> <!-- For bytecode instrumentation -->
                 <groupId>org.ow2.asm</groupId>
-                <artifactId>asm</artifactId>
-                <version>5.1</version>
+                <artifactId>asm-all</artifactId>
+                <version>5.2</version>
             </dependency>
             <dependency> <!-- To attach instrumenting JavaAgent at runtime -->
                 <groupId>com.ea.agentloader</groupId>

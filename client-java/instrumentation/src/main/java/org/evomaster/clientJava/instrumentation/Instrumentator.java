@@ -1,10 +1,13 @@
 package org.evomaster.clientJava.instrumentation;
 
 
+
+import org.evomaster.clientJava.instrumentation.testability.ReplacementList;
 import org.evomaster.clientJava.instrumentation.visitor.CoverageClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.tree.ClassNode;
 
 import java.util.Arrays;
 import java.util.List;
@@ -54,9 +57,19 @@ public class Instrumentator {
         ClassWriter writer = new ComputeClassWriter(asmFlags);
         ClassVisitor cv = writer;
 
+        //avoid reading frames, as we re-compute them
+        int readFlags = ClassReader.SKIP_FRAMES;
+
         if(canInstrumentForCoverage(className)){
 
+            ClassNode cn = new ClassNode();
+            reader.accept(cn, readFlags);
+            ReplacementList.getBooleanMethodTransformers()
+                    .forEach(t -> t.transformClass(cn));
+
             cv = new CoverageClassVisitor(cv, className);
+
+            cn.accept(cv);
 
         } else {
             /*
@@ -65,11 +78,9 @@ public class Instrumentator {
                 In the future, likely also to instrument other third-party
                 library classes for testability transformations
              */
-        }
 
-        //avoid reading frames, as we re-compute them
-        int readFlags = ClassReader.SKIP_FRAMES;
-        reader.accept(cv, readFlags);
+            reader.accept(cv, readFlags);
+        }
 
         return writer.toByteArray();
     }
