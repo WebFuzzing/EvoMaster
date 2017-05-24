@@ -33,3 +33,4 @@ e2e-tests/dropwizard-examples/target/
 e2e-tests/e2e-tests-utils/target/
 e2e-tests/spring-examples/target/
 experiments/target/
+/e2e-tests/spring-examples/src/em/EvoMasterTest.java
