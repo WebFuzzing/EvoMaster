@@ -7,7 +7,10 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -21,7 +24,8 @@ public class BranchCovSETest {
     }
 
     @Test
-    public void testBaseBranchCov() throws Exception{
+    public void testisFooWithIf() throws Exception{
+
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
@@ -29,29 +33,39 @@ public class BranchCovSETest {
                 cl.loadClass(StringsExampleImp.class.getName())
                         .newInstance();
 
+        Consumer<String> lambda = s -> tc.isFooWithIf(s);
+
+        checkIncreasingTillCovered(Arrays.asList("foo123", "foo12", "foo1"), "foo", lambda);
+        checkIncreasingTillCovered(Arrays.asList("", "f", "fo"), "foo", lambda);
+        checkIncreasingTillCovered(Arrays.asList("foa", "fob", "foc"), "foo", lambda);
+        checkIncreasingTillCovered(Arrays.asList("fo}", "fo{"), "foo", lambda);
+        checkIncreasingTillCovered(Arrays.asList("f", "xx","fxxx","xxx","xox","fno"), "foo", lambda);
+    }
+
+    private void checkIncreasingTillCovered(List<String> inputs, String solution, Consumer<String> lambda) throws Exception{
+
         ExecutionTracer.reset();
         assertEquals(0, ExecutionTracer.getNumberOfObjectives());
 
-        tc.isFooWithIf("fo1234");
+        double heuristics = -1;
+        String target = null;
+
+        for(String val : inputs){
+            lambda.accept(val);
+
+            Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+            target = missing.iterator().next();
+            assertEquals(1, missing.size());
+
+            double h = ExecutionTracer.getValue(target);
+            assertTrue(h > heuristics);
+            assertTrue(h < 1);
+            heuristics = h;
+        }
+
+        lambda.accept(solution);
 
         Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
-        String target = missing.iterator().next();
-        assertEquals(1, missing.size());
-        double heuristic = ExecutionTracer.getValue(target);
-
-
-        tc.isFooWithIf("fo12");
-
-        missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
-        assertEquals(1, missing.size());
-        assertEquals(target, missing.iterator().next());
-        double improved = ExecutionTracer.getValue(target);
-        assertTrue(improved > heuristic);
-
-
-        tc.isFooWithIf("foo");
-
-        missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
         assertEquals(0, missing.size());
         double covered = ExecutionTracer.getValue(target);
         assertEquals(1d, covered);
