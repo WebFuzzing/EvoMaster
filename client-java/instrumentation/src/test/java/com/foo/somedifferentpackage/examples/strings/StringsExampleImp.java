@@ -44,6 +44,19 @@ public class StringsExampleImp implements StringsExample {
     }
 
     @Override
+    public boolean isFooWithLocalVariableInIf(String value) {
+
+        boolean local;
+        if("foo".equals(value)){
+            local = true;
+        } else {
+            local = false;
+        }
+
+        return local;
+    }
+
+    @Override
     public boolean isNotFooWithLocalVariable(String value) {
 
         boolean local = ! "foo".equals(value);

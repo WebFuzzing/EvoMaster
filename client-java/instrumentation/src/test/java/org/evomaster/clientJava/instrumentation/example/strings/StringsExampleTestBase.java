@@ -60,6 +60,14 @@ public abstract class StringsExampleTestBase {
     }
 
     @Test
+    public void test_isFooWithLocalVariableInIf() throws Exception{
+
+        StringsExample se = getInstance();
+        assertTrue(se.isFooWithLocalVariableInIf("foo"));
+        assertFalse(se.isFooWithLocalVariableInIf("bar"));
+    }
+
+    @Test
     public void test_isNotFooWithLocalVariable() throws Exception{
 
         StringsExample se = getInstance();

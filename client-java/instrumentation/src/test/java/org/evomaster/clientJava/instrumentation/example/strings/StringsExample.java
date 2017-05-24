@@ -14,6 +14,8 @@ public interface StringsExample {
 
     boolean isFooWithLocalVariable(String value);
 
+    boolean isFooWithLocalVariableInIf(String value);
+
     boolean isNotFooWithLocalVariable(String value);
 
     boolean isBarWithPositiveX(String value, int x);
