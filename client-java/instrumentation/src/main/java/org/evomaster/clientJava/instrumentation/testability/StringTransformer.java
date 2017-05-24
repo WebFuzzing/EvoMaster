@@ -13,6 +13,8 @@ public class StringTransformer extends BooleanMethodTransformer {
         super(String.class);
     }
 
+    //TODO could collect constants here for seeding
+
     @BooleanReplacement
     public static int equals(String caller, Object anObject) {
         Objects.requireNonNull(caller);
@@ -25,8 +27,6 @@ public class StringTransformer extends BooleanMethodTransformer {
         if (caller.equals(anObject)) {
             return BooleanReplacement.TRUE_MAX;
         }
-
-        //TODO could collect constants here for seeding
 
         long distance = getLeftAlignmentDistance(caller, anObject.toString());
         /*
