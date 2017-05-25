@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/arcuri82/EvoMaster.svg?branch=master)](https://travis-ci.org/arcuri82/EvoMaster)
+
 # EvoMaster: A Tool For Automatically Generating System-Level Test Cases
 
 EvoMaster is a tool prototype that automatically generates system-level test cases.
