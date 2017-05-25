@@ -61,14 +61,26 @@ public class StringTransformer extends BooleanMethodTransformer {
 
         int pl = prefix.length();
 
+        /*
+            The penalty when there is a mismatch of lengths/offset
+            should be at least pl, as should be always worse than
+            when doing "equals" comparisons.
+            Furthermore, need to add extra penalty in case string is
+            shorter than prefix
+         */
+        int penalty = pl;
+        if(caller.length() < pl){
+            penalty += (pl - caller.length());
+        }
+
         if (toffset < 0) {
-            long dist = (-toffset + pl) * Character.MAX_VALUE;
+            long dist = (-toffset + penalty) * Character.MAX_VALUE;
             return truncate(-dist);
         }
 
         if (toffset > caller.length() - pl) {
             assert toffset >= 0;
-            long dist = (toffset + pl) * Character.MAX_VALUE;
+            long dist = (toffset + penalty) * Character.MAX_VALUE;
             return truncate(-dist);
         }
 

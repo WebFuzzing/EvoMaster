@@ -89,6 +89,7 @@ public abstract class StringCallsTestBase {
     public void test_StartsWith_false() throws Exception {
         StringCalls sc = getInstance();
         assertFalse(sc.callStartsWith("foo", "bar"));
+        assertFalse(sc.callStartsWith("f", "bar"));
     }
 
     @Test
