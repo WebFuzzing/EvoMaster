@@ -1,0 +1,17 @@
+language: java
+sudo: false
+
+jdk:
+  - oraclejdk8
+
+# As the build will download JAR files from Maven Central, optimize their storage,
+# so they do not get re-downloaded each time
+cache:
+  directories:
+  - .autoconf
+  - $HOME/.m2
+
+notifications:
+  email: false
+
+script: mvn clean verify
