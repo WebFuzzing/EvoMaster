@@ -9,7 +9,7 @@ class StringGene (
         /** Inclusive */
         val minLength: Int = 0,
         /** Inclusive */
-        val maxLength: Int = 10
+        val maxLength: Int = 16
 ) : Gene(name) {
 
 

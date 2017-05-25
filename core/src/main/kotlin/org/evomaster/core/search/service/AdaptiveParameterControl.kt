@@ -29,6 +29,12 @@ class AdaptiveParameterControl {
         return getExploratoryValue(config.startNumberOfMutations, config.endNumberOfMutations )
     }
 
+    /**
+     * Based on the current state of the search, ie how long has been passed
+     * and how much budget is left before starting a focused search,
+     * return  a value between [start] (at the beginning of the search) and [end]
+     * (when the focused search starts)
+     */
     fun getExploratoryValue(start: Int, end: Int) : Int{
         return Math.round(getExploratoryValue(start.toDouble(), end.toDouble())).toInt()
     }
@@ -36,7 +42,7 @@ class AdaptiveParameterControl {
     /**
      * Based on the current state of the search, ie how long has been passed
      * and how much budget is left before starting a focused search,
-     * return  a value between "start" (at the beginning of the search) and "end"
+     * return  a value between [start] (at the beginning of the search) and [end]
      * (when the focused search starts)
      */
     fun getExploratoryValue(start: Double, end: Double) : Double{

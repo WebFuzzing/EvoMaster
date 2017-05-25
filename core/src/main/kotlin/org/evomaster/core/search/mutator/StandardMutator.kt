@@ -9,14 +9,17 @@ import java.math.RoundingMode
 
 class StandardMutator<T> : Mutator<T>() where T : Individual {
 
+    /**
+     * List where each element at position "i" has value "2^i"
+     */
     private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
 
     override fun mutate(individual: T): T {
         val copy = individual.copy() as T
 
-        if(individual.canMutateStructure() &&
-                randomness.nextBoolean(config.structureMutationProbability)){
+        if (individual.canMutateStructure() &&
+                randomness.nextBoolean(config.structureMutationProbability)) {
             //usually, either delete an action, or add a new random one
             structureMutator.mutateStructure(copy)
             return copy
@@ -40,8 +43,8 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                     continue
                 }
 
-                if(gene is DisruptiveGene<*> && ! randomness.nextBoolean(gene.probability)){
-                   continue
+                if (gene is DisruptiveGene<*> && !randomness.nextBoolean(gene.probability)) {
+                    continue
                 }
 
                 mutateGene(gene)
@@ -60,19 +63,62 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             is OptionalGene -> handleOptionalGene(gene)
             is IntegerGene -> handleIntegerGene(gene)
             is DoubleGene -> handleDoubleGene(gene)
+            is StringGene -> handleStringGene(gene)
             else ->
                 //TODO other cases
                 gene.randomize(randomness, true)
         }
     }
 
+    private fun handleStringGene(gene: StringGene) {
 
-    private fun handleOptionalGene(gene: OptionalGene){
-        if(! gene.isActive){
+        val p = randomness.nextDouble()
+        val s = gene.value
+
+        /*
+            What type of mutations we do on Strings is strongly
+            correlated on how we define the fitness functions.
+            When dealing with equality, as we do left alignment,
+            then it makes sense to prefer insertion/deletion at the
+            end of the strings, and reward more "change" over delete/add
+         */
+
+        gene.value = when {
+        //change
+            p < 0.8 && s.length > 0 -> {
+                val delta = getDelta(start = 6, end = 3)
+                val i = randomness.nextInt(s.length)
+                val array = s.toCharArray()
+                array[i] = s[i] + delta
+                array.toString()
+            }
+        //delete last
+            p < 0.9 && s.length > 0 -> {
+                s.dropLast(1)
+            }
+        //append new
+            else -> {
+                if(randomness.nextBoolean(0.8) || s.isEmpty()) {
+                    s + randomness.nextWordChar()
+                } else {
+                    val i = randomness.nextInt(s.length)
+                    if(i == 0){
+                        randomness.nextWordChar() + s
+                    } else {
+                        s.substring(0, i) + randomness.nextWordChar() + s.substring(i, s.length)
+                    }
+                }
+            }
+        }
+    }
+
+
+    private fun handleOptionalGene(gene: OptionalGene) {
+        if (!gene.isActive) {
             gene.isActive = true
         } else {
 
-            if(randomness.nextBoolean(0.01)){
+            if (randomness.nextBoolean(0.01)) {
                 gene.isActive = false
             } else {
                 mutateGene(gene.gene)
@@ -80,15 +126,15 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
     }
 
-    private fun handleDoubleGene(gene: DoubleGene){
+    private fun handleDoubleGene(gene: DoubleGene) {
         //TODO min/max for Double
 
-        gene.value = when(randomness.choose(listOf(0,1,2))){
-            //for small changes
+        gene.value = when (randomness.choose(listOf(0, 1, 2))) {
+        //for small changes
             0 -> gene.value + randomness.nextGaussian()
-            //for large jumps
+        //for large jumps
             1 -> gene.value + (getDelta() * randomness.nextGaussian())
-            //to reduce precision, ie chop off digits after the "."
+        //to reduce precision, ie chop off digits after the "."
             2 -> BigDecimal(gene.value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
             else -> throw IllegalStateException("Regression bug")
         }
@@ -96,8 +142,12 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
 
-    private fun getDelta(range: Long = Long.MAX_VALUE) : Int{
-        val maxIndex = apc.getExploratoryValue(intpow2.size, 10)
+    private fun getDelta(
+            range: Long = Long.MAX_VALUE,
+            start: Int = intpow2.size,
+            end: Int = 10
+    ): Int {
+        val maxIndex = apc.getExploratoryValue(start, end)
 
         var n = 0
         for (i in 0 until maxIndex) {
@@ -134,7 +184,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         gene.value = when {
             res > gene.max -> gene.max
             res < gene.min -> gene.min
-            else ->  res.toInt()
+            else -> res.toInt()
         }
     }
 }
