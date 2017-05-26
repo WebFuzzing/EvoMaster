@@ -87,10 +87,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         //change
             p < 0.8 && s.length > 0 -> {
                 val delta = getDelta(start = 6, end = 3)
+                val sign = randomness.choose(listOf(-1, +1))
                 val i = randomness.nextInt(s.length)
                 val array = s.toCharArray()
-                array[i] = s[i] + delta
-                array.toString()
+                array[i] = s[i] + (sign * delta)
+                String(array)
             }
         //delete last
             p < 0.9 && s.length > 0 -> {
@@ -98,7 +99,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         //append new
             else -> {
-                if(randomness.nextBoolean(0.8) || s.isEmpty()) {
+                if(s.isEmpty() || randomness.nextBoolean(0.8)) {
                     s + randomness.nextWordChar()
                 } else {
                     val i = randomness.nextInt(s.length)

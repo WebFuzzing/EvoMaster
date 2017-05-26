@@ -42,7 +42,7 @@ public class StringsRest {
         if(s == null || s.isEmpty()){
             dto.valid = false;
         }
-        else if(s.startsWith("foo") && s.endsWith("bar")){
+        else if(s.length() == 4 && s.startsWith("X") && s.endsWith("Y")){
             dto.valid = true;
         } else {
             dto.valid = false;

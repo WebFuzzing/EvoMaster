@@ -25,6 +25,12 @@ public class StringsEMTest extends StringsTestBase {
 
         assertTrue(solution.getIndividuals().size() >= 1);
 
-        //TODO check return values
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/equalsFoo/{s}", "false");
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/contains/{s}", "false");
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/startEnds/{s}", "false");
+
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/equalsFoo/{s}", "true");
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/contains/{s}", "true");
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/startEnds/{s}", "true");
     }
 }

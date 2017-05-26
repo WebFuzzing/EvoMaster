@@ -1,18 +1,21 @@
 package org.evomaster.e2etests.utils;
 
-import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controller.EmbeddedSutController;
+import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestCallAction;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.service.RemoteController;
+import org.evomaster.core.search.Action;
 import org.evomaster.core.search.EvaluatedIndividual;
+import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -63,12 +66,29 @@ public abstract class RestTestBase {
         assertTrue(reset);
     }
 
+    protected List<Integer> getIndexOfHttpCalls(Individual ind, HttpVerb verb) {
+
+        List<Integer> indices = new ArrayList<>();
+        List<Action> actions = ind.seeActions();
+
+        for (int i = 0; i < actions.size(); i++) {
+            if (actions.get(i) instanceof RestCallAction) {
+                RestCallAction action = (RestCallAction) actions.get(i);
+                if (action.getVerb() == verb) {
+                    indices.add(i);
+                }
+            }
+        }
+
+        return indices;
+    }
+
 
     protected boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
                                     HttpVerb verb,
                                     int expectedStatusCode) {
 
-        List<Integer> index = ind.getIndividual().getIndexOfHttpCalls(verb);
+        List<Integer> index = getIndexOfHttpCalls(ind.getIndividual(), verb);
         for (int i : index) {
             String statusCode = ind.getResults().get(i).getResultValue(
                     RestCallResult.Companion.getSTATUS_CODE());
@@ -79,23 +99,73 @@ public abstract class RestTestBase {
         return false;
     }
 
+    protected boolean hasAtLeastOne(EvaluatedIndividual<RestIndividual> ind,
+                                    HttpVerb verb,
+                                    int expectedStatusCode,
+                                    String path,
+                                    String inResponse) {
+
+        List<Action> actions = ind.getIndividual().seeActions();
+
+        for (int i = 0; i < actions.size(); i++) {
+
+            if (!(actions.get(i) instanceof RestCallAction)) {
+                continue;
+            }
+
+            RestCallAction action = (RestCallAction) actions.get(i);
+            if (action.getVerb() != verb) {
+                continue;
+            }
+            if(path!=null && ! action.getPath().toString().equals(path)){
+                continue;
+            }
+
+            RestCallResult res = (RestCallResult) ind.getResults().get(i);
+            Integer statusCode = res.getStatusCode();
+
+            if (! statusCode.equals(expectedStatusCode)) {
+                continue;
+            }
+
+            String body = res.getBody();
+            if(inResponse != null && ! body.contains(inResponse)){
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
+                                       HttpVerb verb,
+                                       int expectedStatusCode,
+                                       String path,
+                                       String inResponse) {
+
+        boolean ok = solution.getIndividuals().stream().anyMatch(
+                ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
+
+        assertTrue(ok, restActions(solution));
+    }
 
     protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
                                        HttpVerb verb,
                                        int expectedStatusCode) {
+        assertHasAtLeastOne(solution, verb, expectedStatusCode, null, null);
+    }
 
-        boolean ok = solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, verb, expectedStatusCode));
-
+    private String restActions(Solution<RestIndividual> solution) {
         StringBuffer msg = new StringBuffer("REST calls:\n");
-        if(!ok){
-            solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
-                    .map(ea -> ea.getAction())
-                    .filter(a -> a instanceof RestCallAction)
-                    .forEach(a -> msg.append(a.toString() + "\n"));
-        }
 
-        assertTrue(ok, msg.toString());
+        solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
+                .map(ea -> ea.getAction())
+                .filter(a -> a instanceof RestCallAction)
+                .forEach(a -> msg.append(a.toString() + "\n"));
+
+        return msg.toString();
     }
 
     protected void assertNone(Solution<RestIndividual> solution,
@@ -106,7 +176,7 @@ public abstract class RestTestBase {
                 ind -> hasAtLeastOne(ind, verb, expectedStatusCode));
 
         StringBuffer msg = new StringBuffer("REST calls:\n");
-        if(!ok){
+        if (!ok) {
             solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
                     .map(ea -> ea.getAction())
                     .filter(a -> a instanceof RestCallAction)

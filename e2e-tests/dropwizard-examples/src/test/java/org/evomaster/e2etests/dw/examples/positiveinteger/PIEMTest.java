@@ -31,12 +31,8 @@ public class PIEMTest extends PITestBase {
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
 
         assertTrue(solution.getIndividuals().size() >= 1);
-
-        assertTrue(solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, HttpVerb.GET, 200)));
-
-        assertTrue(solution.getIndividuals().stream().anyMatch(
-                ind -> hasAtLeastOne(ind, HttpVerb.POST, 200)));
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+        assertHasAtLeastOne(solution, HttpVerb.POST, 200);
     }
 
 

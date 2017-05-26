@@ -314,8 +314,7 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         test.forEach { t ->
-            (t as RestCallAction)
-                    .let { preventPathParamMutation(it) }
+            preventPathParamMutation(t as RestCallAction)
         }
     }
 
@@ -357,11 +356,11 @@ class RestSampler : Sampler<RestIndividual>() {
                 TODO: In such case, would really need to handle things like
                 direct creation of data in the DB (for example)
              */
-        }
-
-        test.forEach { t ->
-            (t as RestCallAction)
-                    .let { preventPathParamMutation(it) }
+        } else {
+            //only lock path params if it is not a single GET
+            test.forEach { t ->
+                preventPathParamMutation(t as RestCallAction)
+            }
         }
 
         if (created &&
