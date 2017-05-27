@@ -152,7 +152,7 @@ class TestCaseWriter {
             val verb = call.verb.name.toLowerCase()
             lines.add(".$verb(")
             if (call.locationId != null) {
-                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.path}\")")
+                lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
 
             } else {
 

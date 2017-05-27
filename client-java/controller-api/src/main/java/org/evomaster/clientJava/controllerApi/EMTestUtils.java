@@ -22,7 +22,8 @@ public class EMTestUtils {
      * @param locationHeader a URI-reference, coming from a "location" header. See RFC 7231.
      *                       Note: it can be a relative reference
      * @param expectedTemplate a full URI of the target resource, but with some path elements
-     *                         that are unresolved
+     *                         that might be unresolved. If {@code locationHeader} is not
+     *                         empty, it will replace the beginning of this template.
      * @return a fully resolved URI for the target resource. If there are problems, just
      *          return the input locationHeader
      */

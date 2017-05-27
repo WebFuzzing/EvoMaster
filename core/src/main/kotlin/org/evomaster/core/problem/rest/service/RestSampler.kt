@@ -115,7 +115,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun connectToSwagger(swaggerURL: String, attempts: Int): Response {
 
-        for(i in 0 until attempts){
+        for (i in 0 until attempts) {
             try {
                 return ClientBuilder.newClient()
                         .target(swaggerURL)
@@ -123,7 +123,7 @@ class RestSampler : Sampler<RestIndividual>() {
                         .get()
             } catch (e: Exception) {
 
-                if(e.cause is ConnectException) {
+                if (e.cause is ConnectException) {
                     /*
                         Even if SUT is running, Swagger service might not be ready
                         yet. So let's just wait a bit, and then retry
@@ -213,10 +213,6 @@ class RestSampler : Sampler<RestIndividual>() {
         val action = sampleRandomCallAction(0.0)
 
         /*
-            TODO: so far, we only handle endpoints with a single path
-            parameter. would need to handle the cases in which we need
-            several POSTs on different ancestor resources.
-
             TODO: each of these "smart" tests could end with a GET, to make
             the test easier to read and verify the results (eg side-effects of
             DELETE/PUT/PATCH operations).
@@ -290,7 +286,7 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     /**
-    Only for PUT, DELETE, PATCH
+     *    Only for PUT, DELETE, PATCH
      */
     private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestAction>) {
 
@@ -363,8 +359,7 @@ class RestSampler : Sampler<RestIndividual>() {
             }
         }
 
-        if (created &&
-                !get.path.isLastElementAParameter()) {
+        if (created && !get.path.isLastElementAParameter()) {
 
             val lastPost = test[test.size - 2] as RestCallAction
             assert(lastPost.verb == HttpVerb.POST)

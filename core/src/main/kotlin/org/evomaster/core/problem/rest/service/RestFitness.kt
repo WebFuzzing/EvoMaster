@@ -147,14 +147,14 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             baseUrl = baseUrl.substring(0, baseUrl.length - 1)
         }
 
+        val path = a.resolvedPath()
 
         val fullUri = if (a.locationId != null) {
             val locationHeader = chainState[locationName(a.locationId!!)]
                     ?: throw IllegalStateException("Call expected a missing chained 'location'")
 
-            EMTestUtils.resolveLocation(locationHeader, baseUrl + a.path.toString())!!
+            EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
         } else {
-            val path = a.path.resolve(a.parameters)
             baseUrl + path
         }.let {
             /*

@@ -51,7 +51,11 @@ class RestCallAction(
     }
 
     override fun toString(): String {
-        return "$verb ${path.resolve(parameters)} , auth=${auth.name}"
+        return "$verb ${resolvedPath()} , auth=${auth.name}"
+    }
+
+    fun resolvedPath(): String{
+        return path.resolve(parameters)
     }
 
     /**
