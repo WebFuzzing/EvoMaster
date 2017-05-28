@@ -111,6 +111,7 @@ class TestSuiteWriter {
             }
 
             //TODO check if those are used
+            addImport("io.restassured.RestAssured", lines, format)
             addImport("static io.restassured.RestAssured.given", lines, format)
             addImport("static org.evomaster.clientJava.controllerApi.EMTestUtils.*", lines, format)
             addImport("org.evomaster.clientJava.controller.SutHandler", lines, format)
@@ -146,6 +147,7 @@ class TestSuiteWriter {
             lines.indent()
             lines.add("baseUrlOfSut = $controller.startSut();")
             lines.add("assertNotNull(baseUrlOfSut);")
+            lines.add("RestAssured.urlEncodingEnabled = false;")
             lines.deindent()
             lines.add("}")
 
