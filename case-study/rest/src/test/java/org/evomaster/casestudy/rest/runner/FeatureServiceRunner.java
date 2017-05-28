@@ -80,6 +80,16 @@ public class FeatureServiceRunner extends ExternalSutController {
 
     }
 
+    @Override
+    public void postStart() {
+
+    }
+
+    @Override
+    public void preStop() {
+
+    }
+
     public void postStop() {
 
     }

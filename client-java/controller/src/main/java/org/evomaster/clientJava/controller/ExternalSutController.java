@@ -77,8 +77,22 @@ public abstract class ExternalSutController extends SutController {
     /**
      * If the SUT needs some third-party processes (eg a non-embedded database),
      * here they can be configured and started.
+     * This method is going to be called before we start the SUT.
      */
     public abstract void preStart();
+
+
+    /**
+     * This method is going to be called after the SUT is started.
+     */
+    public abstract void postStart();
+
+
+    /**
+     * This method is going to be called before the SUT is stopped.
+     */
+    public abstract void preStop();
+
 
     /**
      * If the SUT needs some third-party processes (eg a non-embedded database),
@@ -192,6 +206,8 @@ public abstract class ExternalSutController extends SutController {
             return null;
         }
 
+        postStart();
+
         return getBaseURL();
     }
 
@@ -203,6 +219,9 @@ public abstract class ExternalSutController extends SutController {
 
     @Override
     public void stopSut() {
+
+        preStop();
+
         if(serverController != null){
             serverController.closeServer();
         }
