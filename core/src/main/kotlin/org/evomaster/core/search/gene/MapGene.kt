@@ -47,11 +47,11 @@ where T : Gene {
         }
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return "{" +
                 elements.map { f ->
                     """
-                    "${f.name}":${f.getValueAsString()}
+                    "${f.name}":${f.getValueAsPrintableString()}
                     """
                 }.joinToString { "," } +
                 "}";

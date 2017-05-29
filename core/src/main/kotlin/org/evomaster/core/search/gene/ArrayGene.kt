@@ -46,9 +46,9 @@ where T : Gene {
         }
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return "[" +
-                elements.map { g -> g.getValueAsString() }.joinToString(", ") +
+                elements.map { g -> g.getValueAsPrintableString() }.joinToString(", ") +
                 "]";
     }
 }

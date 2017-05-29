@@ -20,7 +20,7 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name){
         value = k
     }
 
-    override fun getValueAsString() : String{
+    override fun getValueAsPrintableString() : String{
         return value.toString()
     }
 

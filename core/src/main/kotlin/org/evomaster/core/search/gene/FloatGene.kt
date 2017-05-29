@@ -15,7 +15,7 @@ class FloatGene(name: String,
         value = randomness.nextFloat()
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return value.toString()
     }
 

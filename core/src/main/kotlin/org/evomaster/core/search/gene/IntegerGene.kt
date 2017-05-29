@@ -45,7 +45,7 @@ class IntegerGene(
         }
     }
 
-    override fun getValueAsString() : String{
+    override fun getValueAsPrintableString() : String{
         return value.toString()
     }
 }

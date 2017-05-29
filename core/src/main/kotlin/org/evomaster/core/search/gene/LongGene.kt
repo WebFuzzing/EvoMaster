@@ -30,7 +30,7 @@ class LongGene (
         value = k
     }
 
-    override fun getValueAsString() : String{
+    override fun getValueAsPrintableString() : String{
         return value.toString()
     }
 

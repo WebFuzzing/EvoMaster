@@ -25,7 +25,7 @@ class StringGene (
         value = randomness.nextWordString(minLength,maxLength)
     }
 
-    override fun getValueAsString() : String{
+    override fun getValueAsPrintableString() : String{
         return "\"$value\""
     }
 

@@ -26,9 +26,9 @@ class DateTimeGene(
         time.randomize(randomness, forceNewValue)
     }
 
-    override fun getValueAsString(): String {
-        return "\"${date.getValueAsString().replace("\"","")}T" +
-                "${time.getValueAsString().replace("\"","")}\""
+    override fun getValueAsPrintableString(): String {
+        return "\"${date.getValueAsPrintableString().replace("\"","")}T" +
+                "${time.getValueAsPrintableString().replace("\"","")}\""
     }
 
     override fun copyValueFrom(other: Gene){

@@ -15,7 +15,7 @@ class Base64StringGene(
         data.randomize(randomness, forceNewValue)
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
 

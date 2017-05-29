@@ -23,7 +23,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         fields.forEach { f -> f.randomize(randomness, forceNewValue) }
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
 
         //by default, return in JSON format
 
@@ -33,7 +33,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         fields.filter {
             f -> f !is CycleObjectGene
         }.map { f ->
-            "\"${f.name}\":${f.getValueAsString()}"
+            "\"${f.name}\":${f.getValueAsPrintableString()}"
         }.joinTo(buffer, ", ")
 
         buffer.append("}")

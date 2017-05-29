@@ -34,7 +34,7 @@ class TimeGene(
         second.randomize(randomness, forceNewValue)
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return "\"${hour.value}:${minute.value}:${second.value}.000Z\""
     }
 

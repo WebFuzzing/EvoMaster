@@ -108,7 +108,7 @@ class RestCallAction(
                     val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
                     val value = (if (p.gene is StringGene)
                         p.gene.value
-                    else p.gene.getValueAsString())
+                    else p.gene.getValueAsPrintableString())
                             .let { URLEncoder.encode(it, "UTF-8") }
 
                     "$name=$value"

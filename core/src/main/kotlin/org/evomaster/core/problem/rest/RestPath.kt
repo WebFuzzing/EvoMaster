@@ -171,7 +171,7 @@ class RestPath(path: String) {
                         //avoid the extra ""
                         encode(gene.value)
                     } else {
-                        encode(gene.getValueAsString())
+                        encode(gene.getValueAsPrintableString())
                     }
                     "$name=$value"
                 }
@@ -189,7 +189,7 @@ class RestPath(path: String) {
                 var p = params.find { p -> p is PathParam && p.name == t.name } ?:
                         throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
-                value = p.gene.getValueAsString()
+                value = p.gene.getValueAsPrintableString()
                 value = value.replace("\"", "")
 
                 if (value.isBlank()) {

@@ -6,7 +6,6 @@ import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -15,7 +14,6 @@ import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ProtocolException
-import java.net.URLEncoder
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
@@ -194,7 +192,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         val bodyEntity = when {
-            body != null -> Entity.json(body.gene.getValueAsString())
+            body != null -> Entity.json(body.gene.getValueAsPrintableString())
             !forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
             else -> Entity.json("") //FIXME
         }

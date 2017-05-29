@@ -28,7 +28,7 @@ abstract class Gene(var name: String) {
      * 1 -> "1" -> printed as 1
      * "foo" -> "\"foo\"" -> printed as "foo"
      */
-    abstract fun getValueAsString() : String
+    abstract fun getValueAsPrintableString() : String
 
     abstract fun copyValueFrom(other: Gene)
 

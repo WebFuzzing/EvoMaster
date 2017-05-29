@@ -28,7 +28,7 @@ class DateGene(
         day.randomize(randomness, forceNewValue)
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return "\"${year.value}-${month.value}-${day.value}\""
     }
 

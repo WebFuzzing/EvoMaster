@@ -26,8 +26,8 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         gene.randomize(randomness, forceNewValue)
     }
 
-    override fun getValueAsString(): String {
-        return gene.getValueAsString()
+    override fun getValueAsPrintableString(): String {
+        return gene.getValueAsPrintableString()
     }
 
     override fun isMutable() = probability > 0

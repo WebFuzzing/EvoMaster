@@ -15,7 +15,7 @@ class DoubleGene(name: String,
         value = randomness.nextDouble()
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         return value.toString()
     }
 

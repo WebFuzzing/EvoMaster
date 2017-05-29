@@ -21,7 +21,7 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
         //nothing to do
     }
 
-    override fun getValueAsString(): String {
+    override fun getValueAsPrintableString(): String {
         throw IllegalStateException("CycleObjectGene has no value")
     }
 

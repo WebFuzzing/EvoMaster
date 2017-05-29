@@ -4,7 +4,6 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
-import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.EvaluatedAction
 
 
@@ -191,7 +190,7 @@ class TestCaseWriter {
                     ?.let {
                         lines.add(".contentType(\"application/json\")")
 
-                        val body = it.gene.getValueAsString()
+                        val body = it.gene.getValueAsPrintableString()
 
                         //needed as JSON uses ""
                         val bodyLines = body.split("\n").map { s ->
