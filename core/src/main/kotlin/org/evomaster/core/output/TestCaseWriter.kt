@@ -193,14 +193,15 @@ class TestCaseWriter {
 
                         val body = it.gene.getValueAsString()
 
+                        //needed as JSON uses ""
                         val bodyLines = body.split("\n").map { s ->
                             "\"" + s.trim().replace("\"", "\\\"") + "\""
                         }
 
                         if (bodyLines.size == 1) {
-                            lines.add(".body(" + bodyLines.first() + ")")
+                            lines.add(".body(${bodyLines.first()})")
                         } else {
-                            lines.add(".body(" + bodyLines.first() + " + ")
+                            lines.add(".body(${bodyLines.first()} + ")
                             lines.indent()
                             (1..bodyLines.lastIndex - 1).forEach { i ->
                                 lines.add("${bodyLines[i]} + ")
@@ -210,6 +211,12 @@ class TestCaseWriter {
                         }
 
                     }
+
+            val form = call.getBodyFormData()
+            if(! form.isBlank()){
+                lines.add(".contentType(\"application/x-www-form-urlencoded\")")
+                lines.add(".body(\"$form\")")
+            }
         }
 
         private fun handleAuth(call: RestCallAction, lines: Lines) {
