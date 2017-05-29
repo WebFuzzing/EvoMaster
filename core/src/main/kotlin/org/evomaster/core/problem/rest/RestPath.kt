@@ -183,8 +183,7 @@ class RestPath(path: String) {
                 var p = params.find { p -> p is PathParam && p.name == t.name } ?:
                         throw IllegalArgumentException("Cannot resolve path parameter '${t.name}'")
 
-                value = p.gene.getValueAsPrintableString()
-                value = value.replace("\"", "")
+                value = p.gene.getValueAsRawString()
 
                 if (value.isBlank()) {
                     /*
