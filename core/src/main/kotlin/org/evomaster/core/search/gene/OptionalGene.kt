@@ -43,5 +43,9 @@ class OptionalGene(name: String,
         return gene.getValueAsPrintableString()
     }
 
+    override fun getValueAsRawString() : String {
+        return gene.getValueAsRawString()
+    }
+
     override fun getVariableName() = gene.getVariableName()
 }

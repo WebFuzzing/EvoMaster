@@ -27,8 +27,13 @@ class DateTimeGene(
     }
 
     override fun getValueAsPrintableString(): String {
-        return "\"${date.getValueAsPrintableString().replace("\"","")}T" +
-                "${time.getValueAsPrintableString().replace("\"","")}\""
+        return "\"${getValueAsRawString()}\""
+    }
+
+    override fun getValueAsRawString(): String {
+        return "${date.getValueAsRawString()}" +
+                "T" +
+                "${time.getValueAsRawString()}"
     }
 
     override fun copyValueFrom(other: Gene){

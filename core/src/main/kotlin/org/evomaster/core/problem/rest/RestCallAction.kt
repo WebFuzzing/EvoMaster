@@ -8,7 +8,6 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
 import java.net.URLEncoder
 
 
@@ -106,11 +105,7 @@ class RestCallAction(
                 .filter { p -> p.gene !is OptionalGene || p.gene.isActive }
                 .map { p ->
                     val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
-                    val value = (if (p.gene is StringGene)
-                        p.gene.value
-                    else p.gene.getValueAsPrintableString())
-                            .let { URLEncoder.encode(it, "UTF-8") }
-
+                    val value = URLEncoder.encode(p.gene.getValueAsRawString(), "UTF-8")
                     "$name=$value"
                 }
                 .joinToString("&")

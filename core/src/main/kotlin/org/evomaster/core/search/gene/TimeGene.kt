@@ -35,7 +35,11 @@ class TimeGene(
     }
 
     override fun getValueAsPrintableString(): String {
-        return "\"${hour.value}:${minute.value}:${second.value}.000Z\""
+        return "\"${getValueAsRawString()}\""
+    }
+
+    override fun getValueAsRawString() : String {
+        return "${hour.value}:${minute.value}:${second.value}.000Z"
     }
 
     override fun copyValueFrom(other: Gene){

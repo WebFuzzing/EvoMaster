@@ -4,7 +4,6 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -152,11 +151,11 @@ class RestPath(path: String) {
         return path
     }
 
-    private fun usableQueryParamsFunction(): (Param) -> Boolean{
+    private fun usableQueryParamsFunction(): (Param) -> Boolean {
         return { p -> p is QueryParam && (p.gene !is OptionalGene || p.gene.isActive) }
     }
 
-    fun numberOfUsableQueryParams(params: List<out Param>): Int{
+    fun numberOfUsableQueryParams(params: List<out Param>): Int {
         return params.filter(usableQueryParamsFunction()).size
     }
 
@@ -167,12 +166,7 @@ class RestPath(path: String) {
                 .map { q ->
                     val name = encode(q.name)
                     val gene = q.gene
-                    val value = if (gene is StringGene) {
-                        //avoid the extra ""
-                        encode(gene.value)
-                    } else {
-                        encode(gene.getValueAsPrintableString())
-                    }
+                    val value = encode(gene.getValueAsRawString())
                     "$name=$value"
                 }
     }

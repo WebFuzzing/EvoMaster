@@ -29,6 +29,10 @@ class StringGene (
         return "\"$value\""
     }
 
+    override fun getValueAsRawString() : String {
+        return value
+    }
+
     override fun copyValueFrom(other: Gene){
         if(other !is StringGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")

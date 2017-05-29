@@ -30,6 +30,8 @@ abstract class Gene(var name: String) {
      */
     abstract fun getValueAsPrintableString() : String
 
+    open fun getValueAsRawString() = getValueAsPrintableString()
+
     abstract fun copyValueFrom(other: Gene)
 
     /**
