@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -133,7 +134,7 @@ public class SqlScriptRunner {
     }
 
 
-    public static void execCommand(Connection conn, String command) throws SQLException {
+    public static QueryResult execCommand(Connection conn, String command) throws SQLException {
         Statement statement = conn.createStatement();
 
         try {
@@ -145,11 +146,16 @@ public class SqlScriptRunner {
 
         conn.commit();
 
+        ResultSet result = statement.getResultSet();
+        QueryResult queryResult = new QueryResult(result);
+
         try {
             statement.close();
         } catch (Exception e) {
             // Ignore to workaround a bug in Jakarta DBCP
         }
+
+        return queryResult;
     }
 
 }
