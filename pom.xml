@@ -23,6 +23,30 @@
         <module>case-study</module>
     </modules>
 
+    <issueManagement>
+        <system>Github</system>
+        <url>https://github.com/arcuri82/evomaster/issues</url>
+    </issueManagement>
+
+    <scm>
+        <connection>scm:git:https://github.com/arcuri82/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/arcuri82/evomaster.git</developerConnection>
+        <url>https://github.com/arcuri82/evomaster/tree/master</url>
+    </scm>
+
+    <developers>
+        <developer>
+            <id>arcuri82</id>
+            <name>Andrea Arcuri</name>
+            <email>arcuri82@gmail.com</email>
+            <url>http://www.arcuriandrea.org</url>
+            <timezone>2</timezone>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
+    </developers>
+
     <licenses>
         <license>
             <name>GNU Lesser General Public License (LGPL), version 3</name>

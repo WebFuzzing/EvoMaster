@@ -1,0 +1,3 @@
+Links related to deploy to Maven Central:
+- https://maven.apache.org/guides/mini/guide-central-repository-upload.html
+- http://central.sonatype.org/pages/ossrh-guide.html
