@@ -226,6 +226,12 @@ class RestActionBuilder {
 
         */
 
+        if(! parameter?.getEnum()?.isEmpty()!! && type == "string") {
+            //TODO enum can be for any type, not just strings
+            //Besides the defined values, add one to test robustness
+            return EnumGene(name, parameter.getEnum().apply { add("EVOMASTER") })
+        }
+
         //first check for "optional" format
         when (format) {
             "int32" -> return IntegerGene(name)
