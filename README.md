@@ -1,6 +1,5 @@
 [![Build Status](https://travis-ci.org/arcuri82/EvoMaster.svg?branch=master)](https://travis-ci.org/arcuri82/EvoMaster)
-
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.png?style=plastic)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 
 # EvoMaster: A Tool For Automatically Generating System-Level Test Cases
 
