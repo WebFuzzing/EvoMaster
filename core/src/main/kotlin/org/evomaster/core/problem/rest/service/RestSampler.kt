@@ -238,6 +238,14 @@ class RestSampler : Sampler<RestIndividual>() {
         return sampleAtRandom()
     }
 
+    override fun hasSpecialInit(): Boolean {
+        return ! adHocInitialIndividuals.isEmpty()
+    }
+
+    override fun resetSpecialInit() {
+        initAdHocInitialIndividuals()
+    }
+
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(post.verb == HttpVerb.POST)
@@ -484,6 +492,8 @@ class RestSampler : Sampler<RestIndividual>() {
 
 
     private fun initAdHocInitialIndividuals() {
+
+        adHocInitialIndividuals.clear()
 
         //init first sampling with 1-action call per endpoint, for all auths
 

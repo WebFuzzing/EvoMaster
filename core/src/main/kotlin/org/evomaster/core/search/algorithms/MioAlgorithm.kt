@@ -23,14 +23,17 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             val randomP = apc.getProbRandomSampling()
 
-            if(archive.isEmpty() || randomness.nextBoolean(randomP)) {
+            if(archive.isEmpty() || sampler.hasSpecialInit() || randomness.nextBoolean(randomP)) {
 
-                /*
-                    TODO: once feedback-based front selection is in place, should
-                    handle special init set, if present (eg SmartSampling)
-                 */
+                val ind = if(sampler.hasSpecialInit()){
+                    // If there is still special init set, sample from that
+                    sampler.smartSample()
+                } else {
+                    //not this can still be a smart sample
+                    sampler.sample()
+                }
 
-                archive.addIfNeeded(ff.calculateCoverage(sampler.sample()))
+                archive.addIfNeeded(ff.calculateCoverage(ind))
 
                 continue
             }
