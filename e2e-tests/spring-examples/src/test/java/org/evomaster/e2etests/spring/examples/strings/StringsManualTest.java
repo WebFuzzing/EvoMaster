@@ -7,7 +7,6 @@ import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.junit.jupiter.api.Test;
 
-import static io.restassured.RestAssured.baseURI;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,7 +32,7 @@ public class StringsManualTest extends StringsTestBase {
     }
 
     @Test
-    public void testEqualsFoo(){
+    public void testEqualsFoo() {
 
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/strings/equalsFoo/bar")
@@ -49,7 +48,7 @@ public class StringsManualTest extends StringsTestBase {
     }
 
     @Test
-    public void testStartEnds(){
+    public void testStartEnds() {
 
         given().accept(ContentType.JSON)
                 .get(baseUrlOfSut + "/api/strings/startEnds/foo")
@@ -70,12 +69,11 @@ public class StringsManualTest extends StringsTestBase {
                 .body("valid", is(false));
 
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/strings/startEnds/foobar")
+                .get(baseUrlOfSut + "/api/strings/startEnds/X12Y")
                 .then()
                 .statusCode(200)
                 .body("valid", is(true));
     }
-
 
 
     @Test
