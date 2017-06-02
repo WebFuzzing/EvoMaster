@@ -1,4 +1,4 @@
-package com.foo.rest.examples.spring.enums;
+package com.foo.rest.examples.spring.db.base;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,11 +13,10 @@ import static springfox.documentation.builders.PathSelectors.regex;
 
 @EnableSwagger2
 @SpringBootApplication
-public class EnumsApplication {
+public class DbBaseApplication {
 
-
-    public static void main(String[] args){
-        SpringApplication.run(EnumsApplication.class, args);
+    public static void main(String[] args) {
+        SpringApplication.run(DbBaseApplication.class, args);
     }
 
     @Bean
@@ -25,7 +24,7 @@ public class EnumsApplication {
         return new Docket(DocumentationType.SWAGGER_2)
                 .apiInfo(apiInfo())
                 .select()
-                .paths(regex("/api/enums.*"))
+                .paths(regex("/api/db/base.*"))
                 .build();
     }
 

@@ -10,7 +10,7 @@ import java.util.Map;
 
 public abstract class SpringController extends EmbeddedSutController {
 
-    private ConfigurableApplicationContext ctx;
+    protected ConfigurableApplicationContext ctx;
     private final Class<?> applicationClass;
 
 
@@ -40,7 +40,7 @@ public abstract class SpringController extends EmbeddedSutController {
 
     @Override
     public boolean isSutRunning() {
-        return ctx!=null && ctx.isRunning(); //TODO check if correct
+        return ctx!=null && ctx.isRunning();
     }
 
     @Override

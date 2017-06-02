@@ -34,16 +34,13 @@ public class SqlScriptRunner {
      */
     public static final Pattern delimP = Pattern.compile("^\\s*(--)?\\s*delimiter\\s*=?\\s*([^\\s]+)+\\s*.*$", Pattern.CASE_INSENSITIVE);
 
-    private final Connection connection;
-
     private String delimiter = DEFAULT_DELIMITER;
     private boolean fullLineDelimiter = false;
 
     /**
      * Default constructor
      */
-    public SqlScriptRunner(Connection connection) {
-        this.connection = connection;
+    public SqlScriptRunner() {
     }
 
     public void setDelimiter(String delimiter, boolean fullLineDelimiter) {
@@ -57,7 +54,7 @@ public class SqlScriptRunner {
      *
      * @param reader - the source of the script
      */
-    public void runScript(Reader reader) {
+    public void runScript(Connection connection, Reader reader) {
         Objects.requireNonNull(reader);
 
         runCommands(connection, readCommands(reader));
