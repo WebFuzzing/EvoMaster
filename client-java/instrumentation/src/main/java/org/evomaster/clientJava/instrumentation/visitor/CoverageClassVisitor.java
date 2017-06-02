@@ -52,15 +52,7 @@ public class CoverageClassVisitor extends ClassVisitor {
 
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
-
-        /*
-                TODO: we will also need to handle exceptions.
-                This is tricky: the line that
-                throws the exception should be marked as 0.5 for
-                line coverage, and a new objective for thrown
-                exceptions at that line should be created.
-                But maybe not needed for a first prototype version...
-         */
+        //mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
 
         return mv;
     }

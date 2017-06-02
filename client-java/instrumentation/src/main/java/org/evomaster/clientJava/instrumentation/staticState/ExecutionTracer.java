@@ -45,6 +45,12 @@ public class ExecutionTracer {
 
 
     /**
+     * Prefix identifier for objectives related to calling methods without exceptions
+     */
+    public static final String SUCCESS_CALL = "Success_Call";
+
+
+    /**
      * Key -> the unique id of the coverage objective
      * <br>
      * Value -> heuristic [0,1], where 1 means covered
@@ -138,6 +144,28 @@ public class ExecutionTracer {
 
         String id = LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line);
         updateObjective(id, 1d);
+    }
+
+    public static final String EXECUTING_METHOD_METHOD_NAME = "executingMethod";
+    public static final String EXECUTING_METHOD_DESCRIPTOR = "(Ljava/lang/String;IIZ)V";
+
+    /**
+     *  Report on whether method calls have been successfully completed.
+     *  Failures can happen due to thrown exceptions.
+     *
+     * @param className
+     * @param line
+     * @param index    as there can be many method calls on same line, need to differentiate them
+     * @param completed whether the method call was successfully completed.
+     */
+    public static void executingMethod(String className, int line, int index, boolean completed){
+        String id = SUCCESS_CALL + "_at_" + ClassName.get(className).getFullNameWithDots() +
+                "_" + padNumber(line) + "_" + index;
+        if(completed) {
+            updateObjective(id, 1d);
+        } else {
+            updateObjective(id, 0.5);
+        }
     }
 
 
