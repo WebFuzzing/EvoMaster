@@ -18,7 +18,6 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and

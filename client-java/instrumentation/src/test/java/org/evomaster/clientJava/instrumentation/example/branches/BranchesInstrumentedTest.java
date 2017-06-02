@@ -1,15 +1,13 @@
 package org.evomaster.clientJava.instrumentation.example.branches;
 
+import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
-import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BranchesInstrumentedTest {
 

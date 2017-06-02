@@ -1,13 +1,11 @@
-
-
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
 import static io.restassured.RestAssured.given;
-import static org.hamcrest.core.Is.is;
 import static org.evomaster.clientJava.controllerApi.EMTestUtils.*;
+import static org.junit.Assert.*;
 
 
 /**

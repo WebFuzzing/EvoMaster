@@ -3,13 +3,9 @@ package org.evomaster.e2etests.spring.examples.positiveinteger;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

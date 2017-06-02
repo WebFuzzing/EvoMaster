@@ -3,9 +3,8 @@ package org.evomaster.clientJava.instrumentation.heuristic;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.Opcodes;
 
-import static org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps.getForSingleValueJump;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 /**

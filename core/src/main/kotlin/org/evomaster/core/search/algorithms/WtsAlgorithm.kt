@@ -1,11 +1,9 @@
 package org.evomaster.core.search.algorithms
 
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.wts.WtsEvalIndividual
-import org.evomaster.core.search.service.Mutator
 import org.evomaster.core.search.service.SearchAlgorithm
 
 /**

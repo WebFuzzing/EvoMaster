@@ -2,8 +2,6 @@ package com.foo.rest.examples.spring.db;
 
 import com.foo.rest.examples.spring.SpringController;
 import org.evomaster.clientJava.controller.db.DbCleaner;
-import org.evomaster.clientJava.controller.db.SqlScriptRunner;
-import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;

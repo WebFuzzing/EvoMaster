@@ -2,7 +2,6 @@ package org.evomaster.experiments.unit
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.IntegerGene
 
 
 class ISFAction(val methodName: String, val genes: List<Gene>) : Action{

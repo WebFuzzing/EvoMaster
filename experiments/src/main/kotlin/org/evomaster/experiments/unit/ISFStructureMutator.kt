@@ -1,8 +1,6 @@
 package org.evomaster.experiments.unit
 
 import com.google.inject.Inject
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.StructureMutator
 

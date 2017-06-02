@@ -1,8 +1,8 @@
 package com.foo.rest.examples.spring.positiveinteger;
 
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;

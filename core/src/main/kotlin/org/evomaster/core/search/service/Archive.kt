@@ -6,8 +6,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import kotlin.comparisons.compareBy
-import kotlin.comparisons.thenBy
 
 
 class Archive<T>() where T : Individual {

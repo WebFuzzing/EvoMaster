@@ -5,8 +5,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchAlgorithm
-import kotlin.comparisons.compareBy
-import kotlin.comparisons.thenBy
 
 /**
  * Implementation of MOSA from

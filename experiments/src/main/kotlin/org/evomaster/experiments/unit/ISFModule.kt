@@ -1,12 +1,8 @@
 package org.evomaster.experiments.unit
 
 import com.google.inject.AbstractModule
-import com.google.inject.Provides
-import com.google.inject.Singleton
 import com.google.inject.TypeLiteral
-import com.google.inject.name.Named
 import com.google.inject.name.Names
-import org.evomaster.core.search.mutator.EmptyStructureMutator
 import org.evomaster.core.search.mutator.StandardMutator
 import org.evomaster.core.search.service.*
 

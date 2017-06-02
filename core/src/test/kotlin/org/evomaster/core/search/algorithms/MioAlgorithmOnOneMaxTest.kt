@@ -1,6 +1,9 @@
 package org.evomaster.core.search.algorithms
 
-import com.google.inject.*
+import com.google.inject.Injector
+import com.google.inject.Key
+import com.google.inject.Module
+import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig

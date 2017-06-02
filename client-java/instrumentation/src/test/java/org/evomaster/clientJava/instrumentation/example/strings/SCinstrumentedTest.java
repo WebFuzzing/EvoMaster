@@ -1,7 +1,6 @@
 package org.evomaster.clientJava.instrumentation.example.strings;
 
 import com.foo.somedifferentpackage.examples.strings.StringCallsImp;
-import com.foo.somedifferentpackage.examples.strings.StringsExampleImp;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.junit.jupiter.api.AfterEach;

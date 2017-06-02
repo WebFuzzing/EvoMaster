@@ -1,9 +1,9 @@
 package com.foo.rest.examples.dw.positiveinteger;
 
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;

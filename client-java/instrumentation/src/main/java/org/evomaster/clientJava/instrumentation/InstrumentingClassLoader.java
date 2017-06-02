@@ -6,9 +6,7 @@ import java.io.InputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static org.evomaster.clientJava.clientUtil.SimpleLogger.debug;
-import static org.evomaster.clientJava.clientUtil.SimpleLogger.error;
-import static org.evomaster.clientJava.clientUtil.SimpleLogger.warn;
+import static org.evomaster.clientJava.clientUtil.SimpleLogger.*;
 
 
 /**

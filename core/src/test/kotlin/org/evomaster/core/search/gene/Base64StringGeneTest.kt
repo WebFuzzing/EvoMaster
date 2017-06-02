@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 internal class Base64StringGeneTest{

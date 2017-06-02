@@ -1,6 +1,5 @@
 package org.evomaster.core.casestudy
 
-import io.restassured.RestAssured
 import io.restassured.RestAssured.given
 import org.evomaster.core.problem.rest.service.RemoteController
 import org.junit.jupiter.api.Assertions

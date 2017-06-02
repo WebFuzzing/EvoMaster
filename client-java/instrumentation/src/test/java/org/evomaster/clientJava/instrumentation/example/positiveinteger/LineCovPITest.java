@@ -1,8 +1,8 @@
 package org.evomaster.clientJava.instrumentation.example.positiveinteger;
 
+import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import com.foo.somedifferentpackage.examples.positiveinteger.PositiveIntegerImp;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

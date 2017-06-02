@@ -1,7 +1,8 @@
 package org.evomaster.core
 
 import org.evomaster.clientJava.controllerApi.ControllerConstants
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 internal class EMConfigTest{
