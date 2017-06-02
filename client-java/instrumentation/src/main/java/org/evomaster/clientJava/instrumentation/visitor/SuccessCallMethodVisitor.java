@@ -35,6 +35,8 @@ public class SuccessCallMethodVisitor extends MethodVisitor {
 
     @Override
     public void visitLineNumber(int line, Label start) {
+        super.visitLineNumber(line, start);
+
         currentLine = line;
         currentIndex = 0; //reset it for current line
     }
