@@ -52,7 +52,7 @@ public class CoverageClassVisitor extends ClassVisitor {
 
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
-        //mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
+        mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
 
         return mv;
     }

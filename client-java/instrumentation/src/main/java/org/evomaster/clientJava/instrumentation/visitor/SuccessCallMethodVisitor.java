@@ -76,7 +76,7 @@ public class SuccessCallMethodVisitor extends MethodVisitor {
     public void visitMaxs(int maxStack, int maxLocals) {
         /*
             We pushed 4 values on stack before a method call,
-            so we need to increase maxStack by at least 3
+            so we need to increase maxStack by at least 4
          */
         super.visitMaxs(maxStack + 4, maxLocals);
     }

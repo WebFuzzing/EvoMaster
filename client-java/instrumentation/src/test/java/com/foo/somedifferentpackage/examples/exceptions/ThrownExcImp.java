@@ -1,11 +1,15 @@
 package com.foo.somedifferentpackage.examples.exceptions;
 
-public class ThrownExcImp {
+import org.evomaster.clientJava.instrumentation.example.exceptions.ThrownExc;
 
+public class ThrownExcImp implements ThrownExc {
+
+    @Override
     public String directReturn(Object obj){
         return obj.toString();
     }
 
+    @Override
     public String directInTry(Object obj){
         try{
             return obj.toString();
@@ -14,10 +18,12 @@ public class ThrownExcImp {
         }
     }
 
+    @Override
     public String doubleCall(Object x, Object y){
         return x.toString() + y.toString();
     }
 
+    @Override
     public String callOnArray(Object[] array, int index){
         return array[index].toString();
     }
