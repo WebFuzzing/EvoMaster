@@ -24,13 +24,13 @@
 
     <issueManagement>
         <system>Github</system>
-        <url>https://github.com/arcuri82/evomaster/issues</url>
+        <url>https://github.com/EMResearch/evomaster/issues</url>
     </issueManagement>
 
     <scm>
-        <connection>scm:git:https://github.com/arcuri82/evomaster.git</connection>
-        <developerConnection>scm:git:https://github.com/arcuri82/evomaster.git</developerConnection>
-        <url>https://github.com/arcuri82/evomaster/tree/master</url>
+        <connection>scm:git:https://github.com/EMResearch/evomaster.git</connection>
+        <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
+        <url>https://github.com/EMResearch/evomaster/tree/master</url>
     </scm>
 
     <developers>
