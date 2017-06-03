@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller;
 
 import com.ea.agentloader.AgentLoader;
 import org.evomaster.clientJava.controller.internal.SutController;
+import org.evomaster.clientJava.controller.internal.db.StandardOutputTracker;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 
 /**
@@ -47,10 +48,12 @@ public class InstrumentedSutStarter {
     }
 
     public boolean start() {
+        StandardOutputTracker.setTracker(true, sutController);
         return sutController.startTheControllerServer();
     }
 
     public boolean stop() {
+        StandardOutputTracker.setTracker(false, null);
         return sutController.stopTheControllerServer();
     }
 

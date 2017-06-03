@@ -7,8 +7,10 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.SutHandler;
+import org.evomaster.clientJava.controller.internal.db.SqlHandler;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
+import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -18,6 +20,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -28,6 +31,8 @@ public abstract class SutController implements SutHandler{
 
     private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
+
+    private final SqlHandler sqlHandler = new SqlHandler();
 
     private Server controllerServer;
 
@@ -110,6 +115,28 @@ public abstract class SutController implements SutHandler{
         this.controllerHost = controllerHost;
     }
 
+
+    /**
+     * Calculate heuristics based on intercepted SQL commands
+     * @param sql
+     */
+    public final void handleSql(String sql){
+        Objects.requireNonNull(sql);
+
+        sqlHandler.handle(sql);
+    }
+
+    public final void resetExtraHeuristics(){
+        sqlHandler.reset();
+    }
+
+    public final ExtraHeuristicDto getExtraHeuristics(){
+
+        ExtraHeuristicDto dto = new ExtraHeuristicDto();
+        dto.toMinimize.addAll(sqlHandler.getDistances());
+
+        return dto;
+    }
 
     /**
      * Re-initialize all internal data to enable a completely new search phase

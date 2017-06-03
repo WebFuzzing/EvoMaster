@@ -161,4 +161,24 @@ public class EMController {
 
         return dto;
     }
+
+
+
+    @Path(ControllerConstants.EXTRA_HEURISTICS)
+    @GET
+    @Produces(Formats.JSON_V1)
+    public ExtraHeuristicDto getExtra(){
+
+        ExtraHeuristicDto dto = sutController.getExtraHeuristics();
+
+        return dto;
+    }
+
+    @Path(ControllerConstants.EXTRA_HEURISTICS)
+    @DELETE
+    public void deleteExtra(){
+
+        sutController.resetExtraHeuristics();
+    }
+
 }

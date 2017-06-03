@@ -12,7 +12,12 @@ public class P6SpyFormatter implements MessageFormattingStrategy {
     public static final String PREFIX = "P6SPY_SQL: ";
 
     @Override
-    public String formatMessage(int connectionId, String now, long elapsed, String category, String prepared, String sql) {
+    public String formatMessage(int connectionId,
+                                String now,
+                                long elapsed,
+                                String category,
+                                String prepared,
+                                String sql) {
 
         if(sql == null || sql.trim().isEmpty()){
             return "";

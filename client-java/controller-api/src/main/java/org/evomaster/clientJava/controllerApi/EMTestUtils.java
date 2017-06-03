@@ -1,9 +1,9 @@
 package org.evomaster.clientJava.controllerApi;
 
 /*
-    Note: this class is in this module, as to make sure its exact same code
-    is used as well in the EvoMaster Core (eg, when making HTTP calls) and
-    the generated tests
+    Note: this class is in this module, as to make sure that the exact same code
+    is used in the EvoMaster Core (eg, when making HTTP calls) and
+    as well in the generated tests
 
     WARNING: if you change any method name/signature, need to make sure that
     the code generation is updated as well
