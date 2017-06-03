@@ -56,6 +56,10 @@
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
         </dependency>
+        <dependency>
+            <groupId>p6spy</groupId>
+            <artifactId>p6spy</artifactId>
+        </dependency>
 
 
         <dependency>
@@ -145,6 +149,10 @@
                                 <relocation>
                                     <pattern>org.objectweb</pattern>
                                     <shadedPattern>shaded.org.objectweb</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.p6spy</pattern>
+                                    <shadedPattern>shaded.com.p6spy</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

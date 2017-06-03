@@ -41,7 +41,7 @@
             <url>http://www.arcuriandrea.org</url>
             <timezone>2</timezone>
             <roles>
-                <role>Developer</role>
+                <role>Architect/Developer</role>
             </roles>
         </developer>
     </developers>
@@ -364,11 +364,10 @@
                 <artifactId>swagger-hibernate-validations</artifactId>
                 <version>${swagger.version}</version>
             </dependency>
-            <!-- Note: this uses a different version number -->
             <dependency>
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-parser</artifactId>
-                <version>1.0.28</version>
+                <version>1.0.28</version>  <!-- Note: this uses a different version number -->
             </dependency>
 
 
@@ -377,6 +376,11 @@
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>1.4.195</version>
+            </dependency>
+            <dependency> <!-- Used to intercept SQL commands -->
+                <groupId>p6spy</groupId>
+                <artifactId>p6spy</artifactId>
+                <version>3.0.0</version>
             </dependency>
 
 

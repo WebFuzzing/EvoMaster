@@ -11,7 +11,7 @@ import java.util.Map;
 public abstract class SpringController extends EmbeddedSutController {
 
     protected ConfigurableApplicationContext ctx;
-    private final Class<?> applicationClass;
+    protected final Class<?> applicationClass;
 
 
 
