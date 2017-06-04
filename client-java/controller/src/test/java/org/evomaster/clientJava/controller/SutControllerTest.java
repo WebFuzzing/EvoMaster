@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Connection;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
@@ -55,6 +56,11 @@ public class SutControllerTest {
 
         @Override
         public List<AuthenticationDto> getInfoForAuthentication() {
+            return null;
+        }
+
+        @Override
+        public Connection getConnection() {
             return null;
         }
 

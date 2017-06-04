@@ -18,6 +18,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.net.InetSocketAddress;
+import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -197,7 +198,13 @@ public abstract class SutController implements SutHandler{
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
 
-
+    /**
+     * If the system under test (SUT) uses a SQL database, we need to have a
+     * configured connection to access it.
+     *
+     * @return {@code null} if the SUT does not use any SQL database
+     */
+    public abstract Connection getConnection();
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 }

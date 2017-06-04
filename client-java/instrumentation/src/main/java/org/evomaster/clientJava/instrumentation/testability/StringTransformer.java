@@ -165,7 +165,7 @@ public class StringTransformer extends BooleanMethodTransformer {
         return (int) value;
     }
 
-    private static long getLeftAlignmentDistance(String a, String b) {
+    public static long getLeftAlignmentDistance(String a, String b) {
 
         long diff = Math.abs(a.length() - b.length());
         long dist = diff * Character.MAX_VALUE;

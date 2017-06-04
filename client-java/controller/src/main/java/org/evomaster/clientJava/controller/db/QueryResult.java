@@ -4,37 +4,39 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class QueryResult {
 
-    private final String[] columnNames;
-    private final List<String[]> raws;
+    private final List<String> variableNames = new ArrayList<>();
+    private final List<DataRow> rows = new ArrayList<>();
+
+    public QueryResult(List<String> names) {
+        Objects.requireNonNull(names);
+        variableNames.addAll(names);
+    }
 
     public QueryResult(ResultSet resultSet) {
 
-        raws = new ArrayList<>();
-
-        if(resultSet == null){
-            columnNames = new String[0];
+        if (resultSet == null) {
             return;
         }
 
         try {
             ResultSetMetaData md = resultSet.getMetaData();
-            columnNames = new String[md.getColumnCount()];
 
-            for (int i = 0; i < columnNames.length; i++) {
-                columnNames[i] = md.getColumnLabel(i + 1);
+            for (int i = 0; i < md.getColumnCount(); i++) {
+                variableNames.add(md.getColumnLabel(i + 1));
             }
 
             while (resultSet.next()) {
-                String[] row = new String[columnNames.length];
-                for (int i = 0; i < row.length; i++) {
-                    String value = resultSet.getString(i + 1);
-                    row[i] = value;
+                List<Object> row = new ArrayList<>();
+                for (int i = 0; i < resultSet.getFetchSize(); i++) {
+                    Object value = resultSet.getObject(i + 1);
+                    row.add(value);
                 }
-                raws.add(row);
+                rows.add(new DataRow(variableNames, row));
             }
 
         } catch (Exception e) {
@@ -42,16 +44,46 @@ public class QueryResult {
         }
     }
 
+    public void addRow(DataRow row) {
+        if (!sameVariableNames(row)) {
+            throw new IllegalArgumentException("Variable name mismatch");
+        }
+        rows.add(row);
+    }
+
+    public boolean sameVariableNames(DataRow row) {
+        if (variableNames.size() != row.getVariableNames().size()) {
+            return false;
+        }
+        for (int i = 0; i < variableNames.size(); i++) {
+            String a = variableNames.get(i);
+            String b = row.getVariableNames().get(i);
+            if (!a.equalsIgnoreCase(b)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public List<DataRow> seeRows() {
+        return rows;
+    }
+
+    public boolean isEmpty() {
+        return rows.isEmpty();
+    }
+
     @Override
     public String toString() {
 
-        if(columnNames.length == 0){
+        if (variableNames.isEmpty()) {
             return "EMPTY";
         }
 
-        return String.join(",", columnNames) +
+        return String.join(",", variableNames) +
                 String.join("",
-                        raws.stream().map(a -> "\n" + String.join(",", a)).collect(Collectors.toList())
+                        rows.stream().map(r -> "\n" + r.getAsLine()).collect(Collectors.toList())
                 );
     }
 }

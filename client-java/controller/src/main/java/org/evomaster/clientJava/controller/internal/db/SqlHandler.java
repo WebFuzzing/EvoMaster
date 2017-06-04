@@ -1,5 +1,14 @@
 package org.evomaster.clientJava.controller.internal.db;
 
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.statement.select.Select;
+import org.evomaster.clientJava.clientUtil.SimpleLogger;
+import org.evomaster.clientJava.controller.db.QueryResult;
+import org.evomaster.clientJava.controller.db.SqlScriptRunner;
+
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -10,9 +19,15 @@ public class SqlHandler {
     private final List<String> buffer;
     private final List<Double> distances;
 
+    private volatile Connection connection;
+
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
+    }
+
+    public void setConnection(Connection connection) {
+        this.connection = connection;
     }
 
     public void handle(String sql) {
@@ -29,6 +44,10 @@ public class SqlHandler {
 
     public List<Double> getDistances() {
 
+        if(connection == null){
+            return distances;
+        }
+
         buffer.stream()
                 .filter(sql -> isSelect(sql))
                 .forEach(sql -> {
@@ -44,10 +63,42 @@ public class SqlHandler {
         return sql.trim().toLowerCase().startsWith("select");
     }
 
-    private Double computeDistance(String select) {
 
-        //TODO
+    public static boolean isValidSql(String sql){
 
-        return -1d;
+        try {
+            CCJSqlParserUtil.parse(sql);
+            return true;
+        } catch (JSQLParserException e) {
+            return false;
+        }
+    }
+
+    public Double computeDistance(String select) {
+
+        if(connection == null){
+            throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
+        }
+
+        try {
+            Select stmt = (Select) CCJSqlParserUtil.parse(select);
+        } catch (Exception e) {
+            SimpleLogger.warn("Cannot handle select query: " + select +"\n" + e.toString(), e);
+            return Double.MAX_VALUE;
+        }
+
+        String noConstraints = SelectHeuristics.removeConstraints(select);
+
+        QueryResult data;
+
+        try {
+             data = SqlScriptRunner.execCommand(connection, noConstraints);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        double dist = SelectHeuristics.computeDistance(select, data);
+
+        return dist;
     }
 }

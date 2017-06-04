@@ -60,6 +60,10 @@
             <groupId>p6spy</groupId>
             <artifactId>p6spy</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.github.jsqlparser</groupId>
+            <artifactId>jsqlparser</artifactId>
+        </dependency>
 
 
         <dependency>
@@ -153,6 +157,10 @@
                                 <relocation>
                                     <pattern>com.p6spy</pattern>
                                     <shadedPattern>shaded.com.p6spy</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>net.sf.jsqlparser</pattern>
+                                    <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
