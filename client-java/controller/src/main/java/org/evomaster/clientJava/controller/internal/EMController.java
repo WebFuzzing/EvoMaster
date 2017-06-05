@@ -64,6 +64,13 @@ public class EMController {
     }
 
 
+    @Path(ControllerConstants.NEW_TEST)
+    @POST
+    public void newTest() {
+        sutController.newTest();
+    }
+
+
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT
     @Consumes(Formats.JSON_V1)
@@ -84,6 +91,7 @@ public class EMController {
                             //there has been an internal failure in starting the SUT
                             throw new WebApplicationException("Internal failure: cannot start SUT based on given configuration", 500);
                         }
+                        sutController.initSqlHandler();
                         sutController.newTest();
                         newlyStarted = true;
                     } else {

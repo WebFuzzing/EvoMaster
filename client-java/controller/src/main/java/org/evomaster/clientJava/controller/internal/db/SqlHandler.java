@@ -51,6 +51,13 @@ public class SqlHandler {
         buffer.stream()
                 .filter(sql -> isSelect(sql))
                 .forEach(sql -> {
+                    /*
+                        Note: even if the Connection we got to analyze
+                        the DB is using P6Spy, that would not be a problem,
+                        as output SQL would not end up on the buffer instance
+                        we are iterating on (copy on write), and we clear
+                        the buffer after this loop.
+                     */
                     double dist = computeDistance(sql);
                     distances.add(dist);
                 });

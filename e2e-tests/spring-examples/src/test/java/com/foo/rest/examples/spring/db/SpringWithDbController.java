@@ -50,4 +50,14 @@ public class SpringWithDbController extends SpringController {
     public void resetStateOfSUT() {
         DbCleaner.clearDatabase_H2(connection);
     }
+
+    @Override
+    public Connection getConnection() {
+        return connection;
+    }
+
+    @Override
+    public String getDatabaseDriverName() {
+        return "org.h2.Driver";
+    }
 }

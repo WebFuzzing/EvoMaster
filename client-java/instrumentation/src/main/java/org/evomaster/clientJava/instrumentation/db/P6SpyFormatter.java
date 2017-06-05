@@ -19,10 +19,10 @@ public class P6SpyFormatter implements MessageFormattingStrategy {
                                 String prepared,
                                 String sql) {
 
-        if(sql == null || sql.trim().isEmpty()){
+        if(prepared == null || prepared.trim().isEmpty()){
             return "";
         }
 
-        return PREFIX + sql;
+        return PREFIX + prepared;
     }
 }

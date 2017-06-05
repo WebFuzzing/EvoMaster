@@ -4,6 +4,7 @@ import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 
@@ -23,29 +24,28 @@ import java.util.Arrays;
  *
  * This class can be used for any analyses of the SUT output
  */
-public class StandardOutputTracker extends PrintStream {
+public class StandardOutputTracker extends ByteArrayOutputStream{//extends PrintStream {
 
     private static final PrintStream DEFAULT_OUT = System.out;
-
-    private static final ByteArrayOutputStream byteStream = new ByteArrayOutputStream(2048);
 
     private volatile SutController sutController;
 
 
     public static void setTracker(boolean on, SutController sutController){
         if(on){
-            System.setOut(new StandardOutputTracker(sutController));
+            System.setOut(new PrintStream(new StandardOutputTracker(sutController), true));
         } else {
             System.setOut(DEFAULT_OUT);
         }
     }
 
     private StandardOutputTracker(SutController sutController) {
-        super(new PrintStream(byteStream), true);
+        super(2048);
+        this.sutController = sutController;
     }
 
     @Override
-    public void flush() {
+    public void flush() throws IOException {
 
         /*
             Output is written to a buffer.
@@ -58,8 +58,8 @@ public class StandardOutputTracker extends PrintStream {
         synchronized (this) {
             super.flush();
 
-            data = byteStream.toString();
-            byteStream.reset();
+            data = toString(); //get content of the buffer
+            reset();
 
             DEFAULT_OUT.print(data);
         }

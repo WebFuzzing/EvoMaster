@@ -127,6 +127,15 @@ public abstract class SutController implements SutHandler{
         sqlHandler.handle(sql);
     }
 
+    /**
+     * This is needed only during test generation (not execution),
+     * and it is automatically called by the EM controller after
+     * the SUT is started.
+     */
+    public final void initSqlHandler(){
+        sqlHandler.setConnection(getConnection());
+    }
+
     public final void resetExtraHeuristics(){
         sqlHandler.reset();
     }
@@ -205,6 +214,15 @@ public abstract class SutController implements SutHandler{
      * @return {@code null} if the SUT does not use any SQL database
      */
     public abstract Connection getConnection();
+
+    /**
+     * If the system under test (SUT) uses a SQL database, we need to specify
+     * the driver used to connect, eg. {@code org.h2.Driver}.
+     * This is needed for when we intercept SQL commands with P6Spy
+     *
+     * @return {@code null} if the SUT does not use any SQL database
+     */
+    public abstract String getDatabaseDriverName();
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 }

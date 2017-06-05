@@ -1,9 +1,13 @@
 package org.evomaster.clientJava.controller;
 
 import com.ea.agentloader.AgentLoader;
+import com.p6spy.engine.spy.appender.StdoutLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.controller.internal.db.StandardOutputTracker;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
+import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
+
+import java.util.Objects;
 
 /**
  * Class responsible to handle the SutController in a way
@@ -45,6 +49,30 @@ public class InstrumentedSutStarter {
         } else {
             throw new IllegalArgumentException("Invalid SUT controller type");
         }
+
+        initP6Spy(sutController);
+    }
+
+    private void initP6Spy(SutController sutController) {
+        String driver = sutController.getDatabaseDriverName();
+        if(driver==null || driver.isEmpty()){
+            return;
+        }
+        initP6Spy(driver);
+    }
+
+    //FIXME move to instrumentation in Agent
+    public static void initP6Spy(String driver){
+        Objects.requireNonNull(driver);
+
+        //see http://p6spy.readthedocs.io/en/latest/configandusage.html
+        System.setProperty("p6spy.config.logMessageFormat", P6SpyFormatter.class.getName());
+        System.setProperty("p6spy.config.driverlist", driver);
+        System.setProperty("p6spy.config.filter", "true");
+        System.setProperty("p6spy.config.include", "select, insert, update, delete");
+        System.setProperty("p6spy.config.autoflush", "true");
+        System.setProperty("p6spy.config.appender", StdoutLogger.class.getName());
+        System.setProperty("p6spy.config.jmx", "false");
     }
 
     public boolean start() {

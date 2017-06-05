@@ -5,6 +5,7 @@ import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
@@ -66,6 +67,16 @@ public abstract class SpringController extends EmbeddedSutController {
 
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
+        return null;
+    }
+
+    @Override
+    public Connection getConnection() {
+        return null;
+    }
+
+    @Override
+    public String getDatabaseDriverName() {
         return null;
     }
 }

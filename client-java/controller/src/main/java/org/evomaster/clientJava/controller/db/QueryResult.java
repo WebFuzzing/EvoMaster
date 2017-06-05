@@ -32,7 +32,7 @@ public class QueryResult {
 
             while (resultSet.next()) {
                 List<Object> row = new ArrayList<>();
-                for (int i = 0; i < resultSet.getFetchSize(); i++) {
+                for (int i = 0; i < md.getColumnCount(); i++) {
                     Object value = resultSet.getObject(i + 1);
                     row.add(value);
                 }
