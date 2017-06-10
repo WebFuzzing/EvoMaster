@@ -80,12 +80,19 @@ class RestPath(path: String) {
         if (this.tokens.size != other.tokens.size) {
             return false
         }
-        for (i in 0 until tokens.size) {
-            if (this.tokens[i] != other.tokens[i]) {
-                return false
-            }
+        return (0 until tokens.size).none { this.tokens[it] != other.tokens[it] }
+    }
+
+    fun isAResolvedOf(other: RestPath) : Boolean {
+        if (this.tokens.size != other.tokens.size) {
+            return false
         }
-        return true
+
+        return (0 until tokens.size).none {
+            val tt =  this.tokens[it]
+            val ot = other.tokens[it]
+            tt.isParameter || (tt != ot && !ot.isParameter)
+        }
     }
 
     fun lastElement(): String {
@@ -118,13 +125,7 @@ class RestPath(path: String) {
             return false
         }
 
-        for (i in 0 until this.tokens.size) {
-            if (other.tokens[i] != this.tokens[i]) {
-                return false
-            }
-        }
-
-        return true
+        return (0 until this.tokens.size).none { other.tokens[it] != this.tokens[it] }
     }
 
     /**

@@ -147,12 +147,47 @@ class FitnessValue(
      */
     fun compareExtraToMinimize(other: FitnessValue): Int {
 
+        //TODO parameter to experiment with
+        //return compareByRewardMore(other)
+        return compareByReduce(other)
+    }
+
+    private fun aggregateDistances(distances : List<Double>) : Double{
+        if(distances.isEmpty()){
+            return Double.MAX_VALUE
+        }
+        val max = distances.max()!!
+        val sum = distances.sum()
+        if(sum >= max){
+            return sum
+        } else {
+            //handle possible overflow
+            return Double.MAX_VALUE
+        }
+    }
+
+    private fun compareByReduce(other: FitnessValue): Int {
+
+        val ts = aggregateDistances(this.extraToMinimize)
+        val os = aggregateDistances(other.extraToMinimize)
+
+        if(ts < os){
+            return +1
+        } else if(ts > os){
+            return -1
+        } else {
+            return 0
+        }
+    }
+
+
+    private fun compareByRewardMore(other: FitnessValue): Int {
         val thisLength = this.extraToMinimize.size
         val otherLength = other.extraToMinimize.size
-        val min = Math.min(thisLength, otherLength)
+        val minLen = Math.min(thisLength, otherLength)
 
-        if (min > 0) {
-            for (i in 0..(min - 1)) {
+        if (minLen > 0) {
+            for (i in 0..(minLen - 1)) {
                 val te = this.extraToMinimize[i]
                 val oe = other.extraToMinimize[i]
 
@@ -180,9 +215,9 @@ class FitnessValue(
             heuristics. And so we reward it.
 
             However, there is big risk of bloat. So, let's put
-            an arbitrary limit.
+            an arbitrary low limit.
          */
-        if (min >= 10) {
+        if (minLen >= 3) { //TODO should be a parameter to experiment with
             return 0
         }
 

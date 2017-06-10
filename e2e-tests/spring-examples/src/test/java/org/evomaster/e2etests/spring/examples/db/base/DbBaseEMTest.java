@@ -4,14 +4,13 @@ import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DbBaseEMTest extends DbBaseTestBase {
 
-    @Disabled
+
     @Test
     public void testRunEM() {
 
@@ -19,7 +18,7 @@ public class DbBaseEMTest extends DbBaseTestBase {
                 "--createTests", "true",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1000",
+                "--maxActionEvaluations", "10000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
@@ -27,6 +26,6 @@ public class DbBaseEMTest extends DbBaseTestBase {
 
         assertTrue(solution.getIndividuals().size() >= 1);
 
-        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/db/base/entitiesByName/{name}", "");
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/base/entitiesByName/{name}", "");
     }
 }

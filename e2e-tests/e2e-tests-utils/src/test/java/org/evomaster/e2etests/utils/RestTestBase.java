@@ -3,10 +3,7 @@ package org.evomaster.e2etests.utils;
 import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestCallAction;
-import org.evomaster.core.problem.rest.RestCallResult;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.problem.rest.service.RemoteController;
 import org.evomaster.core.search.Action;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -117,8 +114,12 @@ public abstract class RestTestBase {
             if (action.getVerb() != verb) {
                 continue;
             }
-            if(path!=null && ! action.getPath().toString().equals(path)){
-                continue;
+
+            if(path!=null){
+                RestPath target = new RestPath(path);
+                if(! action.getPath().isEquivalent(target)) {
+                    continue;
+                }
             }
 
             RestCallResult res = (RestCallResult) ind.getResults().get(i);
