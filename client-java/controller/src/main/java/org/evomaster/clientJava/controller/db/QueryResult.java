@@ -9,12 +9,14 @@ import java.util.stream.Collectors;
 
 public class QueryResult {
 
-    private final List<String> variableNames = new ArrayList<>();
+    private final List<VariableDescriptor> variableDescriptors = new ArrayList<>();
     private final List<DataRow> rows = new ArrayList<>();
 
     public QueryResult(List<String> names) {
         Objects.requireNonNull(names);
-        variableNames.addAll(names);
+        for (String n : names) {
+            variableDescriptors.add(new VariableDescriptor(n));
+        }
     }
 
     public QueryResult(ResultSet resultSet) {
@@ -27,7 +29,13 @@ public class QueryResult {
             ResultSetMetaData md = resultSet.getMetaData();
 
             for (int i = 0; i < md.getColumnCount(); i++) {
-                variableNames.add(md.getColumnLabel(i + 1));
+                int index = i + 1;
+                VariableDescriptor desc = new VariableDescriptor(
+                        md.getColumnName(index),
+                        md.getColumnLabel(index),
+                        md.getTableName(index)
+                );
+                variableDescriptors.add(desc);
             }
 
             while (resultSet.next()) {
@@ -36,7 +44,7 @@ public class QueryResult {
                     Object value = resultSet.getObject(i + 1);
                     row.add(value);
                 }
-                rows.add(new DataRow(variableNames, row));
+                rows.add(new DataRow(variableDescriptors, row));
             }
 
         } catch (Exception e) {
@@ -52,13 +60,13 @@ public class QueryResult {
     }
 
     public boolean sameVariableNames(DataRow row) {
-        if (variableNames.size() != row.getVariableNames().size()) {
+        if (variableDescriptors.size() != row.getVariableDescriptors().size()) {
             return false;
         }
-        for (int i = 0; i < variableNames.size(); i++) {
-            String a = variableNames.get(i);
-            String b = row.getVariableNames().get(i);
-            if (!a.equalsIgnoreCase(b)) {
+        for (int i = 0; i < variableDescriptors.size(); i++) {
+            VariableDescriptor a = variableDescriptors.get(i);
+            VariableDescriptor b = row.getVariableDescriptors().get(i);
+            if (!a.equals(b)) {
                 return false;
             }
         }
@@ -77,12 +85,14 @@ public class QueryResult {
     @Override
     public String toString() {
 
-        if (variableNames.isEmpty()) {
+        if (variableDescriptors.isEmpty()) {
             return "EMPTY";
         }
 
-        return String.join(",", variableNames) +
-                String.join("",
+        String header = String.join(",", variableDescriptors.stream()
+                .map(d -> d.toString()).collect(Collectors.toList()));
+
+        return header + String.join("",
                         rows.stream().map(r -> "\n" + r.getAsLine()).collect(Collectors.toList())
                 );
     }

@@ -24,6 +24,7 @@ public abstract class EmbeddedSutController extends SutController {
     @Override
     public final void newTest(){
         InstrumentationController.resetForNewTest();
+        resetExtraHeuristics();
     }
 
     @Override

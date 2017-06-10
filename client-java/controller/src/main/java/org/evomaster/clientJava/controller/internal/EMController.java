@@ -64,13 +64,6 @@ public class EMController {
     }
 
 
-    @Path(ControllerConstants.NEW_TEST)
-    @POST
-    public void newTest() {
-        sutController.newTest();
-    }
-
-
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT
     @Consumes(Formats.JSON_V1)
@@ -108,7 +101,7 @@ public class EMController {
                 if (dto.resetState != null && dto.resetState) {
                     if (!dto.run) {
                         throw new WebApplicationException(
-                                "Invalid JSON: cannot reset state and stop service at same time");
+                                "Invalid JSON: cannot reset state and stop service at same time", 400);
                     }
 
                     if (!newlyStarted) { //no point resetting if fresh start

@@ -9,10 +9,29 @@ import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.instrumentation.testability.StringTransformer;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 public class HeuristicsCalculator {
 
+    /**
+     * Key -> table alias,
+     * Value -> table name
+     */
+    private final Map<String, String> tableAliases;
 
-    public static double computeExpression(Expression exp, DataRow data) {
+    public HeuristicsCalculator(Map<String, String> aliases) {
+
+        Map<String, String> map = new HashMap<>();
+        if (aliases != null) {
+            map.putAll(aliases);
+        }
+
+        tableAliases = Collections.unmodifiableMap(map);
+    }
+
+    public double computeExpression(Expression exp, DataRow data) {
 
         //TODO all cases
 
@@ -23,12 +42,12 @@ public class HeuristicsCalculator {
         }
     }
 
-    private static double cannotHandle(Expression exp) {
+    private double cannotHandle(Expression exp) {
         SimpleLogger.warn("Cannot handle SQL expression type: " + exp.toString());
         return Double.MAX_VALUE;
     }
 
-    private static double computeEqualsTo(EqualsTo exp, DataRow data) {
+    private double computeEqualsTo(EqualsTo exp, DataRow data) {
 
         Object left = getValue(exp.getLeftExpression(), data);
         Object right = getValue(exp.getRightExpression(), data);
@@ -48,13 +67,19 @@ public class HeuristicsCalculator {
         }
     }
 
-    private static Object getValue(Expression exp, DataRow data) {
+    private Object getValue(Expression exp, DataRow data) {
 
         //TODO all cases
 
         if (exp instanceof Column) {
-            String name = ((Column) exp).getName(true);
-            return data.getValueByName(name);
+            String name = ((Column) exp).getColumnName();
+
+            String table = ((Column) exp).getTable().getName();
+            //might be an alias
+            table = tableAliases.getOrDefault(table, table);
+
+            return data.getValueByName(name, table);
+
         } else if (exp instanceof LongValue) {
             return ((LongValue) exp).getValue();
         } else if (exp instanceof StringValue) {

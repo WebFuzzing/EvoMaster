@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
+import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -89,7 +90,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         //TODO prioritized list
         val ids = randomness.choose(archive.notCoveredTargets(), 100)
 
-
         val dto = rc.getTargetCoverage(ids) ?:
                 throw IllegalStateException("Cannot retrieve coverage")
 
@@ -104,9 +104,27 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             fv.updateTarget(t.id, t.value)
         }
 
+        if(configuration.heuristicsForSQL) {
+            val extra = rc.getExtraHeuristics() ?:
+                    throw IllegalStateException("Cannot retrieve extra heuristics")
+
+            if (!isEmpty(extra)) {
+                //TODO handling of toMaximize
+                fv.setExtraToMinimize(extra.toMinimize)
+            }
+        }
+
         handleResponseTargets(fv, individual.actions, actionResults)
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+    }
+
+    private fun isEmpty(dto: ExtraHeuristicDto): Boolean {
+
+        val hasMin = dto.toMinimize != null && !dto.toMinimize.isEmpty()
+        val hasMax = dto.toMaximize != null && !dto.toMaximize.isEmpty()
+
+        return !hasMin && !hasMax
     }
 
     /**

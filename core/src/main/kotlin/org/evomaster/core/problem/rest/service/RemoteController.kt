@@ -2,10 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.ControllerConstants
-import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
-import org.evomaster.clientJava.controllerApi.dto.SutRunDto
-import org.evomaster.clientJava.controllerApi.dto.TargetsResponseDto
+import org.evomaster.clientJava.controllerApi.dto.*
 import org.evomaster.core.EMConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -28,30 +25,30 @@ import javax.ws.rs.core.Response
 class RemoteController() {
 
     companion object {
-        val log : Logger = LoggerFactory.getLogger(RemoteController::class.java)
+        val log: Logger = LoggerFactory.getLogger(RemoteController::class.java)
     }
 
     lateinit var host: String
     var port: Int = 0
 
     @Inject
-    private lateinit var config : EMConfig
+    private lateinit var config: EMConfig
 
     private val client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int) : this(){
+    constructor(host: String, port: Int) : this() {
         this.host = host
         this.port = port
     }
 
     @PostConstruct
-    private fun initialize(){
+    private fun initialize() {
         host = config.sutControllerHost
         port = config.sutControllerPort
     }
 
     @PreDestroy
-    private fun preDestroy(){
+    private fun preDestroy() {
         close()
     }
 
@@ -60,7 +57,7 @@ class RemoteController() {
     }
 
 
-    fun close(){
+    fun close() {
         client.close()
     }
 
@@ -86,7 +83,7 @@ class RemoteController() {
         return dto
     }
 
-    fun getControllerInfo() : ControllerInfoDto? {
+    fun getControllerInfo(): ControllerInfoDto? {
 
         val response = getWebTarget()
                 .path(ControllerConstants.CONTROLLER_INFO)
@@ -115,7 +112,7 @@ class RemoteController() {
                     .path(ControllerConstants.RUN_SUT_PATH)
                     .request()
                     .put(Entity.json(SutRunDto(run, reset)))
-        }catch (e: Exception){
+        } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
             return false
         }
@@ -137,16 +134,14 @@ class RemoteController() {
     fun resetSUT() = changeState(true, true)
 
 
-    fun startANewSearch(): Boolean{
+    fun startANewSearch(): Boolean {
 
         val response = getWebTarget()
                 .path(ControllerConstants.NEW_SEARCH)
                 .request()
                 .post(Entity.entity("{\"newSearch\"=true}", MediaType.APPLICATION_JSON_TYPE))
 
-        val success = wasSuccess(response)
-
-        if (!success) {
+        if (!wasSuccess(response)) {
             log.warn("Failed to inform SUT of new search. HTTP status: {}", response.status)
             return false
         }
@@ -154,7 +149,7 @@ class RemoteController() {
         return true
     }
 
-    fun getTargetCoverage(ids: Set<Int> = setOf()) : TargetsResponseDto?{
+    fun getTargetCoverage(ids: Set<Int> = setOf()): TargetsResponseDto? {
 
         val queryParam = ids.joinToString(",")
 
@@ -164,9 +159,7 @@ class RemoteController() {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        val success = wasSuccess(response)
-
-        if (!success) {
+        if (!wasSuccess(response)) {
             log.warn("Failed to change running state of the SUT. HTTP status: {}", response.status)
             return null
         }
@@ -174,7 +167,34 @@ class RemoteController() {
         return response.readEntity(TargetsResponseDto::class.java)
     }
 
-    fun wasSuccess(response: Response?) : Boolean{
+    fun getExtraHeuristics(): ExtraHeuristicDto? {
+
+        val response = getWebTarget()
+                .path(ControllerConstants.EXTRA_HEURISTICS)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .get()
+
+        if (!wasSuccess(response)) {
+            log.warn("Failed to retrieve extra heuristics. HTTP status: {}", response.status)
+            return null
+        }
+
+        return response.readEntity(ExtraHeuristicDto::class.java)
+    }
+
+    fun resetExtraHeuristics() {
+
+        val response = getWebTarget()
+                .path(ControllerConstants.EXTRA_HEURISTICS)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .delete()
+
+        if (!wasSuccess(response)) {
+            log.warn("Failed to reset extra heuristics. HTTP status: {}", response.status)
+        }
+    }
+
+    fun wasSuccess(response: Response?): Boolean {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
     }
 

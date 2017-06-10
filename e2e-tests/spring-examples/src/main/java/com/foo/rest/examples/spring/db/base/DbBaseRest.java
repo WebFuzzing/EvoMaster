@@ -52,15 +52,19 @@ public class DbBaseRest {
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public DbBaseDto get(@PathVariable("id") Long id) {
+    public ResponseEntity<DbBaseDto> get(@PathVariable("id") Long id) {
 
         DbBaseEntity entity = repository.findOne(id);
+
+        if(entity == null){
+            return ResponseEntity.status(404).build();
+        }
 
         DbBaseDto dto = new DbBaseDto();
         dto.id = entity.getId();
         dto.name = entity.getName();
 
-        return dto;
+        return ResponseEntity.ok(dto);
     }
 
 

@@ -27,12 +27,4 @@ public class ExtraHeuristicDto {
      */
     public List<Double> toMaximize = new ArrayList<>();
 
-
-    public boolean isEmpty(){
-
-        boolean hasMin = toMinimize != null && ! toMinimize.isEmpty();
-        boolean hasMax = toMaximize != null && ! toMaximize.isEmpty();
-
-        return !hasMin && !hasMax;
-    }
 }

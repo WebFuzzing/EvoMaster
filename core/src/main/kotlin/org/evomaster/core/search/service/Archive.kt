@@ -227,8 +227,13 @@ class Archive<T>() where T : Individual {
             val currh = current[0].fitness.getHeuristic(k)
             val currsize = current[0].individual.size()
             val copySize = copy.individual.size()
+            val extra = copy.fitness.compareExtraToMinimize(current[0].fitness)
 
-            if(v > currh || (v==currh && copySize < currsize)){
+            val better = v > currh ||
+                    (v==currh && extra > 0) ||
+                    (v==currh && extra == 0 && copySize < currsize)
+
+            if(better){
                 time.newActionImprovement()
                 resetCounter(k)
             }
@@ -242,8 +247,12 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
-            if (v >= currh || (v == currh && copySize <= currsize)) {
-                // replace worst element, if copy is not worse than it (but not necessarily better)
+            val equivalent = (v == currh && extra == 0 && copySize == currsize)
+
+            if (better || equivalent) {
+                /*
+                    replace worst element, if copy is not worse than it (but not necessarily better).
+                 */
                 current[0] = copy
                 added = true
             }
@@ -259,8 +268,17 @@ class Archive<T>() where T : Individual {
      */
     private fun sortAndShrinkIfNeeded(list: MutableList<EvaluatedIndividual<T>>, target: Int) {
 
+        /*
+            First look at heuristics for the target.
+            That is most important value.
+            In case of same, then look at the extra heuristics.
+            If all the same, then do prefer shorter tests.
+         */
+
         list.sortWith(compareBy<EvaluatedIndividual<T>>
-        { it.fitness.getHeuristic(target) }.thenBy { -it.individual.size() })
+        { it.fitness.getHeuristic(target) }
+                .thenComparator { a, b ->  a.fitness.compareExtraToMinimize(b.fitness)}
+                .thenBy { -it.individual.size() })
 
         val limit = apc.getArchiveTargetLimit()
         while (list.size > limit) {

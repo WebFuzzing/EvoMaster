@@ -5,10 +5,14 @@ As the number of targets is unknown, we cannot have
 a minimization problem, as new targets could be added
 throughout the search
  */
-class FitnessValue(var size: Double) {
+class FitnessValue(
+        /** An estimation of the size of the individual that obtained
+         * this fitness value. Longer individuals are worse, but only
+         * when fitness is not strictly better */
+        var size: Double) {
 
     init {
-        if(size < 0.0){
+        if (size < 0.0) {
             throw IllegalArgumentException("Invalid size value: $size")
         }
     }
@@ -29,11 +33,29 @@ class FitnessValue(var size: Double) {
      */
     private val targets: MutableMap<Int, Double> = mutableMapOf()
 
+    /**
+     * List of extra heuristics to minimize (min 0).
+     * Those are related to the whole test, and not specific target.
+     * Covering those extra does not guarantee that it would help in
+     * covering target.
+     * An example is rewarding SQL Select commands that return non-empty
+     *
+     * Note: this values are sorted.
+     */
+    private val extraToMinimize: MutableList<Double> = mutableListOf()
+
 
     fun copy(): FitnessValue {
         val copy = FitnessValue(size)
         copy.targets.putAll(this.targets)
+        copy.extraToMinimize.addAll(this.extraToMinimize)
         return copy
+    }
+
+    fun setExtraToMinimize(list: List<Double>) {
+        extraToMinimize.clear()
+        extraToMinimize.addAll(list)
+        extraToMinimize.sort()
     }
 
     fun getViewOfData(): Map<Int, Double> {
@@ -70,7 +92,9 @@ class FitnessValue(var size: Double) {
         targets[id] = value
     }
 
-
+    /**
+     * This only merges the target heuristics, and not the extra ones
+     */
     fun merge(other: FitnessValue) {
 
         other.targets.keys.forEach { t ->
@@ -103,7 +127,12 @@ class FitnessValue(var size: Double) {
             if (v < z) {
                 return false
             }
-            if (v > z || (v==z && this.size < other.size)) {
+
+            val extra = compareExtraToMinimize(other)
+
+            if (v > z ||
+                    (v == z && extra > 0) ||
+                    (v == z && extra == 0 && this.size < other.size)) {
                 atLeastOneBetter = true
             }
         }
@@ -111,40 +140,56 @@ class FitnessValue(var size: Double) {
         return atLeastOneBetter
     }
 
+    /**
+     * Compare the extra heuristics between this and [other].
+     *
+     * @return 0 if equivalent, 1 if this is better, and -1 otherwise
+     */
+    fun compareExtraToMinimize(other: FitnessValue): Int {
 
-    @Deprecated("")
-    fun subsumes(other: FitnessValue, strict: Boolean = true): Boolean {
+        val thisLength = this.extraToMinimize.size
+        val otherLength = other.extraToMinimize.size
+        val min = Math.min(thisLength, otherLength)
 
-        if (this.targets.size < other.targets.size) {
-            //if less targets, cannot subsumes
-            return false
+        if (min > 0) {
+            for (i in 0..(min - 1)) {
+                val te = this.extraToMinimize[i]
+                val oe = other.extraToMinimize[i]
+
+                /*
+                    We prioritize the improvement of lowest
+                    heuristics, as more likely to be covered (ie 0)
+                    first.
+                */
+
+                if (te < oe) {
+                    return +1
+                } else if (te > oe) {
+                    return -1
+                }
+            }
         }
 
-        var atLeastOneBetter = false
-
-        for ((k, v) in this.targets) {
-
-            if (!strict && v == 1.0) {
-                continue
-            }
-
-            val z = other.targets[k] ?: 0.0
-            if (v < z) {
-                return false
-            }
-            if (v > z) {
-                atLeastOneBetter = true
-            }
+        if (thisLength == otherLength) {
+            return 0
         }
 
-        if (!atLeastOneBetter) {
-            return false
+        /*
+            up to min size, same values of the heuristics.
+            But one test is doing more stuff, as it has more extra
+            heuristics. And so we reward it.
+
+            However, there is big risk of bloat. So, let's put
+            an arbitrary limit.
+         */
+        if (min >= 10) {
+            return 0
         }
 
-        val missing = other.targets.keys
-                .filter { k -> !this.targets.containsKey(k) }
-                .size
-
-        return missing == 0
+        if (thisLength > otherLength) {
+            return +1
+        } else {
+            return -1
+        }
     }
 }

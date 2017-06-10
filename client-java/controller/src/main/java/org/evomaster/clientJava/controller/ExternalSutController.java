@@ -248,6 +248,7 @@ public abstract class ExternalSutController extends SutController {
         if(isInstrumentationActivated()) {
             serverController.resetForNewTest();
         }
+        resetExtraHeuristics();
     }
 
     @Override

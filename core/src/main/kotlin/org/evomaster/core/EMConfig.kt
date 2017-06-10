@@ -278,4 +278,8 @@ class EMConfig {
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
     @Min(1.0)
     var maxTestSize = 10
+
+    @Cfg("Tracking of SQL commands to improve test generation")
+    var heuristicsForSQL = true
+
 }

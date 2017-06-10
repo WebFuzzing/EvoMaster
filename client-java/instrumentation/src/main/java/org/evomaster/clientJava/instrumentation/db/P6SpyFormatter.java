@@ -19,10 +19,23 @@ public class P6SpyFormatter implements MessageFormattingStrategy {
                                 String prepared,
                                 String sql) {
 
-        if(prepared == null || prepared.trim().isEmpty()){
+        boolean hasPrepared = (prepared != null && !prepared.trim().isEmpty());
+        boolean hasSQL = (sql != null && !sql.trim().isEmpty());
+
+        if (!hasPrepared && !hasSQL) {
             return "";
         }
 
-        return PREFIX + prepared;
+        /*
+            Note: weird behavior of P6Spy library, where definition
+            of "prepared" and "sql" inputs is rather confusing,
+            and we get different behavior based on whether parameters "?"
+            are present or not in the query.
+         */
+        if (!hasSQL) {
+            return PREFIX + prepared;
+        } else {
+            return PREFIX + sql;
+        }
     }
 }
