@@ -77,10 +77,11 @@
                                     <pattern>org.objectweb</pattern>
                                     <shadedPattern>shaded.org.objectweb</shadedPattern>
                                 </relocation>
-                                <relocation>
-                                    <pattern>com.p6spy</pattern>
-                                    <shadedPattern>shaded.com.p6spy</shadedPattern>
-                                </relocation>
+                                <!-- Shading this one gives a few issues... -->
+                                <!--<relocation>-->
+                                    <!--<pattern>com.p6spy</pattern>-->
+                                    <!--<shadedPattern>shaded.com.p6spy</shadedPattern>-->
+                                <!--</relocation>-->
                             </relocations>
                         </configuration>
                     </execution>

@@ -75,6 +75,8 @@ public class InstrumentedSutStarter {
         System.setProperty("p6spy.config.jmx", "false");
     }
 
+
+
     public boolean start() {
         StandardOutputTracker.setTracker(true, sutController);
         return sutController.startTheControllerServer();
