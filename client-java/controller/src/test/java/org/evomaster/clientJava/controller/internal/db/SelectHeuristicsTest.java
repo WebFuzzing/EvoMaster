@@ -112,4 +112,63 @@ public class SelectHeuristicsTest {
         checkIncreasingTillCovered("x",
                 Arrays.asList("a", "ab", "xxx123x", "xxx123", "axx123", "abc234"), "abc123", sql);
     }
+
+    @Test
+    public void testNotEqual() {
+
+        String sql = "select x from Foo where x != 5";
+
+        checkIncreasingTillCovered("x", Arrays.asList(5), 6, sql);
+    }
+
+    @Test
+    public void testGreaterThanEquals() {
+
+        String sql = "select x from Foo where x >= 5";
+
+        checkIncreasingTillCovered("x", Arrays.asList(-4, 2, 3), 5, sql);
+    }
+
+    @Test
+    public void testGreaterThan() {
+
+        String sql = "select x from Foo where x > 5";
+
+        checkIncreasingTillCovered("x", Arrays.asList(-4, 2, 3, 5), 6, sql);
+    }
+
+    @Test
+    public void testMinorThan() {
+
+        String sql = "select x from Foo where x < 5";
+
+        checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6, 5), -2, sql);
+    }
+
+    @Test
+    public void testMinorThanEquals() {
+
+        String sql = "select x from Foo where x <= 5";
+
+        checkIncreasingTillCovered("x", Arrays.asList(10, 7, 6), 5, sql);
+    }
+
+
+    @Test
+    public void testAnd() {
+
+        String sql = "select x from Foo where x > 5 and x < 10";
+
+        checkIncreasingTillCovered("x", Arrays.asList(20, -1, 4), 7, sql);
+    }
+
+    @Test
+    public void testOr() {
+
+        String sql = "select x from Foo where x < 0 or x > 100";
+
+        checkIncreasingTillCovered("x", Arrays.asList(50, 60, 20, 90, 5), -3, sql);
+    }
+
+
 }
