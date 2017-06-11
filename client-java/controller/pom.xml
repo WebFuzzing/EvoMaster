@@ -125,8 +125,12 @@
                             </transformers>
                             <relocations>
                                 <relocation>
-                                    <pattern>com</pattern>
-                                    <shadedPattern>shaded.com</shadedPattern>
+                                    <pattern>com.fasterxml</pattern>
+                                    <shadedPattern>shaded.com.fasterxml</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.ea</pattern>
+                                    <shadedPattern>shaded.com.ea</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>javax.ws.</pattern>

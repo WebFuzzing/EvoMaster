@@ -1,7 +1,9 @@
 package com.foo.rest.examples.spring.db;
 
 import com.foo.rest.examples.spring.SpringController;
+import com.p6spy.engine.spy.P6SpyDriver;
 import org.evomaster.clientJava.controller.db.DbCleaner;
+import org.hibernate.dialect.H2Dialect;
 import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -24,7 +26,10 @@ public class SpringWithDbController extends SpringController {
         ctx = SpringApplication.run(applicationClass, new String[]{
                 "--server.port=0",
                 "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
-                "--spring.datasource.driver-class-name=com.p6spy.engine.spy.P6SpyDriver"
+                "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
+                "--spring.jpa.database-platform=" + H2Dialect.class.getName(),
+                "--spring.datasource.username=sa",
+                "--spring.datasource.password"
         });
 
 
@@ -40,7 +45,7 @@ public class SpringWithDbController extends SpringController {
         try {
             connection = jdbc.getDataSource().getConnection();
         } catch (SQLException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         return "http://localhost:" + getSutPort();
