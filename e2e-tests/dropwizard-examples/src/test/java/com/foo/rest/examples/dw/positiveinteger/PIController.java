@@ -3,6 +3,7 @@ package com.foo.rest.examples.dw.positiveinteger;
 import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class PIController extends EmbeddedSutController {
@@ -77,6 +78,16 @@ public class PIController extends EmbeddedSutController {
 
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
+        return null;
+    }
+
+    @Override
+    public Connection getConnection() {
+        return null;
+    }
+
+    @Override
+    public String getDatabaseDriverName() {
         return null;
     }
 }

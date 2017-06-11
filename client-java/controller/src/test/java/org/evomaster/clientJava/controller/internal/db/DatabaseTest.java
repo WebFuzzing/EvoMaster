@@ -34,7 +34,6 @@ public class DatabaseTest {
     @BeforeAll
     public static void initClass() throws Exception{
         InstrumentedSutStarter.initP6Spy("org.h2.Driver");
-        //Class.forName("com.p6spy.engine.spy.P6SpyDriver");
 
         connection = DriverManager.getConnection("jdbc:p6spy:h2:mem:db_test", "sa", "");
     }

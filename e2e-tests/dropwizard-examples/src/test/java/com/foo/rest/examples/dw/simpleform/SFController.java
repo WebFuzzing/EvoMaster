@@ -3,6 +3,7 @@ package com.foo.rest.examples.dw.simpleform;
 import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
+import java.sql.Connection;
 import java.util.List;
 
 public class SFController extends EmbeddedSutController {
@@ -76,6 +77,16 @@ public class SFController extends EmbeddedSutController {
 
     @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
+        return null;
+    }
+
+    @Override
+    public Connection getConnection() {
+        return null;
+    }
+
+    @Override
+    public String getDatabaseDriverName() {
         return null;
     }
 }
