@@ -50,4 +50,9 @@ class TimeGene(
         this.minute.copyValueFrom(other.minute)
         this.second.copyValueFrom(other.second)
     }
+
+    override fun flatView(): List<Gene>{
+        return listOf(this, hour, minute, second)
+    }
+
 }

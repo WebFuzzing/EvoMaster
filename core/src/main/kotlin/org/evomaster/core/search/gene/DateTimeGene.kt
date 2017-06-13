@@ -43,4 +43,9 @@ class DateTimeGene(
         this.date.copyValueFrom(other.date)
         this.time.copyValueFrom(other.time)
     }
+
+    override fun flatView(): List<Gene>{
+        return listOf(this).plus(date.flatView()).plus(time.flatView())
+    }
+
 }

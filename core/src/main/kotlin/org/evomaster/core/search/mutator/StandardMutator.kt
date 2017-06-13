@@ -47,7 +47,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                     continue
                 }
 
-                mutateGene(gene)
+                mutateGene(gene, genes)
 
                 mutated = true
             }
@@ -56,21 +56,21 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         return copy
     }
 
-    private fun mutateGene(gene: Gene) {
+    private fun mutateGene(gene: Gene, all: List<Gene>) {
 
         when (gene) {
-            is DisruptiveGene<*> -> mutateGene(gene.gene)
-            is OptionalGene -> handleOptionalGene(gene)
+            is DisruptiveGene<*> -> mutateGene(gene.gene, all)
+            is OptionalGene -> handleOptionalGene(gene, all)
             is IntegerGene -> handleIntegerGene(gene)
             is DoubleGene -> handleDoubleGene(gene)
-            is StringGene -> handleStringGene(gene)
+            is StringGene -> handleStringGene(gene, all)
             else ->
                 //TODO other cases
                 gene.randomize(randomness, true)
         }
     }
 
-    private fun handleStringGene(gene: StringGene) {
+    private fun handleStringGene(gene: StringGene, all: List<Gene>) {
 
         val p = randomness.nextDouble()
         val s = gene.value
@@ -83,7 +83,16 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             end of the strings, and reward more "change" over delete/add
          */
 
+        val others = all.flatMap { g -> g.flatView() }
+                .filterIsInstance<StringGene>()
+                .map { g -> g.value }
+                .filter { s -> s != gene.value }
+
         gene.value = when {
+        //seeding: replace
+            p < 0.02 && !others.isEmpty() -> {
+                randomness.choose(others)
+            }
         //change
             p < 0.8 && s.length > 0 -> {
                 val delta = getDelta(start = 6, end = 3)
@@ -99,11 +108,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         //append new
             else -> {
-                if(s.isEmpty() || randomness.nextBoolean(0.8)) {
+                if (s.isEmpty() || randomness.nextBoolean(0.8)) {
                     s + randomness.nextWordChar()
                 } else {
                     val i = randomness.nextInt(s.length)
-                    if(i == 0){
+                    if (i == 0) {
                         randomness.nextWordChar() + s
                     } else {
                         s.substring(0, i) + randomness.nextWordChar() + s.substring(i, s.length)
@@ -114,7 +123,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
 
-    private fun handleOptionalGene(gene: OptionalGene) {
+    private fun handleOptionalGene(gene: OptionalGene, all: List<Gene>) {
         if (!gene.isActive) {
             gene.isActive = true
         } else {
@@ -122,7 +131,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             if (randomness.nextBoolean(0.01)) {
                 gene.isActive = false
             } else {
-                mutateGene(gene.gene)
+                mutateGene(gene.gene, all)
             }
         }
     }

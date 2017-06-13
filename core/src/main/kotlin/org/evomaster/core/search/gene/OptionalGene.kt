@@ -48,4 +48,9 @@ class OptionalGene(name: String,
     }
 
     override fun getVariableName() = gene.getVariableName()
+
+    override fun flatView(): List<Gene>{
+        return listOf(this).plus(gene.flatView())
+    }
+
 }

@@ -40,4 +40,9 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
 
         return buffer.toString()
     }
+
+    override fun flatView(): List<Gene>{
+        return listOf(this).plus(fields.flatMap { g -> g.flatView() })
+    }
+
 }

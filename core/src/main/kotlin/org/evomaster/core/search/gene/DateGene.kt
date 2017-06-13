@@ -44,4 +44,9 @@ class DateGene(
         this.month.copyValueFrom(other.month)
         this.day.copyValueFrom(other.day)
     }
+
+    override fun flatView(): List<Gene>{
+        return listOf(this, year, month, day)
+    }
+
 }

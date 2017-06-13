@@ -45,4 +45,9 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
     }
 
     override fun getVariableName() = gene.getVariableName()
+
+    override fun flatView(): List<Gene>{
+        return listOf(this).plus(gene.flatView())
+    }
+
 }

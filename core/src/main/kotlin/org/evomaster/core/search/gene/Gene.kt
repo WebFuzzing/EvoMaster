@@ -38,4 +38,12 @@ abstract class Gene(var name: String) {
      * If this gene represents a variable, then return its name.
      */
     open fun getVariableName() = name
+
+    /**
+     * Genes might have other genes inside (eg, think of array).
+     *  @return a recursive list of all nested genes, "this" included
+     */
+    open fun flatView(): List<Gene>{
+        return listOf(this)
+    }
 }

@@ -51,4 +51,8 @@ where T : Gene {
                 elements.map { g -> g.getValueAsPrintableString() }.joinToString(", ") +
                 "]";
     }
+
+    override fun flatView(): List<Gene>{
+        return listOf(this).plus(elements.flatMap { g -> g.flatView() })
+    }
 }
