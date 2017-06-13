@@ -94,7 +94,8 @@ public class SqlHandler {
             return Double.MAX_VALUE;
         }
 
-        String noConstraints = SelectHeuristics.removeConstraints(select);
+        String addedFields = SelectHeuristics.addFieldsToSelect(select);
+        String noConstraints = SelectHeuristics.removeConstraints(addedFields);
 
         QueryResult data;
 

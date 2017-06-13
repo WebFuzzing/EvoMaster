@@ -11,6 +11,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class SelectHeuristicsTest {
 
+
+    @Test
+    public void testAddFields(){
+        String select = "select f.x from Foo f where f.y=5";
+
+        String enh = SelectHeuristics.addFieldsToSelect(select);
+        String res = SelectHeuristics.removeConstraints(enh);
+
+        assertTrue(res.toLowerCase().contains("f.x"));
+        assertTrue(res.toLowerCase().contains("f.y"));
+        assertFalse(res.toLowerCase().contains("where"));
+    }
+
+
     @Test
     public void testRemoveInvalid() {
         assertThrows(IllegalArgumentException.class, () ->
@@ -39,6 +53,17 @@ public class SelectHeuristicsTest {
 
         String base = "select a from Foo ";
         String sql = base + " where a=5";
+
+        String res = SelectHeuristics.removeConstraints(sql);
+
+        assertEquivalent(base, res);
+    }
+
+    @Test
+    public void testRemoveWithLimit(){
+
+        String base = "select a from Foo ";
+        String sql = base + " where a=5 limit 1";
 
         String res = SelectHeuristics.removeConstraints(sql);
 
