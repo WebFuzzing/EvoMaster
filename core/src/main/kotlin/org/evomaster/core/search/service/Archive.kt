@@ -227,7 +227,7 @@ class Archive<T>() where T : Individual {
             val currh = current[0].fitness.getHeuristic(k)
             val currsize = current[0].individual.size()
             val copySize = copy.individual.size()
-            val extra = copy.fitness.compareExtraToMinimize(v.actionIndex, current[0].fitness)
+            val extra = copy.fitness.compareExtraToMinimize(k, current[0].fitness)
 
             val better = v.distance > currh ||
                     (v.distance==currh && extra > 0) ||

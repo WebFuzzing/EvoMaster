@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DbDirectIntEMTest extends DbDirectIntTestBase {
 
 
-    @Disabled
     @Test
     public void testRunEM() {
 
@@ -20,7 +19,7 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                 "--createTests", "true",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1000",
+                "--maxActionEvaluations", "2000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
