@@ -22,7 +22,6 @@ import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and

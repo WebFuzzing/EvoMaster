@@ -11,7 +11,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * The SutController will start a TCP server, and the Agent in the external

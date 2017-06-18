@@ -6,7 +6,6 @@ import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.external.JarAgentLocator;
 import org.evomaster.clientJava.instrumentation.external.ServerController;
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
