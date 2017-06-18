@@ -6,6 +6,7 @@ import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.external.JarAgentLocator;
 import org.evomaster.clientJava.instrumentation.external.ServerController;
+import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -255,6 +256,14 @@ public abstract class ExternalSutController extends SutController {
     public final List<TargetInfo> getTargetInfos(Collection<Integer> ids){
         checkInstrumentation();
         return serverController.getTargetInfos(ids);
+    }
+
+    @Override
+    public final void newAction(int actionIndex){
+        if(isInstrumentationActivated()) {
+           serverController.setActionIndex(actionIndex);
+        }
+        resetExtraHeuristics();
     }
 
     //-----------------------------------------

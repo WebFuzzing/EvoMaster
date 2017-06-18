@@ -17,6 +17,8 @@ public class ControllerConstants {
     public static final String CONTROLLER_INFO = "/controllerInfo";
 
     public static final String NEW_SEARCH = "/newSearch";
-    
+
+    public static final String NEW_ACTION = "/newAction";
+
     public static final String EXTRA_HEURISTICS = "/extraHeuristics";
 }

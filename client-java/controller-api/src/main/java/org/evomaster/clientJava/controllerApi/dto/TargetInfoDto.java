@@ -20,4 +20,14 @@ public class TargetInfoDto {
      * The fitness value for this target, in [0,1], where 1 means covered
      */
     public Double value;
+
+    /**
+     * An id identify the action that led to this fitness score for this
+     * testing target.
+     * For example, it can be the index in the list representation of
+     * the test case.
+     * Can be negative if target was never reached.
+     * But this means that {@code value} must be 0
+     */
+    public Integer actionIndex;
 }

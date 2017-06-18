@@ -12,6 +12,7 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
+import javax.ws.rs.core.Form
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -182,6 +183,18 @@ class RemoteController() {
         return response.readEntity(ExtraHeuristicDto::class.java)
     }
 
+    fun registerNewAction(actionIndex: Int){
+
+        val response = getWebTarget()
+                .path(ControllerConstants.NEW_ACTION)
+                .request(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+                .put(Entity.form(Form("index", actionIndex.toString())))
+
+        if (!wasSuccess(response)) {
+            log.warn("Failed to register new action. HTTP status: {}", response.status)
+        }
+    }
+
     fun resetExtraHeuristics() {
 
         val response = getWebTarget()
@@ -194,7 +207,7 @@ class RemoteController() {
         }
     }
 
-    fun wasSuccess(response: Response?): Boolean {
+    private fun wasSuccess(response: Response?): Boolean {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
     }
 

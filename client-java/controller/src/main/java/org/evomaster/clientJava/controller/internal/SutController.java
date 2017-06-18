@@ -22,6 +22,7 @@ import java.sql.Connection;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -159,6 +160,12 @@ public abstract class SutController implements SutHandler{
      */
     public abstract void newTest();
 
+    /**
+     * As some heuristics are based on which action (eg HTTP call, or click of button)
+     * in the test sequence is executed, and their order, we need to keep track of which
+     * action does cover what.
+     */
+    public abstract void newAction(int actionIndex);
 
     /**
      * Check if bytecode instrumentation is on.
@@ -188,8 +195,6 @@ public abstract class SutController implements SutHandler{
      * @return
      */
     public abstract String getPackagePrefixesToCover();
-
-
 
 
     /**

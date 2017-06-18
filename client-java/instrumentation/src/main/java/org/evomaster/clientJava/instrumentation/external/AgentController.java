@@ -69,6 +69,10 @@ public class AgentController {
                     case TARGET_INFOS:
                         handleTargetInfos();
                         break;
+                    case ACTION_INDEX:
+                        handleActionIndex();
+                        sendObject(Command.ACK);
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -80,6 +84,18 @@ public class AgentController {
         });
 
         thread.start();
+    }
+
+    private static void handleActionIndex(){
+        try {
+            Object msg = in.readObject();
+            Integer index = (Integer) msg;
+            InstrumentationController.newAction(index);
+
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling action index: "+e.getMessage());
+            return;
+        }
     }
 
     private static void handleTargetInfos() {

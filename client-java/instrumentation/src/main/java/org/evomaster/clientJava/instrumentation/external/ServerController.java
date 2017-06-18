@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The SutController will start a TCP server, and the Agent in the external
@@ -88,12 +89,16 @@ public class ServerController {
     }
 
     public boolean sendCommand(Command command){
+        return sendObject(command);
+    }
+
+    public boolean sendObject(Object obj){
         if(! isConnectionOn()){
             return false;
         }
 
         try {
-            out.writeObject(command);
+            out.writeObject(obj);
         } catch (IOException e) {
             return false;
         }
@@ -123,6 +128,28 @@ public class ServerController {
             return false;
         }
 
+        return waitForAck();
+    }
+
+    public boolean sendWithDataAndExpectACK(Command command, Object data){
+
+        boolean sent = sendCommand(command);
+        if(!sent){
+            SimpleLogger.error("Failed to send message");
+            return false;
+        }
+
+        sent = sendObject(data);
+        if(!sent){
+            SimpleLogger.error("Failed to send message");
+            return false;
+        }
+
+        return waitForAck();
+
+    }
+
+    private boolean waitForAck() {
         Object response = waitAndGetResponse();
         if(response == null){
             SimpleLogger.error("Failed to read ACK response");
@@ -141,6 +168,10 @@ public class ServerController {
 
     public  boolean resetForNewTest(){
         return sendAndExpectACK(Command.NEW_TEST);
+    }
+
+    public boolean setActionIndex(int actionIndex){
+        return sendWithDataAndExpectACK(Command.ACTION_INDEX, actionIndex);
     }
 
     public List<TargetInfo> getTargetInfos(Collection<Integer> ids){

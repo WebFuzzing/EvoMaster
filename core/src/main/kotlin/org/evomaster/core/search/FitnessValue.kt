@@ -19,22 +19,22 @@ class FitnessValue(
 
     companion object {
 
-        @JvmField
         val MAX_VALUE = 1.0
 
-        @JvmStatic
         fun isMaxValue(value: Double) = value == MAX_VALUE
     }
 
     /**
      *  Key -> target Id
-     *  <br/>
+     *
      *  Value -> heuristic distance in [0,1], where 1 is for "covered"
      */
-    private val targets: MutableMap<Int, Double> = mutableMapOf()
+    private val targets: MutableMap<Int, Heuristics> = mutableMapOf()
 
     /**
-     * List of extra heuristics to minimize (min 0).
+     *  Key -> action Id
+     *
+     * Value -> List of extra heuristics to minimize (min 0).
      * Those are related to the whole test, and not specific target.
      * Covering those extra does not guarantee that it would help in
      * covering target.
@@ -42,54 +42,53 @@ class FitnessValue(
      *
      * Note: this values are sorted.
      */
-    private val extraToMinimize: MutableList<Double> = mutableListOf()
+    private val extraToMinimize: MutableMap<Int, List<Double>> = mutableMapOf()
 
 
     fun copy(): FitnessValue {
         val copy = FitnessValue(size)
         copy.targets.putAll(this.targets)
-        copy.extraToMinimize.addAll(this.extraToMinimize)
+        copy.extraToMinimize.putAll(this.extraToMinimize)
         return copy
     }
 
-    fun setExtraToMinimize(list: List<Double>) {
-        extraToMinimize.clear()
-        extraToMinimize.addAll(list)
-        extraToMinimize.sort()
+    fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
+
+        extraToMinimize.put(actionIndex, list.sorted())
     }
 
-    fun getViewOfData(): Map<Int, Double> {
+    fun getViewOfData(): Map<Int, Heuristics> {
         return targets
     }
 
     fun doesCover(target: Int): Boolean {
-        return targets[target] == MAX_VALUE
+        return targets[target]?.distance == MAX_VALUE
     }
 
-    fun getHeuristic(target: Int): Double = targets[target] ?: 0.0
+    fun getHeuristic(target: Int): Double = targets[target]?.distance ?: 0.0
 
 
     fun computeFitnessScore(): Double {
 
-        return targets.values.sum()
+        return targets.values.map { h -> h.distance }.sum()
     }
 
     fun coveredTargets(): Int {
 
-        return targets.values.filter { t -> t == MAX_VALUE }.count()
+        return targets.values.filter { t -> t.distance == MAX_VALUE }.count()
     }
 
     fun coverTarget(id: Int) {
         updateTarget(id, MAX_VALUE)
     }
 
-    fun updateTarget(id: Int, value: Double) {
+    fun updateTarget(id: Int, value: Double, actionIndex : Int = -1) {
 
         if (value < 0 || value > MAX_VALUE) {
             throw IllegalArgumentException("Invalid value: " + value)
         }
 
-        targets[id] = value
+        targets[id] = Heuristics(value, actionIndex)
     }
 
     /**
@@ -122,13 +121,13 @@ class FitnessValue(
 
         for (k in targetSubset) {
 
-            val v = this.targets[k] ?: 0.0
-            val z = other.targets[k] ?: 0.0
+            val v = this.targets[k]?.distance ?: 0.0
+            val z = other.targets[k]?.distance ?: 0.0
             if (v < z) {
                 return false
             }
 
-            val extra = compareExtraToMinimize(other)
+            val extra = compareExtraToMinimize(k, other)
 
             if (v > z ||
                     (v == z && extra > 0) ||
@@ -145,35 +144,34 @@ class FitnessValue(
      *
      * @return 0 if equivalent, 1 if this is better, and -1 otherwise
      */
-    fun compareExtraToMinimize(other: FitnessValue): Int {
+    fun compareExtraToMinimize(target: Int, other: FitnessValue): Int {
 
         //TODO parameter to experiment with
         //return compareByRewardMore(other)
-        return compareByReduce(other)
+        return compareByReduce(target, other)
     }
 
-    private fun aggregateDistances(distances : List<Double>) : Double{
-        if(distances.isEmpty()){
+    private fun aggregateDistances(distances: List<Double>?): Double {
+        if (distances == null || distances.isEmpty()) {
             return Double.MAX_VALUE
         }
-        val max = distances.max()!!
-        val sum = distances.sum()
-        if(sum >= max){
-            return sum
-        } else {
-            //handle possible overflow
-            return Double.MAX_VALUE
-        }
+
+        val sum = distances.map { v -> v / distances.size }.sum()
+
+        return sum
     }
 
-    private fun compareByReduce(other: FitnessValue): Int {
+    private fun compareByReduce(target: Int, other: FitnessValue): Int {
 
-        val ts = aggregateDistances(this.extraToMinimize)
-        val os = aggregateDistances(other.extraToMinimize)
+        val thisAction = targets[target]?.actionIndex
+        val otherAction = other.targets[target]?.actionIndex
 
-        if(ts < os){
+        val ts = aggregateDistances(this.extraToMinimize[thisAction])
+        val os = aggregateDistances(other.extraToMinimize[otherAction])
+
+        if (ts < os) {
             return +1
-        } else if(ts > os){
+        } else if (ts > os) {
             return -1
         } else {
             return 0
@@ -181,50 +179,50 @@ class FitnessValue(
     }
 
 
-    private fun compareByRewardMore(other: FitnessValue): Int {
-        val thisLength = this.extraToMinimize.size
-        val otherLength = other.extraToMinimize.size
-        val minLen = Math.min(thisLength, otherLength)
-
-        if (minLen > 0) {
-            for (i in 0..(minLen - 1)) {
-                val te = this.extraToMinimize[i]
-                val oe = other.extraToMinimize[i]
-
-                /*
-                    We prioritize the improvement of lowest
-                    heuristics, as more likely to be covered (ie 0)
-                    first.
-                */
-
-                if (te < oe) {
-                    return +1
-                } else if (te > oe) {
-                    return -1
-                }
-            }
-        }
-
-        if (thisLength == otherLength) {
-            return 0
-        }
-
-        /*
-            up to min size, same values of the heuristics.
-            But one test is doing more stuff, as it has more extra
-            heuristics. And so we reward it.
-
-            However, there is big risk of bloat. So, let's put
-            an arbitrary low limit.
-         */
-        if (minLen >= 3) { //TODO should be a parameter to experiment with
-            return 0
-        }
-
-        if (thisLength > otherLength) {
-            return +1
-        } else {
-            return -1
-        }
-    }
+//    private fun compareByRewardMore(other: FitnessValue): Int {
+//        val thisLength = this.extraToMinimize.size
+//        val otherLength = other.extraToMinimize.size
+//        val minLen = Math.min(thisLength, otherLength)
+//
+//        if (minLen > 0) {
+//            for (i in 0..(minLen - 1)) {
+//                val te = this.extraToMinimize[i]
+//                val oe = other.extraToMinimize[i]
+//
+//                /*
+//                    We prioritize the improvement of lowest
+//                    heuristics, as more likely to be covered (ie 0)
+//                    first.
+//                */
+//
+//                if (te < oe) {
+//                    return +1
+//                } else if (te > oe) {
+//                    return -1
+//                }
+//            }
+//        }
+//
+//        if (thisLength == otherLength) {
+//            return 0
+//        }
+//
+//        /*
+//            up to min size, same values of the heuristics.
+//            But one test is doing more stuff, as it has more extra
+//            heuristics. And so we reward it.
+//
+//            However, there is big risk of bloat. So, let's put
+//            an arbitrary low limit.
+//         */
+//        if (minLen >= 3) { //TODO should be a parameter to experiment with
+//            return 0
+//        }
+//
+//        if (thisLength > otherLength) {
+//            return +1
+//        } else {
+//            return -1
+//        }
+//    }
 }

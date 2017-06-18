@@ -61,24 +61,40 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         rc.resetSUT()
 
+        val fv = FitnessValue(individual.size().toDouble())
+
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
 
         //run the test
-        for (a in individual.actions) {
+        for (i in 0 until individual.actions.size) {
+
+            rc.registerNewAction(i)
+            val a = individual.actions[i]
 
             var ok = false
 
             if (a is RestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState)
             } else {
-                throw IllegalStateException("Cannot handle: " + a.javaClass)
+                throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
 
             if(!ok){
                 break
+            }
+
+            //FIXME SQL here, per action
+            if(configuration.heuristicsForSQL) {
+                val extra = rc.getExtraHeuristics() ?:
+                        throw IllegalStateException("Cannot retrieve extra heuristics")
+
+                if (!isEmpty(extra)) {
+                    //TODO handling of toMaximize
+                    fv.setExtraToMinimize(i, extra.toMinimize)
+                }
             }
         }
 
@@ -93,25 +109,14 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val dto = rc.getTargetCoverage(ids) ?:
                 throw IllegalStateException("Cannot retrieve coverage")
 
-        val fv = FitnessValue(individual.size().toDouble())
-
         dto.targets.forEach { t ->
 
             if (t.descriptiveId != null) {
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 
-            fv.updateTarget(t.id, t.value)
-        }
-
-        if(configuration.heuristicsForSQL) {
-            val extra = rc.getExtraHeuristics() ?:
-                    throw IllegalStateException("Cannot retrieve extra heuristics")
-
-            if (!isEmpty(extra)) {
-                //TODO handling of toMaximize
-                fv.setExtraToMinimize(extra.toMinimize)
-            }
+            //TODO extra
+            fv.updateTarget(t.id, t.value, t.actionIndex)
         }
 
         handleResponseTargets(fv, individual.actions, actionResults)
@@ -144,7 +149,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                             .getStatusCode() ?: -1
                     val desc = "$status:${actions[it].getName()}"
                     val id = idMapper.handleLocalTarget(desc)
-                    fv.updateTarget(id, 1.0)
+                    fv.updateTarget(id, 1.0, it)
                 }
     }
 

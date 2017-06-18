@@ -139,7 +139,7 @@ class Archive<T>() where T : Individual {
     fun wouldReachNewTarget(ei: EvaluatedIndividual<T>): Boolean {
 
         return ei.fitness.getViewOfData()
-                .filter { d -> d.value > 0.0 }
+                .filter { d -> d.value.distance > 0.0 }
                 .map { d -> d.key }
                 .any { k ->  map[k]?.isEmpty() ?: true}
     }
@@ -154,7 +154,7 @@ class Archive<T>() where T : Individual {
 
         for ((k, v) in ei.fitness.getViewOfData()) {
 
-            if (v == 0.0) {
+            if (v.distance == 0.0) {
                 /*
                     No point adding an individual with no impact
                     on a given target
@@ -178,7 +178,7 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
-            val maxed = FitnessValue.isMaxValue(v)
+            val maxed = FitnessValue.isMaxValue(v.distance)
 
             if (isCovered(k) && maxed) {
                 /*
@@ -227,11 +227,11 @@ class Archive<T>() where T : Individual {
             val currh = current[0].fitness.getHeuristic(k)
             val currsize = current[0].individual.size()
             val copySize = copy.individual.size()
-            val extra = copy.fitness.compareExtraToMinimize(current[0].fitness)
+            val extra = copy.fitness.compareExtraToMinimize(v.actionIndex, current[0].fitness)
 
-            val better = v > currh ||
-                    (v==currh && extra > 0) ||
-                    (v==currh && extra == 0 && copySize < currsize)
+            val better = v.distance > currh ||
+                    (v.distance==currh && extra > 0) ||
+                    (v.distance==currh && extra == 0 && copySize < currsize)
 
             if(better){
                 time.newActionImprovement()
@@ -247,7 +247,7 @@ class Archive<T>() where T : Individual {
                 continue
             }
 
-            val equivalent = (v == currh && extra == 0 && copySize == currsize)
+            val equivalent = (v.distance == currh && extra == 0 && copySize == currsize)
 
             if (better || equivalent) {
                 /*
@@ -277,7 +277,7 @@ class Archive<T>() where T : Individual {
 
         list.sortWith(compareBy<EvaluatedIndividual<T>>
         { it.fitness.getHeuristic(target) }
-                .thenComparator { a, b ->  a.fitness.compareExtraToMinimize(b.fitness)}
+                .thenComparator { a, b ->  a.fitness.compareExtraToMinimize(target, b.fitness)}
                 .thenBy { -it.individual.size() })
 
         val limit = apc.getArchiveTargetLimit()

@@ -1,6 +1,7 @@
 package org.evomaster.clientJava.instrumentation.staticState;
 
 import org.evomaster.clientJava.instrumentation.ClassName;
+import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.clientJava.instrumentation.heuristic.Truthness;
 
@@ -51,20 +52,28 @@ public class ExecutionTracer {
 
 
     /**
-     * Key -> the unique id of the coverage objective
-     * <br>
-     * Value -> heuristic [0,1], where 1 means covered
+     * Key -> the unique descriptive id of the coverage objective
      */
-    private static final Map<String, Double> objectiveCoverage =
+    private static final Map<String, TargetInfo> objectiveCoverage =
             new ConcurrentHashMap<>(65536);
 
+    /**
+     * A test case can be composed by 1 or more actions, eg HTTP calls.
+     * When we get the best distance for a testing target, we might
+     * also want to know which action in the test led to it.
+     */
+    private static int actionIndex = 0;
 
     public static void reset() {
         objectiveCoverage.clear();
+        actionIndex = 0;
     }
 
+    public static void setActionIndex(int index){
+        actionIndex = index;
+    }
 
-    public static Map<String, Double> getInternalReferenceToObjectiveCoverage() {
+    public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
     }
 
@@ -105,13 +114,13 @@ public class ExecutionTracer {
         return objectiveCoverage
                 .entrySet().stream()
                 .filter(e -> prefix == null || e.getKey().startsWith(prefix))
-                .filter(e -> e.getValue() < 1)
+                .filter(e -> e.getValue().value < 1)
                 .map(e -> e.getKey())
                 .collect(Collectors.toSet());
     }
 
     public static Double getValue(String id) {
-        return objectiveCoverage.get(id);
+        return objectiveCoverage.get(id).value;
     }
 
     private static void updateObjective(String id, double value) {
@@ -124,10 +133,12 @@ public class ExecutionTracer {
             so we should keep track of the best value found so far
          */
         if (objectiveCoverage.containsKey(id)) {
-            double previous = objectiveCoverage.get(id);
-            objectiveCoverage.put(id, Math.max(value, previous));
+            double previous = objectiveCoverage.get(id).value;
+            if(value > previous){
+                objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
+            }
         } else {
-            objectiveCoverage.put(id, value);
+            objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
         }
 
         ObjectiveRecorder.update(id, value);

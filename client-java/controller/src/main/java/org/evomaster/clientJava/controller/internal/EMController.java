@@ -7,6 +7,7 @@ import org.evomaster.clientJava.controllerApi.dto.*;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -110,14 +111,14 @@ public class EMController {
                     }
                 }
             }
-        }catch (RuntimeException e){
+        } catch (RuntimeException e) {
             /*
                 FIXME: ideally, would not need to do a try/catch on each single endpoint,
                 as could configure Jetty/Jackson to log all errors.
                 But even after spending hours googling it, haven't managed to configure it
              */
 
-            SimpleLogger.error("ERROR -> "+e.getMessage());
+            SimpleLogger.error("ERROR -> " + e.getMessage());
             throw e;
         }
     }
@@ -145,17 +146,18 @@ public class EMController {
         }
 
         List<TargetInfo> list = sutController.getTargetInfos(ids);
-        if(list == null){
-            String msg = "Failed to collect target information for "+ids.size()+" ids";
+        if (list == null) {
+            String msg = "Failed to collect target information for " + ids.size() + " ids";
             SimpleLogger.error(msg);
             throw new WebApplicationException(msg, 500);
         }
 
         list.stream().forEach(t -> {
             TargetInfoDto info = new TargetInfoDto();
-            info.id = t.id;
+            info.id = t.mappedId;
             info.value = t.value;
             info.descriptiveId = t.descriptiveId;
+            info.actionIndex = t.actionIndex;
 
             dto.targets.add(info);
         });
@@ -164,11 +166,10 @@ public class EMController {
     }
 
 
-
     @Path(ControllerConstants.EXTRA_HEURISTICS)
     @GET
     @Produces(Formats.JSON_V1)
-    public ExtraHeuristicDto getExtra(){
+    public ExtraHeuristicDto getExtra() {
 
         ExtraHeuristicDto dto = sutController.getExtraHeuristics();
 
@@ -177,9 +178,16 @@ public class EMController {
 
     @Path(ControllerConstants.EXTRA_HEURISTICS)
     @DELETE
-    public void deleteExtra(){
+    public void deleteExtra() {
 
         sutController.resetExtraHeuristics();
     }
 
+    @Path(ControllerConstants.NEW_ACTION)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @PUT
+    public void newAction(@FormParam("index") int index) {
+
+        sutController.newAction(index);
+    }
 }

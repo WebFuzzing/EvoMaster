@@ -31,18 +31,27 @@ public class InstrumentationController {
         ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
+    public static void newAction(int actionIndex){
+
+        ExecutionTracer.setActionIndex(actionIndex);
+    }
+
     public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){
 
         List<TargetInfo> list = new ArrayList<>();
 
-        Map<String, Double> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
+        Map<String, TargetInfo> objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
 
         ids.stream().forEach(id -> {
 
             String descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
-            double val = objectives.getOrDefault(descriptiveId, 0d);
 
-            TargetInfo info = new TargetInfo(id, null, val);
+            TargetInfo info = objectives.get(descriptiveId);
+            if(info == null){
+                info = TargetInfo.notReached(id);
+            } else {
+                info = info.withMappedId(id).withNoDescriptiveId();
+            }
 
             list.add(info);
         });
@@ -52,10 +61,9 @@ public class InstrumentationController {
          */
         ObjectiveRecorder.getTargetsSeenFirstTime().stream().forEach(s -> {
 
-            double val = objectives.get(s);
             int mappedId = ObjectiveRecorder.getMappedId(s);
 
-            TargetInfo info = new TargetInfo(mappedId, s, val);
+            TargetInfo info = objectives.get(s).withMappedId(mappedId);
 
             list.add(info);
         });
