@@ -60,7 +60,7 @@ class ISFFitness @Inject constructor(@Named("className") className: String) : Fi
         val fv = FitnessValue(1.0)
         ExecutionTracer.getInternalReferenceToObjectiveCoverage().forEach { k, v ->
             val id = ObjectiveRecorder.getMappedId(k)
-            fv.updateTarget(id, v)
+            fv.updateTarget(id, v.value)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as ISFIndividual, listOf(ActionResult()))
