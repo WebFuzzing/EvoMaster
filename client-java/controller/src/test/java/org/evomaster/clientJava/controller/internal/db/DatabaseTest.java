@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller.internal.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
+import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.controller.db.QueryResult;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controllerApi.dto.SutRunDto;
@@ -63,6 +64,41 @@ public class DatabaseTest {
         assertFalse(res.isEmpty());
     }
 
+
+    @Test
+    public void testConstants() throws Exception {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (4)");
+
+        String select = "select x, 1 as y, null as z, 'bar' as w from Foo";
+
+        QueryResult res = SqlScriptRunner.execCommand(connection, select);
+        assertFalse(res.isEmpty());
+
+        DataRow row = res.seeRows().get(0);
+        assertEquals(4, row.getValue(0));
+        assertEquals(1, row.getValue(1));
+        assertEquals(null, row.getValue(2));
+        assertEquals("bar", row.getValue(3));
+    }
+
+    @Test
+    public void testNested() throws Exception{
+
+        String select = "select t.a, t.b from (select x as a, 1 as b from Foo where x<10) t where a>3";
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (1)");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (4)");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (7)");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (20)");
+
+        QueryResult res = SqlScriptRunner.execCommand(connection, select);
+        assertEquals(2, res.size());
+    }
+
+
     @Test
     public void testHeuristic() throws Exception {
 
@@ -112,12 +148,6 @@ public class DatabaseTest {
         } finally {
             starter.stop();
         }
-    }
-
-    private InstrumentedSutStarter getInstrumentedSutStarter() {
-        DatabaseFakeSutController sutController = new DatabaseFakeSutController(connection);
-        sutController.setControllerPort(0);
-        return new InstrumentedSutStarter(sutController);
     }
 
 
@@ -235,4 +265,11 @@ public class DatabaseTest {
 
         return value;
     }
+
+    private InstrumentedSutStarter getInstrumentedSutStarter() {
+        DatabaseFakeSutController sutController = new DatabaseFakeSutController(connection);
+        sutController.setControllerPort(0);
+        return new InstrumentedSutStarter(sutController);
+    }
+
 }

@@ -16,6 +16,9 @@ import java.util.Map;
 
 public class SelectHeuristics {
 
+    public static final String UNNAMED_TABLE = "___unnamed_table___";
+
+
     /**
      * The constraints in the WHERE clause might reference
      * fields that are not retrieved in the SELECT.
@@ -84,13 +87,24 @@ public class SelectHeuristics {
         }
 
         SelectBody selectBody = stmt.getSelectBody();
+        handleSelectBody(selectBody);
+
+        return stmt.toString();
+    }
+
+    private static void handleSelectBody(SelectBody selectBody) {
         if (selectBody instanceof PlainSelect) {
             PlainSelect plainSelect = (PlainSelect) selectBody;
             plainSelect.setWhere(null);
             plainSelect.setLimit(null);
+        } else if (selectBody instanceof SetOperationList) {
+            for(SelectBody select : ((SetOperationList) selectBody).getSelects()){
+                handleSelectBody(select);
+            }
+        } else {
+            throw new RuntimeException("Cannot handle " + selectBody.getClass());
         }
 
-        return stmt.toString();
     }
 
 
@@ -114,6 +128,9 @@ public class SelectHeuristics {
             return 0;
         }
 
+        /*
+            FIXME: aliases should be part of QueryResult
+         */
         Map<String, String> aliases = getTableAliases(stmt);
         HeuristicsCalculator calculator = new HeuristicsCalculator(aliases);
 
@@ -132,10 +149,16 @@ public class SelectHeuristics {
     }
 
     /**
+     * Workaround to JDBC limitations: it does not provide any API to
+     * query meta-data on table aliases!!! ad-hoc solutions for each
+     * possible imaginable DB are not scalable.
+     * So, we just try to do some best effort to cover most cases
+     *
      * @param select
      * @return map from alias to table name
      */
     public static Map<String, String> getTableAliases(Select select) {
+
         Map<String, String> aliases = new HashMap<>();
 
         SelectBody selectBody = select.getSelectBody();
@@ -143,26 +166,55 @@ public class SelectHeuristics {
             PlainSelect plainSelect = (PlainSelect) selectBody;
 
             FromItem fromItem = plainSelect.getFromItem();
-            fromItem.accept(new FromItemVisitorAdapter() {
-                @Override
-                public void visit(Table table) {
-                    handleAlias(aliases, table);
-                }
-            });
+            fromItem.accept(new FromVisitor(aliases));
 
             List<Join> joins = plainSelect.getJoins();
             if (joins != null) {
-                joins.forEach(j -> j.getRightItem().accept(new FromItemVisitorAdapter() {
-                    @Override
-                    public void visit(Table table) {
-                        handleAlias(aliases, table);
-                    }
-                }));
+                joins.forEach(j -> j.getRightItem().accept(new FromVisitor(aliases)));
             }
         }
 
         return aliases;
     }
+
+    private static class FromVisitor extends FromItemVisitorAdapter{
+
+        private final Map<String, String> aliases;
+
+        private FromVisitor(Map<String, String> aliases) {
+            this.aliases = aliases;
+        }
+
+        @Override
+        public void visit(Table table) {
+            handleAlias(aliases, table);
+        }
+
+        @Override
+        public void visit(SubSelect subSelect) {
+            handleAlias(aliases, subSelect);
+        }
+
+    }
+
+
+
+    private static void handleAlias(Map<String, String> aliases, SubSelect subSelect) {
+        Alias alias = subSelect.getAlias();
+        if (alias != null) {
+            String aliasName = alias.getName();
+            if (aliasName != null) {
+                /*
+                    FIXME: need to generalize,
+                    ie for when there can be several un-named sub-selects referring
+                    to columns with same names
+                 */
+                String tableName = UNNAMED_TABLE;
+                aliases.put(aliasName.trim().toLowerCase(), tableName.trim().toLowerCase());
+            }
+        }
+    }
+
 
     private static void handleAlias(Map<String, String> aliases, Table table) {
         Alias alias = table.getAlias();

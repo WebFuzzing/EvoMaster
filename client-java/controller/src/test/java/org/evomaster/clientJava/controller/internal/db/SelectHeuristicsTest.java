@@ -26,6 +26,49 @@ public class SelectHeuristicsTest {
 
 
     @Test
+    public void testRemoveWhenUnion(){
+
+        int x = 15;
+        int y = 72;
+
+        String select = "select x from Foo where x=" + x +
+                " UNION ALL " +
+                "select z from Bar where y=" + y;
+
+        String res = SelectHeuristics.removeConstraints(select.toLowerCase());
+
+        assertTrue(res.contains("foo"));
+        assertTrue(res.contains("bar"));
+        assertTrue(res.contains("union"));
+        assertTrue(res.contains("all"));
+
+        assertFalse(res.contains("" + x));
+        assertFalse(res.contains("" + y));
+    }
+
+    @Test
+    public void testRemoveNested(){
+
+        String select = "select t.x, t.y from (select z as x, 1 as y from Foo where z<10) t where x>3";
+
+        String res = SelectHeuristics.removeConstraints(select.toLowerCase());
+
+        assertTrue(res.contains("foo"));
+        assertTrue(res.contains("x"));
+        assertTrue(res.contains("y"));
+        assertTrue(res.contains("z"));
+
+        assertFalse(res.contains("3"));
+
+        /*
+            TODO: This is a bit tricky. Likely we would need
+            to consider each nested SELECT as independent,
+            with their own heuristics calculations
+         */
+        assertTrue(res.contains("10"));
+    }
+
+    @Test
     public void testRemoveInvalid() {
         assertThrows(IllegalArgumentException.class, () ->
                 SelectHeuristics.removeConstraints("select * from"));

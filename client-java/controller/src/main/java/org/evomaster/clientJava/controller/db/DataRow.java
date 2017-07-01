@@ -1,5 +1,7 @@
 package org.evomaster.clientJava.controller.db;
 
+import org.evomaster.clientJava.controller.internal.db.SelectHeuristics;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -61,13 +63,22 @@ public class DataRow {
         for (int i = 0; i < variableDescriptors.size(); i++) {
             VariableDescriptor desc = variableDescriptors.get(i);
             if (n.equalsIgnoreCase(desc.getColumnName()) &&
-                    (t == null || t.isEmpty() || t.equalsIgnoreCase(desc.getTableName()))
+                    (t == null || t.isEmpty()
+                            || t.equalsIgnoreCase(desc.getTableName())
+                            /*
+                                TODO: this does not cover all possible cases, as in theory
+                                there can be many unnamed tables (eg results of sub-selects)
+                                with same colum names. At this moment, we would not
+                                be able to distinguish them
+                             */
+                            || t.equalsIgnoreCase(SelectHeuristics.UNNAMED_TABLE)
+                    )
                     ) {
                 return values.get(i);
             }
         }
 
-        throw new IllegalArgumentException("No variable called '" + name+"' for table '"+table+"'");
+        throw new IllegalArgumentException("No variable called '" + name + "' for table '" + table + "'");
     }
 
     public String getAsLine() {

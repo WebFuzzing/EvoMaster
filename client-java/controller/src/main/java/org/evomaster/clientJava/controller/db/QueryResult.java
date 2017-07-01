@@ -82,6 +82,10 @@ public class QueryResult {
         return rows.isEmpty();
     }
 
+    public int size(){
+        return rows.size();
+    }
+
     @Override
     public String toString() {
 
