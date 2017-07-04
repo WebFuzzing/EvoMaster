@@ -11,6 +11,7 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -22,6 +23,7 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import org.glassfish.jersey.client.ClientProperties
 
 
 class RestFitness : FitnessFunction<RestIndividual>() {
@@ -33,7 +35,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     @Inject
     private lateinit var rc: RemoteController
 
-    private val client: Client = ClientBuilder.newClient()
+    private val client: Client = {
+        val configuration = ClientConfig()
+                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+                .property(ClientProperties.READ_TIMEOUT, 10_000)
+        ClientBuilder.newClient(configuration)
+    }.invoke()
 
     private lateinit var infoDto: SutInfoDto
 

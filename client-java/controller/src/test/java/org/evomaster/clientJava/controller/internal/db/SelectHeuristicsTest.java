@@ -35,7 +35,7 @@ public class SelectHeuristicsTest {
                 " UNION ALL " +
                 "select z from Bar where y=" + y;
 
-        String res = SelectHeuristics.removeConstraints(select.toLowerCase());
+        String res = SelectHeuristics.removeConstraints(select).toLowerCase();
 
         assertTrue(res.contains("foo"));
         assertTrue(res.contains("bar"));
