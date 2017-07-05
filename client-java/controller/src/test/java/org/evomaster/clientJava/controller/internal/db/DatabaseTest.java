@@ -6,6 +6,7 @@ import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.controller.db.QueryResult;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controllerApi.dto.SutRunDto;
+import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,7 +32,7 @@ public class DatabaseTest {
 
     @BeforeAll
     public static void initClass() throws Exception {
-        InstrumentedSutStarter.initP6Spy("org.h2.Driver");
+        InstrumentingAgent.initP6Spy("org.h2.Driver");
 
         connection = DriverManager.getConnection("jdbc:p6spy:h2:mem:db_test", "sa", "");
     }

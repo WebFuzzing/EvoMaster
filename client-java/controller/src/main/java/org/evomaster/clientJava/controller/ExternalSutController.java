@@ -70,6 +70,7 @@ public abstract class ExternalSutController extends SutController {
     /**
      * How long (in seconds) we should wait at most to check if SUT is ready
      * and initialized (this related to the getLogMessageOfInitializedServer() method)
+     *
      * @return
      */
     public abstract long getMaxAwaitForInitializationInSeconds();
@@ -126,21 +127,26 @@ public abstract class ExternalSutController extends SutController {
         command.add("java");
 
 
-        if(instrumentation){
-            if(serverController == null){
+        if (instrumentation) {
+            if (serverController == null) {
                 serverController = new ServerController();
             }
             int port = serverController.startServer();
-            command.add("-D"+ InstrumentingAgent.EXTERNAL_PORT_PROP+"="+port);
+            command.add("-D" + InstrumentingAgent.EXTERNAL_PORT_PROP + "=" + port);
+
+            String driver = getDatabaseDriverName();
+            if (driver != null && !driver.isEmpty()) {
+                command.add("-D" + InstrumentingAgent.SQL_DRIVER + "=" + driver);
+            }
 
             String jarPath = JarAgentLocator.getAgentJarPath();
-            if(jarPath == null){
+            if (jarPath == null) {
                 throw new IllegalStateException("Cannot locate JAR file with EvoMaster Java Agent");
             }
-            command.add("-javaagent:"+jarPath+"="+getPackagePrefixesToCover());
+            command.add("-javaagent:" + jarPath + "=" + getPackagePrefixesToCover());
         }
 
-        for(String s : getJVMParameters()){
+        for (String s : getJVMParameters()) {
             if (s != null) {
                 String token = s.trim();
                 if (!token.isEmpty()) {
@@ -149,7 +155,7 @@ public abstract class ExternalSutController extends SutController {
             }
         }
 
-        if(! command.stream().anyMatch(s -> s.startsWith("-Xmx"))){
+        if (!command.stream().anyMatch(s -> s.startsWith("-Xmx"))) {
             command.add("-Xmx2048m");
         }
 
@@ -181,9 +187,9 @@ public abstract class ExternalSutController extends SutController {
         //this is not only needed for debugging, but also to check for when SUT is ready
         startExternalProcessPrinter();
 
-        if(instrumentation && serverController != null){
+        if (instrumentation && serverController != null) {
             boolean connected = serverController.waitForIncomingConnection();
-            if(!connected){
+            if (!connected) {
                 SimpleLogger.error("Could not establish connection to retrieve code metrics");
                 return null;
             }
@@ -194,12 +200,12 @@ public abstract class ExternalSutController extends SutController {
         try {
             latch.await(timeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            SimpleLogger.error("SUT has not started properly within " + timeout +" seconds");
+            SimpleLogger.error("SUT has not started properly within " + timeout + " seconds");
             stopSut();
             return null;
         }
 
-        if(! isSutRunning() || ! initialized){
+        if (!isSutRunning() || !initialized) {
             SimpleLogger.error("SUT started but then terminated. Likely a possible misconfiguration");
             //note: actual process might still be running due to Java Agent we started
             stopSut();
@@ -222,7 +228,7 @@ public abstract class ExternalSutController extends SutController {
 
         preStop();
 
-        if(serverController != null){
+        if (serverController != null) {
             serverController.closeServer();
         }
         killProcess();
@@ -238,37 +244,37 @@ public abstract class ExternalSutController extends SutController {
 
     @Override
     public final void newSearch() {
-        if(isInstrumentationActivated()) {
+        if (isInstrumentationActivated()) {
             serverController.resetForNewSearch();
         }
     }
 
     @Override
-    public final void newTest(){
-        if(isInstrumentationActivated()) {
+    public final void newTest() {
+        if (isInstrumentationActivated()) {
             serverController.resetForNewTest();
         }
         resetExtraHeuristics();
     }
 
     @Override
-    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids){
+    public final List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
         checkInstrumentation();
         return serverController.getTargetInfos(ids);
     }
 
     @Override
-    public final void newAction(int actionIndex){
-        if(isInstrumentationActivated()) {
-           serverController.setActionIndex(actionIndex);
+    public final void newAction(int actionIndex) {
+        if (isInstrumentationActivated()) {
+            serverController.setActionIndex(actionIndex);
         }
         resetExtraHeuristics();
     }
 
     //-----------------------------------------
 
-    private void checkInstrumentation(){
-        if(! isInstrumentationActivated()){
+    private void checkInstrumentation() {
+        if (!isInstrumentationActivated()) {
             throw new IllegalStateException("Instrumentation is not active");
         }
     }
@@ -319,12 +325,12 @@ public abstract class ExternalSutController extends SutController {
                     while (line != null && !Thread.interrupted()) {
                         SimpleLogger.info("SUT: " + line);
 
-                        if(line!=null && line.contains(getLogMessageOfInitializedServer())){
+                        if (line != null && line.contains(getLogMessageOfInitializedServer())) {
                             initialized = true;
                             latch.countDown();
                         }
 
-                        if(scanner.hasNext()) {
+                        if (scanner.hasNext()) {
                             line = scanner.nextLine();
                         } else {
                             break;
