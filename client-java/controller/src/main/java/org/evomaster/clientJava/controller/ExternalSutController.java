@@ -4,6 +4,7 @@ import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
+import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
 import org.evomaster.clientJava.instrumentation.external.JarAgentLocator;
 import org.evomaster.clientJava.instrumentation.external.ServerController;
 
@@ -21,18 +22,24 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class ExternalSutController extends SutController {
 
-    private boolean instrumentation;
-
-    public void setInstrumentation(boolean instrumentation) {
-        this.instrumentation = instrumentation;
-    }
+    /**
+     * System property to avoid printing the console output of the SUT.
+     */
+    public static final String PROP_MUTE_SUT = "em.muteSUT";
 
     protected volatile Process process;
+
+    private volatile boolean instrumentation;
     private volatile Thread processKillHook;
     private volatile Thread outputPrinter;
     private volatile CountDownLatch latch;
     private volatile ServerController serverController;
     private volatile boolean initialized;
+
+
+    public void setInstrumentation(boolean instrumentation) {
+        this.instrumentation = instrumentation;
+    }
 
     /**
      * @return the input parameters with which the system under test
@@ -317,13 +324,23 @@ public abstract class ExternalSutController extends SutController {
         if (outputPrinter == null || !outputPrinter.isAlive()) {
             outputPrinter = new Thread(() -> {
                 try {
+
+                    boolean muted = Boolean.parseBoolean(System.getProperty(PROP_MUTE_SUT));
+
                     BufferedReader buffer = new BufferedReader(
                             new InputStreamReader(process.getInputStream()));
 
                     Scanner scanner = new Scanner(buffer);
                     String line = scanner.nextLine();
                     while (line != null && !Thread.interrupted()) {
-                        SimpleLogger.info("SUT: " + line);
+
+                        if(line.startsWith(P6SpyFormatter.PREFIX)){
+                            //import we always print P6Spy as_it_is, even when
+                            //SUT is muted
+                            SimpleLogger.info(line);
+                        } else if(!muted) {
+                            SimpleLogger.info("SUT: " + line);
+                        }
 
                         if (line != null && line.contains(getLogMessageOfInitializedServer())) {
                             initialized = true;
