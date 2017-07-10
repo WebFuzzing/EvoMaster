@@ -107,7 +107,11 @@ class RestActionBuilder {
                     /*
                         Even if a "path" parameter might not be required, still
                         do not use an optional for it. Otherwise, might
-                        end up in quite a few useless 405 errors
+                        end up in quite a few useless 405 errors.
+
+                        Furthermore, "path" parameters must be "required" according
+                        to specs.
+                        TODO: could issue warning that Swagger is incorrect
                      */
                     gene = OptionalGene(name, gene)
                 }
@@ -183,7 +187,7 @@ class RestActionBuilder {
 
             if (gene !is CycleObjectGene) {
 
-                if (o is AbstractProperty && !o.required) {
+                if (o.value is AbstractProperty && !o.value.required) {
                     gene = OptionalGene(gene.name, gene)
                 }
 

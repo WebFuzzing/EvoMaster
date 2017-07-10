@@ -11,1383 +11,28 @@
   "basePath": "/api",
   "tags": [
     {
+      "name": "activities"
+    },
+    {
       "name": "media files"
     },
     {
       "name": "system messages"
     },
     {
-      "name": "users"
+      "name": "system status"
     },
     {
       "name": "tags or categories"
     },
     {
-      "name": "activities"
+      "name": "users"
     },
     {
       "name": "user content"
-    },
-    {
-      "name": "system status"
     }
   ],
   "paths": {
-    "/v1/activities": {
-      "get": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Search for activities",
-        "description": "",
-        "operationId": "all",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The activity attributes to include in the response",
-            "required": false,
-            "type": "id,name,tags",
-            "x-example": "id,name,tags"
-          },
-          {
-            "name": "name",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "text",
-            "in": "query",
-            "description": "Words to look for in any text field. Prefix word with minus character to exclude activities with that word.",
-            "required": false,
-            "type": "mat -matematik",
-            "x-example": "mat -matematik"
-          },
-          {
-            "name": "featured",
-            "in": "query",
-            "description": "Show featured (hand-picked by editor) activities",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "categories",
-            "in": "query",
-            "description": "Show activites with at least one of the specified tags. Comma-separated list of category ids.",
-            "required": false,
-            "type": "12,34",
-            "x-example": "12,34"
-          },
-          {
-            "name": "age_1",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "age_2",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "participants",
-            "in": "query",
-            "description": "Find activities suited for certain number of participants.",
-            "required": false,
-            "type": "1,5",
-            "x-example": "1,5"
-          },
-          {
-            "name": "time_1",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "time_2",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "my_favourites",
-            "in": "query",
-            "description": "Limit result to activities which the current user (as determined by API key) has marked as favourites.",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "ratings_count_min",
-            "in": "query",
-            "description": "Show activities which have been rated by at least this many users",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "ratings_average_min",
-            "in": "query",
-            "description": "Show activities whose average rating is at this amount.",
-            "required": false,
-            "type": "1.0",
-            "format": "double",
-            "x-example": "1.0"
-          },
-          {
-            "name": "random",
-            "in": "query",
-            "description": "Limit result to a number of random activities matching the other conditions.",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "favourites",
-            "in": "query",
-            "description": "Limit result to the overall favourite activities. This means a list of activities sorted by the number of users who have marked them as their favourites. This parameter cannot be used together with any other filtering parameters (meaning that it is not possible to use it to, for example, show favourites for a particular category or age group).",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Create a new activity",
-        "description": "",
-        "operationId": "create",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/ActivityProperties"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Activity"
-            }
-          }
-        }
-      }
-    },
-    "/v1/activities/{id}": {
-      "get": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Read a specific activity",
-        "description": "",
-        "operationId": "get",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Update an activity with new information. Activity properties not specified in the request will be cleared.",
-        "description": "",
-        "operationId": "update",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/ActivityProperties"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Activity"
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Delete an activity",
-        "description": "",
-        "operationId": "delete",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "patch": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Update an activity with new information. Only the properties specified in the request will be updated.",
-        "description": "",
-        "operationId": "patch",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/ActivityProperties"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Activity"
-            }
-          }
-        }
-      }
-    },
-    "/v1/activities/{id}/rating": {
-      "get": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Get the end-user's rating the an activity",
-        "description": "",
-        "operationId": "getRating",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Set the end-user's rating the an activity",
-        "description": "",
-        "operationId": "postRating",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/ActivityRatingAttrs"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Remove the end-user's rating the an activity",
-        "description": "",
-        "operationId": "deleteRating",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/categories": {
-      "get": {
-        "tags": [
-          "tags or categories"
-        ],
-        "operationId": "all",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "group",
-            "in": "query",
-            "description": "Returned tags must have this text in their group names.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "query",
-            "description": "Returned tags must have this text in their names.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "min_activities_count",
-            "in": "query",
-            "description": "Returned tags must have this text in their names.",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "tags or categories"
-        ],
-        "operationId": "create",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/Tag"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Tag"
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
-    "/v1/categories/{id}": {
-      "get": {
-        "tags": [
-          "tags or categories"
-        ],
-        "operationId": "get",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "tags or categories"
-        ],
-        "operationId": "update",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/Tag"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Tag"
-            },
-            "headers": {}
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "tags or categories"
-        ],
-        "operationId": "delete",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/favourites": {
-      "get": {
-        "tags": [
-          "user content"
-        ],
-        "operationId": "get",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "integer",
-                "format": "int64"
-              }
-            },
-            "headers": {}
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "user content"
-        ],
-        "operationId": "put",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/PutFavouritesEntity"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/media_files": {
-      "get": {
-        "tags": [
-          "media files"
-        ],
-        "summary": "List all media files referenced in activities.",
-        "description": "",
-        "operationId": "all",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "uri",
-            "in": "query",
-            "description": "Filter media files based on their path. The parameter value may be found anywhere in the URI.Case sensitive.",
-            "required": false,
-            "type": "Forband",
-            "x-example": "Forband"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "media files"
-        ],
-        "summary": "Upload media files (presumably images) to the system. Media files can then be associated with activities. Keywords and copyright are automatically extracted from EXIF and IPTC metadata.",
-        "description": "",
-        "operationId": "createFromMultiPart",
-        "consumes": [
-          "multipart/form-data"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/MultiPart"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/MediaFile"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/v1/media_files/{id}": {
-      "get": {
-        "tags": [
-          "media files"
-        ],
-        "operationId": "get",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "media files"
-        ],
-        "operationId": "update",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/MediaFile"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/MediaFile"
-            },
-            "headers": {}
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "media files"
-        ],
-        "summary": "Delete a media file. By default, deletes even if referenced by activities.",
-        "description": "",
-        "operationId": "delete",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "verify_unused",
-            "in": "query",
-            "description": "Verify that media file is not referenced by any activities before deleting it.",
-            "required": false,
-            "type": "true",
-            "default": "false",
-            "x-example": "true"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/media_files/{id}/file": {
-      "get": {
-        "tags": [
-          "media files"
-        ],
-        "summary": "Download media file. Can resize images (but images will never be enlarged).",
-        "description": "",
-        "operationId": "downloadFile",
-        "produces": [
-          "application/octet-stream"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "description": "The maximum width/height of returned images. The specified value will be rounded up to the next 'power of 2', e.g. 256, 512, 1024 and so on.",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/system/ping": {
-      "get": {
-        "tags": [
-          "system status"
-        ],
-        "operationId": "ping",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/system/roles": {
-      "get": {
-        "tags": [
-          "system status"
-        ],
-        "operationId": "roles",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/RolesView"
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
-    "/v1/system_messages": {
-      "get": {
-        "tags": [
-          "system messages"
-        ],
-        "operationId": "all",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "key",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "valid",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "now",
-              "now_and_future"
-            ]
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "system messages"
-        ],
-        "operationId": "create",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/SystemMessage"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/SystemMessage"
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
-    "/v1/system_messages/{id}": {
-      "get": {
-        "tags": [
-          "system messages"
-        ],
-        "operationId": "get",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "system messages"
-        ],
-        "operationId": "update",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/SystemMessage"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/SystemMessage"
-            },
-            "headers": {}
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "system messages"
-        ],
-        "operationId": "delete",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v1/users": {
-      "get": {
-        "tags": [
-          "users"
-        ],
-        "operationId": "all",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "name",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "users"
-        ],
-        "operationId": "create",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/User"
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
-    "/v1/users/profile": {
-      "get": {
-        "tags": [
-          "users"
-        ],
-        "operationId": "profile",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/UserProfileView"
-            },
-            "headers": {}
-          }
-        }
-      }
-    },
-    "/v1/users/{id}": {
-      "get": {
-        "tags": [
-          "users"
-        ],
-        "operationId": "get",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "users"
-        ],
-        "operationId": "update",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/User"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/User"
-            },
-            "headers": {}
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "users"
-        ],
-        "operationId": "delete",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "integer",
-            "format": "int64"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      }
-    },
-    "/v2/activities": {
-      "get": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Search for activities",
-        "description": "",
-        "operationId": "all",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "name": "attrs",
-            "in": "query",
-            "description": "The attributes to include in the response. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "name",
-            "in": "query",
-            "description": "Words to look for in activity names. Prefix word with minus character to exclude activities with that word.",
-            "required": false,
-            "type": "mat -matematik",
-            "x-example": "mat -matematik"
-          },
-          {
-            "name": "text",
-            "in": "query",
-            "description": "Words to look for in any text field. Prefix word with minus character to exclude activities with that word.",
-            "required": false,
-            "type": "mat -matematik",
-            "x-example": "mat -matematik"
-          },
-          {
-            "name": "featured",
-            "in": "query",
-            "description": "Show featured (hand-picked by editor) activities",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "categories",
-            "in": "query",
-            "description": "Show activites with at least one of the specified tags. Comma-separated list of tag ids.",
-            "required": false,
-            "type": "12,34",
-            "x-example": "12,34"
-          },
-          {
-            "name": "ages",
-            "in": "query",
-            "description": "Find activities suited for certain ages. Comma-separated list of ages.",
-            "required": false,
-            "type": "8,12",
-            "x-example": "8,12"
-          },
-          {
-            "name": "participants",
-            "in": "query",
-            "description": "Find activities suited for certain number of participants.",
-            "required": false,
-            "type": "1,5",
-            "x-example": "1,5"
-          },
-          {
-            "name": "durations",
-            "in": "query",
-            "description": "Find activities which can be completed in a certain amount of time. Unit: minutes.",
-            "required": false,
-            "type": "15",
-            "x-example": "15"
-          },
-          {
-            "name": "id",
-            "in": "query",
-            "description": "Find specific activites based on their internal identifiers. It is not expected that end-users know these number. Comma-separated list.",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "my_favourites",
-            "in": "query",
-            "description": "Limit result to activities which the current user (as determined by API key) has marked as favourites.",
-            "required": false,
-            "type": "boolean"
-          },
-          {
-            "name": "ratings_count_min",
-            "in": "query",
-            "description": "Show activities which have been rated by at least this many users",
-            "required": false,
-            "type": "integer",
-            "format": "int64"
-          },
-          {
-            "name": "ratings_average_min",
-            "in": "query",
-            "description": "Show activities whose average rating is at this amount.",
-            "required": false,
-            "type": "1.0",
-            "format": "double",
-            "x-example": "1.0"
-          },
-          {
-            "name": "random",
-            "in": "query",
-            "description": "Limit result to a number of random activities matching the other conditions.",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          },
-          {
-            "name": "favourites",
-            "in": "query",
-            "description": "Limit result to the overall favourite activities. This means a list of activities sorted by the number of users who have marked them as their favourites. This parameter cannot be used together with any other filtering parameters (meaning that it is not possible to use it to, for example, show favourites for a particular category or age group).",
-            "required": false,
-            "type": "integer",
-            "format": "int32"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "successful operation"
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "activities"
-        ],
-        "summary": "Create a new activity",
-        "description": "",
-        "operationId": "create",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": false,
-            "schema": {
-              "$ref": "#/definitions/ActivityProperties"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "successful operation",
-            "schema": {
-              "$ref": "#/definitions/Activity"
-            }
-          }
-        }
-      }
-    },
     "/v2/activities/{id}": {
       "get": {
         "tags": [
@@ -1519,6 +164,157 @@
         }
       }
     },
+    "/v2/activities": {
+      "get": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Search for activities",
+        "description": "",
+        "operationId": "all",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Words to look for in activity names. Prefix word with minus character to exclude activities with that word.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "description": "Words to look for in any text field. Prefix word with minus character to exclude activities with that word.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "description": "Show featured (hand-picked by editor) activities",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "categories",
+            "in": "query",
+            "description": "Show activites with at least one of the specified tags. Comma-separated list of tag ids.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "ages",
+            "in": "query",
+            "description": "Find activities suited for certain ages. Comma-separated list of ages.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "participants",
+            "in": "query",
+            "description": "Find activities suited for certain number of participants.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "durations",
+            "in": "query",
+            "description": "Find activities which can be completed in a certain amount of time. Unit: minutes.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "description": "Find specific activites based on their internal identifiers. It is not expected that end-users know these number. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "my_favourites",
+            "in": "query",
+            "description": "Limit result to activities which the current user (as determined by API key) has marked as favourites.",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "ratings_count_min",
+            "in": "query",
+            "description": "Show activities which have been rated by at least this many users",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "ratings_average_min",
+            "in": "query",
+            "description": "Show activities whose average rating is at this amount.",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "random",
+            "in": "query",
+            "description": "Limit result to a number of random activities matching the other conditions.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "favourites",
+            "in": "query",
+            "description": "Limit result to the overall favourite activities. This means a list of activities sorted by the number of users who have marked them as their favourites. This parameter cannot be used together with any other filtering parameters (meaning that it is not possible to use it to, for example, show favourites for a particular category or age group).",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Create a new activity",
+        "description": "",
+        "operationId": "create",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/ActivityProperties"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Activity"
+            }
+          }
+        }
+      }
+    },
     "/v2/activities/{id}/rating": {
       "get": {
         "tags": [
@@ -1592,6 +388,494 @@
         "summary": "Remove the end-user's rating the an activity",
         "description": "",
         "operationId": "deleteRating",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v1/media_files/{id}": {
+      "get": {
+        "tags": [
+          "media files"
+        ],
+        "operationId": "get",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "media files"
+        ],
+        "operationId": "update",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/MediaFile"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/MediaFile"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "media files"
+        ],
+        "summary": "Delete a media file. By default, deletes even if referenced by activities.",
+        "description": "",
+        "operationId": "delete",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "verify_unused",
+            "in": "query",
+            "description": "Verify that media file is not referenced by any activities before deleting it.",
+            "required": false,
+            "type": "boolean",
+            "default": false
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v1/media_files": {
+      "get": {
+        "tags": [
+          "media files"
+        ],
+        "summary": "List all media files referenced in activities.",
+        "description": "",
+        "operationId": "all",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "uri",
+            "in": "query",
+            "description": "Filter media files based on their path. The parameter value may be found anywhere in the URI.Case sensitive.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "media files"
+        ],
+        "summary": "Add a media file to the system. Specify URL of media file or use 'data URI' to upload base64-encoded file.",
+        "description": "",
+        "operationId": "create",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/MediaFile"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/MediaFile"
+            }
+          }
+        }
+      }
+    },
+    "/v1/media_files/{id}/file": {
+      "get": {
+        "tags": [
+          "media files"
+        ],
+        "summary": "Download media file. Can resize images (but images will never be enlarged).",
+        "description": "",
+        "operationId": "downloadFile",
+        "produces": [
+          "application/octet-stream"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The maximum width/height of returned images. The specified value will be rounded up to the next 'power of 2', e.g. 256, 512, 1024 and so on.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v1/system_messages/{id}": {
+      "get": {
+        "tags": [
+          "system messages"
+        ],
+        "operationId": "get",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "system messages"
+        ],
+        "operationId": "update",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/SystemMessage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/SystemMessage"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "system messages"
+        ],
+        "operationId": "delete",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v1/system_messages": {
+      "get": {
+        "tags": [
+          "system messages"
+        ],
+        "operationId": "all",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "valid",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "now",
+              "now_and_future"
+            ]
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "system messages"
+        ],
+        "operationId": "create",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/SystemMessage"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/SystemMessage"
+            },
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/v1/system/roles": {
+      "get": {
+        "tags": [
+          "system status"
+        ],
+        "operationId": "roles",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/RolesView"
+            },
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/v1/system/ping": {
+      "get": {
+        "tags": [
+          "system status"
+        ],
+        "operationId": "ping",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v2/tags/{id}": {
+      "get": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "get",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "update",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Tag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Tag"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "delete",
         "produces": [
           "application/json"
         ],
@@ -1686,10 +970,10 @@
         }
       }
     },
-    "/v2/tags/{id}": {
+    "/v1/users/{id}": {
       "get": {
         "tags": [
-          "tags or categories"
+          "users"
         ],
         "operationId": "get",
         "produces": [
@@ -1719,9 +1003,569 @@
       },
       "put": {
         "tags": [
-          "tags or categories"
+          "users"
         ],
         "operationId": "update",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/User"
+            },
+            "headers": {}
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "delete",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v1/users/profile": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "profile",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/UserProfileView"
+            },
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/v1/users": {
+      "get": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "all",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "users"
+        ],
+        "operationId": "create",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/User"
+            },
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}": {
+      "get": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Read a specific activity",
+        "description": "",
+        "operationId": "get_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Update an activity with new information. Activity properties not specified in the request will be cleared.",
+        "description": "",
+        "operationId": "update_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/ActivityProperties"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Activity"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Delete an activity",
+        "description": "",
+        "operationId": "delete_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Update an activity with new information. Only the properties specified in the request will be updated.",
+        "description": "",
+        "operationId": "patch_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/ActivityProperties"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Activity"
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities": {
+      "get": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Search for activities",
+        "description": "",
+        "operationId": "all",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The activity attributes to include in the response",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "text",
+            "in": "query",
+            "description": "Words to look for in any text field. Prefix word with minus character to exclude activities with that word.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "featured",
+            "in": "query",
+            "description": "Show featured (hand-picked by editor) activities",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "categories",
+            "in": "query",
+            "description": "Show activites with at least one of the specified tags. Comma-separated list of category ids.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "age_1",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "age_2",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "participants",
+            "in": "query",
+            "description": "Find activities suited for certain number of participants.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "time_1",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "time_2",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "my_favourites",
+            "in": "query",
+            "description": "Limit result to activities which the current user (as determined by API key) has marked as favourites.",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "ratings_count_min",
+            "in": "query",
+            "description": "Show activities which have been rated by at least this many users",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "ratings_average_min",
+            "in": "query",
+            "description": "Show activities whose average rating is at this amount.",
+            "required": false,
+            "type": "number",
+            "format": "double"
+          },
+          {
+            "name": "random",
+            "in": "query",
+            "description": "Limit result to a number of random activities matching the other conditions.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "favourites",
+            "in": "query",
+            "description": "Limit result to the overall favourite activities. This means a list of activities sorted by the number of users who have marked them as their favourites. This parameter cannot be used together with any other filtering parameters (meaning that it is not possible to use it to, for example, show favourites for a particular category or age group).",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Create a new activity",
+        "description": "",
+        "operationId": "create_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/ActivityProperties"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Activity"
+            }
+          }
+        }
+      }
+    },
+    "/v1/activities/{id}/rating": {
+      "get": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Get the end-user's rating the an activity",
+        "description": "",
+        "operationId": "getRating_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Set the end-user's rating the an activity",
+        "description": "",
+        "operationId": "postRating_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/ActivityRatingAttrs"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "activities"
+        ],
+        "summary": "Remove the end-user's rating the an activity",
+        "description": "",
+        "operationId": "deleteRating_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/v1/categories/{id}": {
+      "get": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "get_2",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "update_2",
         "produces": [
           "application/json"
         ],
@@ -1756,7 +1600,7 @@
         "tags": [
           "tags or categories"
         ],
-        "operationId": "delete",
+        "operationId": "delete_2",
         "produces": [
           "application/json"
         ],
@@ -1775,143 +1619,193 @@
           }
         }
       }
+    },
+    "/v1/categories": {
+      "get": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "all_1",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "group",
+            "in": "query",
+            "description": "Returned tags must have this text in their group names.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "query",
+            "description": "Returned tags must have this text in their names.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "min_activities_count",
+            "in": "query",
+            "description": "Returned tags must have this text in their names.",
+            "required": false,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "attrs",
+            "in": "query",
+            "description": "The attributes to include in the response. Comma-separated list.",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "tags or categories"
+        ],
+        "operationId": "create_2",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Tag"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/Tag"
+            },
+            "headers": {}
+          }
+        }
+      }
+    },
+    "/v1/favourites": {
+      "get": {
+        "tags": [
+          "user content"
+        ],
+        "operationId": "get",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            },
+            "headers": {}
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "user content"
+        ],
+        "operationId": "put",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/PutFavouritesEntity"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
     }
   },
   "definitions": {
-    "MediaFile": {
+    "Activity": {
       "type": "object",
       "properties": {
         "id": {
           "type": "integer",
           "format": "int64"
         },
-        "mime_type": {
-          "type": "string"
-        },
-        "uri": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "capture_date": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "copy_right": {
-          "type": "string"
-        },
-        "author": {
-          "type": "string"
-        }
-      }
-    },
-    "MessageBodyWorkers": {
-      "type": "object"
-    },
-    "BodyPart": {
-      "type": "object",
-      "properties": {
-        "contentDisposition": {
-          "$ref": "#/definitions/ContentDisposition"
-        },
-        "entity": {
-          "type": "object"
-        },
-        "headers": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "mediaType": {
-          "$ref": "#/definitions/MediaType"
-        },
-        "messageBodyWorkers": {
-          "$ref": "#/definitions/MessageBodyWorkers"
-        },
-        "parent": {
-          "$ref": "#/definitions/MultiPart"
-        },
-        "providers": {
-          "$ref": "#/definitions/Providers"
-        },
-        "parameterizedHeaders": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/ParameterizedHeader"
-            }
-          }
-        }
-      }
-    },
-    "SystemMessage": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "key": {
-          "type": "string"
-        },
-        "value": {
-          "type": "string"
-        },
-        "valid_to": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "valid_from": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "ParameterizedHeader": {
-      "type": "object",
-      "properties": {
-        "value": {
-          "type": "string"
-        },
-        "parameters": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "User": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "name": {
-          "type": "string"
-        },
-        "email_address": {
-          "type": "string"
-        },
-        "authorization_level": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "identities": {
+        "properties_revisions": {
           "type": "array",
           "xml": {
-            "name": "identity",
+            "name": "propertiesRevisions",
             "wrapped": true
           },
           "items": {
-            "$ref": "#/definitions/UserIdentity"
+            "xml": {
+              "name": "properties"
+            },
+            "$ref": "#/definitions/ActivityProperties"
+          }
+        },
+        "properties": {
+          "$ref": "#/definitions/ActivityProperties"
+        },
+        "ratings_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "ratings_sum": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "favourites_count": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "ratings_average": {
+          "type": "number",
+          "format": "double"
+        },
+        "related": {
+          "type": "array",
+          "readOnly": true,
+          "items": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       }
@@ -1973,12 +1867,12 @@
         "age_min": {
           "type": "integer",
           "format": "int32",
-          "maximum": 100.0
+          "maximum": 100
         },
         "age_max": {
           "type": "integer",
           "format": "int32",
-          "maximum": 100.0
+          "maximum": 100
         },
         "participants_min": {
           "type": "integer",
@@ -1997,8 +1891,7 @@
           "format": "int32"
         },
         "featured": {
-          "type": "boolean",
-          "default": false
+          "type": "boolean"
         },
         "source": {
           "type": "string"
@@ -2006,20 +1899,25 @@
         "tags": {
           "type": "array",
           "xml": {
-            "name": "tag",
             "wrapped": true
           },
           "items": {
+            "xml": {
+              "name": "tag"
+            },
             "$ref": "#/definitions/Tag"
           }
         },
         "media_files": {
           "type": "array",
           "xml": {
-            "name": "mediaFile",
+            "name": "mediaFiles",
             "wrapped": true
           },
           "items": {
+            "xml": {
+              "name": "mediaFile"
+            },
             "$ref": "#/definitions/MediaFile"
           }
         },
@@ -2028,6 +1926,87 @@
         },
         "activity": {
           "$ref": "#/definitions/Activity"
+        }
+      }
+    },
+    "MediaFile": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "mime_type": {
+          "type": "string"
+        },
+        "uri": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "capture_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "copy_right": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        }
+      }
+    },
+    "Tag": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "group": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "media_file": {
+          "$ref": "#/definitions/MediaFile"
+        },
+        "activities_count": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "User": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "email_address": {
+          "type": "string"
+        },
+        "authorization_level": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "identities": {
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          },
+          "items": {
+            "xml": {
+              "name": "identity"
+            },
+            "$ref": "#/definitions/UserIdentity"
+          }
         }
       }
     },
@@ -2054,6 +2033,41 @@
         },
         "user": {
           "$ref": "#/definitions/User"
+        }
+      }
+    },
+    "ActivityRatingAttrs": {
+      "type": "object",
+      "properties": {
+        "rating": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "favourite": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SystemMessage": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "key": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        },
+        "valid_to": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "valid_from": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     },
@@ -2093,148 +2107,6 @@
         }
       }
     },
-    "Activity": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "properties_revisions": {
-          "type": "array",
-          "xml": {
-            "name": "properties",
-            "wrapped": true
-          },
-          "items": {
-            "$ref": "#/definitions/ActivityProperties"
-          }
-        },
-        "properties": {
-          "$ref": "#/definitions/ActivityProperties"
-        },
-        "ratings_count": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "ratings_sum": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "favourites_count": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "ratings_average": {
-          "type": "number",
-          "format": "double"
-        },
-        "related": {
-          "type": "array",
-          "readOnly": true,
-          "items": {
-            "type": "integer",
-            "format": "int64"
-          }
-        }
-      }
-    },
-    "Providers": {
-      "type": "object"
-    },
-    "ActivityRatingAttrs": {
-      "type": "object",
-      "properties": {
-        "rating": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "favourite": {
-          "type": "boolean",
-          "default": false
-        }
-      }
-    },
-    "MultiPart": {
-      "type": "object",
-      "properties": {
-        "contentDisposition": {
-          "$ref": "#/definitions/ContentDisposition"
-        },
-        "entity": {
-          "type": "object"
-        },
-        "headers": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
-          }
-        },
-        "mediaType": {
-          "$ref": "#/definitions/MediaType"
-        },
-        "messageBodyWorkers": {
-          "$ref": "#/definitions/MessageBodyWorkers"
-        },
-        "parent": {
-          "$ref": "#/definitions/MultiPart"
-        },
-        "providers": {
-          "$ref": "#/definitions/Providers"
-        },
-        "bodyParts": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/BodyPart"
-          }
-        },
-        "parameterizedHeaders": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/ParameterizedHeader"
-            }
-          }
-        }
-      }
-    },
-    "ContentDisposition": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string"
-        },
-        "parameters": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "fileName": {
-          "type": "string"
-        },
-        "creationDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "modificationDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "readDate": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "size": {
-          "type": "integer",
-          "format": "int64"
-        }
-      }
-    },
     "PutFavouritesEntity": {
       "type": "object",
       "properties": {
@@ -2244,53 +2116,6 @@
             "type": "integer",
             "format": "int64"
           }
-        }
-      }
-    },
-    "MediaType": {
-      "type": "object",
-      "properties": {
-        "type": {
-          "type": "string"
-        },
-        "subtype": {
-          "type": "string"
-        },
-        "parameters": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        },
-        "wildcardType": {
-          "type": "boolean",
-          "default": false
-        },
-        "wildcardSubtype": {
-          "type": "boolean",
-          "default": false
-        }
-      }
-    },
-    "Tag": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "integer",
-          "format": "int64"
-        },
-        "group": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "media_file": {
-          "$ref": "#/definitions/MediaFile"
-        },
-        "activities_count": {
-          "type": "integer",
-          "format": "int64"
         }
       }
     }
