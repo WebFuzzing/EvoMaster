@@ -416,18 +416,48 @@ class RestSampler : Sampler<RestIndividual>() {
 
         val post = createActionFor(template, target)
 
-        if (!post.path.isEquivalent(target.path)) {
-            post.saveLocation = true
-            target.locationId = post.path.lastElement()
-        }
-
         test.add(0, post)
 
+        /*
+            Check if POST depends itself on the creation of
+            some intermediate resource
+         */
         if (post.path.hasVariablePathParameters() &&
                 (!post.path.isLastElementAParameter()) ||
                 post.path.getVariableNames().size >= 2) {
 
-            return createResourcesFor(post, test)
+            val dependencyCreated = createResourcesFor(post, test)
+            if(! dependencyCreated){
+                return false
+            }
+        }
+
+
+        /*
+            Once the POST is fully initialized, need to fix
+            links with target
+         */
+        if (!post.path.isEquivalent(target.path)) {
+            /*
+                eg
+                POST /x
+                GET  /x/{id}
+             */
+            post.saveLocation = true
+            target.locationId = post.path.lastElement()
+        } else {
+            /*
+                eg
+                POST /x
+                POST /x/{id}/y
+                GET  /x/{id}/y
+             */
+            //not going to save the position of last POST, as same as target
+            post.saveLocation = false
+
+            // the target (eg GET) needs to use the location of first POST, or more correctly
+            // the same location used for the last POST (in case there is a deeper chain)
+            target.locationId = post.locationId
         }
 
         return true
@@ -447,7 +477,10 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     /**
-     * Make sure that what returned is different from the target
+     * Make sure that what returned is different from the target.
+     * This can be a strict ancestor (shorter path), or same
+     * endpoint but with different HTTP verb.
+     * Among the different ancestors, return one of the longest
      */
     private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>): RestCallAction? {
 

@@ -41,6 +41,10 @@ class RestStructureMutator : StructureMutator() {
         /*
             recall: in this case, we have 1 or more POST on same
             collection, followed by a single GET
+
+            However, in case of path parameters (eg "/x/{id}/collection")
+            before the collection endpoint, there might be one or more POSTs
+            to setup the intermediary resources
          */
 
         (0 until ind.actions.size - 1).forEach {
@@ -49,19 +53,48 @@ class RestStructureMutator : StructureMutator() {
         }
         assert({ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET }())
 
-        if ((randomness.nextBoolean() && ind.actions.size > 2) ||
-                ind.actions.size == config.maxTestSize) {
+        val indices = ind.actions.indices
+                .filter { i ->
+                    val a = ind.actions[i]
+                    /*
+                        one simple way to distinguish the POST on collection is that
+                        they are not chaining a location, as GET is on same endpoint
+                    */
+                    a is RestCallAction && !a.saveLocation && a.verb == HttpVerb.POST
+                }
+
+        if(indices.isEmpty()){
+            /*
+                Nothing we can do here. Cannot delete a POST, and
+                neither add a new one, as we have no template for
+                it in the test to duplicate.
+             */
+            return
+        }
+
+        if (indices.size > 1 &&
+                (randomness.nextBoolean() ||
+                        ind.actions.size == config.maxTestSize)) {
 
             //delete one POST, but NOT the GET
-            val chosen = randomness.nextInt(ind.actions.size - 1)
+            val chosen = randomness.choose(indices)
             ind.actions.removeAt(chosen)
 
         } else {
+            //insert a new POST on the collection
+            val idx = indices.last()
 
-            val postTemplate = ind.actions[0] as RestCallAction
+            val postTemplate = ind.actions[idx] as RestCallAction
+            assert(postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation)
+
             val post = sampler.createActionFor(postTemplate, ind.actions.last() as RestCallAction)
-            //as where it is inserted should not matter, let's add it at the beginning
-            ind.actions.add(0, post)
+
+            /*
+                where it is inserted should not matter, as long as
+                it is before the last GET, but after all the other initializing
+                POSTs
+             */
+            ind.actions.add(idx, post)
         }
     }
 
