@@ -66,7 +66,7 @@ public class CPGRest {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity handleIOException(Exception ex) {
+    public ResponseEntity handleExceptions(Exception ex) {
         ex.printStackTrace();
         return ResponseEntity.status(500).build();
     }

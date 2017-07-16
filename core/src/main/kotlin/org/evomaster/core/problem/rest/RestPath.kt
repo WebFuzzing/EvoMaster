@@ -117,6 +117,7 @@ class RestPath(path: String) {
         return other.isAncestorOf(this)
     }
 
+
     /**
      * Prefix or same as "other"
      */

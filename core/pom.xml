@@ -74,6 +74,10 @@
             <groupId>com.netflix.governator</groupId>
             <artifactId>governator</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>

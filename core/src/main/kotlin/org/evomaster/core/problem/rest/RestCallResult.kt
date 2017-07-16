@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest
 
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 import org.evomaster.core.search.ActionResult
 import javax.ws.rs.core.MediaType
 
@@ -15,6 +17,7 @@ class RestCallResult : ActionResult {
         val BODY_TYPE = "BODY_TYPE"
         val INFINITE_LOOP = "INFINITE_LOOP"
         val ERROR_MESSAGE = "ERROR_MESSAGE"
+        val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
     }
 
 
@@ -30,6 +33,31 @@ class RestCallResult : ActionResult {
     fun failedCall(): Boolean{
        return getInfiniteLoop()
     }
+
+
+    fun getResourceIdName() = "id"
+
+    fun getResourceId(): String? {
+
+        if(!MediaType.APPLICATION_JSON_TYPE.isCompatible(getBodyType())){
+            //TODO could also handle other media types
+            return null
+        }
+
+        return getBody()?.let {
+            try {
+                /*
+                    TODO: "id" is the most common word, but could check
+                    if others are used as well.
+                 */
+                Gson().fromJson(it, JsonObject::class.java).get(getResourceIdName())?.toString()
+            } catch (e: Exception){
+                //nothing to do
+                null
+            }
+        }
+    }
+
 
     fun setStatusCode(code: Int) {
         if (code < 100 || code >= 600) {
@@ -48,12 +76,7 @@ class RestCallResult : ActionResult {
 
     fun setBodyType(bodyType: MediaType) = addResultValue(BODY_TYPE, bodyType.toString())
     fun getBodyType(): MediaType? {
-        val res = getResultValue(BODY_TYPE)
-        if (res != null) {
-            return MediaType.valueOf(res)
-        } else {
-            return null
-        }
+        return getResultValue(BODY_TYPE)?.let { MediaType.valueOf(it) }
     }
 
     fun setInfiniteLoop(on: Boolean) = addResultValue(INFINITE_LOOP, on.toString())
@@ -61,4 +84,14 @@ class RestCallResult : ActionResult {
 
     fun setErrorMessage(msg: String) = addResultValue(ERROR_MESSAGE, msg)
     fun getErrorMessage(): String? = getResultValue(ERROR_MESSAGE)
+
+    /**
+     * It might happen that we need to chain call location, but
+     * there was no "location" header in the response of call that
+     * created a new resource. However, it "might" still be possible
+     * to try to infer the location (based on object response and
+     * the other available endpoints in the API)
+     */
+    fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
+    fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
 }

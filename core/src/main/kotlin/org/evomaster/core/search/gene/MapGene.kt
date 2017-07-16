@@ -26,8 +26,8 @@ where T : Gene {
         )
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is MapGene<*>){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is MapGene<*>) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
@@ -49,7 +49,10 @@ where T : Gene {
 
     override fun getValueAsPrintableString(): String {
         return "{" +
-                elements.map { f ->
+                elements.filter { f ->
+                    f !is CycleObjectGene &&
+                            (f !is OptionalGene || f.isActive)
+                }.map { f ->
                     """
                     "${f.name}":${f.getValueAsPrintableString()}
                     """
@@ -57,7 +60,7 @@ where T : Gene {
                 "}";
     }
 
-    override fun flatView(): List<Gene>{
+    override fun flatView(): List<Gene> {
         return listOf(this).plus(elements.flatMap { g -> g.flatView() })
     }
 

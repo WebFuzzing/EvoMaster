@@ -55,7 +55,7 @@ public class AgentController {
 
                 Command command = (Command) msg;
                 long start = System.currentTimeMillis();
-                SimpleLogger.info("Handling command: "+command);
+                SimpleLogger.debug("Handling command: "+command);
 
                 switch(command){
                     case NEW_SEARCH:
@@ -79,7 +79,7 @@ public class AgentController {
                 }
 
                 long delta = System.currentTimeMillis() - start;
-                SimpleLogger.info("Command took "+delta+" ms");
+                SimpleLogger.debug("Command took "+delta+" ms");
             }
         });
 

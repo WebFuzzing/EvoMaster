@@ -12,6 +12,11 @@ public class SimpleLogger {
 
     enum Level {DEBUG, INFO, WARN, ERROR, OFF}
 
+    /**
+     * Property used to control the logging level by system property
+     */
+    public static final String PROP_LOGGER_LEVEL = "em.logger.level";
+
     private static Level threshold = Level.INFO;
 
     public static Level getThreshold() {
@@ -21,6 +26,15 @@ public class SimpleLogger {
     public static void setThreshold(Level threshold) {
         SimpleLogger.threshold = threshold;
     }
+
+
+    public static void updateThreshold(){
+        String level = System.getProperty(PROP_LOGGER_LEVEL);
+        if(level != null){
+            setThreshold(Level.valueOf(level));
+        }
+    }
+
 
     public static void debug(String message){
         printMessage(Level.DEBUG, message, null);

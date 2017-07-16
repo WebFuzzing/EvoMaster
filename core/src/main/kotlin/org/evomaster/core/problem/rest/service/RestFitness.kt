@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
@@ -24,6 +25,9 @@ import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import org.glassfish.jersey.client.ClientProperties
+import com.google.gson.JsonObject
+
+
 
 
 class RestFitness : FitnessFunction<RestIndividual>() {
@@ -34,6 +38,10 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     @Inject
     private lateinit var rc: RemoteController
+
+    @Inject
+    private lateinit var sampler: RestSampler
+
 
     private val client: Client = {
         val configuration = ClientConfig()
@@ -75,7 +83,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
 
-        //run the test
+        //run the test, one actiona at a time
         for (i in 0 until individual.actions.size) {
 
             rc.registerNewAction(i)
@@ -93,7 +101,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 break
             }
 
-            //FIXME SQL here, per action
             if(configuration.heuristicsForSQL) {
                 val extra = rc.getExtraHeuristics() ?:
                         throw IllegalStateException("Cannot retrieve extra heuristics")
@@ -182,6 +189,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                     ?: throw IllegalStateException("Call expected a missing chained 'location'")
 
             EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
+
         } else {
             baseUrl + path
         }.let {
@@ -246,7 +254,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         } catch (e: ProcessingException){
 
             //this can happen for example if call ends up in an infinite redirection loop
-            if(e.cause?.message?.contains("redirected too many") ?: false && e.cause is ProtocolException){
+            if((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException){
                 rcr.setInfiniteLoop(true)
                 rcr.setErrorMessage(e.cause!!.message!!)
                 return false
@@ -276,6 +284,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
 
+        if (! handleSaveLocation(a, response, rcr, chainState)) return false
+
+        return true
+    }
+
+    private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
             if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
@@ -288,14 +302,37 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 return false
             }
 
-            //TODO check if there is name class for locations
+            val name = locationName(a.path.lastElement())
+            var location = response.getHeaderString("location")
+
+            if (location == null) {
+                /*
+                    Excluding bugs, this might happen if API was
+                    designed to return the created resource, from
+                    which an "id" can be extracted.
+                    This is usually not a good practice, but it can
+                    happen. So, here we "heuristically" (cannot be 100% sure)
+                    check if this is indeed the case
+                 */
+                val id = rcr.getResourceId()
+
+                if(id != null && hasParameterChild(a)){
+                    location = a.resolvedPath() + "/" + id
+                    rcr.setHeuristicsForChainedLocation(true)
+                }
+            }
 
             //save location for the following REST calls
-            chainState[locationName(a.path.lastElement())] =
-                    response.getHeaderString("location") ?: ""
+            chainState[name] = location ?: ""
         }
-
         return true
+    }
+
+    private fun hasParameterChild(a: RestCallAction): Boolean {
+        return sampler.seeAvailableActions()
+                .filterIsInstance<RestCallAction>()
+                .map { it.path }
+                .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
 
     private fun locationName(id: String): String {

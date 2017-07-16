@@ -51,7 +51,7 @@ class TestSuiteWriter {
             for(test in tests){
                 lines.addEmpty(2)
 
-                val testLines = TestCaseWriter.convertToCompilableTestCode(format, test, baseUrlOfSut)
+                val testLines = TestCaseWriter().convertToCompilableTestCode(format, test, baseUrlOfSut)
                 lines.add(testLines)
             }
 
