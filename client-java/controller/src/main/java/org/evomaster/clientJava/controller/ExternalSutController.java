@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
+import org.evomaster.clientJava.controller.internal.db.StandardOutputTracker;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
@@ -335,10 +336,10 @@ public abstract class ExternalSutController extends SutController {
                     while (line != null && !Thread.interrupted()) {
 
                         if(line.startsWith(P6SpyFormatter.PREFIX)){
-                            //import we always print P6Spy as_it_is, even when
-                            //SUT is muted
-                            SimpleLogger.info(line);
-                        } else if(!muted) {
+                            StandardOutputTracker.handleSqlLine(this, line);
+                        }
+
+                        if(!muted) {
                             SimpleLogger.info("SUT: " + line);
                         }
 

@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * We use p6spy to intercept SQL commands.
@@ -68,9 +69,21 @@ public class StandardOutputTracker extends ByteArrayOutputStream{//extends Print
             Arrays.stream(data.split("\n"))
                     .filter(l -> l.startsWith(P6SpyFormatter.PREFIX))
                     .forEach(l -> {
-                        String sql = l.substring(P6SpyFormatter.PREFIX.length());
-                        sutController.handleSql(sql);
+                        handleSqlLine(sutController, l);
                     });
         }
     }
+
+    public static void handleSqlLine(SutController sc, String line){
+        Objects.requireNonNull(sc);
+        Objects.requireNonNull(line);
+
+        if(! line.startsWith(P6SpyFormatter.PREFIX)){
+            throw new IllegalArgumentException("No P6Spy prefix");
+        }
+
+        String sql = line.substring(P6SpyFormatter.PREFIX.length());
+        sc.handleSql(sql);
+    }
+
 }

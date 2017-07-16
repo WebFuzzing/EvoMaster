@@ -51,7 +51,7 @@ public class InstrumentedSutStarter {
                 the SUT if the SUT is using Jetty.
              */
             System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog");
-            System.setProperty("org.eclipse.jetty.LEVEL", "OFF");
+            System.setProperty("org.eclipse.jetty.LEVEL", "ERROR");
         } else {
             throw new IllegalArgumentException("Invalid SUT controller type");
         }
