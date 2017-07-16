@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller.internal.db;
 
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.parser.TokenMgrError;
 import net.sf.jsqlparser.statement.select.Select;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.db.QueryResult;
@@ -89,8 +90,8 @@ public class SqlHandler {
 
         try {
             Select stmt = (Select) CCJSqlParserUtil.parse(select);
-        } catch (Exception e) {
-            SimpleLogger.warn("Cannot handle select query: " + select +"\n" + e.toString(), e);
+        } catch (Exception | TokenMgrError e) {
+            SimpleLogger.uniqueWarn("Cannot handle select query: " + select +"\n" + e.toString());
             return Double.MAX_VALUE;
         }
 

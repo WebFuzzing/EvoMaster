@@ -1,5 +1,8 @@
 package org.evomaster.clientJava.clientUtil;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Client library should be the least invasive as possible.
  * Using a logger that could conflict with existing ones of the
@@ -17,7 +20,18 @@ public class SimpleLogger {
      */
     public static final String PROP_LOGGER_LEVEL = "em.logger.level";
 
+    /*
+        WARNING: this class has mutable dynamic state.
+        Unfortunately, in client library cannot really add
+        a DI framework just to handle this case.
+        Furthermore, this has no impact on search (just side-effect
+        of logging)
+     */
+
     private static Level threshold = Level.INFO;
+
+    private static final Set<String> uniqueMessages = new HashSet<>(1024);
+
 
     public static Level getThreshold() {
         return threshold;
@@ -42,6 +56,14 @@ public class SimpleLogger {
 
     public static void info(String message){
         printMessage(Level.INFO, message, null);
+    }
+
+    public static void uniqueWarn(String message){
+        if(uniqueMessages.contains(message)){
+            return;
+        }
+        uniqueMessages.add(message);
+        warn(message);
     }
 
     public static void warn(String message){
