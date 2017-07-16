@@ -51,7 +51,7 @@ public class HeuristicsCalculator {
     }
 
     private double cannotHandle(Expression exp) {
-        SimpleLogger.warn("WARNING, cannot handle SQL expression type '" + exp.getClass().getSimpleName() +
+        SimpleLogger.uniqueWarn("WARNING, cannot handle SQL expression type '" + exp.getClass().getSimpleName() +
                 "' with value: " + exp.toString());
         return Double.MAX_VALUE;
     }
