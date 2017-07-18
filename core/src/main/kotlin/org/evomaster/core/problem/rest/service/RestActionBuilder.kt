@@ -127,7 +127,7 @@ class RestActionBuilder {
                     else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
                 }
 
-            } else if (p is BodyParameter) {
+            } else if (p is BodyParameter && ! shouldAvoidCreatingObject(p, swagger)) {
 
                 val gene = p.schema.reference?.let { createObjectFromReference("body", it, swagger) }
                         ?: createObjectFromModel(p.schema, "body", swagger)
@@ -137,6 +137,25 @@ class RestActionBuilder {
         }
 
         return params
+    }
+
+    fun shouldAvoidCreatingObject(p : BodyParameter, swagger: Swagger) : Boolean{
+
+        var ref: String = p.schema.reference ?: return false
+        val classDef = ref.substring(ref.lastIndexOf("/") + 1)
+
+        if(listOf("Principal", "WebRequest").contains(classDef)){
+
+            /*
+                This is/was a bug in Swagger for Spring, in which Spring request
+                handlers wrongly ended up in Swagger as body parts, albeit
+                missing from the definition list
+             */
+
+            swagger.definitions[classDef] ?: return true
+        }
+
+        return false
     }
 
     private fun createObjectFromReference(name: String,
