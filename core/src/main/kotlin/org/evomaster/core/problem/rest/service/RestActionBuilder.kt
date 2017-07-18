@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import io.swagger.models.HttpMethod
+import io.swagger.models.Model
 import io.swagger.models.Operation
 import io.swagger.models.Swagger
 import io.swagger.models.parameters.AbstractSerializableParameter
@@ -19,7 +20,7 @@ import org.slf4j.LoggerFactory
 
 class RestActionBuilder {
 
-    companion object{
+    companion object {
         private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
     }
 
@@ -48,7 +49,7 @@ class RestActionBuilder {
 
         LoggingUtil.getInfoLogger().apply {
             val n = actionCluster.size
-            when(n){
+            when (n) {
                 0 -> warn("There is _NO_ RESTful API entry point defined in the Swagger configuration")
                 1 -> info("There is only one RESTful API entry point defined in the Swagger configuration")
                 else -> info("There are $n RESTful API entry points defined in the Swagger configuration")
@@ -63,14 +64,14 @@ class RestActionBuilder {
 
         restPath.getVariableNames().forEach { n ->
 
-            var p = params.find{p -> p is PathParam && p.name == n}
-            if(p == null){
+            var p = params.find { p -> p is PathParam && p.name == n }
+            if (p == null) {
                 log.warn("No path parameter for variable '$n'")
 
                 //this could happen if bug in Swagger
                 var fixed = false
-                for(i in 0 until params.size) {
-                    if(params[i] is QueryParam && params[i].name == n){
+                for (i in 0 until params.size) {
+                    if (params[i] is QueryParam && params[i].name == n) {
                         params[i] = PathParam(params[i].name, DisruptiveGene("d_", params[i].gene, 1.0))
                         fixed = true
                         break
@@ -128,20 +129,20 @@ class RestActionBuilder {
 
             } else if (p is BodyParameter) {
 
-                val ref = p.schema.reference
+                val gene = p.schema.reference?.let { createObjectFromReference("body", it, swagger) }
+                        ?: createObjectFromModel(p.schema, "body", swagger)
 
-                params.add(BodyParam(
-                        getObjectGene("body", ref, swagger)))
+                params.add(BodyParam(gene))
             }
         }
 
         return params
     }
 
-    private fun getObjectGene(name: String,
-                              reference: String,
-                              swagger: Swagger,
-                              history: MutableList<String> = mutableListOf()
+    private fun createObjectFromReference(name: String,
+                                          reference: String,
+                                          swagger: Swagger,
+                                          history: MutableList<String> = mutableListOf()
     ): ObjectGene {
 
         if (history.contains(reference)) {
@@ -153,13 +154,22 @@ class RestActionBuilder {
         val classDef = reference.substring(reference.lastIndexOf("/") + 1)
 
         val model = swagger.definitions[classDef]
-        if(model == null){
+        if (model == null) {
             log.warn("No $classDef among the object definitions in the Swagger file")
             return ObjectGene(name, listOf())
         }
 
 
         //TODO referenced types might not necessarily objects???
+
+        return createObjectFromModel(model, name, swagger, history)
+    }
+
+    private fun createObjectFromModel(model: Model,
+                                      name: String,
+                                      swagger: Swagger,
+                                      history: MutableList<String> = mutableListOf())
+            : ObjectGene {
 
         //TODO need to handle additionalProperties
 
@@ -168,10 +178,10 @@ class RestActionBuilder {
         return ObjectGene(name, fields)
     }
 
-    private fun createFields(properties: Map<String,Property>?,
+    private fun createFields(properties: Map<String, Property>?,
                              swagger: Swagger,
                              history: MutableList<String> = mutableListOf())
-            : List<out Gene>{
+            : List<out Gene> {
 
         val fields: MutableList<Gene> = mutableListOf()
 
@@ -230,7 +240,7 @@ class RestActionBuilder {
 
         */
 
-        if(type == "string" && ! (parameter?.getEnum()?.isEmpty() ?: true) ) {
+        if (type == "string" && !(parameter?.getEnum()?.isEmpty() ?: true)) {
             //TODO enum can be for any type, not just strings
             //Besides the defined values, add one to test robustness
             return EnumGene(name, parameter!!.getEnum().apply { add("EVOMASTER") })
@@ -267,11 +277,11 @@ class RestActionBuilder {
                     throw IllegalStateException("Cannot handle ref out of a property")
                 }
                 val rp = property as RefProperty
-                return getObjectGene(name, rp.`$ref`, swagger, history)
+                return createObjectFromReference(name, rp.`$ref`, swagger, history)
             }
             "array" -> {
 
-                val items = when{
+                val items = when {
                     property != null -> (property as ArrayProperty).items
                     parameter != null -> parameter.getItems()
                     else -> throw IllegalStateException("Failed to handle array")
@@ -318,7 +328,7 @@ class RestActionBuilder {
 
                 if (property is ObjectProperty) {
 
-                    val fields= createFields( property.properties, swagger, history)
+                    val fields = createFields(property.properties, swagger, history)
                     return ObjectGene(name, fields)
                 }
             }

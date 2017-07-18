@@ -11,92 +11,63 @@ import org.junit.jupiter.api.Test
 
 internal class RestActionBuilderTest {
 
-    @Test
-    fun testCreateActions(){
+    private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int)
+            : MutableMap<String, Action> {
 
-        val swagger = SwaggerParser().read("/positive_integer_swagger.json")
+        val swagger = SwaggerParser().read(resourcePath)
 
         val builder = RestActionBuilder()
         val actions: MutableMap<String, Action> = mutableMapOf()
         builder.createActions(swagger, actions)
 
-        assertEquals(2, actions.size)
+        assertEquals(expectedNumberOfActions, actions.size)
+
+        return actions
+    }
+
+    @Test
+    fun testProxyPrint() {
+        loadAndAssertActions("/swagger/proxyprint.json", 115)
+    }
+
+    @Test
+    fun testCreateActions() {
+        loadAndAssertActions("/swagger/positive_integer_swagger.json", 2)
     }
 
 
     @Test
-    fun testOCVN(){
-
-        val swagger = SwaggerParser().read("/ocvn_1oc.json")
-
-        val builder = RestActionBuilder()
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
-
-        assertEquals(192, actions.size)
+    fun testOCVN() {
+        loadAndAssertActions("/swagger/ocvn_1oc.json", 192)
     }
 
     @Disabled("This is a bug in Swagger Core, reported at https://github.com/swagger-api/swagger-core/issues/2100")
     @Test
-    fun testFeaturesServicesNull(){
-
-        val swagger = SwaggerParser().read("/features_service_null.json")
-
-        val builder = RestActionBuilder()
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
-
-        assertEquals(18, actions.size)
+    fun testFeaturesServicesNull() {
+        loadAndAssertActions("/swagger/features_service_null.json", 18)
     }
 
     @Test
-    fun testFeaturesServices(){
-
-        val swagger = SwaggerParser().read("/features_service.json")
-
-        val builder = RestActionBuilder()
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
-
-        assertEquals(18, actions.size)
+    fun testFeaturesServices() {
+        loadAndAssertActions("/swagger/features_service.json", 18)
     }
 
     @Test
-    fun testScoutApi(){
-
-        val swagger = SwaggerParser().read("/scout-api.json")
-
-        val builder = RestActionBuilder()
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
-
-        assertEquals(49, actions.size)
+    fun testScoutApi() {
+        loadAndAssertActions("/swagger/scout-api.json", 49)
     }
 
 
     @Test
-    fun testBranches(){
-
-        val swagger = SwaggerParser().read("/branches.json")
-
-        val builder = RestActionBuilder()
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
-
-        assertEquals(3, actions.size)
+    fun testBranches() {
+        loadAndAssertActions("/swagger/branches.json", 3)
     }
 
 
     @Test
-    fun testSimpleForm(){
+    fun testSimpleForm() {
+        val actions = loadAndAssertActions("/swagger/simpleform.json", 1)
 
-        val swagger = SwaggerParser().read("/simpleform.json")
-
-        val builder = RestActionBuilder()
-        val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
-
-        assertEquals(1, actions.size)
         val a = actions.values.first() as RestCallAction
 
         assertEquals(HttpVerb.POST, a.verb)
