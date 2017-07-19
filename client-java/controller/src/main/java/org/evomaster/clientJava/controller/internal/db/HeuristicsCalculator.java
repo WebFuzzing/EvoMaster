@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller.internal.db;
 
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.SignedExpression;
 import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
@@ -142,6 +143,25 @@ public class HeuristicsCalculator {
             return ((LongValue) exp).getValue();
         } else if (exp instanceof StringValue) {
             return ((StringValue) exp).getNotExcapedValue();
+        } else if (exp instanceof SignedExpression){
+            SignedExpression signed =  (SignedExpression) exp;
+            Object base = getValue(signed.getExpression(), data);
+            if(signed.getSign() != '-'){
+                return base;
+            } else {
+                if(base instanceof Long){
+                    return - (Long) base;
+                } else if(base instanceof Double){
+                    return - (Double) base;
+                } else if(base instanceof Float){
+                    return - (Float) base;
+                } else if(base instanceof Integer){
+                    return - (Integer) base;
+                } else {
+                    cannotHandle(exp);
+                    return null;
+                }
+            }
         } else {
             cannotHandle(exp);
             return null;
