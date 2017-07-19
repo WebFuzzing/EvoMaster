@@ -26,8 +26,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import org.glassfish.jersey.client.ClientProperties
 import com.google.gson.JsonObject
-
-
+import java.net.SocketTimeoutException
 
 
 class RestFitness : FitnessFunction<RestIndividual>() {
@@ -257,6 +256,22 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             if((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException){
                 rcr.setInfiniteLoop(true)
                 rcr.setErrorMessage(e.cause!!.message!!)
+                return false
+            } else if(e.cause is SocketTimeoutException) {
+                /*
+                    This is very tricky. In theory it shouldn't happen that a REST call
+                    does timeout (eg 10 seconds). But it might happen due to glitch,
+                    or if very slow hardware. If it is a glitch, we do not want to
+                    kill whole EM process, as might not happen again. If it is a
+                    constant, we want to avoid using such test if possible, as it
+                    would kill performance.
+                    In any case, a generated test should never check assertions on time,
+                    eg expect that a is SocketTimeoutException thrown. Not only because
+                    maybe it was just a glitch, but also because the test might be run
+                    on different machines (remote CI vs local development PC) with
+                    different performance (and so the test would become flaky)
+                 */
+                rcr.setTimedout(true)
                 return false
             } else {
                 throw e

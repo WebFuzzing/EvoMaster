@@ -99,7 +99,14 @@ class TestCaseWriter {
         lines.indent()
 
         addRestCallLines(call, lines, res, baseUrlOfSut)
-        lines.add("fail(\"Expected exception\");")
+
+        if(! res.getTimedout()) {
+            /*
+                Fail test if exception is not thrown, but not if it was a timeout,
+                otherwise the test would become flaky
+              */
+            lines.add("fail(\"Expected exception\");")
+        }
         lines.deindent()
 
         lines.add("} catch(Exception e){")

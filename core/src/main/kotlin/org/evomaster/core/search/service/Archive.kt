@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
@@ -98,7 +99,18 @@ class Archive<T>() where T : Individual {
 
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
-        val chosen = randomness.choose(candidates)
+        val notTimedout = candidates.filter {
+            ! it.results.any{ res -> res is RestCallResult && res.getTimedout()}
+        }
+
+        /*
+            If possible avoid sampling tests that did timeout
+         */
+        val chosen = if(! notTimedout.isEmpty()){
+            randomness.choose(notTimedout)
+        } else {
+            randomness.choose(candidates)
+        }
 
         return chosen.copy()
     }

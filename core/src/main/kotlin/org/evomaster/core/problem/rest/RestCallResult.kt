@@ -18,6 +18,7 @@ class RestCallResult : ActionResult {
         val INFINITE_LOOP = "INFINITE_LOOP"
         val ERROR_MESSAGE = "ERROR_MESSAGE"
         val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
+        val TIMEDOUT = "TIMEDOUT"
     }
 
 
@@ -31,7 +32,7 @@ class RestCallResult : ActionResult {
      * object with info
      */
     fun failedCall(): Boolean{
-       return getInfiniteLoop()
+       return getInfiniteLoop() || getTimedout()
     }
 
 
@@ -94,4 +95,7 @@ class RestCallResult : ActionResult {
      */
     fun setHeuristicsForChainedLocation(on: Boolean) = addResultValue(HEURISTICS_FOR_CHAINED_LOCATION, on.toString())
     fun getHeuristicsForChainedLocation(): Boolean = getResultValue(HEURISTICS_FOR_CHAINED_LOCATION)?.toBoolean() ?: false
+
+    fun setTimedout(timedout: Boolean) = addResultValue(TIMEDOUT, timedout.toString())
+    fun getTimedout(): Boolean = getResultValue(TIMEDOUT)?.toBoolean() ?: false
 }
