@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
@@ -12,11 +11,14 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Statistics
 import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ProtocolException
+import java.net.SocketTimeoutException
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
@@ -24,9 +26,6 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import org.glassfish.jersey.client.ClientProperties
-import com.google.gson.JsonObject
-import java.net.SocketTimeoutException
 
 
 class RestFitness : FitnessFunction<RestIndividual>() {
@@ -46,6 +45,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val configuration = ClientConfig()
                 .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
                 .property(ClientProperties.READ_TIMEOUT, 10_000)
+                //workaround bug in Jersey client
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
         ClientBuilder.newClient(configuration)
     }.invoke()
 
@@ -57,9 +58,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         log.debug("Initializing {}", RestFitness::class.simpleName)
 
-        //workaround bug in Jersey client
-        client.property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-
         val started = rc.startSUT()
         if (!started) {
             throw IllegalStateException("Cannot communicate with remote REST controller")
@@ -70,8 +68,20 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         log.debug("Done initializing {}", RestFitness::class.simpleName)
     }
 
+    override open fun reinitialize() : Boolean{
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual> {
+        try {
+            rc.stopSUT()
+            initialize()
+        } catch(e: Exception){
+            log.warn("Failed to re-initialize the SUT: $e")
+            return false
+        }
+
+        return true
+    }
+
+    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -82,7 +92,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
 
-        //run the test, one actiona at a time
+        //run the test, one action at a time
         for (i in 0 until individual.actions.size) {
 
             rc.registerNewAction(i)
@@ -101,8 +111,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             }
 
             if(configuration.heuristicsForSQL) {
-                val extra = rc.getExtraHeuristics() ?:
-                        throw IllegalStateException("Cannot retrieve extra heuristics")
+                val extra = rc.getExtraHeuristics()
+                if(extra == null) {
+                    log.warn("Cannot retrieve extra heuristics")
+                    return null
+                }
 
                 if (!isEmpty(extra)) {
                     //TODO handling of toMaximize
@@ -119,8 +132,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         //TODO prioritized list
         val ids = randomness.choose(archive.notCoveredTargets(), 100)
 
-        val dto = rc.getTargetCoverage(ids) ?:
-                throw IllegalStateException("Cannot retrieve coverage")
+        val dto = rc.getTargetCoverage(ids)
+        if(dto == null) {
+            log.warn("Cannot retrieve coverage")
+            return null
+        }
 
         dto.targets.forEach { t ->
 
@@ -128,7 +144,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 
-            //TODO extra
             fv.updateTarget(t.id, t.value, t.actionIndex)
         }
 
@@ -272,6 +287,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                     different performance (and so the test would become flaky)
                  */
                 rcr.setTimedout(true)
+                statistics.reportTimeout()
                 return false
             } else {
                 throw e

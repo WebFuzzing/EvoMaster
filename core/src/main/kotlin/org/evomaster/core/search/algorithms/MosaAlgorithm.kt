@@ -36,11 +36,8 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             while (nextPop.size < n) {
 
-                var x = selection()
-
-                x = getMutatator().mutateAndSave(x, archive)
-
-                nextPop.add(x)
+                getMutatator().mutateAndSave(selection(), archive)
+                        ?.let { nextPop.add(it) }
 
                 if (!time.shouldContinueSearch()) {
                     break
@@ -191,7 +188,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         val n = config.populationSize
 
         for (i in 1..n) {
-            population.add(sampleIndividual())
+            sampleIndividual()?.run { population.add(this) }
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -199,9 +196,9 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         }
     }
 
-    private fun sampleIndividual(): EvaluatedIndividual<T> {
-        val ind = ff.calculateCoverage(sampler.sample())
-        archive.addIfNeeded(ind)
-        return ind
+    private fun sampleIndividual(): EvaluatedIndividual<T>? {
+
+        return ff.calculateCoverage(sampler.sample())
+                ?.also { archive.addIfNeeded(it) }
     }
 }

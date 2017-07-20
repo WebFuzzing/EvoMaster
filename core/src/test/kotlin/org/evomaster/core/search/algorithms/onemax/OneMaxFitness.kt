@@ -8,7 +8,7 @@ import org.evomaster.core.search.service.FitnessFunction
 class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
 
     override fun doCalculateCoverage(individual: OneMaxIndividual)
-            : EvaluatedIndividual<OneMaxIndividual> {
+            : EvaluatedIndividual<OneMaxIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())
 

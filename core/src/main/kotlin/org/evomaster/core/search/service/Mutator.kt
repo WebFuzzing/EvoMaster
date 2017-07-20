@@ -9,13 +9,13 @@ import org.evomaster.core.search.Individual
 abstract class Mutator<T> where T : Individual {
 
     @Inject
-    protected lateinit var randomness : Randomness
+    protected lateinit var randomness: Randomness
 
     @Inject
-    protected lateinit var ff : FitnessFunction<T>
+    protected lateinit var ff: FitnessFunction<T>
 
     @Inject
-    protected lateinit var time : SearchTimeController
+    protected lateinit var time: SearchTimeController
 
     @Inject
     protected lateinit var apc: AdaptiveParameterControl
@@ -24,12 +24,12 @@ abstract class Mutator<T> where T : Individual {
     protected lateinit var structureMutator: StructureMutator
 
     @Inject
-    protected lateinit var config : EMConfig
+    protected lateinit var config: EMConfig
 
     /**
      * @return a mutated copy
      */
-    abstract fun mutate(individual: T) : T
+    abstract fun mutate(individual: T): T
 
 
     /**
@@ -38,22 +38,23 @@ abstract class Mutator<T> where T : Individual {
      * @param archive where to save newly mutated individuals (if needed, eg covering new targets)
      */
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
-        : EvaluatedIndividual<T> {
+            : EvaluatedIndividual<T> {
 
         var current = individual
         var targets = archive.notCoveredTargets()
 
-        for(i in 0 until upToNTimes){
+        for (i in 0 until upToNTimes) {
 
-            if(! time.shouldContinueSearch()){
+            if (!time.shouldContinueSearch()) {
                 break
             }
 
             val mutated = ff.calculateCoverage(mutate(current.individual))
+                    ?: continue
 
             val reachNew = archive.wouldReachNewTarget(mutated)
 
-            if(reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
+            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
                 archive.addIfNeeded(mutated)
                 current = mutated
             }
@@ -63,10 +64,9 @@ abstract class Mutator<T> where T : Individual {
     }
 
     fun mutateAndSave(individual: EvaluatedIndividual<T>, archive: Archive<T>)
-            : EvaluatedIndividual<T> {
+            : EvaluatedIndividual<T>? {
 
-        val mutated = ff.calculateCoverage(mutate(individual.individual))
-        archive.addIfNeeded(mutated)
-        return mutated
+        return ff.calculateCoverage(mutate(individual.individual))
+                ?.also { archive.addIfNeeded(it) }
     }
 }

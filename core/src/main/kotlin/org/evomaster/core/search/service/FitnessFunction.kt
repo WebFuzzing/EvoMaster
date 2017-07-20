@@ -23,8 +23,28 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var time: SearchTimeController
 
-    fun calculateCoverage(individual: T) : EvaluatedIndividual<T>{
-        val ei = doCalculateCoverage(individual)
+    @Inject
+    protected lateinit var statistics: Statistics
+
+    /**
+     * @return [null] if there were problems in calculating the coverage
+     */
+    fun calculateCoverage(individual: T) : EvaluatedIndividual<T>?{
+        var ei = doCalculateCoverage(individual)
+
+        if(ei == null){
+            /*
+                try again, once. Working with TCP connections and remote servers,
+                it is not impossible that sometimes things fail
+             */
+            reinitialize()
+            ei = doCalculateCoverage(individual)
+
+            if(ei == null){
+                //give up, but record it
+                statistics.reportCoverageFailure()
+            }
+        }
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
@@ -34,6 +54,14 @@ abstract class FitnessFunction<T>  where T : Individual {
         return ei
     }
 
-    protected abstract fun doCalculateCoverage(individual: T) : EvaluatedIndividual<T>
+    /**
+     * @return [null] if there were problems in calculating the coverage
+     */
+    protected abstract fun doCalculateCoverage(individual: T) : EvaluatedIndividual<T>?
 
+    /**
+     * Try to reinitialize the SUT. This is done when there are issues
+     * in calculating coverage
+     */
+    protected open fun reinitialize() = false
 }

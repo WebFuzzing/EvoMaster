@@ -10,13 +10,23 @@ import java.nio.file.Paths
 
 class Statistics {
 
+    private class Pair(val header: String, val element: String)
+
     @Inject
     private lateinit var config: EMConfig
 
     @Inject
     private lateinit var time: SearchTimeController
 
-    private class Pair(val header: String, val element: String)
+    /**
+     * How often test executions did timeout
+     */
+    private var timeouts = 0
+
+    /**
+     * How often it was not possible to compute coverage for a test
+     */
+    private var coverage_failures = 0
 
 
     fun writeStatistics(solution: Solution<*>) {
@@ -40,6 +50,11 @@ class Statistics {
         }
     }
 
+    fun reportTimeout() = timeouts++
+
+    fun reportCoverageFailure() = coverage_failures++
+
+
     private fun getData(solution: Solution<*>): List<Pair> {
 
         val list: MutableList<Pair> = mutableListOf()
@@ -55,6 +70,9 @@ class Statistics {
         val codes = codes(solution)
         list.add(Pair("avgReturnCodes", "" + codes.average()))
         list.add(Pair("maxReturnCodes", "" + codes.max()))
+
+        list.add(Pair("testTimeouts", "$timeouts"))
+        list.add(Pair("coverageFailures", "$coverage_failures"))
 
         list.add(Pair("id", config.statisticsColumnId))
         addConfig(list)

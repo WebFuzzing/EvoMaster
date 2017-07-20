@@ -49,7 +49,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 val y = selection()
                 //x and y are copied
 
-                if(randomness.nextBoolean(config.xoverProbability)) {
+                if (randomness.nextBoolean(config.xoverProbability)) {
                     xover(x, y)
                 }
                 mutate(x)
@@ -70,28 +70,29 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         return archive.extractSolution()
     }
 
-    private fun mutate(wts: WtsEvalIndividual<T>){
+    private fun mutate(wts: WtsEvalIndividual<T>) {
 
-        val op = randomness.choose(listOf("del","add","mod"))
+        val op = randomness.choose(listOf("del", "add", "mod"))
         val n = wts.suite.size
-        when(op){
-            "del" -> if(n > 1){
+        when (op) {
+            "del" -> if (n > 1) {
                 val i = randomness.nextInt(n)
                 wts.suite.removeAt(i)
             }
-            "add" -> if(n < config.maxSearchSuiteSize){
-                val ind = ff.calculateCoverage(sampler.sample())
-                archive.addIfNeeded(ind)
-                wts.suite.add(ind)
+            "add" -> if (n < config.maxSearchSuiteSize) {
+                ff.calculateCoverage(sampler.sample())?.run {
+                    archive.addIfNeeded(this)
+                    wts.suite.add(this)
+                }
             }
             "mod" -> {
                 val i = randomness.nextInt(n)
                 val ind = wts.suite[i]
 
-                wts.suite[i] = getMutatator().mutateAndSave(ind, archive)
+                getMutatator().mutateAndSave(ind, archive)
+                        ?.let { wts.suite[i] = it }
             }
         }
-
     }
 
     private fun selection(): WtsEvalIndividual<T> {
@@ -131,7 +132,7 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val n = config.populationSize
 
-        for(i in 1..n) {
+        for (i in 1..n) {
             population.add(sampleSuite())
 
             if (!time.shouldContinueSearch()) {
@@ -146,10 +147,11 @@ class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val wts = WtsEvalIndividual<T>(mutableListOf())
 
-        for(i in 1..n){
-            val ind = ff.calculateCoverage(sampler.sample())
-            archive.addIfNeeded(ind)
-            wts.suite.add(ind)
+        for (i in 1..n) {
+            ff.calculateCoverage(sampler.sample())?.run {
+                archive.addIfNeeded(this)
+                wts.suite.add(this)
+            }
 
             if (!time.shouldContinueSearch()) {
                 break

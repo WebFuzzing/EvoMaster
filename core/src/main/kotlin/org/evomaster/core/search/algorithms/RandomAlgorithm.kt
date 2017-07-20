@@ -22,7 +22,7 @@ class RandomAlgorithm <T> : SearchAlgorithm<T>() where T : Individual {
 
             val individual = sampler.sampleAtRandom()
 
-            archive.addIfNeeded(ff.calculateCoverage(individual))
+            ff.calculateCoverage(individual)?.run { archive.addIfNeeded(this) }
         }
 
         return archive.extractSolution()

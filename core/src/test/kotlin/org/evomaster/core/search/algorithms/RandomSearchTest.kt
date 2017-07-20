@@ -26,7 +26,7 @@ class RandomSearchTest {
                 object : TypeLiteral<RandomAlgorithm<OneMaxIndividual>>() {}))
 
         val config = injector.getInstance(EMConfig::class.java)
-        config.maxActionEvaluations = 1000
+        config.maxActionEvaluations = 2000
 
         val solution = rs.search()
 
