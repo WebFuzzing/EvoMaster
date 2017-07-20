@@ -109,7 +109,7 @@ class ArchiveTest{
     fun testSampleOnEmptyArchive(){
         try {
             archive.sampleIndividual()
-            fail("Expected exception")
+            fail<Any>("Expected exception")
         }catch (e: Exception){}
     }
 

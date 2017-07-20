@@ -28,7 +28,7 @@ class OcvnTestNot {
         try {
             RestAssured.given().accept("*/*")
                     .get(baseUrlOfSut + "/api/totalProjectsByYear/")
-            fail("Expected exception")
+            fail<Any>("Expected exception")
         }catch (e: Exception){
 
         }
