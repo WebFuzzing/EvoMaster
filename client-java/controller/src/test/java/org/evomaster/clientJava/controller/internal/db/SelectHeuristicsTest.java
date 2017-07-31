@@ -2,8 +2,10 @@ package org.evomaster.clientJava.controller.internal.db;
 
 import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.controller.db.QueryResult;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -13,7 +15,7 @@ public class SelectHeuristicsTest {
 
 
     @Test
-    public void testAddFields(){
+    public void testAddFields() {
         String select = "select f.x from Foo f where f.y=5";
 
         String enh = SelectHeuristics.addFieldsToSelect(select);
@@ -26,7 +28,7 @@ public class SelectHeuristicsTest {
 
 
     @Test
-    public void testRemoveWhenUnion(){
+    public void testRemoveWhenUnion() {
 
         int x = 15;
         int y = 72;
@@ -47,7 +49,7 @@ public class SelectHeuristicsTest {
     }
 
     @Test
-    public void testRemoveNested(){
+    public void testRemoveNested() {
 
         String select = "select t.x, t.y from (select z as x, 1 as y from Foo where z<10) t where x>3";
 
@@ -67,6 +69,7 @@ public class SelectHeuristicsTest {
          */
         assertTrue(res.contains("10"));
     }
+
 
     @Test
     public void testRemoveInvalid() {
@@ -103,7 +106,7 @@ public class SelectHeuristicsTest {
     }
 
     @Test
-    public void testRemoveWithLimit(){
+    public void testRemoveWithLimit() {
 
         String base = "select a from Foo ";
         String sql = base + " where a=5 limit 1";
@@ -148,13 +151,15 @@ public class SelectHeuristicsTest {
 
         QueryResult data = new QueryResult(Arrays.asList(name));
 
-        double prev = Double.MAX_VALUE;
+        double prev = -1;
 
         for (Object val : values) {
             data.addRow(new DataRow(name, val));
             double dist = SelectHeuristics.computeDistance(sql, data);
             assertTrue(dist > 0);
-            assertTrue(dist < prev, "dist=" + dist + " , previous=" + prev);
+            if (prev >= 0) {
+                assertTrue(dist < prev, "dist=" + dist + " , previous=" + prev);
+            }
             prev = dist;
         }
 
@@ -162,6 +167,51 @@ public class SelectHeuristicsTest {
         double target = SelectHeuristics.computeDistance(sql, data);
         assertTrue(target < prev);
         assertEquals(0d, target);
+    }
+
+
+    @Test
+    public void testTrue() {
+        String sql = "select a from Foo where x = true";
+
+        checkIncreasingTillCovered("x", Arrays.asList(false), true, sql);
+    }
+
+    @Test
+    public void testFalse() {
+        String sql = "select a from Foo where x = false";
+
+        checkIncreasingTillCovered("x", Arrays.asList(true), false, sql);
+    }
+
+    @Test
+    public void testNotTrue() {
+        String sql = "select a from Foo where x != true";
+
+        checkIncreasingTillCovered("x", Arrays.asList(true), false, sql);
+    }
+
+    @Test
+    public void testNotFalse() {
+        String sql = "select a from Foo where x != FALSE";
+
+        checkIncreasingTillCovered("x", Arrays.asList(false), true, sql);
+    }
+
+    @Test
+    public void testWithParentheses() {
+
+        String sql = "select a from Foo where x = (5)";
+
+        checkIncreasingTillCovered("x", Arrays.asList(9, 3, 6), 5, sql);
+    }
+
+    @Test
+    public void testNegativeWithParentheses() {
+
+        String sql = "select a from Foo where x = (-5)";
+
+        checkIncreasingTillCovered("x", Arrays.asList(9, 3, -7), -5, sql);
     }
 
     @Test
@@ -173,12 +223,87 @@ public class SelectHeuristicsTest {
     }
 
     @Test
+    public void testEqualToNull() {
+        String sql = "select x from Foo where x = NULL";
+
+        checkIncreasingTillCovered("x", Arrays.asList("foo"), null, sql);
+    }
+
+    @Test
+    public void testIsNull() {
+        String sql = "select x from Foo where x IS NULL";
+
+        checkIncreasingTillCovered("x", Arrays.asList("foo"), null, sql);
+    }
+
+    @Test
+    public void testIsNotNull() {
+        String sql = "select x from Foo where x IS NOT NULL";
+
+        List<Object> list = new ArrayList<>();
+        list.add(null);
+
+        checkIncreasingTillCovered("x", list, "foo", sql);
+    }
+
+    @Test
+    public void testDifferentFromNull() {
+        String sql = "select x from Foo where x != NULL";
+
+        List<Object> list = new ArrayList<>();
+        list.add(null);
+
+        checkIncreasingTillCovered("x", list, "foo", sql);
+    }
+
+    @Test
+    public void testInNumeric(){
+
+        String sql = "select x from Foo where x IN (10, 20)";
+
+        checkIncreasingTillCovered("x", Arrays.asList(-4, 6, 23, 12, 19), 10, sql);
+    }
+
+    @Test
+    public void testInStrings(){
+
+        String sql = "select x from Foo where x IN ('a1', 'e5')";
+
+        checkIncreasingTillCovered("x", Arrays.asList("z9", "z7", "c7", "c2", "b2", "b1"), "a1", sql);
+    }
+
+    @Test
+    public void testNotInNumeric(){
+
+        String sql = "select x from Foo where x Not IN (10, 20)";
+
+        checkIncreasingTillCovered("x", Arrays.asList(10), 11, sql);
+    }
+
+    @Disabled("Need to handle sub-selects. Not so simple, as they might have their own WHEREs")
+    @Test
+    public void testInSelect(){
+        String sql = "select * from Foo where 10 IN (select x from Foo)";
+
+        checkIncreasingTillCovered("x", Arrays.asList(20, 15, 8), 10, sql);
+    }
+
+
+    @Test
     public void testEqualString() {
 
         String sql = "select t.bar as X from Foo t where X='abc123'";
 
         checkIncreasingTillCovered("x",
                 Arrays.asList("a", "ab", "xxx123x", "xxx123", "axx123", "abc234"), "abc123", sql);
+    }
+
+    @Test
+    public void testNotEqualString() {
+
+        String sql = "select t.bar as X from Foo t where X!='foo'";
+
+        checkIncreasingTillCovered("x", Arrays.asList("foo"), "blabla", sql);
     }
 
     @Test

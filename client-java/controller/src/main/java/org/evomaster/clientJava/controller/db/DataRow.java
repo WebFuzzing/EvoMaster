@@ -49,6 +49,15 @@ public class DataRow {
         String n = name.trim();
         String t = (table == null ? null : table.trim());
 
+        //true/false are reserved keywords
+        if(n.equalsIgnoreCase("true")){
+            return true;
+        }
+        if(n.equalsIgnoreCase("false")){
+            return false;
+        }
+
+
         //first check aliases, but only if no specify table
         if (t == null || t.isEmpty()) {
             for (int i = 0; i < variableDescriptors.size(); i++) {

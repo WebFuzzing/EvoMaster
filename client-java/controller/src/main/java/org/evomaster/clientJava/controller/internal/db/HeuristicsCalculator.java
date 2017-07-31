@@ -1,9 +1,6 @@
 package org.evomaster.clientJava.controller.internal.db;
 
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.LongValue;
-import net.sf.jsqlparser.expression.SignedExpression;
-import net.sf.jsqlparser.expression.StringValue;
+import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
@@ -47,8 +44,77 @@ public class HeuristicsCalculator {
         if (exp instanceof OrExpression) {
             return computeOr((OrExpression) exp, data);
         }
+        if( exp instanceof IsNullExpression){
+            return computeIsNull((IsNullExpression) exp, data);
+        }
+        if(exp instanceof InExpression){
+            return computeInExpression((InExpression) exp, data);
+        }
 
         return cannotHandle(exp);
+    }
+
+    private double computeInExpression(InExpression exp, DataRow data) {
+
+        //TODO can left be a list???
+
+        ItemsList itemsList = exp.getRightItemsList();
+        if(itemsList instanceof ExpressionList){
+            ExpressionList list = (ExpressionList) itemsList;
+
+            if(exp.isNot()) {
+
+                double max = 0;
+
+                for (Expression element : list.getExpressions()) {
+                    ComparisonOperator op = new NotEqualsTo();
+                    op.setLeftExpression(exp.getLeftExpression());
+                    op.setRightExpression(element);
+
+                    double dist = computeComparisonOperator(op, data);
+                    if (dist > max) {
+                        max = dist;
+                        break; // no need to look at others, as no gradient
+                    }
+                }
+
+                return max;
+
+            } else {
+
+                double min = Double.MAX_VALUE;
+
+                for (Expression element : list.getExpressions()) {
+                    ComparisonOperator op = new EqualsTo();
+                    op.setLeftExpression(exp.getLeftExpression());
+                    op.setRightExpression(element);
+
+                    double dist = computeComparisonOperator(op, data);
+                    if (dist < min) {
+                        min = dist;
+                    }
+                }
+
+                return min;
+            }
+
+        } else {
+            return cannotHandle(exp);
+        }
+    }
+
+    private double computeIsNull(IsNullExpression exp, DataRow data) {
+
+        Object x = getValue(exp.getLeftExpression(), data);
+
+        if(x == null && ! exp.isNot()){
+            return 0d;
+        }
+        if(x != null && exp.isNot()){
+            return 0d;
+        }
+
+        return 1;
     }
 
     private double cannotHandle(Expression exp) {
@@ -91,11 +157,56 @@ public class HeuristicsCalculator {
 
             return computerComparison(x, y, exp);
         }
+
         if (left instanceof String && right instanceof String) {
             return computeComparison(left.toString(), right.toString(), exp);
-        } else {
+        }
+
+        if(left instanceof Boolean && right instanceof Boolean){
+            return computeBooleanComparison((Boolean) left, (Boolean) right, exp);
+        }
+
+        if (left == null || right == null) {
+            return computeNullComparison(left, right, exp);
+        }
+
+        return cannotHandle(exp);
+    }
+
+    private double computeBooleanComparison(boolean x, boolean y, ComparisonOperator exp){
+        if(! checkEqualOrNotOperator(exp)){
             return cannotHandle(exp);
         }
+
+        if (exp instanceof EqualsTo && x == y) {
+            return 0d;
+        }
+        if (exp instanceof NotEqualsTo && x != y) {
+            return 0d;
+        }
+
+        return 1d;
+    }
+
+    private boolean checkEqualOrNotOperator(ComparisonOperator exp){
+        return  (exp instanceof EqualsTo) || (exp instanceof NotEqualsTo);
+    }
+
+    private double computeNullComparison(Object x, Object y, ComparisonOperator exp) {
+
+        assert x == null || y == null;
+
+        if(! checkEqualOrNotOperator(exp)){
+            return cannotHandle(exp);
+        }
+
+        if (exp instanceof EqualsTo && x == y) {
+            return 0d;
+        }
+        if (exp instanceof NotEqualsTo && x != y) {
+            return 0d;
+        }
+        return Double.MAX_VALUE;
     }
 
     private double computerComparison(double x, double y, ComparisonOperator exp) {
@@ -118,8 +229,15 @@ public class HeuristicsCalculator {
     }
 
     private double computeComparison(String a, String b, ComparisonOperator exp) {
+
         if (exp instanceof EqualsTo) {
             return StringTransformer.getLeftAlignmentDistance(a, b);
+        } else if (exp instanceof NotEqualsTo) {
+            if(a.equals(b)){
+                return Double.MAX_VALUE;
+            } else {
+                return 0d;
+            }
         } else {
             return cannotHandle(exp);
         }
@@ -139,24 +257,28 @@ public class HeuristicsCalculator {
 
             return data.getValueByName(name, table);
 
+        } else if (exp instanceof Parenthesis) {
+            return getValue(((Parenthesis) exp).getExpression(), data);
         } else if (exp instanceof LongValue) {
             return ((LongValue) exp).getValue();
         } else if (exp instanceof StringValue) {
             return ((StringValue) exp).getNotExcapedValue();
-        } else if (exp instanceof SignedExpression){
-            SignedExpression signed =  (SignedExpression) exp;
+        } else if (exp instanceof NullValue) {
+            return null;
+        } else if (exp instanceof SignedExpression) {
+            SignedExpression signed = (SignedExpression) exp;
             Object base = getValue(signed.getExpression(), data);
-            if(signed.getSign() != '-'){
+            if (signed.getSign() != '-') {
                 return base;
             } else {
-                if(base instanceof Long){
-                    return - (Long) base;
-                } else if(base instanceof Double){
-                    return - (Double) base;
-                } else if(base instanceof Float){
-                    return - (Float) base;
-                } else if(base instanceof Integer){
-                    return - (Integer) base;
+                if (base instanceof Long) {
+                    return -(Long) base;
+                } else if (base instanceof Double) {
+                    return -(Double) base;
+                } else if (base instanceof Float) {
+                    return -(Float) base;
+                } else if (base instanceof Integer) {
+                    return -(Integer) base;
                 } else {
                     cannotHandle(exp);
                     return null;

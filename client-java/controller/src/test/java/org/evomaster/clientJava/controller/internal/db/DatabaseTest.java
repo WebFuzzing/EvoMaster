@@ -67,6 +67,17 @@ public class DatabaseTest {
 
 
     @Test
+    public void testParentheses() throws Exception{
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (5)");
+
+        QueryResult res = SqlScriptRunner.execCommand(connection, "select * from Foo where x = (5)");
+        assertFalse(res.isEmpty());
+    }
+
+
+    @Test
     public void testConstants() throws Exception {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
