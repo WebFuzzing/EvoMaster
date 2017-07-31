@@ -37,6 +37,13 @@ public abstract class ExternalSutController extends SutController {
     private volatile ServerController serverController;
     private volatile boolean initialized;
 
+    /*
+        If SUT output is mutated, but SUT fails to start, we
+        still want to print it for debugging
+     */
+    private volatile StringBuffer errorBuffer;
+
+
 
     public void setInstrumentation(boolean instrumentation) {
         this.instrumentation = instrumentation;
@@ -164,7 +171,10 @@ public abstract class ExternalSutController extends SutController {
         }
 
         if (!command.stream().anyMatch(s -> s.startsWith("-Xmx"))) {
-            command.add("-Xmx2048m");
+            command.add("-Xmx2G");
+        }
+        if (!command.stream().anyMatch(s -> s.startsWith("-Xms"))) {
+            command.add("-Xms1G");
         }
 
         command.add("-jar");
@@ -205,16 +215,35 @@ public abstract class ExternalSutController extends SutController {
 
         //need to block until server is ready
         long timeout = getMaxAwaitForInitializationInSeconds();
+        boolean completed;
+
         try {
-            latch.await(timeout, TimeUnit.SECONDS);
+            completed = latch.await(timeout, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            SimpleLogger.error("SUT has not started properly within " + timeout + " seconds");
+            SimpleLogger.error("Interrupted controller");
             stopSut();
             return null;
         }
 
-        if (!isSutRunning() || !initialized) {
+        if(! completed){
+            SimpleLogger.error("SUT has not started properly within " + timeout + " seconds");
+            SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            stopSut();
+            return null;
+        }
+
+        if (!isSutRunning()) {
             SimpleLogger.error("SUT started but then terminated. Likely a possible misconfiguration");
+            SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            //note: actual process might still be running due to Java Agent we started
+            stopSut();
+            return null;
+        }
+
+        if (!initialized) {
+            //this could happen if SUT is hanging for some reason
+            SimpleLogger.error("SUT is started but not initialized");
+            SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
             //note: actual process might still be running due to Java Agent we started
             stopSut();
             return null;
@@ -324,9 +353,14 @@ public abstract class ExternalSutController extends SutController {
 
         if (outputPrinter == null || !outputPrinter.isAlive()) {
             outputPrinter = new Thread(() -> {
+
                 try {
 
                     boolean muted = Boolean.parseBoolean(System.getProperty(PROP_MUTE_SUT));
+
+                    if(muted){
+                        errorBuffer = new StringBuffer(4096);
+                    }
 
                     BufferedReader buffer = new BufferedReader(
                             new InputStreamReader(process.getInputStream()));
@@ -341,10 +375,14 @@ public abstract class ExternalSutController extends SutController {
 
                         if(!muted) {
                             SimpleLogger.info("SUT: " + line);
+                        } else if(errorBuffer != null){
+                            errorBuffer.append(line);
+                            errorBuffer.append("\n");
                         }
 
                         if (line != null && line.contains(getLogMessageOfInitializedServer())) {
                             initialized = true;
+                            errorBuffer = null; //no need to keep track of it if everything is ok
                             latch.countDown();
                         }
 
