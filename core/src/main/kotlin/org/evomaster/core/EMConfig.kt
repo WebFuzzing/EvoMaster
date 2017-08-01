@@ -1,5 +1,7 @@
 package org.evomaster.core
 
+import joptsimple.BuiltinHelpFormatter
+import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.clientJava.controllerApi.ControllerConstants
@@ -11,8 +13,15 @@ import kotlin.reflect.jvm.javaType
 /**
  * Class used to hold all the main configuration properties
  * of EvoMaster.
+ *
  */
 class EMConfig {
+
+    /*
+        Code here does use the JOptSimple library
+
+        https://pholser.github.io/jopt-simple/
+     */
 
     companion object {
 
@@ -30,6 +39,19 @@ class EMConfig {
             return parser
         }
 
+        /**
+         * Having issue with types/kotlin/reflection...
+         * Therefore, need custom output formatting.
+         * However, easier way (for now) is to just override
+         * what we want to change
+         *
+         *  TODO: groups and ordering
+         */
+        private class MyHelpFormatter : BuiltinHelpFormatter(80, 2) {
+            override fun extractTypeIndicator(descriptor: OptionDescriptor): String? {
+                return null
+            }
+        }
 
         /**
          * Get all available "console options" for the annotated properties
@@ -40,7 +62,8 @@ class EMConfig {
 
             var parser = OptionParser()
 
-            parser.accepts("help").forHelp()
+            parser.accepts("help", "Print this help documentation")
+                    .forHelp()
 
             getConfigurationProperties().forEach { m ->
                 /*
@@ -49,27 +72,74 @@ class EMConfig {
                     But it looks bit cumbersome to do it in Kotlin,
                     at least for them moment
 
-                    TODO: do documentation
-                    TODO: groups and ordering
+                    Until we make a complete MyHelpFormatter, here
+                    for the types we "hack" the default one, ie,
+                    we set the type description to "null", but then
+                    the argument description will contain the type
                  */
-                parser.accepts(m.name)
+
+                val argTypeName = m.returnType.toString()
+                        .run { substring(lastIndexOf('.') + 1) }
+
+                parser.accepts(m.name, getDescription(m))
                         .withRequiredArg()
+                        .describedAs(argTypeName)
                         .defaultsTo("" + m.call(defaultInstance))
             }
+
+            parser.formatHelpWith(MyHelpFormatter())
 
             return parser
         }
 
+        private fun getDescription(m: KMutableProperty<*>): String {
+
+            val cfg = (m.annotations.find { it is Cfg } as? Cfg)
+                    ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
+
+            val text = cfg.description.trim().run {
+                when {
+                    isBlank() -> "No description."
+                    !endsWith(".") -> this + "."
+                    else -> this
+                }
+            }
+
+            val min = (m.annotations.find { it is Min } as? Min)?.min
+            val max = (m.annotations.find { it is Max } as? Max)?.max
+
+            var constraints = ""
+            if (min != null || max != null) {
+                constraints += " [Constraints: "
+                if (min != null) {
+                    constraints += "min=$min"
+                }
+                if (max != null) {
+                    if (min != null) constraints += ", "
+                    constraints += "max=$max"
+                }
+                constraints += "]."
+            }
+
+            var enumValues = ""
+
+            val returnType = m.returnType.javaType as Class<*>
+
+            if (returnType.isEnum) {
+                val elements = returnType.getDeclaredMethod("values")
+                        .invoke(null) as Array<*>
+
+                enumValues = " [Values: " + elements.joinToString(", ") + "]"
+            }
+
+            return text + constraints + enumValues
+        }
+
+
         fun getConfigurationProperties(): List<KMutableProperty<*>> {
             return EMConfig::class.members
                     .filterIsInstance(KMutableProperty::class.java)
-                    .filter {
-                        m ->
-                        m.annotations.any {
-                            a ->
-                            a.annotationClass.equals(Cfg::class)
-                        }
-                    }
+                    .filter { it.annotations.any { it is Cfg } }
         }
     }
 
@@ -132,9 +202,17 @@ class EMConfig {
         return true
     }
 
-    //------------------------------------------------------------------------
-    //--- custom annotations
+//------------------------------------------------------------------------
+//--- custom annotations
 
+    /**
+     * Configuration (CFG in short) for EvoMaster.
+     * Properties annotated with [Cfg] can be set from
+     * command line.
+     * The code in this class uses reflection, on each property
+     * marked with this annotation, to build the list of available
+     * modifiable configurations.
+     */
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Cfg(val description: String)
@@ -148,8 +226,8 @@ class EMConfig {
     annotation class Max(val max: Double)
 
 
-    //------------------------------------------------------------------------
-    //--- properties
+//------------------------------------------------------------------------
+//--- properties
 
     enum class Algorithm {
         MIO, RANDOM, WTS, MOSA
@@ -195,7 +273,7 @@ class EMConfig {
     @Min(0.0) @Max(65535.0)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
-    @Cfg("Host name or IP address of where the SUT REST controller is listening o")
+    @Cfg("Host name or IP address of where the SUT REST controller is listening on")
     var sutControllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST
 
     @Cfg("Limit of number of individuals per target to keep in the archive")
