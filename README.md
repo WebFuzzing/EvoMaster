@@ -8,6 +8,20 @@ At the moment, EvoMaster targets RESTful APIs compiled to JVM bytecode (e.g., Ja
 
 This project is in early stage of development. Documentation is still under construction. 
 
+To compile the project, use the Maven command:
+
+`mvn  install -DskipTests`
+
+This should create an `evomaster.jar` executable under the `core/target` folder.
+
+Available options can be queried by using:
+
+`java -jar evomaster.jar --help`
+
+Note: to generate tests, you need an EvoMaster Driver up and running before executing `evomaster.jar`.
+These drivers have to be built manually for each system under test (SUT).
+See [EMB](https://github.com/EMResearch/EMB) for a set of existing SUTs with drivers.
+
 ### License
 EvoMaster's source code is released under the LGPL (v3) license.
 
