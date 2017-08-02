@@ -9,6 +9,8 @@ import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
@@ -39,16 +41,19 @@ class RestSampler : Sampler<RestIndividual>() {
 
         log.debug("Initializing {}", RestSampler::class.simpleName)
 
+        rc.checkConnection()
+
         val started = rc.startSUT()
         if (!started) {
-            throw IllegalStateException("Cannot communicate with remote REST controller")
+            throw SutProblemException("Failed to start the system under test")
         }
 
-        val infoDto = rc.getSutInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
+        val infoDto = rc.getSutInfo()
+                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         val swagger = getSwagger(infoDto)
         if (swagger.paths == null) {
-            log.warn("There is no endpoint definition in the retrieved Swagger file")
+            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
         RestActionBuilder().createActions(swagger, actionCluster)

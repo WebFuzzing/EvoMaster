@@ -7,11 +7,12 @@ import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.core.search.service.Statistics
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -58,12 +59,15 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         log.debug("Initializing {}", RestFitness::class.simpleName)
 
+        rc.checkConnection()
+
         val started = rc.startSUT()
         if (!started) {
-            throw IllegalStateException("Cannot communicate with remote REST controller")
+            throw SutProblemException("Failed to start the system under test")
         }
 
-        infoDto = rc.getSutInfo() ?: throw IllegalStateException("Cannot retrieve SUT info")
+        infoDto = rc.getSutInfo()
+                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         log.debug("Done initializing {}", RestFitness::class.simpleName)
     }

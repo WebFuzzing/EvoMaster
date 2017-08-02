@@ -1,9 +1,10 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.core.remote.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.ControllerConstants
 import org.evomaster.clientJava.controllerApi.dto.*
 import org.evomaster.core.EMConfig
+import org.evomaster.core.remote.NoRemoteConnectionException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -20,8 +21,6 @@ import javax.ws.rs.core.Response
 /**
  * Class used to communicate with the remote RestController that does
  * handle the SUT.
- *
- * TODO: this will be needed to move to different module, as not specific to REST
  */
 class RemoteController() {
 
@@ -134,6 +133,17 @@ class RemoteController() {
 
     fun resetSUT() = changeState(true, true)
 
+    fun checkConnection() {
+
+        try{
+            getWebTarget()
+                    .path(ControllerConstants.CONTROLLER_INFO)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get()
+        } catch (e : Exception){
+            throw NoRemoteConnectionException(port, host)
+        }
+    }
 
     fun startANewSearch(): Boolean {
 

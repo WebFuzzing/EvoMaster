@@ -8,8 +8,10 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.RemoteController
 import org.evomaster.core.problem.rest.service.RestModule
+import org.evomaster.core.remote.NoRemoteConnectionException
+import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
@@ -17,6 +19,8 @@ import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
+import java.lang.reflect.InvocationTargetException
+import kotlin.reflect.full.isSuperclassOf
 
 
 /**
@@ -59,8 +63,26 @@ class Main {
                 LoggingUtil.getInfoLogger().info("EvoMaster process has completed successfully")
 
             } catch (e: Exception) {
-                LoggingUtil.getInfoLogger()
-                        .error("ERROR: EvoMaster process terminated abruptly. Message: " + e.message, e)
+
+                var cause: Throwable = e
+                while (cause.cause != null) {
+                    cause = cause.cause!!
+                }
+
+                val log = LoggingUtil.getInfoLogger()
+
+                when (cause) {
+                    is NoRemoteConnectionException ->
+                        log.error("ERROR: ${cause.message}" +
+                                "\n  Make sure the EvoMaster Driver for the system under test is running correctly.")
+
+                    is SutProblemException ->
+                        log.error("ERROR in the Remote EvoMaster Driver: ${cause.message}" +
+                                "\n  Look at the logs of the EvoMaster Driver to help debugging this problem.")
+
+                    else ->
+                        log.error("ERROR: EvoMaster process terminated abruptly. Message: " + e.message, e)
+                }
             }
         }
 
@@ -91,9 +113,7 @@ class Main {
 
             val injector = init(args)
 
-            //FIXME: check already done in @PostConstruct of some beans,
-            // need to use lifecycle phase "start"
-            val controllerInfo = checkConnection(injector)
+            val controllerInfo = checkState(injector)
 
             val solution = run(injector)
 
@@ -117,15 +137,28 @@ class Main {
 
             //TODO check problem type
 
-            val injector: Injector = LifecycleInjector.builder()
-                    .withModules(* arrayOf<Module>(
-                            BaseModule(args),
-                            RestModule()
-                    ))
-                    .build()
-                    .createInjector()
+            try {
+                val injector = LifecycleInjector.builder()
+                        .withModules(* arrayOf<Module>(
+                                BaseModule(args),
+                                RestModule()
+                        ))
+                        .build()
+                        .createInjector()
 
-            return injector
+                return injector
+            } catch (e: Error){
+                /*
+                    Workaround to Governator bug:
+                    https://github.com/Netflix/governator/issues/371
+                 */
+                if(e.cause != null &&
+                        InvocationTargetException::class.java.isAssignableFrom(e.cause!!.javaClass)){
+                    throw e.cause!!
+                }
+
+                throw e
+            }
         }
 
 
@@ -158,7 +191,7 @@ class Main {
         }
 
 
-        fun checkConnection(injector: Injector): ControllerInfoDto {
+        fun checkState(injector: Injector): ControllerInfoDto {
 
             val rc = injector.getInstance(RemoteController::class.java)
 

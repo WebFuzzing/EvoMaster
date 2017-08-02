@@ -4,7 +4,7 @@ import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.*;
-import org.evomaster.core.problem.rest.service.RemoteController;
+import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Action;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
