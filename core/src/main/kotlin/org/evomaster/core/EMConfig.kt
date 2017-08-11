@@ -360,4 +360,8 @@ class EMConfig {
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 
+    @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
+            "If larger than that, a response will not be stored internally in EM during the test generation. "+
+            "This is needed to avoid running out of memory.")
+    var maxResponseByteSize = 1_000_000
 }

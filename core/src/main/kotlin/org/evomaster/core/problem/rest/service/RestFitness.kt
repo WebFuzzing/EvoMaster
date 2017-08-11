@@ -305,8 +305,20 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 rcr.setBodyType(response.mediaType)
             }
             try {
+                /*
+                    FIXME should read as byte[]
+                 */
                 val body = response.readEntity(String::class.java)
-                rcr.setBody(body)
+
+                if(body.length < configuration.maxResponseByteSize) {
+                    rcr.setBody(body)
+                } else {
+                    log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
+                            " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                            " in the configurations.")
+                    rcr.setTooLargeBody(true)
+                }
+
             } catch (e: Exception) {
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }

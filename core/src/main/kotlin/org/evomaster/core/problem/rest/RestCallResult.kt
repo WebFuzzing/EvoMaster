@@ -15,6 +15,7 @@ class RestCallResult : ActionResult {
         val STATUS_CODE = "STATUS_CODE"
         val BODY = "BODY"
         val BODY_TYPE = "BODY_TYPE"
+        val TOO_LARGE_BODY = "TOO_LARGE_BODY"
         val INFINITE_LOOP = "INFINITE_LOOP"
         val ERROR_MESSAGE = "ERROR_MESSAGE"
         val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
@@ -72,6 +73,9 @@ class RestCallResult : ActionResult {
 
     fun hasErrorCode() : Boolean = getStatusCode()!=null && getStatusCode()!! >= 500
 
+    /*
+        FIXME should rather be a byte[]
+     */
     fun setBody(body: String) = addResultValue(BODY, body)
     fun getBody(): String? = getResultValue(BODY)
 
@@ -79,6 +83,10 @@ class RestCallResult : ActionResult {
     fun getBodyType(): MediaType? {
         return getResultValue(BODY_TYPE)?.let { MediaType.valueOf(it) }
     }
+
+    fun setTooLargeBody(on: Boolean) = addResultValue(TOO_LARGE_BODY, on.toString())
+    fun getTooLargeBody(): Boolean = getResultValue(TOO_LARGE_BODY)?.toBoolean() ?: false
+
 
     fun setInfiniteLoop(on: Boolean) = addResultValue(INFINITE_LOOP, on.toString())
     fun getInfiniteLoop(): Boolean = getResultValue(INFINITE_LOOP)?.toBoolean() ?: false
