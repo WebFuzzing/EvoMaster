@@ -186,7 +186,7 @@ public abstract class SutController implements SutHandler{
     /**
      * a "," separated list of package prefixes or class names.
      * For example, "com.foo.,com.bar.Bar".
-     * Note: be careful of using something as generate as "com."
+     * Note: be careful of using something as general as "com."
      * or "org.", as most likely ALL your third-party libraries
      * would be instrumented as well, which could have a severe
      * impact on performance
