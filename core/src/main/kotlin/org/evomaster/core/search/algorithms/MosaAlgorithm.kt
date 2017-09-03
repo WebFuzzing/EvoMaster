@@ -5,6 +5,10 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchAlgorithm
+import org.evomaster.core.LoggingUtil
+import java.util.ArrayList
+
+
 
 /**
  * Implementation of MOSA from
@@ -13,7 +17,13 @@ import org.evomaster.core.search.service.SearchAlgorithm
  */
 class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
-    private var population: MutableList<EvaluatedIndividual<T>> = mutableListOf()
+    private class Data(val ind: EvaluatedIndividual<*>) {
+
+        var rank = -1
+        var crowdingDistance = -1
+    }
+
+    private var population: MutableList<Data> = mutableListOf()
 
     override fun getType(): EMConfig.Algorithm {
         return EMConfig.Algorithm.MOSA
@@ -32,51 +42,73 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             //new generation
 
-            val nextPop: MutableList<EvaluatedIndividual<T>> = mutableListOf()
+            val nextPop: MutableList<Data> = mutableListOf()
 
-            while (nextPop.size < n) {
+            while (nextPop.size < n-1) {
 
-                getMutatator().mutateAndSave(selection(), archive)
-                        ?.let { nextPop.add(it) }
+                var ind = selection()
+
+                getMutatator().mutateAndSave(ind, archive)
+                        ?.let{nextPop.add(Data(it))}
 
                 if (!time.shouldContinueSearch()) {
                     break
                 }
             }
+            // generate one random solution
+            var ie = sampleIndividual()
+            nextPop.add(Data(ie as EvaluatedIndividual))
 
             population.addAll(nextPop)
             sortPopulation()
-            while (population.size > n) {
-                population.removeAt(population.size - 1)
-            }
         }
 
         return archive.extractSolution()
-    }
-
-    private class Data(val ind: EvaluatedIndividual<*>) {
-
-        var rank = -1
-        var crowdingDistance = -1
-        var dominationByCounter = 0
-        var dominatedSolutions: MutableList<Data> = mutableListOf()
     }
 
 
     private fun sortPopulation() {
 
         val notCovered = archive.notCoveredTargets()
-        val list = population.map { ind -> Data(ind) }
 
-        mosaPreferenceCriterion(notCovered, list)
+        val fronts = preferenceSorting(notCovered, population)
 
-        fastNonDominatedSort(notCovered, list)
+        var remain: Int = config.populationSize
+        var index = 0
+        population.clear()
 
-        subvectorDominance(notCovered, list)
+        // Obtain the next front
+        var front = fronts[index]
 
-        population = list.sortedWith(compareBy<Data> { it.rank }.thenBy { - it.crowdingDistance })
-                .map { d -> d.ind as EvaluatedIndividual<T>}
-                .toMutableList()
+        while (front!=null && remain > 0 && remain >= front.size && front.isNotEmpty()) {
+            // Assign crowding distance to individuals
+            subvectorDominance(notCovered, front)
+            // Add the individuals of this front
+            for (d in front) {
+                population.add(d)
+            }
+
+            // Decrement remain
+            remain = remain - front.size
+
+            // Obtain the next front
+            index += 1
+            if (remain > 0) {
+                front = fronts[index]
+            } // if
+        } // while
+
+        // Remain is less than front(index).size, insert only the best one
+        if (remain > 0 && front!=null && front.isNotEmpty()) {
+            subvectorDominance(notCovered, front)
+            var front2 = front.sortedWith(compareBy<Data> { - it.crowdingDistance })
+                     .toMutableList()
+           for (k in 0..remain - 1) {
+                population.add(front2[k])
+            } // for
+
+        } // if
+
     }
 
     private fun subvectorDominance(notCovered: Set<Int>, list: List<Data>){
@@ -108,78 +140,147 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         return cnt
     }
 
-    private fun fastNonDominatedSort(notCovered: Set<Int>, list: List<Data>) {
-        /*
-            see:
-            A Fast and Elitist Multiobjective Genetic Algorithm: NSGA-II
-         */
 
-        var front: MutableList<Data> = mutableListOf()
+    /*
+      See: Preference sorting as discussed in the TSE paper for DynaMOSA
+    */
+    private fun preferenceSorting(notCovered: Set<Int>, list: List<Data>): HashMap<Int, List<Data>> {
 
-        list.filter { d -> d.rank != 0 }.forEach { d ->
-            //compare to each other
-            list.filter { z -> z.rank != 0 }.forEach { z ->
-                if (dominates(d, z, notCovered)) {
-                    d.dominatedSolutions.add(z)
-                } else if (dominates(z, d, notCovered)) {
-                    d.dominationByCounter++
-                }
-            }
-            if (d.dominationByCounter == 0) {
-                d.rank = 1
-                front.add(d)
-            }
+        var fronts : HashMap<Int, List<Data>> = HashMap<Int, List<Data>>()
+
+        // compute the first front using the Preference Criteria
+        var frontZero = mosaPreferenceCriterion(notCovered, list)
+        fronts.put(0, ArrayList(frontZero))
+        LoggingUtil.getInfoLogger().apply {
+            debug("First front size : ${frontZero.size}")
         }
 
-        var i = 1
-        while (!front.isEmpty()) {
-            val Q: MutableList<Data> = mutableListOf()
+        // compute the remaining non-dominated Fronts
+        var remaining_solutions: MutableList<Data> = mutableListOf()
+        remaining_solutions.addAll(list)
+        remaining_solutions.removeAll(frontZero)
 
-            front.forEach { p ->
-                p.dominatedSolutions.forEach { q ->
-                    q.dominationByCounter--
-                    if (q.dominationByCounter == 0) {
-                        q.rank = i + 1
-                        Q.add(q)
-                    }
-                }
+        var selected_solutions = frontZero.size
+        var front_index = 1
+
+        while (selected_solutions < config.populationSize && remaining_solutions.isNotEmpty()){
+            var front: MutableList<Data> = getNonDominatedFront(notCovered, remaining_solutions)
+            fronts.put(front_index, front)
+            for (sol in front){
+                sol.rank = front_index
             }
-            i++
-            front = Q
+            remaining_solutions.removeAll(front)
+
+            selected_solutions += front.size
+
+            front_index += 1
+
+            LoggingUtil.getInfoLogger().apply {
+                debug("Selected Solutions : ${selected_solutions}")
+            }
         }
+        return fronts
     }
 
-    private fun mosaPreferenceCriterion(notCovered: Set<Int>, list: List<Data>) {
+    /**
+     * It retrieves the front of non-dominated solutions from a list
+     */
+    private fun getNonDominatedFront(notCovered: Set<Int>, remaining_sols: List<Data>): MutableList<Data>{
+        var front: MutableList<Data> = mutableListOf()
+        var isDominated: Boolean
+
+        for (p in remaining_sols) {
+            isDominated = false
+            val dominatedSolutions = ArrayList<Data>(remaining_sols.size)
+            for (best in front) {
+                val flag = compare(p, best, notCovered)
+                if (flag == -1) {
+                    dominatedSolutions.add(best)
+                }
+                if (flag == +1) {
+                    isDominated = true
+                }
+            }
+
+            if (isDominated)
+                continue
+
+            front.removeAll(dominatedSolutions)
+            front.add(p)
+
+        }
+        return front
+    }
+
+    /**
+     * Fast routine based on the Dominance Comparator discussed in
+     * "Automated Test Case Generation as a Many-Objective Optimisation Problem with Dynamic
+     *  Selection of the Targets"
+     */
+    private fun compare(x: Data, y: Data, notCovered: Set<Int>): Int {
+        var dominatesX = false
+        var dominatesY = false
+
+        for (index in 1..notCovered.size) {
+            if (x.ind.fitness.getHeuristic(index) > y.ind.fitness.getHeuristic(index))
+                dominatesX = true
+            if (y.ind.fitness.getHeuristic(index) > x.ind.fitness.getHeuristic(index))
+                dominatesY = true
+
+            // if the both do not dominates each other, we don't
+            // need to iterate over all the other targets
+            if (dominatesX && dominatesY)
+                return 0
+        }
+
+        if (dominatesX == dominatesY)
+            return 0
+
+        else if (dominatesX)
+            return -1
+
+        else (dominatesY)
+            return +1
+    }
+
+    private fun mosaPreferenceCriterion(notCovered: Set<Int>, list: List<Data>): HashSet<Data> {
+        var frontZero: HashSet<Data> = HashSet<Data>()
+
         notCovered.forEach { t ->
             var chosen = list[0]
             list.forEach { data ->
                 if (data.ind.fitness.getHeuristic(t) > chosen.ind.fitness.getHeuristic(t)) {
-                    //recall: maximization problem
+                    // recall: maximization problem
+                    chosen = data
+                } else if (data.ind.fitness.getHeuristic(t) == chosen.ind.fitness.getHeuristic(t)
+                            && data.ind.individual.seeGenes().size < chosen.ind.individual.seeGenes().size){
+                    // Secondary criterion based on tests lengths
                     chosen = data
                 }
             }
-            //MOSA preference criterion: the best for a target gets Rank 0
+            // MOSA preference criterion: the best for a target gets Rank 0
             chosen.rank = 0
+            frontZero.add(chosen)
         }
-    }
-
-    private fun dominates(d: Data, z: Data, notCovered: Set<Int>): Boolean {
-        return d.ind.fitness.subsumes(z.ind.fitness, notCovered)
+        return frontZero
     }
 
     private fun selection(): EvaluatedIndividual<T> {
 
-        //assumed sorted population, where first are bests
-        var min = population.size
+        // the population is not fully sorted
+        var min = randomness.nextInt(population.size)
 
-        (0 until config.tournamentSize).forEach {
+        (0 until config.tournamentSize-1).forEach {
             val sel = randomness.nextInt(population.size)
-            if (sel < min) {
+            if (population[sel].rank < population[min].rank) {
                 min = sel
+            } else if (population[sel].rank == population[min].rank){
+                if (population[sel].crowdingDistance < population[min].crowdingDistance)
+                    min = sel
             }
         }
 
-        return population[min].copy()
+        return (population[min].ind as EvaluatedIndividual<T>).copy()
     }
 
 
@@ -188,7 +289,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         val n = config.populationSize
 
         for (i in 1..n) {
-            sampleIndividual()?.run { population.add(this) }
+            sampleIndividual()?.run { population.add(Data(this)) }
 
             if (!time.shouldContinueSearch()) {
                 break
