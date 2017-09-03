@@ -48,9 +48,8 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
                 var ind = selection()
 
-                var eval = getMutatator().mutateAndSave(ind, archive)
-
-                nextPop.add(Data(eval as EvaluatedIndividual))
+                getMutatator().mutateAndSave(ind, archive)
+                        ?.let{nextPop.add(Data(it))}
 
                 if (!time.shouldContinueSearch()) {
                     break
@@ -85,8 +84,9 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
             // Assign crowding distance to individuals
             subvectorDominance(notCovered, front)
             // Add the individuals of this front
-            for (d in front)
+            for (d in front) {
                 population.add(d)
+            }
 
             // Decrement remain
             remain = remain - front.size
