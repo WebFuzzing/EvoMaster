@@ -309,6 +309,8 @@ class EMConfig {
     @Cfg("Maximum number of action evaluations for the search." +
             " A fitness evaluation can be composed of 1 or more actions," +
             " like for example REST calls or SQL setups." +
+            " The more actions are allowed, the better results one can expect." +
+            " But then of course the test generation will take longer." +
             " Only applicable depending on the stopping criterion.")
     @Min(1.0)
     var maxActionEvaluations = 1000;
