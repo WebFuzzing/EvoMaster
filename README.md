@@ -126,7 +126,7 @@ package structure.
 
 ### EvoMaster Driver
     
-Note generate tests, you need an EvoMaster Driver up and running before 
+Note, to generate tests, you need an EvoMaster Driver up and running before 
 executing `evomaster.jar`.
 These drivers have to be built manually for each system under test (SUT).
 See [EMB](https://github.com/EMResearch/EMB) for a set of existing SUTs with drivers.
