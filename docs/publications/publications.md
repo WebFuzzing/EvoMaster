@@ -10,4 +10,5 @@
 * A. Arcuri. *Many Independent Objective (MIO) 
   Algorithm for Test Suite Generation*.
   Symposium on Search-based Software Engineering (SSBSE).
+  **Best paper award**.
   [[PDF](2017_ssbse.pdf)]  
