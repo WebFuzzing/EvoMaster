@@ -1,5 +1,6 @@
 package org.evomaster.clientJava.instrumentation.staticState;
 
+import java.io.PrintWriter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -76,6 +77,13 @@ public class ObjectiveRecorder {
         firstTimeEncountered.clear();
         counter.set(0);
     }
+
+    public static void printCoveragePerTarget(PrintWriter writer){
+        for(Map.Entry<Integer, Double> entry : maxObjectiveCoverage.entrySet()){
+            writer.println("" + entry.getKey() + " , " + entry.getValue());
+        }
+    }
+
 
     public static List<String> getTargetsSeenFirstTime(){
 

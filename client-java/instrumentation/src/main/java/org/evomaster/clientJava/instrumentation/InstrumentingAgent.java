@@ -4,11 +4,18 @@ import com.p6spy.engine.spy.appender.StdoutLogger;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
 import org.evomaster.clientJava.instrumentation.external.AgentController;
+import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 import org.objectweb.asm.ClassReader;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 import java.util.Objects;
 
@@ -20,6 +27,9 @@ public class InstrumentingAgent {
     public static final String EXTERNAL_PORT_PROP = "evomaster.javaagent.external.port";
 
     public static final String SQL_DRIVER = "evomaster.javaagent.sql.driver";
+
+    public static final String OUTPUT_FILE = "evomaster.javaagent.outputfile";
+
 
     /**
      * WARN: static variable with dynamic state.
@@ -65,6 +75,34 @@ public class InstrumentingAgent {
             SimpleLogger.info("Initializing P6SPY with base driver " + sqlDriver);
             initP6Spy(sqlDriver);
         }
+
+        String outputFile = System.getProperty(OUTPUT_FILE);
+        if(outputFile != null){
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                saveCoverageToDisk(outputFile);
+            }));
+        }
+    }
+
+
+    private static void saveCoverageToDisk(String outputFile) {
+
+        try {
+            SimpleLogger.info("Going to save coverage data to " + outputFile);
+
+            Path path = Paths.get(outputFile);
+            Files.deleteIfExists(path);
+            Files.createFile(path);
+
+            PrintWriter writer = new PrintWriter(outputFile, "UTF-8");
+            ObjectiveRecorder.printCoveragePerTarget(writer);
+            writer.close();
+
+        } catch (IOException e) {
+            SimpleLogger.error("Failed to save data to disk: "+e.getMessage());
+            throw new RuntimeException(e);
+        }
+
     }
 
     public static boolean isActive() {
