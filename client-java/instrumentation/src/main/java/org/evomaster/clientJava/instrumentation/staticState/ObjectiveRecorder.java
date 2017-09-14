@@ -80,7 +80,7 @@ public class ObjectiveRecorder {
 
     public static void printCoveragePerTarget(PrintWriter writer){
         for(Map.Entry<Integer, Double> entry : maxObjectiveCoverage.entrySet()){
-            writer.println("" + entry.getKey() + " , " + entry.getValue());
+            writer.println("" + reversedIdMapping.get(entry.getKey()) + " , " + entry.getValue());
         }
     }
 
