@@ -435,7 +435,7 @@
                 <!-- To run unit tests -->
                 <plugin>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.20</version>
+                    <version>2.19.1</version> <!-- 2.20 does not work with JUnit 5 -->
                     <dependencies>
                         <dependency>
                             <groupId>org.junit.platform</groupId>
