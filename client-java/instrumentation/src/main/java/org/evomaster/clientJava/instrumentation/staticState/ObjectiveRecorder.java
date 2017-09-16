@@ -18,10 +18,28 @@ public class ObjectiveRecorder {
      * Key -> the unique id of the coverage objective
      * <br>
      * Value -> heuristic [0,1], where 1 means covered.
-     *          Only the highest value found so far is kept.
+     * Only the highest value found so far is kept.
      */
     private static final Map<Integer, Double> maxObjectiveCoverage =
             new ConcurrentHashMap<>(65536);
+
+
+    /**
+     * Keep track of all target ids.
+     * In contrast to the other data-structures in this class,
+     * this info is when the SUT classes are loaded.
+     * However, it is also important to notice that which classes
+     * are loaded depends on what is executed.
+     * We can force the loading of all classes, but usually that
+     * is not a good idea, as static initializers might have
+     * side effects.
+     * However, we can do that at the end of the search once we are
+     * done.
+     * This can be useful to calculate how many targets we have missed.
+     */
+    private static final Set<String> allTargets =
+            Collections.newSetFromMap(new ConcurrentHashMap<>(65536));
+
 
     /**
      * Key -> id of an objective/target
@@ -69,52 +87,111 @@ public class ObjectiveRecorder {
     /**
      * Reset all the static state in this class
      */
-    public static void reset(){
+    public static void reset(boolean alsoAtLoadTime) {
         maxObjectiveCoverage.clear();
         idMapping.clear();
         reversedIdMapping.clear();
         idMappingCounter.set(0);
         firstTimeEncountered.clear();
         counter.set(0);
-    }
 
-    public static void printCoveragePerTarget(PrintWriter writer){
-        for(Map.Entry<Integer, Double> entry : maxObjectiveCoverage.entrySet()){
-            writer.println("" + reversedIdMapping.get(entry.getKey()) + " , " + entry.getValue());
+        if (alsoAtLoadTime) {
+            /*
+                Shouldn't always reset it, because
+                it is only computed at SUT classloading time
+             */
+            allTargets.clear();
         }
     }
 
 
-    public static List<String> getTargetsSeenFirstTime(){
+    /**
+     * Mark the existence of a testing target.
+     * This is important to do when SUT classes are loaded
+     * and instrumented.
+     * This cannot be done with the added probes in the
+     * instrumentation, as what executed in the SUT depends
+     * on test data.
+     *
+     * @param target a descriptive string representing the id of the target
+     */
+    public static void registerTarget(String target) {
+        if (target == null || target.isEmpty()) {
+            throw new IllegalArgumentException("Empty target name");
+        }
+        allTargets.add(target);
+    }
+
+    /**
+     * @return a coverage value in [0,1]
+     */
+    public static double computeCoverage(String prefix) {
+
+        int n = 0;
+        int covered = 0;
+
+        for(String id : allTargets){
+            if(! id.startsWith(prefix)){
+                continue;
+            }
+
+            n++;
+            if(idMapping.containsKey(id)){
+                int numericID = idMapping.get(id);
+                double h = maxObjectiveCoverage.get(numericID);
+                if(h == 1d){
+                    covered++;
+                }
+            }
+        }
+
+        if(n == 0){
+            return 1d;
+        }
+
+        return (double) covered / (double) n;
+    }
+
+    public static void printCoveragePerTarget(PrintWriter writer) {
+
+        allTargets.stream()
+                .sorted()
+                .forEachOrdered(id -> {
+                    double h = 0;
+                    if (idMapping.containsKey(id)) {
+                        int numericID = idMapping.get(id);
+                        h = maxObjectiveCoverage.get(numericID);
+                    }
+                    writer.println(id + " , " + h);
+                });
+    }
+
+
+    public static List<String> getTargetsSeenFirstTime() {
 
         return Collections.unmodifiableList(new ArrayList<>(firstTimeEncountered));
     }
 
 
-    public static void clearFirstTimeEncountered(){
+    public static void clearFirstTimeEncountered() {
         firstTimeEncountered.clear();
     }
 
 
-    public static int getAUniqueId(){
-        return counter.getAndIncrement();
-    }
-
     /**
-     *
      * @param descriptiveId of the objective/target
-     * @param value of the coverage heuristic, in [0,1]
+     * @param value         of the coverage heuristic, in [0,1]
      */
-    public static void update(String descriptiveId, double value){
+    public static void update(String descriptiveId, double value) {
 
         Objects.requireNonNull(descriptiveId);
-        if(value < 0d || value > 1){
-            throw new IllegalArgumentException("Invalid value "+value +" out of range [0,1]");
+        if (value < 0d || value > 1) {
+            throw new IllegalArgumentException("Invalid value " + value + " out of range [0,1]");
         }
 
         int id = getMappedId(descriptiveId);
 
-        if(! maxObjectiveCoverage.containsKey(id)){
+        if (!maxObjectiveCoverage.containsKey(id)) {
             firstTimeEncountered.add(descriptiveId);
             maxObjectiveCoverage.put(id, value);
 
@@ -127,7 +204,7 @@ public class ObjectiveRecorder {
         }
     }
 
-    public static int getMappedId(String descriptiveId){
+    public static int getMappedId(String descriptiveId) {
 
         int id = idMapping.computeIfAbsent(descriptiveId, k -> idMappingCounter.getAndIncrement());
         reversedIdMapping.computeIfAbsent(id, k -> descriptiveId);
@@ -136,21 +213,21 @@ public class ObjectiveRecorder {
     }
 
 
-    public static Map<Integer, String> getDescriptiveIds(Collection<Integer> ids){
+    public static Map<Integer, String> getDescriptiveIds(Collection<Integer> ids) {
 
         Map<Integer, String> map = new HashMap<>(ids.size());
-        for(Integer id: ids){
+        for (Integer id : ids) {
             map.put(id, getDescriptiveId(id));
         }
 
         return map;
     }
 
-    public static String getDescriptiveId(int id){
+    public static String getDescriptiveId(int id) {
 
         String descriptiveId = reversedIdMapping.get(id);
-        if(descriptiveId == null){
-            throw new IllegalArgumentException("Id '"+id+"' is not mapped");
+        if (descriptiveId == null) {
+            throw new IllegalArgumentException("Id '" + id + "' is not mapped");
         }
 
         return descriptiveId;

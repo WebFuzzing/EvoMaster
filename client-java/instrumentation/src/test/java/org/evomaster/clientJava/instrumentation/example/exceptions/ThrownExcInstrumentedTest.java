@@ -5,6 +5,7 @@ import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,9 +22,15 @@ public class ThrownExcInstrumentedTest {
                 cl.loadClass(ThrownExcImp.class.getName()).newInstance();
     }
 
+    @BeforeAll
+    public static void initClass(){
+        ObjectiveRecorder.reset(true);
+    }
+
+
     @BeforeEach
     public void init(){
-        ObjectiveRecorder.reset();
+        ObjectiveRecorder.reset(false);
         ExecutionTracer.reset();
         assertEquals(0 , ExecutionTracer.getNumberOfObjectives());
     }

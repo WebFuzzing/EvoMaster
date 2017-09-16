@@ -2,7 +2,9 @@ package org.evomaster.clientJava.instrumentation.visitor;
 
 import org.evomaster.clientJava.instrumentation.ClassName;
 import org.evomaster.clientJava.instrumentation.Constants;
+import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
+import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -52,6 +54,9 @@ public class SuccessCallMethodVisitor extends MethodVisitor {
         }
 
         int index = currentIndex++;
+
+        ObjectiveRecorder.registerTarget(
+                ObjectiveNaming.successCallObjectiveName(className, currentLine, index));
 
         addInstrumentation(index, false);
         super.visitMethodInsn(opcode, owner, name, desc, itf);

@@ -12,7 +12,7 @@ public class InstrumentationController {
 
     public static void resetForNewSearch(){
         ExecutionTracer.reset();
-        ObjectiveRecorder.reset();
+        ObjectiveRecorder.reset(false);
     }
 
     /*

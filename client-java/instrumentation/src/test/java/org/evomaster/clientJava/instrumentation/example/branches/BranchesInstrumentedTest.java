@@ -5,6 +5,7 @@ import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
 import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -48,10 +49,14 @@ public class BranchesInstrumentedTest {
         }
     }
 
+    @BeforeAll
+    public static void initClass(){
+        ObjectiveRecorder.reset(true);
+    }
 
     @BeforeEach
     public void init(){
-        ObjectiveRecorder.reset();
+        ObjectiveRecorder.reset(false);
         ExecutionTracer.reset();
         assertEquals(0 , ExecutionTracer.getNumberOfObjectives());
     }
@@ -90,6 +95,8 @@ public class BranchesInstrumentedTest {
     @Test
     public void testPosY() {
 
+        assertEquals(0d, ObjectiveRecorder.computeCoverage(ObjectiveNaming.BRANCH));
+
         int res;
         res = evalPos(10, 0);
         assertEquals(0, res);
@@ -124,6 +131,8 @@ public class BranchesInstrumentedTest {
 
         assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
         assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
+
+        assertTrue(ObjectiveRecorder.computeCoverage(ObjectiveNaming.BRANCH) > 0);
     }
 
 
