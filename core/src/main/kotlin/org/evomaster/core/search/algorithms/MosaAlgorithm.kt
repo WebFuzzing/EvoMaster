@@ -71,6 +71,11 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
         val notCovered = archive.notCoveredTargets()
 
+        if(notCovered.isEmpty()){
+            //Trivial problem: everything covered in first population
+            return
+        }
+
         val fronts = preferenceSorting(notCovered, population)
 
         var remain: Int = config.populationSize
@@ -146,17 +151,17 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
     */
     private fun preferenceSorting(notCovered: Set<Int>, list: List<Data>): HashMap<Int, List<Data>> {
 
-        var fronts : HashMap<Int, List<Data>> = HashMap<Int, List<Data>>()
+        val fronts = HashMap<Int, List<Data>>()
 
         // compute the first front using the Preference Criteria
-        var frontZero = mosaPreferenceCriterion(notCovered, list)
+        val frontZero = mosaPreferenceCriterion(notCovered, list)
         fronts.put(0, ArrayList(frontZero))
         LoggingUtil.getInfoLogger().apply {
             debug("First front size : ${frontZero.size}")
         }
 
         // compute the remaining non-dominated Fronts
-        var remaining_solutions: MutableList<Data> = mutableListOf()
+        val remaining_solutions: MutableList<Data> = mutableListOf()
         remaining_solutions.addAll(list)
         remaining_solutions.removeAll(frontZero)
 
