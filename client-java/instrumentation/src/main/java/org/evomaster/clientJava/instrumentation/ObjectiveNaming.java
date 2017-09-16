@@ -3,6 +3,12 @@ package org.evomaster.clientJava.instrumentation;
 public class ObjectiveNaming {
 
     /**
+     * Prefix identifier for class coverage objectives.
+     * A class is "covered" if at least one of its lines is executed.
+     */
+    public static final String CLASS = "Class";
+
+    /**
      * Prefix identifier for line coverage objectives
      */
     public static final String LINE = "Line";
@@ -29,6 +35,10 @@ public class ObjectiveNaming {
     public static final String SUCCESS_CALL = "Success_Call";
 
 
+    public static String classObjectiveName(String className){
+        String name = CLASS + "_" + ClassName.get(className).getFullNameWithDots();
+        return name.intern();
+    }
 
     public static String lineObjectiveName(String className, int line){
         String name = LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line);

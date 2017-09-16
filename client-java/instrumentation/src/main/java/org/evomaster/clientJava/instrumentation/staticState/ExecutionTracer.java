@@ -128,8 +128,10 @@ public class ExecutionTracer {
      * Report on the fact that a given line has been executed.
      */
     public static void executedLine(String className, int line) {
-        String id = ObjectiveNaming.lineObjectiveName(className, line);
-        updateObjective(id, 1d);
+        String lineId = ObjectiveNaming.lineObjectiveName(className, line);
+        String classId = ObjectiveNaming.classObjectiveName(className);
+        updateObjective(lineId, 1d);
+        updateObjective(classId, 1d);
     }
 
     public static final String EXECUTING_METHOD_METHOD_NAME = "executingMethod";
