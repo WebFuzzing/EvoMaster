@@ -2,6 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.exceptions;
 
 import com.foo.somedifferentpackage.examples.exceptions.ThrownExcImp;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
+import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ public class ThrownExcInstrumentedTest {
         ThrownExc te = getInstance();
 
         //constructor has a default call to Object()
-        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         try {
             te.directReturn(null);
@@ -42,11 +43,11 @@ public class ThrownExcInstrumentedTest {
         } catch (Exception e){
         }
 
-        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         te.directReturn("");
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
     }
 
 
@@ -56,7 +57,7 @@ public class ThrownExcInstrumentedTest {
         ThrownExc te = getInstance();
 
         //constructor has a default call to Object()
-        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         try {
             te.directInTry(null);
@@ -64,11 +65,11 @@ public class ThrownExcInstrumentedTest {
         } catch (Exception e){
         }
 
-        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         te.directInTry("");
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
     }
 
     @Test
@@ -76,7 +77,7 @@ public class ThrownExcInstrumentedTest {
 
         ThrownExc te = getInstance();
 
-        int n0 = ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL);
+        int n0 = ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL);
 
         try {
             te.doubleCall(null, null);
@@ -84,9 +85,9 @@ public class ThrownExcInstrumentedTest {
         } catch (Exception e){
         }
 
-        int n1 = ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL);
+        int n1 = ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL);
         assertTrue(n1 > n0);
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         try {
             te.doubleCall("", null);
@@ -94,13 +95,13 @@ public class ThrownExcInstrumentedTest {
         } catch (Exception e){
         }
 
-        int n2 = ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL);
+        int n2 = ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL);
         assertTrue(n2 > n1);
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
 
         te.doubleCall("", "");
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
     }
 
     @Test
@@ -117,8 +118,8 @@ public class ThrownExcInstrumentedTest {
         //TODO this will change once we handle arrays
 
         // no call reached yet
-        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         try {
             te.callOnArray(new String[]{"foo"}, -1);
@@ -127,8 +128,8 @@ public class ThrownExcInstrumentedTest {
         }
 
         // still not reached yet
-        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         try {
             te.callOnArray(new String[]{null}, 0);
@@ -137,11 +138,11 @@ public class ThrownExcInstrumentedTest {
         }
 
         // now it is reached yet
-        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.SUCCESS_CALL));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
 
         te.callOnArray(new String[]{"foo"}, 0);
 
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.SUCCESS_CALL));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
     }
 }

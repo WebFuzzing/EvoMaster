@@ -1,6 +1,7 @@
 package org.evomaster.clientJava.instrumentation.staticState;
 
 import org.evomaster.clientJava.instrumentation.ClassName;
+import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.clientJava.instrumentation.heuristic.Truthness;
@@ -24,31 +25,6 @@ public class ExecutionTracer {
         type of issues.
      */
 
-    /**
-     * Prefix identifier for line coverage objectives
-     */
-    public static final String LINE = "Line";
-
-    /**
-     * Prefix identifier for branch coverage objectives
-     */
-    public static final String BRANCH = "Branch";
-
-    /**
-     * Tag used in a branch id to specify it is for the "true"/then branch
-     */
-    public static final String TRUE_BRANCH = "_trueBranch";
-
-    /**
-     * Tag used in a branch id to specify it is for the "false"/else branch
-     */
-    public static final String FALSE_BRANCH = "_falseBranch";
-
-
-    /**
-     * Prefix identifier for objectives related to calling methods without exceptions
-     */
-    public static final String SUCCESS_CALL = "Success_Call";
 
 
     /**
@@ -152,8 +128,7 @@ public class ExecutionTracer {
      * Report on the fact that a given line has been executed.
      */
     public static void executedLine(String className, int line) {
-
-        String id = LINE + "_at_" + ClassName.get(className).getFullNameWithDots() + "_" + padNumber(line);
+        String id = ObjectiveNaming.lineObjectiveName(className, line);
         updateObjective(id, 1d);
     }
 
@@ -170,8 +145,7 @@ public class ExecutionTracer {
      * @param completed whether the method call was successfully completed.
      */
     public static void executingMethod(String className, int line, int index, boolean completed){
-        String id = SUCCESS_CALL + "_at_" + ClassName.get(className).getFullNameWithDots() +
-                "_" + padNumber(line) + "_" + index;
+        String id = ObjectiveNaming.successCallObjectiveName(className, line, index);
         if(completed) {
             updateObjective(id, 1d);
         } else {
@@ -182,7 +156,7 @@ public class ExecutionTracer {
 
     //---- branch-jump methods --------------------------
 
-    private static void updateBranch(String id, Truthness t) {
+    private static void updateBranch(String className, int line, int branchId, Truthness t) {
 
         /*
             Note: when we have
@@ -193,35 +167,11 @@ public class ExecutionTracer {
             x <= 0
          */
 
-        updateObjective(id + FALSE_BRANCH, t.getOfTrue());
-        updateObjective(id + TRUE_BRANCH, t.getOfFalse());
-    }
+        String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);
+        String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);
 
-    private static String getUniqueBranchId(String className, int line, int branchId) {
-
-        return BRANCH + "_at_" +
-                ClassName.get(className).getFullNameWithDots()
-                + "_at_line_" + padNumber(line) + "_position_" + branchId;
-    }
-
-    private static String padNumber(int val){
-        if(val < 0){
-            throw new IllegalArgumentException("Negative number to pad");
-        }
-        if(val < 10){
-            return "0000" + val;
-        }
-        if(val < 100){
-            return "000" + val;
-        }
-        if(val < 1_000){
-            return "00" + val;
-        }
-        if(val < 10_000){
-            return "0" + val;
-        } else {
-            return ""+val;
-        }
+        updateObjective(forElse, t.getOfTrue());
+        updateObjective(forThen, t.getOfFalse());
     }
 
     public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = "executingBranchJump";
@@ -232,10 +182,9 @@ public class ExecutionTracer {
     public static void executingBranchJump(
             int value, int opcode, String className, int line, int branchId) {
 
-        String id = getUniqueBranchId(className, line, branchId);
         Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);
 
-        updateBranch(id, t);
+        updateBranch(className, line, branchId, t);
     }
 
 
@@ -244,11 +193,9 @@ public class ExecutionTracer {
     public static void executingBranchJump(
             int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
 
-        String id = getUniqueBranchId(className, line, branchId);
-        //TODO: make sure the order is correct, as possible issue with JVM stack
         Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);
 
-        updateBranch(id, t);
+        updateBranch(className, line, branchId, t);
     }
 
     public static final String JUMP_DESC_OBJECTS =
@@ -257,10 +204,9 @@ public class ExecutionTracer {
     public static void executingBranchJump(
             Object first, Object second, int opcode, String className, int line, int branchId) {
 
-        String id = getUniqueBranchId(className, line, branchId);
         Truthness t = HeuristicsForJumps.getForObjectComparison(first, second, opcode);
 
-        updateBranch(id, t);
+        updateBranch(className, line, branchId, t);
     }
 
 
@@ -270,9 +216,8 @@ public class ExecutionTracer {
     public static void executingBranchJump(
             Object obj, int opcode, String className, int line, int branchId) {
 
-        String id = getUniqueBranchId(className, line, branchId);
         Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
 
-        updateBranch(id, t);
+        updateBranch(className, line, branchId, t);
     }
 }

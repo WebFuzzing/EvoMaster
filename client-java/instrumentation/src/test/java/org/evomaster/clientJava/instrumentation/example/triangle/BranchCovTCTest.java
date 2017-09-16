@@ -2,6 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.triangle;
 
 import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
+import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +38,7 @@ public class BranchCovTCTest {
 
         tc.classify(-10, 0 , 0);
 
-        Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+        Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH);
         String target = missing.iterator().next();
         assertEquals(1, missing.size());
 
@@ -45,7 +46,7 @@ public class BranchCovTCTest {
 
         tc.classify(-2, 0 , 0);
 
-        missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+        missing = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH);
         assertEquals(1, missing.size());
         assertEquals(target, missing.iterator().next());
 
@@ -79,7 +80,7 @@ public class BranchCovTCTest {
         tc.classify(20, 20,  1); //only case with a==b
         //by now, all branches but last "b==c" check on equilateral should had been taken
 
-        Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+        Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH);
         String target = missing.iterator().next();
         assertEquals(1, missing.size());
 
@@ -99,7 +100,7 @@ public class BranchCovTCTest {
         assertTrue(covered > better);
         assertEquals(1.0, covered, 0.001);
 
-        missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+        missing = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH);
         assertEquals(0, missing.size());
     }
 }

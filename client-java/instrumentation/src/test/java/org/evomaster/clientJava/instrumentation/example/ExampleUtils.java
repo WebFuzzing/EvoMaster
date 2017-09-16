@@ -1,5 +1,6 @@
 package org.evomaster.clientJava.instrumentation.example;
 
+import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 
 import java.util.List;
@@ -25,7 +26,7 @@ public class ExampleUtils {
         for(T val : inputs){
             lambda.accept(val);
 
-            Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+            Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH);
             target = missing.iterator().next();
             assertEquals(1, missing.size());
 
@@ -38,7 +39,7 @@ public class ExampleUtils {
 
         lambda.accept(solution);
 
-        Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH);
+        Set<String> missing = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH);
         assertEquals(0, missing.size());
         double covered = ExecutionTracer.getValue(target);
         assertEquals(1d, covered);

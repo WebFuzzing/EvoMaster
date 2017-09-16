@@ -2,6 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.branches;
 
 import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
+import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
 import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,12 +65,12 @@ public class BranchesInstrumentedTest {
         assertEquals(0, res);
 
         //so far, seen only first "if", of which the else is not covered
-        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
 
-        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
-        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
-        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
 
         double first = ExecutionTracer.getValue(elseBranch);
         assertTrue(first < 1d); // not covered
@@ -97,12 +98,12 @@ public class BranchesInstrumentedTest {
         assertEquals(1, res);
 
         //seen 2 "if", but returned on the second "if"
-        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
 
-        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
-        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
-        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
 
         double first = ExecutionTracer.getValue(elseBranch);
         assertTrue(first < 1d); // not covered
@@ -121,8 +122,8 @@ public class BranchesInstrumentedTest {
         res = evalPos(-89, -45);
         assertEquals(2, res);
 
-        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
     }
 
 
@@ -134,12 +135,12 @@ public class BranchesInstrumentedTest {
         assertEquals(3, res);
 
         //so far, seen only first "if", of which the else is not covered
-        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
 
-        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
-        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
-        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
 
         double first = ExecutionTracer.getValue(elseBranch);
         assertTrue(first < 1d); // not covered
@@ -168,12 +169,12 @@ public class BranchesInstrumentedTest {
         assertEquals(4, res);
 
         //seen 2 "if", but returned on the second "if"
-        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
 
-        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ExecutionTracer.BRANCH).iterator().next();
-        assertTrue(elseBranch.contains(ExecutionTracer.FALSE_BRANCH));
-        assertFalse(elseBranch.contains(ExecutionTracer.TRUE_BRANCH));
+        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
+        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
+        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
 
         double first = ExecutionTracer.getValue(elseBranch);
         assertTrue(first < 1d); // not covered
@@ -192,8 +193,8 @@ public class BranchesInstrumentedTest {
         res = evalNeg(89, 45);
         assertEquals(5, res);
 
-        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
     }
 
 
@@ -204,20 +205,20 @@ public class BranchesInstrumentedTest {
         res = evalEq(0, 0);
         assertEquals(6, res);
 
-        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
 
         res = evalEq(2, 5);
         assertEquals(7, res);
 
-        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
 
         res = evalEq(2, 0);
         assertEquals(8, res);
 
-        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
     }
 
     @Test
@@ -235,8 +236,8 @@ public class BranchesInstrumentedTest {
         evalEq(4, 0);
         evalEq(5, 5);
 
-        assertEquals(12, ExecutionTracer.getNumberOfObjectives(ExecutionTracer.BRANCH));
-        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ExecutionTracer.BRANCH));
+        assertEquals(12, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
     }
 
 }
