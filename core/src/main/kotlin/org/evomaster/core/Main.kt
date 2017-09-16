@@ -127,6 +127,7 @@ class Main {
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Last action improvement: ${stc.lastActionImprovement}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+                info("Covered targets: ${solution.overall.coveredTargets()}")
             }
 
             return solution
