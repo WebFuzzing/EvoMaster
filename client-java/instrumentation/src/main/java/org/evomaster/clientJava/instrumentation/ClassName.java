@@ -31,8 +31,19 @@ public class ClassName {
         this(Objects.requireNonNull(klass).getName());
     }
 
+    /**
+     *
+     * @param name of the class, or path resource
+     */
     public ClassName(String name){
         Objects.requireNonNull(name);
+
+        if(name.endsWith(".class")){
+            name = name.substring(0, name.length() - ".class".length());
+        }
+        if(name.endsWith(".java")){
+            name = name.substring(0, name.length() - ".java".length());
+        }
 
         if(name.contains("/") && name.contains(".")){
             throw new IllegalArgumentException("Do not know how to handle name: " +name);

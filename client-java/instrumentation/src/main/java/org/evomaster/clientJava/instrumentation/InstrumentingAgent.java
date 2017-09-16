@@ -38,6 +38,8 @@ public class InstrumentingAgent {
      */
     private static Instrumentator instrumentator;
 
+    private static String packagePrefixesToCover;
+
     private static boolean active = false;
 
     /**
@@ -60,7 +62,8 @@ public class InstrumentingAgent {
      */
     public static void agentmain(String agentArgs, Instrumentation inst) {
 
-        instrumentator = new Instrumentator(agentArgs);
+        packagePrefixesToCover = agentArgs;
+        instrumentator = new Instrumentator(packagePrefixesToCover);
         inst.addTransformer(new TransformerForTests());
         active = true;
 
@@ -89,6 +92,8 @@ public class InstrumentingAgent {
 
         try {
             SimpleLogger.info("Going to save coverage data to " + outputFile);
+
+            ClassScanner.forceLoading(packagePrefixesToCover);
 
             Path path = Paths.get(outputFile);
             Files.deleteIfExists(path);
