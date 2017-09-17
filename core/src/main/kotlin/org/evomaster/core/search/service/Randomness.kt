@@ -159,14 +159,18 @@ class Randomness {
     }
 
 
-    fun <K,V> choose(map: Map<K,V>): V {
-        if (map.isEmpty()) {
+
+    fun <K,V> choose(map: Map<K,V>): V = choose(map.values)
+
+
+    fun <V> choose(collection: Collection<V>) : V{
+        if (collection.isEmpty()) {
             throw IllegalArgumentException("Empty map to choose from")
         }
-        val index = random.nextInt(map.size)
+        val index = random.nextInt(collection.size)
         var i = 0
 
-        val iter = map.values.iterator()
+        val iter = collection.iterator()
         while(iter.hasNext() && i<index){
             iter.next()
             i++

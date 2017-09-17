@@ -23,13 +23,15 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
             val randomP = apc.getProbRandomSampling()
 
-            if(archive.isEmpty() || sampler.hasSpecialInit() || randomness.nextBoolean(randomP)) {
+            if(archive.isEmpty()
+                    || sampler.hasSpecialInit()
+                    || randomness.nextBoolean(randomP)) {
 
                 val ind = if(sampler.hasSpecialInit()){
                     // If there is still special init set, sample from that
                     sampler.smartSample()
                 } else {
-                    //not this can still be a smart sample
+                    //note this can still be a smart sample
                     sampler.sample()
                 }
 

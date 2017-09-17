@@ -9,7 +9,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 
 
-class Archive<T>() where T : Individual {
+class Archive<T> where T : Individual {
 
     @Inject
     private lateinit var randomness: Randomness
@@ -77,10 +77,10 @@ class Archive<T>() where T : Individual {
             throw IllegalStateException("Empty archive")
         }
 
-        var toChooseFrom = map.keys.filter { k -> !isCovered(k) }
+        var toChooseFrom = notCoveredTargets()
         if (toChooseFrom.isEmpty()) {
             //this means all current targets are covered
-            toChooseFrom = map.keys.toList()
+            toChooseFrom = map.keys.toSet()
         }
 
 
@@ -144,6 +144,12 @@ class Archive<T>() where T : Individual {
      * @return a list of ids
      */
     fun notCoveredTargets(): Set<Int> {
+
+        /*
+            FIXME: performance, use cache for non-covered.
+            As we can have 10s of thousands of covered targets,
+            iterating over them is expensive
+         */
 
         return map.keys.filter { k -> !isCovered(k) }.toSet()
     }

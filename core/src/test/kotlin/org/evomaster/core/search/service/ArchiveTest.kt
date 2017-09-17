@@ -17,9 +17,9 @@ import org.junit.jupiter.api.Test
 
 class ArchiveTest{
 
-    lateinit var archive: Archive<OneMaxIndividual>
-    lateinit var ff : OneMaxFitness
-    lateinit var config: EMConfig
+    private lateinit var archive: Archive<OneMaxIndividual>
+    private lateinit var ff : OneMaxFitness
+    private lateinit var config: EMConfig
 
     @BeforeEach
     fun init(){
@@ -143,7 +143,7 @@ class ArchiveTest{
             Sampling 50 times should have nearly "p = 1 - (0.5)^50"
             of getting both of them, at least once
          */
-        val n = (0..50).map { archive.sampleIndividual() }
+        val n = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.fitness.computeFitnessScore()}
                 .distinct()
                 .count()
@@ -170,7 +170,7 @@ class ArchiveTest{
         /*
             only one should be in archive
          */
-        val n = (0..50).map { archive.sampleIndividual() }
+        val n = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.fitness.computeFitnessScore()}
                 .distinct()
                 .count()
@@ -197,7 +197,7 @@ class ArchiveTest{
         /*
             when "b" inserted, then "a" should had been removed
          */
-        val n = (0..50).map { archive.sampleIndividual() }
+        val n = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.fitness.computeFitnessScore()}
                 .distinct()
                 .count()
@@ -223,7 +223,7 @@ class ArchiveTest{
         assertTrue(added)
 
         //both should be sampled
-        var n = (0..50).map { archive.sampleIndividual() }
+        var n = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
                 .count()
@@ -234,7 +234,7 @@ class ArchiveTest{
         config.archiveTargetLimit = 1
 
         //  only one should be in archive now
-        n = (0..50).map { archive.sampleIndividual() }
+        n = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
                 .count()
@@ -266,7 +266,7 @@ class ArchiveTest{
         archive.addIfNeeded(ff.calculateCoverage(c)!!)
 
 
-        val sizes = (0..50).map { archive.sampleIndividual() }
+        val sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
@@ -295,7 +295,7 @@ class ArchiveTest{
         archive.addIfNeeded(ff.calculateCoverage(c)!!)
 
 
-        val sizes = (0..50).map { archive.sampleIndividual() }
+        val sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.fitness.computeFitnessScore()}
                 .distinct()
 
@@ -316,7 +316,7 @@ class ArchiveTest{
         b.setValue(0, 1.0)
         archive.addIfNeeded(ff.calculateCoverage(b)!!)
 
-        var sizes = (0..50).map { archive.sampleIndividual() }
+        var sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
@@ -328,7 +328,7 @@ class ArchiveTest{
         c.setValue(0, 1.0)
         archive.addIfNeeded(ff.calculateCoverage(c)!!)
 
-        sizes = (0..50).map { archive.sampleIndividual() }
+        sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
@@ -348,7 +348,7 @@ class ArchiveTest{
         b.setValue(1, 1.0) //covering a different branch
         archive.addIfNeeded(ff.calculateCoverage(b)!!)
 
-        var sizes = (0..50).map { archive.sampleIndividual() }
+        var sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
@@ -361,7 +361,7 @@ class ArchiveTest{
         c.setValue(1, 1.0)
         archive.addIfNeeded(ff.calculateCoverage(c)!!)
 
-        sizes = (0..50).map { archive.sampleIndividual() }
+        sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}
                 .distinct()
 
@@ -375,7 +375,7 @@ class ArchiveTest{
         d.setValue(1, 1.0)
         archive.addIfNeeded(ff.calculateCoverage(d)!!)
 
-        var scores = (0..50).map { archive.sampleIndividual() }
+        var scores = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.fitness.computeFitnessScore()}
                 .distinct()
         assertEquals(1, scores.size)
@@ -387,7 +387,7 @@ class ArchiveTest{
         assertFalse(archive.addIfNeeded(ff.calculateCoverage(b)!!))
 
         // "d" should still be the only individual
-        scores = (0..50).map { archive.sampleIndividual() }
+        scores = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.fitness.computeFitnessScore()}
                 .distinct()
         assertEquals(1, scores.size)

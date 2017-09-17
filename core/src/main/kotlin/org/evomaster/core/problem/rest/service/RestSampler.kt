@@ -244,7 +244,7 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     override fun hasSpecialInit(): Boolean {
-        return ! adHocInitialIndividuals.isEmpty()
+        return ! adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
     }
 
     override fun resetSpecialInit() {
