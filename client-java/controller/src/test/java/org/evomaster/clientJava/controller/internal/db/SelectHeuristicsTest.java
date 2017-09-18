@@ -265,6 +265,14 @@ public class SelectHeuristicsTest {
     }
 
     @Test
+    public void testInNumericWithParenthesis(){
+
+        String sql = "select x from Foo where (x IN (10, 20))";
+
+        checkIncreasingTillCovered("x", Arrays.asList(-4, 6, 23, 12, 19), 10, sql);
+    }
+
+    @Test
     public void testInStrings(){
 
         String sql = "select x from Foo where x IN ('a1', 'e5')";

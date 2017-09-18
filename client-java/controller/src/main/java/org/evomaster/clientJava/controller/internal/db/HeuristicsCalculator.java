@@ -50,6 +50,9 @@ public class HeuristicsCalculator {
         if(exp instanceof InExpression){
             return computeInExpression((InExpression) exp, data);
         }
+        if(exp instanceof Parenthesis){
+            return computeExpression(((Parenthesis) exp).getExpression(), data);
+        }
 
         return cannotHandle(exp);
     }
