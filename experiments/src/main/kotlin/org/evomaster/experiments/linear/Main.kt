@@ -53,7 +53,7 @@ class Main {
 
                 val optima = createOptima(nTargets, range, seed.toLong())
 
-                for(inf in listOf(0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
+                for (inf in listOf(0, 1, 2, 3, 4, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100)) {
 
                     listOf(MIO, RANDOM, MOSA, WTS).forEach { a ->
                         runAlg(a, seed.toLong(), budget, nTargets, range, disruptiveP,
@@ -204,7 +204,10 @@ class Main {
             config.tournamentSize = 10 //as in MOSA paper
             config.focusedSearchActivationTime = fsat
             config.populationSize = populationSize
-            config.feedbackDirectedSampling = fds
+
+            config.feedbackDirectedSampling = if (fds)
+                EMConfig.FeedbackDirectedSampling.LAST
+            else EMConfig.FeedbackDirectedSampling.NONE
 
             val lpd = injector.getInstance(LinearProblemDefinition::class.java)
             lpd.nTargets = nTargets

@@ -2,6 +2,8 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
+import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -43,7 +45,22 @@ class Archive<T> where T : Individual {
      *          This means that an infeasible / hard target will not get
      *          its counter reset once the final local optima is reached
      */
-    private val samplingCounter = mutableMapOf<Int,Int>()
+    private val samplingCounter = mutableMapOf<Int, Int>()
+
+
+    /**
+     * Key -> id of the target
+     *
+     * Value -> keep track of how long (in number of sampled individuals)
+     *          it took last time there was an improvement for this target.
+     */
+    private val lastImprovement = mutableMapOf<Int, Int>()
+
+
+    /**
+     * Id of last target used for sampling
+     */
+    private var lastChosen: Int? = null
 
 
     fun extractSolution(): Solution<T> {
@@ -84,15 +101,12 @@ class Archive<T> where T : Individual {
         }
 
 
-        val chosenTarget = if(config.feedbackDirectedSampling){
-            toChooseFrom.minBy { t -> samplingCounter.getOrDefault(t, 0) }!!
-        } else {
-            randomness.choose(toChooseFrom)
-        }
+        val chosenTarget = chooseTarget(toChooseFrom)
+        lastChosen = chosenTarget
 
         val candidates = map[chosenTarget] ?:
-            //should never happen, unless of bug
-            throw IllegalStateException("Target $chosenTarget has no candidate individual")
+                //should never happen, unless of bug
+                throw IllegalStateException("Target $chosenTarget has no candidate individual")
 
 
         incrementCounter(chosenTarget)
@@ -100,13 +114,13 @@ class Archive<T> where T : Individual {
         sortAndShrinkIfNeeded(candidates, chosenTarget)
 
         val notTimedout = candidates.filter {
-            ! it.results.any{ res -> res is RestCallResult && res.getTimedout()}
+            !it.results.any { res -> res is RestCallResult && res.getTimedout() }
         }
 
         /*
             If possible avoid sampling tests that did timeout
          */
-        val chosen = if(! notTimedout.isEmpty()){
+        val chosen = if (!notTimedout.isEmpty()) {
             randomness.choose(notTimedout)
         } else {
             randomness.choose(candidates)
@@ -115,16 +129,66 @@ class Archive<T> where T : Individual {
         return chosen.copy()
     }
 
+    private fun chooseTarget(toChooseFrom: Set<Int>): Int {
+
+        return when (config.feedbackDirectedSampling) {
+            LAST -> toChooseFrom.minBy {
+                samplingCounter.getOrDefault(it, 0)
+            }!!
+            FOCUSED_QUICKEST ->
+                handleFocusedQuickest(toChooseFrom)
+            else ->
+                randomness.choose(toChooseFrom)
+        }
+    }
+
+    private fun handleFocusedQuickest(toChooseFrom: Set<Int>): Int {
+
+        val lc = lastChosen
+
+        if (lc != null
+                && toChooseFrom.contains(lc)
+                /*
+                    the X can happen if there was never an improvement.
+                    so we still want to try 2X times before going to another
+                    one
+                 */
+                && (samplingCounter[lc] ?: 0) < (lastImprovement[lc] ?: 10) * 2
+                ) {
+            return lc
+        }
+
+        /*
+        We can't reuse the previous target. Need to pick up
+        a new one
+        */
+
+        val index = toChooseFrom
+                .filter {
+                    val previous = lastImprovement[it]
+                    previous != null &&
+                            samplingCounter[it]!! < previous * 2
+                }
+                .minBy { lastImprovement[it]!! }
+
+        return index ?: toChooseFrom.minBy {
+            samplingCounter.getOrDefault(it, 0)
+        }!!
+    }
+
     /**
      * update counter by 1
      */
-    private fun incrementCounter(target: Int){
+    private fun incrementCounter(target: Int) {
         samplingCounter.putIfAbsent(target, 0)
         val counter = samplingCounter[target]!!
         samplingCounter.put(target, counter + 1)
     }
 
-    private fun resetCounter(target: Int){
+    private fun reportImprovement(target: Int) {
+
+        val counter = samplingCounter.getOrDefault(target, 0)
+        lastImprovement.put(target, counter)
         samplingCounter.put(target, 0)
     }
 
@@ -159,7 +223,7 @@ class Archive<T> where T : Individual {
         return ei.fitness.getViewOfData()
                 .filter { d -> d.value.distance > 0.0 }
                 .map { d -> d.key }
-                .any { k ->  map[k]?.isEmpty() ?: true}
+                .any { k -> map[k]?.isEmpty() ?: true }
     }
 
     /**
@@ -187,7 +251,7 @@ class Archive<T> where T : Individual {
                 current.add(copy)
                 added = true
                 time.newActionImprovement()
-                resetCounter(k)
+                reportImprovement(k)
 
                 if (isCovered(k)) {
                     time.newCoveredTarget()
@@ -223,7 +287,7 @@ class Archive<T> where T : Individual {
                     current[0] = copy
                     added = true
                     time.newActionImprovement()
-                    resetCounter(k)
+                    reportImprovement(k)
                 }
                 continue
             }
@@ -233,7 +297,7 @@ class Archive<T> where T : Individual {
                 current.add(copy)
                 added = true
                 time.newActionImprovement()
-                resetCounter(k)
+                reportImprovement(k)
                 time.newCoveredTarget()
                 continue
             }
@@ -248,12 +312,12 @@ class Archive<T> where T : Individual {
             val extra = copy.fitness.compareExtraToMinimize(k, current[0].fitness)
 
             val better = v.distance > currh ||
-                    (v.distance==currh && extra > 0) ||
-                    (v.distance==currh && extra == 0 && copySize < currsize)
+                    (v.distance == currh && extra > 0) ||
+                    (v.distance == currh && extra == 0 && copySize < currsize)
 
-            if(better){
+            if (better) {
                 time.newActionImprovement()
-                resetCounter(k)
+                reportImprovement(k)
             }
 
             val limit = apc.getArchiveTargetLimit()
@@ -295,7 +359,7 @@ class Archive<T> where T : Individual {
 
         list.sortWith(compareBy<EvaluatedIndividual<T>>
         { it.fitness.getHeuristic(target) }
-                .thenComparator { a, b ->  a.fitness.compareExtraToMinimize(target, b.fitness)}
+                .thenComparator { a, b -> a.fitness.compareExtraToMinimize(target, b.fitness) }
                 .thenBy { -it.individual.size() })
 
         val limit = apc.getArchiveTargetLimit()

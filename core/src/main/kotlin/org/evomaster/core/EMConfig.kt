@@ -297,7 +297,7 @@ class EMConfig {
     var endNumberOfMutations = 10
 
 
-    enum class StoppingCriterion() {
+    enum class StoppingCriterion {
         TIME,
         FITNESS_EVALUATIONS
     }
@@ -332,8 +332,15 @@ class EMConfig {
     @Min(0.0) @Max(1.0)
     var structureMutationProbability = 0.5
 
+
+    enum class FeedbackDirectedSampling {
+        NONE,
+        LAST,
+        FOCUSED_QUICKEST
+    }
+
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
-    var feedbackDirectedSampling = true
+    var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
 
     @Cfg("Define the population size in the search algorithms that use populations (eg, Genetic Algorithms)")
     @Min(1.0)
