@@ -12,6 +12,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
@@ -24,35 +25,64 @@ class RestActionBuilder {
         private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
     }
 
-    fun createActions(swagger: Swagger, actionCluster: MutableMap<String, Action>) {
+    fun createActions(swagger: Swagger,
+                      actionCluster: MutableMap<String, Action>,
+                      endpointsToSkip: List<String> = listOf()) {
 
         actionCluster.clear()
 
         //TODO check Swagger version
 
-        swagger.paths.forEach { e ->
+        var skipped = mutableListOf<String>()
 
-            val restPath = RestPath((swagger.basePath ?: "") + "/" + e.key)
+        swagger.paths
+                .filter { e ->
+                    if (endpointsToSkip.contains(e.key)) {
+                        skipped.add(e.key)
+                        false
+                    } else {
+                        true
+                    }
+                }
+                .forEach { e ->
 
-            e.value.operationMap.forEach { o ->
-                val verb = HttpVerb.from(o.key)
+                    val restPath = RestPath((swagger.basePath ?: "") + "/" + e.key)
 
-                val params = extractParams(o, swagger)
+                    e.value.operationMap.forEach { o ->
+                        val verb = HttpVerb.from(o.key)
 
-                repairParams(params, restPath)
+                        val params = extractParams(o, swagger)
 
-                val action = RestCallAction(verb, restPath, params)
+                        repairParams(params, restPath)
 
-                actionCluster.put(action.getName(), action)
+                        val action = RestCallAction(verb, restPath, params)
+
+                        actionCluster.put(action.getName(), action)
+                    }
+                }
+
+        if(skipped.size != endpointsToSkip.size){
+            val msg = "${endpointsToSkip.size} where set to be skipped, but ony ${skipped.size}" +
+                    " where found in the schema"
+            LoggingUtil.getInfoLogger().apply {
+                error(msg)
+                endpointsToSkip.filter { ! skipped.contains(it) }
+                        .forEach{ warn("Missing endpoint: $it")}
             }
+            throw SutProblemException(msg)
         }
 
         LoggingUtil.getInfoLogger().apply {
+
+            if(skipped.size != 0) {
+                info("Skipped ${skipped.size} path endpoints from the schema configuration")
+            }
+
             val n = actionCluster.size
             when (n) {
-                0 -> warn("There is _NO_ RESTful API entry point defined in the Swagger configuration")
-                1 -> info("There is only one RESTful API entry point defined in the Swagger configuration")
-                else -> info("There are $n RESTful API entry points defined in the Swagger configuration")
+                0 -> warn("There is _NO_ usable RESTful API endpoint defined in the schema configuration")
+                1 -> info("There is only one usable RESTful API endpoint defined in the schema configuration")
+                else -> info("There are $n usable RESTful API endpoints defined in the schema configuration")
             }
         }
     }
@@ -127,7 +157,7 @@ class RestActionBuilder {
                     else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
                 }
 
-            } else if (p is BodyParameter && ! shouldAvoidCreatingObject(p, swagger)) {
+            } else if (p is BodyParameter && !shouldAvoidCreatingObject(p, swagger)) {
 
                 val gene = p.schema.reference?.let { createObjectFromReference("body", it, swagger) }
                         ?: createObjectFromModel(p.schema, "body", swagger)
@@ -139,12 +169,12 @@ class RestActionBuilder {
         return params
     }
 
-    fun shouldAvoidCreatingObject(p : BodyParameter, swagger: Swagger) : Boolean{
+    fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
 
         var ref: String = p.schema.reference ?: return false
         val classDef = ref.substring(ref.lastIndexOf("/") + 1)
 
-        if(listOf("Principal", "WebRequest").contains(classDef)){
+        if (listOf("Principal", "WebRequest").contains(classDef)) {
 
             /*
                 This is/was a bug in Swagger for Spring, in which Spring request

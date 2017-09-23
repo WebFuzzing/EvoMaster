@@ -69,6 +69,11 @@ public class SutControllerTest {
             return null;
         }
 
+        @Override
+        public List<String> getEndpointsToSkip() {
+            return null;
+        }
+
 
     }
 

@@ -25,6 +25,11 @@ public class DatabaseFakeSutController extends EmbeddedSutController{
     }
 
     @Override
+    public List<String> getEndpointsToSkip() {
+        return null;
+    }
+
+    @Override
     public String startSut() {
         return "foo";
     }

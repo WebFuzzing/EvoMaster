@@ -11,14 +11,14 @@ public interface SutHandler {
     /**
      * Start a new instance of the SUT.
      * <br>
-     * This method must be blocking.
+     * This method must be blocking until the SUT is initialized.
      *
      * @return the base URL of the running SUT, eg "http://localhost:8080"
      */
     String startSut();
 
     /**
-     * Stop the system under test
+     * Stop the SUT
      */
     void stopSut();
 

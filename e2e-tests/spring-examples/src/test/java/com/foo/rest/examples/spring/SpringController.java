@@ -79,4 +79,9 @@ public abstract class SpringController extends EmbeddedSutController {
     public String getDatabaseDriverName() {
         return null;
     }
+
+    @Override
+    public List<String> getEndpointsToSkip(){
+        return null;
+    }
 }

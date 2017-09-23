@@ -39,6 +39,7 @@ public class EMController {
 
         SutInfoDto dto = new SutInfoDto();
         dto.swaggerJsonUrl = sutController.getUrlOfSwaggerJSON();
+        dto.endpointsToSkip = sutController.getEndpointsToSkip();
         dto.isSutRunning = sutController.isSutRunning();
         dto.baseUrlOfSUT = baseUrlOfSUT;
         dto.infoForAuthentication = sutController.getInfoForAuthentication();

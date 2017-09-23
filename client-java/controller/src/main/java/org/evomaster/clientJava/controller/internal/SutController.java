@@ -229,4 +229,15 @@ public abstract class SutController implements SutHandler{
     public abstract String getDatabaseDriverName();
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
+
+
+    /**
+     * When testing a REST API, there might be some endpoints that are not
+     * so important to test.
+     * For example, in Spring, health-check endpoints like "/heapdump"
+     * are not so interesting to test, and they can be very expensive to run.
+     *
+     * @return a list of endpoints (as defined in schema) to skip
+     */
+    public abstract List<String> getEndpointsToSkip();
 }

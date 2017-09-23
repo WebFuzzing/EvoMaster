@@ -28,4 +28,13 @@ public class SutInfoDto {
      * As such, the SUT might need to provide a set of valid credentials
      */
     public List<AuthenticationDto> infoForAuthentication;
+
+
+    /**
+     * When testing a REST API, there might be some endpoints that are not
+     * so important to test.
+     * For example, in Spring, health-check endpoints like "/heapdump"
+     * are not so interesting to test, and they can be very expensive to run.
+     */
+    public List<String> endpointsToSkip;
 }
