@@ -185,18 +185,34 @@ class EMConfig {
                     m.setter.call(this, opt)
 
                 } else if (returnType.isEnum) {
-                    var valueOfMethod = returnType.getDeclaredMethod("valueOf",
+                    val valueOfMethod = returnType.getDeclaredMethod("valueOf",
                             java.lang.String::class.java)
                     m.setter.call(this, valueOfMethod.invoke(null, opt))
 
                 } else {
-                    throw IllegalStateException("BUG: cannot handle type " + returnType)
+                    throw IllegalStateException("BUG: cannot handle type $returnType")
                 }
             } catch (e: Exception) {
-                throw IllegalArgumentException("Failed to handle property ${m.name}", e)
+                throw IllegalArgumentException("Failed to handle property '${m.name}'", e)
             }
 
-            //TODO constraint checks, eg Min/Max
+            val parameterValue = m.getter.call(this).toString()
+
+            m.annotations.find { it is Min }?.also {
+                it as Min
+                if(parameterValue.toDouble() < it.min){
+                    throw IllegalArgumentException("Failed to handle Min ${it.min} constraint for" +
+                            " parameter '${m.name}' with value $parameterValue")
+                }
+            }
+
+            m.annotations.find { it is Max }?.also {
+                it as Max
+                if(parameterValue.toDouble() > it.max){
+                    throw IllegalArgumentException("Failed to handle Max ${it.max} constraint for" +
+                            " parameter '${m.name}' with value $parameterValue")
+                }
+            }
         }
 
         return true
