@@ -88,8 +88,7 @@ class Main {
 
         private fun printLogo() {
 
-            LoggingUtil.getInfoLogger().info(
-                    """
+            val logo =  """
  _____          ___  ___          _
 |  ___|         |  \/  |         | |
 | |____   _____ | .  . | __ _ ___| |_ ___ _ __
@@ -98,7 +97,8 @@ class Main {
 \____/ \_/ \___/\_|  |_/\__,_|___/\__\___|_|
 
                     """
-            )
+
+            LoggingUtil.getInfoLogger().info("\u001B[34m$logo\u001B[0m")
         }
 
         private fun printVersion() {
