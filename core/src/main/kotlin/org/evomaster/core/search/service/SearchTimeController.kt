@@ -28,16 +28,25 @@ class SearchTimeController {
 
     private var startTime = 0L
 
+    private val listeners = mutableListOf<SearchListener>()
+
 
     fun startSearch(){
         searchStarted = true
         startTime = System.currentTimeMillis()
     }
 
-    fun newIndividualEvaluation() = evaluatedIndividuals++
+    fun addListener(listener: SearchListener){
+        listeners.add(listener)
+    }
+
+    fun newIndividualEvaluation() {
+        evaluatedIndividuals++
+    }
 
     fun newActionEvaluation(n: Int = 1) {
         evaluatedActions += n
+        listeners.forEach{it.newActionEvaluated()}
     }
 
     fun newCoveredTarget(){
@@ -69,7 +78,7 @@ class SearchTimeController {
     }
 
     /**
-     * Return how much percentage [0,1] of search budget has been used so far
+     * Return how much percentage `[0,1]` of search budget has been used so far
      */
     fun percentageUsedBudget() : Double{
 

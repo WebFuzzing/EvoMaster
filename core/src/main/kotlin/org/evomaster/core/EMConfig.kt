@@ -313,7 +313,7 @@ class EMConfig {
             " But then of course the test generation will take longer." +
             " Only applicable depending on the stopping criterion.")
     @Min(1.0)
-    var maxActionEvaluations = 1000;
+    var maxActionEvaluations = 1000
 
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")
@@ -324,6 +324,14 @@ class EMConfig {
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
     var appendToStatisticsFile = false
+
+    @Cfg("If positive, check how often, in percentage % of the budget, to collect statistics snapshots." +
+            " For example, every 5% of the time.")
+    @Max(50.0)
+    var snapshotInterval = -1.0
+
+    @Cfg("Where the snapshot file (if any) is going to be written (in CSV format)")
+    var snapshotStatisticsFile = "snapshot.csv"
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "-"

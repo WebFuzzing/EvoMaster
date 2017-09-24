@@ -35,3 +35,4 @@ e2e-tests/spring-examples/target/
 experiments/target/
 /e2e-tests/spring-examples/src/em/EvoMasterTest.java
 /e2e-tests/dropwizard-examples/src/em/
+/snapshot.csv

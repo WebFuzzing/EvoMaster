@@ -241,6 +241,10 @@ class Main {
             val statistics = injector.getInstance(Statistics::class.java)
 
             statistics.writeStatistics(solution)
+
+            if(config.snapshotInterval > 0){
+                statistics.writeSnapshot()
+            }
         }
     }
 }

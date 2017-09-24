@@ -33,7 +33,7 @@ class Archive<T> where T : Individual {
      *
      * Value -> sorted list of best individuals for that target
      */
-    private val map = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
+    private val populations = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
 
     /**
      * Key -> id of the target
@@ -65,10 +65,18 @@ class Archive<T> where T : Individual {
 
     fun extractSolution(): Solution<T> {
 
-        val overall = FitnessValue(0.0)
+        /*
+            Note: no equals() is defined, so Set is based
+            on refs to the heap.
+            This is not an issue, as each individual is copied
+            when sampled.
+            Here, as an individual can go to many populations,
+            we want to avoiding it counting it several times.
+         */
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
+        val overall = FitnessValue(0.0)
 
-        map.entries.forEach { e ->
+        populations.entries.forEach { e ->
             if (isCovered(e.key)) {
                 val ind = e.value[0]
                 uniques.add(ind)
@@ -81,7 +89,7 @@ class Archive<T> where T : Individual {
     }
 
 
-    fun isEmpty() = map.isEmpty()
+    fun isEmpty() = populations.isEmpty()
 
     /**
      * Get a copy of an individual in the archive.
@@ -97,14 +105,14 @@ class Archive<T> where T : Individual {
         var toChooseFrom = notCoveredTargets()
         if (toChooseFrom.isEmpty()) {
             //this means all current targets are covered
-            toChooseFrom = map.keys.toSet()
+            toChooseFrom = populations.keys.toSet()
         }
 
 
         val chosenTarget = chooseTarget(toChooseFrom)
         lastChosen = chosenTarget
 
-        val candidates = map[chosenTarget] ?:
+        val candidates = populations[chosenTarget] ?:
                 //should never happen, unless of bug
                 throw IllegalStateException("Target $chosenTarget has no candidate individual")
 
@@ -197,10 +205,19 @@ class Archive<T> where T : Individual {
      */
     fun encounteredTargetDescriptions(): List<String> {
 
-        return map.entries
+        return populations.entries
                 .map { e -> "key ${e.key}: ${idMapper.getDescriptiveId(e.key)} , size=${e.value.size}" }
                 .sorted()
     }
+
+    fun numberOfCoveredTargets(): Int {
+        return populations.keys.stream().filter { isCovered(it) }.count().toInt()
+    }
+
+    fun numberOfReachedButNotCoveredTargets(): Int {
+        return populations.keys.stream().filter { ! isCovered(it) }.count().toInt()
+    }
+
 
     /**
      * Get all known targets that are not fully covered
@@ -215,15 +232,16 @@ class Archive<T> where T : Individual {
             iterating over them is expensive
          */
 
-        return map.keys.filter { k -> !isCovered(k) }.toSet()
+        return populations.keys.filter { !isCovered(it) }.toSet()
     }
+
 
     fun wouldReachNewTarget(ei: EvaluatedIndividual<T>): Boolean {
 
         return ei.fitness.getViewOfData()
-                .filter { d -> d.value.distance > 0.0 }
-                .map { d -> d.key }
-                .any { k -> map[k]?.isEmpty() ?: true }
+                .filter { it.value.distance > 0.0 }
+                .map { it.key }
+                .any { populations[it]?.isEmpty() ?: true }
     }
 
     /**
@@ -244,7 +262,7 @@ class Archive<T> where T : Individual {
                 continue
             }
 
-            val current = map.getOrPut(k, { mutableListOf() })
+            val current = populations.getOrPut(k, { mutableListOf() })
 
             //ind does reach a new target?
             if (current.isEmpty()) {
@@ -371,7 +389,7 @@ class Archive<T> where T : Individual {
 
     fun isCovered(target: Int): Boolean {
 
-        val current = map[target] ?: return false
+        val current = populations[target] ?: return false
 
         if (current.size != 1) {
             return false
