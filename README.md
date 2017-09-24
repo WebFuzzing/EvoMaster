@@ -100,12 +100,12 @@ Available options can be queried by using:
 
 The most important options are:
 
-* `--maxTimeInSeconds <Int>` 
+* `--maxTimeInSeconds <Int>`        
 Maximum number of seconds allowed for the search. 
 **The more time is allowed, the better results one can expect**.
 But then of course the test generation will take longer.
 
-* `--outputFolder <String>`
+* `--outputFolder <String>`   
 The path directory of where the generated test classes 
 should be saved to.
  
