@@ -62,8 +62,8 @@ class RestActionBuilder {
                 }
 
         if(skipped.size != endpointsToSkip.size){
-            val msg = "${endpointsToSkip.size} where set to be skipped, but ony ${skipped.size}" +
-                    " where found in the schema"
+            val msg = "${endpointsToSkip.size} were set to be skipped, but only ${skipped.size}" +
+                    " were found in the schema"
             LoggingUtil.getInfoLogger().apply {
                 error(msg)
                 endpointsToSkip.filter { ! skipped.contains(it) }
