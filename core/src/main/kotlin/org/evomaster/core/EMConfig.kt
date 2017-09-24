@@ -397,4 +397,7 @@ class EMConfig {
             "If larger than that, a response will not be stored internally in EM during the test generation. "+
             "This is needed to avoid running out of memory.")
     var maxResponseByteSize = 1_000_000
+
+    @Cfg("Whether to print how much search done so far")
+    var showProgress = true
 }

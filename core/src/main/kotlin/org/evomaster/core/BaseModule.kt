@@ -26,6 +26,9 @@ class BaseModule(val args: Array<String>) : AbstractModule() {
 
         bind(Statistics::class.java)
                 .asEagerSingleton()
+
+        bind(SearchStatusUpdater::class.java)
+                .asEagerSingleton()
     }
 
     @Provides @Singleton
