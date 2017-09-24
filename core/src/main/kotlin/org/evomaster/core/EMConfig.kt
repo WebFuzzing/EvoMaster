@@ -147,12 +147,10 @@ class EMConfig {
      * Update the values of the properties based on the options
      * chosen on the command line
      *
-     * @return whether the update was successful. An update might
-     *         fail if constraints are violated
      *
      * @throws IllegalArgumentException if there are constraint violations
      */
-    fun updateProperties(options: OptionSet): Boolean {
+    fun updateProperties(options: OptionSet) {
 
         getConfigurationProperties().forEach { m ->
 
@@ -215,7 +213,14 @@ class EMConfig {
             }
         }
 
-        return true
+        when(stoppingCriterion){
+            StoppingCriterion.TIME -> if(maxActionEvaluations != defaultMaxActionEvaluations){
+                throw IllegalArgumentException("Changing number of max actions, but stopping criterion is time")
+            }
+            StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds){
+                throw IllegalArgumentException("Changing number of max seconds, but stopping criterion is based on fitness evaluations")
+            }
+        }
     }
 
 //------------------------------------------------------------------------
@@ -319,8 +324,10 @@ class EMConfig {
     }
 
     @Cfg("Stopping criterion for the search")
-    var stoppingCriterion = StoppingCriterion.FITNESS_EVALUATIONS
+    var stoppingCriterion = StoppingCriterion.TIME
 
+
+    val defaultMaxActionEvaluations = 1000
 
     @Cfg("Maximum number of action evaluations for the search." +
             " A fitness evaluation can be composed of 1 or more actions," +
@@ -329,7 +336,18 @@ class EMConfig {
             " But then of course the test generation will take longer." +
             " Only applicable depending on the stopping criterion.")
     @Min(1.0)
-    var maxActionEvaluations = 1000
+    var maxActionEvaluations = defaultMaxActionEvaluations
+
+
+    val defaultMaxTimeInSeconds = 60
+
+    @Cfg("Maximum number of seconds allowed for the search." +
+            " The more time is allowed, the better results one can expect." +
+            " But then of course the test generation will take longer." +
+            " Only applicable depending on the stopping criterion.")
+    @Min(1.0)
+    var maxTimeInSeconds = defaultMaxTimeInSeconds
+
 
     @Cfg("Whether or not writing statistics of the search process. " +
             "This is only needed when running experiments with different parameter settings")

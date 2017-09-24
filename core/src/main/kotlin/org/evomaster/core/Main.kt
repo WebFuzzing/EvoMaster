@@ -121,6 +121,8 @@ class Main {
 
             writeStatistics(injector, solution)
 
+            val config = injector.getInstance(EMConfig::class.java)
+
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
@@ -128,6 +130,12 @@ class Main {
                 info("Last action improvement: ${stc.lastActionImprovement}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                 info("Covered targets: ${solution.overall.coveredTargets()}")
+
+                if(config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
+                        config.maxTimeInSeconds == config.defaultMaxTimeInSeconds){
+                    info("\u001B[32mTo obtain better results, use the '--maxTimeInSeconds' option " +
+                            "to run the search for longer\u001B[0m")
+                }
             }
 
             return solution
@@ -192,7 +200,7 @@ class Main {
         }
 
 
-        fun checkState(injector: Injector): ControllerInfoDto {
+        private fun checkState(injector: Injector): ControllerInfoDto {
 
             val rc = injector.getInstance(RemoteController::class.java)
 
@@ -200,7 +208,7 @@ class Main {
                     throw IllegalStateException(
                             "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
 
-            if (!(dto.isInstrumentationOn ?: false)) {
+            if (dto.isInstrumentationOn != true) {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
             }
 

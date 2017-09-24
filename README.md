@@ -100,11 +100,9 @@ Available options can be queried by using:
 
 The most important options are:
 
-* `--maxActionEvaluations <Int>` 
-Maximum number of action evaluations for the search. 
-A test case can be composed of 1 or more actions, 
-like for example REST calls or SQL setups.
-**The more actions are allowed, the better results one can expect**.
+* `--maxTimeInSeconds <Int>` 
+Maximum number of seconds allowed for the search. 
+**The more time is allowed, the better results one can expect**.
 But then of course the test generation will take longer.
 
 * `--outputFolder <String>`

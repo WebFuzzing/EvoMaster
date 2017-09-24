@@ -68,13 +68,7 @@ class SearchTimeController {
 
     fun shouldContinueSearch(): Boolean{
 
-        if(configuration.stoppingCriterion.equals(
-                EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
-
-            return evaluatedActions < configuration.maxActionEvaluations
-        }
-
-        return false //TODO
+        return percentageUsedBudget() < 1.0
     }
 
     /**
@@ -82,12 +76,16 @@ class SearchTimeController {
      */
     fun percentageUsedBudget() : Double{
 
-        if(configuration.stoppingCriterion.equals(
-                EMConfig.StoppingCriterion.FITNESS_EVALUATIONS))    {
+        return when(configuration.stoppingCriterion){
+            EMConfig.StoppingCriterion.FITNESS_EVALUATIONS ->
+                evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()
 
-            return evaluatedActions.toDouble() / configuration.maxActionEvaluations.toDouble()
-        } else {
-            return -1.0; //TODO
+            EMConfig.StoppingCriterion.TIME ->
+                (System.currentTimeMillis() - startTime).toDouble() /
+                        (configuration.maxTimeInSeconds.toDouble() * 1000.0)
+
+            else ->
+                throw IllegalStateException("Not supported stopping criterion")
         }
     }
 }
