@@ -60,7 +60,11 @@ class Main {
 
                 initAndRun(args)
 
-                LoggingUtil.getInfoLogger().info("EvoMaster process has completed successfully")
+                LoggingUtil.getInfoLogger().apply {
+                    info("EvoMaster process has completed successfully")
+                    info("Use \u001B[32m--help\u001B[0m and visit \u001B[34mwww.evomaster.org\u001B[0m to" +
+                            " learn more about available options")
+                }
 
             } catch (e: Exception) {
 
