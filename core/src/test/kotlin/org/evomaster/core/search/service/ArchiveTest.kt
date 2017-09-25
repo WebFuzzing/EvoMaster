@@ -33,6 +33,8 @@ class ArchiveTest{
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
+
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
     }
 
     @Test
@@ -253,18 +255,19 @@ class ArchiveTest{
 
         val a = OneMaxIndividual(2)
         a.setValue(0, 0.25)
-        archive.addIfNeeded(ff.calculateCoverage(a)!!)
-
+        var added = archive.addIfNeeded(ff.calculateCoverage(a)!!)
+        assertTrue(added)
 
         val b = OneMaxIndividual(3)
         b.setValue(0, 0.25)
-        archive.addIfNeeded(ff.calculateCoverage(b)!!)
+        added = archive.addIfNeeded(ff.calculateCoverage(b)!!)
+        assertTrue(added)
 
         //when this inserted, "b" should be removed, as the longest
         val c = OneMaxIndividual(1)
         c.setValue(0, 0.25)
-        archive.addIfNeeded(ff.calculateCoverage(c)!!)
-
+        added = archive.addIfNeeded(ff.calculateCoverage(c)!!)
+        assertTrue(added)
 
         val sizes = (1..50).map { archive.sampleIndividual() }
                 .map{ind -> ind.individual.size()}

@@ -201,6 +201,7 @@ class Main {
             config.algorithm = algType
             config.seed = seed
             config.maxActionEvaluations = budget
+            config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
             config.tournamentSize = 10 //as in MOSA paper
             config.focusedSearchActivationTime = fsat
             config.populationSize = populationSize
