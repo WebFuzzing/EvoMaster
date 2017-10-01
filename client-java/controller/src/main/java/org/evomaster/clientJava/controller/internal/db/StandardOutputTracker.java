@@ -15,14 +15,14 @@ import java.util.Objects;
  * (1) to file,
  * (2) with a logger,
  * (3) to standard output.
+ *
  * <p>
  * (1) is a recipe for disaster: handling generated files, and file locks on Windows.
  * (2) is a nightmare as well, as who knows what the SUT is configuring.
  * (3) is likely the cleanest, easiest option. But it means we need to
  * handle System.out
  *
- * <br />
- *
+ * <p>
  * This class can be used for any analyses of the SUT output
  */
 public class StandardOutputTracker extends ByteArrayOutputStream{//extends PrintStream {

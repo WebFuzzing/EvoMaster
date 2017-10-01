@@ -25,8 +25,8 @@ public class SelectHeuristics {
      * Therefore, we need to add them, otherwise it
      * would not be possible to calculate any heuristics
      *
-     * @param select
-     * @return
+     * @param select the string containing the SQL SELECT command
+     * @return  the modified SQL SELECT
      */
     public static String addFieldsToSelect(String select) {
 
@@ -154,7 +154,7 @@ public class SelectHeuristics {
      * possible imaginable DB are not scalable.
      * So, we just try to do some best effort to cover most cases
      *
-     * @param select
+     * @param select the string containing the SQL SELECT command
      * @return map from alias to table name
      */
     public static Map<String, String> getTableAliases(Select select) {
