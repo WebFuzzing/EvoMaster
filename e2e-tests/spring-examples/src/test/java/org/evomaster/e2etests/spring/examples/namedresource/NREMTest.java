@@ -20,7 +20,7 @@ public class NREMTest extends NRTestBase {
                 "--createTests", "false",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1000",
+                "--maxActionEvaluations", "2000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         };
 
