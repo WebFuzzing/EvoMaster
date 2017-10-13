@@ -3,6 +3,11 @@
 
 # EvoMaster: A Tool For Automatically Generating System-Level Test Cases
 
+
+![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
+
+<br>
+
 EvoMaster ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
 that automatically generates system-level test cases.
 Internally, it uses an *evolutionary algorithm* and *bytecode analysis* to be
