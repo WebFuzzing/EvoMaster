@@ -227,14 +227,18 @@ public abstract class ExternalSutController extends SutController {
 
         if(! completed){
             SimpleLogger.error("SUT has not started properly within " + timeout + " seconds");
-            SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            if(errorBuffer != null) {
+                SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            }
             stopSut();
             return null;
         }
 
         if (!isSutRunning()) {
             SimpleLogger.error("SUT started but then terminated. Likely a possible misconfiguration");
-            SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            if(errorBuffer != null) {
+                SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            }
             //note: actual process might still be running due to Java Agent we started
             stopSut();
             return null;
@@ -243,7 +247,9 @@ public abstract class ExternalSutController extends SutController {
         if (!initialized) {
             //this could happen if SUT is hanging for some reason
             SimpleLogger.error("SUT is started but not initialized");
-            SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            if(errorBuffer != null) {
+                SimpleLogger.error("SUT output:\n" + errorBuffer.toString());
+            }
             //note: actual process might still be running due to Java Agent we started
             stopSut();
             return null;
