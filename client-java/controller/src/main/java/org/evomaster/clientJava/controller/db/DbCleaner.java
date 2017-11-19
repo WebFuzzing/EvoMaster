@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -45,8 +46,11 @@ public class DbCleaner {
         }
     }
 
-
     public static void clearDatabase_H2(Connection connection) {
+        clearDatabase_H2(connection, null);
+    }
+
+    public static void clearDatabase_H2(Connection connection, List<String> tablesToSkip) {
         /*
             Code based on
             https://stackoverflow.com/questions/8523423/reset-embedded-h2-database-periodically
@@ -66,6 +70,10 @@ public class DbCleaner {
             }
             rs.close();
             for (String table : tables) {
+                if(tablesToSkip.stream().anyMatch(t -> t.equalsIgnoreCase(table))){
+                    continue;
+                }
+
                 s.executeUpdate("TRUNCATE TABLE " + table);
             }
 
