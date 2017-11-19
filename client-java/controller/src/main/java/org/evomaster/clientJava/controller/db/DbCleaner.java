@@ -70,7 +70,8 @@ public class DbCleaner {
             }
             rs.close();
             for (String table : tables) {
-                if(tablesToSkip.stream().anyMatch(t -> t.equalsIgnoreCase(table))){
+                if(tablesToSkip != null &&
+                        tablesToSkip.stream().anyMatch(t -> t.equalsIgnoreCase(table))){
                     continue;
                 }
 
