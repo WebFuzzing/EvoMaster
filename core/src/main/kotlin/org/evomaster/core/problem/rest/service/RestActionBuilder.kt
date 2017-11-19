@@ -152,7 +152,7 @@ class RestActionBuilder {
                 when (p.`in`) {
                     "query" -> params.add(QueryParam(name, gene))
                     "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
-                    "header" -> throw IllegalStateException("TODO header")
+                    "header" -> params.add(HeaderParam(name, gene))
                     "formData" -> params.add(FormParam(name, gene))
                     else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
                 }

@@ -1,0 +1,1641 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Api Documentation",
+    "version": "1.0",
+    "title": "Api Documentation",
+    "termsOfService": "urn:tos",
+    "contact": {},
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "projects-api",
+      "description": "the projects API"
+    },
+    {
+      "name": "admin-controller",
+      "description": "Admin Controller"
+    },
+    {
+      "name": "contributors-api",
+      "description": "the contributors API"
+    },
+    {
+      "name": "statistics-api",
+      "description": "the statistics API"
+    },
+    {
+      "name": "languages-api",
+      "description": "the languages API"
+    },
+    {
+      "name": "fetch-controller",
+      "description": "Fetch Controller"
+    },
+    {
+      "name": "config-controller",
+      "description": "Config Controller"
+    },
+    {
+      "name": "health-mvc-endpoint",
+      "description": "Health Mvc Endpoint"
+    },
+    {
+      "name": "basic-error-controller",
+      "description": "Basic Error Controller"
+    }
+  ],
+  "paths": {
+    "/config": {
+      "get": {
+        "tags": [
+          "config-controller"
+        ],
+        "summary": "config",
+        "operationId": "configUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/config/scoring.project": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "configScoringProjects",
+        "operationId": "configScoringProjectsUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=utf-8"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "scoringProject",
+            "description": "scoringProject",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-Organizations",
+            "in": "header",
+            "description": "X-Organizations",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/contributors": {
+      "get": {
+        "tags": [
+          "contributors-api"
+        ],
+        "summary": "Contributor",
+        "description": "The Contributors endpoint returns all information like name, url, commits count, \nprojects count of all the Contributors for the selected filter. \n",
+        "operationId": "contributorsGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items to retrieve. Default is 5.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset the list of returned results by this amount. Default is zero.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Date from which to start fetching records from database(default = current_date)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Date till which records will be fetched from database(default = current_date)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "parameter by which result should be sorted. '-' means descending order (default is count of commit)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "query paramater for search query (this will be contributor names prefix)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "0": {
+            "description": "Unexpected error"
+          },
+          "200": {
+            "description": "An array of Contributors of selected Github organization",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Contributor"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/delete": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "deleteAll",
+        "operationId": "deleteAllUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=utf-8"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/error": {
+      "get": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingHEAD",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingOPTIONS",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "errorHtml",
+        "operationId": "errorHtmlUsingPATCH",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ModelAndView"
+            }
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/export": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "exportJson",
+        "operationId": "exportJsonUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=utf-8"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/DatabaseDto"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/fetch": {
+      "get": {
+        "tags": [
+          "fetch-controller"
+        ],
+        "summary": "fetch",
+        "operationId": "fetchUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=utf-8"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/vnd.spring-boot.actuator.v1+json",
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/health.json": {
+      "get": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/vnd.spring-boot.actuator.v1+json",
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/import": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "importJson",
+        "operationId": "importJsonUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=utf-8"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "dto",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/DatabaseDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/init": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "init",
+        "operationId": "initUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json;charset=utf-8"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/languages": {
+      "get": {
+        "tags": [
+          "languages-api"
+        ],
+        "summary": "Project programming language",
+        "description": "The languages endpoint returns information about the languages used for projects by selected Github Organizations order by the number of projects using the programming language.",
+        "operationId": "languagesGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items to retrieve. Default is 5.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset the list of returned results by this amount. Default is zero.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "query paramater for search query (this can be language name prefix)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "0": {
+            "description": "Unexpected error"
+          },
+          "200": {
+            "description": "An array of programming language used and count of projects using it.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Language"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "tags": [
+          "projects-api"
+        ],
+        "summary": "Project",
+        "description": "The Projects endpoint returns all information like name,description, url, stars count, commits count, forks count, contributors count, score, languages used, last pushed of all the projects for the selected filter.",
+        "operationId": "projectsGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Number of items to retrieve. Default is 5.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Offset the list of returned results by this amount. Default is zero.",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Date from which to start fetching records from database(default = current_date)",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Date till which records will be fetched from database(default = current_date)",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          },
+          {
+            "name": "sortBy",
+            "in": "query",
+            "description": "parameter by which result should be sorted. '-' means descending order (count of star,count of commit, count of forks, count of contributors, score). Default is descending order of score.",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "description": "query paramater for search query (this will be project names prefix)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "language",
+            "in": "query",
+            "description": "query paramater for filtering by primary programming language",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "0": {
+            "description": "Unexpected error"
+          },
+          "200": {
+            "description": "An array of Projects of selected Github organization",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Project"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/statistics": {
+      "get": {
+        "tags": [
+          "statistics-api"
+        ],
+        "summary": "General Statistics of list of Github.com Organizations",
+        "description": "The Statistics endpoint returns snapshot of statistics over a given period of time of the organization \nGithub account. Statistics contains information of the count of all private projects,  public projects,              members, teams, contributors, stars, forks, size, programming languages, tags of the list of Github.com              Organizations.\n",
+        "operationId": "statisticsGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Date from which to start fetching statistics records from database(default = current date)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Date till which statistics records will be fetched from database(default = current date)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "0": {
+            "description": "Unexpected error"
+          },
+          "200": {
+            "description": "An array of Statistics over selected period of time.",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Statistics"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/statistics/contributors": {
+      "get": {
+        "tags": [
+          "statistics-api"
+        ],
+        "summary": "statisticsContributorGet",
+        "operationId": "statisticsContributorGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Date from which to start fetching statistics records from database(default = current date)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Date till which statistics records will be fetched from database(default = current date)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ContributorStats"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/statistics/languages": {
+      "get": {
+        "tags": [
+          "statistics-api"
+        ],
+        "summary": "statisticsLanguagesGet",
+        "operationId": "statisticsLanguagesGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Date from which to start fetching statistics records from database(default = current date)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Date till which statistics records will be fetched from database(default = current date)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LanguageStats"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/statistics/projects": {
+      "get": {
+        "tags": [
+          "statistics-api"
+        ],
+        "summary": "statisticsProjectGet",
+        "operationId": "statisticsProjectGetUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "organizations",
+            "in": "query",
+            "description": "List of github.com organizations to scan(comma seperated)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "description": "Date from which to start fetching statistics records from database(default = current date)",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "description": "Date till which statistics records will be fetched from database(default = current date)",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ProjectStats"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Contributor": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "description": "the GitHub User ID of the Contributor. Part of the primary key. See official GitHub REST API guide."
+        },
+        "key": {
+          "$ref": "#/definitions/ContributorKey"
+        },
+        "loginId": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of contributor"
+        },
+        "organizationId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "the GitHub ID of the organization. Part of the primary key. See official GitHub REST API guide."
+        },
+        "organizationName": {
+          "type": "string",
+          "description": "Organization of the Contributor."
+        },
+        "organizationalCommitsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of organizational commits."
+        },
+        "organizationalProjectsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of organization projects of contributor."
+        },
+        "personalCommitsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of personal commits."
+        },
+        "personalProjectsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of personal projects of contributor."
+        },
+        "snapshotDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Contributor snapshot date. Part of the primary key."
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of contributor"
+        }
+      },
+      "description": "A contributor is a (GitHub) user that may have contributed to projects. Equals to a GitHub acocunt. See https://developer.github.com/v3/users/#get-a-single-user"
+    },
+    "ContributorKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "organizationId": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "snapshotDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ContributorStats": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "organization_commit_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "organization_name": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "organization_project_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "personal_commit_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "personal_project_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "snapshot_dates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "DatabaseDto": {
+      "type": "object",
+      "properties": {
+        "contributors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Contributor"
+          }
+        },
+        "projects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Project"
+          }
+        },
+        "statistics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Statistics"
+          }
+        }
+      }
+    },
+    "Language": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the programming language used."
+        },
+        "percentage": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Usage percentage of programming language."
+        },
+        "projectsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of projects using it."
+        }
+      },
+      "description": "A programming language as it is used in source code of GitHub repositories. Compare with https://developer.github.com/v3/repos/#list-languages"
+    },
+    "LanguageStats": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "project_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "snapshot_dates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    },
+    "ModelAndView": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": "object"
+        },
+        "modelMap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "reference": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "100",
+            "101",
+            "102",
+            "103",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "226",
+            "300",
+            "301",
+            "302",
+            "303",
+            "304",
+            "305",
+            "307",
+            "308",
+            "400",
+            "401",
+            "402",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "411",
+            "412",
+            "413",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "426",
+            "428",
+            "429",
+            "431",
+            "451",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "506",
+            "507",
+            "508",
+            "509",
+            "510",
+            "511"
+          ]
+        },
+        "view": {
+          "$ref": "#/definitions/View"
+        },
+        "viewName": {
+          "type": "string"
+        }
+      }
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "commitsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of commits for the project."
+        },
+        "contributorsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of contributors for project."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of project"
+        },
+        "externalContributorsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of external contributors for project."
+        },
+        "forksCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of forks of project."
+        },
+        "gitHubProjectId": {
+          "type": "integer",
+          "format": "int64",
+          "description": "the GitHub ID of the repository. Part of the primary key. See official GitHub REST API guide."
+        },
+        "image": {
+          "type": "string",
+          "description": "Image url of project"
+        },
+        "languageList": {
+          "type": "array",
+          "description": "List of programming languages of project",
+          "items": {
+            "type": "string"
+          }
+        },
+        "lastPushed": {
+          "type": "string",
+          "description": "Last pushed data of project."
+        },
+        "maintainers": {
+          "type": "array",
+          "description": "List of maintainers of project",
+          "items": {
+            "type": "string"
+          }
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of project"
+        },
+        "organizationName": {
+          "type": "string",
+          "description": "Organization of the Project."
+        },
+        "primaryLanguage": {
+          "type": "string",
+          "description": "Primary programming language of project"
+        },
+        "score": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Score of project."
+        },
+        "snapshotDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Project snapshot date. Part of the primary key."
+        },
+        "starsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of stars for the project."
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of project"
+        },
+        "url": {
+          "type": "string",
+          "description": "URL of project"
+        }
+      },
+      "description": "Represents a GitHub repository. See https://developer.github.com/v3/repos/"
+    },
+    "ProjectStats": {
+      "type": "object",
+      "properties": {
+        "commit_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "contributors_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "description": {
+          "type": "string"
+        },
+        "fork_counts": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "name": {
+          "type": "string"
+        },
+        "organization_name": {
+          "type": "string"
+        },
+        "primary_language": {
+          "type": "string"
+        },
+        "scores": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "snapshot_dates": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "Statistics": {
+      "type": "object",
+      "properties": {
+        "allContributorsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of contributors."
+        },
+        "allForksCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of forks."
+        },
+        "allSizeCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of projects."
+        },
+        "allStarsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of stars."
+        },
+        "externalContributorsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of external contributors."
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "description": "the GitHub ID of the organization. Part of the primary key. See official GitHub REST API guide."
+        },
+        "key": {
+          "$ref": "#/definitions/StatisticsKey"
+        },
+        "membersCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of memebers."
+        },
+        "organizationName": {
+          "type": "string",
+          "description": "Organization name."
+        },
+        "privateProjectCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of private projects."
+        },
+        "programLanguagesCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of programming languages used."
+        },
+        "publicProjectCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of public projects."
+        },
+        "snapshotDate": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Statistics snapshot date. Part of the primary key."
+        },
+        "tagsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of tags."
+        },
+        "teamsCount": {
+          "type": "integer",
+          "format": "int32",
+          "description": "Count of teams."
+        }
+      },
+      "description": "Represents the statistics of a GitHub organization. See https://developer.github.com/v3/orgs/"
+    },
+    "StatisticsKey": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "snapshotDate": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "View": {
+      "type": "object",
+      "properties": {
+        "contentType": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

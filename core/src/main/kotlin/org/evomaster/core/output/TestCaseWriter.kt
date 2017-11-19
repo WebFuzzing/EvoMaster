@@ -2,8 +2,8 @@ package org.evomaster.core.output
 
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 
 
@@ -100,7 +100,7 @@ class TestCaseWriter {
 
         addRestCallLines(call, lines, res, baseUrlOfSut)
 
-        if(! res.getTimedout()) {
+        if (!res.getTimedout()) {
             /*
                 Fail test if exception is not thrown, but not if it was a timeout,
                 otherwise the test would become flaky
@@ -127,7 +127,7 @@ class TestCaseWriter {
         handleFirstLine(call, lines, res)
         lines.indent(2)
 
-        handleAuth(call, lines)
+        handleHeaders(call, lines)
 
         handleBody(call, lines)
 
@@ -154,7 +154,7 @@ class TestCaseWriter {
                 lines.addEmpty()
                 lines.deindent(2)
 
-                val baseUri: String = if(call.locationId != null){
+                val baseUri: String = if (call.locationId != null) {
                     locationVar(call.locationId!!)
                 } else {
                     call.path.resolveOnlyPath(call.parameters)
@@ -173,7 +173,7 @@ class TestCaseWriter {
         lines.addEmpty()
         if (call.saveLocation && !res.stopping) {
 
-            if(! res.getHeuristicsForChainedLocation()) {
+            if (!res.getHeuristicsForChainedLocation()) {
                 lines.append("${locationVar(call.path.lastElement())} = ")
             } else {
                 lines.append("String id_$counter = ")
@@ -253,12 +253,19 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleAuth(call: RestCallAction, lines: Lines) {
-        if (call.auth !is NoAuth) {
-            call.auth.headers.forEach { h ->
-                lines.add(".header(\"${h.name}\", \"${h.value}\") // ${call.auth.name}")
-            }
+    private fun handleHeaders(call: RestCallAction, lines: Lines) {
+
+        val prechosenAuthHeaders = call.auth.headers.map { it.name }
+
+        call.auth.headers.forEach {
+            lines.add(".header(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
         }
+
+        call.parameters.filterIsInstance<HeaderParam>()
+                .filter { !prechosenAuthHeaders.contains(it.name) }
+                .forEach {
+                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString()})")
+                }
     }
 
     private fun getAcceptHeader(): String {

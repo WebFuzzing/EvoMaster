@@ -26,6 +26,7 @@ abstract class Gene(var name: String) {
      * Once printed, it would be equivalent to the actual value, eg
      *
      * 1 -> "1" -> printed as 1
+     *
      * "foo" -> "\"foo\"" -> printed as "foo"
      */
     abstract fun getValueAsPrintableString() : String

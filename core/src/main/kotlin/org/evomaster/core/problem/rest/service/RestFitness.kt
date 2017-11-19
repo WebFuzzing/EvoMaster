@@ -72,12 +72,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         log.debug("Done initializing {}", RestFitness::class.simpleName)
     }
 
-    override open fun reinitialize() : Boolean{
+    override open fun reinitialize(): Boolean {
 
         try {
             rc.stopSUT()
             initialize()
-        } catch(e: Exception){
+        } catch (e: Exception) {
             log.warn("Failed to re-initialize the SUT: $e")
             return false
         }
@@ -110,13 +110,13 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }
 
-            if(!ok){
+            if (!ok) {
                 break
             }
 
-            if(configuration.heuristicsForSQL) {
+            if (configuration.heuristicsForSQL) {
                 val extra = rc.getExtraHeuristics()
-                if(extra == null) {
+                if (extra == null) {
                     log.warn("Cannot retrieve extra heuristics")
                     return null
                 }
@@ -137,7 +137,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val ids = randomness.choose(archive.notCoveredTargets(), 100)
 
         val dto = rc.getTargetCoverage(ids)
-        if(dto == null) {
+        if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null
         }
@@ -220,16 +220,23 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         val builder = client.target(fullUri).request()
 
-        if (a.auth !is NoAuth) {
-            a.auth.headers.forEach { h ->
-                builder.header(h.name, h.value)
-            }
+        a.auth.headers.forEach {
+            builder.header(it.name, it.value)
         }
 
+        val prechosenAuthHeaders = a.auth.headers.map { it.name }
+
         /*
-            TODO: When handling headers, check that they do not
-            conflict with the auth ones
+            TODO: optimization, avoid mutating header gene if anyway
+            using pre-chosen one
          */
+
+        a.parameters.filterIsInstance<org.evomaster.core.problem.rest.param.HeaderParam>()
+                .filter { !prechosenAuthHeaders.contains(it.name) }
+                .forEach {
+                    builder.header(it.name, it.gene.getValueAsRawString())
+                }
+
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -243,7 +250,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val body = a.parameters.find { p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
-        if(body != null && !forms.isBlank()){
+        if (body != null && !forms.isBlank()) {
             throw IllegalStateException("Issue in Swagger configuration: both Body and FormData definitions in the same endpoint")
         }
 
@@ -267,16 +274,16 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val rcr = RestCallResult()
         actionResults.add(rcr)
 
-        val response = try{
+        val response = try {
             invocation.invoke()
-        } catch (e: ProcessingException){
+        } catch (e: ProcessingException) {
 
             //this can happen for example if call ends up in an infinite redirection loop
-            if((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException){
+            if ((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException) {
                 rcr.setInfiniteLoop(true)
                 rcr.setErrorMessage(e.cause!!.message!!)
                 return false
-            } else if(e.cause is SocketTimeoutException) {
+            } else if (e.cause is SocketTimeoutException) {
                 /*
                     This is very tricky. In theory it shouldn't happen that a REST call
                     does timeout (eg 10 seconds). But it might happen due to glitch,
@@ -310,7 +317,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                  */
                 val body = response.readEntity(String::class.java)
 
-                if(body.length < configuration.maxResponseByteSize) {
+                if (body.length < configuration.maxResponseByteSize) {
                     rcr.setBody(body)
                 } else {
                     log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
@@ -331,7 +338,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
 
-        if (! handleSaveLocation(a, response, rcr, chainState)) return false
+        if (!handleSaveLocation(a, response, rcr, chainState)) return false
 
         return true
     }
@@ -363,7 +370,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                  */
                 val id = rcr.getResourceId()
 
-                if(id != null && hasParameterChild(a)){
+                if (id != null && hasParameterChild(a)) {
                     location = a.resolvedPath() + "/" + id
                     rcr.setHeuristicsForChainedLocation(true)
                 }
