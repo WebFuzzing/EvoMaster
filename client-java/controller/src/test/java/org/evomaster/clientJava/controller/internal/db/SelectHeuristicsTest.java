@@ -15,6 +15,21 @@ public class SelectHeuristicsTest {
 
 
     @Test
+    public void testCount(){
+
+        String select = "select count(*) as n from Foo f where f.id=1";
+
+        String withFields =  SelectHeuristics.addFieldsToSelect(select);
+        String withoutConstraints = SelectHeuristics.removeConstraints(withFields);
+        String withoutOperations = SelectHeuristics.removeOperations(withoutConstraints);
+
+        assertFalse(withoutOperations.contains("where"));
+        assertTrue(withoutOperations.contains("id"));
+        assertFalse(withoutOperations.contains("count"));
+    }
+
+
+    @Test
     public void testAddFields() {
         String select = "select f.x from Foo f where f.y=5";
 

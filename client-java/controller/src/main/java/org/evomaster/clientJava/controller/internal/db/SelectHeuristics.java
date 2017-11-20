@@ -3,6 +3,7 @@ package org.evomaster.clientJava.controller.internal.db;
 import net.sf.jsqlparser.expression.Alias;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
+import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
@@ -11,6 +12,7 @@ import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.controller.db.QueryResult;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -30,12 +32,7 @@ public class SelectHeuristics {
      */
     public static String addFieldsToSelect(String select) {
 
-        Select stmt;
-        try {
-            stmt = (Select) CCJSqlParserUtil.parse(select);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Select SQL: " + select + "\n" + e.getMessage(), e);
-        }
+        Select stmt = asStatement(select);
 
         SelectBody selectBody = stmt.getSelectBody();
         if (selectBody instanceof PlainSelect) {
@@ -76,20 +73,41 @@ public class SelectHeuristics {
         return stmt.toString();
     }
 
+    public static String removeOperations(String select){
+
+        Select stmt = asStatement(select);
+        SelectBody selectBody = stmt.getSelectBody();
+
+        if (selectBody instanceof PlainSelect) {
+            PlainSelect plainSelect = (PlainSelect) selectBody;
+
+            plainSelect.getSelectItems()
+                    .removeIf(item ->
+                            ((SelectExpressionItem)item).getExpression() instanceof Function);
+        }
+
+        return stmt.toString();
+    }
+
 
     public static String removeConstraints(String select) {
 
+        Select stmt = asStatement(select);
+
+        SelectBody selectBody = stmt.getSelectBody();
+        handleSelectBody(selectBody);
+
+        return stmt.toString();
+    }
+
+    private static Select asStatement(String select) {
         Select stmt;
         try {
             stmt = (Select) CCJSqlParserUtil.parse(select);
         } catch (Exception e) {
             throw new IllegalArgumentException("Invalid Select SQL: " + select + "\n" + e.getMessage(), e);
         }
-
-        SelectBody selectBody = stmt.getSelectBody();
-        handleSelectBody(selectBody);
-
-        return stmt.toString();
+        return stmt;
     }
 
     private static void handleSelectBody(SelectBody selectBody) {
@@ -110,12 +128,7 @@ public class SelectHeuristics {
 
     public static double computeDistance(String select, QueryResult data) {
 
-        Select stmt;
-        try {
-            stmt = (Select) CCJSqlParserUtil.parse(select);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Select SQL: " + select + "\n" + e.getMessage(), e);
-        }
+        Select stmt = asStatement(select);
 
         if (data.isEmpty()) {
             //if no data, we have no info whatsoever
