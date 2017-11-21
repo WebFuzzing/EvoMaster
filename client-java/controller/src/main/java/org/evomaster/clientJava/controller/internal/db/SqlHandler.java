@@ -95,14 +95,14 @@ public class SqlHandler {
             return Double.MAX_VALUE;
         }
 
-        select = SelectHeuristics.addFieldsToSelect(select);
-        select = SelectHeuristics.removeConstraints(select);
-        select = SelectHeuristics.removeOperations(select);
+        String modified = SelectHeuristics.addFieldsToSelect(select);
+        modified = SelectHeuristics.removeConstraints(modified);
+        modified = SelectHeuristics.removeOperations(modified);
 
         QueryResult data;
 
         try {
-             data = SqlScriptRunner.execCommand(connection, select);
+             data = SqlScriptRunner.execCommand(connection, modified);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
