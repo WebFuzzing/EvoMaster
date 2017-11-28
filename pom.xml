@@ -59,8 +59,8 @@
         <java.version>1.8</java.version>
         <kotlin.version>1.1.50</kotlin.version>
         <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
-        <junit.jupiter.version>5.0.0</junit.jupiter.version>
-        <junit.platform.version>1.0.0</junit.platform.version>
+        <junit.jupiter.version>5.0.2</junit.jupiter.version>
+        <junit.platform.version>1.0.2</junit.platform.version>
         <dropwizard.version>1.1.2</dropwizard.version>
         <swagger.version>1.5.13</swagger.version> <!-- 1.5.14 breaks tests -->
         <springboot.version>1.5.4.RELEASE</springboot.version>
@@ -449,9 +449,12 @@
                         </dependency>
                     </dependencies>
                     <configuration>
+                        <forkCount>1</forkCount>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <argLine>-Xms1024m -Xmx2048m</argLine>
                     </configuration>
+
                 </plugin>
 
                 <!-- To compile Kotlin code -->
