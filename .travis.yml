@@ -14,4 +14,4 @@ cache:
 notifications:
   email: false
 
-script: mvn clean verify
+script: mvn clean verify -Dmaven.test.redirectTestOutputToFile=true
