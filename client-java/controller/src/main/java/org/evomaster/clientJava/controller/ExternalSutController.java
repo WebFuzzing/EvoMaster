@@ -11,6 +11,7 @@ import org.evomaster.clientJava.instrumentation.external.ServerController;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -120,6 +121,8 @@ public abstract class ExternalSutController extends SutController {
 
     @Override
     public String startSut() {
+
+        SimpleLogger.info("Going to start the SUT");
 
         initialized = false;
 
@@ -269,6 +272,8 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public void stopSut() {
 
+        SimpleLogger.info("Going to stop the SUT");
+
         preStop();
 
         if (serverController != null) {
@@ -368,12 +373,12 @@ public abstract class ExternalSutController extends SutController {
                         errorBuffer = new StringBuffer(4096);
                     }
 
-                    BufferedReader buffer = new BufferedReader(
-                            new InputStreamReader(process.getInputStream()));
+                    Scanner scanner = new Scanner(new BufferedReader(
+                            new InputStreamReader(process.getInputStream())));
 
-                    Scanner scanner = new Scanner(buffer);
-                    String line = scanner.nextLine();
-                    while (line != null && !Thread.interrupted()) {
+                    while (scanner.hasNextLine()) {
+
+                        String line = scanner.nextLine();
 
                         if(line.startsWith(P6SpyFormatter.PREFIX)){
                             StandardOutputTracker.handleSqlLine(this, line);
@@ -386,16 +391,10 @@ public abstract class ExternalSutController extends SutController {
                             errorBuffer.append("\n");
                         }
 
-                        if (line != null && line.contains(getLogMessageOfInitializedServer())) {
+                        if (line.contains(getLogMessageOfInitializedServer())) {
                             initialized = true;
                             errorBuffer = null; //no need to keep track of it if everything is ok
                             latch.countDown();
-                        }
-
-                        if (scanner.hasNext()) {
-                            line = scanner.nextLine();
-                        } else {
-                            break;
                         }
                     }
 
@@ -403,6 +402,14 @@ public abstract class ExternalSutController extends SutController {
                         if we arrive here, it means the process has no more output.
                         this could happen if it was started with some misconfiguration
                      */
+                    if(! process.isAlive()){
+                        SimpleLogger.warn("SUT has terminated");
+                    } else {
+                        SimpleLogger.warn("SUT is still alive, but its output was closed before" +
+                                " producing the initialization message.");
+                    }
+
+
                     latch.countDown();
 
                 } catch (Exception e) {
