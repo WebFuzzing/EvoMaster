@@ -18,7 +18,9 @@ able to generate effective test cases.
 At the moment, EvoMaster targets RESTful APIs compiled to 
 JVM bytecode (e.g., Java and Kotlin).
 
-This project is in early stage of development. Documentation is still under construction. 
+This project is in early stage of development. Documentation is still under construction.
+A short [video](https://youtu.be/7zTLUlH-BNI) shows the use of EvoMaster on one of the 
+case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 To compile the project, use the Maven command:
 
