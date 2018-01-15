@@ -22,6 +22,11 @@ This project is in early stage of development. Documentation is still under cons
 A short [video](https://youtu.be/7zTLUlH-BNI) shows the use of EvoMaster on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
+
+EvoMaster is currently (2018-2021) funded by a 7.7 million Norwegian Kroner grant 
+by the Norwegian Research Council, as part of the 
+Frinatek project <i>Evolutionary Enterprise Testing</i>.  
+
 To compile the project, use the Maven command:
 
 `mvn  install -DskipTests`
