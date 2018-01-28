@@ -173,10 +173,10 @@ public abstract class ExternalSutController extends SutController {
             }
         }
 
-        if (!command.stream().anyMatch(s -> s.startsWith("-Xmx"))) {
+        if (command.stream().noneMatch(s -> s.startsWith("-Xmx"))) {
             command.add("-Xmx2G");
         }
-        if (!command.stream().anyMatch(s -> s.startsWith("-Xms"))) {
+        if (command.stream().noneMatch(s -> s.startsWith("-Xms"))) {
             command.add("-Xms1G");
         }
 
