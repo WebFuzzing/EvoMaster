@@ -13,6 +13,8 @@
 
     <inceptionYear>2016</inceptionYear>
     <name>EvoMaster</name>
+    <description>A tool for automatically generating system-level test cases</description>
+    <url>www.evomaster.org</url>
     <packaging>pom</packaging>
 
     <modules>
@@ -32,6 +34,36 @@
         <developerConnection>scm:git:https://github.com/EMResearch/evomaster.git</developerConnection>
         <url>https://github.com/EMResearch/evomaster/tree/master</url>
     </scm>
+
+
+    <profiles>
+        <profile>
+            <!--
+                   Profile needed when making a deployment to Maven Central.
+                   Note: we upload only the client library, not the whole EvoMaster.
+                   However, we also need this root pom.xml. So,
+
+                   On the root:
+                   mvn  -N -Pdeployment -DskipTests  deploy
+
+                   On "client-java":
+                   mvn clean source:jar javadoc:jar -Pdeployment -DskipTests  deploy
+              -->
+            <id>deployment</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.plugins</groupId>
+                        <artifactId>nexus-staging-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 
     <developers>
         <developer>

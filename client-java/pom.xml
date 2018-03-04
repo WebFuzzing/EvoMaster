@@ -29,29 +29,4 @@
         </dependencies>
     </dependencyManagement>
 
-
-    <profiles>
-        <profile>
-            <!--
-                   mvn clean source:jar javadoc:jar -Pdeployment -DskipTests  deploy
-
-                   Profile needed when making a deployment to Maven Central.
-                   Note: we upload only the client library, not the whole EvoMaster.
-              -->
-            <id>deployment</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.sonatype.plugins</groupId>
-                        <artifactId>nexus-staging-maven-plugin</artifactId>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
-
 </project>
