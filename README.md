@@ -251,11 +251,9 @@ There are many ways in which you can contribute:
 ### Further Resources
 
 The development of EvoMaster is rooted in academia.
-Academic publications based on EvoMaster can be 
-found [here](docs/publications/publications.md).
+Academic publications based on EvoMaster and slides of presentations can be 
+found [here](docs/publications.md).
 
-Slides of presentations about EvoMaster can be
-found [here](docs/slides/slides.md).
 
 ### License
 EvoMaster's source code is released under the LGPL (v3) license.
