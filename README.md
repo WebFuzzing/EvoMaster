@@ -219,13 +219,13 @@ then you can use `evomaster.jar` to finally generate test cases.
 
 ### How to Contribute
 
-There are many ways in which you can contribute:
-
-* If you found EvoMaster of any use, the easiest
-  way to show appreciation is to *star* it.
+There are many ways in which you can contribute.
+If you found EvoMaster of any use, the easiest
+way to show appreciation is to *star* it.
+Issues and feature requests can be reported on
+the [issues](https://github.com/EMResearch/EvoMaster/issues) page:  
   
-* *Bugs* can be reported in the [issues](https://github.com/EMResearch/EvoMaster/issues) page of 
-  Github. As for any bug report, the more detailed
+* *Bugs*: as for any bug report, the more detailed
   you can be the better.
   If you are using EvoMaster on an open source project,
   please provide links to it, as then it is much easier
@@ -233,19 +233,13 @@ There are many ways in which you can contribute:
   
 * If you are trying to use EvoMaster, but the instructions
   in these notes are not enough to get you started, 
-  then it means it
-  is a "bug" in the documentation, which then would need
-  to be clarified. Please report it as any other
-  bug in the [issues](https://github.com/EMResearch/EvoMaster/issues) page.
+  then it means it is a "bug" in the documentation, which then would need
+  to be clarified. 
   
 * *Feature Requests*: to improve EvoMaster,
   we are very keen to receive
   feature requests, although of course we cannot
   guarantee when they are going to be implemented. 
-  To track them, those requests should be written
-  under the [issues](https://github.com/EMResearch/EvoMaster/issues) page, 
-  like the bug reports.
-  
     
 
 ### Further Resources
