@@ -23,8 +23,8 @@ A short [video](https://youtu.be/7zTLUlH-BNI) shows the use of EvoMaster on one 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 
-EvoMaster is currently (2018-2021) funded by a 7.7 million Norwegian Kroner grant 
-by the Norwegian Research Council, as part of the 
+EvoMaster is currently (2018-2021) funded by a 7.8 million Norwegian Kroner grant 
+by the Research Council of Norway (RCN), as part of the 
 Frinatek project <i>Evolutionary Enterprise Testing</i>.  
 
 To compile the project, use the Maven command:
