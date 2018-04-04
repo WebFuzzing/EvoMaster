@@ -14,10 +14,11 @@ import org.evomaster.core.search.service.SearchAlgorithm
  * and we use a population algorithm as Genetic Algorithm (GA).
  * But still use an archive to do not lose best individuals.
  * <br>
- * Note: unless some unknown side-effect, or bug, WTS should be
- * definitively worse than MIO.
- * The implementation here is only experiments, not something to
- * use in EvoMaster
+ * Note: unless some unknown side-effect, or bug, WTS would be
+ * worse than MIO on average.
+ * This implementation was written mainly to run experiments on comparisons
+ * of search algorithms, and not really something to
+ * use regularly in EvoMaster
  */
 class WtsAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
