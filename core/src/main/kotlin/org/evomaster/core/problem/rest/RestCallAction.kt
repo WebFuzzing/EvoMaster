@@ -99,6 +99,10 @@ class RestCallAction(
     Plus, x-www-form-urlencoded and encoding of URIs are not the same!!!
 
     REALLY: WTF?!?
+
+    TODO: update/verify based on
+    https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
+
      */
     fun getBodyFormData(): String {
         return parameters.filter { p -> p is FormParam }
