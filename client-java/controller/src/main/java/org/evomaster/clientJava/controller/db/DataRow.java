@@ -77,7 +77,7 @@ public class DataRow {
                             /*
                                 TODO: this does not cover all possible cases, as in theory
                                 there can be many unnamed tables (eg results of sub-selects)
-                                with same colum names. At this moment, we would not
+                                with same column names. At this moment, we would not
                                 be able to distinguish them
                              */
                             || t.equalsIgnoreCase(SelectHeuristics.UNNAMED_TABLE)
