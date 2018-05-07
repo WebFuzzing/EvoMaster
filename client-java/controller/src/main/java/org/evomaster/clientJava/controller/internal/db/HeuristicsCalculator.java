@@ -44,13 +44,13 @@ public class HeuristicsCalculator {
         if (exp instanceof OrExpression) {
             return computeOr((OrExpression) exp, data);
         }
-        if( exp instanceof IsNullExpression){
+        if (exp instanceof IsNullExpression) {
             return computeIsNull((IsNullExpression) exp, data);
         }
-        if(exp instanceof InExpression){
+        if (exp instanceof InExpression) {
             return computeInExpression((InExpression) exp, data);
         }
-        if(exp instanceof Parenthesis){
+        if (exp instanceof Parenthesis) {
             return computeExpression(((Parenthesis) exp).getExpression(), data);
         }
 
@@ -62,10 +62,10 @@ public class HeuristicsCalculator {
         //TODO can left be a list???
 
         ItemsList itemsList = exp.getRightItemsList();
-        if(itemsList instanceof ExpressionList){
+        if (itemsList instanceof ExpressionList) {
             ExpressionList list = (ExpressionList) itemsList;
 
-            if(exp.isNot()) {
+            if (exp.isNot()) {
 
                 double max = 0;
 
@@ -110,10 +110,10 @@ public class HeuristicsCalculator {
 
         Object x = getValue(exp.getLeftExpression(), data);
 
-        if(x == null && ! exp.isNot()){
+        if (x == null && !exp.isNot()) {
             return 0d;
         }
-        if(x != null && exp.isNot()){
+        if (x != null && exp.isNot()) {
             return 0d;
         }
 
@@ -165,7 +165,7 @@ public class HeuristicsCalculator {
             return computeComparison(left.toString(), right.toString(), exp);
         }
 
-        if(left instanceof Boolean && right instanceof Boolean){
+        if (left instanceof Boolean && right instanceof Boolean) {
             return computeBooleanComparison((Boolean) left, (Boolean) right, exp);
         }
 
@@ -176,8 +176,8 @@ public class HeuristicsCalculator {
         return cannotHandle(exp);
     }
 
-    private double computeBooleanComparison(boolean x, boolean y, ComparisonOperator exp){
-        if(! checkEqualOrNotOperator(exp)){
+    private double computeBooleanComparison(boolean x, boolean y, ComparisonOperator exp) {
+        if (!checkEqualOrNotOperator(exp)) {
             return cannotHandle(exp);
         }
 
@@ -191,15 +191,15 @@ public class HeuristicsCalculator {
         return 1d;
     }
 
-    private boolean checkEqualOrNotOperator(ComparisonOperator exp){
-        return  (exp instanceof EqualsTo) || (exp instanceof NotEqualsTo);
+    private boolean checkEqualOrNotOperator(ComparisonOperator exp) {
+        return (exp instanceof EqualsTo) || (exp instanceof NotEqualsTo);
     }
 
     private double computeNullComparison(Object x, Object y, ComparisonOperator exp) {
 
         assert x == null || y == null;
 
-        if(! checkEqualOrNotOperator(exp)){
+        if (!checkEqualOrNotOperator(exp)) {
             return cannotHandle(exp);
         }
 
@@ -236,7 +236,7 @@ public class HeuristicsCalculator {
         if (exp instanceof EqualsTo) {
             return StringTransformer.getLeftAlignmentDistance(a, b);
         } else if (exp instanceof NotEqualsTo) {
-            if(a.equals(b)){
+            if (a.equals(b)) {
                 return Double.MAX_VALUE;
             } else {
                 return 0d;

@@ -91,6 +91,6 @@ public class DataRow {
     }
 
     public String getAsLine() {
-        return String.join(",", values.stream().map(obj -> obj.toString()).collect(Collectors.toList()));
+        return values.stream().map(obj -> obj.toString()).collect(Collectors.joining(","));
     }
 }
