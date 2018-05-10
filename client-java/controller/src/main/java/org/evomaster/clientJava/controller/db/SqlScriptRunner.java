@@ -54,10 +54,10 @@ public class SqlScriptRunner {
      *
      * @param reader - the source of the script
      */
-    public void runScript(Connection connection, Reader reader) {
+    public static void runScript(Connection connection, Reader reader) {
         Objects.requireNonNull(reader);
 
-        runCommands(connection, readCommands(reader));
+        runCommands(connection, new SqlScriptRunner().readCommands(reader));
     }
 
     public static void runCommands(Connection connection, List<String> commands) {

@@ -1,9 +1,6 @@
 package org.evomaster.clientJava.controller.internal.db.schema;
 
-import org.evomaster.clientJava.controllerApi.dto.database.ColumnDto;
-import org.evomaster.clientJava.controllerApi.dto.database.DatabaseType;
-import org.evomaster.clientJava.controllerApi.dto.database.DbSchemaDto;
-import org.evomaster.clientJava.controllerApi.dto.database.TableDto;
+import org.evomaster.clientJava.controllerApi.dto.database.*;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -74,7 +71,13 @@ public class SchemaExtractor {
 
             ResultSet fks = md.getImportedKeys(null, null, tableDto.name);
             while (fks.next()) {
-                //TODO
+                //TODO need to see how to handle case of multi-columns
+
+                ForeignKeyDto fkDto = new ForeignKeyDto();
+                fkDto.columns.add(fks.getString("FKCOLUMN_NAME"));
+                fkDto.targetTable = fks.getString("PKTABLE_NAME");
+
+                tableDto.foreignKeys.add(fkDto);
             }
             fks.close();
         }
