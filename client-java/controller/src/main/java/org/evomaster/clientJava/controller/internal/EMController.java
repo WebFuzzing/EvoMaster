@@ -43,6 +43,7 @@ public class EMController {
         dto.isSutRunning = sutController.isSutRunning();
         dto.baseUrlOfSUT = baseUrlOfSUT;
         dto.infoForAuthentication = sutController.getInfoForAuthentication();
+        dto.sqlSchemaDto = sutController.getSqlDatabaseSchema();
 
         return dto;
     }
@@ -138,7 +139,7 @@ public class EMController {
         Set<Integer> ids;
 
         try {
-            ids = Arrays.asList(idList.split(",")).stream()
+            ids = Arrays.stream(idList.split(","))
                     .filter(s -> !s.trim().isEmpty())
                     .map(Integer::parseInt)
                     .collect(Collectors.toSet());
@@ -153,7 +154,7 @@ public class EMController {
             throw new WebApplicationException(msg, 500);
         }
 
-        list.stream().forEach(t -> {
+        list.forEach(t -> {
             TargetInfoDto info = new TargetInfoDto();
             info.id = t.mappedId;
             info.value = t.value;

@@ -1,8 +1,6 @@
 package org.evomaster.clientJava.controller.db;
 
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.Reader;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -58,6 +56,16 @@ public class SqlScriptRunner {
         Objects.requireNonNull(reader);
 
         runCommands(connection, new SqlScriptRunner().readCommands(reader));
+    }
+
+    public static void runScriptFromResourceFile(Connection connection, String resourcePath){
+        try {
+            InputStream in = SqlScriptRunner.class.getResourceAsStream(resourcePath);
+            runScript(connection, new InputStreamReader(in));
+            in.close();
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
     }
 
     public static void runCommands(Connection connection, List<String> commands) {

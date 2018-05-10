@@ -1,5 +1,7 @@
 package org.evomaster.clientJava.controllerApi.dto;
 
+import org.evomaster.clientJava.controllerApi.dto.database.DbSchemaDto;
+
 import java.util.List;
 
 public class SutInfoDto {
@@ -37,4 +39,11 @@ public class SutInfoDto {
      * are not so interesting to test, and they can be very expensive to run.
      */
     public List<String> endpointsToSkip;
+
+
+    /**
+     * If the application is using a SQL database, then we need to
+     * know its schema to be able to do operations on it.
+     */
+    public DbSchemaDto sqlSchemaDto;
 }

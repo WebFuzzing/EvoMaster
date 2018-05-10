@@ -8,9 +8,11 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.SutHandler;
 import org.evomaster.clientJava.controller.internal.db.SqlHandler;
+import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
+import org.evomaster.clientJava.controllerApi.dto.database.DbSchemaDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -36,6 +38,11 @@ public abstract class SutController implements SutHandler{
     private final SqlHandler sqlHandler = new SqlHandler();
 
     private Server controllerServer;
+
+    /**
+     * If using a SQL Database, gather info about its schema
+     */
+    private DbSchemaDto schemaDto;
 
     /**
      * Start the controller as a RESTful server.
@@ -147,6 +154,32 @@ public abstract class SutController implements SutHandler{
 
         return dto;
     }
+
+
+    /**
+     * Extra information about the SQL Database Schema, if any is present.
+     * Note: this is extracted by querying the database itself.
+     * So it must be up and running.
+     *
+     * @see SutController#getConnection()
+     */
+    public final DbSchemaDto getSqlDatabaseSchema(){
+        if(schemaDto != null){
+            return schemaDto;
+        }
+
+        if(getConnection() == null){
+            return null;
+        }
+
+        try {
+            return SchemaExtractor.extract(getConnection());
+        } catch (Exception e) {
+            SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
+            return null;
+        }
+    }
+
 
     /**
      * Re-initialize all internal data to enable a completely new search phase

@@ -1,4 +1,4 @@
-package org.evomaster.clientJava.controller.internal.db.schema;
+package org.evomaster.clientJava.controller.internal.db;
 
 import org.evomaster.clientJava.controllerApi.dto.database.*;
 

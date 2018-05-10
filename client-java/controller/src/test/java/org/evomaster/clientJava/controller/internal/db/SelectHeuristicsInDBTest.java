@@ -20,48 +20,22 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class DatabaseTest {
-
-    /*
-        Useful link:
-        https://www.tutorialspoint.com/sql/index.htm
-     */
-
-    private static Connection connection;
+public class SelectHeuristicsInDBTest extends DatabaseTestTemplate{
 
 
-    @BeforeAll
-    public static void initClass() throws Exception {
-        InstrumentingAgent.initP6Spy("org.h2.Driver");
-
-        connection = DriverManager.getConnection("jdbc:p6spy:h2:mem:db_test", "sa", "");
-    }
-
-    @BeforeEach
-    public void initTest() throws Exception {
-
-        /*
-            Not supported in H2
-            SqlScriptRunner.execCommand(connection, "DROP DATABASE db_test;");
-            SqlScriptRunner.execCommand(connection, "CREATE DATABASE db_test;");
-        */
-
-        //custom H2 command
-        SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;");
-    }
 
 
     @Test
     public void testBase() throws Exception {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
 
-        QueryResult res = SqlScriptRunner.execCommand(connection, "select * from Foo");
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "select * from Foo");
         assertTrue(res.isEmpty());
 
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (4)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (4)");
 
-        res = SqlScriptRunner.execCommand(connection, "select * from Foo");
+        res = SqlScriptRunner.execCommand(getConnection(), "select * from Foo");
         assertFalse(res.isEmpty());
     }
 
@@ -69,10 +43,10 @@ public class DatabaseTest {
     @Test
     public void testParentheses() throws Exception{
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (5)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (5)");
 
-        QueryResult res = SqlScriptRunner.execCommand(connection, "select * from Foo where x = (5)");
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "select * from Foo where x = (5)");
         assertFalse(res.isEmpty());
     }
 
@@ -80,12 +54,12 @@ public class DatabaseTest {
     @Test
     public void testConstants() throws Exception {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (4)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (4)");
 
         String select = "select x, 1 as y, null as z, 'bar' as w from Foo";
 
-        QueryResult res = SqlScriptRunner.execCommand(connection, select);
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), select);
         assertFalse(res.isEmpty());
 
         DataRow row = res.seeRows().get(0);
@@ -100,13 +74,13 @@ public class DatabaseTest {
 
         String select = "select t.a, t.b from (select x as a, 1 as b from Foo where x<10) t where a>3";
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (1)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (4)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (7)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (20)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (1)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (4)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (7)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (20)");
 
-        QueryResult res = SqlScriptRunner.execCommand(connection, select);
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), select);
         assertEquals(2, res.size());
     }
 
@@ -114,13 +88,14 @@ public class DatabaseTest {
     @Test
     public void testHeuristic() throws Exception {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x) VALUES (10)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (10)");
 
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
             String url = start(starter);
+            url += BASE_PATH + EXTRA_HEURISTICS;
 
             given().accept(ContentType.JSON)
                     .get(url)
@@ -128,7 +103,7 @@ public class DatabaseTest {
                     .statusCode(200)
                     .body("toMinimize.size()", is(0));
 
-            SqlScriptRunner.execCommand(connection, "SELECT x FROM Foo WHERE x = 12");
+            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 12");
 
             given().accept(ContentType.JSON)
                     .get(url)
@@ -137,7 +112,7 @@ public class DatabaseTest {
                     .body("toMinimize.size()", is(1))
                     .body("toMinimize[0]", greaterThan(0f));
 
-            SqlScriptRunner.execCommand(connection, "SELECT x FROM Foo WHERE x = 10");
+            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10");
 
             given().accept(ContentType.JSON)
                     .get(url)
@@ -166,8 +141,8 @@ public class DatabaseTest {
     @Test
     public void testVarNotInSelect() throws Exception {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT, y INT)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x, y) VALUES (0, 0)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)");
 
         int y = 42;
         String select = "select f.x from Foo f where f.y=" + y;
@@ -177,14 +152,15 @@ public class DatabaseTest {
 
         try {
             String url = start(starter);
+            url += BASE_PATH + EXTRA_HEURISTICS;
 
-            SqlScriptRunner.execCommand(connection, select);
+            SqlScriptRunner.execCommand(getConnection(), select);
 
             double a = getFirstAndDelete(url);
             assertTrue(a > 0d);
 
-            SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (x, y) VALUES (1, " + y + ")");
-            SqlScriptRunner.execCommand(connection, select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")");
+            SqlScriptRunner.execCommand(getConnection(), select);
 
             double b = getFirstAndDelete(url);
             assertTrue(b < a);
@@ -198,12 +174,12 @@ public class DatabaseTest {
     @Test
     public void testInnerJoin() throws Exception {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Bar(id INT Primary Key, value INT)");
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(id INT Primary Key, value INT)");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(id INT Primary Key, value INT, bar_id INT, " +
                 "CONSTRAINT fk FOREIGN KEY (bar_id) REFERENCES Bar(id) )");
 
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Bar (id, value) VALUES (0, 0)");
-        SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (0, 0)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (0, 0, 0)");
 
         int x = 10;
         int y = 20;
@@ -215,28 +191,29 @@ public class DatabaseTest {
 
         try {
             String url = start(starter);
+            url += BASE_PATH + EXTRA_HEURISTICS;
 
-            SqlScriptRunner.execCommand(connection, select);
+            SqlScriptRunner.execCommand(getConnection(), select);
 
             double a = getFirstAndDelete(url);
             assertTrue(a > 0d);
 
-            SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (id, value, bar_id) VALUES (1, " + x + ", 0)");
-            SqlScriptRunner.execCommand(connection, select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (1, " + x + ", 0)");
+            SqlScriptRunner.execCommand(getConnection(), select);
 
             double b = getFirstAndDelete(url);
             assertTrue(b < a);
 
-            SqlScriptRunner.execCommand(connection, "INSERT INTO Bar (id, value) VALUES (1, " + y + ")");
-            SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (id, value, bar_id) VALUES (2, 0, 1)");
-            SqlScriptRunner.execCommand(connection, select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, " + y + ")");
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (2, 0, 1)");
+            SqlScriptRunner.execCommand(getConnection(), select);
 
             double c = getFirstAndDelete(url);
             assertTrue(c < b);
 
-            SqlScriptRunner.execCommand(connection, "INSERT INTO Bar (id, value) VALUES (2, " + y + ")");
-            SqlScriptRunner.execCommand(connection, "INSERT INTO Foo (id, value, bar_id) VALUES (3, " + x + ", 2)");
-            SqlScriptRunner.execCommand(connection, select);
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (2, " + y + ")");
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (3, " + x + ", 2)");
+            SqlScriptRunner.execCommand(getConnection(), select);
 
             double d = getFirstAndDelete(url);
             assertTrue(d < c);
@@ -247,25 +224,7 @@ public class DatabaseTest {
         }
     }
 
-    private String start(InstrumentedSutStarter starter) {
-        boolean started = starter.start();
-        assertTrue(started);
 
-        int port = starter.getControllerServerPort();
-
-        startSut(port);
-
-        return "http://localhost:" + port + BASE_PATH + EXTRA_HEURISTICS;
-    }
-
-
-    private void startSut(int port) {
-        given().contentType(ContentType.JSON)
-                .body(new SutRunDto(true, false))
-                .put("http://localhost:" + port + BASE_PATH + RUN_SUT_PATH)
-                .then()
-                .statusCode(204);
-    }
 
     private Double getFirstAndDelete(String url) {
         double value = Double.parseDouble(given().accept(ContentType.JSON)
@@ -276,12 +235,6 @@ public class DatabaseTest {
         given().delete(url).then().statusCode(204);
 
         return value;
-    }
-
-    private InstrumentedSutStarter getInstrumentedSutStarter() {
-        DatabaseFakeSutController sutController = new DatabaseFakeSutController(connection);
-        sutController.setControllerPort(0);
-        return new InstrumentedSutStarter(sutController);
     }
 
 }
