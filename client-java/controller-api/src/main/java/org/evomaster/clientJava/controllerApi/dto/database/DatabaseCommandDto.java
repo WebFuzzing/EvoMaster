@@ -1,7 +1,8 @@
 package org.evomaster.clientJava.controllerApi.dto.database;
 
-public class SqlCommandDto {
+public class DatabaseCommandDto {
 
-    public String sql;
+
+    public String command;
 
 }

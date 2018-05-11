@@ -93,11 +93,12 @@ public class QueryResult {
             return "EMPTY";
         }
 
-        String header = String.join(",", variableDescriptors.stream()
-                .map(d -> d.toString()).collect(Collectors.toList()));
+        String header =  variableDescriptors.stream()
+                .map(d -> d.toString())
+                .collect(Collectors.joining(","));
 
-        return header + String.join("",
-                        rows.stream().map(r -> "\n" + r.getAsLine()).collect(Collectors.toList())
-                );
+        return header + rows.stream()
+                .map(r -> "\n" + r.getAsLine())
+                .collect(Collectors.joining());
     }
 }

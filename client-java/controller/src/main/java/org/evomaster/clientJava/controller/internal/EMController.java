@@ -1,13 +1,16 @@
 package org.evomaster.clientJava.controller.internal;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
+import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.*;
+import org.evomaster.clientJava.controllerApi.dto.database.DatabaseCommandDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -191,5 +194,24 @@ public class EMController {
     public void newAction(@FormParam("index") int index) {
 
         sutController.newAction(index);
+    }
+
+
+    @Path(ControllerConstants.DATABASE_COMMAND)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public void executeDatabaseCommand(DatabaseCommandDto dto) {
+
+        Connection connection = sutController.getConnection();
+        if (connection == null) {
+            throw new WebApplicationException("No active database connection", 400);
+        }
+
+        try {
+            SqlScriptRunner.execCommand(connection, dto.command);
+        } catch (Exception e) {
+            throw new WebApplicationException(
+                    "Failed to execute database command: " + e.getMessage(), 400);
+        }
     }
 }

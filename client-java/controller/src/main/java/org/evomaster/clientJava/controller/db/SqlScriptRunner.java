@@ -138,6 +138,45 @@ public class SqlScriptRunner {
         return list;
     }
 
+    /**
+     *
+     * @return a single id for the new row, if any was automatically generated, {@code null} otherwise
+     * @throws SQLException
+     */
+    public static Long execInsert(Connection conn, String command) throws SQLException {
+
+        String insert = "INSERT ";
+
+        command = command.trim();
+        if(! command.toUpperCase().startsWith(insert)){
+            throw new IllegalArgumentException("SQL command is not an INSERT\n"+command);
+        }
+
+        Statement statement = conn.createStatement();
+
+        try {
+            statement.executeUpdate(command, Statement.RETURN_GENERATED_KEYS);
+        } catch (SQLException e) {
+            String errText = String.format("Error executing '%s': %s", command, e.getMessage());
+            throw new SQLException(errText, e);
+        }
+
+
+        ResultSet generatedKeys =  statement.getGeneratedKeys();
+        if(generatedKeys.next()){
+            return generatedKeys.getLong(1);
+        }
+
+        // IMPORTANT that is called AFTER getGeneratedKeys(),
+        conn.commit();
+
+        try {
+            statement.close();
+        } catch (Exception e) {
+        }
+
+        return null;
+    }
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
         Statement statement = conn.createStatement();
@@ -157,7 +196,6 @@ public class SqlScriptRunner {
         try {
             statement.close();
         } catch (Exception e) {
-            // Ignore to workaround a bug in Jakarta DBCP
         }
 
         return queryResult;

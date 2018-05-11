@@ -13,7 +13,6 @@ import java.sql.DriverManager;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.clientJava.controllerApi.ControllerConstants.BASE_PATH;
-import static org.evomaster.clientJava.controllerApi.ControllerConstants.EXTRA_HEURISTICS;
 import static org.evomaster.clientJava.controllerApi.ControllerConstants.RUN_SUT_PATH;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
