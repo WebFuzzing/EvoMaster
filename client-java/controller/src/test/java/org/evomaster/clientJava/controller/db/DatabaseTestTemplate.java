@@ -1,8 +1,7 @@
-package org.evomaster.clientJava.controller.internal.db;
+package org.evomaster.clientJava.controller.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
-import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controllerApi.dto.SutRunDto;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.junit.jupiter.api.BeforeAll;

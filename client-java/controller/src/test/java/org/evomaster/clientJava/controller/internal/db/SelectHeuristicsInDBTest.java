@@ -3,16 +3,10 @@ package org.evomaster.clientJava.controller.internal.db;
 import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controller.db.DataRow;
+import org.evomaster.clientJava.controller.db.DatabaseTestTemplate;
 import org.evomaster.clientJava.controller.db.QueryResult;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
-import org.evomaster.clientJava.controllerApi.dto.SutRunDto;
-import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.clientJava.controllerApi.ControllerConstants.*;
@@ -20,7 +14,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SelectHeuristicsInDBTest extends DatabaseTestTemplate{
+public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
 
 
 

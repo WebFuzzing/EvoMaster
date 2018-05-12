@@ -207,8 +207,21 @@ public class EMController {
             throw new WebApplicationException("No active database connection", 400);
         }
 
+        if (dto.command == null && (dto.insertions == null || dto.insertions.isEmpty())) {
+            throw new WebApplicationException("No input command", 400);
+        }
+
+        if (dto.command != null && dto.insertions != null && !dto.insertions.isEmpty()) {
+            throw new WebApplicationException("Only 1 command can be specified", 400);
+        }
+
+
         try {
-            SqlScriptRunner.execCommand(connection, dto.command);
+            if (dto.command != null) {
+                SqlScriptRunner.execCommand(connection, dto.command);
+            } else {
+                SqlScriptRunner.execInsert(connection, dto.insertions);
+            }
         } catch (Exception e) {
             throw new WebApplicationException(
                     "Failed to execute database command: " + e.getMessage(), 400);

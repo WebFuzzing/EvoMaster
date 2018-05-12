@@ -2,6 +2,7 @@ package org.evomaster.clientJava.controller.internal.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
+import org.evomaster.clientJava.controller.db.DatabaseTestTemplate;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controllerApi.dto.database.*;
 import org.junit.jupiter.api.Test;
@@ -12,7 +13,7 @@ import static org.evomaster.clientJava.controllerApi.ControllerConstants.INFO_SU
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SchemaExtractorTest extends DatabaseTestTemplate{
+public class SchemaExtractorTest extends DatabaseTestTemplate {
 
 
     @Test

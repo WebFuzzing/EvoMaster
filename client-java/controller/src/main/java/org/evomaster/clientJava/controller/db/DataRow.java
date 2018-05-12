@@ -12,7 +12,7 @@ public class DataRow {
 
 
     public DataRow(String name, Object value) {
-        this(Arrays.asList(new VariableDescriptor(name)), Arrays.asList(new Object[]{value}));
+        this(Arrays.asList(new VariableDescriptor(name)), Arrays.asList(value));
     }
 
     public DataRow(List<VariableDescriptor> descriptors, List<Object> values) {

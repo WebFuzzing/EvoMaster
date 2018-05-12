@@ -1,4 +1,4 @@
-package org.evomaster.clientJava.controller.internal.db;
+package org.evomaster.clientJava.controller.db;
 
 import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;

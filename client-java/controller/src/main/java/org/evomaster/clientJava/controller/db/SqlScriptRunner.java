@@ -1,15 +1,16 @@
 package org.evomaster.clientJava.controller.db;
 
+import org.evomaster.clientJava.controllerApi.dto.database.InsertionDto;
+
 import java.io.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 
 /**
@@ -58,12 +59,12 @@ public class SqlScriptRunner {
         runCommands(connection, new SqlScriptRunner().readCommands(reader));
     }
 
-    public static void runScriptFromResourceFile(Connection connection, String resourcePath){
+    public static void runScriptFromResourceFile(Connection connection, String resourcePath) {
         try {
             InputStream in = SqlScriptRunner.class.getResourceAsStream(resourcePath);
             runScript(connection, new InputStreamReader(in));
             in.close();
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -138,8 +139,45 @@ public class SqlScriptRunner {
         return list;
     }
 
+
+    public static void execInsert(Connection conn, List<InsertionDto> insertions) throws SQLException {
+
+        if (insertions == null || insertions.isEmpty()) {
+            throw new IllegalArgumentException("No data to insert");
+        }
+
+        String insertSql = "INSERT INTO ";
+
+        //From DTO Insertion Id to generated Id in database
+        Map<Integer, Long> map = new HashMap<>();
+
+        for (InsertionDto insDto : insertions) {
+
+            StringBuilder sql = new StringBuilder(insertSql);
+            sql.append(insDto.targetTable).append(" (");
+
+            sql.append(insDto.data.stream()
+                    .map(e -> e.variableName)
+                    .collect(Collectors.joining(",")));
+
+            sql.append(" )  VALUES (");
+
+            sql.append(insDto.data.stream()
+                    .map(e -> e.printableValue != null
+                            ? e.printableValue
+                            : map.get(e.foreignKeyToPreviouslyGeneratedRow).toString()
+                    ).collect(Collectors.joining(",")));
+
+            sql.append(");");
+
+            Long id = execInsert(conn, sql.toString());
+            if(id != null){
+                map.put(insDto.id, id);
+            }
+        }
+    }
+
     /**
-     *
      * @return a single id for the new row, if any was automatically generated, {@code null} otherwise
      * @throws SQLException
      */
@@ -148,8 +186,8 @@ public class SqlScriptRunner {
         String insert = "INSERT ";
 
         command = command.trim();
-        if(! command.toUpperCase().startsWith(insert)){
-            throw new IllegalArgumentException("SQL command is not an INSERT\n"+command);
+        if (!command.toUpperCase().startsWith(insert)) {
+            throw new IllegalArgumentException("SQL command is not an INSERT\n" + command);
         }
 
         Statement statement = conn.createStatement();
@@ -157,25 +195,21 @@ public class SqlScriptRunner {
         try {
             statement.executeUpdate(command, Statement.RETURN_GENERATED_KEYS);
         } catch (SQLException e) {
+            statement.close();
             String errText = String.format("Error executing '%s': %s", command, e.getMessage());
             throw new SQLException(errText, e);
         }
 
+        ResultSet generatedKeys = statement.getGeneratedKeys();
+        Long id = null;
 
-        ResultSet generatedKeys =  statement.getGeneratedKeys();
-        if(generatedKeys.next()){
-            return generatedKeys.getLong(1);
+        if (generatedKeys.next()) {
+            id = generatedKeys.getLong(1);
         }
 
-        // IMPORTANT that is called AFTER getGeneratedKeys(),
-        conn.commit();
+        statement.close();
 
-        try {
-            statement.close();
-        } catch (Exception e) {
-        }
-
-        return null;
+        return id;
     }
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
@@ -184,19 +218,15 @@ public class SqlScriptRunner {
         try {
             statement.execute(command);
         } catch (SQLException e) {
+            statement.close();
             String errText = String.format("Error executing '%s': %s", command, e.getMessage());
             throw new SQLException(errText, e);
         }
 
-        conn.commit();
-
         ResultSet result = statement.getResultSet();
         QueryResult queryResult = new QueryResult(result);
 
-        try {
-            statement.close();
-        } catch (Exception e) {
-        }
+        statement.close();
 
         return queryResult;
     }
