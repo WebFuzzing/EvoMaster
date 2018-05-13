@@ -17,9 +17,12 @@ More info [here](https://www.webcruiter.no/WcMain/advertviewpublic.aspx?oppdrags
 <br>
 
 EvoMaster ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
-that automatically generates system-level test cases.
+that automatically *generates* system-level test cases.
 Internally, it uses an *evolutionary algorithm* and *bytecode analysis* to be
 able to generate effective test cases.
+The approach is to *evolve* test cases from an initial population of 
+random ones, trying to maximize measures like code coverage and fault detection.
+
 At the moment, EvoMaster targets RESTful APIs compiled to 
 JVM bytecode (e.g., Java and Kotlin).
 
@@ -80,7 +83,7 @@ public void test12() throws Exception {
 ```
 
 The generated tests are self-contained, i.e. they 
-start/stop the REST server by their self:
+start/stop the REST server by themselves:
 
 ```
     private static SutHandler controller = new em.embedded.se.devscout.scoutapi.EmbeddedEvoMasterController();

@@ -2,7 +2,6 @@ package org.evomaster.core
 
 import com.google.inject.Injector
 import com.google.inject.Key
-import com.google.inject.Module
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
@@ -20,7 +19,6 @@ import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import java.lang.reflect.InvocationTargetException
-import kotlin.reflect.full.isSuperclassOf
 
 
 /**
@@ -44,7 +42,7 @@ class Main {
                     Before running anything, check if the input
                     configurations are valid
                  */
-                var parser = try {
+                val parser = try {
                     EMConfig.validateOptions(args)
                 } catch (e: Exception) {
                     LoggingUtil.getInfoLogger().error(
@@ -151,15 +149,11 @@ class Main {
             //TODO check problem type
 
             try {
-                val injector = LifecycleInjector.builder()
-                        .withModules(* arrayOf<Module>(
-                                BaseModule(args),
-                                RestModule()
-                        ))
+                return LifecycleInjector.builder()
+                        .withModules(BaseModule(args), RestModule())
                         .build()
                         .createInjector()
 
-                return injector
             } catch (e: Error){
                 /*
                     Workaround to Governator bug:
@@ -222,7 +216,7 @@ class Main {
         }
 
 
-        fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto) {
+        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -242,7 +236,7 @@ class Main {
             )
         }
 
-        fun writeStatistics(injector: Injector, solution: Solution<*>) {
+        private fun writeStatistics(injector: Injector, solution: Solution<*>) {
 
             val config = injector.getInstance(EMConfig::class.java)
 

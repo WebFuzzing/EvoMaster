@@ -169,7 +169,7 @@ class RestActionBuilder {
         return params
     }
 
-    fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
+    private fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
 
         var ref: String = p.schema.reference ?: return false
         val classDef = ref.substring(ref.lastIndexOf("/") + 1)
