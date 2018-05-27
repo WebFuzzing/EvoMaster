@@ -11,9 +11,8 @@
 
 <br>
 
-<b>HIRING</b>: we are hiring two postdocs to work on this project.
-Application deadline 15/05/18.
-More info [here](https://www.webcruiter.no/WcMain/advertviewpublic.aspx?oppdragsnr=3791745385&company_id=22057550&culture_id=NB-NO).
+<b>HIRING</b>: we are hiring postdocs to work on this project.
+For more information and for applying, contact us directly at *arcand@westerdals.no*
 <br>
 
 EvoMaster ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
