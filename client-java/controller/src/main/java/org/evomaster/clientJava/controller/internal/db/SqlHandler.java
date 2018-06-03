@@ -36,6 +36,11 @@ public class SqlHandler {
      */
     private final Map<String, Set<String>> readData;
 
+    /**
+     * SQL Select commands that did not return any data
+     */
+    private final Set<String> emptySqlSelects;
+
 
     private volatile Connection connection;
 
@@ -44,6 +49,14 @@ public class SqlHandler {
         buffer = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
         readData = new ConcurrentHashMap<>();
+        emptySqlSelects = Collections.newSetFromMap(new ConcurrentHashMap<>());
+    }
+
+    public void reset() {
+        buffer.clear();
+        distances.clear();
+        readData.clear();
+        emptySqlSelects.clear();
     }
 
     public void setConnection(Connection connection) {
@@ -93,13 +106,6 @@ public class SqlHandler {
     }
 
 
-    public void reset() {
-        buffer.clear();
-        distances.clear();
-        readData.clear();
-    }
-
-
     /**
      * key -> table name
      * <br>
@@ -111,6 +117,10 @@ public class SqlHandler {
         return readData;
     }
 
+
+    public Set<String> getEmptySqlSelects() {
+        return emptySqlSelects;
+    }
 
     public List<Double> getDistances() {
 
@@ -159,7 +169,7 @@ public class SqlHandler {
         }
 
         try {
-            Select stmt = (Select) CCJSqlParserUtil.parse(select);
+            CCJSqlParserUtil.parse(select);
         } catch (Exception | TokenMgrError e) {
             SimpleLogger.uniqueWarn("Cannot handle select query: " + select + "\n" + e.toString());
             return Double.MAX_VALUE;
@@ -178,6 +188,10 @@ public class SqlHandler {
         }
 
         double dist = SelectHeuristics.computeDistance(select, data);
+
+        if(dist > 0){
+            emptySqlSelects.add(select);
+        }
 
         return dist;
     }

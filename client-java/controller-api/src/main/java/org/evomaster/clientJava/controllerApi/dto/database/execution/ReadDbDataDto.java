@@ -18,4 +18,16 @@ public class ReadDbDataDto {
      * The value "*" means all columns in the table.
      */
     public Map<String, Set<String>> queriedData = new HashMap<>();
+
+    /**
+     * SQL queries executed by the SUTs, but that resulted in empty, no returned data
+     */
+    public Set<String> emptySqlSelects;
+
+    /*
+        TODO: queriedData could be derived from emptySqlSelects, and so be
+        redundant.
+        But, at this point, not decided yet if really going to need emptySqlSelects,
+        and if move all SQL code from Driver to Core
+     */
 }

@@ -154,6 +154,7 @@ public abstract class SutController implements SutHandler{
 
         ReadDbDataDto readDbDataDto = new ReadDbDataDto();
         readDbDataDto.queriedData = sqlHandler.getReadData();
+        readDbDataDto.emptySqlSelects = sqlHandler.getEmptySqlSelects();
         dto.readDbData = readDbDataDto;
 
         return dto;
