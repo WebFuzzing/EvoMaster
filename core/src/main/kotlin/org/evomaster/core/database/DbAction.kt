@@ -23,7 +23,7 @@ class DbAction(
         when {
         //TODO handle all constraints and cases, eg FK
             it.type.equals("VARCHAR", ignoreCase = true) ->
-                StringGene(it.name)
+                StringGene(name = it.name, minLength = 0, maxLength = it.size)
             it.type.equals("INTEGER", ignoreCase = true) ->
                 IntegerGene(it.name)
             it.type.equals("LONG", ignoreCase = true) ->
