@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto
+import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -72,7 +74,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         log.debug("Done initializing {}", RestFitness::class.simpleName)
     }
 
-    override open fun reinitialize(): Boolean {
+    override fun reinitialize(): Boolean {
 
         try {
             rc.stopSUT()
@@ -95,6 +97,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
+
+        val dbData = mutableListOf<ReadDbDataDto>()
 
         //run the test, one action at a time
         for (i in 0 until individual.actions.size) {
@@ -125,8 +129,17 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                     //TODO handling of toMaximize
                     fv.setExtraToMinimize(i, extra.toMinimize)
                 }
+
+                extra.readDbData?.let {
+                    dbData.add(it)
+                }
             }
         }
+
+        if(! dbData.isEmpty()){
+            fv.emptySelects = EmptySelects.fromDtos(dbData)
+        }
+
 
         /*
             We cannot request all non-covered targets, because:

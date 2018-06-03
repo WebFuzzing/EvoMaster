@@ -4,6 +4,8 @@ import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -35,6 +37,9 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private val adHocInitialIndividuals: MutableList<RestAction> = mutableListOf()
 
+    private var sqlInsertBuilder: SqlInsertBuilder? = null
+
+
 
     @PostConstruct
     private fun initialize() {
@@ -62,6 +67,10 @@ class RestSampler : Sampler<RestIndividual>() {
         setupAuthentication(infoDto)
 
         initAdHocInitialIndividuals()
+
+        if(infoDto.sqlSchemaDto != null){
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
+        }
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
@@ -142,6 +151,19 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         throw IllegalStateException("Failed to connect to $swaggerURL")
+    }
+
+
+    fun sampleSqlInsertion(tableName: String, columns: Set<String>) : List<DbAction>{
+
+        if(sqlInsertBuilder == null){
+            throw IllegalStateException("No DB schema is available");
+        }
+
+        val actions = sqlInsertBuilder!!.createSqlInsertionAction(tableName, columns)
+        actions.forEach{randomizeActionGenes(it)}
+
+        return actions
     }
 
 

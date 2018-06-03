@@ -22,7 +22,6 @@ class RestActionBuilder {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
 
-
         fun addActionsFromSwagger(swagger: Swagger,
                                   actionCluster: MutableMap<String, Action>,
                                   endpointsToSkip: List<String> = listOf()) {

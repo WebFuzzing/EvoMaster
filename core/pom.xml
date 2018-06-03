@@ -17,6 +17,21 @@
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-controller-api</artifactId>
         </dependency>
+        <dependency>
+            <!--
+                This is only needed for testing, when accessing some SQL
+                code. But might be removed in future if all SQL code is
+                moved into Core
+            -->
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-controller</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
 
 
         <dependency>

@@ -1,5 +1,7 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.database.EmptySelects
+
 /**
 As the number of targets is unknown, we cannot have
 a minimization problem, as new targets could be added
@@ -19,7 +21,7 @@ class FitnessValue(
 
     companion object {
 
-        val MAX_VALUE = 1.0
+        const val MAX_VALUE = 1.0
 
         fun isMaxValue(value: Double) = value == MAX_VALUE
     }
@@ -40,15 +42,21 @@ class FitnessValue(
      * covering target.
      * An example is rewarding SQL Select commands that return non-empty
      *
-     * Note: this values are sorted.
+     * Note: these values are sorted.
      */
     private val extraToMinimize: MutableMap<Int, List<Double>> = mutableMapOf()
+
+    /**
+     * Needed to keep track if the SUT does access a SQL database
+     */
+    var emptySelects: EmptySelects? = null
 
 
     fun copy(): FitnessValue {
         val copy = FitnessValue(size)
         copy.targets.putAll(this.targets)
         copy.extraToMinimize.putAll(this.extraToMinimize)
+        copy.emptySelects = this.emptySelects //note: supposed to be immutable
         return copy
     }
 
@@ -169,12 +177,10 @@ class FitnessValue(
         val ts = aggregateDistances(this.extraToMinimize[thisAction])
         val os = aggregateDistances(other.extraToMinimize[otherAction])
 
-        if (ts < os) {
-            return +1
-        } else if (ts > os) {
-            return -1
-        } else {
-            return 0
+        return when {
+            ts < os -> +1
+            ts > os -> -1
+            else -> 0
         }
     }
 
