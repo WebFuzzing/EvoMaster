@@ -56,7 +56,8 @@ class RestSampler : Sampler<RestIndividual>() {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
-        RestActionBuilder().createActions(swagger, actionCluster, infoDto.endpointsToSkip ?: listOf())
+        actionCluster.clear()
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.endpointsToSkip ?: listOf())
 
         setupAuthentication(infoDto)
 

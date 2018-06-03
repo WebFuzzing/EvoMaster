@@ -54,7 +54,7 @@ class FitnessValue(
 
     fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
 
-        extraToMinimize.put(actionIndex, list.sorted())
+        extraToMinimize[actionIndex] = list.sorted()
     }
 
     fun getViewOfData(): Map<Int, Heuristics> {
@@ -85,7 +85,7 @@ class FitnessValue(
     fun updateTarget(id: Int, value: Double, actionIndex : Int = -1) {
 
         if (value < 0 || value > MAX_VALUE) {
-            throw IllegalArgumentException("Invalid value: " + value)
+            throw IllegalArgumentException("Invalid value: $value")
         }
 
         targets[id] = Heuristics(value, actionIndex)
@@ -113,7 +113,7 @@ class FitnessValue(
      * are covered.
      *
      * @param other, the one we compare to
-     * @param targetSubset, only calculate subsumpsion on these testing targets
+     * @param targetSubset, only calculate subsumption on these testing targets
      */
     fun subsumes(other: FitnessValue, targetSubset: Set<Int>): Boolean {
 

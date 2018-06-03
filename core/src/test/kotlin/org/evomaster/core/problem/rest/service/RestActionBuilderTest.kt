@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import io.swagger.parser.SwaggerParser
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
@@ -16,9 +17,8 @@ internal class RestActionBuilderTest {
 
         val swagger = SwaggerParser().read(resourcePath)
 
-        val builder = RestActionBuilder()
         val actions: MutableMap<String, Action> = mutableMapOf()
-        builder.createActions(swagger, actions)
+        RestActionBuilder.addActionsFromSwagger(swagger, actions)
 
         assertEquals(expectedNumberOfActions, actions.size)
 
