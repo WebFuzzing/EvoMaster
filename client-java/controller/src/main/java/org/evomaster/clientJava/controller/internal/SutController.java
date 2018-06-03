@@ -12,7 +12,8 @@ import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
-import org.evomaster.clientJava.controllerApi.dto.database.DbSchemaDto;
+import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -21,9 +22,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.net.InetSocketAddress;
 import java.sql.Connection;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -151,6 +150,11 @@ public abstract class SutController implements SutHandler{
 
         ExtraHeuristicDto dto = new ExtraHeuristicDto();
         dto.toMinimize.addAll(sqlHandler.getDistances());
+        //TODO toMaximize
+
+        ReadDbDataDto readDbDataDto = new ReadDbDataDto();
+        readDbDataDto.queriedData = sqlHandler.getReadData();
+        dto.readDbData = readDbDataDto;
 
         return dto;
     }
@@ -161,7 +165,7 @@ public abstract class SutController implements SutHandler{
      * Note: this is extracted by querying the database itself.
      * So it must be up and running.
      *
-     * @see SutController#getConnection()
+     * @see SutController#getConnection
      */
     public final DbSchemaDto getSqlDatabaseSchema(){
         if(schemaDto != null){
@@ -173,11 +177,13 @@ public abstract class SutController implements SutHandler{
         }
 
         try {
-            return SchemaExtractor.extract(getConnection());
+            schemaDto = SchemaExtractor.extract(getConnection());
         } catch (Exception e) {
             SimpleLogger.error("Failed to extract the SQL Database Schema: " + e.getMessage());
             return null;
         }
+
+        return schemaDto;
     }
 
 

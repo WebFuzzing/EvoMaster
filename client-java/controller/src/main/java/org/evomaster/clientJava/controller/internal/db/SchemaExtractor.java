@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.controller.internal.db;
 
-import org.evomaster.clientJava.controllerApi.dto.database.*;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.*;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;

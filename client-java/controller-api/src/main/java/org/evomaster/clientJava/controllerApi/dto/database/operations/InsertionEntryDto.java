@@ -1,4 +1,4 @@
-package org.evomaster.clientJava.controllerApi.dto.database;
+package org.evomaster.clientJava.controllerApi.dto.database.operations;
 
 public class InsertionEntryDto {
 

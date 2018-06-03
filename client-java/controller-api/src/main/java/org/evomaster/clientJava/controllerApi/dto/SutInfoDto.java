@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.controllerApi.dto;
 
-import org.evomaster.clientJava.controllerApi.dto.database.DbSchemaDto;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
 
 import java.util.List;
 

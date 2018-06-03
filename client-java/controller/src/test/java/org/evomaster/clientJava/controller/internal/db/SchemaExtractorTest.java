@@ -4,7 +4,7 @@ import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controller.db.DatabaseTestTemplate;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
-import org.evomaster.clientJava.controllerApi.dto.database.*;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.*;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;

@@ -2,8 +2,8 @@ package org.evomaster.clientJava.controller.db;
 
 import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
-import org.evomaster.clientJava.controllerApi.dto.database.DatabaseCommandDto;
-import org.evomaster.clientJava.controllerApi.dto.database.InsertionDto;
+import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

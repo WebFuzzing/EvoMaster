@@ -11,15 +11,62 @@ import net.sf.jsqlparser.statement.select.*;
 import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.controller.db.QueryResult;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SelectHeuristics {
 
     public static final String UNNAMED_TABLE = "___unnamed_table___";
 
+
+    /**
+     *
+     * @return
+     */
+    public static Map<String, Set<String>> getReadDataFields(String select){
+
+        Map<String, Set<String>> map = new HashMap<>();
+
+        /*
+            TODO: for now, we just use * for all read Tables.
+            But, we should look at actual read columns.
+         */
+
+        Select stmt = asStatement(select);
+        SelectBody selectBody = stmt.getSelectBody();
+
+        if (selectBody instanceof PlainSelect) {
+
+            PlainSelect plainSelect = (PlainSelect) selectBody;
+
+            FromItem fromItem = plainSelect.getFromItem();
+            if(fromItem == null){
+                //is this even possible?
+                return map;
+            }
+
+            handleFromItem(map, fromItem);
+
+            List<Join> joins = plainSelect.getJoins();
+            if(joins != null) {
+                for (Join join : joins) {
+                    FromItem rightItem = join.getRightItem();
+                    handleFromItem(map, rightItem);
+                }
+            }
+        }
+
+        return map;
+    }
+
+    private static void handleFromItem(Map<String, Set<String>> map, FromItem fromItem) {
+        if(fromItem instanceof Table){
+            Table table = (Table) fromItem;
+            Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
+            //TODO: should check actual fields
+            columns.add("*");
+
+        } // TODO handle other cases, eg sub-selects
+    }
 
     /**
      * The constraints in the WHERE clause might reference
@@ -73,6 +120,14 @@ public class SelectHeuristics {
         return stmt.toString();
     }
 
+    /**
+     * For example, when we have "select count(*)" we are not interested
+     * in the count, but the actual involved fields, so we want to
+     * transform it into "select *" by removing the count() operation.
+     *
+     * @param select
+     * @return
+     */
     public static String removeOperations(String select){
 
         Select stmt = asStatement(select);

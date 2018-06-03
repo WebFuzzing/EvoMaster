@@ -1,6 +1,6 @@
 package org.evomaster.clientJava.controller.db.dsl;
 
-import org.evomaster.clientJava.controllerApi.dto.database.InsertionDto;
+import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 
 import java.util.List;
 

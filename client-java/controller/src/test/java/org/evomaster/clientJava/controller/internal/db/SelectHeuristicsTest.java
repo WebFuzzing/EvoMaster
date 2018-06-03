@@ -5,14 +5,51 @@ import org.evomaster.clientJava.controller.db.QueryResult;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SelectHeuristicsTest {
 
+
+
+    @Test
+    public void testReadFromJoinedTables(){
+
+        String select = "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate" +
+                " FROM Orders " +
+                " INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;";
+
+        Map<String, Set<String>> data = SelectHeuristics.getReadDataFields(select);
+
+        assertEquals(2, data.size());
+
+        Set<String> columns = data.get("Orders");
+        //FIXME: once supporting actual fields instead of *
+        assertEquals(1, columns.size());
+        assertTrue(columns.contains("*"));
+
+        columns = data.get("Customers");
+        //FIXME: once supporting actual fields instead of *
+        assertEquals(1, columns.size());
+        assertTrue(columns.contains("*"));
+    }
+
+
+    @Test
+    public void testReadAllFromSingleTable(){
+
+        String select = "select *  from Foo";
+
+        Map<String, Set<String>> data = SelectHeuristics.getReadDataFields(select);
+
+        assertEquals(1, data.size());
+
+        Set<String> columns = data.get("Foo");
+
+        assertEquals(1, columns.size());
+        assertTrue(columns.contains("*"));
+    }
 
     @Test
     public void testCount(){

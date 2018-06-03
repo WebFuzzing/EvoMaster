@@ -5,7 +5,7 @@ import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.*;
-import org.evomaster.clientJava.controllerApi.dto.database.DatabaseCommandDto;
+import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
@@ -177,6 +177,7 @@ public class EMController {
     public ExtraHeuristicDto getExtra() {
 
         ExtraHeuristicDto dto = sutController.getExtraHeuristics();
+
 
         return dto;
     }
