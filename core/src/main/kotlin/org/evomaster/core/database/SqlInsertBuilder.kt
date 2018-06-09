@@ -5,6 +5,7 @@ import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.search.gene.SqlForeignKeyGene
 
 
 class SqlInsertBuilder(schemaDto: DbSchemaDto) {
@@ -19,6 +20,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
 
     private val name: String
 
+    private var counter: Long = 0
 
     init {
         /*
@@ -75,17 +77,17 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
                 val targetTable = tableToColumns[f.targetTable]
                         ?: throw IllegalArgumentException("Foreign key for non-existent table ${f.targetTable}")
 
-                val columns = mutableSetOf<Column>()
+                val sourceColumns = mutableSetOf<Column>()
 
 
-                for(cname in f.columns){
+                for(cname in f.sourceColumns){
                     val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
                             ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
-                    columns.add(c)
+                    sourceColumns.add(c)
                 }
 
-                fks.add(ForeignKey(columns, f.targetTable))
+                fks.add(ForeignKey(sourceColumns, f.targetTable))
             }
 
             tableToForeignKeys[t.name] = fks
@@ -107,7 +109,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
      * If the table has non-null foreign keys to other tables, then create an insertion for those
      * as well. This means that more than one action can be returned here.
      *
-     * Note: the create action has default values. You might want to randomize its data before
+     * Note: the created actions have default values. You might want to randomize its data before
      * using it.
      *
      * Note: names are case-sensitive, although some DBs are case-insensitive. To make
@@ -141,13 +143,13 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
             }
         }
 
-        val insertion = DbAction(table, selectedColumns)
+        val insertion = DbAction(table, selectedColumns, counter++)
         val actions = mutableListOf(insertion)
 
         for(fk in table.foreignKeys){
             /*
                 Assumption: in a valid Schema, this should never end up
-                in a infinite loop.
+                in a infinite loop?
              */
             val pre = createSqlInsertionAction(fk.targetTable, setOf())
             actions.addAll(0, pre)

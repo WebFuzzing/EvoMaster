@@ -17,7 +17,14 @@ abstract class Gene(var name: String) {
 
     abstract fun copy() : Gene
 
+    /**
+     * Specify if this gene can be mutated during the search.
+     * Typically, it will be true, apart from some special cases.
+     */
     open fun isMutable() = true
+
+
+    // FIXME: refactoring by adding "allGenes: List<Gene> = listOf()"
 
     abstract fun randomize(randomness: Randomness, forceNewValue: Boolean)
 
@@ -30,6 +37,16 @@ abstract class Gene(var name: String) {
      * "foo" -> "\"foo\"" -> printed as "foo"
      */
     abstract fun getValueAsPrintableString() : String
+
+    //FIXME refactor below method into above
+
+    /**
+     * @param previousGenes previous genes which are necessary to look at
+     * to determine the actual value of this gene
+     */
+    open fun getValueAsPrintableString(previousGenes: List<Gene>) : String {
+        return getValueAsPrintableString()
+    }
 
     open fun getValueAsRawString() = getValueAsPrintableString()
 

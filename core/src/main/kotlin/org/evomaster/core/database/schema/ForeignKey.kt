@@ -7,7 +7,7 @@ package org.evomaster.core.database.schema
 
 data class ForeignKey(
 
-    val columns: Set<Column>,
+        val sourceColumns: Set<Column>,
 
-    val targetTable: String
+        val targetTable: String
 )

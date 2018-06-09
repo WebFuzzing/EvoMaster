@@ -9,17 +9,26 @@ import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataD
  *
  * This class is supposed to be immutable
  */
-class EmptySelects(val selects: Set<String>,
-                   val queriedData: Map<String, Set<String>> ) {
+class EmptySelects(
+        /**
+         * SQL queries executed by the SUTs, but that resulted in empty, no returned data
+         */
+        val selects: Set<String>,
+        /**
+         * Map from Table Name to Column Names.
+         * The value "*" means all columns in the table.
+         */
+        val queriedData: Map<String, Set<String>>
+) {
 
     companion object {
 
-        fun fromDtos(dtos: Collection<ReadDbDataDto>) : EmptySelects{
+        fun fromDtos(dtos: Collection<ReadDbDataDto>): EmptySelects {
 
             val selects = dtos.flatMap { it.emptySqlSelects }.toSet()
             val data = mutableMapOf<String, MutableSet<String>>()
 
-            for(dto in dtos){
+            for (dto in dtos) {
 
                 for (e in dto.queriedData.entries) {
                     val key = e.key

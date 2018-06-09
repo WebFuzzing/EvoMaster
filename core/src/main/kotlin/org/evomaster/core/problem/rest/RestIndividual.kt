@@ -27,8 +27,15 @@ class RestIndividual(val actions: MutableList<RestAction>,
 
     override fun seeGenes(): List<out Gene> {
 
-        return actions.flatMap(RestAction::seeGenes)
+        return dbInitialization.flatMap(DbAction::seeGenes)
+                .plus(actions.flatMap(RestAction::seeGenes))
     }
+
+    /*
+        TODO Tricky... should dbInitialization somehow be part of the size?
+        But they are merged in a single operation in a single call...
+        need to think about it
+     */
 
     override fun size() = actions.size
 

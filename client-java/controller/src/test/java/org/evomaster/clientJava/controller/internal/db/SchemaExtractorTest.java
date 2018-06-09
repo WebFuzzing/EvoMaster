@@ -132,8 +132,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ForeignKeyDto foreignKey = foo.foreignKeys.get(0);
 
-        assertEquals(1, foreignKey.columns.size());
-        assertTrue(foreignKey.columns.stream().anyMatch(c -> c.equalsIgnoreCase("barId")));
+        assertEquals(1, foreignKey.sourceColumns.size());
+        assertTrue(foreignKey.sourceColumns.stream().anyMatch(c -> c.equalsIgnoreCase("barId")));
         assertTrue(foreignKey.targetTable.equalsIgnoreCase("Bar"));
     }
 

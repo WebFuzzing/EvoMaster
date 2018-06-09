@@ -74,7 +74,7 @@ public class SchemaExtractor {
                 //TODO need to see how to handle case of multi-columns
 
                 ForeignKeyDto fkDto = new ForeignKeyDto();
-                fkDto.columns.add(fks.getString("FKCOLUMN_NAME"));
+                fkDto.sourceColumns.add(fks.getString("FKCOLUMN_NAME"));
                 fkDto.targetTable = fks.getString("PKTABLE_NAME");
 
                 tableDto.foreignKeys.add(fkDto);

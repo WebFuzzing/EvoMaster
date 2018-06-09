@@ -20,6 +20,9 @@ class RestStructureMutator : StructureMutator() {
             throw IllegalArgumentException("Invalid individual type")
         }
 
+        //TODO handle SQL
+
+
         if (!individual.canMutateStructure()) {
             return // nothing to do
         }

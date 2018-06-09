@@ -258,7 +258,7 @@ class MosaAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     // recall: maximization problem
                     chosen = data
                 } else if (data.ind.fitness.getHeuristic(t) == chosen.ind.fitness.getHeuristic(t)
-                            && data.ind.individual.seeGenes().size < chosen.ind.individual.seeGenes().size){
+                            && data.ind.individual.size() < chosen.ind.individual.size()){
                     // Secondary criterion based on tests lengths
                     chosen = data
                 }

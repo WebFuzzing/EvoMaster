@@ -59,6 +59,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutateGene(gene: Gene, all: List<Gene>) {
 
         when (gene) {
+            is SqlForeignKeyGene -> handleSqlForeignKeyGene(gene, all)
             is DisruptiveGene<*> -> mutateGene(gene.gene, all)
             is OptionalGene -> handleOptionalGene(gene, all)
             is IntegerGene -> handleIntegerGene(gene)
@@ -68,6 +69,10 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 //TODO other cases
                 gene.randomize(randomness, true)
         }
+    }
+
+    private fun handleSqlForeignKeyGene(gene: SqlForeignKeyGene, all: List<Gene>) {
+        gene.randomize(randomness, true, all)
     }
 
     private fun handleStringGene(gene: StringGene, all: List<Gene>) {
@@ -94,7 +99,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 randomness.choose(others)
             }
         //change
-            p < 0.8 && s.length > 0 -> {
+            p < 0.8 && s.isNotEmpty() -> {
                 val delta = getDelta(start = 6, end = 3)
                 val sign = randomness.choose(listOf(-1, +1))
                 val i = randomness.nextInt(s.length)
@@ -103,7 +108,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 String(array)
             }
         //delete last
-            p < 0.9 && s.length > 0 -> {
+            p < 0.9 && s.isNotEmpty() -> {
                 s.dropLast(1)
             }
         //append new

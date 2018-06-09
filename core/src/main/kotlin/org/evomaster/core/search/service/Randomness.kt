@@ -146,6 +146,9 @@ class Randomness {
         return selection.subList(0, n)
     }
 
+    /**
+     * Randomly choose (without replacement) up to [n] values from the [set]
+     */
     fun <T> choose(set: Set<T>, n: Int): Set<T>{
         if(set.size <= n){
             return set
@@ -163,6 +166,9 @@ class Randomness {
     fun <K,V> choose(map: Map<K,V>): V = choose(map.values)
 
 
+    /**
+     * Randomly choose one element
+     */
     fun <V> choose(collection: Collection<V>) : V{
         if (collection.isEmpty()) {
             throw IllegalArgumentException("Empty map to choose from")
