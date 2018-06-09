@@ -131,7 +131,7 @@ class SqlInsertBuilderTest {
     }
 
 
-    //@Test
+    @Test
     fun testForeignKey(){
         SqlScriptRunner.execCommand(connection, """
             CREATE TABLE Foo(
@@ -152,7 +152,7 @@ class SqlInsertBuilderTest {
 
         val actions = builder.createSqlInsertionAction("FOO", setOf())
 
-        assertEquals(1, actions.size)
+        assertEquals(2, actions.size)
 
         //TODO
     }

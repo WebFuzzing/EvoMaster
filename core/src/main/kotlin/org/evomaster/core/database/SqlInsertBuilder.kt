@@ -5,7 +5,6 @@ import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
-import org.evomaster.core.search.gene.SqlForeignKeyGene
 
 
 class SqlInsertBuilder(schemaDto: DbSchemaDto) {
@@ -48,7 +47,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
 
             for (c in t.columns) {
 
-                if(! c.table.equals(t.name, ignoreCase = true)){
+                if (!c.table.equals(t.name, ignoreCase = true)) {
                     throw IllegalArgumentException("Column in different table: ${c.table}!=${t.name}")
                 }
 
@@ -72,7 +71,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
 
             val fks = mutableSetOf<ForeignKey>()
 
-            for(f in t.foreignKeys){
+            for (f in t.foreignKeys) {
 
                 val targetTable = tableToColumns[f.targetTable]
                         ?: throw IllegalArgumentException("Foreign key for non-existent table ${f.targetTable}")
@@ -80,10 +79,13 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
                 val sourceColumns = mutableSetOf<Column>()
 
 
-                for(cname in f.sourceColumns){
-                    val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
-                            ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
+                for (cname in f.sourceColumns) {
+                    //TODO wrong check, as should be based on targetColumns, when we ll introduce them
+                    //val c = targetTable.find { it.name.equals(cname, ignoreCase = true) }
+                    //        ?: throw IllegalArgumentException("Issue in foreign key: table ${f.targetTable} does not have a column called $cname")
 
+                    val c = tableToColumns[t.name]!!.find { it.name.equals(cname, ignoreCase = true) }
+                            ?: throw IllegalArgumentException("Issue in foreign key: table ${t.name} does not have a column called $cname")
                     sourceColumns.add(c)
                 }
 
@@ -118,26 +120,25 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
      * This is (should not) be a problem when running EM, but can be trickier when writing
      * test cases manually for EM
      */
-    fun createSqlInsertionAction(tableName: String, columnNames: Set<String>) : List<DbAction>{
+    fun createSqlInsertionAction(tableName: String, columnNames: Set<String>): List<DbAction> {
 
-        val table = tables[tableName] ?:
-                throw IllegalArgumentException("No table called $tableName")
+        val table = tables[tableName] ?: throw IllegalArgumentException("No table called $tableName")
 
-        for(cn in columnNames){
-            if(! table.columns.any{it.name == cn}){
+        for (cn in columnNames) {
+            if (!table.columns.any { it.name == cn }) {
                 throw IllegalArgumentException("No column called $cn in table $tableName")
             }
         }
 
         val selectedColumns = mutableSetOf<Column>()
 
-        for (c in table.columns){
-            if(c.primaryKey && c.autoIncrement){
+        for (c in table.columns) {
+            if (c.primaryKey && c.autoIncrement) {
                 //value will be set by DB, so skip it
                 continue
             }
 
-            if(columnNames.contains(c.name) || !c.nullable){
+            if (columnNames.contains(c.name) || !c.nullable) {
                 //TODO are there also other constraints to consider?
                 selectedColumns.add(c)
             }
@@ -146,7 +147,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
         val insertion = DbAction(table, selectedColumns, counter++)
         val actions = mutableListOf(insertion)
 
-        for(fk in table.foreignKeys){
+        for (fk in table.foreignKeys) {
             /*
                 Assumption: in a valid Schema, this should never end up
                 in a infinite loop?
