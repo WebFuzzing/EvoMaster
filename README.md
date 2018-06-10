@@ -23,7 +23,7 @@ The approach is to *evolve* test cases from an initial population of
 random ones, trying to maximize measures like code coverage and fault detection.
 
 At the moment, EvoMaster targets RESTful APIs compiled to 
-JVM bytecode (e.g., Java and Kotlin).
+JVM 8 bytecode (e.g., Java and Kotlin).
 
 This project is in early stage of development. Documentation is still under construction.
 A short [video](https://youtu.be/7zTLUlH-BNI) shows the use of EvoMaster on one of the 
@@ -249,11 +249,13 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   guarantee when they are going to be implemented. 
     
 
-### Further Resources
+### Publications and Further Resources
 
 The development of EvoMaster is rooted in academia.
 Academic publications based on EvoMaster and slides of presentations can be 
 found [here](docs/publications.md).
+These can be useful if you want to know more on how EvoMaster works internally,
+e.g., details on the Many Independent Algorithm (MIO).
 
 
 ### License
