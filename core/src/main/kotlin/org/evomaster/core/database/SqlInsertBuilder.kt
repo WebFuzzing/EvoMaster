@@ -101,6 +101,9 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
         }
     }
 
+    private fun getTable(tableName: String): Table {
+        return tables[tableName] ?: throw IllegalArgumentException("No table called $tableName")
+    }
 
     /**
      * Create a SQL insertion operation into the table called [tableName].
@@ -122,10 +125,16 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
      */
     fun createSqlInsertionAction(tableName: String, columnNames: Set<String>): List<DbAction> {
 
-        val table = tables[tableName] ?: throw IllegalArgumentException("No table called $tableName")
+        val table = getTable(tableName)
+
+        val takeAll = columnNames.contains("*")
+
+        if(takeAll && columnNames.size > 1){
+            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
+        }
 
         for (cn in columnNames) {
-            if (!table.columns.any { it.name == cn }) {
+            if (cn != "*" && !table.columns.any { it.name == cn }) {
                 throw IllegalArgumentException("No column called $cn in table $tableName")
             }
         }
@@ -138,7 +147,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
                 continue
             }
 
-            if (columnNames.contains(c.name) || !c.nullable) {
+            if (takeAll || columnNames.contains(c.name) || !c.nullable) {
                 //TODO are there also other constraints to consider?
                 selectedColumns.add(c)
             }

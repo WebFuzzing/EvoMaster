@@ -11,8 +11,8 @@ import org.evomaster.core.search.gene.*
  *  Typically, a SQL Insertion
  */
 class DbAction(
-        private val table: Table,
-        private val selectedColumns: Set<Column>,
+        val table: Table,
+        val selectedColumns: Set<Column>,
         private val id: Long,
         //FIXME: this should not be exposed outside this class
         computedGenes: List<Gene>? = null

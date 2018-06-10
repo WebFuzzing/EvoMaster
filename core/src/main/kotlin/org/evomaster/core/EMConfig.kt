@@ -409,7 +409,11 @@ class EMConfig {
     var maxTestSize = 10
 
     @Cfg("Tracking of SQL commands to improve test generation")
-    var heuristicsForSQL = true
+    var heuristicsForSQL = false
+
+    @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
+    @Min(1.0)
+    var maxSqlInitActionsPerMissingData = 5
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
             "If larger than that, a response will not be stored internally in EM during the test generation. "+

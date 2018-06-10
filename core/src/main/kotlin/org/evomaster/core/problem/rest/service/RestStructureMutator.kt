@@ -1,10 +1,13 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
+import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.StructureMutator
 
@@ -14,13 +17,72 @@ class RestStructureMutator : StructureMutator() {
     @Inject
     private lateinit var sampler: RestSampler
 
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
+
+        val ind = individual.individual as? RestIndividual
+                ?: throw IllegalArgumentException("Invalid individual type")
+
+        val es = individual.fitness.emptySelects
+                ?: return
+
+        if (es.queriedData.isEmpty()) {
+            return
+        }
+
+        val max = config.maxSqlInitActionsPerMissingData
+
+        var missing = findMissing(es, ind)
+
+        while(! missing.isEmpty()){
+
+            val first = missing.entries.first()
+
+            val k = randomness.nextInt(1, max)
+
+            (0 until k).forEach {
+                val insertions = sampler.sampleSqlInsertion(first.key, first.value)
+                ind.dbInitialization.addAll(0, insertions)
+            }
+
+            /*
+                When we miss A and B, and we add for A, it can still happen that
+                then B is covered as well. For example, if A has a non-null
+                foreign key to B, then generating an action for A would also
+                imply generating an action for B as well.
+                So, we need to recompute "missing" each time
+             */
+            missing = findMissing(es, ind)
+        }
+    }
+
+    private fun findMissing(es: EmptySelects, ind: RestIndividual): Map<String, Set<String>> {
+
+        return es.queriedData.filter { e ->
+            //shouldn't have already an action adding such SQL data
+            ind.dbInitialization.none { a ->
+                a.table.name == e.key && e.value.all { c ->
+                    // either the selected column is already in existing action
+                    (c != "*" && a.selectedColumns.any { x ->
+                        x.name.equals(c, ignoreCase = true)
+                    }) // or we want all, and existing action has all columns
+                            || (c == "*" && a.table.columns.map { it.name.toLowerCase() }
+                            .containsAll(a.selectedColumns.map { it.name.toLowerCase() }))
+
+                }
+            }
+        }
+    }
+
 
     override fun mutateStructure(individual: Individual) {
         if (individual !is RestIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
 
-        //TODO handle SQL
+        /*
+            TODO should be enable the adding/removing of SQL commands here?
+            Or should that be better to handle with DSE?
+         */
 
 
         if (!individual.canMutateStructure()) {
@@ -35,7 +97,7 @@ class RestStructureMutator : StructureMutator() {
             SampleType.SMART -> throw IllegalStateException(
                     "SMART sampled individuals shouldn't be marked for structure mutations")
 
-            //this would be a bug
+        //this would be a bug
             else -> throw IllegalStateException("Cannot handle sample type ${individual.sampleType}")
         }
     }
@@ -66,7 +128,7 @@ class RestStructureMutator : StructureMutator() {
                     a is RestCallAction && !a.saveLocation && a.verb == HttpVerb.POST
                 }
 
-        if(indices.isEmpty()){
+        if (indices.isEmpty()) {
             /*
                 Nothing we can do here. Cannot delete a POST, and
                 neither add a new one, as we have no template for

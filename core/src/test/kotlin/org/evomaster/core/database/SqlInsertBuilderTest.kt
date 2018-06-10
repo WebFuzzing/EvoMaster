@@ -150,10 +150,12 @@ class SqlInsertBuilderTest {
 
         val builder = SqlInsertBuilder(dto)
 
-        val actions = builder.createSqlInsertionAction("FOO", setOf())
+        //Bar is independent
+        val barActions = builder.createSqlInsertionAction("BAR", setOf())
+        assertEquals(1, barActions.size)
 
-        assertEquals(2, actions.size)
-
-        //TODO
+        //Foo has a FK to Bar
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+        assertEquals(2, fooActions.size)
     }
 }

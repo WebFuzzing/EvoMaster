@@ -49,6 +49,8 @@ abstract class Mutator<T> where T : Individual {
                 break
             }
 
+            structureMutator.addInitializingActions(current)
+
             val mutated = ff.calculateCoverage(mutate(current.individual))
                     ?: continue
 
@@ -65,6 +67,8 @@ abstract class Mutator<T> where T : Individual {
 
     fun mutateAndSave(individual: EvaluatedIndividual<T>, archive: Archive<T>)
             : EvaluatedIndividual<T>? {
+
+        structureMutator.addInitializingActions(individual)
 
         return ff.calculateCoverage(mutate(individual.individual))
                 ?.also { archive.addIfNeeded(it) }
