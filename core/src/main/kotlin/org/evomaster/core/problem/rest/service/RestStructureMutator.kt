@@ -19,6 +19,10 @@ class RestStructureMutator : StructureMutator() {
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
 
+        if(! config.generateSqlData){
+            return
+        }
+
         val ind = individual.individual as? RestIndividual
                 ?: throw IllegalArgumentException("Invalid individual type")
 

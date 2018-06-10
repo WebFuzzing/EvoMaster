@@ -19,7 +19,8 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "2000",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--heuristicsForSQL", "true"
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);

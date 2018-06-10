@@ -36,6 +36,11 @@ class EMConfig {
                 config.updateProperties(options)
             }
 
+            if(config.generateSqlData && ! config.heuristicsForSQL){
+                throw IllegalArgumentException("Cannot generate SQL data if you not enable " +
+                        "collecting heuristics with 'heuristicsForSQL'")
+            }
+
             return parser
         }
 
@@ -410,6 +415,9 @@ class EMConfig {
 
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = false
+
+    @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database")
+    var generateSqlData = false
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
