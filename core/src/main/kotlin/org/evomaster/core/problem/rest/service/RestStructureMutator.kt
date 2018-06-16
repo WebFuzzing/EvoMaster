@@ -64,7 +64,7 @@ class RestStructureMutator : StructureMutator() {
         return es.queriedData.filter { e ->
             //shouldn't have already an action adding such SQL data
             ind.dbInitialization.none { a ->
-                a.table.name == e.key && e.value.all { c ->
+                a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->
                     // either the selected column is already in existing action
                     (c != "*" && a.selectedColumns.any { x ->
                         x.name.equals(c, ignoreCase = true)

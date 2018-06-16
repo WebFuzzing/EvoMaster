@@ -27,7 +27,7 @@ public class SqlDsl implements SequenceDsl, StatementDsl{
     }
 
     @Override
-    public StatementDsl insertInto(String tableName, Integer id){
+    public StatementDsl insertInto(String tableName, Long id){
 
         checkDsl();
 
@@ -68,7 +68,7 @@ public class SqlDsl implements SequenceDsl, StatementDsl{
     }
 
     @Override
-    public StatementDsl r(String variableName, int insertionId){
+    public StatementDsl r(String variableName, long insertionId){
 
         checkDsl();
 
@@ -82,7 +82,7 @@ public class SqlDsl implements SequenceDsl, StatementDsl{
 
         InsertionEntryDto entry = new InsertionEntryDto();
         entry.variableName = variableName;
-        entry.foreignKeyToPreviouslyGeneratedRow = insertionId;
+        entry.foreignKeyToPreviouslyGeneratedRow = (long) insertionId;
 
         current().data.add(entry);
 

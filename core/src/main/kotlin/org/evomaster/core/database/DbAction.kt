@@ -30,6 +30,8 @@ class DbAction(
 
         val gene = when {
         //TODO handle all constraints and cases
+            it.autoIncrement ->
+                SqlAutoIncrementGene(it.name)
             fk != null ->
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
             it.type.equals("VARCHAR", ignoreCase = true) ->
@@ -42,7 +44,7 @@ class DbAction(
         }
 
         if(it.primaryKey) {
-            SqlPrimaryKey(it.name, table.name, gene, id)
+            SqlPrimaryKeyGene(it.name, table.name, gene, id)
         } else {
             gene
         }

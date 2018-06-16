@@ -181,8 +181,8 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
 
 
         List<InsertionDto> insertions = sql()
-                .insertInto("Bar", 0).d("id", "default").d("x", "42").and()
-                .insertInto("Bar", 1).d("id", "default").d("x", "66").and()
+                .insertInto("Bar", 0L).d("id", "default").d("x", "42").and()
+                .insertInto("Bar", 1L).d("id", "default").d("x", "66").and()
                 .insertInto("Foo").r("barId", 0).and()
                 .insertInto("Foo").r("barId", 1).dtos();
 

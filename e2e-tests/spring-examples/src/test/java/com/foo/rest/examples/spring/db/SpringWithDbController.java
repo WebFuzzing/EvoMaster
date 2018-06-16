@@ -29,7 +29,8 @@ public class SpringWithDbController extends SpringController {
                 "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
                 "--spring.jpa.database-platform=" + H2Dialect.class.getName(),
                 "--spring.datasource.username=sa",
-                "--spring.datasource.password"
+                "--spring.datasource.password",
+                "--spring.jpa.properties.hibernate.show_sql=true"
         });
 
 

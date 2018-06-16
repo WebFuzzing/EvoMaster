@@ -41,7 +41,6 @@ class RestSampler : Sampler<RestIndividual>() {
     private var sqlInsertBuilder: SqlInsertBuilder? = null
 
 
-
     @PostConstruct
     private fun initialize() {
 
@@ -69,7 +68,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
         initAdHocInitialIndividuals()
 
-        if(infoDto.sqlSchemaDto != null){
+        if (infoDto.sqlSchemaDto != null) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
         }
 
@@ -89,7 +88,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
             val headers: MutableList<AuthenticationHeader> = mutableListOf()
 
-            i.headers.forEach loop@ { h ->
+            i.headers.forEach loop@{ h ->
                 val name = h.name?.trim()
                 val value = h.value?.trim()
                 if (name == null || value == null) {
@@ -109,8 +108,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun getSwagger(infoDto: SutInfoDto): Swagger {
 
-        val swaggerURL = infoDto.swaggerJsonUrl ?:
-                throw IllegalStateException("Cannot retrieve Swagger URL")
+        val swaggerURL = infoDto.swaggerJsonUrl ?: throw IllegalStateException("Cannot retrieve Swagger URL")
 
         val response = connectToSwagger(swaggerURL, 30)
 
@@ -155,10 +153,10 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
 
-    fun sampleSqlInsertion(tableName: String, columns: Set<String>) : List<DbAction>{
+    fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
 
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-            ?: throw IllegalStateException("No DB schema is available");
+                ?: throw IllegalStateException("No DB schema is available");
 
         /*
             At this point, SQL genes are particular, as they can have
@@ -168,13 +166,15 @@ class RestSampler : Sampler<RestIndividual>() {
          */
 
         val all = actions.flatMap { it.seeGenes() }
-        all.forEach{
-            if(it is SqlForeignKeyGene){
-                it.randomize(randomness, false, all)
-            } else {
-                it.randomize(randomness, false)
-            }
-        }
+        all.asSequence()
+                .filter { it.isMutable() }
+                .forEach {
+                    if (it is SqlForeignKeyGene) {
+                        it.randomize(randomness, false, all)
+                    } else {
+                        it.randomize(randomness, false)
+                    }
+                }
 
         return actions
     }
@@ -280,7 +280,7 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     override fun hasSpecialInit(): Boolean {
-        return ! adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
     }
 
     override fun resetSpecialInit() {
@@ -468,7 +468,7 @@ class RestSampler : Sampler<RestIndividual>() {
                 post.path.getVariableNames().size >= 2) {
 
             val dependencyCreated = createResourcesFor(post, test)
-            if(! dependencyCreated){
+            if (!dependencyCreated) {
                 return false
             }
         }

@@ -11,7 +11,7 @@ public class InsertionDto {
      * we need to refer (eg foreign key) to the data generated
      * by a previous insertion
      */
-    public Integer id;
+    public Long id;
 
     public String targetTable;
 

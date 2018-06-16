@@ -149,7 +149,7 @@ public class SqlScriptRunner {
         String insertSql = "INSERT INTO ";
 
         //From DTO Insertion Id to generated Id in database
-        Map<Integer, Long> map = new HashMap<>();
+        Map<Long, Long> map = new HashMap<>();
 
         for (InsertionDto insDto : insertions) {
 

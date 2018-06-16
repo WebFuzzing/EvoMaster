@@ -23,6 +23,13 @@ abstract class Gene(var name: String) {
      */
     open fun isMutable() = true
 
+    /**
+     * Specify if this gene should be printed in the output test.
+     * In other words, if this genotype directly influences the
+     * phenotype
+     */
+    open fun isPrintable() = true
+
 
     // FIXME: refactoring by adding "allGenes: List<Gene> = listOf()"
 

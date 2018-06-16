@@ -102,7 +102,9 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
     }
 
     private fun getTable(tableName: String): Table {
-        return tables[tableName] ?: throw IllegalArgumentException("No table called $tableName")
+        return tables[tableName]
+                ?: tables[tableName.toUpperCase()]
+                ?: throw IllegalArgumentException("No table called $tableName")
     }
 
     /**
@@ -142,12 +144,14 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
         val selectedColumns = mutableSetOf<Column>()
 
         for (c in table.columns) {
-            if (c.primaryKey && c.autoIncrement) {
-                //value will be set by DB, so skip it
-                continue
-            }
+            /*
+                we need to take primaryKey even if autoIncrement.
+                Point is, even if value will be set by DB, and so could skip it,
+                we would still need a non-modifiable, non-printable Gene to
+                store it, as we can have other Foreign Key genes pointing to it
+             */
 
-            if (takeAll || columnNames.contains(c.name) || !c.nullable) {
+            if (takeAll || columnNames.contains(c.name) || !c.nullable || c.primaryKey) {
                 //TODO are there also other constraints to consider?
                 selectedColumns.add(c)
             }

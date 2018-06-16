@@ -33,12 +33,8 @@ class EMConfig {
             val options = parser.parse(*args)
 
             if (!options.has("help")) {
+                //actual validation is done here
                 config.updateProperties(options)
-            }
-
-            if(config.generateSqlData && ! config.heuristicsForSQL){
-                throw IllegalArgumentException("Cannot generate SQL data if you not enable " +
-                        "collecting heuristics with 'heuristicsForSQL'")
             }
 
             return parser
@@ -225,6 +221,11 @@ class EMConfig {
             StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds){
                 throw IllegalArgumentException("Changing number of max seconds, but stopping criterion is based on fitness evaluations")
             }
+        }
+
+        if(generateSqlData && ! heuristicsForSQL){
+            throw IllegalArgumentException("Cannot generate SQL data if you not enable " +
+                    "collecting heuristics with 'heuristicsForSQL'")
         }
     }
 

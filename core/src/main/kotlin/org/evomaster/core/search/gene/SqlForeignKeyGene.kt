@@ -47,7 +47,7 @@ class SqlForeignKeyGene(
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
                 .takeWhile { it !is SqlForeignKeyGene || it.uniqueId != uniqueId }
-                .filterIsInstance(SqlPrimaryKey::class.java)
+                .filterIsInstance(SqlPrimaryKeyGene::class.java)
                 .filter { it.tableName == targetTable }
                 .map { it.uniqueId }
                 .toSet()
@@ -111,10 +111,26 @@ class SqlForeignKeyGene(
             }
         }
 
-        val pk = previousGenes.find { it is SqlPrimaryKey && it.uniqueId == uniqueIdOfPrimaryKey }
+        val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
+        if(! pk.isPrintable()){
+            //this can happen if the PK is autoincrement
+            throw IllegalArgumentException("Trying to print a Foreign Key pointing to a non-printable Primary Key")
+        }
+
         return pk.getValueAsPrintableString()
+    }
+
+    fun isReferenceToNonPrintable(previousGenes: List<Gene>) : Boolean{
+        if(! isBound()){
+            return false
+        }
+
+        val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
+                ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
+
+        return ! pk.isPrintable()
     }
 
     private fun isBound() = uniqueIdOfPrimaryKey >= 0

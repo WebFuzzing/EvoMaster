@@ -9,7 +9,7 @@ public interface SequenceDsl {
      * @param id an id for this insertion. Can be null.
      * @return
      */
-    StatementDsl insertInto(String tableName, Integer id);
+    StatementDsl insertInto(String tableName, Long id);
 
     /**
      * An insertion operation on the SQL Database (DB)

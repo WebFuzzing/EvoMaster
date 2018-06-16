@@ -9,5 +9,5 @@ public class InsertionEntryDto {
     /**
      * If non null, then printableValue should be null
      */
-    public Integer foreignKeyToPreviouslyGeneratedRow;
+    public Long foreignKeyToPreviouslyGeneratedRow;
 }

@@ -25,8 +25,7 @@ public abstract class SpringController extends EmbeddedSutController {
     @Override
     public String startSut() {
 
-        ctx = SpringApplication.run(applicationClass,
-                new String[]{"--server.port=0"});
+        ctx = SpringApplication.run(applicationClass, "--server.port=0");
 
 
         return "http://localhost:"+getSutPort();

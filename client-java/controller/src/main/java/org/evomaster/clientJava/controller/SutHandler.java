@@ -1,5 +1,9 @@
 package org.evomaster.clientJava.controller;
 
+import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
+
+import java.util.List;
+
 /**
  * Base interface used to control the system under test (SUT)
  * from the generated tests.
@@ -28,4 +32,9 @@ public interface SutHandler {
      * call #stopSUT followed by #startSUT
      */
     void resetStateOfSUT();
+
+    /**
+     * Execute the given data insertions into the database (if any)
+     */
+    void execInsertionsIntoDatabase(List<InsertionDto> insertions);
 }

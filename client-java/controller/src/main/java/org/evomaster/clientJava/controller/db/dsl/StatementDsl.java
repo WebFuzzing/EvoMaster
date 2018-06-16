@@ -27,7 +27,7 @@ public interface StatementDsl {
      *                      the database (eg, auto-increment).
      * @return
      */
-    StatementDsl r(String variableName, int insertionId);
+    StatementDsl r(String variableName, long insertionId);
 
     /**
      * Concatenate a new SQL command

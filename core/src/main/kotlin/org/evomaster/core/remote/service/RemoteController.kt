@@ -3,6 +3,7 @@ package org.evomaster.core.remote.service
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.ControllerConstants
 import org.evomaster.clientJava.controllerApi.dto.*
+import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.slf4j.Logger
@@ -204,6 +205,22 @@ class RemoteController() {
             log.warn("Failed to register new action. HTTP status: {}", response.status)
         }
     }
+
+    fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
+
+        val response = getWebTarget()
+                .path(ControllerConstants.DATABASE_COMMAND)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+
+        if (!wasSuccess(response)) {
+            log.warn("Failed to execute database command. HTTP status: {}", response.status)
+            return false
+        }
+
+        return true
+    }
+
 
     fun resetExtraHeuristics() {
 

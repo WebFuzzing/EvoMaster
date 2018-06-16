@@ -2,6 +2,7 @@ package org.evomaster.e2etests.utils;
 
 import org.evomaster.clientJava.controller.EmbeddedSutController;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
+import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.remote.service.RemoteController;
@@ -22,10 +23,13 @@ public abstract class RestTestBase {
 
     protected static InstrumentedSutStarter embeddedStarter;
     protected static String baseUrlOfSut;
+    protected static SutController controller;
     protected static RemoteController remoteController;
     protected static int controllerPort;
 
     protected static void initClass(EmbeddedSutController controller) throws Exception {
+
+        RestTestBase.controller = controller;
 
         embeddedStarter = new InstrumentedSutStarter(controller);
         embeddedStarter.start();
@@ -115,9 +119,9 @@ public abstract class RestTestBase {
                 continue;
             }
 
-            if(path!=null){
+            if (path != null) {
                 RestPath target = new RestPath(path);
-                if(! action.getPath().isEquivalent(target)) {
+                if (!action.getPath().isEquivalent(target)) {
                     continue;
                 }
             }
@@ -125,12 +129,12 @@ public abstract class RestTestBase {
             RestCallResult res = (RestCallResult) ind.getResults().get(i);
             Integer statusCode = res.getStatusCode();
 
-            if (! statusCode.equals(expectedStatusCode)) {
+            if (!statusCode.equals(expectedStatusCode)) {
                 continue;
             }
 
             String body = res.getBody();
-            if(inResponse != null && ! body.contains(inResponse)){
+            if (inResponse != null && !body.contains(inResponse)) {
                 continue;
             }
 
@@ -152,6 +156,16 @@ public abstract class RestTestBase {
         assertTrue(ok, restActions(solution));
     }
 
+    protected void assertInsertionIntoTable(Solution<RestIndividual> solution, String tableName) {
+
+        boolean ok = solution.getIndividuals().stream().anyMatch(
+                ind -> ind.getIndividual().getDbInitialization().stream().anyMatch(
+                        da -> da.getTable().getName().equalsIgnoreCase(tableName))
+        );
+
+        assertTrue(ok);
+    }
+
     protected void assertHasAtLeastOne(Solution<RestIndividual> solution,
                                        HttpVerb verb,
                                        int expectedStatusCode) {
@@ -164,7 +178,7 @@ public abstract class RestTestBase {
         solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
                 .map(ea -> ea.getAction())
                 .filter(a -> a instanceof RestCallAction)
-                .forEach(a -> msg.append(a.toString() + "\n"));
+                .forEach(a -> msg.append(a.toString()).append("\n"));
 
         return msg.toString();
     }

@@ -7,10 +7,10 @@ import org.evomaster.core.search.service.Randomness
  * where such column is a Primary Key.
  * This is important to check Foreign Keys referencing it.
  */
-class SqlPrimaryKey(name: String,
-                    val tableName: String,
-                    val gene: Gene,
-                    /**
+class SqlPrimaryKeyGene(name: String,
+                        val tableName: String,
+                        val gene: Gene,
+                        /**
                      * Important for the Foreign Keys referencing it.
                      * Cannot be negative
                      */
@@ -24,14 +24,14 @@ class SqlPrimaryKey(name: String,
         }
     }
 
-    override fun copy() = SqlPrimaryKey(name, tableName, gene.copy(), uniqueId)
+    override fun copy() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
         gene.randomize(randomness, false)
     }
 
     override fun copyValueFrom(other: Gene) {
-        if(other !is SqlPrimaryKey){
+        if(other !is SqlPrimaryKeyGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.gene.copyValueFrom(other.gene)
@@ -50,5 +50,9 @@ class SqlPrimaryKey(name: String,
     override fun flatView(): List<Gene>{
         return listOf(this).plus(gene.flatView())
     }
+
+    override fun isMutable() = gene.isMutable()
+
+    override fun isPrintable() = gene.isPrintable()
 
 }

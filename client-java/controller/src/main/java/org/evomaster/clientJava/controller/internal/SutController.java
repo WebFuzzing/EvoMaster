@@ -7,12 +7,14 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.SutHandler;
+import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controller.internal.db.SqlHandler;
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
 import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto;
+import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
@@ -22,6 +24,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 
 import java.net.InetSocketAddress;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 
 /**
@@ -120,6 +123,21 @@ public abstract class SutController implements SutHandler{
 
     public final void setControllerHost(String controllerHost) {
         this.controllerHost = controllerHost;
+    }
+
+    @Override
+    public void execInsertionsIntoDatabase(List<InsertionDto> insertions){
+
+        Connection connection = getConnection();
+        if(connection == null){
+            throw new IllegalStateException("No connection to database");
+        }
+
+        try {
+            SqlScriptRunner.execInsert(connection, insertions);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
