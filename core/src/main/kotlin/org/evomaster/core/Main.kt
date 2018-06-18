@@ -143,7 +143,7 @@ class Main {
             return solution
         }
 
-
+        @JvmStatic
         fun init(args: Array<String>): Injector {
 
             //TODO check problem type

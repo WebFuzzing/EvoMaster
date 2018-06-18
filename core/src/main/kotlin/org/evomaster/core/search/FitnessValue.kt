@@ -159,6 +159,10 @@ class FitnessValue(
         return compareByReduce(target, other)
     }
 
+    fun averageExtraDistancesToMinimize(actionIndex: Int): Double{
+        return aggregateDistances(extraToMinimize[actionIndex])
+    }
+
     private fun aggregateDistances(distances: List<Double>?): Double {
         if (distances == null || distances.isEmpty()) {
             return Double.MAX_VALUE

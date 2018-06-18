@@ -28,21 +28,34 @@ class IntegerGene(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
         val z = 1000
+        val range = max.toLong() - min.toLong() + 1L
 
-        if(min < -z && max > z && randomness.nextBoolean()){
-            //if very large range, might want to sample small values any now and then
-            if (forceNewValue) {
-                value = randomness.nextInt(-z, z, value)
+        val a: Int
+        val b: Int
+
+        if(range > z && randomness.nextBoolean(0.95)){
+            //if very large range, might want to sample small values around 0 most of the times
+            if(min <= 0 && max >= z){
+                a = 0
+                b = z
+            } else if(randomness.nextBoolean()){
+                a = min
+                b = min + z
             } else {
-                value = randomness.nextInt(-z, z)
+                a = max - z
+                b = max
             }
         } else {
-            if (forceNewValue) {
-                value = randomness.nextInt(min, max, value)
-            } else {
-                value = randomness.nextInt(min, max)
-            }
+            a = min
+            b = max
         }
+
+        value = if (forceNewValue) {
+            randomness.nextInt(a, b, value)
+        } else {
+            randomness.nextInt(a, b)
+        }
+
     }
 
     override fun getValueAsPrintableString() : String{

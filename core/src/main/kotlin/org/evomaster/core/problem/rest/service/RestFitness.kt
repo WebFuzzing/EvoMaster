@@ -178,6 +178,10 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     private fun doInitializingActions(ind: RestIndividual) {
 
+        if(ind.dbInitialization.isEmpty()){
+            return
+        }
+
         val list = mutableListOf<InsertionDto>()
 
         for(i in 0 until ind.dbInitialization.size){

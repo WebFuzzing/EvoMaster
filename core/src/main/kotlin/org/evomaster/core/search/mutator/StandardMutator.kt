@@ -91,7 +91,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         val others = all.flatMap { g -> g.flatView() }
                 .filterIsInstance<StringGene>()
                 .map { g -> g.value }
-                .filter { s -> s != gene.value }
+                .filter { it != gene.value }
 
         gene.value = when {
         //seeding: replace
