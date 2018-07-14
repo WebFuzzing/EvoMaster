@@ -73,6 +73,10 @@ public class SqlHandler {
 
     private void handleReadData(String sql) {
 
+        if(! isSelect(sql)){
+            return;
+        }
+
         Map<String, Set<String>> current = SelectHeuristics.getReadDataFields(sql);
 
 
