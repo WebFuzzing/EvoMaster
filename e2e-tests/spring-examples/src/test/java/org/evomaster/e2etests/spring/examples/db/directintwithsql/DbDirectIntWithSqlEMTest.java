@@ -37,11 +37,12 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
                 "--createTests", "true",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2000",
+                "--maxActionEvaluations", "20000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
                 "--generateSqlData", "true",
-                "--maxTestSize", "1" //TODO Remove
+                "--maxTestSize", "1", //TODO Remove?
+                "--maxSqlInitActionsPerMissingData", "1" //TODO Remove?
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
@@ -52,8 +53,8 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
         assertNone(solution, HttpVerb.POST, 200);
 
         assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
-        assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
         assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+        assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
     }
 
 
