@@ -11,9 +11,11 @@
 
 <br>
 
+<!--
 <b>HIRING</b>: we are hiring postdocs to work on this project.
-For more information and for applying, see [here](https://www.linkedin.com/jobs/view/644074423/).
+For more information and for applying, see [here]().
 <br>
+-->
 
 EvoMaster ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
 that automatically *generates* system-level test cases.
