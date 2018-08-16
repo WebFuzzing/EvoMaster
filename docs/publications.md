@@ -5,7 +5,7 @@
 
 * A. Arcuri *Test Suite Generation with the
              Many Independent Objective (MIO) Algorithm*.
-     Information and Software Technology.
+     Information and Software Technology (IST).
      [[PDF](publications/2018_ist.pdf)]   
 
 
@@ -16,7 +16,7 @@
      
 *   A. Arcuri. *An Experience Report On Applying Software Testing Academic 
                Results In Industry: We Need Usable Automated Test Generation*.
-   Empirical Software Engineering.
+   Empirical Software Engineering (EMSE).
    [[PDF](publications/2018_emse.pdf)]                           
 
 ### 2017
