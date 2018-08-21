@@ -12,6 +12,6 @@ cache:
   - $HOME/.m2
 
 notifications:
-  email: false
+  email: true
 
 script: mvn clean verify --quiet

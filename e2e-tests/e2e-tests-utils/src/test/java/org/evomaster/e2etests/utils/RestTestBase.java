@@ -200,4 +200,34 @@ public abstract class RestTestBase {
 
         assertTrue(ok, msg.toString());
     }
+
+    /**
+     * Unfortunately JUnit 5 does not handle flaky tests, and Maven is not upgraded yet.
+     * See https://github.com/junit-team/junit5/issues/1558#issuecomment-414701182
+     *
+     * TODO: once that issue is fixed (if it will ever be fixed), then this method
+     * will no longer be needed
+     *
+     * @param lambda
+     * @throws Throwable
+     */
+    protected void handleFlaky(Runnable lambda) throws Throwable{
+
+        int attempts = 3;
+        Throwable error = null;
+
+        for(int i=0; i<attempts; i++){
+
+            try{
+                lambda.run();
+                return;
+            }catch (OutOfMemoryError e){
+                throw e;
+            }catch (Throwable t){
+                error = t;
+            }
+        }
+
+        throw error;
+    }
 }

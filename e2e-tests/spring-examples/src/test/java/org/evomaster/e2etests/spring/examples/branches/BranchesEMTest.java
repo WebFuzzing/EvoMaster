@@ -28,45 +28,48 @@ public class BranchesEMTest extends SpringTestBase {
 
 
     @Test
-    public void testRunEM() {
+    public void testRunEM() throws Throwable {
 
-        String[] args = new String[]{
-                "--createTests", "false",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1000",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
-        };
+        handleFlaky(() -> {
 
-        Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+            String[] args = new String[]{
+                    "--createTests", "false",
+                    "--seed", "42",
+                    "--sutControllerPort", "" + controllerPort,
+                    "--maxActionEvaluations", "5000",
+                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
+            };
 
-        assertTrue(solution.getIndividuals().size() >= 1);
+            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
 
-        ObjectMapper mapper = new ObjectMapper();
+            assertTrue(solution.getIndividuals().size() >= 1);
 
-        //get number of distinct response values
-        List<Integer> responses = solution.getIndividuals().stream()
-                .flatMap(i -> i.getResults().stream())
-                .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
-                .filter(s -> s != null)
-                .map(s -> {
-                    try {
-                        return mapper.readValue(s, BranchesResponseDto.class);
-                    } catch (IOException e) {
-                        return null;
-                    }
-                })
-                .filter(b -> b != null)
-                .map(b -> b.value)
-                .distinct()
-                .sorted()
-                .collect(Collectors.toList());
+            ObjectMapper mapper = new ObjectMapper();
 
-        long n = responses.size();
+            //get number of distinct response values
+            List<Integer> responses = solution.getIndividuals().stream()
+                    .flatMap(i -> i.getResults().stream())
+                    .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
+                    .filter(s -> s != null)
+                    .map(s -> {
+                        try {
+                            return mapper.readValue(s, BranchesResponseDto.class);
+                        } catch (IOException e) {
+                            return null;
+                        }
+                    })
+                    .filter(b -> b != null)
+                    .map(b -> b.value)
+                    .distinct()
+                    .sorted()
+                    .collect(Collectors.toList());
 
-        //FIXME: should be 9, but 2 branches requiring ==0 cannot be
-        //covered until we have "working" local search or seeding
-        assertTrue(n >= 7);
-        //assertEquals(9, n);
+            long n = responses.size();
+
+            //FIXME: should be 9, but 2 branches requiring ==0 cannot be
+            //covered until we have "working" local search or seeding
+            assertTrue(n >= 7);
+            //assertEquals(9, n);
+        });
     }
 }
