@@ -36,10 +36,12 @@ Frinatek project <i>Evolutionary Enterprise Testing</i>.
 
 To compile the project, use the Maven command:
 
-`mvn  install -DskipTests`
+`mvn  clean install -DskipTests`
 
 This should create an `evomaster.jar` executable under the `core/target` folder.
 
+Note: if you get an arror from the shade-plugin, then make sure to use
+`clean` in your maven commands.
 
 ### Example
 
