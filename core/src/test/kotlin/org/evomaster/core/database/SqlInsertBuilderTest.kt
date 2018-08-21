@@ -3,6 +3,7 @@ package org.evomaster.core.database
 import org.evomaster.clientJava.controller.db.SqlScriptRunner
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
@@ -79,15 +80,17 @@ class SqlInsertBuilderTest {
         assertTrue(genes.any { it.name.equals("y", ignoreCase = true) })
 
         /*
-            - id skipped because auto-incremented value
+            - id should had been skipped because auto-incremented value.
+              however, being a primary key, we still need it for the tests
+              in a non-modifiable, non-printable Gene.
             - z skipped because nullable and not requested
          */
-        assertFalse(genes.any { it.name.equals("id", ignoreCase = true) })
+        assertTrue(genes.any { it.name.equals("id", ignoreCase = true) })
         assertFalse(genes.any { it.name.equals("z", ignoreCase = true) })
 
-        assertEquals(2, genes.size)
-        assertTrue(genes[0] is IntegerGene)
-        assertTrue(genes[1] is IntegerGene)
+        assertEquals(3, genes.size)
+        assertEquals(2, genes.filterIsInstance(IntegerGene::class.java).size)
+        assertEquals(1, genes.filterIsInstance(SqlPrimaryKeyGene::class.java).size)
     }
 
 
