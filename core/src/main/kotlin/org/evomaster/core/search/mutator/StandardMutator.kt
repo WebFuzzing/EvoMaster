@@ -108,11 +108,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 String(array)
             }
         //delete last
-            p < 0.9 && s.isNotEmpty() -> {
+            p < 0.9 && s.isNotEmpty() && s.length > gene.minLength -> {
                 s.dropLast(1)
             }
         //append new
-            else -> {
+            s.length < gene.maxLength -> {
                 if (s.isEmpty() || randomness.nextBoolean(0.8)) {
                     s + randomness.nextWordChar()
                 } else {
@@ -123,6 +123,10 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                         s.substring(0, i) + randomness.nextWordChar() + s.substring(i, s.length)
                     }
                 }
+            }
+            else -> {
+                //do nothing
+                s
             }
         }
     }

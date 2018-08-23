@@ -35,7 +35,7 @@ class DbAction(
             fk != null ->
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
             it.type.equals("VARCHAR", ignoreCase = true) ->
-                StringGene(name = it.name, minLength = 0, maxLength = Math.min(16, it.size))
+                StringGene(name = it.name, minLength = 0, maxLength = it.size)
             it.type.equals("INTEGER", ignoreCase = true) ->
                 IntegerGene(it.name)
             it.type.equals("LONG", ignoreCase = true) ->
@@ -71,7 +71,7 @@ class DbAction(
             return DateTimeGene(column.name)
         } else {
             //go for a default string
-            return StringGene(name = column.name, minLength = 0, maxLength = Math.min(16, column.size))
+            return StringGene(name = column.name, minLength = 0, maxLength =  column.size)
         }
     }
 
