@@ -40,6 +40,14 @@ class DbAction(
                 IntegerGene(it.name)
             it.type.equals("LONG", ignoreCase = true) ->
                 LongGene(it.name)
+            it.type.equals("BIGINT", ignoreCase = true) ->
+                LongGene(it.name)
+            it.type.equals("TIMESTAMP", ignoreCase = true) ->
+                /*
+                    TODO handle fact that TimeStamp have year limitations and possible different
+                    string formats when printed
+                 */
+                    DateTimeGene(it.name)
 //            it.type.equals("VARBINARY", ignoreCase = true) ->
 //                handleVarBinary(it)
             else -> throw IllegalArgumentException("Cannot handle: $it")
