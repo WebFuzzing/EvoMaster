@@ -66,8 +66,13 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             is DoubleGene -> handleDoubleGene(gene)
             is StringGene -> handleStringGene(gene, all)
             else ->
-                //TODO other cases
-                gene.randomize(randomness, true)
+                if(gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
+                    //FIXME: this needs refactoring
+                    handleSqlForeignKeyGene(gene.gene, all)
+                } else {
+                    //TODO other cases
+                    gene.randomize(randomness, true)
+                }
         }
     }
 

@@ -18,6 +18,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.FitnessFunction
@@ -184,6 +185,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
 
         val list = mutableListOf<InsertionDto>()
+        val previous = mutableListOf<Gene>()
 
         for(i in 0 until ind.dbInitialization.size){
 
@@ -202,11 +204,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 val entry = InsertionEntryDto()
 
                 if(g is SqlForeignKeyGene) {
-                    handleSqlForeignKey(g, action, entry)
+                    handleSqlForeignKey(g, previous, entry)
                 } else if(g is SqlPrimaryKeyGene){
                     val k = g.gene
                     if(k is SqlForeignKeyGene){
-                        handleSqlForeignKey(k, action, entry)
+                        handleSqlForeignKey(k, previous, entry)
                     } else {
                         entry.printableValue = g.getValueAsPrintableString()
                     }
@@ -220,6 +222,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             }
 
             list.add(insertion)
+            previous.addAll(action.seeGenes())
         }
 
         val dto = DatabaseCommandDto().apply { insertions = list }
@@ -230,11 +233,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
     }
 
-    private fun handleSqlForeignKey(g: SqlForeignKeyGene, action: DbAction, entry: InsertionEntryDto) {
-        if (g.isReferenceToNonPrintable(action.seeGenes())) {
+    private fun handleSqlForeignKey(g: SqlForeignKeyGene, previous: List< Gene>, entry: InsertionEntryDto) {
+        if (g.isReferenceToNonPrintable(previous)) {
             entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
         } else {
-            entry.printableValue = g.getValueAsPrintableString(action.seeGenes())
+            entry.printableValue = g.getValueAsPrintableString(previous)
         }
     }
 

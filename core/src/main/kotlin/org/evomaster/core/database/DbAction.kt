@@ -42,6 +42,8 @@ class DbAction(
                 LongGene(it.name)
             it.type.equals("BIGINT", ignoreCase = true) ->
                 LongGene(it.name)
+            it.type.equals("BOOLEAN", ignoreCase = true) ->
+                BooleanGene(it.name)
             it.type.equals("TIMESTAMP", ignoreCase = true) ->
                 /*
                     TODO handle fact that TimeStamp have year limitations and possible different
