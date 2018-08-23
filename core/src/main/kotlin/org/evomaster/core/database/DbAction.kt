@@ -35,11 +35,13 @@ class DbAction(
             fk != null ->
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
             it.type.equals("VARCHAR", ignoreCase = true) ->
-                StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                StringGene(name = it.name, minLength = 0, maxLength = Math.min(16, it.size))
             it.type.equals("INTEGER", ignoreCase = true) ->
                 IntegerGene(it.name)
             it.type.equals("LONG", ignoreCase = true) ->
                 LongGene(it.name)
+//            it.type.equals("VARBINARY", ignoreCase = true) ->
+//                handleVarBinary(it)
             else -> throw IllegalArgumentException("Cannot handle: $it")
         }
 
@@ -47,6 +49,29 @@ class DbAction(
             SqlPrimaryKeyGene(it.name, table.name, gene, id)
         } else {
             gene
+        }
+    }
+
+
+    private fun handleVarBinary(column: Column): Gene {
+        /*
+            TODO: this is more complicated than expected, as we need
+            new gene type to handle transformation to hex format
+         */
+        /*
+            This is a nasty case, as it is a blob of binary data.
+            Could be any format, and likely no constraint in the DB schema,
+            where the actual constraints are in the SUT code.
+            This is also what for example can be used by Hibernate to represent
+            a ZoneDataTime before Java 8 support.
+            A workaround for the moment is to guess a possible type/constraints
+            based on the column name
+         */
+        if(column.name.contains("time", ignoreCase = true)){
+            return DateTimeGene(column.name)
+        } else {
+            //go for a default string
+            return StringGene(name = column.name, minLength = 0, maxLength = Math.min(16, column.size))
         }
     }
 

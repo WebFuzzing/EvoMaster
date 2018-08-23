@@ -77,7 +77,9 @@ public class EMController {
 
         try {
             if (dto.run == null) {
-                throw new WebApplicationException("Invalid JSON: 'run' field is required", 400);
+                String msg = "Invalid JSON: 'run' field is required";
+                SimpleLogger.warn(msg);
+                throw new WebApplicationException(msg, 400);
             }
 
             boolean newlyStarted = false;
@@ -106,8 +108,9 @@ public class EMController {
 
                 if (dto.resetState != null && dto.resetState) {
                     if (!dto.run) {
-                        throw new WebApplicationException(
-                                "Invalid JSON: cannot reset state and stop service at same time", 400);
+                        String msg = "Invalid JSON: cannot reset state and stop service at same time";
+                        SimpleLogger.warn(msg);
+                        throw new WebApplicationException(msg, 400);
                     }
 
                     if (!newlyStarted) { //no point resetting if fresh start
@@ -147,7 +150,9 @@ public class EMController {
                     .map(Integer::parseInt)
                     .collect(Collectors.toSet());
         } catch (NumberFormatException e) {
-            throw new WebApplicationException("Invalid parameter 'ids': " + e.getMessage(), e);
+            String msg = "Invalid parameter 'ids': " + e.getMessage();
+            SimpleLogger.warn(msg);
+            throw new WebApplicationException(msg, e);
         }
 
         List<TargetInfo> list = sutController.getTargetInfos(ids);
@@ -205,15 +210,21 @@ public class EMController {
 
         Connection connection = sutController.getConnection();
         if (connection == null) {
-            throw new WebApplicationException("No active database connection", 400);
+            String msg = "No active database connection";
+            SimpleLogger.warn(msg);
+            throw new WebApplicationException(msg, 400);
         }
 
         if (dto.command == null && (dto.insertions == null || dto.insertions.isEmpty())) {
-            throw new WebApplicationException("No input command", 400);
+            String msg = "No input command";
+            SimpleLogger.warn(msg);
+            throw new WebApplicationException(msg, 400);
         }
 
         if (dto.command != null && dto.insertions != null && !dto.insertions.isEmpty()) {
-            throw new WebApplicationException("Only 1 command can be specified", 400);
+            String msg = "Only 1 command can be specified";
+            SimpleLogger.warn(msg);
+            throw new WebApplicationException(msg, 400);
         }
 
 
@@ -224,8 +235,9 @@ public class EMController {
                 SqlScriptRunner.execInsert(connection, dto.insertions);
             }
         } catch (Exception e) {
-            throw new WebApplicationException(
-                    "Failed to execute database command: " + e.getMessage(), 400);
+            String msg = "Failed to execute database command: " + e.getMessage();
+            SimpleLogger.warn(msg);
+            throw new WebApplicationException(msg, 400);
         }
     }
 }
