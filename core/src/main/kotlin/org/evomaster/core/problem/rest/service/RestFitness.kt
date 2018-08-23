@@ -8,6 +8,7 @@ import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataD
 import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionEntryDto
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -201,10 +202,13 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 val entry = InsertionEntryDto()
 
                 if(g is SqlForeignKeyGene) {
-                    if(g.isReferenceToNonPrintable(action.seeGenes())) {
-                        entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
+                    handleSqlForeignKey(g, action, entry)
+                } else if(g is SqlPrimaryKeyGene){
+                    val k = g.gene
+                    if(k is SqlForeignKeyGene){
+                        handleSqlForeignKey(k, action, entry)
                     } else {
-                        entry.printableValue = g.getValueAsPrintableString(action.seeGenes())
+                        entry.printableValue = g.getValueAsPrintableString()
                     }
                 } else {
                     entry.printableValue = g.getValueAsPrintableString()
@@ -223,6 +227,14 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val ok = rc.executeDatabaseCommand(dto)
         if(! ok){
             log.warn("Failed in executing database command")
+        }
+    }
+
+    private fun handleSqlForeignKey(g: SqlForeignKeyGene, action: DbAction, entry: InsertionEntryDto) {
+        if (g.isReferenceToNonPrintable(action.seeGenes())) {
+            entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
+        } else {
+            entry.printableValue = g.getValueAsPrintableString(action.seeGenes())
         }
     }
 

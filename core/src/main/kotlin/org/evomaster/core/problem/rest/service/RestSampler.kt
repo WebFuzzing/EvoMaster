@@ -15,6 +15,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.SqlForeignKeyGene
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -156,20 +157,28 @@ class RestSampler : Sampler<RestIndividual>() {
     fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
 
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
-                ?: throw IllegalStateException("No DB schema is available");
+                ?: throw IllegalStateException("No DB schema is available")
 
         /*
             At this point, SQL genes are particular, as they can have
             references to each other (eg Foreign Keys)
 
-            FIXME: refactoring to put such concept at higher level directly in Gene
+            FIXME: refactoring to put such concept at higher level directly in Gene.
+            And, in any case, shouldn't something specific just for Rest
          */
 
         val all = actions.flatMap { it.seeGenes() }
         all.asSequence()
                 .filter { it.isMutable() }
                 .forEach {
-                    if (it is SqlForeignKeyGene) {
+                    if(it is SqlPrimaryKeyGene){
+                        val g = it.gene
+                        if(g is SqlForeignKeyGene){
+                            g.randomize(randomness, false, all)
+                        } else {
+                            it.randomize(randomness, false)
+                        }
+                    } else if (it is SqlForeignKeyGene) {
                         it.randomize(randomness, false, all)
                     } else {
                         it.randomize(randomness, false)
