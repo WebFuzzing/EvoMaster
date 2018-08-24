@@ -13,7 +13,7 @@ class LinearIndividual(val id: DisruptiveGene<IntegerGene>, val k: IntegerGene) 
         return LinearIndividual(id.copy() as DisruptiveGene<IntegerGene>, k.copy() as IntegerGene)
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeGenes(filter: GENE_FILTER): List<out Gene> {
         return listOf(id, k)
     }
 

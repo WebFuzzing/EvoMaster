@@ -40,7 +40,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
                 "--maxActionEvaluations", "20000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
-                "--generateSqlData", "true",
+                "--generateSqlDataWithSearch", "true",
                 "--maxTestSize", "1", //TODO Remove?
                 "--maxSqlInitActionsPerMissingData", "1" //TODO Remove?
         };
@@ -68,7 +68,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
                 "--maxActionEvaluations", "1",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
-                "--generateSqlData", "true",
+                "--generateSqlDataWithSearch", "true",
                 "--maxTestSize", "1"
         };
 

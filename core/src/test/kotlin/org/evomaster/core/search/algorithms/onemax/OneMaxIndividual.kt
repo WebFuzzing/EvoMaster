@@ -43,7 +43,7 @@ class OneMaxIndividual(val n: Int) : Individual() {
         }
     }
 
-    override fun seeGenes(): List<out Gene> {
+    override fun seeGenes(filter: GENE_FILTER): List<out Gene> {
         return list
     }
 

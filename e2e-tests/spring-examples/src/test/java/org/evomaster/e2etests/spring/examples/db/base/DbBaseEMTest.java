@@ -21,7 +21,7 @@ public class DbBaseEMTest extends DbBaseTestBase {
                 "--maxActionEvaluations", "10000",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForSQL", "true",
-                "--generateSqlData", "false"
+                "--generateSqlDataWithSearch", "false"
         };
 
         Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);

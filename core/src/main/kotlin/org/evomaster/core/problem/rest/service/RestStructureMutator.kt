@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.EMConfig
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -19,7 +18,7 @@ class RestStructureMutator : StructureMutator() {
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
 
-        if(! config.generateSqlData){
+        if(! config.shouldGenerateSqlData()){
             return
         }
 
@@ -57,6 +56,10 @@ class RestStructureMutator : StructureMutator() {
              */
             missing = findMissing(es, ind)
         }
+
+        if(config.generateSqlDataWithDSE){
+            //TODO DSE could be plugged in here
+        }
     }
 
     private fun findMissing(es: EmptySelects, ind: RestIndividual): Map<String, Set<String>> {
@@ -71,7 +74,6 @@ class RestStructureMutator : StructureMutator() {
                     }) // or we want all, and existing action has all columns
                             || (c == "*" && a.table.columns.map { it.name.toLowerCase() }
                             .containsAll(a.selectedColumns.map { it.name.toLowerCase() }))
-
                 }
             }
         }

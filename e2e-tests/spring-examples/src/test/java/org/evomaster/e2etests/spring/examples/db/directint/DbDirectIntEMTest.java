@@ -22,7 +22,7 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                     "--maxActionEvaluations", "3000",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--heuristicsForSQL", "true",
-                    "--generateSqlData", "false"
+                    "--generateSqlDataWithSearch", "false"
             };
 
             Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);

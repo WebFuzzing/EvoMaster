@@ -25,7 +25,10 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
         }
 
-        val genesToMutate = copy.seeGenes().filter(Gene::isMutable)
+        val filter = if(config.generateSqlDataWithSearch) Individual.GENE_FILTER.ALL
+            else Individual.GENE_FILTER.NO_SQL
+
+        val genesToMutate = copy.seeGenes(filter).filter(Gene::isMutable)
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
         if (genesToMutate.isEmpty()) {
