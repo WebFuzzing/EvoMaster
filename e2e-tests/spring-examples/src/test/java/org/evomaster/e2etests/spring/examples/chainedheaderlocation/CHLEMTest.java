@@ -11,21 +11,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CHLEMTest extends CHLTestBase {
 
     @Test
-    public void testRunEM() {
+    public void testRunEM() throws Throwable {
 
-        String[] args = new String[]{
-                "--createTests", "false",
-                "--outputFormat", "JAVA_JUNIT_5",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1000",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
-        };
+        handleFlaky(() -> {
+            String[] args = new String[]{
+                    "--createTests", "false",
+                    "--outputFormat", "JAVA_JUNIT_5",
+                    "--seed", "42",
+                    "--sutControllerPort", "" + controllerPort,
+                    "--maxActionEvaluations", "1000",
+                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
+            };
 
-        Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
 
-        assertTrue(solution.getIndividuals().size() >= 1);
+            assertTrue(solution.getIndividuals().size() >= 1);
 
-        assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+        });
     }
 }
