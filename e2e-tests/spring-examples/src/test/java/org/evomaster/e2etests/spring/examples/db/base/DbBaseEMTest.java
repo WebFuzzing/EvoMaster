@@ -12,22 +12,24 @@ public class DbBaseEMTest extends DbBaseTestBase {
 
 
     @Test
-    public void testRunEM() {
+    public void testRunEM() throws Throwable {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "10000",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForSQL", "true",
-                "--generateSqlDataWithSearch", "false"
-        };
+        handleFlaky(() -> {
+            String[] args = new String[]{
+                    "--createTests", "true",
+                    "--seed", "42",
+                    "--sutControllerPort", "" + controllerPort,
+                    "--maxActionEvaluations", "10000",
+                    "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                    "--heuristicsForSQL", "true",
+                    "--generateSqlDataWithSearch", "false"
+            };
 
-        Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
 
-        assertTrue(solution.getIndividuals().size() >= 1);
+            assertTrue(solution.getIndividuals().size() >= 1);
 
-        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/base/entitiesByName/{name}", "");
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/base/entitiesByName/{name}", "");
+        });
     }
 }

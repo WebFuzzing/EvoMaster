@@ -233,7 +233,7 @@
             <dependency> <!-- Used to handle terminal/console inputs -->
                 <groupId>net.sf.jopt-simple</groupId>
                 <artifactId>jopt-simple</artifactId>
-                <version>6.0-alpha-1</version>
+                <version>6.0-alpha-2</version>
             </dependency>
 
 

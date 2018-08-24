@@ -133,7 +133,20 @@ class EMConfig {
                 enumValues = " [Values: " + elements.joinToString(", ") + "]"
             }
 
-            return text + constraints + enumValues
+            var description = "$text$constraints$enumValues"
+
+            val experimental = (m.annotations.find { it is Experimental } as? Experimental)
+            if(experimental != null){
+                /*
+                    TODO: For some reasons, coloring is not working here.
+                    Could open an issue at:
+                    https://github.com/jopt-simple/jopt-simple
+                 */
+                //description = AnsiColor.inRed("EXPERIMENTAL: $description")
+                description = "EXPERIMENTAL: $description"
+            }
+
+            return description
         }
 
 
@@ -255,6 +268,14 @@ class EMConfig {
     @MustBeDocumented
     annotation class Max(val max: Double)
 
+    /**
+     * This annotation is used to represent properties controlling
+     * features that are still work in progress.
+     * Do not use them (yet).
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Experimental
 
 //------------------------------------------------------------------------
 //--- properties
@@ -417,15 +438,19 @@ class EMConfig {
     @Min(1.0)
     var maxTestSize = 10
 
+    @Experimental
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = false
 
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     var generateSqlDataWithDSE = false
 
+    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
     var generateSqlDataWithSearch = false
 
+    @Experimental
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
     var maxSqlInitActionsPerMissingData = 5
