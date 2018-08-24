@@ -5,6 +5,8 @@ import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
+import org.evomaster.core.AnsiColor.Companion.inBlue
+import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
@@ -60,7 +62,7 @@ class Main {
 
                 LoggingUtil.getInfoLogger().apply {
                     info("EvoMaster process has completed successfully")
-                    info("Use \u001B[32m--help\u001B[0m and visit \u001B[34mwww.evomaster.org\u001B[0m to" +
+                    info("Use ${inGreen("--help")} and visit ${inBlue("www.evomaster.org")} to" +
                             " learn more about available options")
                 }
 
@@ -100,7 +102,7 @@ class Main {
 
                     """
 
-            LoggingUtil.getInfoLogger().info("\u001B[34m$logo\u001B[0m")
+            LoggingUtil.getInfoLogger().info(inBlue(logo))
         }
 
         private fun printVersion() {
@@ -135,8 +137,8 @@ class Main {
 
                 if(config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTimeInSeconds == config.defaultMaxTimeInSeconds){
-                    info("\u001B[32mTo obtain better results, use the '--maxTimeInSeconds' option " +
-                            "to run the search for longer\u001B[0m")
+                    info(inGreen("To obtain better results, use the '--maxTimeInSeconds' option" +
+                            " to run the search for longer"))
                 }
             }
 
