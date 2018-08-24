@@ -54,7 +54,7 @@ class SqlForeignKeyGene(
 
         if (pks.isEmpty()) {
             if (!nullable) {
-                throw IllegalStateException("Trying to bind a non-nullable FK, but not valid PK is found")
+                throw IllegalStateException("Trying to bind a non-nullable FK, but no valid PK is found")
             } else {
                 uniqueIdOfPrimaryKey = -1
                 return

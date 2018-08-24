@@ -145,7 +145,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             }
         }
 
-        if(! dbData.isEmpty()){
+        if (!dbData.isEmpty()) {
             fv.emptySelects = EmptySelects.fromDtos(dbData)
         }
 
@@ -180,34 +180,40 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     private fun doInitializingActions(ind: RestIndividual) {
 
-        if(ind.dbInitialization.isEmpty()){
+        if (ind.dbInitialization.isEmpty()) {
             return
         }
 
         val list = mutableListOf<InsertionDto>()
         val previous = mutableListOf<Gene>()
 
-        for(i in 0 until ind.dbInitialization.size){
+        for (i in 0 until ind.dbInitialization.size) {
 
             val action = ind.dbInitialization[i]
             val insertion = InsertionDto().apply { targetTable = action.table.name }
 
-            for(g in action.seeGenes()){
-                if(! g.isPrintable()){
-                    continue
+            for (g in action.seeGenes()) {
+                if (g is SqlPrimaryKeyGene) {
+                    /*
+                        If there is more than one primary key field, this
+                        will be overridden.
+                        But, as we need it only for automatically generated ones,
+                        this shouldn't matter, as in that case there should be just 1.
+                     */
+                    insertion.id = g.uniqueId
                 }
 
-                if(g is SqlPrimaryKeyGene){
-                    insertion.id = g.uniqueId
+                if (!g.isPrintable()) {
+                    continue
                 }
 
                 val entry = InsertionEntryDto()
 
-                if(g is SqlForeignKeyGene) {
+                if (g is SqlForeignKeyGene) {
                     handleSqlForeignKey(g, previous, entry)
-                } else if(g is SqlPrimaryKeyGene){
+                } else if (g is SqlPrimaryKeyGene) {
                     val k = g.gene
-                    if(k is SqlForeignKeyGene){
+                    if (k is SqlForeignKeyGene) {
                         handleSqlForeignKey(k, previous, entry)
                     } else {
                         entry.printableValue = g.getValueAsPrintableString()
@@ -228,12 +234,16 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val dto = DatabaseCommandDto().apply { insertions = list }
 
         val ok = rc.executeDatabaseCommand(dto)
-        if(! ok){
+        if (!ok) {
             log.warn("Failed in executing database command")
         }
     }
 
-    private fun handleSqlForeignKey(g: SqlForeignKeyGene, previous: List< Gene>, entry: InsertionEntryDto) {
+    private fun handleSqlForeignKey(
+            g: SqlForeignKeyGene,
+            previous: List<Gene>,
+            entry: InsertionEntryDto
+    ) {
         if (g.isReferenceToNonPrintable(previous)) {
             entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
         } else {

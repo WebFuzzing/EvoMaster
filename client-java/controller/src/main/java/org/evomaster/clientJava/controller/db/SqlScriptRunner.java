@@ -1,6 +1,7 @@
 package org.evomaster.clientJava.controller.db;
 
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
+import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionEntryDto;
 
 import java.io.*;
 import java.sql.Connection;
@@ -151,7 +152,9 @@ public class SqlScriptRunner {
         //From DTO Insertion Id to generated Id in database
         Map<Long, Long> map = new HashMap<>();
 
-        for (InsertionDto insDto : insertions) {
+        for (int i = 0; i < insertions.size(); i++) {
+
+            InsertionDto insDto = insertions.get(i);
 
             StringBuilder sql = new StringBuilder(insertSql);
             sql.append(insDto.targetTable).append(" (");
@@ -162,19 +165,45 @@ public class SqlScriptRunner {
 
             sql.append(" )  VALUES (");
 
+            for (InsertionEntryDto e : insDto.data) {
+                if (e.printableValue == null && e.foreignKeyToPreviouslyGeneratedRow != null) {
+                   if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {
+                        throw new IllegalArgumentException(
+                                "Insertion operation at position " + i
+                                        + " has a foreign key reference to key "
+                                        + e.foreignKeyToPreviouslyGeneratedRow
+                                        + " but that was not processed."
+                                        + " Processed primary keys: "
+                                        + map.keySet().stream().map(v -> v.toString()).collect(Collectors.joining(", "))
+                        );
+                    }
+                }
+            }
+
             sql.append(insDto.data.stream()
                     .map(e -> e.printableValue != null
-                            ? e.printableValue
+                            ? replaceQuotes(e.printableValue)
                             : map.get(e.foreignKeyToPreviouslyGeneratedRow).toString()
                     ).collect(Collectors.joining(",")));
 
             sql.append(");");
 
             Long id = execInsert(conn, sql.toString());
-            if(id != null){
+            if (id != null) {
                 map.put(insDto.id, id);
             }
         }
+    }
+
+    /**
+     * In SQL, strings need '' instead of "" (at least for H2).
+     */
+    private static String replaceQuotes(String value) {
+        if (value.startsWith("\"") && value.endsWith("\"")) {
+            return "'" + value.substring(1, value.length() - 1) + "'";
+        }
+
+        return value;
     }
 
     /**

@@ -25,19 +25,20 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
         }
 
-        val genes = copy.seeGenes().filter(Gene::isMutable)
+        val genesToMutate = copy.seeGenes().filter(Gene::isMutable)
+        val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
-        if (genes.isEmpty()) {
+        if (genesToMutate.isEmpty()) {
             return copy
         }
 
-        val p = 1.0 / genes.size
+        val p = 1.0 / genesToMutate.size
 
         var mutated = false
 
         while (!mutated) { //no point in returning a copy that is not mutated
 
-            for (gene in genes) {
+            for (gene in genesToMutate) {
 
                 if (!randomness.nextBoolean(p)) {
                     continue
@@ -47,7 +48,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                     continue
                 }
 
-                mutateGene(gene, genes)
+                mutateGene(gene, allGenes)
 
                 mutated = true
             }

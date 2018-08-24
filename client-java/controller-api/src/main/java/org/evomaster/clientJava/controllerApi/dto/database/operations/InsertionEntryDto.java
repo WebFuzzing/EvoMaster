@@ -7,7 +7,9 @@ public class InsertionEntryDto {
     public String printableValue;
 
     /**
-     * If non null, then printableValue should be null
+     * If non null, then printableValue should be null.
+     * This should be an id of an InsertionDto previously
+     * executed
      */
     public Long foreignKeyToPreviouslyGeneratedRow;
 }

@@ -171,9 +171,9 @@ class RestSampler : Sampler<RestIndividual>() {
         all.asSequence()
                 .filter { it.isMutable() }
                 .forEach {
-                    if(it is SqlPrimaryKeyGene){
+                    if (it is SqlPrimaryKeyGene) {
                         val g = it.gene
-                        if(g is SqlForeignKeyGene){
+                        if (g is SqlForeignKeyGene) {
                             g.randomize(randomness, false, all)
                         } else {
                             it.randomize(randomness, false)
@@ -185,9 +185,41 @@ class RestSampler : Sampler<RestIndividual>() {
                     }
                 }
 
+        if(javaClass.desiredAssertionStatus()) {
+            //TODO refactor if/when Kotlin will support lazy asserts
+            assert(verifyForeignKeys(actions))
+        }
+
         return actions
     }
 
+    private fun verifyForeignKeys(actions: List<DbAction>) : Boolean {
+
+        val all = actions.flatMap { it.seeGenes() }
+
+        for (i in 1 until actions.size) {
+
+            val previous = actions.subList(0, i)
+
+            actions[i].seeGenes().asSequence()
+                    .flatMap { it.flatView().asSequence() }
+                    .filterIsInstance<SqlForeignKeyGene>()
+                    .filter { it.isReferenceToNonPrintable(all) }
+                    .map { it.uniqueIdOfPrimaryKey }
+                    .forEach {
+                        val id = it
+                        val match = previous.asSequence()
+                                .flatMap { it.seeGenes().asSequence() }
+                                .filterIsInstance<SqlPrimaryKeyGene>()
+                                .any { it.uniqueId == id }
+
+                        if(! match){
+                            return false
+                        }
+                    }
+        }
+        return true
+    }
 
     override fun sampleAtRandom(): RestIndividual {
 
