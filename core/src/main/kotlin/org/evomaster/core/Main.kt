@@ -7,6 +7,8 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
+import org.evomaster.core.AnsiColor.Companion.inRed
+import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
@@ -47,8 +49,7 @@ class Main {
                 val parser = try {
                     EMConfig.validateOptions(args)
                 } catch (e: Exception) {
-                    LoggingUtil.getInfoLogger().error(
-                            "Invalid parameter settings: " + e.message +
+                    logError("Invalid parameter settings: " + e.message +
                                     "\nUse --help to see the available options")
                     return
                 }
@@ -73,21 +74,27 @@ class Main {
                     cause = cause.cause!!
                 }
 
-                val log = LoggingUtil.getInfoLogger()
-
                 when (cause) {
                     is NoRemoteConnectionException ->
-                        log.error("ERROR: ${cause.message}" +
+                        logError("ERROR: ${cause.message}" +
                                 "\n  Make sure the EvoMaster Driver for the system under test is running correctly.")
 
                     is SutProblemException ->
-                        log.error("ERROR in the Remote EvoMaster Driver: ${cause.message}" +
+                        logError("ERROR in the Remote EvoMaster Driver: ${cause.message}" +
                                 "\n  Look at the logs of the EvoMaster Driver to help debugging this problem.")
 
                     else ->
-                        log.error("ERROR: EvoMaster process terminated abruptly. Message: " + e.message, e)
+                        logError("ERROR: EvoMaster process terminated abruptly. Message: " + e.message)
                 }
             }
+        }
+
+        private fun logError(msg: String){
+            LoggingUtil.getInfoLogger().error(inRed("[ERROR] ") + inYellow(msg))
+        }
+
+        private fun logWarn(msg: String){
+            LoggingUtil.getInfoLogger().warn(inYellow("[WARNING] ") + inYellow(msg))
         }
 
         private fun printLogo() {
@@ -116,6 +123,8 @@ class Main {
         fun initAndRun(args: Array<String>): Solution<*> {
 
             val injector = init(args)
+
+            checkExperimentalSettings(injector)
 
             val controllerInfo = checkState(injector)
 
@@ -199,6 +208,22 @@ class Main {
             return solution
         }
 
+        private fun checkExperimentalSettings(injector: Injector){
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            val experimental = config.experimentalFeatures()
+
+            if(experimental.isEmpty()){
+                return
+            }
+
+            val options = "[" + experimental.joinToString(", ") + "]"
+
+            logWarn("Using experimental settings." +
+                    " Those might not work as expected, or simply straight out crash." +
+                    " Used experimental settings: $options")
+        }
 
         private fun checkState(injector: Injector): ControllerInfoDto {
 

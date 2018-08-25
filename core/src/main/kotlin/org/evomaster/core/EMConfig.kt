@@ -245,6 +245,36 @@ class EMConfig {
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
 
+    fun experimentalFeatures() : List<String>{
+
+        val properties = getConfigurationProperties()
+                .filter { it.annotations.find { it is Experimental } != null }
+                .filter {
+                    val returnType = it.returnType.javaType as Class<*>
+                    if(java.lang.Boolean.TYPE.isAssignableFrom(returnType)){
+                        it.getter.call(this) as Boolean
+                    } else {
+                        false
+                    }
+                }
+                .map { it.name }
+
+        val enums = getConfigurationProperties()
+                .filter {
+                    val returnType = it.returnType.javaType as Class<*>
+                    if (returnType.isEnum){
+                        val e = it.getter.call(this)
+                        val f = returnType.getField(e.toString())
+                        f.annotations.find { it is Experimental } != null
+                    } else {
+                        false
+                    }
+                }
+                .map { "${it.name}=${it.getter.call(this)}" }
+
+        return properties.plus(enums)
+    }
+
 //------------------------------------------------------------------------
 //--- custom annotations
 
@@ -271,9 +301,9 @@ class EMConfig {
     /**
      * This annotation is used to represent properties controlling
      * features that are still work in progress.
-     * Do not use them (yet).
+     * Do not use them (yet) in production.
      */
-    @Target(AnnotationTarget.PROPERTY)
+    @Target(AnnotationTarget.PROPERTY, AnnotationTarget.FIELD)
     @MustBeDocumented
     annotation class Experimental
 
@@ -289,7 +319,8 @@ class EMConfig {
 
 
     enum class ProblemType {
-        REST
+        REST,
+        @Experimental WEB
     }
 
     @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
