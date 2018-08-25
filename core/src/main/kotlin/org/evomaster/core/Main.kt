@@ -12,6 +12,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
+import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -157,11 +158,20 @@ class Main {
         @JvmStatic
         fun init(args: Array<String>): Injector {
 
-            //TODO check problem type
+            val base = BaseModule(args)
+
+            val problemType = base.getEMConfig().problemType
+
+            val problemModule = when (problemType) {
+                EMConfig.ProblemType.REST -> RestModule()
+                EMConfig.ProblemType.WEB -> WebModule()
+                //this should never happen, unless we add new type and forget to add it here
+                else -> throw IllegalStateException("Unrecognized problem type: $problemType")
+            }
 
             try {
                 return LifecycleInjector.builder()
-                        .withModules(BaseModule(args), RestModule())
+                        .withModules(base, problemModule)
                         .build()
                         .createInjector()
 
