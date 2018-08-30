@@ -33,6 +33,9 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
     @Test
     public void testRunEM() {
 
+        //TODO add flaky check once fixed
+        //handleFlaky(() -> {
+
         String[] args = new String[]{
                 "--createTests", "true",
                 "--seed", "42",
