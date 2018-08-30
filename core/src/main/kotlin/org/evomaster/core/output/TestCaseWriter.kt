@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -219,13 +220,17 @@ class TestCaseWriter {
             //TODO check on body
         }
     }
-
     private fun handleBody(call: RestCallAction, lines: Lines) {
+        handleBody(call, lines, true)
+    }
+
+    private fun handleBody(call: RestCallAction, lines: Lines, readable: Boolean) {
         call.parameters.find { p -> p is BodyParam }
                 ?.let {
                     lines.add(".contentType(\"application/json\")")
 
-                    val body = it.gene.getValueAsPrintableString()
+                    val body = if(readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
+                                else it.gene.getValueAsPrintableString();
 
                     //needed as JSON uses ""
                     val bodyLines = body.split("\n").map { s ->
