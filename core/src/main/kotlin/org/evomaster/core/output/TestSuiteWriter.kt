@@ -115,6 +115,7 @@ class TestSuiteWriter {
             addImport("static io.restassured.RestAssured.given", lines, format)
             addImport("static org.evomaster.clientJava.controllerApi.EMTestUtils.*", lines, format)
             addImport("org.evomaster.clientJava.controller.SutHandler", lines, format)
+            addImport("static org.evomaster.clientJava.controller.db.dsl.SqlDsl.sql",lines,format)
             //addImport("static org.hamcrest.core.Is.is", lines, format)
 
             lines.addEmpty(2)

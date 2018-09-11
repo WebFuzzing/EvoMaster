@@ -1,11 +1,15 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.gene.SqlForeignKeyGene
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 
 
 class TestCaseWriter {
@@ -32,6 +36,16 @@ class TestCaseWriter {
         }
 
         lines.indent()
+
+        if (test.test.individual is RestIndividual) {
+
+            if (!test.test.individual.dbInitialization.isEmpty()) {
+
+                handleDbInitialization(format, test.test.individual.dbInitialization, lines)
+
+            }
+        }
+
 
         if (test.hasChainedLocations()) {
             lines.addEmpty()
@@ -64,6 +78,59 @@ class TestCaseWriter {
         lines.add("}")
 
         return lines
+    }
+
+    private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
+
+        var line = ""
+        when {
+            format.isJava() -> line += "List<InsertionDto> "
+            format.isKotlin() -> line += "val "
+        }
+        line += "insertions = sql()"
+
+        dbInitialization.forEachIndexed { index, dbAction ->
+
+            if (index>0) {
+                line += ".and()"
+            }
+            line += ".insertInto(\"${dbAction.table.name}\")"
+
+            dbAction.seeGenes().forEach { g ->
+
+                if (g.isPrintable()) {
+
+                    if (g is SqlForeignKeyGene) {
+                        val variableName = g.getVariableName()
+                        val uniqueId = g.uniqueId
+                        line += ".r(\"$variableName\", $uniqueId)"
+                    } else if (g is SqlPrimaryKeyGene) {
+                        val variableName = g.getVariableName()
+                        val printableValue = g.getValueAsPrintableString()
+                        line += ".d(\"$variableName\", $printableValue)"
+                    } else {
+                        val variableName = g.getVariableName()
+                        val printableValue = g.getValueAsPrintableString()
+                        line += ".d(\"$variableName\", $printableValue)"
+                    }
+
+                }
+
+            }
+        }
+
+        line += ".dtos()"
+
+        when {
+            format.isJava() -> line += ";"
+            format.isKotlin() -> {
+            }
+        }
+
+        lines.add(line)
+
+        lines.add("controller.execInsertionsIntoDatabase(insertions);")
+
     }
 
 
@@ -220,6 +287,7 @@ class TestCaseWriter {
             //TODO check on body
         }
     }
+
     private fun handleBody(call: RestCallAction, lines: Lines) {
         handleBody(call, lines, true)
     }
@@ -229,8 +297,8 @@ class TestCaseWriter {
                 ?.let {
                     lines.add(".contentType(\"application/json\")")
 
-                    val body = if(readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
-                                else it.gene.getValueAsPrintableString();
+                    val body = if (readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
+                    else it.gene.getValueAsPrintableString()
 
                     //needed as JSON uses ""
                     val bodyLines = body.split("\n").map { s ->
