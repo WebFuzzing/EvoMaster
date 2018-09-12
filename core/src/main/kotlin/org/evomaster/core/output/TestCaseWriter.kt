@@ -91,7 +91,7 @@ class TestCaseWriter {
 
         dbInitialization.forEachIndexed { index, dbAction ->
 
-            if (index>0) {
+            if (index > 0) {
                 line += ".and()"
             }
             line += ".insertInto(\"${dbAction.table.name}\")"

@@ -43,14 +43,14 @@ class TestCaseWriterTest {
 
     @Test
     fun testOneAction() {
-        val aColumn = Column("aColumn","VARCHAR", 10)
+        val aColumn = Column("aColumn", "VARCHAR", 10)
 
-        val aTable = Table("myTable",setOf(aColumn), HashSet<ForeignKey>())
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
 
         val id = 0L
 
-        val gene = StringGene(aColumn.name, "stringValue",0, 10)
+        val gene = StringGene(aColumn.name, "stringValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
@@ -68,8 +68,10 @@ class TestCaseWriterTest {
         val expectedLines = Lines()
         expectedLines.add("@Test")
         expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("    List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
-        expectedLines.add("    controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.indent()
+        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
+        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.deindent()
         expectedLines.add("}")
 
         assertEquals(expectedLines.toString(), lines.toString())
@@ -98,18 +100,18 @@ class TestCaseWriterTest {
 
     @Test
     fun testTwoAction() {
-        val aColumn = Column("aColumn","VARCHAR", 10)
+        val aColumn = Column("aColumn", "VARCHAR", 10)
 
-        val aTable = Table("myTable",setOf(aColumn), HashSet<ForeignKey>())
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
 
         val id = 0L
 
-        val gene0 = StringGene(aColumn.name, "stringValue0",0, 10)
+        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
 
         val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene0))
 
-        val gene1= StringGene(aColumn.name, "stringValue1",0, 10)
+        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 10)
 
         val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene1))
 
@@ -125,8 +127,10 @@ class TestCaseWriterTest {
         val expectedLines = Lines()
         expectedLines.add("@Test")
         expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("    List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue0\").and().insertInto(\"myTable\").d(\"aColumn\", \"stringValue1\").dtos();")
-        expectedLines.add("    controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.indent()
+        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue0\").and().insertInto(\"myTable\").d(\"aColumn\", \"stringValue1\").dtos();")
+        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.deindent()
         expectedLines.add("}")
 
         assertEquals(expectedLines.toString(), lines.toString())
@@ -135,15 +139,15 @@ class TestCaseWriterTest {
 
     @Test
     fun testTwoColumns() {
-        val column0 = Column("Column0","VARCHAR", 10)
-        val column1 = Column("Column1","VARCHAR", 10)
+        val column0 = Column("Column0", "VARCHAR", 10)
+        val column1 = Column("Column1", "VARCHAR", 10)
 
-        val aTable = Table("myTable",setOf(column0, column1), HashSet<ForeignKey>())
+        val aTable = Table("myTable", setOf(column0, column1), HashSet<ForeignKey>())
 
         val id = 0L
 
-        val gene0 = StringGene(column0.name, "stringValue0",0, 10)
-        val gene1 = StringGene(column1.name, "stringValue1",0, 10)
+        val gene0 = StringGene(column0.name, "stringValue0", 0, 10)
+        val gene1 = StringGene(column1.name, "stringValue1", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(column0, column1), id, mutableListOf(gene0, gene1))
 
@@ -158,8 +162,10 @@ class TestCaseWriterTest {
         val expectedLines = Lines()
         expectedLines.add("@Test")
         expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("    List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Column0\", \"stringValue0\").d(\"Column1\", \"stringValue1\").dtos();")
-        expectedLines.add("    controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.indent()
+        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Column0\", \"stringValue0\").d(\"Column1\", \"stringValue1\").dtos();")
+        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.deindent()
         expectedLines.add("}")
 
         assertEquals(expectedLines.toString(), lines.toString())
@@ -168,15 +174,15 @@ class TestCaseWriterTest {
 
     @Test
     fun testIntegerColumn() {
-        val idColumn = Column("Id","INTEGER", 10, primaryKey=false)
-        val nameColumn = Column("Name","VARCHAR", 10, primaryKey=false)
+        val idColumn = Column("Id", "INTEGER", 10, primaryKey = false)
+        val nameColumn = Column("Name", "VARCHAR", 10, primaryKey = false)
 
-        val aTable = Table("myTable",setOf(idColumn, nameColumn), HashSet<ForeignKey>())
+        val aTable = Table("myTable", setOf(idColumn, nameColumn), HashSet<ForeignKey>())
 
         val id = 0L
 
-        val integerGene = IntegerGene(idColumn.name, 42,0, 10)
-        val stringGene = StringGene(nameColumn.name, "nameValue",0, 10)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(integerGene, stringGene))
 
@@ -191,8 +197,10 @@ class TestCaseWriterTest {
         val expectedLines = Lines()
         expectedLines.add("@Test")
         expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("    List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
-        expectedLines.add("    controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.indent()
+        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
+        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.deindent()
         expectedLines.add("}")
 
         assertEquals(expectedLines.toString(), lines.toString())
@@ -201,17 +209,17 @@ class TestCaseWriterTest {
 
     @Test
     fun testPrimaryKeyColumn() {
-        val idColumn = Column("Id","INTEGER", 10, primaryKey=true)
-        val nameColumn = Column("Name","VARCHAR", 10, primaryKey=false)
+        val idColumn = Column("Id", "INTEGER", 10, primaryKey = true)
+        val nameColumn = Column("Name", "VARCHAR", 10, primaryKey = false)
 
-        val aTable = Table("myTable",setOf(idColumn, nameColumn), HashSet<ForeignKey>())
+        val aTable = Table("myTable", setOf(idColumn, nameColumn), HashSet<ForeignKey>())
 
 
         val id = 0L
 
-        val integerGene = IntegerGene(idColumn.name, 42,0, 10)
-        val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, "myTable",integerGene, 10)
-        val stringGene = StringGene(nameColumn.name, "nameValue",0, 10)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val primaryKeyGene = SqlPrimaryKeyGene(idColumn.name, "myTable", integerGene, 10)
+        val stringGene = StringGene(nameColumn.name, "nameValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(primaryKeyGene, stringGene))
 
@@ -226,8 +234,10 @@ class TestCaseWriterTest {
         val expectedLines = Lines()
         expectedLines.add("@Test")
         expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("    List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
-        expectedLines.add("    controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.indent()
+        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
+        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.deindent()
         expectedLines.add("}")
 
         assertEquals(expectedLines.toString(), lines.toString())
@@ -236,26 +246,25 @@ class TestCaseWriterTest {
 
     @Test
     fun testForeignKeyColumn() {
-        val idColumn = Column("Id","INTEGER", 10, primaryKey=true)
-        val table0 = Table("Table0",setOf(idColumn), HashSet<ForeignKey>())
+        val idColumn = Column("Id", "INTEGER", 10, primaryKey = true)
+        val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
 
-        val fkColumn = Column("fkId","INTEGER", 10, primaryKey=false)
-        val table1= Table("Table1",setOf(idColumn,fkColumn), HashSet<ForeignKey>())
-
+        val fkColumn = Column("fkId", "INTEGER", 10, primaryKey = false)
+        val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
         val insertionId = 1001L
 
-        val integerGene = IntegerGene(idColumn.name, 42,0, 10)
-        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0",integerGene, 10)
-        val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1",integerGene, 10)
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, insertionId, "Table0",nullable=false)
+        val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
+        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, 10)
+        val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, insertionId, "Table0", nullable = false)
 
 
         val insertIntoTable0 = DbAction(table0, setOf(idColumn), insertionId, listOf(primaryKeyTable0Gene))
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), insertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
-       val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
 
         val test = TestCase(test = ei, name = "test")
 
@@ -266,11 +275,15 @@ class TestCaseWriterTest {
         val expectedLines = Lines()
         expectedLines.add("@Test")
         expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("    List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", 42).and().insertInto(\"Table1\").d(\"Id\", 42).r(\"fkId\", 1001).dtos();")
-        expectedLines.add("    controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.indent()
+        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", 42).and().insertInto(\"Table1\").d(\"Id\", 42).r(\"fkId\", 1001).dtos();")
+        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
+        expectedLines.deindent()
         expectedLines.add("}")
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
+
+
 
 }
