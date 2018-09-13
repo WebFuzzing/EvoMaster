@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class DbDirectIntEMTest extends DbDirectIntTestBase {
 
 
-    @Disabled
     @Test
     public void testRunEM() throws Throwable {
 
