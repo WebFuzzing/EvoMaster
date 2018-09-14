@@ -28,6 +28,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
 
+    /*
+        In the SUT, there are 2 endpoints:
+        1) a POST that generates some data into the DB
+        2) a GET that search for such data, specified by parameters
+
+        To cover all statements, we first need to create data with a POST,
+        and then search for it with a GET.
+
+        However, in contrast to DbDirectInt, here we disable the call to POST.
+        This is done in the EM Driver.
+        This makes the SUT "read-only".
+        Therefore, the only way to have the right data in the DB for the GET to
+        find it, is to write such data directly with SQL commands.
+     */
 
     @Disabled
     @Test
