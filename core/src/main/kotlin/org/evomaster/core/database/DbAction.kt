@@ -102,7 +102,7 @@ class DbAction(
     }
 
     override fun copy(): Action {
-        return DbAction(table, selectedColumns, id, genes)
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy))
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
