@@ -10,6 +10,7 @@ import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.StringGene
 
 
 class TestCaseWriter {
@@ -104,14 +105,14 @@ class TestCaseWriter {
                         val variableName = g.getVariableName()
                         val uniqueId = g.uniqueId
                         newInsertIntoLine += ".r(\"$variableName\", $uniqueId)"
-                    } else if (g is SqlPrimaryKeyGene) {
+                    } else if (g is StringGene){
                         val variableName = g.getVariableName()
                         val printableValue = g.getValueAsPrintableString()
                         newInsertIntoLine += ".d(\"$variableName\", $printableValue)"
                     } else {
                         val variableName = g.getVariableName()
                         val printableValue = g.getValueAsPrintableString()
-                        newInsertIntoLine += ".d(\"$variableName\", $printableValue)"
+                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
                     }
 
                 }

@@ -11,10 +11,7 @@ import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -205,7 +202,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", \"42\").d(\"Name\", \"nameValue\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -243,7 +240,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", \"42\").d(\"Name\", \"nameValue\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -285,10 +282,49 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", 42)")
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", \"42\")")
             indent()
-            add(".and().insertInto(\"Table1\").d(\"Id\", 42).r(\"fkId\", 1001).dtos();")
+            add(".and().insertInto(\"Table1\").d(\"Id\", \"42\").r(\"fkId\", 1001).dtos();")
             deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+
+    @Test
+    fun testBooleanColumn() {
+        val aColumn = Column("aColumn", "BOOLEAN", 10)
+
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+
+        val id = 0L
+
+        val gene = BooleanGene(aColumn.name, false)
+
+        val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
+
+        val dbInitialization = ArrayList<DbAction>()
+        dbInitialization.add(insertIntoTableAction)
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"false\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
