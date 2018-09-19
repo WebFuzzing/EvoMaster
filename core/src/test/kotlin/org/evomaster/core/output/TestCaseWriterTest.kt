@@ -33,10 +33,11 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
@@ -65,14 +66,15 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
@@ -124,14 +126,15 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue0\").and().insertInto(\"myTable\").d(\"aColumn\", \"stringValue1\").dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue0\").and().insertInto(\"myTable\").d(\"aColumn\", \"stringValue1\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
@@ -159,14 +162,15 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Column0\", \"stringValue0\").d(\"Column1\", \"stringValue1\").dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Column0\", \"stringValue0\").d(\"Column1\", \"stringValue1\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
@@ -194,14 +198,15 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
@@ -231,14 +236,15 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", 42).d(\"Name\", \"nameValue\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
@@ -272,18 +278,18 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", 42).and().insertInto(\"Table1\").d(\"Id\", 42).r(\"fkId\", 1001).dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", 42).and().insertInto(\"Table1\").d(\"Id\", 42).r(\"fkId\", 1001).dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
-
 
 
 }
