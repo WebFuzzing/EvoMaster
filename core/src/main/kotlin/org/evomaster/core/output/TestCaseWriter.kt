@@ -82,19 +82,19 @@ class TestCaseWriter {
 
     private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
 
-        var line = ""
-        when {
-            format.isJava() -> line += "List<InsertionDto> "
-            format.isKotlin() -> line += "val "
-        }
-        line += "insertions = sql()"
-
         dbInitialization.forEachIndexed { index, dbAction ->
 
-            if (index > 0) {
-                line += ".and()"
+            var newInsertIntoLine = ""
+            if (index == 0) {
+                when {
+                    format.isJava() -> newInsertIntoLine += "List<InsertionDto> "
+                    format.isKotlin() -> newInsertIntoLine += "val "
+                }
+                newInsertIntoLine += "insertions = sql()"
+            } else {
+                newInsertIntoLine += ".and()"
             }
-            line += ".insertInto(\"${dbAction.table.name}\")"
+            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\")"
 
             dbAction.seeGenes().forEach { g ->
 
@@ -103,34 +103,46 @@ class TestCaseWriter {
                     if (g is SqlForeignKeyGene) {
                         val variableName = g.getVariableName()
                         val uniqueId = g.uniqueId
-                        line += ".r(\"$variableName\", $uniqueId)"
+                        newInsertIntoLine += ".r(\"$variableName\", $uniqueId)"
                     } else if (g is SqlPrimaryKeyGene) {
                         val variableName = g.getVariableName()
                         val printableValue = g.getValueAsPrintableString()
-                        line += ".d(\"$variableName\", $printableValue)"
+                        newInsertIntoLine += ".d(\"$variableName\", $printableValue)"
                     } else {
                         val variableName = g.getVariableName()
                         val printableValue = g.getValueAsPrintableString()
-                        line += ".d(\"$variableName\", $printableValue)"
+                        newInsertIntoLine += ".d(\"$variableName\", $printableValue)"
                     }
 
                 }
 
             }
-        }
 
-        line += ".dtos()"
-
-        when {
-            format.isJava() -> line += ";"
-            format.isKotlin() -> {
+            if (index == dbInitialization.size - 1) {
+                newInsertIntoLine += ".dtos()"
+                when {
+                    format.isJava() -> newInsertIntoLine += ";"
+                    format.isKotlin() -> {
+                    }
+                }
+            }
+            if (index==1) {
+                lines.indent()
+            }
+            lines.add(newInsertIntoLine)
+            if (index>0 &&  index == dbInitialization.size - 1) {
+                lines.deindent()
             }
         }
 
-        lines.add(line)
 
-        lines.add("controller.execInsertionsIntoDatabase(insertions);")
-
+        var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
+        when {
+            format.isJava() -> execInsertionsLine  += ";"
+            format.isKotlin() -> {
+            }
+        }
+        lines.add(execInsertionsLine)
     }
 
 
