@@ -7,7 +7,6 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -264,11 +263,11 @@ class TestCaseWriterTest {
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
 
 
-        val fistInsertionId = 1001L
-        val insertIntoTable0 = DbAction(table0, setOf(idColumn), fistInsertionId , listOf(primaryKeyTable0Gene))
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, fistInsertionId, "Table0", nullable = false)
-
+        val firstInsertionId = 1001L
+        val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId , listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, firstInsertionId)
+
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))

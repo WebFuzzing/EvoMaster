@@ -105,7 +105,7 @@ class TestCaseWriter {
 
                     if (g is SqlForeignKeyGene) {
                         val variableName = g.getVariableName()
-                        val uniqueId = g.uniqueId
+                        val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
                         newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
                     } else {
                         val variableName = g.getVariableName()
