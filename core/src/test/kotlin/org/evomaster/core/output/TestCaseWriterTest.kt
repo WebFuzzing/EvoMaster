@@ -65,15 +65,15 @@ class TestCaseWriterTest {
 
         val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
 
-        val expectedLines = Lines()
-        expectedLines.add("@Test")
-        expectedLines.add("public void test() throws Exception {")
-        expectedLines.indent()
-        expectedLines.add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
-        expectedLines.add("controller.execInsertionsIntoDatabase(insertions);")
-        expectedLines.deindent()
-        expectedLines.add("}")
-
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
