@@ -108,4 +108,8 @@ class DbAction(
     override fun shouldCountForFitnessEvaluations(): Boolean {
         return false
     }
+
+    fun geInsertionId(): Long {
+        return this.id
+    }
 }

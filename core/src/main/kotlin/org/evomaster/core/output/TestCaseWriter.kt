@@ -95,7 +95,7 @@ class TestCaseWriter {
             } else {
                 newInsertIntoLine += ".and()"
             }
-            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\")"
+            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()})"
 
             dbAction.seeGenes().forEach { g ->
 

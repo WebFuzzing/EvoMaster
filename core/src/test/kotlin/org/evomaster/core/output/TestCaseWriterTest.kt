@@ -67,7 +67,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0).d(\"aColumn\", \"stringValue\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -104,15 +104,14 @@ class TestCaseWriterTest {
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
 
-        val id = 0L
 
         val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
 
-        val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene0))
+        val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), 0L, mutableListOf(gene0))
 
         val gene1 = StringGene(aColumn.name, "stringValue1", 0, 10)
 
-        val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene1))
+        val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), 1L, mutableListOf(gene1))
 
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1))
@@ -127,9 +126,9 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"stringValue0\")")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0).d(\"aColumn\", \"stringValue0\")")
             indent()
-            add(".and().insertInto(\"myTable\").d(\"aColumn\", \"stringValue1\").dtos();")
+            add(".and().insertInto(\"myTable\", 1).d(\"aColumn\", \"stringValue1\").dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -166,7 +165,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Column0\", \"stringValue0\").d(\"Column1\", \"stringValue1\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0).d(\"Column0\", \"stringValue0\").d(\"Column1\", \"stringValue1\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -202,7 +201,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", \"42\").d(\"Name\", \"nameValue\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0).d(\"Id\", \"42\").d(\"Name\", \"nameValue\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -240,7 +239,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"Id\", \"42\").d(\"Name\", \"nameValue\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0).d(\"Id\", \"42\").d(\"Name\", \"nameValue\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -259,16 +258,18 @@ class TestCaseWriterTest {
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
-        val insertionId = 1001L
 
         val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, 10)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, insertionId, "Table0", nullable = false)
 
 
-        val insertIntoTable0 = DbAction(table0, setOf(idColumn), insertionId, listOf(primaryKeyTable0Gene))
-        val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), insertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
+        val fistInsertionId = 1001L
+        val insertIntoTable0 = DbAction(table0, setOf(idColumn), fistInsertionId , listOf(primaryKeyTable0Gene))
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, fistInsertionId, "Table0", nullable = false)
+
+        val secondInsertionId = 1002L
+        val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
 
@@ -282,9 +283,9 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\").d(\"Id\", \"42\")")
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001).d(\"Id\", \"42\")")
             indent()
-            add(".and().insertInto(\"Table1\").d(\"Id\", \"42\").r(\"fkId\", 1001).dtos();")
+            add(".and().insertInto(\"Table1\", 1002).d(\"Id\", \"42\").r(\"fkId\", 1001).dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -324,7 +325,7 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\").d(\"aColumn\", \"false\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0).d(\"aColumn\", \"false\").dtos();")
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
