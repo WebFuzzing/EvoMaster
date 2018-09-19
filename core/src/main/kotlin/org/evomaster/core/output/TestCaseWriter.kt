@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.RestCallAction
@@ -95,7 +96,8 @@ class TestCaseWriter {
             } else {
                 newInsertIntoLine += ".and()"
             }
-            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()})"
+            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)"
+
 
             dbAction.seeGenes().forEach { g ->
 
@@ -104,14 +106,10 @@ class TestCaseWriter {
                     if (g is SqlForeignKeyGene) {
                         val variableName = g.getVariableName()
                         val uniqueId = g.uniqueId
-                        newInsertIntoLine += ".r(\"$variableName\", $uniqueId)"
-                    } else if (g is StringGene){
-                        val variableName = g.getVariableName()
-                        val printableValue = g.getValueAsPrintableString()
-                        newInsertIntoLine += ".d(\"$variableName\", $printableValue)"
+                        newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
                     } else {
                         val variableName = g.getVariableName()
-                        val printableValue = g.getValueAsPrintableString()
+                        val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
                         newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
                     }
 
