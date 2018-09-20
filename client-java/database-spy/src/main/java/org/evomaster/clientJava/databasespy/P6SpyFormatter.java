@@ -1,4 +1,4 @@
-package org.evomaster.clientJava.instrumentation.db;
+package org.evomaster.clientJava.databasespy;
 
 import com.p6spy.engine.spy.appender.MessageFormattingStrategy;
 

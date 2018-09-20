@@ -1,13 +1,9 @@
 package org.evomaster.clientJava.controller;
 
 import com.ea.agentloader.AgentLoader;
-import com.p6spy.engine.spy.appender.StdoutLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.controller.internal.db.StandardOutputTracker;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
-import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
-
-import java.util.Objects;
 
 /**
  * Class responsible to handle the SutController in a way
