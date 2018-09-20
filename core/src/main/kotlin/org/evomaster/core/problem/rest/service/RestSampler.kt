@@ -114,7 +114,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val response = connectToSwagger(swaggerURL, 30)
 
         if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            throw IllegalStateException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
+            throw SutProblemException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
         }
 
         val json = response.readEntity(String::class.java)
@@ -122,7 +122,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val swagger = try {
             SwaggerParser().parse(json)
         } catch (e: Exception) {
-            throw IllegalStateException("Failed to parse Swagger JSON data", e)
+            throw SutProblemException("Failed to parse Swagger JSON data: $e")
         }
 
         return swagger
