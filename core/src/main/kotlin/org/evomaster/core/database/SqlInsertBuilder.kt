@@ -3,6 +3,7 @@ package org.evomaster.core.database
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto
 import org.evomaster.core.database.schema.Column
+import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 
@@ -54,7 +55,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
                 val column = Column(
                         name = c.name,
                         size = c.size,
-                        type = c.type, //TODO enum mapping
+                        type = ColumnDataType.valueOf(c.type),
                         primaryKey = c.primaryKey,
                         nullable = c.nullable,
                         unique = c.unique,
@@ -131,7 +132,7 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
 
         val takeAll = columnNames.contains("*")
 
-        if(takeAll && columnNames.size > 1){
+        if (takeAll && columnNames.size > 1) {
             throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
         }
 

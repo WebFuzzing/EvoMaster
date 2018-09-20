@@ -1,6 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.database.schema.Column
+import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
@@ -18,7 +19,7 @@ class DbAction(
         computedGenes: List<Gene>? = null
 ) : Action {
 
-    private val genes: List<Gene> = computedGenes ?: selectedColumns.map{
+    private val genes: List<Gene> = computedGenes ?: selectedColumns.map {
 
         val fk = getForeignKey(table, it)
 
@@ -29,33 +30,31 @@ class DbAction(
          */
 
         val gene = when {
-        //TODO handle all constraints and cases
+            //TODO handle all constraints and cases
             it.autoIncrement ->
                 SqlAutoIncrementGene(it.name)
             fk != null ->
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
-            it.type.equals("VARCHAR", ignoreCase = true) ->
-                StringGene(name = it.name, minLength = 0, maxLength = it.size)
-            it.type.equals("INTEGER", ignoreCase = true) ->
-                IntegerGene(it.name)
-            it.type.equals("LONG", ignoreCase = true) ->
-                LongGene(it.name)
-            it.type.equals("BIGINT", ignoreCase = true) ->
-                LongGene(it.name)
-            it.type.equals("BOOLEAN", ignoreCase = true) ->
-                BooleanGene(it.name)
-            it.type.equals("TIMESTAMP", ignoreCase = true) ->
-                /*
-                    TODO handle fact that TimeStamp have year limitations and possible different
-                    string formats when printed
-                 */
+
+            else -> when (it.type) {
+                VARCHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                INTEGER -> IntegerGene(it.name)
+                BIGINT -> LongGene(it.name)
+                BOOLEAN -> BooleanGene(it.name)
+                TIMESTAMP ->
+                    /**
+                     * TODO handle fact that TimeStamp have year limitations and possible different string formats when printed
+                     */
                     DateTimeGene(it.name)
-//            it.type.equals("VARBINARY", ignoreCase = true) ->
-//                handleVarBinary(it)
-            else -> throw IllegalArgumentException("Cannot handle: $it")
+                //it.type.equals("VARBINARY", ignoreCase = true) ->
+                //handleVarBinary(it)
+
+                else -> throw IllegalArgumentException("Cannot handle: $it")
+            }
+
         }
 
-        if(it.primaryKey) {
+        if (it.primaryKey) {
             SqlPrimaryKeyGene(it.name, table.name, gene, id)
         } else {
             gene
@@ -77,15 +76,15 @@ class DbAction(
             A workaround for the moment is to guess a possible type/constraints
             based on the column name
          */
-        if(column.name.contains("time", ignoreCase = true)){
+        if (column.name.contains("time", ignoreCase = true)) {
             return DateTimeGene(column.name)
         } else {
             //go for a default string
-            return StringGene(name = column.name, minLength = 0, maxLength =  column.size)
+            return StringGene(name = column.name, minLength = 0, maxLength = column.size)
         }
     }
 
-    private fun getForeignKey(table: Table, column: Column) : ForeignKey?{
+    private fun getForeignKey(table: Table, column: Column): ForeignKey? {
 
         //TODO: what if a column is part of more than 1 FK? is that even possible?
 

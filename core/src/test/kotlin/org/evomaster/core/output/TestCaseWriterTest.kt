@@ -2,6 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Column
+import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.RestAction
@@ -40,7 +41,7 @@ class TestCaseWriterTest {
 
     @Test
     fun testOneAction() {
-        val aColumn = Column("aColumn", "VARCHAR", 10)
+        val aColumn = Column("aColumn", VARCHAR, 10)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
@@ -98,10 +99,9 @@ class TestCaseWriterTest {
 
     @Test
     fun testTwoAction() {
-        val aColumn = Column("aColumn", "VARCHAR", 10)
+        val aColumn = Column("aColumn", VARCHAR, 10)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
-
 
 
         val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
@@ -140,8 +140,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testTwoColumns() {
-        val column0 = Column("Column0", "VARCHAR", 10)
-        val column1 = Column("Column1", "VARCHAR", 10)
+        val column0 = Column("Column0", VARCHAR, 10)
+        val column1 = Column("Column1", VARCHAR, 10)
 
         val aTable = Table("myTable", setOf(column0, column1), HashSet<ForeignKey>())
 
@@ -176,8 +176,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testIntegerColumn() {
-        val idColumn = Column("Id", "INTEGER", 10, primaryKey = false)
-        val nameColumn = Column("Name", "VARCHAR", 10, primaryKey = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = false)
+        val nameColumn = Column("Name", VARCHAR, 10, primaryKey = false)
 
         val aTable = Table("myTable", setOf(idColumn, nameColumn), HashSet<ForeignKey>())
 
@@ -212,8 +212,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testPrimaryKeyColumn() {
-        val idColumn = Column("Id", "INTEGER", 10, primaryKey = true)
-        val nameColumn = Column("Name", "VARCHAR", 10, primaryKey = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true)
+        val nameColumn = Column("Name", VARCHAR, 10, primaryKey = false)
 
         val aTable = Table("myTable", setOf(idColumn, nameColumn), HashSet<ForeignKey>())
 
@@ -250,12 +250,11 @@ class TestCaseWriterTest {
 
     @Test
     fun testForeignKeyColumn() {
-        val idColumn = Column("Id", "INTEGER", 10, primaryKey = true)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true)
         val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
 
-        val fkColumn = Column("fkId", "INTEGER", 10, primaryKey = false)
+        val fkColumn = Column("fkId", INTEGER, 10, primaryKey = false)
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
-
 
 
         val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
@@ -264,7 +263,7 @@ class TestCaseWriterTest {
 
 
         val firstInsertionId = 1001L
-        val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId , listOf(primaryKeyTable0Gene))
+        val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
         val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, firstInsertionId)
 
@@ -295,10 +294,9 @@ class TestCaseWriterTest {
     }
 
 
-
     @Test
     fun testBooleanColumn() {
-        val aColumn = Column("aColumn", "BOOLEAN", 10)
+        val aColumn = Column("aColumn", BOOLEAN, 10)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
