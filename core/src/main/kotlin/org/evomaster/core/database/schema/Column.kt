@@ -8,7 +8,7 @@ data class Column(
 
         val name: String,
 
-        val type: String,
+        val type: ColumnDataType,
 
         val size: Int = 0,
 

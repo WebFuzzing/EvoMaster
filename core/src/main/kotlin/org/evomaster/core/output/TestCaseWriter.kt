@@ -1,11 +1,17 @@
 package org.evomaster.core.output
 
+import org.apache.commons.lang3.StringEscapeUtils
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.gene.SqlForeignKeyGene
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.StringGene
 
 
 class TestCaseWriter {
@@ -32,6 +38,16 @@ class TestCaseWriter {
         }
 
         lines.indent()
+
+        if (test.test.individual is RestIndividual) {
+
+            if (!test.test.individual.dbInitialization.isEmpty()) {
+
+                handleDbInitialization(format, test.test.individual.dbInitialization, lines)
+
+            }
+        }
+
 
         if (test.hasChainedLocations()) {
             lines.addEmpty()
@@ -64,6 +80,68 @@ class TestCaseWriter {
         lines.add("}")
 
         return lines
+    }
+
+    private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
+
+        dbInitialization.forEachIndexed { index, dbAction ->
+
+            var newInsertIntoLine = ""
+            if (index == 0) {
+                when {
+                    format.isJava() -> newInsertIntoLine += "List<InsertionDto> "
+                    format.isKotlin() -> newInsertIntoLine += "val "
+                }
+                newInsertIntoLine += "insertions = sql()"
+            } else {
+                newInsertIntoLine += ".and()"
+            }
+            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)"
+
+
+            dbAction.seeGenes().forEach { g ->
+
+                if (g.isPrintable()) {
+
+                    if (g is SqlForeignKeyGene) {
+                        val variableName = g.getVariableName()
+                        val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
+                        newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
+                    } else {
+                        val variableName = g.getVariableName()
+                        val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                    }
+
+                }
+
+            }
+
+            if (index == dbInitialization.size - 1) {
+                newInsertIntoLine += ".dtos()"
+                when {
+                    format.isJava() -> newInsertIntoLine += ";"
+                    format.isKotlin() -> {
+                    }
+                }
+            }
+            if (index==1) {
+                lines.indent()
+            }
+            lines.add(newInsertIntoLine)
+            if (index>0 &&  index == dbInitialization.size - 1) {
+                lines.deindent()
+            }
+        }
+
+
+        var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
+        when {
+            format.isJava() -> execInsertionsLine  += ";"
+            format.isKotlin() -> {
+            }
+        }
+        lines.add(execInsertionsLine)
     }
 
 
@@ -220,6 +298,7 @@ class TestCaseWriter {
             //TODO check on body
         }
     }
+
     private fun handleBody(call: RestCallAction, lines: Lines) {
         handleBody(call, lines, true)
     }
@@ -229,8 +308,8 @@ class TestCaseWriter {
                 ?.let {
                     lines.add(".contentType(\"application/json\")")
 
-                    val body = if(readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
-                                else it.gene.getValueAsPrintableString();
+                    val body = if (readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
+                    else it.gene.getValueAsPrintableString()
 
                     //needed as JSON uses ""
                     val bodyLines = body.split("\n").map { s ->

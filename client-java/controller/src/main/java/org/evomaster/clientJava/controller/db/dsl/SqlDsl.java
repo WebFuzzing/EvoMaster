@@ -50,16 +50,16 @@ public class SqlDsl implements SequenceDsl, StatementDsl{
     }
 
     @Override
-    public StatementDsl d(String variableName, String printableValue){
+    public StatementDsl d(String columnName, String printableValue){
 
         checkDsl();
 
-        if(variableName == null || variableName.isEmpty()){
+        if(columnName == null || columnName.isEmpty()){
             throw new IllegalArgumentException("Unspecified variable");
         }
 
         InsertionEntryDto entry = new InsertionEntryDto();
-        entry.variableName = variableName;
+        entry.variableName = columnName;
         entry.printableValue = printableValue;
 
         current().data.add(entry);
@@ -68,11 +68,11 @@ public class SqlDsl implements SequenceDsl, StatementDsl{
     }
 
     @Override
-    public StatementDsl r(String variableName, long insertionId){
+    public StatementDsl r(String columnName, long insertionId){
 
         checkDsl();
 
-        if(variableName == null || variableName.isEmpty()){
+        if(columnName == null || columnName.isEmpty()){
             throw new IllegalArgumentException("Unspecified variable");
         }
 
@@ -81,7 +81,7 @@ public class SqlDsl implements SequenceDsl, StatementDsl{
         }
 
         InsertionEntryDto entry = new InsertionEntryDto();
-        entry.variableName = variableName;
+        entry.variableName = columnName;
         entry.foreignKeyToPreviouslyGeneratedRow = (long) insertionId;
 
         current().data.add(entry);
