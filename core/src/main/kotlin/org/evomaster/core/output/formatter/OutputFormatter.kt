@@ -5,7 +5,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 
 /**
- * @author: manzhang
+ * @javatypes: manzhang
  * @date: 27/08/2018
  * @description: this class can be extended for supporting different styles of outputs (i.e., test cases),
  *                 currently only json is supported with string input

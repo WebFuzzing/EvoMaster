@@ -37,10 +37,14 @@ class DbAction(
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
 
             else -> when (it.type) {
+                CHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
                 VARCHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
                 INTEGER -> IntegerGene(it.name)
                 BIGINT -> LongGene(it.name)
                 BOOLEAN -> BooleanGene(it.name)
+                TINYINT -> ByteGene(it.name)
+                DOUBLE -> DoubleGene(it.name)
+                SMALLINT -> ShortGene(it.name)
                 TIMESTAMP ->
                     /**
                      * TODO handle fact that TimeStamp have year limitations and possible different string formats when printed

@@ -6,6 +6,12 @@ enum class ColumnDataType(dataTypeName: String) {
      * A Boolean value (true/false)
      */
     BOOLEAN("BOOLEAN"),
+    TINYINT("TINYINT"),
+    /**
+     * A string value.
+     * The length of a CHAR column is fixed.
+     */
+    CHAR("CHAR"),
     /**
      * A normal-size integer.
      * The signed range is -2147483648 to 2147483647.
@@ -32,7 +38,15 @@ enum class ColumnDataType(dataTypeName: String) {
      * VARBINARY is similar to VARCHAR, except that it contains binary strings rather than nonbinary strings.
      * That is, it contains byte sequences rather than character sequences.
      */
-    VARBINARY("VARBINARY")
-
+    VARBINARY("VARBINARY"),
+    /**
+     *  The DOUBLE type represents approximate numeric data values.
+     *  MySQL uses eight bytes for double-precision values.
+     */
+    DOUBLE("DOUBLE"),
+    /**
+     * A 16-bit (2 bytes) exact integer value
+     */
+    SMALLINT("SMALLINT")
 
 }
