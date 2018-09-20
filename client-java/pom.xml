@@ -17,6 +17,7 @@
         <module>controller-api</module>
         <module>instrumentation</module>
         <module>client-util</module>
+        <module>database-spy</module>
     </modules>
 
     <dependencyManagement>

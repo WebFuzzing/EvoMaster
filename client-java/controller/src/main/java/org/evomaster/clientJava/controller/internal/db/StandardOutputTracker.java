@@ -1,7 +1,7 @@
 package org.evomaster.clientJava.controller.internal.db;
 
 import org.evomaster.clientJava.controller.internal.SutController;
-import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
+import org.evomaster.clientJava.databasespy.P6SpyFormatter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
