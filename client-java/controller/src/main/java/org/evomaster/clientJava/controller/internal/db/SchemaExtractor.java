@@ -18,8 +18,16 @@ public class SchemaExtractor {
 
         DbSchemaDto schemaDto = new DbSchemaDto();
 
-        schemaDto.name = connection.getSchema();
-
+        try {
+            schemaDto.name = connection.getSchema();
+        } catch (Exception e) {
+            /*
+                In remote sessions, getSchema might fail.
+                We do not do much with it anyway (at least for
+                now), so not a big deal...
+             */
+            schemaDto.name = "public";
+        }
         DatabaseMetaData md = connection.getMetaData();
 
         String protocol = md.getURL(); //TODO better handling
