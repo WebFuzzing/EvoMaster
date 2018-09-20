@@ -31,7 +31,7 @@ class SqlForeignKeyGene(
 ) : Gene(sourceColumn) {
 
     init {
-        if(uniqueId < 0){
+        if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
     }
@@ -69,7 +69,7 @@ class SqlForeignKeyGene(
                 //only one possible option
                 pks.first()
             } else {
-                if(! forceNewValue){
+                if (!forceNewValue) {
                     randomness.choose(pks)
                 } else {
                     randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -81,14 +81,14 @@ class SqlForeignKeyGene(
         /*
             If it can be NULL, we have the option of NULL plus the PKs
          */
-        uniqueIdOfPrimaryKey = if(!isBound()){
+        uniqueIdOfPrimaryKey = if (!isBound()) {
             //not bound, ie NULL? choose from PKs
             randomness.choose(pks)
         } else if (randomness.nextBoolean(0.1)) {
             //currently bound, but with certain probability we set it to NULL
-             -1
+            -1
         } else {
-            if(! forceNewValue || pks.size == 1){
+            if (!forceNewValue || pks.size == 1) {
                 randomness.choose(pks)
             } else {
                 randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -114,7 +114,7 @@ class SqlForeignKeyGene(
         val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
-        if(! pk.isPrintable()){
+        if (!pk.isPrintable()) {
             //this can happen if the PK is autoincrement
             throw IllegalArgumentException("Trying to print a Foreign Key pointing to a non-printable Primary Key")
         }
@@ -122,15 +122,15 @@ class SqlForeignKeyGene(
         return pk.getValueAsPrintableString()
     }
 
-    fun isReferenceToNonPrintable(previousGenes: List<Gene>) : Boolean{
-        if(! isBound()){
+    fun isReferenceToNonPrintable(previousGenes: List<Gene>): Boolean {
+        if (!isBound()) {
             return false
         }
 
         val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
-        return ! pk.isPrintable()
+        return !pk.isPrintable()
     }
 
     private fun isBound() = uniqueIdOfPrimaryKey >= 0
@@ -142,4 +142,22 @@ class SqlForeignKeyGene(
         this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
     }
 
+    /**
+     * Reports if the current value of the fk gene is NULL.
+     * This procedure should be called only if the pk is valid.
+     */
+    fun isNull(): Boolean {
+        if (!hasValidUniqueIdOfPrimaryKey()) {
+            throw IllegalStateException("Cannot ")
+        }
+        return uniqueIdOfPrimaryKey == -1L
+    }
+
+    /**
+     * Returns if the pk unique Id is valid.
+     * A pk Id is valid if it has an Id greater or equals to 0,
+     * or if it is nullable and the Id is equal to -1
+     */
+    fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
+            (nullable && uniqueIdOfPrimaryKey == -1L)
 }
