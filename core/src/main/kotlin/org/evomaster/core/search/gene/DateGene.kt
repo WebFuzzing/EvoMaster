@@ -33,7 +33,9 @@ class DateGene(
     }
 
     override fun getValueAsRawString(): String {
-        return "${year.value}-${month.value}-${day.value}"
+        return GeneUtils.let {
+            "${it.padded(year.value,4)}-${it.padded(month.value,2)}-${it.padded(day.value,2)}"
+        }
     }
 
     override fun copyValueFrom(other: Gene){
