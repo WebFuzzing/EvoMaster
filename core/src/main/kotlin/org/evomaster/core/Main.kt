@@ -232,6 +232,7 @@ class Main {
 
             logWarn("Using experimental settings." +
                     " Those might not work as expected, or simply straight out crash." +
+                    " Furthermore, they might simply be incomplete features still under development." +
                     " Used experimental settings: $options")
         }
 
