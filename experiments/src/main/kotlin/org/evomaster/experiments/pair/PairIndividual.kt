@@ -12,7 +12,7 @@ class PairIndividual(val x: IntegerGene, val y: IntegerGene) : Individual() {
         return PairIndividual(x.copy() as IntegerGene, y.copy() as IntegerGene)
     }
 
-    override fun seeGenes(filter: GENE_FILTER): List<out Gene> {
+    override fun seeGenes(filter: GeneFilter): List<out Gene> {
         return listOf(x,y)
     }
 

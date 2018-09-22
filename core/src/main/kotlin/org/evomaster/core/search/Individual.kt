@@ -16,12 +16,12 @@ abstract class Individual{
      */
     abstract fun copy() : Individual
 
-    enum class GENE_FILTER{ALL, NO_SQL}
+    enum class GeneFilter{ALL, NO_SQL, ONLY_SQL}
 
     /**
      * Return a view of all the Genes in this chromosome/individual
      */
-    abstract fun seeGenes(filter: GENE_FILTER = GENE_FILTER.ALL) : List<out Gene>
+    abstract fun seeGenes(filter: GeneFilter = GeneFilter.ALL) : List<out Gene>
 
     /**
      * An estimation of the "size" of this individual.

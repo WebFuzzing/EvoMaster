@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
@@ -34,6 +35,10 @@ class RestSampler : Sampler<RestIndividual>() {
 
     @Inject
     private lateinit var rc: RemoteController
+
+    @Inject
+    private lateinit var configuration: EMConfig
+
 
     private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
@@ -69,7 +74,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
         initAdHocInitialIndividuals()
 
-        if (infoDto.sqlSchemaDto != null) {
+        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
         }
 

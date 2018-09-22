@@ -25,13 +25,14 @@ class RestIndividual(val actions: MutableList<RestAction>,
     }
 
 
-    override fun seeGenes(filter: GENE_FILTER): List<out Gene> {
+    override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when(filter){
-            GENE_FILTER.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
+            GeneFilter.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
                     .plus(actions.flatMap(RestAction::seeGenes))
 
-            GENE_FILTER.NO_SQL -> actions.flatMap(RestAction::seeGenes)
+            GeneFilter.NO_SQL -> actions.flatMap(RestAction::seeGenes)
+            GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
         }
     }
 
