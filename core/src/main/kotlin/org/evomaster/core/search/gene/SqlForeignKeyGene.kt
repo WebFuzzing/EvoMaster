@@ -148,7 +148,7 @@ class SqlForeignKeyGene(
      */
     fun isNull(): Boolean {
         if (!hasValidUniqueIdOfPrimaryKey()) {
-            throw IllegalStateException("Cannot ")
+            throw IllegalStateException("uniqueId of primary key not yet put")
         }
         return uniqueIdOfPrimaryKey == -1L
     }
