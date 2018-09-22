@@ -26,6 +26,12 @@ internal class RestActionBuilderTest {
     }
 
     @Test
+    fun testNews() {
+        loadAndAssertActions("/swagger/news.json", 7)
+    }
+
+
+    @Test
     fun testCatWatch() {
         loadAndAssertActions("/swagger/catwatch.json", 23)
     }

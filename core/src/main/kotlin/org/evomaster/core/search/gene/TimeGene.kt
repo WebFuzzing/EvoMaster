@@ -39,7 +39,10 @@ class TimeGene(
     }
 
     override fun getValueAsRawString() : String {
-        return "${hour.value}:${minute.value}:${second.value}.000Z"
+
+        return GeneUtils.let {
+            "${it.padded(hour.value,2)}:${it.padded(minute.value,2)}:${it.padded(second.value,2)}.000Z"
+        }
     }
 
     override fun copyValueFrom(other: Gene){
