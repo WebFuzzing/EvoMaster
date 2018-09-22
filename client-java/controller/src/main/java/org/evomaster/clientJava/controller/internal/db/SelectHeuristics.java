@@ -5,6 +5,7 @@ import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.parser.TokenMgrError;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.*;
@@ -159,7 +160,7 @@ public class SelectHeuristics {
         Select stmt;
         try {
             stmt = (Select) CCJSqlParserUtil.parse(select);
-        } catch (Exception e) {
+        } catch (Exception | TokenMgrError e) {
             throw new IllegalArgumentException("Invalid Select SQL: " + select + "\n" + e.getMessage(), e);
         }
         return stmt;
