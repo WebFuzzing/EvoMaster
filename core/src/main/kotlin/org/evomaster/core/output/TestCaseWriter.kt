@@ -55,10 +55,10 @@ class TestCaseWriter {
 
 
             test.test.evaluatedActions()
-                    .map { ea -> ea.action }
+                    .map { it.action }
                     .filterIsInstance(RestCallAction::class.java)
-                    .filter { a -> a.locationId != null }
-                    .map { a -> a.locationId }
+                    .filter { it.locationId != null }
+                    .map { it.locationId }
                     .distinct()
                     .forEach { id ->
                         val name = locationVar(id!!)
@@ -117,6 +117,11 @@ class TestCaseWriter {
                         }
                         g is DateTimeGene -> {
                             // YYYY-MM-DD HH:MM:SS
+                            /*
+                                TODO: if SQL dates are in different format than JSON,
+                                might rather want to create a special gene for it, eg
+                                SqlDateTimeGene
+                             */
                             val variableName = g.getVariableName()
                             val dateStr = g.date.getValueAsRawString()
                             val timeStr = GeneUtils.let {
@@ -322,7 +327,7 @@ class TestCaseWriter {
                 lines.append("\"$path?\" + ")
 
                 lines.indent()
-                (0..elements.lastIndex - 1).forEach { i -> lines.add("\"${elements[i]}&\" + ") }
+                (0 until elements.lastIndex).forEach { i -> lines.add("\"${elements[i]}&\" + ") }
                 lines.add("\"${elements.last()}\"")
                 lines.deindent()
             }
@@ -361,7 +366,7 @@ class TestCaseWriter {
                     } else {
                         lines.add(".body(${bodyLines.first()} + ")
                         lines.indent()
-                        (1..bodyLines.lastIndex - 1).forEach { i ->
+                        (1 until bodyLines.lastIndex).forEach { i ->
                             lines.add("${bodyLines[i]} + ")
                         }
                         lines.add("${bodyLines.last()})")
