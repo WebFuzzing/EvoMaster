@@ -1,8 +1,7 @@
 package com.foo.rest.examples.spring.db.javatypes;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 
@@ -13,6 +12,21 @@ public class JavaTypesEntity {
     @GeneratedValue
     private Long id;
 
+    /**
+     * Primitive data types
+     */
+    private final boolean primitiveBoolean = true;
+    private final char primitvieChar = Character.MAX_VALUE;
+    private final short primitiveShort = Short.MAX_VALUE;
+    private final byte primitveByte = Byte.MAX_VALUE;
+    private final int primitveInt = Integer.MAX_VALUE;
+    private final long primitveLong = Long.MAX_VALUE;
+    private final float primitveFloat = Float.MAX_VALUE;
+    private final double primitiveDouble = Double.MAX_VALUE;
+
+    /**
+     * Wrapped data types
+     */
     @NotNull
     private final Boolean booleanField;
 
@@ -37,24 +51,42 @@ public class JavaTypesEntity {
     @NotNull
     private final Double doubleField;
 
+    /**
+     * Date date type
+     */
     @NotNull
     private final Date dateField;
 
+    /**
+     * By default Strings are stored as VARCHAR(255).
+     * Any attempt to persist a string value beyond that length
+     * leads to a "Value too long for column" SQL exception
+     */
     @NotNull
-    private final String stringField;
+    private final String shortString;
+
+    @NotNull
+    @Column(length = Integer.MAX_VALUE)
+    private final String longString;
+
+    @NotNull
+    @Lob
+    private final String veryLongString;
 
     public JavaTypesEntity() {
 
-        stringField = "Hello World";
+        shortString = "Hello World";
+        longString = new String(new char[300]).replace('\0', 'X');
         dateField = new Date();
         doubleField = Math.PI;
-        floatField = (float)Math.E;
+        floatField = (float) Math.E;
         longField = Long.MAX_VALUE;
         integerField = Integer.MAX_VALUE;
         shortField = Short.MAX_VALUE;
         characterField = 'X';
         byteField = Byte.MAX_VALUE;
         booleanField = true;
+        veryLongString = new String(new char[300]).replace('\0', 'X');
     }
 
     public Long getId() {
@@ -101,7 +133,12 @@ public class JavaTypesEntity {
         return dateField;
     }
 
-    public String getStringField() {
-        return stringField;
+    public String getShortString() {
+        return shortString;
     }
+
+    public String getLongString() {
+        return longString;
+    }
+
 }

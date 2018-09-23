@@ -9,9 +9,10 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.gene.DateTimeGene
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.StringGene
+import java.text.SimpleDateFormat
 
 
 class TestCaseWriter {
@@ -105,8 +106,27 @@ class TestCaseWriter {
 
                     if (g is SqlForeignKeyGene) {
                         val variableName = g.getVariableName()
-                        val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
-                        newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
+                        /**
+                         * At this point all pk Ids should be valid
+                         * (despite they being NULL or not)
+                         **/
+                        assert(g.hasValidUniqueIdOfPrimaryKey())
+                        if (g.isNull()) {
+                            newInsertIntoLine += ".d(\"$variableName\", \"NULL\")"
+                        } else {
+                            val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
+                            newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
+                        }
+                    } else if (g is DateTimeGene) {
+                        // YYYY-MM-DD HH:MM:SS
+                        val variableName = g.getVariableName()
+                        val dateStr = g.date.getValueAsRawString()
+                        val timeStr = GeneUtils.let {
+                            "${it.padded(g.time.hour.value,2)}:${it.padded(g.time.minute.value,2)}:${it.padded(g.time.second.value,2)}"
+                        }
+
+                        val printableValue = "\\\"$dateStr $timeStr\\\""
+                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
                     } else {
                         val variableName = g.getVariableName()
                         val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
@@ -125,11 +145,11 @@ class TestCaseWriter {
                     }
                 }
             }
-            if (index==1) {
+            if (index == 1) {
                 lines.indent()
             }
             lines.add(newInsertIntoLine)
-            if (index>0 &&  index == dbInitialization.size - 1) {
+            if (index > 0 && index == dbInitialization.size - 1) {
                 lines.deindent()
             }
         }
@@ -137,7 +157,7 @@ class TestCaseWriter {
 
         var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
         when {
-            format.isJava() -> execInsertionsLine  += ";"
+            format.isJava() -> execInsertionsLine += ";"
             format.isKotlin() -> {
             }
         }

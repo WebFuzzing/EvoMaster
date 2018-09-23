@@ -37,19 +37,55 @@ class DbAction(
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
 
             else -> when (it.type) {
-                CHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
-                VARCHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
-                INTEGER -> IntegerGene(it.name)
-                BIGINT -> LongGene(it.name)
+                /**
+                 * BOOLEAN(1) is assumed to be a boolean/Boolean field
+                 */
                 BOOLEAN -> BooleanGene(it.name)
+                /**
+                 * TINYINT(3) is assumed to be representing a byte/Byte field
+                 */
                 TINYINT -> ByteGene(it.name)
-                DOUBLE -> DoubleGene(it.name)
+                /**
+                 * SMALLINT(5) is assumed as a short/Short field
+                 */
                 SMALLINT -> ShortGene(it.name)
+                /**
+                 * CHAR(255) is assumed to be a char/Character field.
+                 * A StringGene of length 1 is used to represent the data.
+                 * TODO How to discover if it is a char or a char[] of 255 elements?
+                 */
+                CHAR -> StringGene(name = it.name, value = "f", minLength = 0, maxLength = 1)
+                /**
+                 * INTEGER(10) is a int/Integer field
+                 */
+                INTEGER -> IntegerGene(it.name)
+                /**
+                 * BIGINT(19) is a long/Long field
+                 */
+                BIGINT -> LongGene(it.name)
+                /**
+                 * DOUBLE(17) is assumed to be a double/Double field
+                 * TODO How to discover if the source field is a float/Float field?
+                 */
+
+                DOUBLE -> DoubleGene(it.name)
+                /**
+                 * VARCHAR(N) is assumed to be a String with a maximum length of N.
+                 * N could be as large as Integer.MAX_VALUE
+                 */
+                VARCHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                /**
+                 * TIMESTAMP is assumed to be a Date field
+                 */
                 TIMESTAMP ->
                     /**
                      * TODO handle fact that TimeStamp have year limitations and possible different string formats when printed
                      */
                     DateTimeGene(it.name)
+                /**
+                 * CLOB(N) stores a UNICODE document of length N
+                 */
+                CLOB -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
                 //it.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
 

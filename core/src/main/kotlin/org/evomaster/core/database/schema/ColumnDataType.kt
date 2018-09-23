@@ -47,6 +47,12 @@ enum class ColumnDataType(dataTypeName: String) {
     /**
      * A 16-bit (2 bytes) exact integer value
      */
-    SMALLINT("SMALLINT")
+    SMALLINT("SMALLINT"),
+    /**
+     * A CLOB (character large object) value can be up to 2,147,483,647 characters long.
+     * A CLOB is used to store unicode character-based data, such as large documents in any character set.
+     * The length is given in number characters for both CLOB, unless one of the suffixes K, M, or G is given, relating to the multiples of 1024, 1024*1024, 1024*1024*1024 respectively.
+     **/
+    CLOB("CLOB")
 
 }
