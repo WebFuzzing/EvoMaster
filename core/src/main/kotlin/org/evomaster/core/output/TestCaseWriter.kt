@@ -12,7 +12,7 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.DateTimeGene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.SqlForeignKeyGene
-import java.text.SimpleDateFormat
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 
 
 class TestCaseWriter {
@@ -104,33 +104,33 @@ class TestCaseWriter {
 
                 if (g.isPrintable()) {
 
-                    if (g is SqlForeignKeyGene) {
-                        val variableName = g.getVariableName()
-                        /**
-                         * At this point all pk Ids should be valid
-                         * (despite they being NULL or not)
-                         **/
-                        assert(g.hasValidUniqueIdOfPrimaryKey())
-                        if (g.isNull()) {
-                            newInsertIntoLine += ".d(\"$variableName\", \"NULL\")"
-                        } else {
-                            val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
-                            newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
+                    when {
+                        g is SqlForeignKeyGene -> {
+                            newInsertIntoLine += handleFK(g)
                         }
-                    } else if (g is DateTimeGene) {
-                        // YYYY-MM-DD HH:MM:SS
-                        val variableName = g.getVariableName()
-                        val dateStr = g.date.getValueAsRawString()
-                        val timeStr = GeneUtils.let {
-                            "${it.padded(g.time.hour.value,2)}:${it.padded(g.time.minute.value,2)}:${it.padded(g.time.second.value,2)}"
+                        g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
+                            /*
+                                TODO: this will need to be refactored when Gene system
+                                will have "previousGenes"-based methods on all genes
+                             */
+                            newInsertIntoLine += handleFK(g.gene)
                         }
+                        g is DateTimeGene -> {
+                            // YYYY-MM-DD HH:MM:SS
+                            val variableName = g.getVariableName()
+                            val dateStr = g.date.getValueAsRawString()
+                            val timeStr = GeneUtils.let {
+                                "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
+                            }
 
-                        val printableValue = "\\\"$dateStr $timeStr\\\""
-                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
-                    } else {
-                        val variableName = g.getVariableName()
-                        val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
-                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                            val printableValue = "\\\"$dateStr $timeStr\\\""
+                            newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                        }
+                        else -> {
+                            val variableName = g.getVariableName()
+                            val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+                            newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                        }
                     }
 
                 }
@@ -162,6 +162,26 @@ class TestCaseWriter {
             }
         }
         lines.add(execInsertionsLine)
+    }
+
+    private fun handleFK(g: SqlForeignKeyGene): String {
+
+        /*
+            TODO: why the code here is not relying on SqlForeignKeyGene#getValueAsPrintableString ???
+         */
+
+        val variableName = g.getVariableName()
+        /**
+         * At this point all pk Ids should be valid
+         * (despite they being NULL or not)
+         **/
+        assert(g.hasValidUniqueIdOfPrimaryKey())
+        return if (g.isNull()) {
+            ".d(\"$variableName\", \"NULL\")"
+        } else {
+            val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
+            ".r(\"$variableName\", ${uniqueId}L)"
+        }
     }
 
 
