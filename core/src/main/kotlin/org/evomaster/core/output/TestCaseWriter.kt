@@ -9,7 +9,10 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.gene.DateTimeGene
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.SqlForeignKeyGene
+import java.text.SimpleDateFormat
 
 
 class TestCaseWriter {
@@ -114,6 +117,16 @@ class TestCaseWriter {
                             val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
                             newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
                         }
+                    } else if (g is DateTimeGene) {
+                        // YYYY-MM-DD HH:MM:SS
+                        val variableName = g.getVariableName()
+                        val dateStr = g.date.getValueAsRawString()
+                        val timeStr = GeneUtils.let {
+                            "${it.padded(g.time.hour.value,2)}:${it.padded(g.time.minute.value,2)}:${it.padded(g.time.second.value,2)}"
+                        }
+
+                        val printableValue = "\\\"$dateStr $timeStr\\\""
+                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
                     } else {
                         val variableName = g.getVariableName()
                         val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())

@@ -1,10 +1,7 @@
 package com.foo.rest.examples.spring.db.javatypes;
 
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.util.Date;
 
@@ -72,6 +69,10 @@ public class JavaTypesEntity {
     @Column(length = Integer.MAX_VALUE)
     private final String longString;
 
+    @NotNull
+    @Lob
+    private final String veryLongString;
+
     public JavaTypesEntity() {
 
         shortString = "Hello World";
@@ -85,6 +86,7 @@ public class JavaTypesEntity {
         characterField = 'X';
         byteField = Byte.MAX_VALUE;
         booleanField = true;
+        veryLongString = new String(new char[300]).replace('\0', 'X');
     }
 
     public Long getId() {

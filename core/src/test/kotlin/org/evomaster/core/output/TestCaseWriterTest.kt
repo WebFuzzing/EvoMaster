@@ -377,4 +377,42 @@ class TestCaseWriterTest {
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
+
+    @Test
+    fun testTimeStampColumn() {
+        val aColumn = Column("aColumn", TIMESTAMP, 10)
+
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+
+        val id = 0L
+
+        val gene = DateTimeGene(aColumn.name)
+
+        val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
+
+        val dbInitialization = ArrayList<DbAction>()
+        dbInitialization.add(insertIntoTableAction)
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"aColumn\", \"\\\"2016-03-12 00:00:00\\\"\").dtos();")
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
 }

@@ -82,7 +82,10 @@ class DbAction(
                      * TODO handle fact that TimeStamp have year limitations and possible different string formats when printed
                      */
                     DateTimeGene(it.name)
-
+                /**
+                 * CLOB(N) stores a UNICODE document of length N
+                 */
+                CLOB -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
                 //it.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
 
