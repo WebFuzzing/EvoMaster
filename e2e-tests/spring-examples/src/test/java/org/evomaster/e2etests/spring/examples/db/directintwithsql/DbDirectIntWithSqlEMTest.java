@@ -43,7 +43,6 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         find it, is to write such data directly with SQL commands.
      */
 
-    @Disabled
     @Test
     public void testRunEM() throws Throwable {
 
@@ -53,12 +52,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     "--createTests", "true",
                     "--seed", "42",
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "20000",
+                    "--maxActionEvaluations", "2000",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--heuristicsForSQL", "true",
-                    "--generateSqlDataWithSearch", "true",
-                    "--maxTestSize", "1", //TODO Remove?
-                    "--maxSqlInitActionsPerMissingData", "1" //TODO Remove?
+                    "--generateSqlDataWithSearch", "true"
             };
 
             Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
