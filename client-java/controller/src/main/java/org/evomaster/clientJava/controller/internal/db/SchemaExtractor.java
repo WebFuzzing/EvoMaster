@@ -20,11 +20,13 @@ public class SchemaExtractor {
 
         try {
             schemaDto.name = connection.getSchema();
-        } catch (Exception e) {
+        } catch (Exception | AbstractMethodError e) {
             /*
                 In remote sessions, getSchema might fail.
                 We do not do much with it anyway (at least for
                 now), so not a big deal...
+                Furthermore, some drivers might be compiled to Java 6,
+                whereas getSchema was introduced in Java 7
              */
             schemaDto.name = "public";
         }
