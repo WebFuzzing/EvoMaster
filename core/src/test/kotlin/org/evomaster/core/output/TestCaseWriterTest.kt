@@ -139,8 +139,8 @@ class TestCaseWriterTest {
             add(".and().insertInto(\"myTable\", 1L)")
             indent()
             add(".d(\"aColumn\", \"\\\"stringValue1\\\"\")")
-            add(".dtos();")
             deindent()
+            add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -324,8 +324,8 @@ class TestCaseWriterTest {
             indent()
             add(".d(\"Id\", \"42\")")
             add(".r(\"fkId\", 1001L)")
-            add(".dtos();")
             deindent()
+            add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -424,8 +424,8 @@ class TestCaseWriterTest {
             indent()
             add(".d(\"Id\", \"42\")")
             add(".d(\"fkId\", \"NULL\")")
-            add(".dtos();")
             deindent()
+            add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -478,5 +478,61 @@ class TestCaseWriterTest {
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
+
+
+    @Test
+    fun testThreeAction() {
+        val aColumn = Column("aColumn", VARCHAR, 10)
+
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+
+        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
+
+        val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), 0L, mutableListOf(gene0))
+
+        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 10)
+
+        val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), 1L, mutableListOf(gene1))
+
+        val gene2 = StringGene(aColumn.name, "stringValue2", 0, 10)
+
+        val insertIntoTableAction2 = DbAction(aTable, setOf(aColumn), 2L, mutableListOf(gene2))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1, insertIntoTableAction2))
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue0\\\"\")")
+            deindent()
+            add(".and().insertInto(\"myTable\", 1L)")
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue1\\\"\")")
+            deindent()
+            add(".and().insertInto(\"myTable\", 2L)")
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue2\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
 
 }

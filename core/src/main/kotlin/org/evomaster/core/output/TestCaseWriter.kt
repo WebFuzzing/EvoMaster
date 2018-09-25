@@ -92,14 +92,12 @@ class TestCaseWriter {
                 else -> ".and()"
             } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
 
-            if (index==0) {
+            if (index == 0) {
                 lines.indent()
             }
 
             lines.indent()
             dbAction.seeGenes().forEach { g ->
-
-
                 if (g.isPrintable()) {
 
                     if (g is SqlForeignKeyGene) {
@@ -136,9 +134,6 @@ class TestCaseWriter {
             lines.deindent()
 
 
-            if (index == 1) {
-                lines.indent()
-            }
             if (index == dbInitialization.size - 1) {
                 lines.add(".dtos()" +
                         when {
@@ -146,9 +141,6 @@ class TestCaseWriter {
                             format.isKotlin() -> ""
                             else -> ""
                         })
-            }
-            if (index > 0 && index == dbInitialization.size - 1) {
-                lines.deindent()
             }
         }
 
