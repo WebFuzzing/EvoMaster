@@ -8,7 +8,7 @@ class SqlTimestampGene(
 ) : DateTimeGene(name, date, time) {
 
     init{
-        require(! time.withMsZ)
+        require(! time.withMsZ){"Must not have MsZ in SQL Timestamps"}
     }
 
     override fun copy(): Gene = SqlTimestampGene(

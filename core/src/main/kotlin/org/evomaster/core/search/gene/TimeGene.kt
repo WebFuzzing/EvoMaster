@@ -25,7 +25,8 @@ class TimeGene(
             name,
             hour.copy() as IntegerGene,
             minute.copy() as IntegerGene,
-            second.copy() as IntegerGene
+            second.copy() as IntegerGene,
+            withMsZ
             )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
