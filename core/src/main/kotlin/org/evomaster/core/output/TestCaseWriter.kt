@@ -12,7 +12,6 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.DateTimeGene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.SqlForeignKeyGene
-import java.text.SimpleDateFormat
 
 
 class TestCaseWriter {
@@ -87,20 +86,19 @@ class TestCaseWriter {
 
         dbInitialization.forEachIndexed { index, dbAction ->
 
-            var newInsertIntoLine = ""
-            if (index == 0) {
-                when {
-                    format.isJava() -> newInsertIntoLine += "List<InsertionDto> "
-                    format.isKotlin() -> newInsertIntoLine += "val "
-                }
-                newInsertIntoLine += "insertions = sql()"
-            } else {
-                newInsertIntoLine += ".and()"
+            lines.add(when {
+                index == 0 && format.isJava() -> "List<InsertionDto> insertions = sql()"
+                index == 0 && format.isKotlin() -> "val insertions = sql()"
+                else -> ".and()"
+            } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
+
+            if (index==0) {
+                lines.indent()
             }
-            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)"
 
-
+            lines.indent()
             dbAction.seeGenes().forEach { g ->
+
 
                 if (g.isPrintable()) {
 
@@ -112,48 +110,49 @@ class TestCaseWriter {
                          **/
                         assert(g.hasValidUniqueIdOfPrimaryKey())
                         if (g.isNull()) {
-                            newInsertIntoLine += ".d(\"$variableName\", \"NULL\")"
+                            lines.add(".d(\"$variableName\", \"NULL\")")
                         } else {
                             val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
-                            newInsertIntoLine += ".r(\"$variableName\", ${uniqueId}L)"
+                            lines.add(".r(\"$variableName\", ${uniqueId}L)")
                         }
                     } else if (g is DateTimeGene) {
                         // YYYY-MM-DD HH:MM:SS
                         val variableName = g.getVariableName()
                         val dateStr = g.date.getValueAsRawString()
                         val timeStr = GeneUtils.let {
-                            "${it.padded(g.time.hour.value,2)}:${it.padded(g.time.minute.value,2)}:${it.padded(g.time.second.value,2)}"
+                            "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
                         }
 
                         val printableValue = "\\\"$dateStr $timeStr\\\""
-                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                        lines.add(".d(\"$variableName\", \"$printableValue\")")
                     } else {
                         val variableName = g.getVariableName()
                         val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
-                        newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                        lines.add(".d(\"$variableName\", \"$printableValue\")")
                     }
-
                 }
 
             }
+            lines.deindent()
 
-            if (index == dbInitialization.size - 1) {
-                newInsertIntoLine += ".dtos()"
-                when {
-                    format.isJava() -> newInsertIntoLine += ";"
-                    format.isKotlin() -> {
-                    }
-                }
-            }
+
             if (index == 1) {
                 lines.indent()
             }
-            lines.add(newInsertIntoLine)
+            if (index == dbInitialization.size - 1) {
+                lines.add(".dtos()" +
+                        when {
+                            format.isJava() -> ";"
+                            format.isKotlin() -> ""
+                            else -> ""
+                        })
+            }
             if (index > 0 && index == dbInitialization.size - 1) {
                 lines.deindent()
             }
         }
 
+        lines.deindent()
 
         var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
         when {
