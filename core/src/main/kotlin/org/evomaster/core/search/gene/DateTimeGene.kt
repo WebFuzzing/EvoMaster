@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
  *
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
-class DateTimeGene(
+open class DateTimeGene(
         name: String,
         val date: DateGene = DateGene("date"),
         val time: TimeGene = TimeGene("time")

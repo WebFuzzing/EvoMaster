@@ -78,10 +78,7 @@ class DbAction(
                  * TIMESTAMP is assumed to be a Date field
                  */
                 TIMESTAMP ->
-                    /**
-                     * TODO handle fact that TimeStamp have year limitations and possible different string formats when printed
-                     */
-                    DateTimeGene(it.name)
+                    SqlTimestampGene(it.name)
                 /**
                  * CLOB(N) stores a UNICODE document of length N
                  */
@@ -127,7 +124,7 @@ class DbAction(
             based on the column name
          */
         if (column.name.contains("time", ignoreCase = true)) {
-            return DateTimeGene(column.name)
+            return SqlTimestampGene(column.name)
         } else {
             //go for a default string
             return StringGene(name = column.name, minLength = 0, maxLength = column.size)

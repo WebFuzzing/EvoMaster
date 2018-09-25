@@ -12,7 +12,8 @@ class TimeGene(
         //note: ranges deliberately include wrong values.
         val hour: IntegerGene = IntegerGene("hour", 0, -1, 25),
         val minute: IntegerGene = IntegerGene("minute", 0, -1, 60),
-        val second: IntegerGene = IntegerGene("second", 0, -1, 60)
+        val second: IntegerGene = IntegerGene("second", 0, -1, 60),
+        val withMsZ: Boolean = true
 ) : Gene(name){
 
     /*
@@ -40,8 +41,14 @@ class TimeGene(
 
     override fun getValueAsRawString() : String {
 
-        return GeneUtils.let {
-            "${it.padded(hour.value,2)}:${it.padded(minute.value,2)}:${it.padded(second.value,2)}.000Z"
+        val s =  GeneUtils.let {
+            "${it.padded(hour.value,2)}:${it.padded(minute.value,2)}:${it.padded(second.value,2)}"
+        }
+
+        return if(withMsZ){
+            "$s.000Z";
+        } else {
+            s;
         }
     }
 

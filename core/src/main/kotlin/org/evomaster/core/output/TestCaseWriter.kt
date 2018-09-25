@@ -149,15 +149,6 @@ class TestCaseWriter {
 
             return getPrintableValue(g.gene)
 
-        } else if (g is DateTimeGene) {
-            // YYYY-MM-DD HH:MM:SS
-            val dateStr = g.date.getValueAsRawString()
-            val timeStr = GeneUtils.let {
-                "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
-            }
-
-            return "\\\"$dateStr $timeStr\\\""
-
         } else {
             return StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
         }

@@ -445,7 +445,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val gene = DateTimeGene(aColumn.name)
+        val gene = SqlTimestampGene(aColumn.name)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
@@ -544,7 +544,7 @@ class TestCaseWriterTest {
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
-        val timeStampGene = DateTimeGene(idColumn.name)
+        val timeStampGene = SqlTimestampGene(idColumn.name)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", timeStampGene, 10)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", timeStampGene, 10)
 

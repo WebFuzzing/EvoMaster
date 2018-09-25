@@ -180,7 +180,7 @@ class SqlInsertBuilderTest {
 
         val genes = actions[0].seeGenes()
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is DateTimeGene)
+        assertTrue(genes[0] is SqlTimestampGene)
     }
 
     @Test
@@ -277,7 +277,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is DateTimeGene)
+        assertTrue(genes[0] is SqlTimestampGene)
     }
 
     @Test
