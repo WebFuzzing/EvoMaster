@@ -238,7 +238,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is ShortGene)
+        assertTrue(genes[0] is IntegerGene)
     }
 
     @Test
@@ -257,7 +257,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is ByteGene)
+        assertTrue(genes[0] is IntegerGene)
     }
 
 

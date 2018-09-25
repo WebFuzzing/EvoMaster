@@ -19,7 +19,8 @@ class DbAction(
         computedGenes: List<Gene>? = null
 ) : Action {
 
-    private val genes: List<Gene> = computedGenes ?: selectedColumns.map {
+    private
+    val genes: List<Gene> = computedGenes ?: selectedColumns.map {
 
         val fk = getForeignKey(table, it)
 
@@ -44,11 +45,11 @@ class DbAction(
                 /**
                  * TINYINT(3) is assumed to be representing a byte/Byte field
                  */
-                TINYINT -> ByteGene(it.name)
+                TINYINT -> IntegerGene(it.name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
                 /**
                  * SMALLINT(5) is assumed as a short/Short field
                  */
-                SMALLINT -> ShortGene(it.name)
+                SMALLINT -> IntegerGene(it.name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
                 /**
                  * CHAR(255) is assumed to be a char/Character field.
                  * A StringGene of length 1 is used to represent the data.
@@ -96,6 +97,7 @@ class DbAction(
                  * TODO: DECIMAL precision is lower than a float gene
                  */
                 DECIMAL -> FloatGene(it.name)
+
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }
 
