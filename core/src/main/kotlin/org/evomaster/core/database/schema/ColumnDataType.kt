@@ -1,5 +1,9 @@
 package org.evomaster.core.database.schema
 
+/**
+ * SQL Data types from databases
+ * See http://www.h2database.com/html/datatypes.html
+ */
 enum class ColumnDataType(dataTypeName: String) {
 
     /**
@@ -53,6 +57,18 @@ enum class ColumnDataType(dataTypeName: String) {
      * A CLOB is used to store unicode character-based data, such as large documents in any character set.
      * The length is given in number characters for both CLOB, unless one of the suffixes K, M, or G is given, relating to the multiples of 1024, 1024*1024, 1024*1024*1024 respectively.
      **/
-    CLOB("CLOB")
+    CLOB("CLOB"),
 
+    /**
+     * Real data can hold a value 4 bytes in size, meaning it has 7 digits of precision
+     * (the number of digits to the right of the decimal point).
+     * It is also a floating-point numeric that is identical to the floating point statement float(24).
+     */
+    REAL("REAL"),
+    /**
+     * Data type with fixed precision and scale. This data type is recommended for storing currency values.
+     * Mapped to java.math.BigDecimal.
+     * Example: DECIMAL(20, 2)
+     **/
+    DECIMAL("DECIMAL")
 }

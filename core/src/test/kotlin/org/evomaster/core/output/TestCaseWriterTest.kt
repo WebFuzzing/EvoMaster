@@ -67,7 +67,13 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"aColumn\", \"\\\"stringValue\\\"\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -125,9 +131,16 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"aColumn\", \"\\\"stringValue0\\\"\")")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
             indent()
-            add(".and().insertInto(\"myTable\", 1L).d(\"aColumn\", \"\\\"stringValue1\\\"\").dtos();")
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue0\\\"\")")
+            deindent()
+            add(".and().insertInto(\"myTable\", 1L)")
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue1\\\"\")")
+            deindent()
+            add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -164,7 +177,14 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"Column0\", \"\\\"stringValue0\\\"\").d(\"Column1\", \"\\\"stringValue1\\\"\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"Column0\", \"\\\"stringValue0\\\"\")")
+            add(".d(\"Column1\", \"\\\"stringValue1\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -200,7 +220,14 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"Id\", \"42\").d(\"Name\", \"\\\"nameValue\\\"\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"Id\", \"42\")")
+            add(".d(\"Name\", \"\\\"nameValue\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -238,7 +265,14 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"Id\", \"42\").d(\"Name\", \"\\\"nameValue\\\"\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"Id\", \"42\")")
+            add(".d(\"Name\", \"\\\"nameValue\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -281,9 +315,17 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L).d(\"Id\", \"42\")")
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L)")
             indent()
-            add(".and().insertInto(\"Table1\", 1002L).d(\"Id\", \"42\").r(\"fkId\", 1001L).dtos();")
+            indent()
+            add(".d(\"Id\", \"42\")")
+            deindent()
+            add(".and().insertInto(\"Table1\", 1002L)")
+            indent()
+            add(".d(\"Id\", \"42\")")
+            add(".r(\"fkId\", 1001L)")
+            deindent()
+            add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -322,7 +364,13 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"aColumn\", \"false\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"aColumn\", \"false\")")
+            deindent()
+            add(".dtos();")
+            deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -365,9 +413,19 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L).d(\"Id\", \"42\")")
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L)")
             indent()
-            add(".and().insertInto(\"Table1\", 1002L).d(\"Id\", \"42\").d(\"fkId\", \"NULL\").dtos();")
+            indent()
+            add(".d(\"Id\", \"42\")")
+            deindent()
+            deindent()
+            indent()
+            add(".and().insertInto(\"Table1\", 1002L)")
+            indent()
+            add(".d(\"Id\", \"42\")")
+            add(".d(\"fkId\", \"NULL\")")
+            deindent()
+            add(".dtos();")
             deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
@@ -406,7 +464,13 @@ class TestCaseWriterTest {
             add("@Test")
             add("public void test() throws Exception {")
             indent()
-            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L).d(\"aColumn\", \"\\\"2016-03-12 00:00:00\\\"\").dtos();")
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"aColumn\", \"\\\"2016-03-12 00:00:00\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
             add("controller.execInsertionsIntoDatabase(insertions);")
             deindent()
             add("}")
@@ -414,5 +478,115 @@ class TestCaseWriterTest {
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
+
+
+    @Test
+    fun testThreeAction() {
+        val aColumn = Column("aColumn", VARCHAR, 10)
+
+        val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
+
+
+        val gene0 = StringGene(aColumn.name, "stringValue0", 0, 10)
+
+        val insertIntoTableAction0 = DbAction(aTable, setOf(aColumn), 0L, mutableListOf(gene0))
+
+        val gene1 = StringGene(aColumn.name, "stringValue1", 0, 10)
+
+        val insertIntoTableAction1 = DbAction(aTable, setOf(aColumn), 1L, mutableListOf(gene1))
+
+        val gene2 = StringGene(aColumn.name, "stringValue2", 0, 10)
+
+        val insertIntoTableAction2 = DbAction(aTable, setOf(aColumn), 2L, mutableListOf(gene2))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1, insertIntoTableAction2))
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"myTable\", 0L)")
+            indent()
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue0\\\"\")")
+            deindent()
+            add(".and().insertInto(\"myTable\", 1L)")
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue1\\\"\")")
+            deindent()
+            add(".and().insertInto(\"myTable\", 2L)")
+            indent()
+            add(".d(\"aColumn\", \"\\\"stringValue2\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+    @Test
+    fun testTimeStampForeignKeyColumn() {
+        val idColumn = Column("Id", TIMESTAMP, 10, primaryKey = true)
+        val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
+
+        val fkColumn = Column("fkId", TIMESTAMP, 10, primaryKey = false)
+        val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
+
+
+        val timeStampGene = DateTimeGene(idColumn.name)
+        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", timeStampGene, 10)
+        val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", timeStampGene, 10)
+
+
+        val firstInsertionId = 1001L
+        val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
+        val secondInsertionId = 1002L
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, firstInsertionId)
+
+        val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L)")
+            indent()
+            indent()
+            add(".d(\"Id\", \"\\\"2016-03-12 00:00:00\\\"\")")
+            deindent()
+            add(".and().insertInto(\"Table1\", 1002L)")
+            indent()
+            add(".d(\"Id\", \"\\\"2016-03-12 00:00:00\\\"\")")
+            add(".r(\"fkId\", 1001L)")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
 
 }
