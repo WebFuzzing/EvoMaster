@@ -2,15 +2,13 @@ package org.evomaster.core.database
 
 import org.evomaster.clientJava.controller.db.SqlScriptRunner
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
-import org.evomaster.core.search.gene.DateTimeGene
-import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection
+import java.sql.Date
 import java.sql.DriverManager
 
 class SqlInsertBuilderTest {
@@ -185,4 +183,177 @@ class SqlInsertBuilderTest {
         assertTrue(genes[0] is DateTimeGene)
     }
 
+    @Test
+    fun testRealColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x REAL);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is DoubleGene)
+    }
+
+
+    @Test
+    fun testCLOBColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CLOB);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is StringGene)
+    }
+
+    @Test
+    fun testSmallIntColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x SMALLINT);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is ShortGene)
+    }
+
+    @Test
+    fun testTinyIntColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TINYINT);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is ByteGene)
+    }
+
+
+    @Test
+    fun testTimeStampColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TIMESTAMP);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is DateTimeGene)
+    }
+
+    @Test
+    fun testBooleanColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BOOLEAN);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is BooleanGene)
+    }
+
+    @Test
+    fun testCharColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CHAR);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is StringGene)
+    }
+
+
+    @Test
+    fun testBigIntColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BIGINT);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is LongGene)
+    }
+
+    @Test
+    fun testDoubleColumn() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x DOUBLE);")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("X"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is DoubleGene)
+    }
 }

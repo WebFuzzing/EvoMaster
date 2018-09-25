@@ -89,6 +89,13 @@ class DbAction(
                 //it.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
 
+                /**
+                 * REAL is identical to the floating point statement float(24).
+                 * TODO How to discover if the source field is a float/Float field?
+                 */
+                REAL -> DoubleGene(it.name)
+
+
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }
 
