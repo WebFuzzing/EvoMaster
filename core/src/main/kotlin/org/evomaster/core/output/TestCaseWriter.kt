@@ -9,10 +9,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.gene.DateTimeGene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.*
 
 
 class TestCaseWriter {
@@ -85,80 +82,58 @@ class TestCaseWriter {
 
     private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
 
+
         dbInitialization.forEachIndexed { index, dbAction ->
 
-            var newInsertIntoLine = ""
+            lines.add(when {
+                index == 0 && format.isJava() -> "List<InsertionDto> insertions = sql()"
+                index == 0 && format.isKotlin() -> "val insertions = sql()"
+                else -> ".and()"
+            } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
+
             if (index == 0) {
-                when {
-                    format.isJava() -> newInsertIntoLine += "List<InsertionDto> "
-                    format.isKotlin() -> newInsertIntoLine += "val "
-                }
-                newInsertIntoLine += "insertions = sql()"
-            } else {
-                newInsertIntoLine += ".and()"
+                lines.indent()
             }
-            newInsertIntoLine += ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)"
 
-
+            lines.indent()
             dbAction.seeGenes().forEach { g ->
 
                 if (g.isPrintable()) {
 
                     when {
                         g is SqlForeignKeyGene -> {
-                            newInsertIntoLine += handleFK(g)
+
+                            lines.add(handleFK(g))
                         }
                         g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
                             /*
                                 TODO: this will need to be refactored when Gene system
                                 will have "previousGenes"-based methods on all genes
                              */
-                            newInsertIntoLine += handleFK(g.gene)
-                        }
-                        g is DateTimeGene -> {
-                            // YYYY-MM-DD HH:MM:SS
-                            /*
-                                TODO: if SQL dates are in different format than JSON,
-                                might rather want to create a special gene for it, eg
-                                SqlDateTimeGene
-                             */
-                            val variableName = g.getVariableName()
-                            val dateStr = g.date.getValueAsRawString()
-                            val timeStr = GeneUtils.let {
-                                "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
-                            }
-
-                            val printableValue = "\\\"$dateStr $timeStr\\\""
-                            newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                            lines.add(handleFK(g.gene))
                         }
                         else -> {
                             val variableName = g.getVariableName()
-                            val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
-                            newInsertIntoLine += ".d(\"$variableName\", \"$printableValue\")"
+                            val printableValue = getPrintableValue(g)
+                            lines.add(".d(\"$variableName\", \"$printableValue\")")
                         }
                     }
-
                 }
-
             }
+            lines.deindent()
 
             if (index == dbInitialization.size - 1) {
-                newInsertIntoLine += ".dtos()"
-                when {
-                    format.isJava() -> newInsertIntoLine += ";"
-                    format.isKotlin() -> {
-                    }
-                }
-            }
-            if (index == 1) {
-                lines.indent()
-            }
-            lines.add(newInsertIntoLine)
-            if (index > 0 && index == dbInitialization.size - 1) {
-                lines.deindent()
-            }
-        }
+                lines.add(".dtos()" +
+                        when {
+                            format.isJava() -> ";"
+                            format.isKotlin() -> ""
+                            else -> ""
 
+                        })
+            }
+
+        }
+        lines.deindent()
 
         var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
         when {
@@ -167,6 +142,25 @@ class TestCaseWriter {
             }
         }
         lines.add(execInsertionsLine)
+    }
+
+    private fun getPrintableValue(g: Gene): String {
+        if (g is SqlPrimaryKeyGene) {
+
+            return getPrintableValue(g.gene)
+
+        } else if (g is DateTimeGene) {
+            // YYYY-MM-DD HH:MM:SS
+            val dateStr = g.date.getValueAsRawString()
+            val timeStr = GeneUtils.let {
+                "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
+            }
+
+            return "\\\"$dateStr $timeStr\\\""
+
+        } else {
+            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+        }
     }
 
     private fun handleFK(g: SqlForeignKeyGene): String {
