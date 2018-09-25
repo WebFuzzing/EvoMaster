@@ -3,6 +3,7 @@ package com.foo.rest.examples.spring.db.javatypes;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import java.util.Date;
 
 @Entity
@@ -72,6 +73,9 @@ public class JavaTypesEntity {
     @NotNull
     @Lob
     private final String veryLongString;
+
+    @NotNull
+    private final BigDecimal bigDecimal = new BigDecimal(10);
 
     public JavaTypesEntity() {
 

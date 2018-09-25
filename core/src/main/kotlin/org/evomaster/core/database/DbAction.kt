@@ -95,7 +95,10 @@ class DbAction(
                  */
                 REAL -> DoubleGene(it.name)
 
-
+                /**
+                 * TODO: DECIMAL precision is lower than a float gene
+                 */
+                DECIMAL -> FloatGene(it.name)
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }
 

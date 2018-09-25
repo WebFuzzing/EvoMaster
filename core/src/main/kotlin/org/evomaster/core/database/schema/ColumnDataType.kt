@@ -64,5 +64,11 @@ enum class ColumnDataType(dataTypeName: String) {
      * (the number of digits to the right of the decimal point).
      * It is also a floating-point numeric that is identical to the floating point statement float(24).
      */
-    REAL("REAL")
+    REAL("REAL"),
+    /**
+     * Data type with fixed precision and scale. This data type is recommended for storing currency values.
+     * Mapped to java.math.BigDecimal.
+     * Example: DECIMAL(20, 2)
+     **/
+    DECIMAL("DECIMAL")
 }

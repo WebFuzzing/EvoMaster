@@ -1,12 +1,13 @@
-package org.evomaster.clientJava.controller.internal.db;
+package sql_schema;
 
 import org.evomaster.clientJava.controller.db.DatabaseTestTemplate;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
+import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
 import org.junit.jupiter.api.Test;
 
-import static org.evomaster.clientJava.controller.internal.db.TableDtoUtils.containsTable;
+import static org.evomaster.core.database.TableDtoUtils.containsTable;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ProxyPrintSchemaExtractorTest extends DatabaseTestTemplate {
