@@ -9,9 +9,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.gene.DateTimeGene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.SqlForeignKeyGene
+import org.evomaster.core.search.gene.*
 
 
 class TestCaseWriter {
@@ -82,6 +80,28 @@ class TestCaseWriter {
         return lines
     }
 
+
+    private fun getPrintableValue(g: Gene): String {
+        if (g is SqlPrimaryKeyGene) {
+
+            return getPrintableValue(g.gene)
+
+        } else if (g is DateTimeGene) {
+            // YYYY-MM-DD HH:MM:SS
+            val variableName = g.getVariableName()
+
+            val dateStr = g.date.getValueAsRawString()
+            val timeStr = GeneUtils.let {
+                "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
+            }
+
+            return "\\\"$dateStr $timeStr\\\""
+
+        } else {
+            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+        }
+    }
+
     private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
 
         dbInitialization.forEachIndexed { index, dbAction ->
@@ -113,19 +133,9 @@ class TestCaseWriter {
                             val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
                             lines.add(".r(\"$variableName\", ${uniqueId}L)")
                         }
-                    } else if (g is DateTimeGene) {
-                        // YYYY-MM-DD HH:MM:SS
-                        val variableName = g.getVariableName()
-                        val dateStr = g.date.getValueAsRawString()
-                        val timeStr = GeneUtils.let {
-                            "${it.padded(g.time.hour.value, 2)}:${it.padded(g.time.minute.value, 2)}:${it.padded(g.time.second.value, 2)}"
-                        }
-
-                        val printableValue = "\\\"$dateStr $timeStr\\\""
-                        lines.add(".d(\"$variableName\", \"$printableValue\")")
                     } else {
                         val variableName = g.getVariableName()
-                        val printableValue = StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+                        val printableValue = getPrintableValue(g)
                         lines.add(".d(\"$variableName\", \"$printableValue\")")
                     }
                 }
