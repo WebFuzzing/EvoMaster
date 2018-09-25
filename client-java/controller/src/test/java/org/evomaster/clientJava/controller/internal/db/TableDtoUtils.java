@@ -8,8 +8,7 @@ public class TableDtoUtils {
 
 
     public static boolean containsTable(List<TableDto> tables, String tableName) {
-        for (TableDto tableDto :
-                tables) {
+        for (TableDto tableDto : tables) {
             if (tableDto.name.equalsIgnoreCase(tableName)) {
                 return true;
             }
@@ -18,8 +17,7 @@ public class TableDtoUtils {
     }
 
     public static TableDto getTable(List<TableDto> tables, String tableName) {
-        for (TableDto tableDto :
-                tables) {
+        for (TableDto tableDto : tables) {
             if (tableDto.name.equalsIgnoreCase(tableName)) {
                 return tableDto;
             }
