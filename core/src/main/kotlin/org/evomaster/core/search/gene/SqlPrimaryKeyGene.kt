@@ -41,6 +41,10 @@ class SqlPrimaryKeyGene(name: String,
         return gene.getValueAsPrintableString()
     }
 
+    override fun getValueAsPrintableString(previousGenes: List<Gene>) : String {
+        return gene.getValueAsPrintableString(previousGenes)
+    }
+
     override fun getValueAsRawString() : String {
         return gene.getValueAsRawString()
     }
