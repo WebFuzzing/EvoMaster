@@ -35,7 +35,14 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
         }
 
-        val p = 1.0 / genesToMutate.size
+        /*
+            TODO: this likely will need experiments and a better formula.
+            The problem is that SQL could introduce a huge amount of genes, slowing
+            down the search
+         */
+        val n = Math.max(1, copy.seeGenes(Individual.GeneFilter.NO_SQL).filter(Gene::isMutable).count())
+
+        val p = 1.0 / n
 
         var mutated = false
 
