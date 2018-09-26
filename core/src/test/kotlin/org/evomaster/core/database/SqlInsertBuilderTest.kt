@@ -356,4 +356,24 @@ class SqlInsertBuilderTest {
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DoubleGene)
     }
+
+    @Test
+    fun testTableCalledUsers(){
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Users(id  bigserial not null, primary key (id));")
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("USERS", setOf("ID"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(1, genes.size)
+        assertTrue(genes[0] is SqlPrimaryKeyGene)
+        assertTrue((genes[0] as SqlPrimaryKeyGene).gene is SqlAutoIncrementGene)
+    }
 }

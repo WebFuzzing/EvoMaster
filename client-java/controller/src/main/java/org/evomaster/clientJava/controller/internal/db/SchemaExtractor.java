@@ -43,7 +43,7 @@ public class SchemaExtractor {
 
         //see https://www.progress.com/blogs/jdbc-tutorial-extracting-database-metadata-via-jdbc-driver
 
-        ResultSet tables = md.getTables(null, null, null, new String[]{"TABLE"});
+        ResultSet tables = md.getTables(null, schemaDto.name.toUpperCase(), null, new String[]{"TABLE"});
 
         while (tables.next()) {
 
@@ -59,7 +59,7 @@ public class SchemaExtractor {
             rsPK.close();
 
 
-            ResultSet columns = md.getColumns(null, null, tableDto.name, null);
+            ResultSet columns = md.getColumns(null, schemaDto.name.toUpperCase(), tableDto.name, null);
 
             while (columns.next()) {
 

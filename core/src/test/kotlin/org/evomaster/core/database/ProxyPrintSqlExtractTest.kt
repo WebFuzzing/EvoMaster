@@ -3,6 +3,8 @@ package org.evomaster.core.database
 import org.evomaster.clientJava.controller.db.SqlScriptRunner
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
+import org.evomaster.core.search.gene.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -17,6 +19,8 @@ class ProxyPrintSqlExtractTest {
     companion object {
 
         private lateinit var connection: Connection
+
+        private val sqlSchema = this::class.java.getResource("/sql_schema/proxyprint.sql").readText()
 
         @BeforeAll
         @JvmStatic
@@ -36,9 +40,7 @@ class ProxyPrintSqlExtractTest {
     @Test
     fun testCreateAndExtract() {
 
-        val sqlCommand = this::class.java.getResource("/sql_schema/proxyprint.sql").readText()
-
-        SqlScriptRunner.execCommand(connection, sqlCommand)
+        SqlScriptRunner.execCommand(connection, sqlSchema)
 
         val schema = SchemaExtractor.extract(connection)
 
@@ -64,4 +66,26 @@ class ProxyPrintSqlExtractTest {
     }
 
 
+    @Test
+    fun testIssueWithPKs(){
+
+        SqlScriptRunner.execCommand(connection, sqlSchema)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val actions = builder.createSqlInsertionAction("USERS", setOf("ID", "PASSWORD", "USERNAME"))
+
+        assertEquals(1, actions.size)
+
+        val genes = actions[0].seeGenes()
+
+        assertEquals(3, genes.size)
+
+        val pk = genes.find { it.name.equals("ID", ignoreCase = true) }
+
+        assertTrue(pk is SqlPrimaryKeyGene)
+        assertTrue((pk as SqlPrimaryKeyGene).gene is SqlAutoIncrementGene)
+    }
 }
