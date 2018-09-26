@@ -78,8 +78,7 @@ class DbAction(
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
-                TIMESTAMP ->
-                    SqlTimestampGene(it.name)
+                TIMESTAMP -> SqlTimestampGene(it.name)
                 /**
                  * CLOB(N) stores a UNICODE document of length N
                  */
