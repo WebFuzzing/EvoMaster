@@ -127,13 +127,23 @@ class SqlForeignKeyGene(
             return false
         }
 
-        val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
+        val pk = previousGenes.filterIsInstance<SqlPrimaryKeyGene>()
+                .find { it.uniqueId == uniqueIdOfPrimaryKey }
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
-        return !pk.isPrintable()
+
+        if(!pk.isPrintable()){
+            return true
+        }
+
+        if(pk.gene is SqlForeignKeyGene){
+            return pk.gene.isReferenceToNonPrintable(previousGenes)
+        }
+
+        return false
     }
 
-    private fun isBound() = uniqueIdOfPrimaryKey >= 0
+    fun isBound() = uniqueIdOfPrimaryKey >= 0
 
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlForeignKeyGene) {

@@ -4,7 +4,9 @@ import org.evomaster.clientJava.controller.db.SqlScriptRunner
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -67,13 +69,13 @@ class ProxyPrintSqlExtractTest {
 
 
     @Test
-    fun testIssueWithPKs(){
+    fun testIssueWithUsers(){
 
         SqlScriptRunner.execCommand(connection, sqlSchema)
 
-        val dto = SchemaExtractor.extract(connection)
+        val schema = SchemaExtractor.extract(connection)
 
-        val builder = SqlInsertBuilder(dto)
+        val builder = SqlInsertBuilder(schema)
 
         val actions = builder.createSqlInsertionAction("USERS", setOf("ID", "PASSWORD", "USERNAME"))
 
@@ -87,5 +89,44 @@ class ProxyPrintSqlExtractTest {
 
         assertTrue(pk is SqlPrimaryKeyGene)
         assertTrue((pk as SqlPrimaryKeyGene).gene is SqlAutoIncrementGene)
+    }
+
+    @Test
+    fun testIssueWithFK(){
+
+        SqlScriptRunner.execCommand(connection, sqlSchema)
+
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+
+        val actions = builder.createSqlInsertionAction("PRINT_REQUESTS", setOf("CONSUMER_ID"))
+
+        val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+
+        //force binding
+        all.filterIsInstance<SqlForeignKeyGene>()
+                .forEach{it.randomize(Randomness(), true, all)}
+
+
+        /*
+           - PRINT_REQUESTS request has a FK to CONSUMER
+           - the PK of CONSUMER is itself a FK to USERS
+           - the PK of USERS is autoincrement, so not printable
+
+           This means PRINT_REQUESTS:CONSUMER_ID has to point to a row when printed
+         */
+
+        val gene = all.find { it.name.equals("CONSUMER_ID", ignoreCase = true) }
+        assertTrue(gene is SqlForeignKeyGene)
+
+        val fk = gene as SqlForeignKeyGene
+        assertTrue(fk.isBound())
+        assertTrue(fk.isReferenceToNonPrintable(all))
+
+
+        val dto = DbActionTransformer.transform(actions)
+
+        assertEquals(actions.size, dto.insertions.size)
     }
 }
