@@ -19,7 +19,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         val copy = individual.copy() as T
 
         if (individual.canMutateStructure() &&
-                randomness.nextBoolean(config.structureMutationProbability)) {
+                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1 ) {
             //usually, either delete an action, or add a new random one
             structureMutator.mutateStructure(copy)
             return copy
