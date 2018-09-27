@@ -1,5 +1,6 @@
 package org.evomaster.core.search.mutator
 
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Mutator
@@ -62,6 +63,12 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
                 mutated = true
             }
+        }
+
+        if(javaClass.desiredAssertionStatus()) {
+            //TODO refactor if/when Kotlin will support lazy asserts
+            assert(DbAction.verifyForeignKeys(
+                    individual.seeInitializingActions().filterIsInstance<DbAction>()))
         }
 
         GeneUtils.repairGenes(copy.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })

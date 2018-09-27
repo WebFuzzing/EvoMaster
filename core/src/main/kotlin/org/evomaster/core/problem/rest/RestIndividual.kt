@@ -47,4 +47,8 @@ class RestIndividual(val actions: MutableList<RestAction>,
     override fun seeActions(): List<out Action> {
         return actions
     }
+
+    override fun seeInitializingActions() : List<Action>{
+        return dbInitialization
+    }
 }

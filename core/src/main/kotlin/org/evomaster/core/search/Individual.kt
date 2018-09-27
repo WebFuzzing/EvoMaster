@@ -37,6 +37,14 @@ abstract class Individual{
     abstract fun seeActions() : List<out Action>
 
     /**
+     * Return a view of all initializing actions done before the main
+     * ones. Example: these could set up database before doing HTTP
+     * calls toward the SUT.
+     * A test does not require to have initializing actions.
+     */
+    open fun seeInitializingActions() : List<Action> = listOf()
+
+    /**
      * Determine if the structure (ie the actions) of this individual
      * can be mutated (eg, add/remove actions).
      * Note: even if this is false, it would still be possible to
