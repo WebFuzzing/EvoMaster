@@ -63,6 +63,19 @@ class ScoutApiSqlExtractTest {
                 Executable { assertTrue(schema.tables.any { it.name == "USERS" }, "missing table USERS") }
         )
 
+
+        assertTrue(schema.tables.filter { it.name == "ACTIVITY" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertTrue(schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertTrue(schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertTrue(schema.tables.filter { it.name == "SYSTEM_MESSAGE" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertTrue(schema.tables.filter { it.name == "TAG" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertTrue(schema.tables.filter { it.name == "USER_IDENTITY" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertTrue(schema.tables.filter { it.name == "MEDIA_FILE" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+
+
+        assertEquals(5, schema.tables.filter { it.name == "USERS" }.first().columns.size)
+
+
     }
 
 

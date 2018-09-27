@@ -45,11 +45,22 @@ public class SchemaExtractor {
 
         ResultSet tables = md.getTables(null, schemaDto.name.toUpperCase(), null, new String[]{"TABLE"});
 
+        Set<String> tableNames = new HashSet<String>();
+
         while (tables.next()) {
 
             TableDto tableDto = new TableDto();
             schemaDto.tables.add(tableDto);
             tableDto.name = tables.getString("TABLE_NAME");
+
+            if (tableNames.contains(tableDto.name)) {
+                /**
+                 * Perhaps we should throw a more specific exception than IllegalArgumentException
+                 */
+                throw new IllegalArgumentException("Cannot handle repeated table " + tableDto.name + " in schema");
+            } else {
+                tableNames.add(tableDto.name);
+            }
 
             Set<String> pks = new HashSet<>();
             ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);
@@ -61,6 +72,7 @@ public class SchemaExtractor {
 
             ResultSet columns = md.getColumns(null, schemaDto.name.toUpperCase(), tableDto.name, null);
 
+            Set<String> columnNames = new HashSet<String>();
             while (columns.next()) {
 
                 ColumnDto columnDto = new ColumnDto();
@@ -68,6 +80,16 @@ public class SchemaExtractor {
 
                 columnDto.table = tableDto.name;
                 columnDto.name = columns.getString("COLUMN_NAME");
+
+                if (columnNames.contains(columnDto.name)) {
+                    /**
+                     * Perhaps we should throw a more specific exception than IllegalArgumentException
+                     */
+                    throw new IllegalArgumentException("Cannot handle repeated column " + columnDto.name + " in table " + tableDto.name);
+                } else {
+                    columnNames.add(columnDto.name);
+                }
+
                 columnDto.type = columns.getString("TYPE_NAME");
                 columnDto.size = columns.getInt("COLUMN_SIZE");
                 columnDto.nullable = columns.getBoolean("IS_NULLABLE");
