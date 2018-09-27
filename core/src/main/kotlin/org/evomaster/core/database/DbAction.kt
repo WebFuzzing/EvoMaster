@@ -6,6 +6,7 @@ import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.service.Randomness
 
 /**
  *  An action executed on the database.
@@ -47,6 +48,48 @@ class DbAction(
                         }
             }
             return true
+        }
+
+        //FIXME need refactoring
+        fun randomizeDbActionGenes(actions: List<DbAction>, randomness: Randomness) {
+            /*
+                At this point, SQL genes are particular, as they can have
+                references to each other (eg Foreign Keys)
+
+                FIXME: refactoring to put such concept at higher level directly in Gene.
+                And, in any case, shouldn't something specific just for Rest
+             */
+
+            val all = actions.flatMap { it.seeGenes() }
+            all.asSequence()
+                    .filter { it.isMutable() }
+                    .forEach {
+                        if (it is SqlPrimaryKeyGene) {
+                            val g = it.gene
+                            if (g is SqlForeignKeyGene) {
+                                g.randomize(randomness, false, all)
+                            } else {
+                                it.randomize(randomness, false)
+                            }
+                        } else if (it is SqlForeignKeyGene) {
+                            it.randomize(randomness, false, all)
+                        } else {
+                            it.randomize(randomness, false)
+                        }
+                    }
+
+            if(javaClass.desiredAssertionStatus()) {
+                //TODO refactor if/when Kotlin will support lazy asserts
+                assert(DbAction.verifyForeignKeys(actions))
+            }
+
+            /**
+             * Some genes (e.g. SQL timestamps) could still be invalid at this point
+             * due to randomization.
+             * It is needed to repair them before submitting the list.
+             */
+            val genes = actions.flatMap { it.seeGenes() }
+            genes.forEach { GeneUtils.repairGenes(it.flatView()) }
         }
     }
 

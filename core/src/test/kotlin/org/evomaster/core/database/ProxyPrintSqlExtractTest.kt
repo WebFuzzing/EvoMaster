@@ -105,9 +105,8 @@ class ProxyPrintSqlExtractTest {
         val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
 
         //force binding
-        all.filterIsInstance<SqlForeignKeyGene>()
-                .forEach{it.randomize(Randomness(), true, all)}
-
+        val randomness = Randomness()//.apply { updateSeed(1) }
+        DbAction.randomizeDbActionGenes(actions, randomness)
 
         /*
            - PRINT_REQUESTS request has a FK to CONSUMER
@@ -124,9 +123,7 @@ class ProxyPrintSqlExtractTest {
         assertTrue(fk.isBound())
         assertTrue(fk.isReferenceToNonPrintable(all))
 
-
         val dto = DbActionTransformer.transform(actions)
-
         assertEquals(actions.size, dto.insertions.size)
     }
 }

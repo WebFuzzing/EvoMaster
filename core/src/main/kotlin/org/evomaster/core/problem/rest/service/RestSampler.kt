@@ -165,52 +165,9 @@ class RestSampler : Sampler<RestIndividual>() {
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
                 ?: throw IllegalStateException("No DB schema is available")
 
-        randomizeDbActionGenes(actions)
+        DbAction.randomizeDbActionGenes(actions, randomness)
         return actions
     }
-
-    fun randomizeDbActionGenes(actions: List<DbAction>) {
-        /*
-            At this point, SQL genes are particular, as they can have
-            references to each other (eg Foreign Keys)
-
-            FIXME: refactoring to put such concept at higher level directly in Gene.
-            And, in any case, shouldn't something specific just for Rest
-         */
-
-        val all = actions.flatMap { it.seeGenes() }
-        all.asSequence()
-                .filter { it.isMutable() }
-                .forEach {
-                    if (it is SqlPrimaryKeyGene) {
-                        val g = it.gene
-                        if (g is SqlForeignKeyGene) {
-                            g.randomize(randomness, false, all)
-                        } else {
-                            it.randomize(randomness, false)
-                        }
-                    } else if (it is SqlForeignKeyGene) {
-                        it.randomize(randomness, false, all)
-                    } else {
-                        it.randomize(randomness, false)
-                    }
-                }
-
-        if(javaClass.desiredAssertionStatus()) {
-            //TODO refactor if/when Kotlin will support lazy asserts
-            assert(DbAction.verifyForeignKeys(actions))
-        }
-
-        /**
-         * Some genes (e.g. SQL timestamps) could still be invalid at this point
-         * due to randomization.
-         * It is needed to repair them before submitting the list.
-         */
-        val genes = actions.flatMap { it.seeGenes() }
-        genes.forEach { GeneUtils.repairGenes(it.flatView()) }
-    }
-
-
 
     override fun sampleAtRandom(): RestIndividual {
 
