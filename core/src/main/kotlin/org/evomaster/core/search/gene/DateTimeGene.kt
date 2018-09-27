@@ -21,7 +21,14 @@ open class DateTimeGene(
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-
+        /**
+         * If forceNewValue==true both date and time
+         * get a new value, but it only might need
+         * one to be different to get a new value.
+         *
+         * Shouldn't this method decide randomly if
+         * date, time or both get a new value?
+         */
         date.randomize(randomness, forceNewValue)
         time.randomize(randomness, forceNewValue)
     }

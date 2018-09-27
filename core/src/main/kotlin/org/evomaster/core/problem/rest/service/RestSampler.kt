@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Sampler
@@ -164,6 +165,11 @@ class RestSampler : Sampler<RestIndividual>() {
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
                 ?: throw IllegalStateException("No DB schema is available")
 
+        randomizeDbActionGenes(actions)
+        return actions
+    }
+
+    fun randomizeDbActionGenes(actions: List<DbAction>) {
         /*
             At this point, SQL genes are particular, as they can have
             references to each other (eg Foreign Keys)
@@ -190,15 +196,22 @@ class RestSampler : Sampler<RestIndividual>() {
                     }
                 }
 
-        if(javaClass.desiredAssertionStatus()) {
+        if (javaClass.desiredAssertionStatus()) {
             //TODO refactor if/when Kotlin will support lazy asserts
             assert(verifyForeignKeys(actions))
         }
 
-        return actions
+        /**
+         * Some genes (e.g. SQL timestamps) could still be invalid at this point
+         * due to randomization.
+         * It is needed to repair them before submitting the list.
+         */
+        val genes = actions.flatMap { it.seeGenes() }
+        genes.forEach { GeneUtils.repairGenes(it.flatView()) }
     }
 
-    private fun verifyForeignKeys(actions: List<DbAction>) : Boolean {
+
+    private fun verifyForeignKeys(actions: List<DbAction>): Boolean {
 
         val all = actions.flatMap { it.seeGenes() }
 
@@ -218,7 +231,7 @@ class RestSampler : Sampler<RestIndividual>() {
                                 .filterIsInstance<SqlPrimaryKeyGene>()
                                 .any { it.uniqueId == id }
 
-                        if(! match){
+                        if (!match) {
                             return false
                         }
                     }

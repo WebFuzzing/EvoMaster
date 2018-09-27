@@ -7,18 +7,18 @@ object GeneUtils {
      * Given a number [x], return its string representation, with padded 0s
      * to have a defined [length]
      */
-    fun padded(x: Int, length: Int) : String {
+    fun padded(x: Int, length: Int): String {
 
-        require(length >= 0){"Negative length"}
+        require(length >= 0) { "Negative length" }
 
         val s = x.toString()
 
-        require(length >= s.length){"Value is too large for chosen length"}
+        require(length >= s.length) { "Value is too large for chosen length" }
 
-        return if(x >=0 ){
+        return if (x >= 0) {
             s.padStart(length, '0')
         } else {
-            "-${(-x).toString().padStart(length-1, '0')}"
+            "-${(-x).toString().padStart(length - 1, '0')}"
         }
     }
 
@@ -32,17 +32,17 @@ object GeneUtils {
      *
      * So, we simply "repair" such genes with only valid inputs.
      */
-    fun repairGenes(genes: Collection<Gene>){
+    fun repairGenes(genes: Collection<Gene>) {
 
-        for(g in genes){
-            when(g){
+        for (g in genes) {
+            when (g) {
                 is DateGene -> repairDateGene(g)
                 is TimeGene -> repairTimeGene(g)
             }
         }
     }
 
-    private fun repairDateGene(date: DateGene){
+    private fun repairDateGene(date: DateGene) {
 
         date.run {
             if (month.value < 1) {
@@ -56,35 +56,35 @@ object GeneUtils {
             }
 
             //February
-            if (month.value == 2 && day.value > 28){
+            if (month.value == 2 && day.value > 28) {
                 //for simplicity, let's not consider cases in which 29...
                 day.value = 28
-            } else if(day.value > 30 && (month.value.let { it == 11 || it == 4 || it == 6 || it == 9} )){
+            } else if (day.value > 30 && (month.value.let { it == 11 || it == 4 || it == 6 || it == 9 })) {
                 day.value = 30
-            } else if(day.value > 31){
+            } else if (day.value > 31) {
                 day.value = 31
             }
         }
     }
 
-    private fun repairTimeGene(time: TimeGene){
+    private fun repairTimeGene(time: TimeGene) {
 
         time.run {
-            if(hour.value < 0){
+            if (hour.value < 0) {
                 hour.value = 0
-            } else if(hour.value > 23){
+            } else if (hour.value > 23) {
                 hour.value = 23
             }
 
-            if(minute.value < 0){
+            if (minute.value < 0) {
                 minute.value = 0
-            } else if(minute.value > 59){
+            } else if (minute.value > 59) {
                 minute.value = 59
             }
 
-            if(second.value < 0){
+            if (second.value < 0) {
                 second.value = 0
-            } else if(second.value > 59){
+            } else if (second.value > 59) {
                 second.value = 59
             }
         }
