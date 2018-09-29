@@ -34,6 +34,10 @@ public class SqlScriptRunner {
      */
     public static final Pattern delimP = Pattern.compile("^\\s*(--)?\\s*delimiter\\s*=?\\s*([^\\s]+)+\\s*.*$", Pattern.CASE_INSENSITIVE);
 
+    private static final String SINGLE_APOSTROPHE = "'";
+
+    private static final String DOUBLE_APOSTROPHE = "''";
+
     private String delimiter = DEFAULT_DELIMITER;
     private boolean fullLineDelimiter = false;
 
@@ -167,7 +171,7 @@ public class SqlScriptRunner {
 
             for (InsertionEntryDto e : insDto.data) {
                 if (e.printableValue == null && e.foreignKeyToPreviouslyGeneratedRow != null) {
-                   if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {
+                    if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {
                         throw new IllegalArgumentException(
                                 "Insertion operation at position " + i
                                         + " has a foreign key reference to key "
@@ -197,8 +201,15 @@ public class SqlScriptRunner {
 
     /**
      * In SQL, strings need '' instead of "" (at least for H2).
+     * Also, in H2 single apostrophes have to be duplicated
+     * (http://h2database.com/html/grammar.html#string)
      */
     private static String replaceQuotes(String value) {
+        if (value.contains(SINGLE_APOSTROPHE)) {
+            String oldValue = value;
+            value = value.replaceAll(SINGLE_APOSTROPHE, DOUBLE_APOSTROPHE);
+            assert(!oldValue.equals(value));
+        }
         if (value.startsWith("\"") && value.endsWith("\"")) {
             return "'" + value.substring(1, value.length() - 1) + "'";
         }
