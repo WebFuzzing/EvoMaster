@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
@@ -51,7 +52,13 @@ abstract class Mutator<T> where T : Individual {
 
             structureMutator.addInitializingActions(current)
 
-            val mutated = ff.calculateCoverage(mutate(current.individual))
+            val verifyAfterAdd = DbAction.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())
+
+            val mutatedInd = mutate(current.individual)
+
+            val verifyOK = DbAction.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())
+
+            val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
             val reachNew = archive.wouldReachNewTarget(mutated)

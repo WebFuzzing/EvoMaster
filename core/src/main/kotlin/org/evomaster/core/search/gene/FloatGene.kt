@@ -19,10 +19,19 @@ class FloatGene(name: String,
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is FloatGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is FloatGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
     }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is FloatGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value == other.value
+    }
+
+
 }

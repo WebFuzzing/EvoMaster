@@ -205,4 +205,26 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
     }
 
+    @Test
+    public void testPrimaryKey() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (id INT, "
+                + "primary key (id));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("id")));
+
+        assertEquals(true, fooTable.columns.get(0).primaryKey);
+        assertEquals(false, fooTable.columns.get(0).unique);
+
+    }
+
 }

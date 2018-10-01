@@ -20,9 +20,7 @@ class TestCaseWriterTest {
     @Test
     fun testEmptyDbInitialization() {
 
-        val dbInitialization = ArrayList<DbAction>()
-
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(emptyList<DbAction>().toMutableList())
 
         val test = TestCase(test = ei, name = "test")
 
@@ -45,15 +43,13 @@ class TestCaseWriterTest {
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
-
         val id = 0L
 
         val gene = StringGene(aColumn.name, "stringValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
-        val dbInitialization = ArrayList<DbAction>()
-        dbInitialization.add(insertIntoTableAction)
+        val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
 
@@ -90,14 +86,14 @@ class TestCaseWriterTest {
 
         val sampleType = SampleType.RANDOM
 
-        val restActions = ArrayList<RestAction>()
+        val restActions = emptyList<RestAction>().toMutableList()
 
 
         val individual = RestIndividual(restActions, sampleType, dbInitialization)
 
         val fitnessVal = FitnessValue(0.0)
 
-        val results = ArrayList<ActionResult>()
+        val results = emptyList<ActionResult>().toMutableList()
 
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
@@ -349,8 +345,7 @@ class TestCaseWriterTest {
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
-        val dbInitialization = ArrayList<DbAction>()
-        dbInitialization.add(insertIntoTableAction)
+        val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
 
@@ -449,8 +444,7 @@ class TestCaseWriterTest {
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
-        val dbInitialization = ArrayList<DbAction>()
-        dbInitialization.add(insertIntoTableAction)
+        val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
 

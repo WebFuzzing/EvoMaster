@@ -78,18 +78,141 @@ class DbAction(
                         }
                     }
 
-            if(javaClass.desiredAssertionStatus()) {
+            if (javaClass.desiredAssertionStatus()) {
                 //TODO refactor if/when Kotlin will support lazy asserts
                 assert(DbAction.verifyForeignKeys(actions))
             }
 
-            /**
-             * Some genes (e.g. SQL timestamps) could still be invalid at this point
-             * due to randomization.
-             * It is needed to repair them before submitting the list.
-             */
-            val genes = actions.flatMap { it.seeGenes() }
-            genes.forEach { GeneUtils.repairGenes(it.flatView()) }
+        }
+
+        private val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
+
+        /**
+         * Some actions might break schema constraints
+         * (such as unique columns or primary keys).
+         * This method tries to fix each unique column that is broken
+         *
+         * The repair algorithm first tries to modify genes.
+         * If it is unable to do, it starts removing Db Actions
+         *
+         * Returns true if the action list was fixed without truncating it.
+         * Returns false if the list needed to be truncated
+         */
+        fun repairBrokenDbActionsList(actions: MutableList<DbAction>,
+                                      randomness: Randomness,
+                                      maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
+        ): Boolean {
+
+            if (maxNumberOfAttemptsToRepairAnAction < 0) {
+                throw IllegalArgumentException("Maximum umber of attempts to fix an action should be non negative but it is: $maxNumberOfAttemptsToRepairAnAction")
+            }
+
+            var attemptCounter = 0
+            var previousActionIndexToRepair = -1
+
+            var geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
+            var geneToRepair = geneToRepairAndActionIndex.first
+            var actionIndexToRepair = geneToRepairAndActionIndex.second
+
+            while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
+
+                val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
+                randomizeGene(geneToRepair, randomness, previousGenes)
+
+                if (actionIndexToRepair == previousActionIndexToRepair) {
+                    //
+                    attemptCounter++
+                } else if (actionIndexToRepair > previousActionIndexToRepair) {
+                    attemptCounter = 0
+                    previousActionIndexToRepair = actionIndexToRepair
+                } else {
+                    throw IllegalStateException("Invalid last action repaired at position $previousActionIndexToRepair " +
+                            " but new action to repair at position $actionIndexToRepair")
+                }
+
+                geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
+                geneToRepair = geneToRepairAndActionIndex.first
+                actionIndexToRepair = geneToRepairAndActionIndex.second
+            }
+
+            if (geneToRepair == null) {
+                return true
+            } else {
+                assert(actionIndexToRepair >= 0 && actionIndexToRepair < actions.size)
+                // truncate list of actions to make them valid
+                val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
+                actions.clear()
+                actions.addAll(truncatedListOfActions)
+                return false
+            }
+        }
+
+        private fun randomizeGene(gene: Gene, randomness: Randomness, previousGenes: List<Gene>) {
+            when (gene) {
+                is SqlForeignKeyGene -> gene.randomize(randomness, true, previousGenes)
+                else ->
+                    if (gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
+                        //FIXME: this needs refactoring
+                        gene.gene.randomize(randomness, true, previousGenes)
+                    } else {
+                        //TODO other cases
+                        gene.randomize(randomness, true)
+                    }
+            }
+        }
+
+        /**
+         * Returns true iff all action are valid wrt the schema.
+         * For example
+         */
+        fun verifyActions(actions: List<DbAction>): Boolean {
+            return verifyUniqueColumns(actions)
+                    && verifyForeignKeys(actions)
+        }
+
+        /**
+         * Returns true if a insertion tries to insert a repeated value
+         * in a unique column
+         */
+        fun verifyUniqueColumns(actions: List<DbAction>): Boolean {
+            val offendingGene = findFirstOffendingGeneWithIndex(actions)
+            return (offendingGene.first == null)
+        }
+
+        /**
+         * Returns the first offending gene found with the action index to the
+         * passed list where the gene was found.
+         * If no such gene is found, the function returns the tuple (-1,null).
+         */
+        private fun findFirstOffendingGeneWithIndex(actions: List<Action>): Pair<Gene?, Int> {
+            val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<Gene>>()
+
+            for ((actionIndex, action) in actions.withIndex()) {
+                if (action !is DbAction) {
+                    continue
+                }
+
+                val tableName = action.table.name
+
+                action.seeGenes().forEach { g ->
+                    val columnName = g.name
+                    if (action.table.columns.filter { c ->
+                                c.name == columnName && !c.autoIncrement && (c.unique || c.primaryKey)
+                            }.isNotEmpty()) {
+                        val key = Pair(tableName, columnName)
+
+                        val genes = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
+
+                        if (genes.filter { otherGene -> otherGene.containsSameValueAs(g) }.isNotEmpty()) {
+                            return Pair(g, actionIndex)
+                        } else {
+                            genes.add(g)
+                        }
+                    }
+                }
+
+            }
+            return Pair(null, -1)
         }
     }
 

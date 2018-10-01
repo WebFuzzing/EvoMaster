@@ -65,6 +65,8 @@ class ProxyPrintSqlExtractTest {
                 Executable { assertTrue(schema.tables.any { it.name == "USERS" }) }
         )
 
+
+
     }
 
 

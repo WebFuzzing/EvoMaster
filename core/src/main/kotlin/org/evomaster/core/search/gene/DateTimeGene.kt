@@ -11,8 +11,7 @@ open class DateTimeGene(
         name: String,
         val date: DateGene = DateGene("date"),
         val time: TimeGene = TimeGene("time")
-): Gene(name) {
-
+) : Gene(name) {
 
     override fun copy(): Gene = DateTimeGene(
             name,
@@ -43,15 +42,24 @@ open class DateTimeGene(
                 "${time.getValueAsRawString()}"
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is DateTimeGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.date.copyValueFrom(other.date)
         this.time.copyValueFrom(other.time)
     }
 
-    override fun flatView(): List<Gene>{
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is DateTimeGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.date.containsSameValueAs(other.date)
+                && this.time.containsSameValueAs(other.time)
+    }
+
+
+    override fun flatView(): List<Gene> {
         return listOf(this).plus(date.flatView()).plus(time.flatView())
     }
 

@@ -80,7 +80,7 @@ class TestCaseWriter {
         return lines
     }
 
-    private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
+    fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
 
 
         dbInitialization.forEachIndexed { index, dbAction ->

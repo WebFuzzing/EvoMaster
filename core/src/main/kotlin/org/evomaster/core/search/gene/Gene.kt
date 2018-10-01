@@ -71,4 +71,10 @@ abstract class Gene(var name: String) {
     open fun flatView(): List<Gene>{
         return listOf(this)
     }
+
+    /**
+     * Genes might contain a value that is also stored
+     * in another gene.
+     */
+    abstract fun containsSameValueAs(other: Gene): Boolean
 }
