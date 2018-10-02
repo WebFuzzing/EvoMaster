@@ -66,12 +66,32 @@ class ProxyPrintSqlExtractTest {
         )
 
 
+        /**
+         * The schema includes an alter table command that specifies that
+         * table USERS has a unique column USERNAME:
+         * alter table users add constraint UK_r43af9ap4edm43mmtq01oddj6 unique (username);
+         */
+        assertEquals(true, schema.tables.find { it.name == "USERS" }!!.columns.find { it.name == "USERNAME" }!!.unique)
+
+        /**
+         * BIGSERIAL are autoincrement fields
+         */
+        assertEquals(true, schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "DOCUMENTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "NOTIFICATION" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "PRINTING_SCHEMAS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "PRINTSHOPS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "PRINT_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+        assertEquals(true, schema.tables.filter { it.name == "REVIEWS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
+
 
     }
 
 
     @Test
-    fun testIssueWithUsers(){
+    fun testIssueWithUsers() {
 
         SqlScriptRunner.execCommand(connection, sqlSchema)
 
@@ -94,7 +114,7 @@ class ProxyPrintSqlExtractTest {
     }
 
     @Test
-    fun testIssueWithFK(){
+    fun testIssueWithFK() {
 
         SqlScriptRunner.execCommand(connection, sqlSchema)
 
@@ -128,4 +148,6 @@ class ProxyPrintSqlExtractTest {
         val dto = DbActionTransformer.transform(actions)
         assertEquals(actions.size, dto.insertions.size)
     }
+
+
 }

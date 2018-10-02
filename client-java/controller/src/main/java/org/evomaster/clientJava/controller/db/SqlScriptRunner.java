@@ -1,7 +1,12 @@
 package org.evomaster.clientJava.controller.db;
 
+import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionEntryDto;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.ColumnDto;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.ForeignKeyDto;
+import org.evomaster.clientJava.controllerApi.dto.database.schema.TableDto;
 
 import java.io.*;
 import java.sql.Connection;
@@ -151,6 +156,14 @@ public class SqlScriptRunner {
             throw new IllegalArgumentException("No data to insert");
         }
 
+        DbSchemaDto schema;
+        try {
+            schema = SchemaExtractor.extract(conn);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+
         String insertSql = "INSERT INTO ";
 
         //From DTO Insertion Id to generated Id in database
@@ -192,15 +205,64 @@ public class SqlScriptRunner {
 
             sql.append(");");
 
+
             Long id = execInsert(conn, sql.toString());
+            if (id == null) {
+                //check if this table has a pk that is a fk to autoincrement column
+                if (check(schema, insDto.targetTable)) {
+
+                }
+            }
             if (id != null) {
                 map.put(insDto.id, id);
             }
         }
     }
 
+    private static TableDto getTable(DbSchemaDto schema, String tableName) {
+        TableDto tableDto = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+        return tableDto;
+    }
+
+    private static Set<ColumnDto> getPrimaryKeys(DbSchemaDto schema, String tableName) {
+        TableDto tableDto = getTable(schema, tableName);
+        return tableDto.columns.stream().filter(c -> c.primaryKey).collect(Collectors.toSet());
+    }
+
+    private static boolean isForeignKey(DbSchemaDto schema, String tableName, String columnName) {
+        TableDto tableDto = getTable(schema, tableName);
+        return tableDto.foreignKeys.stream().anyMatch(fk -> fk.sourceColumns.contains(columnName));
+    }
+
+    private static TableDto getTargetTable(DbSchemaDto schema, String tableName, String columnName) {
+        if (!isForeignKey(schema, tableName, columnName)) {
+            throw new IllegalArgumentException("Cannot ask source table of non foreign key column " + tableName + "." + columnName);
+        }
+        TableDto tableDto = getTable(schema, tableName);
+        ForeignKeyDto targetTableDto = tableDto.foreignKeys.stream().filter(fk -> fk.sourceColumns.contains(columnName)).findFirst().orElse(null);
+        if (targetTableDto == null) {
+            throw new IllegalArgumentException("Cannot find target table for foreign key of column " + tableName + "." + columnName);
+        }
+
+        String targetTableName = targetTableDto.targetTable;
+        TableDto targetTable = getTable(schema, targetTableName);
+        return targetTable;
+    }
+
+    private static boolean check(DbSchemaDto schema, String tableName) {
+        Set<ColumnDto> primaryKeys = getPrimaryKeys(schema, tableName);
+        for (ColumnDto primaryKey : primaryKeys) {
+
+        }
+        return false;
+    }
+
+
     /**
-     * In SQL, strings need '' instead of "" (at least for H2).
+     * In SQL, strings need '' instead of ""         Set<ColumnDto> primaryKeys = getPrimaryKeys(schema, tableName);
+        for (ColumnDto primaryKey : primaryKeys) {
+            primaryKey.
+        }(at least for H2).
      * Also, in H2 single apostrophes have to be duplicated
      * (http://h2database.com/html/grammar.html#string)
      */
@@ -208,7 +270,7 @@ public class SqlScriptRunner {
         if (value.contains(SINGLE_APOSTROPHE)) {
             String oldValue = value;
             value = value.replaceAll(SINGLE_APOSTROPHE, DOUBLE_APOSTROPHE);
-            assert(!oldValue.equals(value));
+            assert (!oldValue.equals(value));
         }
         if (value.startsWith("\"") && value.endsWith("\"")) {
             return "'" + value.substring(1, value.length() - 1) + "'";

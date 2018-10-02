@@ -12,4 +12,6 @@ public class InsertionEntryDto {
      * executed
      */
     public Long foreignKeyToPreviouslyGeneratedRow;
+
+
 }
