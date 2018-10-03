@@ -259,4 +259,42 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
         assertEquals(1, res.seeRows().size());
     }
 
+
+    @Test
+    public void testDoubleIndirectForeignKey() throws Exception {
+
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Table1(" +
+                "  id bigserial not null, " +
+                " primary key (id)" +
+                ");"
+                +
+                "CREATE TABLE Table2(" +
+                "  id int8, " +
+                " primary key (id)" +
+                ");"
+                +
+                "CREATE TABLE Table3(" +
+                "  id int8, " +
+                " primary key (id)" +
+                ");"
+                +
+                "alter table Table2 " +
+                "  add constraint FKTable2 foreign key (id) references Table1;"
+                +
+                "alter table Table3 " +
+                "  add constraint FKTable3 foreign key (id) references Table2;"
+        );
+
+        List<InsertionDto> insertions = sql()
+                .insertInto("Table1", 1000L)
+                .and()
+                .insertInto("Table2", 1001L).r("Id", 1000L, true)
+                .and()
+                .insertInto("Table3", 1002L).r("Id", 1001L).dtos();
+
+        SqlScriptRunner.execInsert(getConnection(), insertions);
+
+
+    }
 }

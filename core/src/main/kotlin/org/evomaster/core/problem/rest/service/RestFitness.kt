@@ -5,8 +5,12 @@ import org.evomaster.clientJava.controllerApi.EMTestUtils
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
+import org.evomaster.core.output.Lines
+import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.TestCaseWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -177,6 +181,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         if (ind.dbInitialization.isEmpty()) {
             return
         }
+
 
         val dto = DbActionTransformer.transform(ind.dbInitialization)
 

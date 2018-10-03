@@ -4,6 +4,8 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.service.Randomness
 
 
 class RestIndividual(val actions: MutableList<RestAction>,
@@ -27,8 +29,8 @@ class RestIndividual(val actions: MutableList<RestAction>,
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
-        return when(filter){
-            GeneFilter.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
+        return when (filter) {
+            GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes)
                     .plus(actions.flatMap(RestAction::seeGenes))
 
             GeneFilter.NO_SQL -> actions.flatMap(RestAction::seeGenes)
@@ -48,7 +50,30 @@ class RestIndividual(val actions: MutableList<RestAction>,
         return actions
     }
 
-    override fun seeInitializingActions() : List<Action>{
+    override fun seeInitializingActions(): List<Action> {
         return dbInitialization
     }
+
+    override fun verifyInitializationActions(): Boolean {
+        return DbAction.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+    }
+
+
+    override fun repairInitializationActions(randomness: Randomness) {
+
+        /**
+         * First repair SQL Genes (i.e. SQL Timestamps)
+         */
+        GeneUtils.repairGenes(this.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+
+        /**
+         * Now repair databse constraints (primary keys, foreign keys, unique fields, etc.)
+         */
+        if (!verifyInitializationActions()) {
+            DbAction.repairBrokenDbActionsList(dbInitialization, randomness)
+            assert(verifyInitializationActions())
+        }
+    }
+
+
 }

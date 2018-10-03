@@ -15,9 +15,6 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -166,6 +163,7 @@ class RestSampler : Sampler<RestIndividual>() {
                 ?: throw IllegalStateException("No DB schema is available")
 
         DbAction.randomizeDbActionGenes(actions, randomness)
+
         return actions
     }
 

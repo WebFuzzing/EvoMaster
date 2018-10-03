@@ -7,8 +7,8 @@ class SqlTimestampGene(
         time: TimeGene = TimeGene("time", withMsZ = false)
 ) : DateTimeGene(name, date, time) {
 
-    init{
-        require(! time.withMsZ){"Must not have MsZ in SQL Timestamps"}
+    init {
+        require(!time.withMsZ) { "Must not have MsZ in SQL Timestamps" }
     }
 
     override fun copy(): Gene = SqlTimestampGene(
@@ -34,4 +34,13 @@ class SqlTimestampGene(
         this.date.copyValueFrom(other.date)
         this.time.copyValueFrom(other.time)
     }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SqlTimestampGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.date.containsSameValueAs(other.date)
+                && this.time.containsSameValueAs(other.time)
+    }
+
 }

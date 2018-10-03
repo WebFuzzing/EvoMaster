@@ -75,6 +75,10 @@ class ScoutApiSqlExtractTest {
 
         assertEquals(5, schema.tables.filter { it.name == "USERS" }.first().columns.size)
 
+        assertEquals(true, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().columns.filter { it.name == "publishing_activity_id".toUpperCase() }.first().unique)
+        assertEquals(true, schema.tables.filter { it.name == "MEDIA_FILE" }.first().columns.filter { it.name == "uri".toUpperCase() }.first().unique)
+        assertEquals(true, schema.tables.filter { it.name == "SYSTEM_MESSAGE" }.first().columns.filter { it.name == "key".toUpperCase() }.first().unique)
+
 
     }
 

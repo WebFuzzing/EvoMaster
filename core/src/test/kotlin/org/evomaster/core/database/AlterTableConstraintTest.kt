@@ -11,7 +11,7 @@ import org.junit.jupiter.api.function.Executable
 import java.sql.Connection
 import java.sql.DriverManager
 
-class FeaturesServiceSqlExtractTest {
+class AlterTableConstraintTest {
 
 
     companion object {
@@ -36,7 +36,7 @@ class FeaturesServiceSqlExtractTest {
     @Test
     fun testCreateAndExtract() {
 
-        val sqlCommand = this::class.java.getResource("/sql_schema/features_service.sql").readText()
+        val sqlCommand = this::class.java.getResource("/sql_schema/passports.sql").readText()
 
         SqlScriptRunner.execCommand(connection, sqlCommand)
 
@@ -46,17 +46,14 @@ class FeaturesServiceSqlExtractTest {
 
         assertAll(Executable { assertEquals("public", schema.name.toLowerCase()) },
                 Executable { assertEquals(DatabaseType.H2, schema.databaseType) },
-                Executable { assertEquals(6, schema.tables.size) },
-                Executable { assertTrue(schema.tables.any { it.name == "CONSTRAINT_EXCLUDES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "CONSTRAINT_REQUIRES" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "FEATURE" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRODUCT" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRODUCT_CONFIGURATION" }) },
-                Executable { assertTrue(schema.tables.any { it.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }) }
+                Executable { assertEquals(2, schema.tables.size) },
+                Executable { assertTrue(schema.tables.any { it.name == "COUNTRIES" }, "missing table COUNTRIES") },
+                Executable { assertTrue(schema.tables.any { it.name == "PASSPORTS" }, "missing table PASSPORTS") }
         )
 
-        assertEquals(listOf("IN_CONFIGURATIONS_ID", "ACTIVED_FEATURES_ID"), schema.tables.filter { it.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }.first().primaryKeySequence);
 
+        assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "COUNTRY_ID"}.first().unique)
+        assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().unique)
     }
 
 

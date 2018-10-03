@@ -4,9 +4,11 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 
 
 class OneMaxIndividual(val n: Int) : Individual() {
+
 
     private val list : MutableList<EnumGene<Double>> = mutableListOf()
 
@@ -53,5 +55,13 @@ class OneMaxIndividual(val n: Int) : Individual() {
 
     override fun seeActions(): List<out Action> {
         return listOf()
+    }
+
+    override fun verifyInitializationActions(): Boolean {
+        return true
+    }
+
+    override fun repairInitializationActions(randomness: Randomness) {
+
     }
 }

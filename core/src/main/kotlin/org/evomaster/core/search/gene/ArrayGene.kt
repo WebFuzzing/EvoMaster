@@ -9,7 +9,7 @@ class ArrayGene<T>(
         val maxSize: Int = 5,
         var elements: MutableList<T> = mutableListOf()
 ) : Gene(name)
-where T : Gene {
+        where T : Gene {
 
     init {
         if (elements.size > maxSize) {
@@ -33,6 +33,16 @@ where T : Gene {
         this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is ArrayGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.elements.zip(other.elements) { thisElem, otherElem ->
+            thisElem.containsSameValueAs(otherElem)
+        }.all { it == true }
+    }
+
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
         //maybe not so important here to complicate code to enable forceNewValue
@@ -52,7 +62,7 @@ where T : Gene {
                 "]";
     }
 
-    override fun flatView(): List<Gene>{
+    override fun flatView(): List<Gene> {
         return listOf(this).plus(elements.flatMap { g -> g.flatView() })
     }
 }

@@ -3,7 +3,8 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.Randomness
 
 
-class BooleanGene(name: String, var value: Boolean = true) : Gene(name){
+class BooleanGene(name: String, var value: Boolean = true) : Gene(name) {
+
 
     override fun copy(): Gene {
         return BooleanGene(name, value)
@@ -12,7 +13,7 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name){
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
         val k: Boolean = if (forceNewValue) {
-            ! value
+            !value
         } else {
             randomness.nextBoolean()
         }
@@ -20,14 +21,21 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name){
         value = k
     }
 
-    override fun getValueAsPrintableString() : String{
+    override fun getValueAsPrintableString(): String {
         return value.toString()
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is BooleanGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is BooleanGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
+    }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is BooleanGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value == other.value
     }
 }

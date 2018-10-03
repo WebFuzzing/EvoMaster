@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 
 /**
  * An individual for the search.
@@ -9,32 +10,32 @@ import org.evomaster.core.search.gene.Gene
  * a single test case, composed by 1 or more "actions" (eg, calls
  * to a RESTful API, SQL operations on a database or WireMock setup)
  */
-abstract class Individual{
+abstract class Individual {
 
     /**
      * Make a deep copy of this individual
      */
-    abstract fun copy() : Individual
+    abstract fun copy(): Individual
 
-    enum class GeneFilter{ALL, NO_SQL, ONLY_SQL}
+    enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 
     /**
      * Return a view of all the Genes in this chromosome/individual
      */
-    abstract fun seeGenes(filter: GeneFilter = GeneFilter.ALL) : List<out Gene>
+    abstract fun seeGenes(filter: GeneFilter = GeneFilter.ALL): List<out Gene>
 
     /**
      * An estimation of the "size" of this individual.
      * Longer/bigger individuals are usually considered worse,
      * unless they cover more coverage targets
      */
-    abstract fun size() : Int
+    abstract fun size(): Int
 
     /**
      * Return a view of all the "actions" defined in this individual.
      * Note: each action could be composed by 0 or more genes
      */
-    abstract fun seeActions() : List<out Action>
+    abstract fun seeActions(): List<out Action>
 
     /**
      * Return a view of all initializing actions done before the main
@@ -42,7 +43,7 @@ abstract class Individual{
      * calls toward the SUT.
      * A test does not require to have initializing actions.
      */
-    open fun seeInitializingActions() : List<Action> = listOf()
+    open fun seeInitializingActions(): List<Action> = listOf()
 
     /**
      * Determine if the structure (ie the actions) of this individual
@@ -51,5 +52,19 @@ abstract class Individual{
      * mutate the genes in those actions
      */
     open fun canMutateStructure() = false
+
+
+    /**
+     * Returns true if the initialization actions
+     * are correct (i.e. all constraints are satisfied)
+     */
+    abstract fun verifyInitializationActions(): Boolean;
+
+    /**
+     * Attempts to repair the initialization actions.
+     * Initialization actions must pass the verifyInitializationAction()
+     * test after this method is invoked.
+     */
+    abstract fun repairInitializationActions(randomness: Randomness);
 }
 

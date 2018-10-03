@@ -16,40 +16,48 @@ class OptionalGene(name: String,
         return OptionalGene(name, gene.copy(), isActive)
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is OptionalGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is OptionalGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.isActive = other.isActive
         this.gene.copyValueFrom(other.gene)
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is OptionalGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.isActive == other.isActive
+                && this.gene.containsSameValueAs(other.gene)
+    }
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
-        if(! forceNewValue){
+        if (!forceNewValue) {
             isActive = randomness.nextBoolean()
             gene.randomize(randomness, false)
         } else {
 
-            if(randomness.nextBoolean()){
-                isActive = ! isActive
+            if (randomness.nextBoolean()) {
+                isActive = !isActive
             } else {
                 gene.randomize(randomness, true)
             }
         }
     }
 
-    override fun getValueAsPrintableString() : String{
+    override fun getValueAsPrintableString(): String {
         return gene.getValueAsPrintableString()
     }
 
-    override fun getValueAsRawString() : String {
+    override fun getValueAsRawString(): String {
         return gene.getValueAsRawString()
     }
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(): List<Gene>{
+    override fun flatView(): List<Gene> {
         return listOf(this).plus(gene.flatView())
     }
 

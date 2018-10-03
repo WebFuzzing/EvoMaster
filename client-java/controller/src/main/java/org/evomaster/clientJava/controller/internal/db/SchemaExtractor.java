@@ -2,12 +2,8 @@ package org.evomaster.clientJava.controller.internal.db;
 
 import org.evomaster.clientJava.controllerApi.dto.database.schema.*;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.sql.*;
+import java.util.*;
 
 public class SchemaExtractor {
 
@@ -63,12 +59,20 @@ public class SchemaExtractor {
             }
 
             Set<String> pks = new HashSet<>();
+            SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
             ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);
+
+
             while (rsPK.next()) {
-                pks.add(rsPK.getString("COLUMN_NAME"));
+                String pkColumnName = rsPK.getString("COLUMN_NAME");
+                int positionInPrimaryKey = (int) rsPK.getShort("KEY_SEQ");
+                pks.add(pkColumnName);
+                int pkIndex = positionInPrimaryKey - 1;
+                primaryKeySequence.put(pkIndex, pkColumnName);
             }
             rsPK.close();
 
+            tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
             ResultSet columns = md.getColumns(null, schemaDto.name.toUpperCase(), tableDto.name, null);
 
@@ -116,6 +120,11 @@ public class SchemaExtractor {
         tables.close();
 
         /*
+            Mark those columns that are using auto generated values
+         */
+        addForeignKeyToAutoIncrement(schemaDto);
+
+        /*
             JDBC MetaData is quite limited.
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
@@ -125,15 +134,257 @@ public class SchemaExtractor {
         return schemaDto;
     }
 
-    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws Exception {
-        if (dt == DatabaseType.H2) {
-            addConstraints(connection, schemaDto);
+    /**
+     * Sets the foreignKeyToAutoIncrement field in the Column DTO
+     * when a column is a foreign key to an auto increment value.
+     * This information will be needed to properly handle the
+     * automatically generated values in primary keys that are
+     * referenced by other columns in tables (that are not directly
+     * linked)
+     *
+     * @param schema
+     */
+    private static void addForeignKeyToAutoIncrement(DbSchemaDto schema) {
+        for (TableDto tableDto : schema.tables) {
+            String tableName = tableDto.name;
+            for (ColumnDto columnDto : tableDto.columns) {
+                if (columnDto.autoIncrement == true) {
+                    continue;
+                }
+                if (columnDto.primaryKey == false) {
+                    continue;
+                }
+                if (!tableDto.foreignKeys.stream().anyMatch(fk -> fk.sourceColumns.contains(columnDto.name))) {
+                    continue;
+                }
+                String columnName = columnDto.name;
+                if (isFKToAutoIncrementColumn(schema, tableName, columnName)) {
+                    columnDto.foreignKeyToAutoIncrement = true;
+                }
+            }
         }
-        //TODO Derby
     }
 
-    private static void addConstraints(Connection connection, DbSchemaDto schemaDto) throws Exception {
-        //TODO  Unique and Check
+    /**
+     * Returns a table DTO for a particular table name
+     *
+     * @param schema
+     * @param tableName
+     * @return
+     */
+    private static TableDto getTable(DbSchemaDto schema, String tableName) {
+        TableDto tableDto = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+        return tableDto;
+    }
+
+    /**
+     * Indicates the first column name that is a foreign key to an autoincrement column
+     *
+     * @param schema
+     * @param tableName
+     * @return
+     */
+    private static String getColumnNameForeignKeyToAutoIncrementColumn(DbSchemaDto schema, String tableName) {
+        TableDto tableDto = getTable(schema, tableName);
+        for (String pkColumnName : tableDto.primaryKeySequence) {
+            if (isFKToAutoIncrementColumn(schema, tableName, pkColumnName)) {
+                return pkColumnName;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the given tableName.columnName column is a foreign key to an autoincrement column
+     *
+     * @param schema
+     * @param tableName
+     * @param columnName
+     * @return
+     */
+    private static boolean isFKToAutoIncrementColumn(DbSchemaDto schema, String tableName, String columnName) {
+        TableDto tableDto = getTable(schema, tableName);
+        // check if column is primary key
+        if (tableDto.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase(columnName) && c.primaryKey)) {
+            // check if the column is autoincrement (non printable)
+            if (tableDto.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase(columnName) && c.autoIncrement)) {
+                return true;
+            } else {
+                // check if the column belongs to a foreign key that is non printable
+                for (ForeignKeyDto fk : tableDto.foreignKeys) {
+                    if (fk.sourceColumns.contains(columnName)) {
+                        int positionInFKSequence = fk.sourceColumns.indexOf(columnName);
+                        String targetTableName = fk.targetTable;
+                        TableDto targetTableDto = getTable(schema, targetTableName);
+                        String targetColumnName = targetTableDto.primaryKeySequence.get(positionInFKSequence);
+                        if (isFKToAutoIncrementColumn(schema, targetTableName, targetColumnName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    /**
+     * Appends constraints that are database specific.
+     *
+     * @param connection
+     * @param dt
+     * @param schemaDto
+     * @throws Exception
+     */
+    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws Exception {
+        switch (dt) {
+            case H2: {
+                addH2Constraints(connection, schemaDto);
+                break;
+            }
+            case DERBY: {
+                // TODO Derby
+                break;
+            }
+            case OTHER: {
+                // TODO Other
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unknown database type " + dt);
+            }
+        }
+    }
+
+    /**
+     * Expects the schema explained in
+     * http://www.h2database.com/html/systemtables.html#information_schema
+     *
+     * @param connectionToH2 a connection to a H2 database
+     * @param schemaDto      a DTO schema with retrieved information from the JBDC metada
+     * @throws Exception
+     */
+    private static void addH2Constraints(Connection connectionToH2, DbSchemaDto schemaDto) throws Exception {
+
+        addH2ColumnConstraints(connectionToH2, schemaDto);
+
+        addH2TableConstraints(connectionToH2, schemaDto);
+
+    }
+
+    /**
+     * For each table in the schema DTO, this method appends
+     * the constraints that are originated in the ALTER TABLE commands
+     * for those particular tables.
+     * <p>
+     * Foreign keys are handled separately in the JDBC metadata
+     *
+     * @param connectionToH2 a connection to a H2 database
+     * @param schemaDto
+     * @throws SQLException
+     */
+    private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+
+        String tableSchema = schemaDto.name;
+        for (TableDto tableDto : schemaDto.tables) {
+            String tableName = tableDto.name;
+            Statement statement = connectionToH2.createStatement();
+            ResultSet constraints = statement.executeQuery("Select * From INFORMATION_SCHEMA.CONSTRAINTS "
+                    + " where CONSTRAINTS.TABLE_SCHEMA='" + tableSchema + "' and CONSTRAINTS.TABLE_NAME='" + tableName + "'");
+
+            while (constraints.next()) {
+                String tableCatalog = constraints.getString("TABLE_CATALOG");
+                String constraintCatalog = constraints.getString("CONSTRAINT_CATALOG");
+                String constraintSchema = constraints.getString("CONSTRAINT_SCHEMA");
+                String constraintName = constraints.getString("CONSTRAINT_NAME");
+                String constraintType = constraints.getString("CONSTRAINT_TYPE");
+                String uniqueIndexName = constraints.getString("UNIQUE_INDEX_NAME");
+                String checkExpression = constraints.getString("CHECK_EXPRESSION");
+                String columnList = constraints.getString("COLUMN_LIST");
+
+                if (constraintType.equals("UNIQUE")) {
+                    assert (checkExpression == null);
+                    String[] uniqueColumnNames = columnList.split(",");
+                    for (int i = 0; i < uniqueColumnNames.length; i++) {
+                        String columnName = uniqueColumnNames[i].trim();
+                        addUniqueConstraintToColumn(tableName, tableDto, columnName);
+                    }
+                } else if (constraintType.equals("REFERENTIAL")) {
+                    /**
+                     * This type of constraint is already handled by
+                     * JDBC Metadata
+                     **/
+                    continue;
+                } else if (constraintType.equals("PRIMARY KEY")) {
+                    /**
+                     * This type of constraint is already handled by
+                     * JDBC Metadata
+                     **/
+                    continue;
+                } else if (constraintType.equals("CHECK")) {
+                    assert (columnList == null);
+                    addH2CheckConstraint(tableDto, checkExpression);
+                } else {
+                    throw new RuntimeException("Unknown constraint type : " + constraintType);
+                }
+
+            }
+
+            statement.close();
+
+        }
+
+    }
+
+    /**
+     * Parsers a check expression and appends the constraint to the TableDto
+     *
+     * @param tableDto
+     * @param checkExpression
+     */
+    private static void addH2CheckConstraint(TableDto tableDto, String checkExpression) {
+
+    }
+
+    /**
+     * Appends all Column constraints (i.e. CHECK contraints) to the DTO
+     *
+     * @param connectionToH2 a connection to a H2 database
+     * @param schemaDto
+     * @throws SQLException
+     */
+    private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+        String tableSchema = schemaDto.name;
+        for (TableDto tableDto : schemaDto.tables) {
+            String tableName = tableDto.name;
+            Statement statement = connectionToH2.createStatement();
+            ResultSet columns = statement.executeQuery("Select * From INFORMATION_SCHEMA.COLUMNS "
+                    + " where COLUMNS.TABLE_SCHEMA='" + tableSchema + "' and COLUMNS.TABLE_NAME='" + tableName + "'");
+            while (columns.next()) {
+                String tableCatalog = columns.getString("TABLE_CATALOG");
+                String columnName = columns.getString("COLUMN_NAME");
+
+                String checkConstraint = columns.getString("CHECK_CONSTRAINT");
+                if (checkConstraint != null && !checkConstraint.equals("")) {
+                    addH2CheckConstraint(tableDto, checkConstraint);
+                }
+            }
+
+            statement.close();
+        }
+    }
+
+    /**
+     * Adds a unique constriant to the correspondinding ColumnDTO for the selected table.column pair.
+     * Requires the ColumnDTO to be contained in the TableDTO.
+     * If the column DTO is not contained, a IllegalArgumentException is thrown.
+     **/
+    private static void addUniqueConstraintToColumn(String tableName, TableDto tableDto, String columnName) {
+        ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equals(columnName)).findAny().orElse(null);
+        if (columnDto == null) {
+            throw new IllegalArgumentException("Missing column DTO for column:" + tableName + "." + columnName);
+        }
+        columnDto.unique = true;
     }
 
 }

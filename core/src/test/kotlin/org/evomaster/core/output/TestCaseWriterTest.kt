@@ -20,9 +20,7 @@ class TestCaseWriterTest {
     @Test
     fun testEmptyDbInitialization() {
 
-        val dbInitialization = ArrayList<DbAction>()
-
-        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(emptyList<DbAction>().toMutableList())
 
         val test = TestCase(test = ei, name = "test")
 
@@ -45,15 +43,13 @@ class TestCaseWriterTest {
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
-
         val id = 0L
 
         val gene = StringGene(aColumn.name, "stringValue", 0, 10)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
-        val dbInitialization = ArrayList<DbAction>()
-        dbInitialization.add(insertIntoTableAction)
+        val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
 
@@ -90,14 +86,14 @@ class TestCaseWriterTest {
 
         val sampleType = SampleType.RANDOM
 
-        val restActions = ArrayList<RestAction>()
+        val restActions = emptyList<RestAction>().toMutableList()
 
 
         val individual = RestIndividual(restActions, sampleType, dbInitialization)
 
         val fitnessVal = FitnessValue(0.0)
 
-        val results = ArrayList<ActionResult>()
+        val results = emptyList<ActionResult>().toMutableList()
 
         val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
         return Triple(format, baseUrlOfSut, ei)
@@ -349,8 +345,7 @@ class TestCaseWriterTest {
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
-        val dbInitialization = ArrayList<DbAction>()
-        dbInitialization.add(insertIntoTableAction)
+        val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
 
@@ -449,8 +444,7 @@ class TestCaseWriterTest {
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
-        val dbInitialization = ArrayList<DbAction>()
-        dbInitialization.add(insertIntoTableAction)
+        val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
 
@@ -577,6 +571,70 @@ class TestCaseWriterTest {
             indent()
             add(".d(\"Id\", \"\\\"2016-03-12 00:00:00\\\"\")")
             add(".r(\"fkId\", 1001L)")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+
+    @Test
+    fun testIndirectForeignKeyColumn() {
+        val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val table0 = Table("Table0", setOf(table0_Id), HashSet<ForeignKey>())
+
+        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true)
+        val table1 = Table("Table1", setOf(table1_Id), HashSet<ForeignKey>())
+
+        val table2_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
+        val table2 = Table("Table2", setOf(table2_Id), HashSet<ForeignKey>())
+
+
+        val integerGene = IntegerGene(table0_Id.name, 42, 0, 10)
+
+        val primaryKeyTable1Gene = SqlPrimaryKeyGene(table0_Id.name, "Table1", integerGene, 10)
+
+
+        val insertId0 = 1001L
+        val autoGene = SqlAutoIncrementGene(table0_Id.name)
+        val pkGene0 = SqlPrimaryKeyGene(table0_Id.name, "Table0", autoGene, 10)
+        val insert0 = DbAction(table0, setOf(table0_Id), insertId0, listOf(pkGene0))
+
+        val insertId1 = 1002L
+        val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, "Table0", false, insertId0)
+        val insert1 = DbAction(table1, setOf(table1_Id), insertId1, listOf(fkGene0))
+
+        val insertId2 = 1003L
+        val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, "Table1", false, insertId1)
+        val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(fkGene1))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert0, insert1, insert2))
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 1001L)")
+            indent()
+            add(".and().insertInto(\"Table1\", 1002L)")
+            indent()
+            add(".r(\"Id\", 1001L)")
+            deindent()
+            add(".and().insertInto(\"Table2\", 1003L)")
+            indent()
+            add(".r(\"Id\", 1002L, true)")
             deindent()
             add(".dtos();")
             deindent()

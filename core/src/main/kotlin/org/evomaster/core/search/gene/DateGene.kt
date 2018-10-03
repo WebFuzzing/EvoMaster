@@ -34,12 +34,12 @@ class DateGene(
 
     override fun getValueAsRawString(): String {
         return GeneUtils.let {
-            "${it.padded(year.value,4)}-${it.padded(month.value,2)}-${it.padded(day.value,2)}"
+            "${it.padded(year.value, 4)}-${it.padded(month.value, 2)}-${it.padded(day.value, 2)}"
         }
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is DateGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is DateGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.year.copyValueFrom(other.year)
@@ -47,7 +47,17 @@ class DateGene(
         this.day.copyValueFrom(other.day)
     }
 
-    override fun flatView(): List<Gene>{
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is DateGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.year.containsSameValueAs(other.year)
+                && this.month.containsSameValueAs(other.month)
+                && this.day.containsSameValueAs(other.day)
+    }
+
+    override fun flatView(): List<Gene> {
         return listOf(this, year, month, day)
     }
 
