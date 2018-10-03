@@ -129,7 +129,7 @@ public class SchemaExtractor {
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
          */
-        addH2Constraints(connection, dt, schemaDto);
+        addConstraints(connection, dt, schemaDto);
 
         return schemaDto;
     }
@@ -148,10 +148,10 @@ public class SchemaExtractor {
         for (TableDto tableDto : schema.tables) {
             String tableName = tableDto.name;
             for (ColumnDto columnDto : tableDto.columns) {
-                if (columnDto.autoIncrement==true) {
+                if (columnDto.autoIncrement == true) {
                     continue;
                 }
-                if (columnDto.primaryKey==false) {
+                if (columnDto.primaryKey == false) {
                     continue;
                 }
                 if (!tableDto.foreignKeys.stream().anyMatch(fk -> fk.sourceColumns.contains(columnDto.name))) {
@@ -228,14 +228,22 @@ public class SchemaExtractor {
     }
 
 
-    private static void addH2Constraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws Exception {
+    /**
+     * Appends constraints that are database specific.
+     *
+     * @param connection
+     * @param dt
+     * @param schemaDto
+     * @throws Exception
+     */
+    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws Exception {
         switch (dt) {
             case H2: {
                 addH2Constraints(connection, schemaDto);
                 break;
             }
             case DERBY: {
-                //TODO Derby
+                // TODO Derby
                 break;
             }
             case OTHER: {
@@ -252,15 +260,15 @@ public class SchemaExtractor {
      * Expects the schema explained in
      * http://www.h2database.com/html/systemtables.html#information_schema
      *
-     * @param connection a connection to a H2 database
-     * @param schemaDto  a DTO schema with retrieved information from the JBDC metada
+     * @param connectionToH2 a connection to a H2 database
+     * @param schemaDto      a DTO schema with retrieved information from the JBDC metada
      * @throws Exception
      */
-    private static void addH2Constraints(Connection connection, DbSchemaDto schemaDto) throws Exception {
+    private static void addH2Constraints(Connection connectionToH2, DbSchemaDto schemaDto) throws Exception {
 
-        addH2ColumnConstraints(connection, schemaDto);
+        addH2ColumnConstraints(connectionToH2, schemaDto);
 
-        addH2TableConstraints(connection, schemaDto);
+        addH2TableConstraints(connectionToH2, schemaDto);
 
     }
 
@@ -271,16 +279,16 @@ public class SchemaExtractor {
      * <p>
      * Foreign keys are handled separately in the JDBC metadata
      *
-     * @param connection
+     * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
      * @throws SQLException
      */
-    private static void addH2TableConstraints(Connection connection, DbSchemaDto schemaDto) throws SQLException {
+    private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
-            Statement statement = connection.createStatement();
+            Statement statement = connectionToH2.createStatement();
             ResultSet constraints = statement.executeQuery("Select * From INFORMATION_SCHEMA.CONSTRAINTS "
                     + " where CONSTRAINTS.TABLE_SCHEMA='" + tableSchema + "' and CONSTRAINTS.TABLE_NAME='" + tableName + "'");
 
@@ -341,15 +349,15 @@ public class SchemaExtractor {
     /**
      * Appends all Column constraints (i.e. CHECK contraints) to the DTO
      *
-     * @param connection
+     * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
      * @throws SQLException
      */
-    private static void addH2ColumnConstraints(Connection connection, DbSchemaDto schemaDto) throws SQLException {
+    private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
-            Statement statement = connection.createStatement();
+            Statement statement = connectionToH2.createStatement();
             ResultSet columns = statement.executeQuery("Select * From INFORMATION_SCHEMA.COLUMNS "
                     + " where COLUMNS.TABLE_SCHEMA='" + tableSchema + "' and COLUMNS.TABLE_NAME='" + tableName + "'");
             while (columns.next()) {
