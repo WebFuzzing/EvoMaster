@@ -41,7 +41,7 @@ public class SchemaExtractor {
 
         ResultSet tables = md.getTables(null, schemaDto.name.toUpperCase(), null, new String[]{"TABLE"});
 
-        Set<String> tableNames = new HashSet<String>();
+        Set<String> tableNames = new HashSet<>();
 
         while (tables.next()) {
 
@@ -76,7 +76,7 @@ public class SchemaExtractor {
 
             ResultSet columns = md.getColumns(null, schemaDto.name.toUpperCase(), tableDto.name, null);
 
-            Set<String> columnNames = new HashSet<String>();
+            Set<String> columnNames = new HashSet<>();
             while (columns.next()) {
 
                 ColumnDto columnDto = new ColumnDto();

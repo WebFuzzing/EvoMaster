@@ -50,6 +50,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
             String[] args = new String[]{
                     "--createTests", "true",
+                    "--outputFormat", "JAVA_JUNIT_5",
                     "--seed", "42",
                     "--sutControllerPort", "" + controllerPort,
                     "--maxActionEvaluations", "2000",
