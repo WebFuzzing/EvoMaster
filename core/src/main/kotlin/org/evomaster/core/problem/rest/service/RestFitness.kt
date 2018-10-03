@@ -188,15 +188,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val ok = rc.executeDatabaseCommand(dto)
         if (!ok) {
             log.warn("Failed in executing database command")
-
-            val verifyOK = DbAction.verifyActions(ind.dbInitialization)
-            if (!verifyOK) {
-                log.warn("Broken Db Action")
-            }
-            val testCaseWriter = TestCaseWriter()
-            val lines = Lines()
-            testCaseWriter.handleDbInitialization(OutputFormat.JAVA_JUNIT_4, ind.dbInitialization, lines)
-            log.warn(lines.toString())
         }
     }
 
