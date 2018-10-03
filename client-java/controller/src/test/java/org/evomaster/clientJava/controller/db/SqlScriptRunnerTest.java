@@ -289,19 +289,12 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
         List<InsertionDto> insertions = sql()
                 .insertInto("Table1", 1000L)
                 .and()
-                .insertInto("Table2", 1001L).r("Id", 1000L)
+                .insertInto("Table2", 1001L).r("Id", 1000L, true)
                 .and()
                 .insertInto("Table3", 1002L).r("Id", 1001L).dtos();
 
         SqlScriptRunner.execInsert(getConnection(), insertions);
 
 
-//        List<InsertionDto> insertions = sql()
-//                .insertInto("Foo", 0L).d("name", "\"'\"").dtos();
-//
-//        SqlScriptRunner.execInsert(getConnection(), insertions);
-//
-//        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
-//        assertEquals(1, res.seeRows().size());
     }
 }

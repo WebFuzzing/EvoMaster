@@ -55,6 +55,8 @@ class FeaturesServiceSqlExtractTest {
                 Executable { assertTrue(schema.tables.any { it.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }) }
         )
 
+        assertEquals(listOf("IN_CONFIGURATIONS_ID", "ACTIVED_FEATURES_ID"), schema.tables.filter { it.name == "PRODUCT_CONFIGURATION_ACTIVED_FEATURES" }.first().primaryKeySequence);
+
     }
 
 

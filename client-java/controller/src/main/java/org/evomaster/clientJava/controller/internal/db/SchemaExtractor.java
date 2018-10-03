@@ -3,9 +3,7 @@ package org.evomaster.clientJava.controller.internal.db;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.*;
 
 import java.sql.*;
-import java.util.HashSet;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 public class SchemaExtractor {
 
@@ -61,12 +59,20 @@ public class SchemaExtractor {
             }
 
             Set<String> pks = new HashSet<>();
+            SortedMap<Integer, String> primaryKeySequence = new TreeMap<>();
             ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);
+
+
             while (rsPK.next()) {
-                pks.add(rsPK.getString("COLUMN_NAME"));
+                String pkColumnName = rsPK.getString("COLUMN_NAME");
+                int positionInPrimaryKey = (int) rsPK.getShort("KEY_SEQ");
+                pks.add(pkColumnName);
+                int pkIndex = positionInPrimaryKey - 1;
+                primaryKeySequence.put(pkIndex, pkColumnName);
             }
             rsPK.close();
 
+            tableDto.primaryKeySequence.addAll(primaryKeySequence.values());
 
             ResultSet columns = md.getColumns(null, schemaDto.name.toUpperCase(), tableDto.name, null);
 
@@ -114,6 +120,11 @@ public class SchemaExtractor {
         tables.close();
 
         /*
+            Mark those columns that are using auto generated values
+         */
+        addForeignKeyToAutoIncrement(schemaDto);
+
+        /*
             JDBC MetaData is quite limited.
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
@@ -122,6 +133,100 @@ public class SchemaExtractor {
 
         return schemaDto;
     }
+
+    /**
+     * Sets the foreignKeyToAutoIncrement field in the Column DTO
+     * when a column is a foreign key to an auto increment value.
+     * This information will be needed to properly handle the
+     * automatically generated values in primary keys that are
+     * referenced by other columns in tables (that are not directly
+     * linked)
+     *
+     * @param schema
+     */
+    private static void addForeignKeyToAutoIncrement(DbSchemaDto schema) {
+        for (TableDto tableDto : schema.tables) {
+            String tableName = tableDto.name;
+            for (ColumnDto columnDto : tableDto.columns) {
+                if (columnDto.autoIncrement==true) {
+                    continue;
+                }
+                if (columnDto.primaryKey==false) {
+                    continue;
+                }
+                if (!tableDto.foreignKeys.stream().anyMatch(fk -> fk.sourceColumns.contains(columnDto.name))) {
+                    continue;
+                }
+                String columnName = columnDto.name;
+                if (isFKToAutoIncrementColumn(schema, tableName, columnName)) {
+                    columnDto.foreignKeyToAutoIncrement = true;
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns a table DTO for a particular table name
+     *
+     * @param schema
+     * @param tableName
+     * @return
+     */
+    private static TableDto getTable(DbSchemaDto schema, String tableName) {
+        TableDto tableDto = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+        return tableDto;
+    }
+
+    /**
+     * Indicates the first column name that is a foreign key to an autoincrement column
+     *
+     * @param schema
+     * @param tableName
+     * @return
+     */
+    private static String getColumnNameForeignKeyToAutoIncrementColumn(DbSchemaDto schema, String tableName) {
+        TableDto tableDto = getTable(schema, tableName);
+        for (String pkColumnName : tableDto.primaryKeySequence) {
+            if (isFKToAutoIncrementColumn(schema, tableName, pkColumnName)) {
+                return pkColumnName;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the given tableName.columnName column is a foreign key to an autoincrement column
+     *
+     * @param schema
+     * @param tableName
+     * @param columnName
+     * @return
+     */
+    private static boolean isFKToAutoIncrementColumn(DbSchemaDto schema, String tableName, String columnName) {
+        TableDto tableDto = getTable(schema, tableName);
+        // check if column is primary key
+        if (tableDto.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase(columnName) && c.primaryKey)) {
+            // check if the column is autoincrement (non printable)
+            if (tableDto.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase(columnName) && c.autoIncrement)) {
+                return true;
+            } else {
+                // check if the column belongs to a foreign key that is non printable
+                for (ForeignKeyDto fk : tableDto.foreignKeys) {
+                    if (fk.sourceColumns.contains(columnName)) {
+                        int positionInFKSequence = fk.sourceColumns.indexOf(columnName);
+                        String targetTableName = fk.targetTable;
+                        TableDto targetTableDto = getTable(schema, targetTableName);
+                        String targetColumnName = targetTableDto.primaryKeySequence.get(positionInFKSequence);
+                        if (isFKToAutoIncrementColumn(schema, targetTableName, targetColumnName)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
 
     private static void addH2Constraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws Exception {
         switch (dt) {

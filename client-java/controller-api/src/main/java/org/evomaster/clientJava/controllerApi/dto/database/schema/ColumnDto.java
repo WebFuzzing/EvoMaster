@@ -18,6 +18,8 @@ public class ColumnDto {
 
     public boolean autoIncrement;
 
+    public boolean foreignKeyToAutoIncrement = false;
+
 //    public boolean identity;
 
     //TODO something for other constraints

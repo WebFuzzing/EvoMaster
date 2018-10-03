@@ -86,6 +86,24 @@ class ProxyPrintSqlExtractTest {
         assertEquals(true, schema.tables.filter { it.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
         assertEquals(true, schema.tables.filter { it.name == "REVIEWS" }.first().columns.filter { it.name == "ID" }.first().autoIncrement)
 
+        assertEquals(false, schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "PASSWORD" }.first().nullable)
+        assertEquals(false, schema.tables.filter { it.name == "USERS" }.first().columns.filter { it.name == "USERNAME" }.first().nullable)
+
+        assertEquals(listOf("PRINTSHOP_ID", "ITEM"), schema.tables.filter { it.name == "PRICETABLES" }.first().primaryKeySequence);
+
+        assertEquals(true, schema.tables.filter { it.name == "CONSUMERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.name == "ADMIN" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.name == "EMPLOYEES" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement); assertEquals(true, schema.tables.filter { it.name == "CONSUMERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.name == "MANAGERS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement);
+        assertEquals(true, schema.tables.filter { it.name == "PRICETABLES" }.first().columns.filter { it.name == "PRINTSHOP_ID" }.first().foreignKeyToAutoIncrement);
+
+        assertEquals(false, schema.tables.filter { it.name == "DOCUMENTS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.name == "NOTIFICATION" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.name == "DOCUMENTS_SPECS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.name == "PRINTING_SCHEMAS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+        assertEquals(false, schema.tables.filter { it.name == "REGISTER_REQUESTS" }.first().columns.filter { it.name == "ID" }.first().foreignKeyToAutoIncrement)
+
 
     }
 

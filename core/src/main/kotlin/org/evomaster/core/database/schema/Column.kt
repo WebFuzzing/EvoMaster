@@ -18,7 +18,9 @@ data class Column(
 
         val unique: Boolean = false,
 
-        val autoIncrement: Boolean = false
+        val autoIncrement: Boolean = false,
+
+        var foreignKeyToAutoIncrement: Boolean = false
 
         // public boolean identity;
 

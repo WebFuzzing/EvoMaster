@@ -10,4 +10,6 @@ public class TableDto {
     public List<ColumnDto> columns = new ArrayList<>();
 
     public List<ForeignKeyDto> foreignKeys = new ArrayList<>();
+
+    public List<String> primaryKeySequence = new ArrayList<>();
 }
