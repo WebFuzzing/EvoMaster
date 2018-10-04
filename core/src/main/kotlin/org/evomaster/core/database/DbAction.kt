@@ -89,14 +89,18 @@ class DbAction(
 
         /**
          * Some actions might break schema constraints
-         * (such as unique columns or primary keys).
-         * This method tries to fix each unique column that is broken
+         * (such as unique columns, primary keys or foreign keys).
+         * This method tries to fix each action that is broken.
          *
-         * The repair algorithm first tries to modify genes.
-         * If it is unable to do, it starts removing Db Actions
+         * In order to do so, it starts by finding the first action with a broken gene.
+         * This gene is randomize. If an action cannot be repaired after
+         * <code>maxNumberOfAttemptsToRepairAnAction</code> attempts
+         * (because it is not satisfiable given the current list of previous actions),
+         * the remaining actions (including the one that is broken) are removed
+         * from the list of actions.
          *
-         * Returns true if the action list was fixed without truncating it.
-         * Returns false if the list needed to be truncated
+         * Returns true if the action list was fixed without removing any action.
+         * Returns false if actions needed to be removed
          */
         fun repairBrokenDbActionsList(actions: MutableList<DbAction>,
                                       randomness: Randomness,
