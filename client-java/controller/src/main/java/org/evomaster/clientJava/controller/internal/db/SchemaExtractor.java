@@ -1,5 +1,8 @@
 package org.evomaster.clientJava.controller.internal.db;
 
+import net.sf.jsqlparser.JSQLParserException;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.*;
 
 import java.sql.*;
@@ -236,7 +239,7 @@ public class SchemaExtractor {
      * @param schemaDto
      * @throws Exception
      */
-    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws Exception {
+    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
         switch (dt) {
             case H2: {
                 addH2Constraints(connection, schemaDto);
@@ -264,7 +267,7 @@ public class SchemaExtractor {
      * @param schemaDto      a DTO schema with retrieved information from the JBDC metada
      * @throws Exception
      */
-    private static void addH2Constraints(Connection connectionToH2, DbSchemaDto schemaDto) throws Exception {
+    private static void addH2Constraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
 
         addH2ColumnConstraints(connectionToH2, schemaDto);
 
@@ -281,9 +284,10 @@ public class SchemaExtractor {
      *
      * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
-     * @throws SQLException
+     * @throws SQLException        if the connection to the H2 database fails,
+     * @throws JSQLParserException if a conditional expression fails to be parsed
      */
-    private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+    private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
 
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
@@ -337,13 +341,52 @@ public class SchemaExtractor {
     }
 
     /**
-     * Parsers a check expression and appends the constraint to the TableDto
+     * Parsers a conditional expression and adds those constraints to the TableDto
      *
      * @param tableDto
-     * @param checkExpression
+     *
+     * @param condExpression
+     *
+     * @throws JSQLParserException if the parsing of the conditional expression fails
      */
-    private static void addH2CheckConstraint(TableDto tableDto, String checkExpression) {
+    private static void addH2CheckConstraint(TableDto tableDto, String condExpression) throws JSQLParserException {
+        Expression expr = CCJSqlParserUtil.parseCondExpression(condExpression);
+        CheckExprExtractor exprExtractor = new CheckExprExtractor();
+        expr.accept(exprExtractor);
+        String tableName = tableDto.name;
+        List<SchemaConstraint> constraints = exprExtractor.getConstraints();
+        for (SchemaConstraint constraint : constraints) {
+            if (constraint instanceof LowerBoundConstraint) {
+                LowerBoundConstraint lowerBound = (LowerBoundConstraint) constraint;
+                String columnName = lowerBound.getColumnName();
+                ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equalsIgnoreCase(columnName)).findFirst().orElse(null);
+                if (columnDto == null) {
+                    throw new IllegalArgumentException("Column " + columnName + " was not found in table " + tableName);
+                }
+                columnDto.lowerBound = (int) lowerBound.getLowerBound();
 
+            } else if (constraint instanceof UpperBoundConstraint) {
+                UpperBoundConstraint upperBound = (UpperBoundConstraint) constraint;
+                String columnName = upperBound.getColumnName();
+                ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equalsIgnoreCase(columnName)).findFirst().orElse(null);
+                if (columnDto == null) {
+                    throw new IllegalArgumentException("Column " + columnName + " was not found in table " + tableName);
+                }
+                columnDto.upperBound = (int) upperBound.getUpperBound();
+
+            } else if (constraint instanceof RangeConstraint) {
+                RangeConstraint rangeConstraint = (RangeConstraint) constraint;
+                String columnName = rangeConstraint.getColumnName();
+                ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equalsIgnoreCase(columnName)).findFirst().orElse(null);
+                if (columnDto == null) {
+                    throw new IllegalArgumentException("Column " + columnName + " was not found in table " + tableName);
+                }
+                columnDto.lowerBound = (int) rangeConstraint.getMinValue();
+                columnDto.upperBound = (int) rangeConstraint.getMaxValue();
+            } else {
+                throw new RuntimeException("Unknown constraint type " + constraint.getClass().getName());
+            }
+        }
     }
 
     /**
@@ -351,9 +394,10 @@ public class SchemaExtractor {
      *
      * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
-     * @throws SQLException
+     * @throws SQLException        if the connection to the database fails
+     * @throws JSQLParserException if the parsing of a conditional expression fails
      */
-    private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
+    private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;

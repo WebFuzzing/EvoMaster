@@ -22,5 +22,3 @@ alter table Passports
 alter table Passports
   add constraint ValidPassportNumber check (passport_number>0);
 
-alter table Passports
-  add constraint ValidExpirationDate check (birth_date<=expiration_date)

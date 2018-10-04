@@ -243,11 +243,15 @@ class DbAction(
                 /**
                  * TINYINT(3) is assumed to be representing a byte/Byte field
                  */
-                TINYINT -> IntegerGene(it.name, min = Byte.MIN_VALUE.toInt(), max = Byte.MAX_VALUE.toInt())
+                TINYINT -> IntegerGene(it.name,
+                        min = it.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                        max = it.upperBound ?: Byte.MAX_VALUE.toInt())
                 /**
                  * SMALLINT(5) is assumed as a short/Short field
                  */
-                SMALLINT -> IntegerGene(it.name, min = Short.MIN_VALUE.toInt(), max = Short.MAX_VALUE.toInt())
+                SMALLINT -> IntegerGene(it.name,
+                        min = it.lowerBound ?: Short.MIN_VALUE.toInt(),
+                        max = it.upperBound ?: Short.MAX_VALUE.toInt())
                 /**
                  * CHAR(255) is assumed to be a char/Character field.
                  * A StringGene of length 1 is used to represent the data.
@@ -257,7 +261,9 @@ class DbAction(
                 /**
                  * INTEGER(10) is a int/Integer field
                  */
-                INTEGER -> IntegerGene(it.name)
+                INTEGER -> IntegerGene(it.name,
+                        min = it.lowerBound ?: Int.MIN_VALUE,
+                        max = it.upperBound ?: Int.MAX_VALUE)
                 /**
                  * BIGINT(19) is a long/Long field
                  */
