@@ -164,7 +164,7 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testColumnConstraint() throws Exception {
+    public void testColumnUpperBoundConstraint() throws Exception {
         String sqlCommand = "CREATE TABLE FOO (fooId INT, age_max integer check (age_max<=100));";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
@@ -180,13 +180,18 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
         assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("age_max")));
 
         // TODO check that the column constraint is actually extracted
+        ColumnDto columnDto = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("age_max")).findFirst().orElse(null);
 
+        assertEquals("INTEGER", columnDto.type);
+        assertNull(columnDto.lowerBound);
+        assertEquals(100, columnDto.upperBound.intValue());
 
     }
 
     @Test
     public void testTableConstraint() throws Exception {
-        String sqlCommand = "CREATE TABLE FOO (fooId INT, age_max integer);" + "ALTER TABLE FOO ADD CONSTRAINT CHK_AGE_MAX CHECK (age_max<=100);";
+        String sqlCommand = "CREATE TABLE FOO (fooId INT, age_max integer);"
+                + "ALTER TABLE FOO ADD CONSTRAINT CHK_AGE_MAX CHECK (age_max<=100);";
         SqlScriptRunner.execCommand(getConnection(), sqlCommand);
 
         DbSchemaDto schema = SchemaExtractor.extract(getConnection());
