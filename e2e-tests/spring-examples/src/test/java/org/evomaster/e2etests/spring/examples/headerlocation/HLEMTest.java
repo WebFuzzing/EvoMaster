@@ -19,7 +19,7 @@ public class HLEMTest extends HLTestBase {
                     "--createTests", "false",
                     "--seed", "42",
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "2000",
+                    "--maxActionEvaluations", "5000",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS"
             };
 
