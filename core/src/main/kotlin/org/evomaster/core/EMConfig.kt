@@ -469,19 +469,16 @@ class EMConfig {
     @Min(1.0)
     var maxTestSize = 10
 
-    @Experimental
     @Cfg("Tracking of SQL commands to improve test generation")
-    var heuristicsForSQL = false
+    var heuristicsForSQL = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     var generateSqlDataWithDSE = false
 
-    @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm")
-    var generateSqlDataWithSearch = false
+    var generateSqlDataWithSearch = true
 
-    @Experimental
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
     var maxSqlInitActionsPerMissingData = 5
