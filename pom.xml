@@ -39,7 +39,12 @@
     <profiles>
         <profile>
             <!--
-                   Profile needed when making a deployment to Maven Central.
+                   Note: before release, the client-java should be built first
+                   with javadoc:jar, as that might fail.
+                   If forget to do it before making release, use:
+                   -Dadditionalparam=-Xdoclint:none
+
+                   This profile is needed when making a deployment to Maven Central.
                    Note: we upload only the client library, not the whole EvoMaster.
                    However, we also need this root pom.xml. So,
 
