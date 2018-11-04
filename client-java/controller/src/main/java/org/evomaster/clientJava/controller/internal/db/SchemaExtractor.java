@@ -319,7 +319,7 @@ public class SchemaExtractor {
                      * JDBC Metadata
                      **/
                     continue;
-                } else if (constraintType.equals("PRIMARY KEY")) {
+                } else if (constraintType.equals("PRIMARY KEY") || constraintType.equals("PRIMARY_KEY")) {
                     /**
                      * This type of constraint is already handled by
                      * JDBC Metadata
