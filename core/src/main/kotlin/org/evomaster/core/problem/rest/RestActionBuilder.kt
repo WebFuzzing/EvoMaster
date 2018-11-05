@@ -28,9 +28,12 @@ class RestActionBuilder {
 
             actionCluster.clear()
 
-            //TODO check Swagger version
+            val version = swagger.swagger
+            if(version != "2.0"){
+                throw SutProblemException("EvoMaster does not support Swagger version '$version'")
+            }
 
-            var skipped = mutableListOf<String>()
+            val skipped = mutableListOf<String>()
 
             swagger.paths
                     .filter { e ->
@@ -133,14 +136,14 @@ class RestActionBuilder {
                     var gene = getGene(name, type, p.getFormat(), swagger, null, p)
                     if (!p.required && p.`in` != "path") {
                         /*
-                        Even if a "path" parameter might not be required, still
-                        do not use an optional for it. Otherwise, might
-                        end up in quite a few useless 405 errors.
+                            Even if a "path" parameter might not be required, still
+                            do not use an optional for it. Otherwise, might
+                            end up in quite a few useless 405 errors.
 
-                        Furthermore, "path" parameters must be "required" according
-                        to specs.
-                        TODO: could issue warning that Swagger is incorrect
-                     */
+                            Furthermore, "path" parameters must be "required" according
+                            to specs.
+                            TODO: could issue warning that Swagger is incorrect
+                        */
                         gene = OptionalGene(name, gene)
                     }
 
@@ -174,10 +177,10 @@ class RestActionBuilder {
             if (listOf("Principal", "WebRequest").contains(classDef)) {
 
                 /*
-                This is/was a bug in Swagger for Spring, in which Spring request
-                handlers wrongly ended up in Swagger as body parts, albeit
-                missing from the definition list
-             */
+                    This is/was a bug in Swagger for Spring, in which Spring request
+                    handlers wrongly ended up in Swagger as body parts, albeit
+                    missing from the definition list
+                */
 
                 swagger.definitions[classDef] ?: return true
             }
@@ -284,9 +287,9 @@ class RestActionBuilder {
         dateTime	    string	date-time	As defined by date-time - RFC3339
         password	    string	password	Used to hint UIs the input needs to be obscured.
 
-        */
+            */
 
-            if (type == "string" && !(parameter?.getEnum()?.isEmpty() ?: true)) {
+            if (type == "string" && parameter?.getEnum()?.isEmpty() == false) {
                 //TODO enum can be for any type, not just strings
                 //Besides the defined values, add one to test robustness
                 return EnumGene(name, parameter!!.getEnum().apply { add("EVOMASTER") })
@@ -309,9 +312,9 @@ class RestActionBuilder {
             }
 
             /*
-            If a format is not defined, the type should default to
-            the JSON Schema definition
-         */
+                If a format is not defined, the type should default to
+                the JSON Schema definition
+            */
             when (type) {
                 "integer" -> return IntegerGene(name)
                 "number" -> return DoubleGene(name)
