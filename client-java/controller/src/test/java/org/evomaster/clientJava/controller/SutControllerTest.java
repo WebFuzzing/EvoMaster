@@ -5,6 +5,7 @@ import org.evomaster.clientJava.controller.problem.ProblemInfo;
 import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,6 +69,11 @@ public class SutControllerTest {
         @Override
         public ProblemInfo getProblemInfo() {
             return new RestProblem(SWAGGER_URL, null);
+        }
+
+        @Override
+        public SutInfoDto.OutputFormat getPreferredOutputFormat() {
+            return SutInfoDto.OutputFormat.JAVA_JUNIT_5;
         }
     }
 
