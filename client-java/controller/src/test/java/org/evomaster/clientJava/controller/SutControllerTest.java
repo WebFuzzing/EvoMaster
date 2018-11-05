@@ -1,6 +1,8 @@
 package org.evomaster.clientJava.controller;
 
 import io.restassured.RestAssured;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
+import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.junit.jupiter.api.AfterAll;
@@ -46,12 +48,6 @@ public class SutControllerTest {
 
         @Override
         public void resetStateOfSUT() {
-
-        }
-
-        @Override
-        public String getUrlOfSwaggerJSON() {
-            return SWAGGER_URL;
         }
 
         @Override
@@ -70,11 +66,9 @@ public class SutControllerTest {
         }
 
         @Override
-        public List<String> getEndpointsToSkip() {
-            return null;
+        public ProblemInfo getProblemInfo() {
+            return new RestProblem(SWAGGER_URL, null);
         }
-
-
     }
 
     private static EmbeddedSutController restController = new FakeRestController();
@@ -149,6 +143,6 @@ public class SutControllerTest {
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
-                .body("swaggerJsonUrl", is(SWAGGER_URL));
+                .body("restProblem.swaggerJsonUrl", is(SWAGGER_URL));
     }
 }

@@ -1,6 +1,8 @@
 package org.evomaster.clientJava.controller.db;
 
 import org.evomaster.clientJava.controller.EmbeddedSutController;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
+import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
 import java.sql.Connection;
@@ -25,8 +27,8 @@ public class DatabaseFakeSutController extends EmbeddedSutController{
     }
 
     @Override
-    public List<String> getEndpointsToSkip() {
-        return null;
+    public ProblemInfo getProblemInfo() {
+        return new RestProblem(null, null);
     }
 
     @Override
@@ -36,12 +38,10 @@ public class DatabaseFakeSutController extends EmbeddedSutController{
 
     @Override
     public void stopSut() {
-
     }
 
     @Override
     public void resetStateOfSUT() {
-
     }
 
     @Override
@@ -52,11 +52,6 @@ public class DatabaseFakeSutController extends EmbeddedSutController{
     @Override
     public String getPackagePrefixesToCover() {
         return "none";
-    }
-
-    @Override
-    public String getUrlOfSwaggerJSON() {
-        return null;
     }
 
     @Override

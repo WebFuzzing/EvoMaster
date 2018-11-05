@@ -2,10 +2,13 @@ package org.evomaster.clientJava.controller.internal;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
+import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.*;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.clientJava.controllerApi.dto.problem.RestProblemDto;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
@@ -41,12 +44,22 @@ public class EMController {
     public SutInfoDto getSutInfo() {
 
         SutInfoDto dto = new SutInfoDto();
-        dto.swaggerJsonUrl = sutController.getUrlOfSwaggerJSON();
-        dto.endpointsToSkip = sutController.getEndpointsToSkip();
         dto.isSutRunning = sutController.isSutRunning();
         dto.baseUrlOfSUT = baseUrlOfSUT;
         dto.infoForAuthentication = sutController.getInfoForAuthentication();
         dto.sqlSchemaDto = sutController.getSqlDatabaseSchema();
+
+        ProblemInfo info = sutController.getProblemInfo();
+        if(info == null){
+            SimpleLogger.error("ERROR -> undefined problem type");
+        } else if (info instanceof RestProblem){
+            RestProblem rp = (RestProblem) info;
+            dto.restProblem = new RestProblemDto();
+            dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
+            dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
+        } else {
+            SimpleLogger.error("ERROR -> unrecognized type " + info.getClass().getName());
+        }
 
         return dto;
     }

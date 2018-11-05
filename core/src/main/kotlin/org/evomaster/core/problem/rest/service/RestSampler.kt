@@ -66,7 +66,7 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.endpointsToSkip ?: listOf())
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto?.restProblem?.endpointsToSkip ?: listOf())
 
         setupAuthentication(infoDto)
 
@@ -112,7 +112,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun getSwagger(infoDto: SutInfoDto): Swagger {
 
-        val swaggerURL = infoDto.swaggerJsonUrl ?: throw IllegalStateException("Cannot retrieve Swagger URL")
+        val swaggerURL = infoDto?.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
 
         val response = connectToSwagger(swaggerURL, 30)
 

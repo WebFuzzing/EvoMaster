@@ -1,6 +1,8 @@
 package com.foo.rest.examples.dw.simpleform;
 
 import org.evomaster.clientJava.controller.EmbeddedSutController;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
+import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 
 import java.sql.Connection;
@@ -71,11 +73,6 @@ public class SFController extends EmbeddedSutController {
     }
 
     @Override
-    public String getUrlOfSwaggerJSON() {
-        return "http://localhost:"+application.getJettyPort()+"/api/swagger.json";
-    }
-
-    @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
         return null;
     }
@@ -91,7 +88,11 @@ public class SFController extends EmbeddedSutController {
     }
 
     @Override
-    public List<String> getEndpointsToSkip() {
-        return null;
+    public ProblemInfo getProblemInfo() {
+        return new RestProblem(
+                "http://localhost:"+application.getJettyPort()+"/api/swagger.json",
+                null
+        );
     }
+
 }

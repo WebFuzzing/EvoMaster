@@ -1,25 +1,42 @@
 package org.evomaster.clientJava.controllerApi.dto;
 
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
+import org.evomaster.clientJava.controllerApi.dto.problem.RestProblemDto;
 
 import java.util.List;
 
 public class SutInfoDto {
 
     /**
-     * The full URL of where the Swagger JSON data can be located
+     * If the SUT is a RESTful API, here there will be the info
+     * on how to interact with it
      */
-    public String swaggerJsonUrl;
-
+    public RestProblemDto restProblem;
 
     /**
      * Whether the SUT is running or not
      */
     public Boolean isSutRunning;
 
+    /*
+        Note: this enum must be kept in sync with what declared in
+        org.evomaster.core.output.OutputFormat
+     */
+    enum OutputFormat {
+        JAVA_JUNIT_5,
+        JAVA_JUNIT_4
+    }
+
+    /**
+     * When generating test cases for this SUT, specify the default
+     * preffered output format (eg JUnit 4 in Java)
+     */
+    public OutputFormat defaultOutputFormat;
+
     /**
      * The base URL of the running SUT (if any).
      * E.g., "http://localhost:8080"
+     * It should only contain the protocol and the hostname/port
      */
     public String baseUrlOfSUT;
 
@@ -30,15 +47,6 @@ public class SutInfoDto {
      * As such, the SUT might need to provide a set of valid credentials
      */
     public List<AuthenticationDto> infoForAuthentication;
-
-
-    /**
-     * When testing a REST API, there might be some endpoints that are not
-     * so important to test.
-     * For example, in Spring, health-check endpoints like "/heapdump"
-     * are not so interesting to test, and they can be very expensive to run.
-     */
-    public List<String> endpointsToSkip;
 
 
     /**

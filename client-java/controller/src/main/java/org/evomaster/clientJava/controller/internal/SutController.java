@@ -10,6 +10,7 @@ import org.evomaster.clientJava.controller.SutHandler;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controller.internal.db.SqlHandler;
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
@@ -257,14 +258,6 @@ public abstract class SutController implements SutHandler{
      */
     public abstract String getPackagePrefixesToCover();
 
-
-    /**
-     * Provide the URL of where the swagger.json can be found
-     *
-     * @return
-     */
-    public abstract String getUrlOfSwaggerJSON();
-
     /**
      * Provide a list of valid authentication credentials, or {@code null} if
      * none is necessary
@@ -292,14 +285,11 @@ public abstract class SutController implements SutHandler{
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
-
     /**
-     * When testing a REST API, there might be some endpoints that are not
-     * so important to test.
-     * For example, in Spring, health-check endpoints like "/heapdump"
-     * are not so interesting to test, and they can be very expensive to run.
+     * Depending of which kind of SUT we are dealing with (eg, REST, GraphQL or SPA frontend),
+     * there is different info that must be provided
      *
-     * @return a list of endpoints (as defined in schema) to skip
+     * @return an instance of object with all the needed data for the specific addressed problem
      */
-    public abstract List<String> getEndpointsToSkip();
+    public abstract ProblemInfo getProblemInfo();
 }
