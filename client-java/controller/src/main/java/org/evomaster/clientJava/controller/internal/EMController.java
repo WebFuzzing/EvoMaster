@@ -48,6 +48,7 @@ public class EMController {
         dto.baseUrlOfSUT = baseUrlOfSUT;
         dto.infoForAuthentication = sutController.getInfoForAuthentication();
         dto.sqlSchemaDto = sutController.getSqlDatabaseSchema();
+        dto.defaultOutputFormat = sutController.getPreferredOutputFormat();
 
         ProblemInfo info = sutController.getProblemInfo();
         if(info == null){

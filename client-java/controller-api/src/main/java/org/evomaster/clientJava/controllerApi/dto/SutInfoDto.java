@@ -22,7 +22,7 @@ public class SutInfoDto {
         Note: this enum must be kept in sync with what declared in
         org.evomaster.core.output.OutputFormat
      */
-    enum OutputFormat {
+    public enum OutputFormat {
         JAVA_JUNIT_5,
         JAVA_JUNIT_4
     }

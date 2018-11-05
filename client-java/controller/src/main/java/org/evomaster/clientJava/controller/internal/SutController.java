@@ -14,6 +14,7 @@ import org.evomaster.clientJava.controller.problem.ProblemInfo;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
@@ -292,4 +293,9 @@ public abstract class SutController implements SutHandler{
      * @return an instance of object with all the needed data for the specific addressed problem
      */
     public abstract ProblemInfo getProblemInfo();
+
+    /**
+     * Specify the format in which the test cases should be generated
+     */
+    public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
 }
