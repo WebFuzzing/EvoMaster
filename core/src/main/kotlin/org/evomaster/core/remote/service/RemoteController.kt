@@ -15,6 +15,7 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
 import javax.ws.rs.core.Form
+import javax.ws.rs.core.GenericType
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -69,19 +70,24 @@ class RemoteController() {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            log.warn("Failed to connect to remote RestController. HTTP status: {}", response.status)
-            return null
-        }
-
         val dto = try {
-            response.readEntity(SutInfoDto::class.java)
+            response.readEntity(object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
         } catch (e: Exception) {
             log.warn("Failed to parse SUT info dto", e)
             null
         }
 
-        return dto
+        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
+            log.warn("Failed request to EM controller. HTTP status {}. Message: '{}'", response.status, dto?.error)
+            return null
+        }
+
+        if (dto?.data == null) {
+            log.warn("Missing DTO")
+            return null
+        }
+
+        return dto.data
     }
 
     fun getControllerInfo(): ControllerInfoDto? {
@@ -91,19 +97,24 @@ class RemoteController() {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            log.warn("Failed to connect to remote RestController. HTTP status: {}", response.status)
-            return null
-        }
-
         val dto = try {
-            response.readEntity(ControllerInfoDto::class.java)
+            response.readEntity(object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
         } catch (e: Exception) {
-            log.warn("Failed to parse the controller info dto", e)
+            log.warn("Failed to parse controller info dto", e)
             null
         }
 
-        return dto
+        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
+            log.warn("Failed request to EM controller. HTTP status {}. Message: '{}'", response.status, dto?.error)
+            return null
+        }
+
+        if (dto?.data == null) {
+            log.warn("Missing DTO")
+            return null
+        }
+
+        return dto.data
     }
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
@@ -136,12 +147,12 @@ class RemoteController() {
 
     fun checkConnection() {
 
-        try{
+        try {
             getWebTarget()
                     .path(ControllerConstants.CONTROLLER_INFO)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
-        } catch (e : Exception){
+        } catch (e: Exception) {
             throw NoRemoteConnectionException(port, host)
         }
     }
@@ -172,11 +183,18 @@ class RemoteController() {
                 .get()
 
         if (!wasSuccess(response)) {
-            log.warn("Failed to change running state of the SUT. HTTP status: {}", response.status)
+            log.warn("Failed to retrieve target coverage. HTTP status: {}", response.status)
             return null
         }
 
-        return response.readEntity(TargetsResponseDto::class.java)
+        val dto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<TargetsResponseDto>>() {})
+        } catch (e: Exception) {
+            log.warn("Failed to parse target coverage dto", e)
+            null
+        }
+
+        return dto?.data
     }
 
     fun getExtraHeuristics(): ExtraHeuristicDto? {
@@ -191,15 +209,22 @@ class RemoteController() {
             return null
         }
 
-        return response.readEntity(ExtraHeuristicDto::class.java)
+        val dto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<ExtraHeuristicDto>>() {})
+        } catch (e: Exception) {
+            log.warn("Failed to parse controller info dto", e)
+            null
+        }
+
+        return dto?.data
     }
 
-    fun registerNewAction(actionIndex: Int){
+    fun registerNewAction(actionIndex: Int) {
 
         val response = getWebTarget()
                 .path(ControllerConstants.NEW_ACTION)
-                .request(MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-                .put(Entity.form(Form("index", actionIndex.toString())))
+                .request()
+                .put(Entity.entity(actionIndex, MediaType.APPLICATION_JSON_TYPE))
 
         if (!wasSuccess(response)) {
             log.warn("Failed to register new action. HTTP status: {}", response.status)

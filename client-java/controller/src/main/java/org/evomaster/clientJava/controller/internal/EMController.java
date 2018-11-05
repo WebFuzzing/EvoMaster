@@ -13,6 +13,7 @@ import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.sql.Connection;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
  * as we might need to re-implement it in different languages.
  */
 @Path("")
+@Produces(Formats.JSON_V1)
 public class EMController {
 
     private final SutController sutController;
@@ -40,8 +42,7 @@ public class EMController {
 
     @Path(ControllerConstants.INFO_SUT_PATH)
     @GET
-    @Produces(Formats.JSON_V1)
-    public SutInfoDto getSutInfo() {
+    public Response getSutInfo() {
 
         SutInfoDto dto = new SutInfoDto();
         dto.isSutRunning = sutController.isSutRunning();
@@ -52,48 +53,55 @@ public class EMController {
 
         ProblemInfo info = sutController.getProblemInfo();
         if(info == null){
-            SimpleLogger.error("ERROR -> undefined problem type");
+            String msg = "Undefined problem type in the EM Controller";
+            SimpleLogger.error(msg);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+
         } else if (info instanceof RestProblem){
             RestProblem rp = (RestProblem) info;
             dto.restProblem = new RestProblemDto();
             dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
+
         } else {
-            SimpleLogger.error("ERROR -> unrecognized type " + info.getClass().getName());
+            String msg = "Unrecognized problem type: " + info.getClass().getName();
+            SimpleLogger.error(msg);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
-        return dto;
+        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
     @Path(ControllerConstants.CONTROLLER_INFO)
     @GET
-    @Produces(Formats.JSON_V1)
-    public ControllerInfoDto getControllerInfoDto() {
+    public Response getControllerInfoDto() {
 
         ControllerInfoDto dto = new ControllerInfoDto();
         dto.fullName = sutController.getClass().getName();
         dto.isInstrumentationOn = sutController.isInstrumentationActivated();
 
-        return dto;
+        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
     @Path(ControllerConstants.NEW_SEARCH)
     @POST
-    public void newSearch() {
+    public Response newSearch() {
         sutController.newSearch();
+
+        return Response.status(201).entity(WrappedResponseDto.withNoData()).build();
     }
 
 
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT
     @Consumes(Formats.JSON_V1)
-    public void runSut(SutRunDto dto) {
+    public Response runSut(SutRunDto dto) {
 
         try {
             if (dto.run == null) {
                 String msg = "Invalid JSON: 'run' field is required";
                 SimpleLogger.warn(msg);
-                throw new WebApplicationException(msg, 400);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
             boolean newlyStarted = false;
@@ -104,7 +112,9 @@ public class EMController {
                         baseUrlOfSUT = sutController.startSut();
                         if (baseUrlOfSUT == null) {
                             //there has been an internal failure in starting the SUT
-                            throw new WebApplicationException("Internal failure: cannot start SUT based on given configuration", 500);
+                            String msg = "Internal failure: cannot start SUT based on given configuration";
+                            SimpleLogger.warn(msg);
+                            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         sutController.initSqlHandler();
                         sutController.newTest();
@@ -124,7 +134,7 @@ public class EMController {
                     if (!dto.run) {
                         String msg = "Invalid JSON: cannot reset state and stop service at same time";
                         SimpleLogger.warn(msg);
-                        throw new WebApplicationException(msg, 400);
+                        return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
                     }
 
                     if (!newlyStarted) { //no point resetting if fresh start
@@ -140,16 +150,18 @@ public class EMController {
                 But even after spending hours googling it, haven't managed to configure it
              */
 
-            SimpleLogger.error("ERROR -> " + e.getMessage());
-            throw e;
+            String msg = e.getMessage();
+            SimpleLogger.error(msg );
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
+
+        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
 
 
     @Path(ControllerConstants.TARGETS_PATH)
     @GET
-    @Produces(Formats.JSON_V1)
-    public TargetsResponseDto getTargets(
+    public Response getTargets(
             @QueryParam("ids")
             @DefaultValue("")
                     String idList) {
@@ -166,14 +178,14 @@ public class EMController {
         } catch (NumberFormatException e) {
             String msg = "Invalid parameter 'ids': " + e.getMessage();
             SimpleLogger.warn(msg);
-            throw new WebApplicationException(msg, e);
+            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
         List<TargetInfo> list = sutController.getTargetInfos(ids);
         if (list == null) {
             String msg = "Failed to collect target information for " + ids.size() + " ids";
             SimpleLogger.error(msg);
-            throw new WebApplicationException(msg, 500);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
         list.forEach(t -> {
@@ -186,59 +198,62 @@ public class EMController {
             dto.targets.add(info);
         });
 
-        return dto;
+
+        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
 
     @Path(ControllerConstants.EXTRA_HEURISTICS)
     @GET
-    @Produces(Formats.JSON_V1)
-    public ExtraHeuristicDto getExtra() {
+    public Response getExtra() {
 
         ExtraHeuristicDto dto = sutController.getExtraHeuristics();
 
-
-        return dto;
+        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
     @Path(ControllerConstants.EXTRA_HEURISTICS)
     @DELETE
-    public void deleteExtra() {
+    public Response deleteExtra() {
 
         sutController.resetExtraHeuristics();
+
+        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
 
     @Path(ControllerConstants.NEW_ACTION)
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Consumes(MediaType.APPLICATION_JSON)
     @PUT
-    public void newAction(@FormParam("index") int index) {
+    public Response newAction(int index) {
 
         sutController.newAction(index);
+
+        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
 
 
     @Path(ControllerConstants.DATABASE_COMMAND)
     @Consumes(Formats.JSON_V1)
     @POST
-    public void executeDatabaseCommand(DatabaseCommandDto dto) {
+    public Response executeDatabaseCommand(DatabaseCommandDto dto) {
 
         Connection connection = sutController.getConnection();
         if (connection == null) {
             String msg = "No active database connection";
             SimpleLogger.warn(msg);
-            throw new WebApplicationException(msg, 400);
+            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
         if (dto.command == null && (dto.insertions == null || dto.insertions.isEmpty())) {
             String msg = "No input command";
             SimpleLogger.warn(msg);
-            throw new WebApplicationException(msg, 400);
+            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
         if (dto.command != null && dto.insertions != null && !dto.insertions.isEmpty()) {
             String msg = "Only 1 command can be specified";
             SimpleLogger.warn(msg);
-            throw new WebApplicationException(msg, 400);
+            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
 
@@ -251,7 +266,9 @@ public class EMController {
         } catch (Exception e) {
             String msg = "Failed to execute database command: " + e.getMessage();
             SimpleLogger.warn(msg);
-            throw new WebApplicationException(msg, 400);
+            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
+
+        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
 }

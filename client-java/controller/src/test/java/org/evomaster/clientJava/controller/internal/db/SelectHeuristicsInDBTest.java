@@ -95,7 +95,7 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .get(url)
                     .then()
                     .statusCode(200)
-                    .body("toMinimize.size()", is(0));
+                    .body("data.toMinimize.size()", is(0));
 
             SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 12");
 
@@ -103,8 +103,8 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .get(url)
                     .then()
                     .statusCode(200)
-                    .body("toMinimize.size()", is(1))
-                    .body("toMinimize[0]", greaterThan(0f));
+                    .body("data.toMinimize.size()", is(1))
+                    .body("data.toMinimize[0]", greaterThan(0f));
 
             SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10");
 
@@ -112,9 +112,9 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .get(url)
                     .then()
                     .statusCode(200)
-                    .body("toMinimize.size()", is(2))
-                    .body("toMinimize[0]", greaterThan(0f))
-                    .body("toMinimize[1]", is(0f));
+                    .body("data.toMinimize.size()", is(2))
+                    .body("data.toMinimize[0]", greaterThan(0f))
+                    .body("data.toMinimize[1]", is(0f));
 
             given().delete(url)
                     .then()
@@ -124,7 +124,7 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .get(url)
                     .then()
                     .statusCode(200)
-                    .body("toMinimize.size()", is(0));
+                    .body("data.toMinimize.size()", is(0));
 
         } finally {
             starter.stop();
@@ -225,7 +225,7 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                 .get(url)
                 .then()
                 .statusCode(200)
-                .extract().body().path("toMinimize[0]").toString());
+                .extract().body().path("data.toMinimize[0]").toString());
         given().delete(url).then().statusCode(204);
 
         return value;

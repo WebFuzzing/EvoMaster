@@ -111,7 +111,7 @@ public class SutControllerTest {
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
-                .body("isSutRunning", is(false));
+                .body("data.isSutRunning", is(false));
     }
 
     @Test
@@ -124,7 +124,7 @@ public class SutControllerTest {
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
-                .body("isSutRunning", is(true));
+                .body("data.isSutRunning", is(true));
     }
 
     @Test
@@ -138,7 +138,7 @@ public class SutControllerTest {
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
-                .body("isSutRunning", is(true));
+                .body("data.isSutRunning", is(true));
     }
 
 
@@ -149,6 +149,6 @@ public class SutControllerTest {
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
-                .body("restProblem.swaggerJsonUrl", is(SWAGGER_URL));
+                .body("data.restProblem.swaggerJsonUrl", is(SWAGGER_URL));
     }
 }
