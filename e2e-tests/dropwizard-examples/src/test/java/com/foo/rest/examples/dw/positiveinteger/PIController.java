@@ -1,7 +1,10 @@
 package com.foo.rest.examples.dw.positiveinteger;
 
 import org.evomaster.clientJava.controller.EmbeddedSutController;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
+import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 
 import java.sql.Connection;
 import java.util.List;
@@ -72,11 +75,6 @@ public class PIController extends EmbeddedSutController {
     }
 
     @Override
-    public String getUrlOfSwaggerJSON() {
-        return "http://localhost:"+application.getJettyPort()+"/api/swagger.json";
-    }
-
-    @Override
     public List<AuthenticationDto> getInfoForAuthentication() {
         return null;
     }
@@ -92,7 +90,15 @@ public class PIController extends EmbeddedSutController {
     }
 
     @Override
-    public List<String> getEndpointsToSkip() {
-        return null;
+    public ProblemInfo getProblemInfo() {
+        return new RestProblem(
+                "http://localhost:"+application.getJettyPort()+"/api/swagger.json",
+                null
+        );
+    }
+
+    @Override
+    public SutInfoDto.OutputFormat getPreferredOutputFormat() {
+        return SutInfoDto.OutputFormat.JAVA_JUNIT_4;
     }
 }

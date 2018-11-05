@@ -1,7 +1,10 @@
 package com.foo.rest.examples.spring;
 
 import org.evomaster.clientJava.controller.EmbeddedSutController;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
+import org.evomaster.clientJava.controller.problem.RestProblem;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
@@ -15,10 +18,9 @@ public abstract class SpringController extends EmbeddedSutController {
     protected final Class<?> applicationClass;
 
 
-
-    protected SpringController(Class<?> applicationClass){
-       this.applicationClass = applicationClass;
-       super.setControllerPort(0);
+    protected SpringController(Class<?> applicationClass) {
+        this.applicationClass = applicationClass;
+        super.setControllerPort(0);
     }
 
 
@@ -28,11 +30,11 @@ public abstract class SpringController extends EmbeddedSutController {
         ctx = SpringApplication.run(applicationClass, "--server.port=0");
 
 
-        return "http://localhost:"+getSutPort();
+        return "http://localhost:" + getSutPort();
     }
 
-    protected int getSutPort(){
-        return (Integer)((Map) ctx.getEnvironment()
+    protected int getSutPort() {
+        return (Integer) ((Map) ctx.getEnvironment()
                 .getPropertySources().get("server.ports").getSource())
                 .get("local.server.port");
     }
@@ -40,7 +42,7 @@ public abstract class SpringController extends EmbeddedSutController {
 
     @Override
     public boolean isSutRunning() {
-        return ctx!=null && ctx.isRunning();
+        return ctx != null && ctx.isRunning();
     }
 
     @Override
@@ -60,8 +62,11 @@ public abstract class SpringController extends EmbeddedSutController {
     }
 
     @Override
-    public String getUrlOfSwaggerJSON() {
-        return "http://localhost:"+getSutPort()+"/v2/api-docs";
+    public ProblemInfo getProblemInfo() {
+        return new RestProblem(
+                "http://localhost:" + getSutPort() + "/v2/api-docs",
+                null
+        );
     }
 
     @Override
@@ -80,7 +85,8 @@ public abstract class SpringController extends EmbeddedSutController {
     }
 
     @Override
-    public List<String> getEndpointsToSkip(){
-        return null;
+    public SutInfoDto.OutputFormat getPreferredOutputFormat() {
+        return SutInfoDto.OutputFormat.JAVA_JUNIT_5;
     }
+
 }

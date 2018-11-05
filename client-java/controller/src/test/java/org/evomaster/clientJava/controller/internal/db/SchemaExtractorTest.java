@@ -160,7 +160,7 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
                 .get(url + BASE_PATH + INFO_SUT_PATH)
                 .then()
                 .statusCode(200)
-                .body("sqlSchemaDto.tables.size()", is(2));
+                .body("data.sqlSchemaDto.tables.size()", is(2));
     }
 
     @Test

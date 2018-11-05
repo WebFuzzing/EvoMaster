@@ -5,6 +5,10 @@ package org.evomaster.core.output
  */
 enum class OutputFormat {
 
+    /**
+       Use the format specified in the SUT driver
+     */
+    DEFAULT,
     JAVA_JUNIT_5,
     JAVA_JUNIT_4
     ;

@@ -7,6 +7,7 @@ import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -66,7 +67,7 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.endpointsToSkip ?: listOf())
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
 
         setupAuthentication(infoDto)
 
@@ -74,6 +75,15 @@ class RestSampler : Sampler<RestIndividual>() {
 
         if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
+        }
+
+        if(configuration.outputFormat == OutputFormat.DEFAULT){
+            try {
+                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
+                configuration.outputFormat = format
+            } catch (e : Exception){
+                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
+            }
         }
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
@@ -112,7 +122,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun getSwagger(infoDto: SutInfoDto): Swagger {
 
-        val swaggerURL = infoDto.swaggerJsonUrl ?: throw IllegalStateException("Cannot retrieve Swagger URL")
+        val swaggerURL = infoDto?.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
 
         val response = connectToSwagger(swaggerURL, 30)
 
