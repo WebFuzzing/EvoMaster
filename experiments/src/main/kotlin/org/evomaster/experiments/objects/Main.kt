@@ -12,32 +12,31 @@ class Main {
         @JvmStatic
         fun main(args: Array<String>) {
 
-            Main.testMapPrint()
+           // Main.testMapPrint()
             Main.base()
 //            infeasible()
         }
 
-        fun base () {
+        private fun base () {
             printHeader()
 
-            val inj = setStuffUp()
+            //println("Injector: ${inj}")
 
-            println("Injector: ${inj}")
+            val sampler = setStuffUp().getInstance(ObjRestSampler::class.java)
 
-            val sampler = inj.getInstance(ObjRestSampler::class.java)
+            //println("And the sampler ref is:... TA DAAAAA: ${sampler}")
 
-            println("And the sampler ref is:... TA DAAAAA: ${sampler}")
+            //val action = sampler.sampleAtRandom()
 
-            val action = sampler.sampleAtRandom()
-
-            println("I took an action, me: ${action.debugginPrint()} ")
+            //println("I took an action, me: ${action.debugginPrint()} ")
             //BMR: debugginPrint uses .getName() which returns {variable} etc...
-            println("In practice it would look like: ${action.debugginPrintProcessed()} ")
+            //println("In practice it would look like: ${action.debugginPrintProcessed()} ")
             //BMR: debugginPrintProcessed uses .toString(), and seems to return the {variable} values already processed.
+            //TODO figure out why the model overview is printed 3 times
 
             val models = sampler.getModelCluster()
 
-            val available = action.seeActions()
+            val available = sampler.seeAvailableActions()
             //models["Organization"].fields.forEach{ t -> t.name.contains("Id"); println("${t.name} => ${t.getValueAsPrintableString()}") }
 
             models.forEach{(k, v) -> v.fields.forEach {
@@ -87,7 +86,7 @@ class Main {
         }
 
         fun printHeader() {
-            println("Let's start mucking about")
+            println("Let's start playing about")
         }
 
         fun setStuffUp () : Injector{
