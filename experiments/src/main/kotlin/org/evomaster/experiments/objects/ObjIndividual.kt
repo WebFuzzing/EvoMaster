@@ -1,30 +1,21 @@
-package org.evomaster.experiments.objects
+package org.evomaster.core.problem.rest
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.SampleType
 
 
-class ObjIndividual(val callActions: MutableList<RestAction>,
-                    val sampleType: SampleType,
-                    var uo: UsedObj,
-                    val dbInitialization: MutableList<DbAction> = mutableListOf()
-
+class ObjIndividual(val actions: MutableList<RestAction>,
+                     val sampleType: SampleType,
+                     val dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : Individual() {
 
     override fun copy(): Individual {
-        return ObjIndividual(
-                callActions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+        return RestIndividual(
+                actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
-                uo.copy(),
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
-
         )
     }
 
@@ -38,9 +29,9 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
 
         return when(filter){
             GeneFilter.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
-                    .plus(uo.usedObjects())
+                    .plus(actions.flatMap(RestAction::seeGenes))
 
-            GeneFilter.NO_SQL -> uo.usedObjects()
+            GeneFilter.NO_SQL -> actions.flatMap(RestAction::seeGenes)
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
         }
     }
@@ -51,31 +42,10 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
         need to think about it
      */
 
-    override fun size() = callActions.size
+    override fun size() = actions.size
 
     override fun seeActions(): List<out Action> {
-        return callActions
-    }
-
-    override fun verifyInitializationActions(): Boolean {
-        return DbAction.verifyActions(dbInitialization.filterIsInstance<DbAction>())
-    }
-
-    override fun repairInitializationActions(randomness: Randomness) {
-
-        /**
-         * First repair SQL Genes (i.e. SQL Timestamps)
-         */
-        GeneUtils.repairGenes(this.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })
-
-        /**
-         * Now repair databse constraints (primary keys, foreign keys, unique fields, etc.)
-         */
-        if (!verifyInitializationActions()) {
-            DbAction.repairBrokenDbActionsList(dbInitialization, randomness)
-            assert(verifyInitializationActions())
-        }
-
+        return actions
     }
 
     override fun seeInitializingActions() : List<Action>{
@@ -84,7 +54,7 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
 
     fun debugginPrint() : String{
         var rez = ""
-        for(r in this.callActions){
+        for(r in this.actions){
             rez += r.getName() + "\n"
             //rez += r.seeGenes() + "\n"
         }
@@ -92,7 +62,8 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
     }
     fun debugginPrintProcessed() : String{
         var rez = ""
-        for(r in this.callActions){
+        for(r in this.actions){
+            //rez += r.getName() + "\n"
             rez += r.toString() + "\n"
         }
         return rez
