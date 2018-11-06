@@ -9,11 +9,12 @@ import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.properties.*
 import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestPath
+import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
-import org.evomaster.experiments.objects.param.*
-import org.evomaster.experiments.objects.service.ObjRestSampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -52,7 +53,7 @@ class ObjRestActionBuilder {
 
                             repairParams(params, restPath)
 
-                            val action = ObjRestCallAction(verb, restPath, params)
+                            val action = RestCallAction(verb, restPath, params)
 
                             actionCluster.put(action.getName(), action)
                         }
@@ -92,16 +93,15 @@ class ObjRestActionBuilder {
                                  modelCluster: MutableMap<String, ObjectGene>){
             modelCluster.clear()
 
-            if(swagger.definitions != null) {
-                swagger.definitions
-                        .forEach {
-                            val model = createObjectFromReference(it.key,
-                                    it.component1(),
-                                    swagger
-                            )
-                            modelCluster.put(it.component1(), model)
-                        }
-            }
+            swagger.definitions
+                    .forEach{
+                        val model = createObjectFromReference(it.key,
+                                                                it.component1(),
+                                                                swagger
+                        )
+                        println("obtained model: ${model.name} => ${model.getValueAsPrintableString()}")
+                        modelCluster.put(it.component1(), model)
+                    }
         }
 
         private fun repairParams(params: MutableList<Param>, restPath: RestPath) {
@@ -395,8 +395,6 @@ class ObjRestActionBuilder {
                         return ObjectGene(name, fields)
                     }
                 }
-                "file" -> return StringGene(name)
-                //TODO file is a hack. Find a more elegant way of dealing with it (BMR)
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
