@@ -4,6 +4,8 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.service.Randomness
 
 
 class ObjIndividual(val actions: MutableList<RestAction>,
@@ -46,6 +48,26 @@ class ObjIndividual(val actions: MutableList<RestAction>,
 
     override fun seeActions(): List<out Action> {
         return actions
+    }
+
+    override fun verifyInitializationActions(): Boolean {
+        return DbAction.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+    }
+
+    override fun repairInitializationActions(randomness: Randomness) {
+
+        /**
+         * First repair SQL Genes (i.e. SQL Timestamps)
+         */
+        GeneUtils.repairGenes(this.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+
+        /**
+         * Now repair databse constraints (primary keys, foreign keys, unique fields, etc.)
+         */
+        if (!verifyInitializationActions()) {
+            DbAction.repairBrokenDbActionsList(dbInitialization, randomness)
+            assert(verifyInitializationActions())
+        }
     }
 
     override fun seeInitializingActions() : List<Action>{
