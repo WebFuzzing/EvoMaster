@@ -14,7 +14,7 @@ class TimeGene(
         val minute: IntegerGene = IntegerGene("minute", 0, -1, 60),
         val second: IntegerGene = IntegerGene("second", 0, -1, 60),
         val withMsZ: Boolean = true
-) : Gene(name){
+) : Gene(name) {
 
     /*
         Note: would need to handle timezone and second fractions,
@@ -27,7 +27,7 @@ class TimeGene(
             minute.copy() as IntegerGene,
             second.copy() as IntegerGene,
             withMsZ
-            )
+    )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
@@ -40,21 +40,21 @@ class TimeGene(
         return "\"${getValueAsRawString()}\""
     }
 
-    override fun getValueAsRawString() : String {
+    override fun getValueAsRawString(): String {
 
-        val s =  GeneUtils.let {
-            "${it.padded(hour.value,2)}:${it.padded(minute.value,2)}:${it.padded(second.value,2)}"
+        val s = GeneUtils.let {
+            "${it.padded(hour.value, 2)}:${it.padded(minute.value, 2)}:${it.padded(second.value, 2)}"
         }
 
-        return if(withMsZ){
+        return if (withMsZ) {
             "$s.000Z";
         } else {
             s;
         }
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is TimeGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is TimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.hour.copyValueFrom(other.hour)
@@ -62,7 +62,16 @@ class TimeGene(
         this.second.copyValueFrom(other.second)
     }
 
-    override fun flatView(): List<Gene>{
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is TimeGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.hour.containsSameValueAs(other.hour)
+                && this.minute.containsSameValueAs(other.minute)
+                && this.second.containsSameValueAs(other.second)
+    }
+
+    override fun flatView(): List<Gene> {
         return listOf(this, hour, minute, second)
     }
 

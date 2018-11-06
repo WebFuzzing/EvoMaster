@@ -10,9 +10,11 @@ import org.evomaster.clientJava.controller.SutHandler;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
 import org.evomaster.clientJava.controller.internal.db.SqlHandler;
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor;
+import org.evomaster.clientJava.controller.problem.ProblemInfo;
 import org.evomaster.clientJava.controllerApi.ControllerConstants;
 import org.evomaster.clientJava.controllerApi.dto.AuthenticationDto;
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto;
+import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
@@ -257,14 +259,6 @@ public abstract class SutController implements SutHandler{
      */
     public abstract String getPackagePrefixesToCover();
 
-
-    /**
-     * Provide the URL of where the swagger.json can be found
-     *
-     * @return
-     */
-    public abstract String getUrlOfSwaggerJSON();
-
     /**
      * Provide a list of valid authentication credentials, or {@code null} if
      * none is necessary
@@ -292,14 +286,16 @@ public abstract class SutController implements SutHandler{
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
+    /**
+     * Depending of which kind of SUT we are dealing with (eg, REST, GraphQL or SPA frontend),
+     * there is different info that must be provided
+     *
+     * @return an instance of object with all the needed data for the specific addressed problem
+     */
+    public abstract ProblemInfo getProblemInfo();
 
     /**
-     * When testing a REST API, there might be some endpoints that are not
-     * so important to test.
-     * For example, in Spring, health-check endpoints like "/heapdump"
-     * are not so interesting to test, and they can be very expensive to run.
-     *
-     * @return a list of endpoints (as defined in schema) to skip
+     * Specify the format in which the test cases should be generated
      */
-    public abstract List<String> getEndpointsToSkip();
+    public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
 }

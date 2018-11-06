@@ -59,7 +59,10 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
                         primaryKey = c.primaryKey,
                         nullable = c.nullable,
                         unique = c.unique,
-                        autoIncrement = c.autoIncrement
+                        autoIncrement = c.autoIncrement,
+                        foreignKeyToAutoIncrement =  c.foreignKeyToAutoIncrement,
+                        lowerBound = c.lowerBound,
+                        upperBound = c.upperBound
                 )
 
                 columns.add(column)

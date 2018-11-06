@@ -133,11 +133,11 @@ class SqlForeignKeyGene(
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
 
-        if(!pk.isPrintable()){
+        if (!pk.isPrintable()) {
             return true
         }
 
-        if(pk.gene is SqlForeignKeyGene){
+        if (pk.gene is SqlForeignKeyGene) {
             return pk.gene.isReferenceToNonPrintable(previousGenes)
         }
 
@@ -152,6 +152,14 @@ class SqlForeignKeyGene(
         }
         this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
     }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SqlForeignKeyGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.uniqueIdOfPrimaryKey == other.uniqueIdOfPrimaryKey
+    }
+
 
     /**
      * Reports if the current value of the fk gene is NULL.

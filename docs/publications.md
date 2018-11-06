@@ -3,7 +3,12 @@
 
 ### 2018
 
-* A. Arcuri *Test Suite Generation with the
+* A. Arcuri. *RESTful API Automated Test Case Generation with
+             EvoMaster*.
+     ACM Transactions on Software Engineering and Methodology (TOSEM).
+     [[PDF](publications/2018_tosem.pdf)]   
+
+* A. Arcuri. *Test Suite Generation with the
              Many Independent Objective (MIO) Algorithm*.
      Information and Software Technology (IST).
      [[PDF](publications/2018_ist.pdf)]   

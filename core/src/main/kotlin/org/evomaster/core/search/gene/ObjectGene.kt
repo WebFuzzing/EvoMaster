@@ -18,6 +18,16 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         }
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is ObjectGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.fields.size == other.fields.size
+                && this.fields.zip(other.fields) { thisField, otherField ->
+            thisField.containsSameValueAs(otherField)
+        }.all { it == true }
+    }
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
 
         fields.forEach { f -> f.randomize(randomness, forceNewValue) }

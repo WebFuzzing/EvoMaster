@@ -1,9 +1,6 @@
 package org.evomaster.core.problem.rest
 
-import io.swagger.models.HttpMethod
-import io.swagger.models.Model
-import io.swagger.models.Operation
-import io.swagger.models.Swagger
+import io.swagger.models.*
 import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.properties.*
@@ -28,9 +25,12 @@ class RestActionBuilder {
 
             actionCluster.clear()
 
-            //TODO check Swagger version
+            val version = swagger.swagger
+            if (version != "2.0") {
+                throw SutProblemException("EvoMaster does not support Swagger version '$version'")
+            }
 
-            var skipped = mutableListOf<String>()
+            val skipped = mutableListOf<String>()
 
             swagger.paths
                     .filter { e ->
@@ -91,7 +91,7 @@ class RestActionBuilder {
 
             restPath.getVariableNames().forEach { n ->
 
-                var p = params.find { p -> p is PathParam && p.name == n }
+                val p = params.find { p -> p is PathParam && p.name == n }
                 if (p == null) {
                     log.warn("No path parameter for variable '$n'")
 
@@ -133,14 +133,14 @@ class RestActionBuilder {
                     var gene = getGene(name, type, p.getFormat(), swagger, null, p)
                     if (!p.required && p.`in` != "path") {
                         /*
-                        Even if a "path" parameter might not be required, still
-                        do not use an optional for it. Otherwise, might
-                        end up in quite a few useless 405 errors.
+                            Even if a "path" parameter might not be required, still
+                            do not use an optional for it. Otherwise, might
+                            end up in quite a few useless 405 errors.
 
-                        Furthermore, "path" parameters must be "required" according
-                        to specs.
-                        TODO: could issue warning that Swagger is incorrect
-                     */
+                            Furthermore, "path" parameters must be "required" according
+                            to specs.
+                            TODO: could issue warning that Swagger is incorrect
+                        */
                         gene = OptionalGene(name, gene)
                     }
 
@@ -154,10 +154,25 @@ class RestActionBuilder {
                         else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
                     }
 
-                } else if (p is BodyParameter && !shouldAvoidCreatingObject(p, swagger)) {
+                } else if (p is BodyParameter
+                        && !shouldAvoidCreatingObject(p, swagger)
+                        && o.key != HttpMethod.GET
+                ) {
 
-                    val gene = p.schema.reference?.let { createObjectFromReference("body", it, swagger) }
-                            ?: createObjectFromModel(p.schema, "body", swagger)
+                    val name = "body"
+
+                    var gene = p.schema.reference?.let { createObjectFromReference(name, it, swagger) }
+                            ?: (p.schema as ModelImpl).let {
+                                if (it.type == "object") {
+                                    createObjectFromModel(p.schema, "body", swagger)
+                                } else {
+                                    getGene(name, it.type, it.format, swagger)
+                                }
+                            }
+
+                    if (!p.required) {
+                        gene = OptionalGene(name, gene)
+                    }
 
                     params.add(BodyParam(gene))
                 }
@@ -166,6 +181,9 @@ class RestActionBuilder {
             return params
         }
 
+        /**
+         *  Workaround for bug in Springfox
+         */
         private fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
 
             var ref: String = p.schema.reference ?: return false
@@ -174,10 +192,10 @@ class RestActionBuilder {
             if (listOf("Principal", "WebRequest").contains(classDef)) {
 
                 /*
-                This is/was a bug in Swagger for Spring, in which Spring request
-                handlers wrongly ended up in Swagger as body parts, albeit
-                missing from the definition list
-             */
+                    This is/was a bug in Swagger for Spring, in which Spring request
+                    handlers wrongly ended up in Swagger as body parts, albeit
+                    missing from the definition list
+                */
 
                 swagger.definitions[classDef] ?: return true
             }
@@ -189,7 +207,7 @@ class RestActionBuilder {
                                               reference: String,
                                               swagger: Swagger,
                                               history: MutableList<String> = mutableListOf()
-        ): ObjectGene {
+        ): Gene {
 
             if (history.contains(reference)) {
                 return CycleObjectGene("Cycle for: $reference")
@@ -215,13 +233,60 @@ class RestActionBuilder {
                                           name: String,
                                           swagger: Swagger,
                                           history: MutableList<String> = mutableListOf())
-                : ObjectGene {
+                : Gene {
 
-            //TODO need to handle additionalProperties
+            if (model.properties != null) {
+                val fields = createFields(model.properties, swagger, history)
 
-            val fields = createFields(model.properties, swagger, history)
+                return ObjectGene(name, fields)
+            }
 
-            return ObjectGene(name, fields)
+            if (model is ModelImpl
+                    && model.additionalProperties != null
+                    && model.additionalProperties.type == "object") {
+                val ap = model.additionalProperties
+                return createMapGene(
+                        name + "_map",
+                        ap.type,
+                        ap.format,
+                        swagger,
+                        ap,
+                        history)
+            }
+
+            //worst case, just create a map of strings
+            return createMapGene(
+                    name + "_map",
+                    "string",
+                    null,
+                    swagger,
+                    null,
+                    history)
+        }
+
+        private fun createMapGene(
+                name: String,
+                type: String,
+                format: String?,
+                swagger: Swagger,
+                property: Property? = null,
+                history: MutableList<String> = mutableListOf()
+        ): Gene {
+
+            val template = getGene(
+                    name + "_map",
+                    type,
+                    format,
+                    swagger,
+                    property,
+                    null,
+                    history)
+
+            if (template is CycleObjectGene) {
+                return CycleObjectGene("<map> ${template.name}")
+            }
+
+            return MapGene(name, template)
         }
 
         private fun createFields(properties: Map<String, Property>?,
@@ -284,9 +349,9 @@ class RestActionBuilder {
         dateTime	    string	date-time	As defined by date-time - RFC3339
         password	    string	password	Used to hint UIs the input needs to be obscured.
 
-        */
+            */
 
-            if (type == "string" && !(parameter?.getEnum()?.isEmpty() ?: true)) {
+            if (type == "string" && parameter?.getEnum()?.isEmpty() == false) {
                 //TODO enum can be for any type, not just strings
                 //Besides the defined values, add one to test robustness
                 return EnumGene(name, parameter!!.getEnum().apply { add("EVOMASTER") })
@@ -309,9 +374,9 @@ class RestActionBuilder {
             }
 
             /*
-            If a format is not defined, the type should default to
-            the JSON Schema definition
-         */
+                If a format is not defined, the type should default to
+                the JSON Schema definition
+            */
             when (type) {
                 "integer" -> return IntegerGene(name)
                 "number" -> return DoubleGene(name)
@@ -351,25 +416,18 @@ class RestActionBuilder {
                 "object" -> {
                     if (property == null) {
                         //TODO somehow will need to handle it
-                        throw IllegalStateException("Cannot handle array out of a property")
+                        throw IllegalStateException("Cannot handle object out of a property")
                     }
 
                     if (property is MapProperty) {
                         val ap = property.additionalProperties
-                        val template = getGene(
+                        return createMapGene(
                                 name + "_map",
                                 ap.type,
                                 ap.format,
                                 swagger,
                                 ap,
-                                null,
                                 history)
-
-                        if (template is CycleObjectGene) {
-                            return CycleObjectGene("<map> ${template.name}")
-                        }
-
-                        return MapGene(name, template)
                     }
 
                     if (property is ObjectProperty) {

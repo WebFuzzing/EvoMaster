@@ -18,11 +18,18 @@ class IntegerGene(
         return copy
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is IntegerGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is IntegerGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
+    }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is IntegerGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value == other.value
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
@@ -33,12 +40,12 @@ class IntegerGene(
         val a: Int
         val b: Int
 
-        if(range > z && randomness.nextBoolean(0.95)){
+        if (range > z && randomness.nextBoolean(0.95)) {
             //if very large range, might want to sample small values around 0 most of the times
-            if(min <= 0 && max >= z){
+            if (min <= 0 && max >= z) {
                 a = 0
                 b = z
-            } else if(randomness.nextBoolean()){
+            } else if (randomness.nextBoolean()) {
                 a = min
                 b = min + z
             } else {
@@ -58,7 +65,7 @@ class IntegerGene(
 
     }
 
-    override fun getValueAsPrintableString() : String{
+    override fun getValueAsPrintableString(): String {
         return value.toString()
     }
 }

@@ -2,11 +2,14 @@ package org.evomaster.core.problem.rest.service
 
 import io.swagger.parser.SwaggerParser
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.StringGene
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -33,7 +36,14 @@ internal class RestActionBuilderTest {
 
     @Test
     fun testCatWatch() {
-        loadAndAssertActions("/swagger/catwatch.json", 23)
+        val map = loadAndAssertActions("/swagger/catwatch.json", 23)
+
+        val postScoring = map["POST:/config/scoring.project"] as RestAction
+        assertEquals(2, postScoring.seeGenes().size)
+        val bodyPostScoring = postScoring.seeGenes().find { it.name == "body" }
+        assertNotNull(bodyPostScoring)
+        assertTrue(bodyPostScoring is OptionalGene)
+        assertTrue((bodyPostScoring as OptionalGene).gene is StringGene)
     }
 
     @Test

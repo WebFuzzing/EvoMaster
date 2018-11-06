@@ -7,6 +7,7 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -22,16 +23,18 @@ class RandomSearchTest {
     @Test
     fun testRandomSearch(){
 
-        val rs = injector.getInstance(Key.get(
-                object : TypeLiteral<RandomAlgorithm<OneMaxIndividual>>() {}))
+        TestUtils.handleFlaky {
+            val rs = injector.getInstance(Key.get(
+                    object : TypeLiteral<RandomAlgorithm<OneMaxIndividual>>() {}))
 
-        val config = injector.getInstance(EMConfig::class.java)
-        config.maxActionEvaluations = 2000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+            val config = injector.getInstance(EMConfig::class.java)
+            config.maxActionEvaluations = 2000
+            config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
 
-        val solution = rs.search()
+            val solution = rs.search()
 
-        assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001);
-        assertEquals(1, solution.individuals.size)
+            assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001);
+            assertEquals(1, solution.individuals.size)
+        }
     }
 }

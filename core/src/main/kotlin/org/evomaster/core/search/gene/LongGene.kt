@@ -40,4 +40,12 @@ class LongGene (
         }
         this.value = other.value
     }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if(other !is LongGene){
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.value == other.value
+    }
+
 }
