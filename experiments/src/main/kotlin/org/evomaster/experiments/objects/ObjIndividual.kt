@@ -6,16 +6,17 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.experiments.objects.ObjRestAction
 
 
-class ObjIndividual(val actions: MutableList<RestAction>,
-                     val sampleType: SampleType,
-                     val dbInitialization: MutableList<DbAction> = mutableListOf()
+class ObjIndividual(val actions: MutableList<ObjRestAction>,
+                    val sampleType: SampleType,
+                    val dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : Individual() {
 
     override fun copy(): Individual {
-        return RestIndividual(
-                actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+        return ObjIndividual(
+                actions.map { a -> a.copy() as ObjRestAction } as MutableList<ObjRestAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
         )
@@ -31,9 +32,9 @@ class ObjIndividual(val actions: MutableList<RestAction>,
 
         return when(filter){
             GeneFilter.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
-                    .plus(actions.flatMap(RestAction::seeGenes))
+                    .plus(actions.flatMap(ObjRestAction::seeGenes))
 
-            GeneFilter.NO_SQL -> actions.flatMap(RestAction::seeGenes)
+            GeneFilter.NO_SQL -> actions.flatMap(ObjRestAction::seeGenes)
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
         }
     }
