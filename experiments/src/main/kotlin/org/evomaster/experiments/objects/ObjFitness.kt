@@ -9,14 +9,15 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.experiments.objects.ObjRestAction
 import org.evomaster.experiments.objects.ObjRestSampler
+import org.evomaster.experiments.objects.param.BodyParam
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -112,7 +113,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
 
             var ok = false
 
-            if (a is RestCallAction) {
+            if (a is ObjRestAction) {
                 ok = handleRestCall(a, actionResults, chainState)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
@@ -202,11 +203,11 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
      */
     private fun handleResponseTargets(
             fv: FitnessValue,
-            actions: MutableList<RestAction>,
+            actions: MutableList<ObjRestAction>,
             actionResults: MutableList<ActionResult>) {
 
         (0 until actionResults.size)
-                .filter { actions[it] is RestCallAction }
+                .filter { actions[it] is ObjRestAction }
                 .filter { actionResults[it] is RestCallResult }
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
@@ -222,7 +223,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    private fun handleRestCall(a: RestCallAction,
+    private fun handleRestCall(a: ObjRestAction,
                                actionResults: MutableList<ActionResult>,
                                chainState: MutableMap<String, String>)
             : Boolean {
@@ -280,6 +281,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
            not just JSON and forms
          */
         val body = a.parameters.find { p -> p is BodyParam }
+        a.parameters.find{ p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
         if (body != null && !forms.isBlank()) {
@@ -375,7 +377,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
+    private fun handleSaveLocation(a: ObjRestAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
             if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
@@ -414,9 +416,9 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    private fun hasParameterChild(a: RestCallAction): Boolean {
+    private fun hasParameterChild(a: ObjRestAction): Boolean {
         return sampler.seeAvailableActions()
-                .filterIsInstance<RestCallAction>()
+                .filterIsInstance<ObjRestAction>()
                 .map { it.path }
                 .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
