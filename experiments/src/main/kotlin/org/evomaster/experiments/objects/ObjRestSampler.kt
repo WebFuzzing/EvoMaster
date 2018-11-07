@@ -8,10 +8,12 @@ import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
@@ -43,7 +45,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
     private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
-    private val adHocInitialIndividuals: MutableList<RestAction> = mutableListOf()
+    private val adHocInitialIndividuals: MutableList<ObjRestAction> = mutableListOf()
 
     private var sqlInsertBuilder: SqlInsertBuilder? = null
 
@@ -52,7 +54,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     @PostConstruct
     private fun initialize() {
 
-        log.debug("Initializing {}", ObjRestSampler::class.simpleName)
+        RestSampler.log.debug("Initializing {}", RestSampler::class.simpleName)
 
         rc.checkConnection()
 
@@ -83,9 +85,17 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
         }
 
-        log.debug("Done initializing {}", ObjRestSampler::class.simpleName)
-    }
+        if(configuration.outputFormat == OutputFormat.DEFAULT){
+            try {
+                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
+                configuration.outputFormat = format
+            } catch (e : Exception){
+                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
+            }
+        }
 
+        RestSampler.log.debug("Done initializing {}", RestSampler::class.simpleName)
+    }
 
     private fun setupAuthentication(infoDto: SutInfoDto) {
 
@@ -175,7 +185,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
     override fun sampleAtRandom(): ObjIndividual {
 
-        val actions = mutableListOf<RestAction>()
+        val actions = mutableListOf<ObjRestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
         (0 until n).forEach {
@@ -191,8 +201,8 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     }
 
 
-    fun sampleRandomAction(noAuthP: Double): RestAction {
-        val action = randomness.choose(actionCluster).copy() as RestAction
+    fun sampleRandomAction(noAuthP: Double): ObjRestAction {
+        val action = randomness.choose(actionCluster).copy() as ObjRestAction
         randomizeActionGenes(action)
 
         if (action is ObjRestAction) {
@@ -242,7 +252,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
 
 
-        val test = mutableListOf<RestAction>()
+        val test = mutableListOf<ObjRestAction>()
 
         val action = sampleRandomCallAction(0.0)
 
@@ -280,7 +290,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    private fun handleSmartPost(post: ObjRestAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPost(post: ObjRestAction, test: MutableList<ObjRestAction>): SampleType {
 
         assert(post.verb == HttpVerb.POST)
 
@@ -289,7 +299,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartDelete(delete: ObjRestAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartDelete(delete: ObjRestAction, test: MutableList<ObjRestAction>): SampleType {
 
         assert(delete.verb == HttpVerb.DELETE)
 
@@ -298,7 +308,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartPatch(patch: ObjRestAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPatch(patch: ObjRestAction, test: MutableList<ObjRestAction>): SampleType {
 
         assert(patch.verb == HttpVerb.PATCH)
 
@@ -307,7 +317,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartPut(put: ObjRestAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPut(put: ObjRestAction, test: MutableList<ObjRestAction>): SampleType {
 
         assert(put.verb == HttpVerb.PUT)
 
@@ -330,7 +340,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     /**
      *    Only for PUT, DELETE, PATCH
      */
-    private fun createWriteOperationAfterAPost(write: ObjRestAction, test: MutableList<RestAction>) {
+    private fun createWriteOperationAfterAPost(write: ObjRestAction, test: MutableList<ObjRestAction>) {
 
         assert(write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH)
 
@@ -356,7 +366,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
     }
 
-    private fun handleSmartGet(get: ObjRestAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartGet(get: ObjRestAction, test: MutableList<ObjRestAction>): SampleType {
 
         assert(get.verb == HttpVerb.GET)
 
@@ -438,7 +448,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     }
 
 
-    private fun createResourcesFor(target: ObjRestAction, test: MutableList<RestAction>)
+    private fun createResourcesFor(target: ObjRestAction, test: MutableList<ObjRestAction>)
             : Boolean {
 
         if (test.size >= config.maxTestSize) {
@@ -608,10 +618,16 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return generatedObject
     }
 
-    fun getRandomObjectSwaggerish(): ObjectGene{
+    fun getRandomSwaggerObject(): ObjectGene {
         var genObj = randomness.choose(modelCluster).copy() as ObjectGene
         genObj.randomize(randomness, true)
         return genObj
+    }
+
+    fun getObjectFromTemplate(objTemplate: String): ObjectGene {
+        var result = modelCluster[objTemplate] as ObjectGene
+        result.randomize(randomness, true)
+        return result
     }
 
     fun getModelCluster() :MutableMap<String, ObjectGene>{
@@ -620,12 +636,21 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     }
 
     fun getRandomObjIndividual() : ObjIndividual{
+        var test = mutableListOf<ObjRestAction>()
+        var action = sampleRandomCallAction(0.0)
+
+        action.seeGenes().forEach{
+            // Select a template (based on name similarity) and create an object based on it
+
+            val selObj = this.getObjectFromTemplate(pickWithProbability(likelyhoods(it.getVariableName(), modelCluster)))
+            //println("Selected -> ${selObj.name} => ${selObj.getValueAsPrintableString()}")
 
 
-        val test = mutableListOf<RestAction>()
-        val action = sampleRandomCallAction(0.0)
+        }
 
-        val sampleType = SampleType.RANDOM
+        // Sure... let's say smart. What's the worst that can happen?
+        val sampleType = SampleType.SMART
+
 
         /*
 
@@ -645,6 +670,53 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
 
         return sampleAtRandom()
+    }
+
+    //TODO: This needs refactoring, but it will do for a lark
+    fun likelyhoods(parameter: String, candidates: MutableMap<String, ObjectGene>): MutableMap<String, Float>{
+
+        var result = mutableMapOf<String, Float>()
+        var sum : Float = 0.toFloat()
+        candidates.forEach { k, v ->
+            val temp = lcs(parameter, k).length.toFloat()/ Integer.max(parameter.length, k.length).toFloat()
+            result[k] = temp
+            sum += temp
+        }
+        result.forEach { k, u ->
+            result[k] = u/sum
+        }
+
+        return result
+    }
+
+    fun lcs(a: String, b: String): String {
+        if (a.length > b.length) return lcs(b, a)
+        var res = ""
+        for (ai in 0 until a.length) {
+            for (len in a.length - ai downTo 1) {
+                for (bi in 0 until b.length - len) {
+                    if (a.regionMatches(ai, b, bi,len) && len > res.length) {
+                        res = a.substring(ai, ai + len)
+                    }
+                }
+            }
+        }
+        return res
+    }
+
+    fun pickWithProbability(map: MutableMap<String, Float>): String{
+        val randFl = randomness.nextFloat()
+        var temp = 0.toFloat()
+        var found = map.keys.first()
+
+        for((k, v) in map){
+            if(randFl <= (v + temp)){
+                found = k
+                break
+            }
+            temp += v
+        }
+        return found
     }
 
 }
