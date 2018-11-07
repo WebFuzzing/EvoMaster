@@ -99,7 +99,6 @@ class ObjRestActionBuilder {
                                                                 it.component1(),
                                                                 swagger
                         )
-                        println("obtained model: ${model.name} => ${model.getValueAsPrintableString()}")
                         modelCluster.put(it.component1(), model)
                     }
         }
