@@ -385,7 +385,7 @@ class TestCaseWriter {
                 lines.add(".body(\"$body\")")
             } */ else if(bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString("text")
-                lines.add(".body(\"$body\")")
+                lines.add(".body($body)")
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
             }
