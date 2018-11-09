@@ -279,23 +279,26 @@ class RestFitness : FitnessFunction<RestIndividual>() {
          */
 
 
-        /*
-           TODO: need to handle also other formats in the body,
-           not just JSON and forms
-         */
         val body = a.parameters.find { p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
-        if (body != null && !forms.isBlank()) {
+        if (body != null && forms != null) {
             throw IllegalStateException("Issue in Swagger configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = when {
-            body != null -> Entity.json(body.gene.getValueAsPrintableString())
-            !forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-            else -> Entity.json("") //FIXME
+        val bodyEntity = if(body != null && body is BodyParam){
+            val mode = when {
+                body.isJson() -> "json"
+                //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                body.isTextPlain() ->  "text"
+                else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
+            }
+            Entity.entity(body.gene.getValueAsPrintableString(mode), body.contentType())
+        } else if(forms != null){
+            Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else {
+            throw IllegalStateException("Issue in Swagger configuration: cannot handle body payload")
         }
-
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()

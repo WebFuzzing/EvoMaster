@@ -36,21 +36,54 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
     override fun getValueAsPrintableString(): String {
 
         //by default, return in JSON format
+        return getValueAsPrintableString("json")
+    }
+
+    override fun getValueAsPrintableString(mode: String?) : String{
 
         val buffer = StringBuffer()
-        buffer.append("{")
 
-        fields.filter { f ->
-            f !is CycleObjectGene &&
-                    (f !is OptionalGene || f.isActive)
-        }.map { f ->
-            "\"${f.name}\":${f.getValueAsPrintableString()}"
-        }.joinTo(buffer, ", ")
+        if(mode == null || mode.equals("json", ignoreCase = true)){
+            buffer.append("{")
 
-        buffer.append("}")
+            fields.filter {
+                it !is CycleObjectGene &&
+                        (it !is OptionalGene || it.isActive)
+            }.map {
+                "\"${it.name}\":${it.getValueAsPrintableString(mode)}"
+            }.joinTo(buffer, ", ")
+
+            buffer.append("}")
+
+        } else if(mode.equals("xml", ignoreCase = true)){
+
+            /*
+                Note: this is a very basic support, which should not really depend
+                much on. Problem is that we would need to access to the XSD schema
+                to decide when fields should be represented with tags or attributes
+             */
+
+            buffer.append(openXml(name))
+            fields.filter {
+                it !is CycleObjectGene &&
+                        (it !is OptionalGene || it.isActive)
+            }.forEach {
+                buffer.append(openXml(it.name))
+                buffer.append(it.getValueAsPrintableString(mode))
+                buffer.append(closeXml(it.name))
+            }
+
+            buffer.append(closeXml(name))
+        } else {
+            throw IllegalArgumentException("Unrecognized mode: $mode")
+        }
 
         return buffer.toString()
     }
+
+    private fun openXml(tagName: String) = "<$tagName>"
+
+    private fun closeXml(tagName: String) = "</$tagName>"
 
     override fun flatView(): List<Gene> {
         return listOf(this).plus(fields.flatMap { g -> g.flatView() })

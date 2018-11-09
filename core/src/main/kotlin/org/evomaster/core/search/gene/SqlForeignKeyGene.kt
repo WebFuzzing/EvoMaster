@@ -102,7 +102,7 @@ class SqlForeignKeyGene(
         throw IllegalStateException("This method should never be called. Use version that takes as input genes instead")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
 
         if (!isBound()) {
             if (!nullable) {

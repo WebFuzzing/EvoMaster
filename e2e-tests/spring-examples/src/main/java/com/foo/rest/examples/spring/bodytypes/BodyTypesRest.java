@@ -1,0 +1,82 @@
+package com.foo.rest.examples.spring.bodytypes;
+
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+
+/**
+ * Created by arcuri82 on 07-Nov-18.
+ */
+@RestController
+public class BodyTypesRest {
+
+    @PostMapping(value = "/api/bodytypes/x", consumes = "application/json")
+    public int jsonX( @RequestBody BodyTypesDto dto){
+        System.out.println("X: JSON");
+        return 0;
+    }
+
+    @PostMapping(value = "/api/bodytypes/x", consumes = "application/merge-patch+json")
+    public int mergeX( @RequestBody BodyTypesDto dto){
+        System.out.println("X: Merge Patch JSON");
+        return 1;
+    }
+
+    @PostMapping(
+            value = "/api/bodytypes/y",
+            consumes = {"application/merge-patch+json", "application/json"})
+    public int y( @RequestBody BodyTypesDto dto){
+        System.out.println("Y: JSON");
+        return 2;
+    }
+
+    @PostMapping(value = "/api/bodytypes/z",
+            consumes = {"application/json;charset=iso-8859-1","application/json;charset=utf-8"})
+    public int charsetZ( @RequestBody BodyTypesDto dto){
+        System.out.println("Z: charset");
+        return 3;
+    }
+
+
+    @PostMapping(value = "/api/bodytypes/k", consumes = "text/plain")
+    public int plainK( @RequestBody String text){
+        System.out.println("K: plain");
+        return 4;
+    }
+
+    @PostMapping(value = "/api/bodytypes/k", consumes = "application/json")
+    public int jsonK( @RequestBody String text){
+        System.out.println("K: plain");
+        return 5;
+    }
+
+    //XML giving a few issues, and not so important
+//    @PostMapping(value = "/api/bodytypes/x", consumes = "application/xml")
+//    public int xmlX( @RequestBody BodyTypesDto dto){
+//        System.out.println("X: XML");
+//        return 6;
+//    }
+
+
+    @PostMapping(value = "/api/bodytypes/q", consumes = "application/json")
+    public int jsonQ( @RequestBody BodyTypesDto dto){
+        System.out.println("Q: JSON");
+        return 7;
+    }
+
+//    @PostMapping(value = "/api/bodytypes/q", consumes = "application/x-www-form-urlencoded")
+//    public int formQ(@ModelAttribute("value") int value){
+//        System.out.println("Q: Form");
+//        return 8;
+//    }
+
+
+    @PostMapping(value = "/api/bodytypes/r", consumes = "application/x-www-form-urlencoded")
+    public int formR(@ModelAttribute("value") int value) {
+        System.out.println("R: Form");
+        return 9;
+    }
+
+}

@@ -113,13 +113,14 @@ class RestActionBuilder {
 
 
         private fun extractParams(
-                o: Map.Entry<HttpMethod, Operation>,
+                opEntry: Map.Entry<HttpMethod, Operation>,
                 swagger: Swagger
         ): MutableList<Param> {
 
             val params: MutableList<Param> = mutableListOf()
+            val operation = opEntry.value
 
-            o.value.parameters.forEach { p ->
+            operation.parameters.forEach { p ->
 
                 val name = p.name ?: "undefined"
 
@@ -156,7 +157,7 @@ class RestActionBuilder {
 
                 } else if (p is BodyParameter
                         && !shouldAvoidCreatingObject(p, swagger)
-                        && o.key != HttpMethod.GET
+                        && opEntry.key != HttpMethod.GET
                 ) {
 
                     val name = "body"
@@ -174,7 +175,15 @@ class RestActionBuilder {
                         gene = OptionalGene(name, gene)
                     }
 
-                    params.add(BodyParam(gene))
+                    var types = operation.consumes
+                    if(types == null || types.isEmpty()){
+                        RestSampler.log.warn("Missing consume types in body payload definition. Defaulting to JSON")
+                       types = listOf("application/json")
+                    }
+
+                    val contentTypeGene = EnumGene<String>("contentType", types)
+
+                    params.add(BodyParam(gene, contentTypeGene))
                 }
             }
 

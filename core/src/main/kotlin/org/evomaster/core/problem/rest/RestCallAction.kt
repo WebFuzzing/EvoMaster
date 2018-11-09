@@ -50,7 +50,7 @@ class RestCallAction(
 
     override fun seeGenes(): List<out Gene> {
 
-        return parameters.map(Param::gene)
+        return parameters.flatMap { it.seeGenes() }
     }
 
     override fun toString(): String {
@@ -104,12 +104,17 @@ class RestCallAction(
     https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
 
      */
-    fun getBodyFormData(): String {
-        return parameters.filter { p -> p is FormParam }
-                .filter { p -> p.gene !is OptionalGene || p.gene.isActive }
-                .map { p ->
-                    val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
-                    val value = URLEncoder.encode(p.gene.getValueAsRawString(), "UTF-8")
+    fun getBodyFormData(): String? {
+
+        val forms = parameters.filterIsInstance<FormParam>()
+        if(forms.isEmpty()){
+            return null
+        }
+
+        return forms.filter { it.gene !is OptionalGene || it.gene.isActive }
+                .map {
+                    val name = URLEncoder.encode(it.gene.getVariableName(), "UTF-8")
+                    val value = URLEncoder.encode(it.gene.getValueAsRawString(), "UTF-8")
                     "$name=$value"
                 }
                 .joinToString("&")

@@ -343,34 +343,55 @@ class TestCaseWriter {
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines, readable: Boolean) {
-        call.parameters.find { p -> p is BodyParam }
-                ?.let {
-                    lines.add(".contentType(\"application/json\")")
 
-                    val body = if (readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
-                    else it.gene.getValueAsPrintableString()
+        val bodyParam = call.parameters.find { p -> p is BodyParam }
+        val form = call.getBodyFormData()
 
-                    //needed as JSON uses ""
-                    val bodyLines = body.split("\n").map { s ->
-                        "\"" + s.trim().replace("\"", "\\\"") + "\""
-                    }
+        if (bodyParam != null && form != null) {
+            throw IllegalStateException("Issue: both Body and FormData present")
+        }
 
-                    if (bodyLines.size == 1) {
-                        lines.add(".body(${bodyLines.first()})")
-                    } else {
-                        lines.add(".body(${bodyLines.first()} + ")
-                        lines.indent()
-                        (1 until bodyLines.lastIndex).forEach { i ->
-                            lines.add("${bodyLines[i]} + ")
-                        }
-                        lines.add("${bodyLines.last()})")
-                        lines.deindent()
-                    }
+        if(bodyParam != null && bodyParam is BodyParam) {
 
+            lines.add(".contentType(\"${bodyParam.contentType()}\")")
+
+            if(bodyParam.isJson()) {
+
+                val body = if (readable) {
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString("json"))
+                } else {
+                    bodyParam.gene.getValueAsPrintableString("json")
                 }
 
-        val form = call.getBodyFormData()
-        if (!form.isBlank()) {
+                //needed as JSON uses ""
+                val bodyLines = body.split("\n").map { s ->
+                    "\"" + s.trim().replace("\"", "\\\"") + "\""
+                }
+
+                if (bodyLines.size == 1) {
+                    lines.add(".body(${bodyLines.first()})")
+                } else {
+                    lines.add(".body(${bodyLines.first()} + ")
+                    lines.indent()
+                    (1 until bodyLines.lastIndex).forEach { i ->
+                        lines.add("${bodyLines[i]} + ")
+                    }
+                    lines.add("${bodyLines.last()})")
+                    lines.deindent()
+                }
+
+            } /* else if(bodyParam.isXml()) {
+                val body = bodyParam.gene.getValueAsPrintableString("xml")
+                lines.add(".body(\"$body\")")
+            } */ else if(bodyParam.isTextPlain()) {
+                val body = bodyParam.gene.getValueAsPrintableString("text")
+                lines.add(".body(\"$body\")")
+            } else {
+                throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
+            }
+        }
+
+        if (form != null) {
             lines.add(".contentType(\"application/x-www-form-urlencoded\")")
             lines.add(".body(\"$form\")")
         }

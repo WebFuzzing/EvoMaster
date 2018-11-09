@@ -45,13 +45,18 @@ abstract class Gene(var name: String) {
      */
     abstract fun getValueAsPrintableString() : String
 
-    //FIXME refactor below method into above
+    //FIXME refactor below method into above, and explain "mode"
 
     /**
      * @param previousGenes previous genes which are necessary to look at
      * to determine the actual value of this gene
      */
-    open fun getValueAsPrintableString(previousGenes: List<Gene>) : String {
+    open fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String? = null) : String {
+        return getValueAsPrintableString(mode)
+    }
+
+    //FIXME
+    open fun getValueAsPrintableString( mode: String? = null) : String{
         return getValueAsPrintableString()
     }
 

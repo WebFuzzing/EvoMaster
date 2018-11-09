@@ -14,7 +14,7 @@ class EnumGene<T>(
             throw IllegalArgumentException("Empty list of values")
         }
         if (index < 0 || index >= values.size) {
-            throw IllegalArgumentException("Invalid index: " + index)
+            throw IllegalArgumentException("Invalid index: $index")
         }
     }
 
@@ -43,7 +43,7 @@ class EnumGene<T>(
 
         val res = values[index]
         if(res is String){
-            return "\"$res\"";
+            return "\"$res\""
         } else {
             return res.toString()
         }
