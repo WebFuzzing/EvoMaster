@@ -297,7 +297,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         } else if(forms != null){
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else {
-            throw IllegalStateException("Issue in Swagger configuration: cannot handle body payload")
+            null
         }
 
         val invocation = when (a.verb) {
@@ -318,7 +318,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         } catch (e: ProcessingException) {
 
             //this can happen for example if call ends up in an infinite redirection loop
-            if ((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException) {
+            if ((e.cause?.message?.contains("redirected too many") == true) && e.cause is ProtocolException) {
                 rcr.setInfiniteLoop(true)
                 rcr.setErrorMessage(e.cause!!.message!!)
                 return false
