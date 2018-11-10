@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 /**
  * Created by arcuri82 on 07-Nov-18.
  */
-@Disabled //TODO put back once hanlded new x-www-form-urlencoded
 public class BodyTypesEMTest extends SpringTestBase {
 
     @BeforeAll
@@ -56,8 +55,9 @@ public class BodyTypesEMTest extends SpringTestBase {
             // Plus looks like issues in handling on Spring side
             //assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/q", "8");
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/r", "9");
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/t", "10");
+            // x-www-form-urlencoded has changed in Springfox, as now handled in BodyParam
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/r", "9");
+//            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/t", "10");
         });
     }
 }

@@ -66,15 +66,15 @@ public class BodyTypesRest {
 //    }
 
 
-    @PostMapping(value = "/api/bodytypes/r", consumes = "application/x-www-form-urlencoded")
-    public int formR(@ModelAttribute("value") int value) {
-        return 9;
-    }
-
-    @PostMapping(value = "/api/bodytypes/t", consumes = "application/x-www-form-urlencoded")
-    public int formT(@ModelAttribute("a") int a, @ModelAttribute("b") int b) {
-        return 10;
-    }
+//    @PostMapping(value = "/api/bodytypes/r", consumes = "application/x-www-form-urlencoded")
+//    public int formR(@ModelAttribute("value") int value) {
+//        return 9;
+//    }
+//
+//    @PostMapping(value = "/api/bodytypes/t", consumes = "application/x-www-form-urlencoded")
+//    public int formT(@ModelAttribute("a") int a, @ModelAttribute("b") int b) {
+//        return 10;
+//    }
 
 
 }
