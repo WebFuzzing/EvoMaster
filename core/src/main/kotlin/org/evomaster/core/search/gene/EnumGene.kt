@@ -28,7 +28,7 @@ class EnumGene<T>(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         val k = if (forceNewValue) {
             randomness.nextInt(0, values.size - 1, index)
@@ -39,7 +39,7 @@ class EnumGene<T>(
         index = k
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
 
         val res = values[index]
         if(res is String){

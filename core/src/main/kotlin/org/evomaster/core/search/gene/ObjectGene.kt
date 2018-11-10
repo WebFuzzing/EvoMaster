@@ -28,21 +28,17 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         }.all { it == true }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        fields.forEach { f -> f.randomize(randomness, forceNewValue) }
+        fields.forEach { f -> f.randomize(randomness, forceNewValue, allGenes) }
     }
 
-    override fun getValueAsPrintableString(): String {
 
-        //by default, return in JSON format
-        return getValueAsPrintableString("json")
-    }
-
-    override fun getValueAsPrintableString(mode: String?) : String{
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?) : String{
 
         val buffer = StringBuffer()
 
+        //by default, return in JSON format
         if(mode == null || mode.equals("json", ignoreCase = true)){
             buffer.append("{")
 
@@ -50,7 +46,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
                 it !is CycleObjectGene &&
                         (it !is OptionalGene || it.isActive)
             }.map {
-                "\"${it.name}\":${it.getValueAsPrintableString(mode)}"
+                "\"${it.name}\":${it.getValueAsPrintableString(previousGenes,mode)}"
             }.joinTo(buffer, ", ")
 
             buffer.append("}")
@@ -69,7 +65,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
                         (it !is OptionalGene || it.isActive)
             }.forEach {
                 buffer.append(openXml(it.name))
-                buffer.append(it.getValueAsPrintableString(mode))
+                buffer.append(it.getValueAsPrintableString(previousGenes,mode))
                 buffer.append(closeXml(it.name))
             }
 

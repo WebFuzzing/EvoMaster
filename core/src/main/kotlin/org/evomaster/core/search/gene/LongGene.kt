@@ -15,7 +15,7 @@ class LongGene (
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         var k = if(randomness.nextBoolean()) {
             randomness.nextLong()
@@ -30,7 +30,7 @@ class LongGene (
         value = k
     }
 
-    override fun getValueAsPrintableString() : String{
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?) : String{
         return value.toString()
     }
 

@@ -9,11 +9,11 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
         return SqlAutoIncrementGene(name)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         throw IllegalStateException("AutoIncrement fields should never be printed")
     }
 

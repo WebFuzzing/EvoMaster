@@ -21,14 +21,14 @@ class DateGene(
             month.copy() as IntegerGene,
             day.copy() as IntegerGene)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        year.randomize(randomness, forceNewValue)
-        month.randomize(randomness, forceNewValue)
-        day.randomize(randomness, forceNewValue)
+        year.randomize(randomness, forceNewValue, allGenes)
+        month.randomize(randomness, forceNewValue, allGenes)
+        day.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"${getValueAsRawString()}\""
     }
 

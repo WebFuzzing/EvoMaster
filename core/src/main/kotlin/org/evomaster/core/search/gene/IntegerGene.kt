@@ -32,7 +32,7 @@ class IntegerGene(
         return this.value == other.value
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         val z = 1000
         val range = max.toLong() - min.toLong() + 1L
@@ -65,7 +65,7 @@ class IntegerGene(
 
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return value.toString()
     }
 }

@@ -17,7 +17,7 @@ class SqlTimestampGene(
             time.copy() as TimeGene
     )
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"${getValueAsRawString()}\""
     }
 

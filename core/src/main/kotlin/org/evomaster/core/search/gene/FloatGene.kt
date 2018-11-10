@@ -9,13 +9,13 @@ class FloatGene(name: String,
 
     override fun copy() = FloatGene(name, value)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //need for forceNewValue?
         value = randomness.nextFloat()
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return value.toString()
     }
 

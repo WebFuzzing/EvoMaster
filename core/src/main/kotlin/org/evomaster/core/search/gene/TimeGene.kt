@@ -29,14 +29,14 @@ class TimeGene(
             withMsZ
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        hour.randomize(randomness, forceNewValue)
-        minute.randomize(randomness, forceNewValue)
-        second.randomize(randomness, forceNewValue)
+        hour.randomize(randomness, forceNewValue, allGenes)
+        minute.randomize(randomness, forceNewValue, allGenes)
+        second.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"${getValueAsRawString()}\""
     }
 

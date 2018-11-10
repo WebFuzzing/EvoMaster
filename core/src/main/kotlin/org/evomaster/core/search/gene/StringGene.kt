@@ -24,13 +24,13 @@ class StringGene(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //TODO much more would need to be done here to handle strings...
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"$value\""
     }
 

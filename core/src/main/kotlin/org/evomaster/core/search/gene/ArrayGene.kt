@@ -43,7 +43,7 @@ class ArrayGene<T>(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //maybe not so important here to complicate code to enable forceNewValue
 
@@ -56,9 +56,9 @@ class ArrayGene<T>(
         }
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "[" +
-                elements.map { g -> g.getValueAsPrintableString() }.joinToString(", ") +
+                elements.map { g -> g.getValueAsPrintableString(previousGenes, mode) }.joinToString(", ") +
                 "]";
     }
 

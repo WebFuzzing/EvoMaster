@@ -38,11 +38,7 @@ class SqlForeignKeyGene(
 
     override fun copy() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-        throw IllegalStateException("Cannot randomize a foreign key without knowing the state of other SQL inserted data")
-    }
-
-    fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
@@ -98,9 +94,6 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun getValueAsPrintableString(): String {
-        throw IllegalStateException("This method should never be called. Use version that takes as input genes instead")
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
 
@@ -120,7 +113,7 @@ class SqlForeignKeyGene(
             throw IllegalArgumentException("Trying to print a Foreign Key pointing to a non-printable Primary Key")
         }
 
-        return pk.getValueAsPrintableString(previousGenes)
+        return pk.getValueAsPrintableString(previousGenes, mode)
     }
 
     fun isReferenceToNonPrintable(previousGenes: List<Gene>): Boolean {

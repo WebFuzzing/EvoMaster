@@ -32,22 +32,22 @@ class OptionalGene(name: String,
                 && this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         if (!forceNewValue) {
             isActive = randomness.nextBoolean()
-            gene.randomize(randomness, false)
+            gene.randomize(randomness, false, allGenes)
         } else {
 
             if (randomness.nextBoolean()) {
                 isActive = !isActive
             } else {
-                gene.randomize(randomness, true)
+                gene.randomize(randomness, true, allGenes)
             }
         }
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return gene.getValueAsPrintableString()
     }
 

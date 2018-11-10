@@ -19,7 +19,7 @@ open class DateTimeGene(
             time.copy() as TimeGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         /**
          * If forceNewValue==true both date and time
          * get a new value, but it only might need
@@ -28,11 +28,11 @@ open class DateTimeGene(
          * Shouldn't this method decide randomly if
          * date, time or both get a new value?
          */
-        date.randomize(randomness, forceNewValue)
-        time.randomize(randomness, forceNewValue)
+        date.randomize(randomness, forceNewValue, allGenes)
+        time.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"${getValueAsRawString()}\""
     }
 

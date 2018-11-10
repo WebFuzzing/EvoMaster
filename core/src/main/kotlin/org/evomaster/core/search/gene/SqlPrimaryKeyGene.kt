@@ -25,8 +25,8 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun copy() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-        gene.randomize(randomness, false)
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        gene.randomize(randomness, false, allGenes)
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -43,12 +43,9 @@ class SqlPrimaryKeyGene(name: String,
         return this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun getValueAsPrintableString(): String {
-        return gene.getValueAsPrintableString()
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
-        return gene.getValueAsPrintableString(previousGenes)
+        return gene.getValueAsPrintableString(previousGenes, mode)
     }
 
     override fun getValueAsRawString(): String {

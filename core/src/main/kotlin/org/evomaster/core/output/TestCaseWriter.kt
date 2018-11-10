@@ -358,9 +358,9 @@ class TestCaseWriter {
             if(bodyParam.isJson()) {
 
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString("json"))
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json"))
                 } else {
-                    bodyParam.gene.getValueAsPrintableString("json")
+                    bodyParam.gene.getValueAsPrintableString(mode = "json")
                 }
 
                 //needed as JSON uses ""
@@ -384,7 +384,7 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
             } */ else if(bodyParam.isTextPlain()) {
-                val body = bodyParam.gene.getValueAsPrintableString("text")
+                val body = bodyParam.gene.getValueAsPrintableString(mode = "text")
                 lines.add(".body($body)")
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())

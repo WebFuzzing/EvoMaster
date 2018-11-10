@@ -44,13 +44,13 @@ class MapGene<T>(
     }
 
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //maybe not so important here to complicate code to enable forceNewValue
 
         elements.clear()
         val n = randomness.nextInt(maxSize)
-        (0..n - 1).forEach {
+        (0 until n).forEach {
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             gene.name = "key_$it"
@@ -58,7 +58,7 @@ class MapGene<T>(
         }
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "{" +
                 elements.filter { f ->
                     f !is CycleObjectGene &&

@@ -293,7 +293,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 body.isTextPlain() ->  "text"
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
-            Entity.entity(body.gene.getValueAsPrintableString(mode), body.contentType())
+            Entity.entity(body.gene.getValueAsPrintableString(mode = mode), body.contentType())
         } else if(forms != null){
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else {

@@ -22,12 +22,12 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         return DisruptiveGene(name, gene.copy(), probability)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-        gene.randomize(randomness, forceNewValue)
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        gene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(): String {
-        return gene.getValueAsPrintableString()
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+        return gene.getValueAsPrintableString(previousGenes, mode)
     }
 
     override fun getValueAsRawString(): String {

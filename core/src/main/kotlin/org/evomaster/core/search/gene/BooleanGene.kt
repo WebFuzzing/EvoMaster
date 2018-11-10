@@ -10,7 +10,7 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name) {
         return BooleanGene(name, value)
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         val k: Boolean = if (forceNewValue) {
             !value
@@ -21,7 +21,7 @@ class BooleanGene(name: String, var value: Boolean = true) : Gene(name) {
         value = k
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return value.toString()
     }
 
