@@ -7,10 +7,12 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.utils.RestTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled
 public class SFTest extends RestTestBase {
 
     @BeforeAll
