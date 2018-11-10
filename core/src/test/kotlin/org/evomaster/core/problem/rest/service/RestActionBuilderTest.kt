@@ -39,7 +39,7 @@ internal class RestActionBuilderTest {
         val map = loadAndAssertActions("/swagger/catwatch.json", 23)
 
         val postScoring = map["POST:/config/scoring.project"] as RestAction
-        assertEquals(2, postScoring.seeGenes().size)
+        assertEquals(3, postScoring.seeGenes().size)
         val bodyPostScoring = postScoring.seeGenes().find { it.name == "body" }
         assertNotNull(bodyPostScoring)
         assertTrue(bodyPostScoring is OptionalGene)
