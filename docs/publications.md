@@ -40,6 +40,11 @@
   
 # Seminars/Presentations
 
+* 2018: *EvoMaster: Evolutionary Multi-context
+  Automated System Testing*. 
+  Seminar given at Mälardalen University, Sweden.
+  [[PDF](slides/seminar_evomaster_mdh_2018.pdf)]  
+
 * 2017: *EvoMaster: Evolutionary Multi-context
   Automated System Testing*. 
   Seminar given at the University of Luxembourg.
