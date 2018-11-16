@@ -6,17 +6,17 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.experiments.objects.ObjRestAction
+import org.evomaster.experiments.objects.ObjRestCallAction
 
 
-class ObjIndividual(val actions: MutableList<ObjRestAction>,
+class ObjIndividual(val callActions: MutableList<RestAction>,
                     val sampleType: SampleType,
                     val dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : Individual() {
 
     override fun copy(): Individual {
         return ObjIndividual(
-                actions.map { a -> a.copy() as ObjRestAction } as MutableList<ObjRestAction>,
+                callActions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
         )
@@ -32,9 +32,9 @@ class ObjIndividual(val actions: MutableList<ObjRestAction>,
 
         return when(filter){
             GeneFilter.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
-                    .plus(actions.flatMap(ObjRestAction::seeGenes))
+                    .plus(callActions.flatMap(RestAction::seeGenes))
 
-            GeneFilter.NO_SQL -> actions.flatMap(ObjRestAction::seeGenes)
+            GeneFilter.NO_SQL -> callActions.flatMap(RestAction::seeGenes)
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
         }
     }
@@ -45,10 +45,10 @@ class ObjIndividual(val actions: MutableList<ObjRestAction>,
         need to think about it
      */
 
-    override fun size() = actions.size
+    override fun size() = callActions.size
 
     override fun seeActions(): List<out Action> {
-        return actions
+        return callActions
     }
 
     override fun verifyInitializationActions(): Boolean {
@@ -77,7 +77,7 @@ class ObjIndividual(val actions: MutableList<ObjRestAction>,
 
     fun debugginPrint() : String{
         var rez = ""
-        for(r in this.actions){
+        for(r in this.callActions){
             rez += r.getName() + "\n"
             //rez += r.seeGenes() + "\n"
         }
@@ -85,7 +85,7 @@ class ObjIndividual(val actions: MutableList<ObjRestAction>,
     }
     fun debugginPrintProcessed() : String{
         var rez = ""
-        for(r in this.actions){
+        for(r in this.callActions){
             //rez += r.getName() + "\n"
             rez += r.toString() + "\n"
         }
