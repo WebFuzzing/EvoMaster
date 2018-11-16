@@ -15,8 +15,8 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.experiments.objects.ObjRestAction
-import org.evomaster.experiments.objects.ObjRestSampler
+import org.evomaster.experiments.objects.ObjRestCallAction
+import org.evomaster.experiments.objects.service.ObjRestSampler
 import org.evomaster.experiments.objects.param.BodyParam
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -106,14 +106,14 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         val dbData = mutableListOf<ReadDbDataDto>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.actions.size) {
+        for (i in 0 until individual.callActions.size) {
 
             rc.registerNewAction(i)
-            val a = individual.actions[i]
+            val a = individual.callActions[i]
 
             var ok = false
 
-            if (a is ObjRestAction) {
+            if (a is ObjRestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
@@ -169,7 +169,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
             fv.updateTarget(t.id, t.value, t.actionIndex)
         }
 
-        handleResponseTargets(fv, individual.actions, actionResults)
+        handleResponseTargets(fv, individual.callActions, actionResults)
 
         return EvaluatedIndividual(fv, individual.copy() as ObjIndividual, actionResults)
     }
@@ -203,16 +203,16 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
      */
     private fun handleResponseTargets(
             fv: FitnessValue,
-            actions: MutableList<ObjRestAction>,
+            callActions: MutableList<RestAction>,
             actionResults: MutableList<ActionResult>) {
 
         (0 until actionResults.size)
-                .filter { actions[it] is ObjRestAction }
+                .filter { callActions[it] is RestAction }
                 .filter { actionResults[it] is RestCallResult }
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
                             .getStatusCode() ?: -1
-                    val desc = "$status:${actions[it].getName()}"
+                    val desc = "$status:${callActions[it].getName()}"
                     val id = idMapper.handleLocalTarget(desc)
                     fv.updateTarget(id, 1.0, it)
                 }
@@ -223,7 +223,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    private fun handleRestCall(a: ObjRestAction,
+    private fun handleRestCall(a: ObjRestCallAction,
                                actionResults: MutableList<ActionResult>,
                                chainState: MutableMap<String, String>)
             : Boolean {
@@ -377,12 +377,12 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    private fun handleSaveLocation(a: ObjRestAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
+    private fun handleSaveLocation(a: ObjRestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
             if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
                 /*
-                    If this failed, and following actions require the "location" header
+                    If this failed, and following callActions require the "location" header
                     of this call, there is no point whatsoever to continue evaluating
                     the remaining calls
                  */
@@ -416,9 +416,9 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    private fun hasParameterChild(a: ObjRestAction): Boolean {
+    private fun hasParameterChild(a: ObjRestCallAction): Boolean {
         return sampler.seeAvailableActions()
-                .filterIsInstance<ObjRestAction>()
+                .filterIsInstance<ObjRestCallAction>()
                 .map { it.path }
                 .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
