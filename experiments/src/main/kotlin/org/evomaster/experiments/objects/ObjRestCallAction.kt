@@ -9,12 +9,11 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.experiments.objects.RestPath
 import org.evomaster.core.problem.rest.RestAction
 import java.net.URLEncoder
 
 
-class ObjRestAction(
+class ObjRestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
         val parameters: List<out Param>,
@@ -44,7 +43,7 @@ class ObjRestAction(
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
     override fun copy(): Action {
-        return ObjRestAction(verb, path, parameters.map(Param::copy), auth, saveLocation, locationId)
+        return ObjRestCallAction(verb, path, parameters.map(Param::copy), auth, saveLocation, locationId)
     }
 
     override fun getName(): String {
@@ -68,7 +67,7 @@ class ObjRestAction(
      * Make sure that the path params are resolved to the same concrete values of "other".
      * Note: "this" can be just an ancestor of "other"
      */
-    fun bindToSamePathResolution(other: ObjRestAction) {
+    fun bindToSamePathResolution(other: ObjRestCallAction) {
         if (!this.path.isAncestorOf(other.path)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
@@ -117,4 +116,5 @@ class ObjRestAction(
                 }
                 .joinToString("&")
     }
+
 }
