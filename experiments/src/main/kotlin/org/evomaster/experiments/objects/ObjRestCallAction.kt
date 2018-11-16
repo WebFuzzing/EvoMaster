@@ -16,7 +16,7 @@ import java.net.URLEncoder
 class ObjRestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
-        val parameters: MutableList<Param>,
+        val parameters: List<out Param>,
         var auth: AuthenticationInfo = NoAuth(),
         /**
          * If true, it means that it will
@@ -43,8 +43,7 @@ class ObjRestCallAction(
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
     override fun copy(): Action {
-        val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return ObjRestCallAction(verb, path, p, auth, saveLocation, locationId)
+        return ObjRestCallAction(verb, path, parameters.map(Param::copy), auth, saveLocation, locationId)
     }
 
     override fun getName(): String {
@@ -53,7 +52,7 @@ class ObjRestCallAction(
 
     override fun seeGenes(): List<out Gene> {
 
-        return parameters.flatMap { it.seeGenes() }
+        return parameters.map(Param::gene)
     }
 
     override fun toString(): String {
