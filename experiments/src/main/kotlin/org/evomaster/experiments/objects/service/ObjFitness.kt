@@ -1,4 +1,4 @@
-package org.evomaster.experiments.objects.service
+package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
@@ -9,15 +9,14 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
-import org.evomaster.experiments.objects.ObjRestCallAction
-import org.evomaster.experiments.objects.service.ObjRestSampler
-import org.evomaster.experiments.objects.param.BodyParam
+import org.evomaster.experiments.objects.ObjRestSampler
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -32,7 +31,6 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
-import org.evomaster.experiments.objects.ObjIndividual
 
 
 class ObjFitness : FitnessFunction<ObjIndividual>() {
@@ -107,14 +105,14 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         val dbData = mutableListOf<ReadDbDataDto>()
 
         //run the test, one action at a time
-        for (i in 0 until individual.callActions.size) {
+        for (i in 0 until individual.actions.size) {
 
             rc.registerNewAction(i)
-            val a = individual.callActions[i]
+            val a = individual.actions[i]
 
             var ok = false
 
-            if (a is ObjRestCallAction) {
+            if (a is RestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
@@ -170,7 +168,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
             fv.updateTarget(t.id, t.value, t.actionIndex)
         }
 
-        handleResponseTargets(fv, individual.callActions, actionResults)
+        handleResponseTargets(fv, individual.actions, actionResults)
 
         return EvaluatedIndividual(fv, individual.copy() as ObjIndividual, actionResults)
     }
@@ -204,16 +202,16 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
      */
     private fun handleResponseTargets(
             fv: FitnessValue,
-            callActions: MutableList<RestAction>,
+            actions: MutableList<RestAction>,
             actionResults: MutableList<ActionResult>) {
 
         (0 until actionResults.size)
-                .filter { callActions[it] is RestAction }
+                .filter { actions[it] is RestCallAction }
                 .filter { actionResults[it] is RestCallResult }
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
                             .getStatusCode() ?: -1
-                    val desc = "$status:${callActions[it].getName()}"
+                    val desc = "$status:${actions[it].getName()}"
                     val id = idMapper.handleLocalTarget(desc)
                     fv.updateTarget(id, 1.0, it)
                 }
@@ -224,7 +222,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    private fun handleRestCall(a: ObjRestCallAction,
+    private fun handleRestCall(a: RestCallAction,
                                actionResults: MutableList<ActionResult>,
                                chainState: MutableMap<String, String>)
             : Boolean {
@@ -282,7 +280,6 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
            not just JSON and forms
          */
         val body = a.parameters.find { p -> p is BodyParam }
-        a.parameters.find{ p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
         if (body != null && !forms.isBlank()) {
@@ -378,12 +375,12 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    private fun handleSaveLocation(a: ObjRestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
+    private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
             if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
                 /*
-                    If this failed, and following callActions require the "location" header
+                    If this failed, and following actions require the "location" header
                     of this call, there is no point whatsoever to continue evaluating
                     the remaining calls
                  */
@@ -417,9 +414,9 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    private fun hasParameterChild(a: ObjRestCallAction): Boolean {
+    private fun hasParameterChild(a: RestCallAction): Boolean {
         return sampler.seeAvailableActions()
-                .filterIsInstance<ObjRestCallAction>()
+                .filterIsInstance<RestCallAction>()
                 .map { it.path }
                 .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }

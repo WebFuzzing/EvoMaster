@@ -1,25 +1,22 @@
-package org.evomaster.experiments.objects.service
+package org.evomaster.experiments.objects
 
 import com.google.inject.Inject
+import io.swagger.models.Model
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Sampler
-import org.evomaster.experiments.objects.*
-import org.evomaster.experiments.objects.RestPath
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
@@ -28,7 +25,8 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 import org.evomaster.experiments.objects.param.PathParam
-
+import org.evomaster.experiments.objects.param.Param
+import org.omg.CORBA.Object
 
 class ObjRestSampler : Sampler<ObjIndividual>() {
 
@@ -45,17 +43,11 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
     private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
-    private val adHocInitialIndividuals: MutableList<ObjRestCallAction> = mutableListOf()
+    private val adHocInitialIndividuals: MutableList<RestAction> = mutableListOf()
 
     private var sqlInsertBuilder: SqlInsertBuilder? = null
 
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
-
-    private val uo: UsedObj = UsedObj()
-    //private val usedObj: MutableMap<Pair<String, String> , ObjectGene> = mutableMapOf()
-    //private val usedObj: MutableMap<Pair<ObjRestCallAction, String> , ObjectGene> = mutableMapOf()
-
-    //private val usedObj: MutableList<ObjectGene> = mutableListOf()
 
     @PostConstruct
     private fun initialize() {
@@ -78,8 +70,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
 
         actionCluster.clear()
-        ObjRestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip
-                ?: listOf())
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
 
         modelCluster.clear()
         ObjRestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
@@ -92,17 +83,9 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
         }
 
-        if(configuration.outputFormat == OutputFormat.DEFAULT){
-            try {
-                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
-                configuration.outputFormat = format
-            } catch (e : Exception){
-                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
-            }
-        }
-
-        RestSampler.log.debug("Done initializing {}", RestSampler::class.simpleName)
+        log.debug("Done initializing {}", ObjRestSampler::class.simpleName)
     }
+
 
     private fun setupAuthentication(infoDto: SutInfoDto) {
 
@@ -196,110 +179,31 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         val n = randomness.nextInt(1, config.maxTestSize)
 
         (0 until n).forEach {
-            //actions.add(sampleRandomAction(0.05))
-            actions.add(sampleRandomObjCallAction(0.05))
+            actions.add(sampleRandomAction(0.05))
         }
 
-        val objIndivid = ObjIndividual(actions, SampleType.RANDOM, uo)
-        //objIndivid.uo = uo
-        return objIndivid
+        return ObjIndividual(actions, SampleType.RANDOM)
     }
 
 
     private fun randomizeActionGenes(action: Action) {
-        action.seeGenes().forEach {g ->
-
-            val restrictedModels = mutableMapOf<String, ObjectGene>()
-            modelCluster.forEach{ k, model ->
-                val fields = model.fields.filter { field ->
-                    when (g::class) {
-                        DisruptiveGene::class -> (field as OptionalGene).gene::class === (g as DisruptiveGene<*>).gene::class
-                        OptionalGene::class -> (field as OptionalGene).gene::class === (g as OptionalGene).gene::class
-                        else -> {
-                            false
-                        }
-                    }
-                }
-                //(fields as ArrayList).add(OptionalGene("Deleted", BooleanGene("Deleted", value = false)))
-                restrictedModels[k] = ObjectGene(model.name, fields)
-
-            }
-
-
-            val likely = likelyhoodsExtended(g.getVariableName(), restrictedModels).toList().sortedBy { (_, value) -> -value}.toMap()
-            val sel = pickWithProbability(likely as MutableMap<Pair<String, String>, Float>)
-            val temp = modelCluster.get(sel.first) as ObjectGene
-            temp.randomize(randomness, forceNewValue = true)
-
-            //BMR-update: reversed the order-objects get mutated and I must find a way to propagate the changes back.
-
-            val selectedGene = temp.fields.filter { g -> (g as OptionalGene).name === sel.second }?.single() as OptionalGene
-
-            when (g::class) {
-                DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(selectedGene.gene)
-                OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(selectedGene.gene)
-            }
-            uo.assign(Pair((action as ObjRestCallAction), g), temp, sel)
-            //TODO: this is where the usedObj is set. Just FYI until the usedObj usage is sorted
-        }
-        uo.coherenceCheck()
+        action.seeGenes().forEach { it.randomize(randomness, false) }
     }
-
-    fun collectObjects(action: Action){
-        /*
-            BMR: ad hoc individuals do not have the same generation path as others
-            as a result, they do not have associated used objects lists
-            this is meant to address that particular problem
-        */
-        action.seeGenes().forEach {g ->
-
-            val restrictedModels = mutableMapOf<String, ObjectGene>()
-            modelCluster.forEach{ k, model ->
-                val fields = model.fields.filter { field ->
-                    when (g::class) {
-                        DisruptiveGene::class -> (field as OptionalGene).gene::class === (g as DisruptiveGene<*>).gene::class
-                        OptionalGene::class -> (field as OptionalGene).gene::class === (g as OptionalGene).gene::class
-                        else -> {
-                            false
-                        }
-                    }
-                }
-                //(fields as ArrayList).add(OptionalGene("Deleted", BooleanGene("Deleted", value = false)))
-                restrictedModels[k] = ObjectGene(model.name, fields)
-
-            }
-
-
-            val likely = likelyhoodsExtended(g.getVariableName(), restrictedModels).toList().sortedBy { (_, value) -> -value}.toMap()
-            val sel = pickWithProbability(likely as MutableMap<Pair<String, String>, Float>)
-            val temp = modelCluster.get(sel.first) as ObjectGene
-            val selectedGene = temp.fields.filter { g -> (g as OptionalGene).name === sel.second }?.single() as OptionalGene
-
-            when (g::class) {
-                DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(selectedGene.gene)
-                OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(selectedGene.gene)
-            }
-            uo.assign(Pair((action as ObjRestCallAction), g), temp, sel)
-            //TODO: this is where the usedObj is set. Just FYI until the usedObj usage is sorted
-        }
-        uo.coherenceCheck()
-    }
-
 
 
     fun sampleRandomAction(noAuthP: Double): RestAction {
         val action = randomness.choose(actionCluster).copy() as RestAction
         randomizeActionGenes(action)
 
-        if (action is ObjRestCallAction) {
+        if (action is ObjRestAction) {
             action.auth = getRandomAuth(noAuthP)
         }
 
         return action
     }
 
-    private fun sampleRandomCallAction(noAuthP: Double): ObjRestCallAction {
-        val action = randomness.choose(actionCluster.filter { a -> a.value is ObjRestCallAction }).copy() as ObjRestCallAction
+    private fun sampleRandomCallAction(noAuthP: Double): ObjRestAction {
+        val action = randomness.choose(actionCluster.filter { a -> a.value is ObjRestAction }).copy() as ObjRestAction
         randomizeActionGenes(action)
         action.auth = getRandomAuth(noAuthP)
 
@@ -322,10 +226,9 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         /*
             At the beginning, sample from this set, until it is empty
          */
-
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            return ObjIndividual(mutableListOf(action), SampleType.SMART, uo)
+            return ObjIndividual(mutableListOf(action), SampleType.SMART)
         }
 
         if (config.maxTestSize <= 1) {
@@ -340,9 +243,8 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
 
         val test = mutableListOf<RestAction>()
-        uo.clearLists()
 
-        val action = sampleRandomObjCallAction(0.0)
+        val action = sampleRandomCallAction(0.0)
 
         /*
             TODO: each of these "smart" tests could end with a GET, to make
@@ -364,7 +266,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
 
         if (!test.isEmpty()) {
-            return ObjIndividual(test, sampleType, uo)
+            return ObjIndividual(test, sampleType)
         }
 
         return sampleAtRandom()
@@ -378,7 +280,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         initAdHocInitialIndividuals()
     }
 
-    private fun handleSmartPost(post: ObjRestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPost(post: ObjRestAction, test: MutableList<RestAction>): SampleType {
 
         assert(post.verb == HttpVerb.POST)
 
@@ -387,7 +289,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartDelete(delete: ObjRestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartDelete(delete: ObjRestAction, test: MutableList<RestAction>): SampleType {
 
         assert(delete.verb == HttpVerb.DELETE)
 
@@ -396,7 +298,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartPatch(patch: ObjRestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPatch(patch: ObjRestAction, test: MutableList<RestAction>): SampleType {
 
         assert(patch.verb == HttpVerb.PATCH)
 
@@ -405,7 +307,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return SampleType.SMART
     }
 
-    private fun handleSmartPut(put: ObjRestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartPut(put: ObjRestAction, test: MutableList<RestAction>): SampleType {
 
         assert(put.verb == HttpVerb.PUT)
 
@@ -428,7 +330,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     /**
      *    Only for PUT, DELETE, PATCH
      */
-    private fun createWriteOperationAfterAPost(write: ObjRestCallAction, test: MutableList<RestAction>) {
+    private fun createWriteOperationAfterAPost(write: ObjRestAction, test: MutableList<RestAction>) {
 
         assert(write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH)
 
@@ -450,11 +352,11 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
 
         test.forEach { t ->
-            preventPathParamMutation(t as ObjRestCallAction)
+            preventPathParamMutation(t as ObjRestAction)
         }
     }
 
-    private fun handleSmartGet(get: ObjRestCallAction, test: MutableList<RestAction>): SampleType {
+    private fun handleSmartGet(get: ObjRestAction, test: MutableList<RestAction>): SampleType {
 
         assert(get.verb == HttpVerb.GET)
 
@@ -495,13 +397,13 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         } else {
             //only lock path params if it is not a single GET
             test.forEach { t ->
-                preventPathParamMutation(t as ObjRestCallAction)
+                preventPathParamMutation(t as ObjRestAction)
             }
         }
 
         if (created && !get.path.isLastElementAParameter()) {
 
-            val lastPost = test[test.size - 2] as ObjRestCallAction
+            val lastPost = test[test.size - 2] as ObjRestAction
             assert(lastPost.verb == HttpVerb.POST)
 
             val available = config.maxTestSize - test.size
@@ -536,7 +438,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     }
 
 
-    private fun createResourcesFor(target: ObjRestCallAction, test: MutableList<RestAction>)
+    private fun createResourcesFor(target: ObjRestAction, test: MutableList<RestAction>)
             : Boolean {
 
         if (test.size >= config.maxTestSize) {
@@ -595,16 +497,15 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return true
     }
 
-    private fun preventPathParamMutation(callAction: ObjRestCallAction) {
-        callAction.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
+    private fun preventPathParamMutation(action: ObjRestAction) {
+        action.parameters.forEach { p -> if (p is PathParam) p.preventMutation() }
     }
 
-    fun createActionFor(template: ObjRestCallAction, target: ObjRestCallAction): ObjRestCallAction {
-        val res = template.copy() as ObjRestCallAction
+    fun createActionFor(template: ObjRestAction, target: ObjRestAction): ObjRestAction {
+        val res = template.copy() as ObjRestAction
         randomizeActionGenes(res)
         res.auth = target.auth
         res.bindToSamePathResolution(target)
-        //TODO this is a candidate for a place to synch objects with paths between related actions?
 
         return res
     }
@@ -615,7 +516,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
      * endpoint but with different HTTP verb.
      * Among the different ancestors, return one of the longest
      */
-    private fun chooseClosestAncestor(target: ObjRestCallAction, verbs: List<HttpVerb>): ObjRestCallAction? {
+    private fun chooseClosestAncestor(target: ObjRestAction, verbs: List<HttpVerb>): ObjRestAction? {
 
         var others = sameOrAncestorEndpoints(target.path)
         others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
@@ -631,27 +532,27 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
      * Get all ancestor (same path prefix) endpoints that do at least one
      * of the specified operations
      */
-    private fun sameOrAncestorEndpoints(path: RestPath): List<ObjRestCallAction> {
+    private fun sameOrAncestorEndpoints(path: RestPath): List<ObjRestAction> {
         return actionCluster.values.asSequence()
-                .filter { a -> a is ObjRestCallAction && a.path.isAncestorOf(path) }
-                .map { a -> a as ObjRestCallAction }
+                .filter { a -> a is ObjRestAction && a.path.isAncestorOf(path) }
+                .map { a -> a as ObjRestAction }
                 .toList()
     }
 
-    private fun chooseLongestPath(callActions: List<ObjRestCallAction>): ObjRestCallAction {
+    private fun chooseLongestPath(actions: List<ObjRestAction>): ObjRestAction {
 
-        if (callActions.isEmpty()) {
+        if (actions.isEmpty()) {
             throw IllegalArgumentException("Cannot choose from an empty collection")
         }
 
-        val max = callActions.asSequence().map { a -> a.path.levels() }.max()!!
-        val candidates = callActions.filter { a -> a.path.levels() == max }
+        val max = actions.asSequence().map { a -> a.path.levels() }.max()!!
+        val candidates = actions.filter { a -> a.path.levels() == max }
 
         return randomness.choose(candidates)
     }
 
-    private fun hasWithVerbs(callActions: List<ObjRestCallAction>, verbs: List<HttpVerb>): List<ObjRestCallAction> {
-        return callActions.filter { a ->
+    private fun hasWithVerbs(actions: List<ObjRestAction>, verbs: List<HttpVerb>): List<ObjRestAction> {
+        return actions.filter { a ->
             verbs.contains(a.verb)
         }
     }
@@ -672,13 +573,45 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
     private fun createSingleCallOnEachEndpoint(auth: AuthenticationInfo) {
         actionCluster.asSequence()
-                .filter { a -> a.value is ObjRestCallAction }
+                .filter { a -> a.value is ObjRestAction }
                 .forEach { a ->
-                    val copy = a.value.copy() as ObjRestCallAction
+                    val copy = a.value.copy() as ObjRestAction
                     copy.auth = auth
                     randomizeActionGenes(copy)
                     adHocInitialIndividuals.add(copy)
                 }
+    }
+
+    fun getRandomObject(): ObjectGene{
+        var someName = StringGene(
+                "name"
+        )
+        var someId = LongGene(
+                "someId"
+        )
+        var col = mutableListOf(StringGene("a1"), StringGene("a2"), StringGene("a3"))
+        var someCol = MapGene(
+                "map",
+                StringGene("bar"),
+                5,
+                col
+        )
+        // TODO: add some collection here for giggles (and testing)
+        someName.randomize(randomness, true)
+        someId.randomize(randomness, true)
+        someCol.randomize(randomness, true)
+        var someFields = listOf(someId, someName, someCol)
+        var generatedObject = ObjectGene(
+                "randomObject",
+                someFields
+        )
+        return generatedObject
+    }
+
+    fun getRandomObjectSwaggerish(): ObjectGene{
+        var genObj = randomness.choose(modelCluster).copy() as ObjectGene
+        genObj.randomize(randomness, true)
+        return genObj
     }
 
     fun getModelCluster() :MutableMap<String, ObjectGene>{
@@ -686,65 +619,32 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return modelCluster
     }
 
-    fun sampleRandomObjCallAction(noAuthP: Double): ObjRestCallAction {
-        val action = randomness.choose(actionCluster.filter { a -> a.value is ObjRestCallAction }).copy() as ObjRestCallAction
-        randomizeActionGenes(action)
-        action.auth = getRandomAuth(noAuthP)
-
-        return action
-    }
-
-    fun lcs(a: String, b: String): String {
-        if (a.length > b.length) return lcs(b, a)
-        var res = ""
-        for (ai in 0 until a.length) {
-            for (len in a.length - ai downTo 1) {
-                for (bi in 0 until b.length - len + 1) {
-                    if (a.regionMatches(ai, b, bi,len) && len > res.length) {
-                        res = a.substring(ai, ai + len)
-                    }
-                }
-            }
-        }
-        return res
-    }
-
-    fun pickWithProbability(map: MutableMap<Pair<String, String>, Float>): Pair<String, String>{
-        val randFl = randomness.nextFloat()
-        var temp = 0.toFloat()
-        var found = map.keys.first()
-
-        for((k, v) in map){
-            if(randFl <= (v + temp)){
-                found = k
-                break
-            }
-            temp += v
-        }
-        return found
-    }
+    fun getRandomObjIndividual() : ObjIndividual{
 
 
-    fun <T> likelyhoodsExtended(parameter: String, candidates: MutableMap<String, T>): MutableMap<Pair<String, String>, Float>{
+        val test = mutableListOf<RestAction>()
+        val action = sampleRandomCallAction(0.0)
 
-        val result = mutableMapOf<Pair<String, String>, Float>()
-        var sum : Float = 0.toFloat()
+        val sampleType = SampleType.RANDOM
 
-        candidates.forEach { k, v ->
-            for (field in (v as ObjectGene).fields) {
-                val fieldName = field.name
+        /*
 
-                val extendedName = "$k${fieldName}"
-                val temp = lcs(parameter.toLowerCase(), extendedName.toLowerCase()).length.toFloat()/ Integer.max(parameter.length, extendedName.length).toFloat()
-                result[Pair(k, fieldName)] = temp
-                sum += temp
-            }
-        }
-        result.forEach { k, u ->
-            result[k] = u/sum
+        val sampleType = when (action.verb) {
+            HttpVerb.GET -> handleSmartGet(action, test)
+            HttpVerb.POST -> handleSmartPost(action, test)
+            HttpVerb.PUT -> handleSmartPut(action, test)
+            HttpVerb.DELETE -> handleSmartDelete(action, test)
+            HttpVerb.PATCH -> handleSmartPatch(action, test)
+            else -> SampleType.RANDOM
         }
 
-        return result
+        */
+
+        if (!test.isEmpty()) {
+            return ObjIndividual(test, sampleType)
+        }
+
+        return sampleAtRandom()
     }
 
 }
