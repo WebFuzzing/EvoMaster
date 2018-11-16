@@ -1,13 +1,22 @@
 package org.evomaster.experiments.objects
 
 import com.google.inject.Injector
+import com.google.inject.Key
+import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
-import org.evomaster.core.search.gene.MapGene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.EMConfig
+import org.evomaster.core.output.TestSuiteWriter
+import org.evomaster.core.problem.rest.ObjIndividual
+import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.experiments.objects.service.ObjModule
+import org.evomaster.experiments.objects.service.ObjRestSampler
 import java.lang.Integer.max
 import java.util.*
+import javax.swing.text.html.Option
 
 class Main {
     companion object {
@@ -23,12 +32,29 @@ class Main {
         private fun base () {
             printHeader()
 
-            val sampler = setStuffUp().getInstance(ObjRestSampler::class.java)
+            val injector = setStuffUp()
+            val sampler = injector.getInstance(ObjRestSampler::class.java)
+
+            val key = Key.get( object : TypeLiteral<MioAlgorithm<ObjIndividual>>() {})
+
+            val imp = injector.getInstance(key)
 
             //BMR: debugginPrint uses .getName() which returns {variable} etc...
             //BMR: debugginPrintProcessed uses .toString(), and seems to return the {variable} values already processed.
 
             val models = sampler.getModelCluster()
+                    .filter { (_, m) -> !(m.fields.isEmpty()) } as MutableMap
+            // TODO: this needs to be thought out better in future, but let's trim the model set to remove empties.
+
+
+            if (models.isEmpty()){
+                val col = mutableListOf(StringGene("default"))
+                val someCol = ObjectGene(
+                        "Default",
+                        col
+                )
+                models["Default"] = someCol
+            }
 
             val available = sampler.seeAvailableActions()
 
@@ -41,52 +67,106 @@ class Main {
             //nameMatchExperiments(models)
 
 
-            /*
-            for (ac in available){
-                var genes = ac.seeGenes()
-                for (g in genes){
-                    if (g.getVariableName().contains("Id")){
-                        println("(Id): Action ${ac.getName()}; Gene ${g.getVariableName()}")
-                    }
-                    if (g.getVariableName().contains("Name")){
-                        println("(Name): Action ${ac.getName()}; Gene ${g.getVariableName()}")
-                    }
-                }
-            }*/
 
             println("===============================================>")
 
-            println("Available actions:")
-            available.forEach{
-                println("${it.getName()}")
-                it.seeGenes().forEach {
-                    println(" -> ${it.getVariableName()}")
-                    val likely = likelyhoods(it.getVariableName(), models)
-                    println("Likelyhoods: ${likely}")
-                    (0..10).forEach{k ->
-                        val sel = pickWithProbability(likely)
-                        val selObj = sampler.getObjectFromTemplate(sel)
-                        println("Selected -> ${selObj.name} => ${selObj.getValueAsPrintableString()}")
-                        if(!selObj.fields.isEmpty()){
-                            println("Picked field -> ${selObj.fields.random().getValueAsPrintableString()}")
+            println("Available callActions:")
+            available.forEach{it ->
+                println("===============================================>")
+                //val action = it.copy() as ObjRestCallAction
+
+                val action = sampler.sampleRandomObjCallAction(0.0)
+                println(action.getName())
+
+
+/*
+                action.seeGenes().forEach {g ->
+
+                    println(" --- ")
+
+                    val restrictedModels = mutableMapOf<String, ObjectGene>()
+                    models.forEach{ k, model ->
+                        val fields = model.fields.filter { field ->
+                            when (g::class) {
+                                DisruptiveGene::class -> (field as OptionalGene).gene::class === (g as DisruptiveGene<*>).gene::class
+                                OptionalGene::class -> (field as OptionalGene).gene::class === (g as OptionalGene).gene::class
+                                else -> {
+                                    false
+                                }
+                            }
                         }
+
+                        restrictedModels[k] = ObjectGene(model.name, fields)
+
                     }
+
+
+                    val likely = likelyhoodsExtended(g.getVariableName(), restrictedModels).toList().sortedBy { (_, value) -> -value}.toMap()
+
+                    println("Likelyhoods: ${likely}")
+
+
+                    println(" -> ${g.getVariableName()}")
+                    val sel = pickWithProbability(likely as MutableMap<Pair<String, String>, Float>)
+
+                    println("Selected: ${sel.first} -> ${sel.second}")
+
+                    val selectedGene = models.get(sel.first)?.fields?.filter { g -> (g as OptionalGene).name === sel.second }?.single() as OptionalGene
+
+                    println(selectedGene.name)
+
+
+
                 }
-                println(" --- ")
+*/
+                println("Action after selection: ${action.resolvedPath()}")
+
             }
+
+            // TODO: when picking an object, make sure it has fields to match the data required by the action.
+            // E.g. do not pick an object without any numerical values, if an Int id is required.
 
             println("===============================================>")
 
             //randomObjectExperiments(sampler, 10)
 
-            println("===============================================>")
 
+            println("===============================================>")
             //swaggerishObjectExperiments(sampler, 50)
 
-
+            val smarts = sampler.smartSample()
+            println("One more try on smart: ${smarts.debugginPrint()} => ${smarts.debugginPrintProcessed()}")
             //var smarts = sampler.getRandomObjIndividual()
             //println("Let's try to be smart again: ${smarts.debugginPrintProcessed()}")
-            // TODO: Smart need more work
+            // TODO: Smart needs more work
+
+            println("===============================================>")
+            println("And a quick search, too:")
+
+            val solution = imp.search()
+            println("Solution: ${solution}:")
+            for (individual in solution.individuals) {
+                println(" --- ")
+                println("${individual.individual.debugginPrint()} => ${individual.individual.debugginPrintProcessed()} => ${individual.fitness.computeFitnessScore()}")
+
+            }
+
+            val config = injector.getInstance(EMConfig::class.java)
+            val rc = injector.getInstance(RemoteController::class.java)
+            val controllerInfoDto = rc.getControllerInfo() ?:
+            throw IllegalStateException(
+                    "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
+
+
+            /*
+            TODO: Writing the tests is a bloody mess at the moment (for a variety of reasons, some self-inflicted). Fix that.
+            TestSuiteWriter.writeTests(
+                    solution,
+                    controllerInfoDto.fullName,
+                    config
+            )
+            */
+
         }
 
         fun printHeader() {
@@ -102,95 +182,7 @@ class Main {
 
         }
 
-        fun testMapPrint() {
 
-            println("Quick test of the map print ")
-            val s1 = StringGene("string_1")
-            val s2 = StringGene("string_2")
-
-            println("String 1 is: ${s1.getValueAsPrintableString()}")
-            println("String 2 is: ${s2.getValueAsPrintableString()}")
-
-            var map = MapGene<StringGene>("PrintableMap", StringGene("map"), 7, mutableListOf(s1, s2))
-            var mapstring = map.getValueAsPrintableString()
-            println("PrintableMap is =>  $mapstring")
-            assert(mapstring.contains(s1.getValueAsPrintableString(), ignoreCase = true) &&
-                    mapstring.contains(s2.getValueAsPrintableString(), ignoreCase = true))
-        }
-
-        fun likelyhoods(parameter: String, candidates: MutableMap<String, ObjectGene>): MutableMap<String, Float>{
-
-            var result = mutableMapOf<String, Float>()
-            var sum : Float = 0.toFloat()
-            candidates.forEach { k, v ->
-                val temp = lcs(parameter, k).length.toFloat()/max(parameter.length, k.length).toFloat()
-                result[k] = temp
-                sum += temp
-            }
-            result.forEach { k, u ->
-                result[k] = u/sum
-            }
-
-            return result
-        }
-
-        fun lcs(a: String, b: String): String {
-            if (a.length > b.length) return lcs(b, a)
-            var res = ""
-            for (ai in 0 until a.length) {
-                for (len in a.length - ai downTo 1) {
-                    for (bi in 0 until b.length - len) {
-                        if (a.regionMatches(ai, b, bi,len) && len > res.length) {
-                            res = a.substring(ai, ai + len)
-                        }
-                    }
-                }
-            }
-            return res
-        }
-
-        fun pickWithProbability(map: MutableMap<String, Float>): String{
-            val randFl = Random().nextFloat()
-            var temp = 0.toFloat()
-            var found = map.keys.first()
-
-            for((k, v) in map){
-                if(randFl <= (v + temp)){
-                    found = k
-                    break
-                }
-                temp += v
-            }
-            return found
-        }
-
-        fun nameMatchExperiments(models: MutableMap<String, ObjectGene>){
-            println("Name match experiments:")
-            models.forEach{(k, v) -> v.fields.forEach {
-                if(it.name.equals("id", ignoreCase = true) || it.name.equals("name", ignoreCase = true)){
-                    println("Exact Match Model: $k => ${it.name} =>>> ${it.getValueAsPrintableString()}")
-                }
-                else{
-                    if (it.name.contains("id", ignoreCase = true) || it.name.contains("name", ignoreCase = true)){
-                        println("Partial Match Model: $k => ${it.name} =>>> ${it.getValueAsPrintableString()}")
-                    }
-                }
-            }}
-        }
-
-        fun randomObjectExperiments(sampler: ObjRestSampler, numberOfObjects: Int = 10){
-            for (i in 0..numberOfObjects) {
-                var randomobject = sampler.getRandomObject()
-                println("Pseudo-random object: ${randomobject.getValueAsPrintableString()}")
-            }
-        }
-
-        fun swaggerishObjectExperiments(sampler: ObjRestSampler, numberOfObjects: Int = 25){
-            for (i in 0..numberOfObjects) {
-                var swaggerishRandomobject = sampler.getRandomSwaggerObject()
-                println("Swagger object: ${swaggerishRandomobject.name} =>> ${swaggerishRandomobject.getValueAsPrintableString()}")
-            }
-        }
 
     }
 
