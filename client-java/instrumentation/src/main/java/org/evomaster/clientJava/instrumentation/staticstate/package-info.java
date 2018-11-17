@@ -8,4 +8,4 @@
  * libraries unless if really necessary (and even in that case,
  * they should be shaded)... :(
  */
-package org.evomaster.clientJava.instrumentation.staticState;
+package org.evomaster.clientJava.instrumentation.staticstate;

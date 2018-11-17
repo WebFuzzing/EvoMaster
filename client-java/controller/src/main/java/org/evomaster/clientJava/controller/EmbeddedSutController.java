@@ -4,7 +4,7 @@ import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.instrumentation.InstrumentationController;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
+import org.evomaster.clientJava.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Collection;
 import java.util.List;

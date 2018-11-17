@@ -2,7 +2,7 @@ package org.evomaster.clientJava.instrumentation.example.triangle;
 
 import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import org.evomaster.clientJava.instrumentation.InstrumentingClassLoader;
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
+import org.evomaster.clientJava.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;

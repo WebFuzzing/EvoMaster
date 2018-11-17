@@ -1,7 +1,7 @@
 package org.evomaster.clientJava.instrumentation;
 
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.evomaster.clientJava.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.clientJava.instrumentation.staticstate.ObjectiveRecorder;
 
 import java.util.ArrayList;
 import java.util.Collection;

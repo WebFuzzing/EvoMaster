@@ -2,7 +2,7 @@ package org.evomaster.clientJava.instrumentation;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.instrumentation.external.AgentController;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.evomaster.clientJava.instrumentation.staticstate.ObjectiveRecorder;
 import org.objectweb.asm.ClassReader;
 
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package org.evomaster.clientJava.instrumentation.staticState;
+package org.evomaster.clientJava.instrumentation.staticstate;
 
 import java.io.PrintWriter;
 import java.util.*;

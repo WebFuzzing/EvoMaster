@@ -1,10 +1,10 @@
-package org.evomaster.clientJava.instrumentation.visitor;
+package org.evomaster.clientJava.instrumentation.coverage;
 
 import org.evomaster.clientJava.instrumentation.ClassName;
 import org.evomaster.clientJava.instrumentation.Constants;
 import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
-import org.evomaster.clientJava.instrumentation.staticState.ExecutionTracer;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.evomaster.clientJava.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.clientJava.instrumentation.staticstate.ObjectiveRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;

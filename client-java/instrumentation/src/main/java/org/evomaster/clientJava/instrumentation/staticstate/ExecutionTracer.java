@@ -1,6 +1,6 @@
-package org.evomaster.clientJava.instrumentation.staticState;
+package org.evomaster.clientJava.instrumentation.staticstate;
 
-import org.evomaster.clientJava.instrumentation.ClassName;
+import org.evomaster.clientJava.instrumentation.AdditionalInfo;
 import org.evomaster.clientJava.instrumentation.ObjectiveNaming;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.heuristic.HeuristicsForJumps;
@@ -40,13 +40,28 @@ public class ExecutionTracer {
      */
     private static int actionIndex = 0;
 
+    private static AdditionalInfo additionalInfo = new AdditionalInfo();
+
     public static void reset() {
         objectiveCoverage.clear();
         actionIndex = 0;
+        additionalInfo = new AdditionalInfo();
     }
 
     public static void setActionIndex(int index){
         actionIndex = index;
+    }
+
+    public static AdditionalInfo getAdditionalInfo() {
+        return additionalInfo;
+    }
+
+    public static void addQueryParameter(String param){
+        additionalInfo.addQueryParameter(param);
+    }
+
+    public static void addHeader(String header){
+        additionalInfo.addHeader(header);
     }
 
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
