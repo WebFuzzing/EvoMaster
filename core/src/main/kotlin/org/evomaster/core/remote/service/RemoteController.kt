@@ -14,7 +14,6 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.client.WebTarget
-import javax.ws.rs.core.Form
 import javax.ws.rs.core.GenericType
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
@@ -172,12 +171,12 @@ class RemoteController() {
         return true
     }
 
-    fun getTargetCoverage(ids: Set<Int> = setOf()): TargetsResponseDto? {
+    fun getTestResults(ids: Set<Int> = setOf()): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
         val response = getWebTarget()
-                .path(ControllerConstants.TARGETS_PATH)
+                .path(ControllerConstants.TEST_RESULTS)
                 .queryParam("ids", queryParam)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
@@ -188,7 +187,7 @@ class RemoteController() {
         }
 
         val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<TargetsResponseDto>>() {})
+            response.readEntity(object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
         } catch (e: Exception) {
             log.warn("Failed to parse target coverage dto", e)
             null

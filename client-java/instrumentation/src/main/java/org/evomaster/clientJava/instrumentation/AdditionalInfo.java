@@ -1,5 +1,6 @@
 package org.evomaster.clientJava.instrumentation;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -8,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Besides code coverage, there can be additional info that we want
  * to collect at runtime when test cases are executed.
  */
-public class AdditionalInfo {
+public class AdditionalInfo implements Serializable {
 
     /**
      * In REST APIs, it can happen that some query parameters do not

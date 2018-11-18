@@ -14,7 +14,7 @@ import java.net.URLEncoder
 class RestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
-        val parameters: List<out Param>,
+        val parameters: MutableList<Param>,
         var auth: AuthenticationInfo = NoAuth(),
         /**
          * If true, it means that it will
@@ -41,7 +41,8 @@ class RestCallAction(
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
     override fun copy(): Action {
-        return RestCallAction(verb, path, parameters.map(Param::copy), auth, saveLocation, locationId)
+        val p = parameters.asSequence().map(Param::copy).toMutableList()
+        return RestCallAction(verb, path, p, auth, saveLocation, locationId)
     }
 
     override fun getName(): String {

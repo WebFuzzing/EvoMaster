@@ -3,7 +3,7 @@ package org.evomaster.e2etests.spring.examples.branches;
 import com.foo.rest.examples.spring.branches.BranchesController;
 import com.foo.rest.examples.spring.branches.BranchesPostDto;
 import io.restassured.http.ContentType;
-import org.evomaster.clientJava.controllerApi.dto.TargetsResponseDto;
+import org.evomaster.clientJava.controllerApi.dto.TestResultsDto;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,7 +36,7 @@ public class BranchesManualTest extends SpringTestBase {
     @Test
     public void test(){
 
-        TargetsResponseDto dto = remoteController.getTargetCoverage(Collections.emptySet());
+        TestResultsDto dto = remoteController.getTestResults(Collections.emptySet());
         assertEquals(0, dto.targets.size());
 
         given().contentType(ContentType.JSON)
@@ -47,7 +47,7 @@ public class BranchesManualTest extends SpringTestBase {
                 .statusCode(200)
                 .body("value", is(0));
 
-        dto = remoteController.getTargetCoverage(Collections.emptySet());
+        dto = remoteController.getTestResults(Collections.emptySet());
         assertTrue(dto.targets.size() > 0);
 
         List<String> targetDescriptions = dto.targets.stream()

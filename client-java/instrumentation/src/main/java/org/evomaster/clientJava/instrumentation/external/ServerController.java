@@ -1,6 +1,7 @@
 package org.evomaster.clientJava.instrumentation.external;
 
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
+import org.evomaster.clientJava.instrumentation.AdditionalInfo;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import java.io.IOException;
@@ -198,5 +199,26 @@ public class ServerController {
         }
 
         return (List<TargetInfo>) response;
+    }
+
+    public List<AdditionalInfo> getAdditionalInfoList(){
+
+        boolean sent = sendCommand(Command.ADDITIONAL_INFO);
+        if(!sent){
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if(response == null){
+            SimpleLogger.error("Failed to read response about additional info");
+            return null;
+        }
+
+        if(! (response instanceof List<?>)){
+            throw new IllegalStateException("Invalid response: "+response);
+        }
+
+        return (List<AdditionalInfo>) response;
     }
 }

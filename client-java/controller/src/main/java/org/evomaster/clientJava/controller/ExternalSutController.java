@@ -4,10 +4,12 @@ import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
 import org.evomaster.clientJava.controller.internal.db.StandardOutputTracker;
 import org.evomaster.clientJava.databasespy.P6SpyFormatter;
+import org.evomaster.clientJava.instrumentation.AdditionalInfo;
 import org.evomaster.clientJava.instrumentation.InstrumentingAgent;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.evomaster.clientJava.instrumentation.external.JarAgentLocator;
 import org.evomaster.clientJava.instrumentation.external.ServerController;
+import org.evomaster.clientJava.instrumentation.staticstate.ExecutionTracer;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -309,6 +311,13 @@ public abstract class ExternalSutController extends SutController {
         checkInstrumentation();
         return serverController.getTargetInfos(ids);
     }
+
+    @Override
+    public final List<AdditionalInfo> getAdditionalInfoList(){
+        checkInstrumentation();
+        return serverController.getAdditionalInfoList();
+    }
+
 
     @Override
     public final void newAction(int actionIndex) {

@@ -71,4 +71,7 @@ public class InstrumentationController {
         return list;
     }
 
+    public static List<AdditionalInfo> getAdditionalInfoList(){
+        return new ArrayList<>(ExecutionTracer.exposeAdditionalInfoList());
+    }
 }

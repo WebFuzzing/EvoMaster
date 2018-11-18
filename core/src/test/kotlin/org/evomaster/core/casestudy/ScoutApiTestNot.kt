@@ -20,7 +20,7 @@ class ScoutApiTestNot {
         assertTrue(ctr.stopSUT())
         assertTrue(ctr.startSUT())
 
-        var targets = ctr.getTargetCoverage()
+        var targets = ctr.getTestResults()
         assertTrue(targets!!.targets.isEmpty())
 
         val baseUrlOfSut = ctr.getSutInfo()!!.baseUrlOfSUT
@@ -30,7 +30,7 @@ class ScoutApiTestNot {
                 .then()
                 .statusCode(200)
 
-        targets = ctr.getTargetCoverage()
+        targets = ctr.getTestResults()
         assertTrue(targets!!.targets.size > 0)
 
         targets!!.targets.forEach { t ->

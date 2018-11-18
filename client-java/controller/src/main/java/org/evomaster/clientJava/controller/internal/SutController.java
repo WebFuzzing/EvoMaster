@@ -18,6 +18,7 @@ import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
 import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto;
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto;
+import org.evomaster.clientJava.instrumentation.AdditionalInfo;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
@@ -285,6 +286,12 @@ public abstract class SutController implements SutHandler{
     public abstract String getDatabaseDriverName();
 
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
+
+    /**
+     * Get additional info for each action in the test.
+     * The list is ordered based on the action index.
+     */
+    public abstract List<AdditionalInfo> getAdditionalInfoList();
 
     /**
      * Depending of which kind of SUT we are dealing with (eg, REST, GraphQL or SPA frontend),

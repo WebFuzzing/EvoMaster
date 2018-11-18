@@ -9,16 +9,14 @@ import org.evomaster.clientJava.controllerApi.Formats;
 import org.evomaster.clientJava.controllerApi.dto.*;
 import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.clientJava.controllerApi.dto.problem.RestProblemDto;
+import org.evomaster.clientJava.instrumentation.AdditionalInfo;
 import org.evomaster.clientJava.instrumentation.TargetInfo;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.sql.Connection;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -159,14 +157,14 @@ public class EMController {
     }
 
 
-    @Path(ControllerConstants.TARGETS_PATH)
+    @Path(ControllerConstants.TEST_RESULTS)
     @GET
-    public Response getTargets(
+    public Response getTestResults(
             @QueryParam("ids")
             @DefaultValue("")
                     String idList) {
 
-        TargetsResponseDto dto = new TargetsResponseDto();
+        TestResultsDto dto = new TestResultsDto();
 
         Set<Integer> ids;
 
@@ -198,6 +196,13 @@ public class EMController {
             dto.targets.add(info);
         });
 
+        sutController.getAdditionalInfoList().forEach(a -> {
+            AdditionalInfoDto info = new AdditionalInfoDto();
+            info.queryParameters = new HashSet<>(a.getQueryParametersView());
+            info.headers = new HashSet<>(a.getHeadersView());
+
+            dto.additionalInfoList.add(info);
+        });
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }

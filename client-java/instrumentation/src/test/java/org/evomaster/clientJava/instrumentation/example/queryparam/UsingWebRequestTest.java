@@ -43,7 +43,7 @@ public class UsingWebRequestTest {
     @Test
     public void testHeadersAndParams(){
 
-        AdditionalInfo info = ExecutionTracer.getAdditionalInfo();
+        AdditionalInfo info = ExecutionTracer.exposeAdditionalInfoList().get(0);
         assertFalse(info.getQueryParametersView().contains("p0"));
         assertFalse(info.getQueryParametersView().contains("p1"));
         assertFalse(info.getHeadersView().contains("h0"));
