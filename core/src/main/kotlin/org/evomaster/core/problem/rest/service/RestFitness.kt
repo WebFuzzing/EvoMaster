@@ -356,6 +356,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             Entity.entity(body.gene.getValueAsPrintableString(mode = mode), body.contentType())
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else if(a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH){
+            /*
+                PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
+                when objects like WebRequest are used. So we default to urlencoded
+             */
+            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
         } else {
             null
         }

@@ -238,7 +238,22 @@ class RemoteController() {
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
         if (!wasSuccess(response)) {
-            log.warn("Failed to execute database command. HTTP status: {}", response.status)
+            log.warn("Failed to execute database command. HTTP status: {}.", response.status)
+
+            val dto = try {
+                response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
+            } catch (e: Exception) {
+                log.warn("Failed to parse dto", e)
+                return false
+            }
+
+            if(dto?.error != null) {
+                log.warn("Error message: " + dto.error)
+            }
+            /*
+                TODO refactor all methods in this class to print error message, if any
+             */
+
             return false
         }
 

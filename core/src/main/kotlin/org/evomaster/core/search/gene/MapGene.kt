@@ -67,7 +67,7 @@ class MapGene<T>(
                     """
                     "${f.name}":${f.getValueAsPrintableString()}
                     """
-                }.joinToString { "," } +
+                }.joinToString(",") +
                 "}";
     }
 
