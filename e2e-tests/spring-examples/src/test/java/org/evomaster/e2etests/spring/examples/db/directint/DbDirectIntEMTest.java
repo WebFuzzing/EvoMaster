@@ -20,7 +20,7 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
                     "--createTests", "true",
                     "--seed", "42",
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "5000",
+                    "--maxActionEvaluations", "7000",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--heuristicsForSQL", "true",
                     "--generateSqlDataWithSearch", "false"
