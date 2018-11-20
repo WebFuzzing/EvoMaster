@@ -48,4 +48,8 @@ class DateTimeGene(
         return listOf(this).plus(date.flatView()).plus(time.flatView())
     }
 
+    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
+        return if(predicate(this)) listOf(this) else listOf(this).plus(date.flatViewWithTypeFilter(predicate)).plus(time.flatViewWithTypeFilter(predicate))
+    }
+
 }

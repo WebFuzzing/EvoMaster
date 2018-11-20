@@ -53,4 +53,8 @@ class OptionalGene(name: String,
         return listOf(this).plus(gene.flatView())
     }
 
+    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
+        return if(predicate(this)) listOf(this) else listOf(this).plus(gene.flatViewWithTypeFilter(predicate))
+    }
+
 }
