@@ -439,7 +439,7 @@ alter table vietnam_import_source_files_locations_file
   add constraint FKjdj3duiul1xxyugdhqopct995 foreign key (vietnam_import_source_files_id) references vietnam_import_source_files;
 
 alter table vietnam_import_source_files_prototype_database_file
-  add constraint FKqqsaykseguaei0smol3v9go34 foreign key (prototype_database_file_id) references file_metadata
+  add constraint FKqqsaykseguaei0smol3v9go34 foreign key (prototype_database_file_id) references file_metadata;
 
 alter table vietnam_import_source_files_prototype_database_file
   add constraint FK1m44ao56kbf4pvui270q3c39j foreign key (vietnam_import_source_files_id) references vietnam_import_source_files;
