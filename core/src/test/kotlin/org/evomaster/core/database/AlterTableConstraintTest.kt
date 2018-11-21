@@ -1,44 +1,17 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controller.db.SqlScriptRunner
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
-import java.sql.Connection
-import java.sql.DriverManager
 
-class AlterTableConstraintTest {
+class AlterTableConstraintTest : ExtractTestBase() {
 
-
-    companion object {
-
-        private lateinit var connection: Connection
-
-        @BeforeAll
-        @JvmStatic
-        fun initClass() {
-            connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "")
-        }
-    }
-
-    @BeforeEach
-    fun initTest() {
-
-        //custom H2 command
-        SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
-    }
-
+    override fun getSchemaLocation()= "/sql_schema/passports.sql"
 
     @Test
     fun testCreateAndExtract() {
-
-        val sqlCommand = this::class.java.getResource("/sql_schema/passports.sql").readText()
-
-        SqlScriptRunner.execCommand(connection, sqlCommand)
 
         val schema = SchemaExtractor.extract(connection)
 

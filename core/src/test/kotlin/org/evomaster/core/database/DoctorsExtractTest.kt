@@ -15,34 +15,13 @@ import org.junit.jupiter.api.function.Executable
 import java.sql.Connection
 import java.sql.DriverManager
 
-class DoctorsExtractTest {
+class DoctorsExtractTest : ExtractTestBase() {
 
-
-    companion object {
-
-        private lateinit var connection: Connection
-
-        private val sqlSchema = this::class.java.getResource("/sql_schema/doctors.sql").readText()
-
-        @BeforeAll
-        @JvmStatic
-        fun initClass() {
-            connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "")
-        }
-    }
-
-    @BeforeEach
-    fun initTest() {
-
-        //custom H2 command
-        SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
-    }
+    override fun getSchemaLocation() = "/sql_schema/doctors.sql"
 
 
     @Test
     fun testIssueWithFK() {
-
-        SqlScriptRunner.execCommand(connection, sqlSchema)
 
         val schema = SchemaExtractor.extract(connection)
 
@@ -57,7 +36,6 @@ class DoctorsExtractTest {
         DbAction.randomizeDbActionGenes(actions, randomness)
 
         val dto = DbActionTransformer.transform(actions)
-
 
         assertEquals(actions.size, dto.insertions.size)
     }

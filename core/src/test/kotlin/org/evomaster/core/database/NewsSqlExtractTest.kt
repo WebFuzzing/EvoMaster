@@ -11,34 +11,13 @@ import org.junit.jupiter.api.function.Executable
 import java.sql.Connection
 import java.sql.DriverManager
 
-class NewsSqlExtractTest {
+class NewsSqlExtractTest : ExtractTestBase() {
 
-
-    companion object {
-
-        private lateinit var connection: Connection
-
-        @BeforeAll
-        @JvmStatic
-        fun initClass() {
-            connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "")
-        }
-    }
-
-    @BeforeEach
-    fun initTest() {
-
-        //custom H2 command
-        SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
-    }
+    override fun getSchemaLocation() = "/sql_schema/news.sql"
 
 
     @Test
     fun testCreateAndExtract() {
-
-        val sqlCommand = this::class.java.getResource("/sql_schema/news.sql").readText()
-
-        SqlScriptRunner.execCommand(connection, sqlCommand)
 
         val schema = SchemaExtractor.extract(connection)
 
