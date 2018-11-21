@@ -61,7 +61,7 @@ class OcvnExtractTest : ExtractTestBase() {
         )
 
         for (name in tableNames) {
-            assertTrue(schema.tables.any { it.name.equals(name, true) })
+            assertTrue(schema.tables.any { it.name.equals(name, true) }, "Missing table $name")
         }
     }
 }
