@@ -70,5 +70,9 @@ enum class ColumnDataType(dataTypeName: String) {
      * Mapped to java.math.BigDecimal.
      * Example: DECIMAL(20, 2)
      **/
-    DECIMAL("DECIMAL")
+    DECIMAL("DECIMAL"),
+    /**
+     * A Binary Large Object, typically images, audio or multimedia.
+     */
+    BLOB("BLOB")
 }

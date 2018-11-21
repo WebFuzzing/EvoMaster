@@ -2,6 +2,8 @@ package org.evomaster.core.database
 
 import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
 import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
+import org.evomaster.core.search.gene.SqlForeignKeyGene
+import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
@@ -63,5 +65,25 @@ class OcvnExtractTest : ExtractTestBase() {
         for (name in tableNames) {
             assertTrue(schema.tables.any { it.name.equals(name, true) }, "Missing table $name")
         }
+    }
+
+
+    @Test
+    fun testBlobIssue(){
+
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+
+        val tableName = "FILE_CONTENT"
+        assertTrue(schema.tables.any { it.name.equals(tableName, true) })
+
+        val columnName = "BYTES"
+        val actions = builder.createSqlInsertionAction(tableName, setOf(columnName))
+
+        val all = actions.flatMap { it.seeGenes() }.flatMap { it.flatView() }
+        val gene = all.find { it.name.equals(columnName, true) }
+
+        assertTrue(gene is StringGene)
     }
 }

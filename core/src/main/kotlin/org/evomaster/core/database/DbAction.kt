@@ -295,6 +295,12 @@ class DbAction(
                 //handleVarBinary(it)
 
                 /**
+                 * Could be any kind of binary data... so let's just use a string,
+                 * which also simplifies when needing generate the test files
+                 */
+                BLOB -> StringGene(name = it.name, minLength = 0, maxLength = 8)
+
+                /**
                  * REAL is identical to the floating point statement float(24).
                  * TODO How to discover if the source field is a float/Float field?
                  */
