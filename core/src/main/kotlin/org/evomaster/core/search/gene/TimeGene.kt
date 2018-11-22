@@ -55,11 +55,4 @@ class TimeGene(
         return listOf(this, hour, minute, second)
     }
 
-    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this)
-        else listOf(this).plus(hour.flatViewWithTypeFilter(predicate))
-                .plus(minute.flatViewWithTypeFilter(predicate))
-                .plus(second.flatViewWithTypeFilter(predicate))
-    }
-
 }

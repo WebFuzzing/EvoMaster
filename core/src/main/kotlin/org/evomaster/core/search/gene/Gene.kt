@@ -71,9 +71,4 @@ abstract class Gene(var name: String) {
     open fun flatView(): List<Gene>{
         return listOf(this)
     }
-
-    //update: add filter for flatView
-    open fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this) else listOf()
-    }
 }
