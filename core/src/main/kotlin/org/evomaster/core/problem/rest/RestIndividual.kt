@@ -8,7 +8,7 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.Randomness
 
 
-class RestIndividual(val actions: MutableList<RestAction>,
+open class RestIndividual(val actions: MutableList<RestAction>,
                      val sampleType: SampleType,
                      val dbInitialization: MutableList<DbAction> = mutableListOf()
 ) : Individual() {

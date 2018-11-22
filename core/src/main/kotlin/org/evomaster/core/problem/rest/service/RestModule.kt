@@ -19,7 +19,7 @@ class RestModule : AbstractModule(){
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<FitnessFunction<RestIndividual>>() {})
-                .to(RestFitness::class.java)
+                .to(object : TypeLiteral<RestFitness<RestIndividual>>(){})
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<RestIndividual>>() {})

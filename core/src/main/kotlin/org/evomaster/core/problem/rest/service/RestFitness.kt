@@ -37,14 +37,13 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
-class RestFitness : FitnessFunction<RestIndividual>() {
-
+open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
     }
 
     @Inject
-    private lateinit var rc: RemoteController
+    protected lateinit var rc: RemoteController
 
     @Inject
     private lateinit var sampler: RestSampler
@@ -93,7 +92,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         return true
     }
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: T): EvaluatedIndividual<T>? {
 
         rc.resetSUT()
 
@@ -181,7 +180,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         expandIndividual(individual, dto.additionalInfoList)
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+        return EvaluatedIndividual(fv, individual.copy() as T, actionResults)
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual
@@ -236,7 +235,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
     }
 
-    private fun doInitializingActions(ind: RestIndividual) {
+    protected fun doInitializingActions(ind: RestIndividual) {
 
         if (ind.dbInitialization.isEmpty()) {
             return
@@ -252,7 +251,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     }
 
 
-    private fun isEmpty(dto: ExtraHeuristicDto): Boolean {
+    protected fun isEmpty(dto: ExtraHeuristicDto): Boolean {
 
         val hasMin = dto.toMinimize != null && !dto.toMinimize.isEmpty()
         val hasMax = dto.toMaximize != null && !dto.toMaximize.isEmpty()
@@ -264,7 +263,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
      * Create local targets for each HTTP status code in each
      * API entry point
      */
-    private fun handleResponseTargets(
+    protected fun handleResponseTargets(
             fv: FitnessValue,
             actions: MutableList<RestAction>,
             actionResults: MutableList<ActionResult>) {
@@ -286,7 +285,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    private fun handleRestCall(a: RestCallAction,
+    protected fun handleRestCall(a: RestCallAction,
                                actionResults: MutableList<ActionResult>,
                                chainState: MutableMap<String, String>)
             : Boolean {

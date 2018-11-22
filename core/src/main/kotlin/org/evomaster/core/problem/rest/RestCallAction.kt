@@ -2,9 +2,11 @@ package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.serviceII.BindParams
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
@@ -67,17 +69,36 @@ class RestCallAction(
      * Note: "this" can be just an ancestor of "other"
      */
     fun bindToSamePathResolution(other: RestCallAction) {
-        if (!this.path.isAncestorOf(other.path)) {
-            throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
-                    "${this.path} vs ${other.path}")
-        }
+//        if (!this.path.isAncestorOf(other.path)) {
+//            throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
+//                    "${this.path} vs ${other.path}")
+//        }
+//
+//        for (i in 0 until parameters.size) {
+//            val target = parameters[i]
+//            if (target is PathParam) {
+//                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
+//                parameters[i].gene.copyValueFrom(k.gene)
+//            }
+//        }
+        bindToSamePathResolution(other.path, other.parameters)
+    }
 
-        for (i in 0 until parameters.size) {
-            val target = parameters[i]
-            if (target is PathParam) {
-                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
-                parameters[i].gene.copyValueFrom(k.gene)
+    fun bindToSamePathResolution(otherPath : RestPath, params : List<Param>) {
+        if (!this.path.isAncestorOf(otherPath)) {
+            throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same otherPath resolution: " +
+                    "${this.path} vs ${otherPath}")
+        }
+        //FIXME bind required parameter
+        if(BindParams.numOfBodyParam(parameters) < parameters.size){
+            parameters.filter { param -> !(param is BodyParam) }.forEach { param->
+                BindParams.bindParam(param, this.path, otherPath, params)
             }
+        }else{
+            parameters.forEach {param->
+                BindParams.bindParam(param, this.path, otherPath, params)
+            }
+
         }
     }
 

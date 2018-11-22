@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest
 
+import org.evomaster.core.EMConfig
+
 /**
  * Specify how a REST individual was sampled.
  * This info is needed to have custom mutations of the
@@ -8,5 +10,6 @@ package org.evomaster.core.problem.rest
 enum class SampleType {
     RANDOM,
     SMART,
+    @EMConfig.Experimental SMART_RESOURCE,
     SMART_GET_COLLECTION
 }

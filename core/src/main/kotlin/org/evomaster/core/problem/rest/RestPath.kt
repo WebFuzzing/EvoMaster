@@ -227,4 +227,12 @@ class RestPath(path: String) {
     private fun encode(s: String): String {
         return URLEncoder.encode(s, "UTF-8")
     }
+
+    fun copy() : RestPath{
+        return RestPath(this.toString())
+    }
+
+    fun getStaticTokens(): List<String> {
+        return tokens.filter { t -> !t.isParameter }.map { t -> t.name }
+    }
 }
