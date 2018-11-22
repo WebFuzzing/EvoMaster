@@ -1,10 +1,12 @@
 package org.evomaster.core.database
 
 import org.evomaster.core.database.schema.Column
+import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.service.Randomness
 
 /**
  *  An action executed on the database.
@@ -18,7 +20,209 @@ class DbAction(
         computedGenes: List<Gene>? = null
 ) : Action {
 
-    private val genes: List<Gene> = computedGenes ?: selectedColumns.map{
+    companion object {
+
+        fun verifyForeignKeys(actions: List<DbAction>): Boolean {
+
+            val all = actions.flatMap { it.seeGenes() }
+
+            for (i in 1 until actions.size) {
+
+                val previous = actions.subList(0, i)
+
+                actions[i].seeGenes().asSequence()
+                        .flatMap { it.flatView().asSequence() }
+                        .filterIsInstance<SqlForeignKeyGene>()
+                        .filter { it.isReferenceToNonPrintable(all) }
+                        .map { it.uniqueIdOfPrimaryKey }
+                        .forEach {
+                            val id = it
+                            val match = previous.asSequence()
+                                    .flatMap { it.seeGenes().asSequence() }
+                                    .filterIsInstance<SqlPrimaryKeyGene>()
+                                    .any { it.uniqueId == id }
+
+                            if (!match) {
+                                return false
+                            }
+                        }
+            }
+            return true
+        }
+
+        //FIXME need refactoring
+        fun randomizeDbActionGenes(actions: List<DbAction>, randomness: Randomness) {
+            /*
+                At this point, SQL genes are particular, as they can have
+                references to each other (eg Foreign Keys)
+
+                FIXME: refactoring to put such concept at higher level directly in Gene.
+                And, in any case, shouldn't something specific just for Rest
+             */
+
+            val all = actions.flatMap { it.seeGenes() }
+            all.asSequence()
+                    .filter { it.isMutable() }
+                    .forEach {
+                        if (it is SqlPrimaryKeyGene) {
+                            val g = it.gene
+                            if (g is SqlForeignKeyGene) {
+                                g.randomize(randomness, false, all)
+                            } else {
+                                it.randomize(randomness, false)
+                            }
+                        } else if (it is SqlForeignKeyGene) {
+                            it.randomize(randomness, false, all)
+                        } else {
+                            it.randomize(randomness, false)
+                        }
+                    }
+
+            if (javaClass.desiredAssertionStatus()) {
+                //TODO refactor if/when Kotlin will support lazy asserts
+                assert(DbAction.verifyForeignKeys(actions))
+            }
+
+        }
+
+        private val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
+
+        /**
+         * Some actions might break schema constraints
+         * (such as unique columns, primary keys or foreign keys).
+         * This method tries to fix each action that is broken.
+         *
+         * In order to do so, it starts by finding the first action with a broken gene.
+         * This gene is randomize. If an action cannot be repaired after
+         * <code>maxNumberOfAttemptsToRepairAnAction</code> attempts
+         * (because it is not satisfiable given the current list of previous actions),
+         * the remaining actions (including the one that is broken) are removed
+         * from the list of actions.
+         *
+         * Returns true if the action list was fixed without removing any action.
+         * Returns false if actions needed to be removed
+         */
+        fun repairBrokenDbActionsList(actions: MutableList<DbAction>,
+                                      randomness: Randomness,
+                                      maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
+        ): Boolean {
+
+            if (maxNumberOfAttemptsToRepairAnAction < 0) {
+                throw IllegalArgumentException("Maximum umber of attempts to fix an action should be non negative but it is: $maxNumberOfAttemptsToRepairAnAction")
+            }
+
+            var attemptCounter = 0
+            var previousActionIndexToRepair = -1
+
+            var geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
+            var geneToRepair = geneToRepairAndActionIndex.first
+            var actionIndexToRepair = geneToRepairAndActionIndex.second
+
+            while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
+
+                val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
+                randomizeGene(geneToRepair, randomness, previousGenes)
+
+                if (actionIndexToRepair == previousActionIndexToRepair) {
+                    //
+                    attemptCounter++
+                } else if (actionIndexToRepair > previousActionIndexToRepair) {
+                    attemptCounter = 0
+                    previousActionIndexToRepair = actionIndexToRepair
+                } else {
+                    throw IllegalStateException("Invalid last action repaired at position $previousActionIndexToRepair " +
+                            " but new action to repair at position $actionIndexToRepair")
+                }
+
+                geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
+                geneToRepair = geneToRepairAndActionIndex.first
+                actionIndexToRepair = geneToRepairAndActionIndex.second
+            }
+
+            if (geneToRepair == null) {
+                return true
+            } else {
+                assert(actionIndexToRepair >= 0 && actionIndexToRepair < actions.size)
+                // truncate list of actions to make them valid
+                val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
+                actions.clear()
+                actions.addAll(truncatedListOfActions)
+                return false
+            }
+        }
+
+        private fun randomizeGene(gene: Gene, randomness: Randomness, previousGenes: List<Gene>) {
+            when (gene) {
+                is SqlForeignKeyGene -> gene.randomize(randomness, true, previousGenes)
+                else ->
+                    if (gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
+                        //FIXME: this needs refactoring
+                        gene.gene.randomize(randomness, true, previousGenes)
+                    } else {
+                        //TODO other cases
+                        gene.randomize(randomness, true)
+                    }
+            }
+        }
+
+        /**
+         * Returns true iff all action are valid wrt the schema.
+         * For example
+         */
+        fun verifyActions(actions: List<DbAction>): Boolean {
+            return verifyUniqueColumns(actions)
+                    && verifyForeignKeys(actions)
+        }
+
+        /**
+         * Returns true if a insertion tries to insert a repeated value
+         * in a unique column
+         */
+        fun verifyUniqueColumns(actions: List<DbAction>): Boolean {
+            val offendingGene = findFirstOffendingGeneWithIndex(actions)
+            return (offendingGene.first == null)
+        }
+
+        /**
+         * Returns the first offending gene found with the action index to the
+         * passed list where the gene was found.
+         * If no such gene is found, the function returns the tuple (-1,null).
+         */
+        private fun findFirstOffendingGeneWithIndex(actions: List<Action>): Pair<Gene?, Int> {
+            val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<Gene>>()
+
+            for ((actionIndex, action) in actions.withIndex()) {
+                if (action !is DbAction) {
+                    continue
+                }
+
+                val tableName = action.table.name
+
+                action.seeGenes().forEach { g ->
+                    val columnName = g.name
+                    if (action.table.columns.filter { c ->
+                                c.name == columnName && !c.autoIncrement && (c.unique || c.primaryKey)
+                            }.isNotEmpty()) {
+                        val key = Pair(tableName, columnName)
+
+                        val genes = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
+
+                        if (genes.filter { otherGene -> otherGene.containsSameValueAs(g) }.isNotEmpty()) {
+                            return Pair(g, actionIndex)
+                        } else {
+                            genes.add(g)
+                        }
+                    }
+                }
+
+            }
+            return Pair(null, -1)
+        }
+    }
+
+
+    private
+    val genes: List<Gene> = computedGenes ?: selectedColumns.map {
 
         val fk = getForeignKey(table, it)
 
@@ -29,33 +233,90 @@ class DbAction(
          */
 
         val gene = when {
-        //TODO handle all constraints and cases
+            //TODO handle all constraints and cases
             it.autoIncrement ->
                 SqlAutoIncrementGene(it.name)
             fk != null ->
                 SqlForeignKeyGene(it.name, id, fk.targetTable, it.nullable)
-            it.type.equals("VARCHAR", ignoreCase = true) ->
-                StringGene(name = it.name, minLength = 0, maxLength = it.size)
-            it.type.equals("INTEGER", ignoreCase = true) ->
-                IntegerGene(it.name)
-            it.type.equals("LONG", ignoreCase = true) ->
-                LongGene(it.name)
-            it.type.equals("BIGINT", ignoreCase = true) ->
-                LongGene(it.name)
-            it.type.equals("BOOLEAN", ignoreCase = true) ->
-                BooleanGene(it.name)
-            it.type.equals("TIMESTAMP", ignoreCase = true) ->
-                /*
-                    TODO handle fact that TimeStamp have year limitations and possible different
-                    string formats when printed
+
+            else -> when (it.type) {
+                /**
+                 * BOOLEAN(1) is assumed to be a boolean/Boolean field
                  */
-                    DateTimeGene(it.name)
-//            it.type.equals("VARBINARY", ignoreCase = true) ->
-//                handleVarBinary(it)
-            else -> throw IllegalArgumentException("Cannot handle: $it")
+                BOOLEAN -> BooleanGene(it.name)
+                /**
+                 * TINYINT(3) is assumed to be representing a byte/Byte field
+                 */
+                TINYINT -> IntegerGene(it.name,
+                        min = it.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                        max = it.upperBound ?: Byte.MAX_VALUE.toInt())
+                /**
+                 * SMALLINT(5) is assumed as a short/Short field
+                 */
+                SMALLINT -> IntegerGene(it.name,
+                        min = it.lowerBound ?: Short.MIN_VALUE.toInt(),
+                        max = it.upperBound ?: Short.MAX_VALUE.toInt())
+                /**
+                 * CHAR(255) is assumed to be a char/Character field.
+                 * A StringGene of length 1 is used to represent the data.
+                 * TODO How to discover if it is a char or a char[] of 255 elements?
+                 */
+                CHAR -> StringGene(name = it.name, value = "f", minLength = 0, maxLength = 1)
+                /**
+                 * INTEGER(10) is a int/Integer field
+                 */
+                INTEGER -> IntegerGene(it.name,
+                        min = it.lowerBound ?: Int.MIN_VALUE,
+                        max = it.upperBound ?: Int.MAX_VALUE)
+                /**
+                 * BIGINT(19) is a long/Long field
+                 */
+                BIGINT -> LongGene(it.name)
+                /**
+                 * DOUBLE(17) is assumed to be a double/Double field
+                 * TODO How to discover if the source field is a float/Float field?
+                 */
+
+                DOUBLE -> DoubleGene(it.name)
+                /**
+                 * VARCHAR(N) is assumed to be a String with a maximum length of N.
+                 * N could be as large as Integer.MAX_VALUE
+                 */
+                VARCHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                /**
+                 * TIMESTAMP is assumed to be a Date field
+                 */
+                TIMESTAMP -> SqlTimestampGene(it.name)
+                /**
+                 * CLOB(N) stores a UNICODE document of length N
+                 */
+                CLOB -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                //it.type.equals("VARBINARY", ignoreCase = true) ->
+                //handleVarBinary(it)
+
+                /**
+                 * Could be any kind of binary data... so let's just use a string,
+                 * which also simplifies when needing generate the test files
+                 */
+                BLOB -> StringGene(name = it.name, minLength = 0, maxLength = 8)
+
+                /**
+                 * REAL is identical to the floating point statement float(24).
+                 * TODO How to discover if the source field is a float/Float field?
+                 */
+                REAL -> DoubleGene(it.name)
+
+                /**
+                 * TODO: DECIMAL precision is lower than a float gene
+                 */
+                DECIMAL -> FloatGene(it.name)
+
+                else -> throw IllegalArgumentException("Cannot handle: $it")
+            }
+
         }
 
-        if(it.primaryKey) {
+        if (it.primaryKey) {
             SqlPrimaryKeyGene(it.name, table.name, gene, id)
         } else {
             gene
@@ -77,15 +338,15 @@ class DbAction(
             A workaround for the moment is to guess a possible type/constraints
             based on the column name
          */
-        if(column.name.contains("time", ignoreCase = true)){
-            return DateTimeGene(column.name)
+        if (column.name.contains("time", ignoreCase = true)) {
+            return SqlTimestampGene(column.name)
         } else {
             //go for a default string
-            return StringGene(name = column.name, minLength = 0, maxLength =  column.size)
+            return StringGene(name = column.name, minLength = 0, maxLength = column.size)
         }
     }
 
-    private fun getForeignKey(table: Table, column: Column) : ForeignKey?{
+    private fun getForeignKey(table: Table, column: Column): ForeignKey? {
 
         //TODO: what if a column is part of more than 1 FK? is that even possible?
 
@@ -102,10 +363,14 @@ class DbAction(
     }
 
     override fun copy(): Action {
-        return DbAction(table, selectedColumns, id, genes)
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy))
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
         return false
+    }
+
+    fun geInsertionId(): Long {
+        return this.id
     }
 }

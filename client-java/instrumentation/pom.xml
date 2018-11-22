@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster-client-java</artifactId>
-        <version>0.1.2-SNAPSHOT</version>
+        <version>0.2.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-client-java-instrumentation</artifactId>
@@ -25,10 +25,6 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm-util</artifactId>
         </dependency>
-        <dependency>
-            <groupId>p6spy</groupId>
-            <artifactId>p6spy</artifactId>
-        </dependency>
 
 
         <dependency>
@@ -39,6 +35,18 @@
             <groupId>org.junit.platform</groupId>
             <artifactId>junit-platform-surefire-provider</artifactId>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -81,11 +89,6 @@
                                     <pattern>org.objectweb</pattern>
                                     <shadedPattern>shaded.org.objectweb</shadedPattern>
                                 </relocation>
-                                <!-- Shading this one gives a few issues... -->
-                                <!--<relocation>-->
-                                    <!--<pattern>com.p6spy</pattern>-->
-                                    <!--<shadedPattern>shaded.com.p6spy</shadedPattern>-->
-                                <!--</relocation>-->
                             </relocations>
                         </configuration>
                     </execution>

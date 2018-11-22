@@ -26,40 +26,52 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
+public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
+    /*
+        In the SUT, there are 2 endpoints:
+        1) a POST that generates some data into the DB
+        2) a GET that search for such data, specified by parameters
 
-    @Disabled
+        To cover all statements, we first need to create data with a POST,
+        and then search for it with a GET.
+
+        However, in contrast to DbDirectInt, here we disable the call to POST.
+        This is done in the EM Driver.
+        This makes the SUT "read-only".
+        Therefore, the only way to have the right data in the DB for the GET to
+        find it, is to write such data directly with SQL commands.
+     */
+
     @Test
-    public void testRunEM() {
+    public void testRunEM() throws Throwable {
 
-        //TODO add flaky check once fixed
-        //handleFlaky(() -> {
+        handleFlaky(() -> {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "20000",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForSQL", "true",
-                "--generateSqlDataWithSearch", "true",
-                "--maxTestSize", "1", //TODO Remove?
-                "--maxSqlInitActionsPerMissingData", "1" //TODO Remove?
-        };
+            String[] args = new String[]{
+                    "--createTests", "true",
+                    "--outputFormat", "JAVA_JUNIT_5",
+                    "--seed", "42",
+                    "--sutControllerPort", "" + controllerPort,
+                    "--maxActionEvaluations", "2000",
+                    "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                    "--heuristicsForSQL", "true",
+                    "--generateSqlDataWithSearch", "true"
+            };
 
-        Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
 
-        assertTrue(solution.getIndividuals().size() >= 1);
+            assertTrue(solution.getIndividuals().size() >= 1);
 
-        //the POST is deactivated in the controller
-        assertNone(solution, HttpVerb.POST, 200);
+            //the POST is deactivated in the controller
+            assertNone(solution, HttpVerb.POST, 200);
 
-        assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
-        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
-        assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+            assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
+        });
+
     }
-
 
     @Test
     public void testSteps() {
@@ -83,7 +95,8 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
 
 
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
-                new TypeLiteral<FitnessFunction<RestIndividual>>(){}));
+                new TypeLiteral<FitnessFunction<RestIndividual>>() {
+                }));
         EvaluatedIndividual ei = ff.calculateCoverage(ind);
         assertNotNull(ei);
 
@@ -92,14 +105,13 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
         //as no data in database, should get worst heuristic value
         assertEquals(Double.MAX_VALUE, noDataFV.averageExtraDistancesToMinimize(0));
 
-        RestCallResult result = (RestCallResult) ((EvaluatedAction)ei.evaluatedActions().get(0)).getResult();
+        RestCallResult result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
-
 
 
         //now, try to execute an action in which as well we add SQL data
 
-        List<DbAction> insertions =  sampler.sampleSqlInsertion("DB_DIRECT_INT_ENTITY", Collections.singleton("*"));
+        List<DbAction> insertions = sampler.sampleSqlInsertion("DB_DIRECT_INT_ENTITY", Collections.singleton("*"));
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call
@@ -117,10 +129,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
         insertions.stream()
                 .flatMap(a -> a.seeGenes().stream())
                 .forEach(g -> {
-                    if(g.getName().equalsIgnoreCase("x")) {
+                    if (g.getName().equalsIgnoreCase("x")) {
                         IntegerGene gene = (IntegerGene) g;
                         gene.setValue(x + 1);
-                    } else if(g.getName().equalsIgnoreCase("y")) {
+                    } else if (g.getName().equalsIgnoreCase("y")) {
                         IntegerGene gene = (IntegerGene) g;
                         gene.setValue(y + 1);
                     }
@@ -137,12 +149,12 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
         assertTrue(closeDataFV.averageExtraDistancesToMinimize(0) <
                 noDataFV.averageExtraDistancesToMinimize(0));
 
-        for(int target : noDataFV.getViewOfData().keySet()) {
+        for (int target : noDataFV.getViewOfData().keySet()) {
             assertTrue(closeDataFV.compareExtraToMinimize(target, noDataFV) >= 0);
         }
 
         //but still not reaching target
-        result = (RestCallResult) ((EvaluatedAction)ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
         assertEquals(400, result.getStatusCode().intValue());
 
 
@@ -150,10 +162,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
         insertions.stream()
                 .flatMap(a -> a.seeGenes().stream())
                 .forEach(g -> {
-                    if(g.getName().equalsIgnoreCase("x")) {
+                    if (g.getName().equalsIgnoreCase("x")) {
                         IntegerGene gene = (IntegerGene) g;
                         gene.setValue(x);
-                    } else if(g.getName().equalsIgnoreCase("y")) {
+                    } else if (g.getName().equalsIgnoreCase("y")) {
                         IntegerGene gene = (IntegerGene) g;
                         gene.setValue(y);
                     }
@@ -169,7 +181,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase{
 //            assertTrue(rightDataFV.compareExtraToMinimize(target, closeDataFV) >= 0);
 //        }
 
-        result = (RestCallResult) ((EvaluatedAction)ei.evaluatedActions().get(0)).getResult();
+        result = (RestCallResult) ((EvaluatedAction) ei.evaluatedActions().get(0)).getResult();
         assertEquals(200, result.getStatusCode().intValue());
     }
 

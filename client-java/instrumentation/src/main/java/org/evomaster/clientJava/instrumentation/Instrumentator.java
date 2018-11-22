@@ -3,7 +3,8 @@ package org.evomaster.clientJava.instrumentation;
 
 
 import org.evomaster.clientJava.instrumentation.testability.ReplacementList;
-import org.evomaster.clientJava.instrumentation.visitor.CoverageClassVisitor;
+import org.evomaster.clientJava.instrumentation.coverage.CoverageClassVisitor;
+import org.evomaster.clientJava.instrumentation.tracker.TrackerClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -68,6 +69,13 @@ public class Instrumentator {
                     .forEach(t -> t.transformClass(cn));
 
             cv = new CoverageClassVisitor(cv, className);
+
+            /*
+                this should be done after coverage instrumentation, as
+                we don't want these extra methods added as part of
+                targets to cover
+             */
+            cv = new TrackerClassVisitor(cv, className);
 
             cn.accept(cv);
 

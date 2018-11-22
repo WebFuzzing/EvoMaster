@@ -1,7 +1,8 @@
 package org.evomaster.clientJava.controller.internal.db;
 
+import org.evomaster.clientJava.clientUtil.SimpleLogger;
 import org.evomaster.clientJava.controller.internal.SutController;
-import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
+import org.evomaster.clientJava.databasespy.P6SpyFormatter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -83,7 +84,12 @@ public class StandardOutputTracker extends ByteArrayOutputStream{//extends Print
         }
 
         String sql = line.substring(P6SpyFormatter.PREFIX.length());
-        sc.handleSql(sql);
+
+        try {
+            sc.handleSql(sql);
+        } catch (Exception | Error e){
+            SimpleLogger.error("Failed to handle SQL command: '"+sql+"'\n" + e.getMessage());
+        }
     }
 
 }

@@ -54,7 +54,7 @@ public class DbBaseRest {
     )
     public ResponseEntity<DbBaseDto> get(@PathVariable("id") Long id) {
 
-        DbBaseEntity entity = repository.findOne(id);
+        DbBaseEntity entity = repository.findById(id).orElse(null);
 
         if(entity == null){
             return ResponseEntity.status(404).build();

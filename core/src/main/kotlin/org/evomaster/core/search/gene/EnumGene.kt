@@ -14,7 +14,7 @@ class EnumGene<T>(
             throw IllegalArgumentException("Empty list of values")
         }
         if (index < 0 || index >= values.size) {
-            throw IllegalArgumentException("Invalid index: " + index)
+            throw IllegalArgumentException("Invalid index: $index")
         }
     }
 
@@ -28,7 +28,7 @@ class EnumGene<T>(
         return copy
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         val k = if (forceNewValue) {
             randomness.nextInt(0, values.size - 1, index)
@@ -39,11 +39,11 @@ class EnumGene<T>(
         index = k
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
 
         val res = values[index]
         if(res is String){
-            return "\"$res\"";
+            return "\"$res\""
         } else {
             return res.toString()
         }
@@ -59,4 +59,12 @@ class EnumGene<T>(
         }
         this.index = other.index
     }
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is EnumGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.index == other.index
+    }
+
 }

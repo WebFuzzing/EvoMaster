@@ -1,13 +1,10 @@
 package org.evomaster.clientJava.instrumentation;
 
-import com.p6spy.engine.spy.appender.StdoutLogger;
 import org.evomaster.clientJava.clientUtil.SimpleLogger;
-import org.evomaster.clientJava.instrumentation.db.P6SpyFormatter;
 import org.evomaster.clientJava.instrumentation.external.AgentController;
-import org.evomaster.clientJava.instrumentation.staticState.ObjectiveRecorder;
+import org.evomaster.clientJava.instrumentation.staticstate.ObjectiveRecorder;
 import org.objectweb.asm.ClassReader;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
@@ -123,13 +120,19 @@ public class InstrumentingAgent {
         Objects.requireNonNull(driver);
 
         //see http://p6spy.readthedocs.io/en/latest/configandusage.html
-        System.setProperty("p6spy.config.logMessageFormat", P6SpyFormatter.class.getName());
         System.setProperty("p6spy.config.driverlist", driver);
         System.setProperty("p6spy.config.filter", "true");
         System.setProperty("p6spy.config.include", "select, insert, update, delete");
         System.setProperty("p6spy.config.autoflush", "true");
-        System.setProperty("p6spy.config.appender", StdoutLogger.class.getName());
+        System.setProperty("p6spy.config.appender", "com.p6spy.engine.spy.appender.StdoutLogger");
         System.setProperty("p6spy.config.jmx", "false");
+
+        /*
+            Note: this is a reference to a class in another module, although
+            this module does NOT (and should not) reference it.
+            Long story... see documentation on how P6Spy is used in EM.
+         */
+        System.setProperty("p6spy.config.logMessageFormat", "org.evomaster.clientJava.databasespy.P6SpyFormatter");
     }
 
 

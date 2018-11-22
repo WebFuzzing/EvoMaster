@@ -18,29 +18,68 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         }
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-
-        fields.forEach { f -> f.randomize(randomness, forceNewValue) }
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is ObjectGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.fields.size == other.fields.size
+                && this.fields.zip(other.fields) { thisField, otherField ->
+            thisField.containsSameValueAs(otherField)
+        }.all { it == true }
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        //by default, return in JSON format
+        fields.forEach { f -> f.randomize(randomness, forceNewValue, allGenes) }
+    }
+
+
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?) : String{
 
         val buffer = StringBuffer()
-        buffer.append("{")
 
-        fields.filter { f ->
-            f !is CycleObjectGene &&
-                    (f !is OptionalGene || f.isActive)
-        }.map { f ->
-            "\"${f.name}\":${f.getValueAsPrintableString()}"
-        }.joinTo(buffer, ", ")
+        //by default, return in JSON format
+        if(mode == null || mode.equals("json", ignoreCase = true)){
+            buffer.append("{")
 
-        buffer.append("}")
+            fields.filter {
+                it !is CycleObjectGene &&
+                        (it !is OptionalGene || it.isActive)
+            }.map {
+                "\"${it.name}\":${it.getValueAsPrintableString(previousGenes,mode)}"
+            }.joinTo(buffer, ", ")
+
+            buffer.append("}")
+
+        } else if(mode.equals("xml", ignoreCase = true)){
+
+            /*
+                Note: this is a very basic support, which should not really depend
+                much on. Problem is that we would need to access to the XSD schema
+                to decide when fields should be represented with tags or attributes
+             */
+
+            buffer.append(openXml(name))
+            fields.filter {
+                it !is CycleObjectGene &&
+                        (it !is OptionalGene || it.isActive)
+            }.forEach {
+                buffer.append(openXml(it.name))
+                buffer.append(it.getValueAsPrintableString(previousGenes,mode))
+                buffer.append(closeXml(it.name))
+            }
+
+            buffer.append(closeXml(name))
+        } else {
+            throw IllegalArgumentException("Unrecognized mode: $mode")
+        }
 
         return buffer.toString()
     }
+
+    private fun openXml(tagName: String) = "<$tagName>"
+
+    private fun closeXml(tagName: String) = "</$tagName>"
 
     override fun flatView(): List<Gene> {
         return listOf(this).plus(fields.flatMap { g -> g.flatView() })

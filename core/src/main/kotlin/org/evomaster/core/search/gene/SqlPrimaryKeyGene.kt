@@ -11,43 +11,50 @@ class SqlPrimaryKeyGene(name: String,
                         val tableName: String,
                         val gene: Gene,
                         /**
-                     * Important for the Foreign Keys referencing it.
-                     * Cannot be negative
-                     */
-                    val uniqueId: Long
-                    )
-    : Gene(name) {
+                         * Important for the Foreign Keys referencing it.
+                         * Cannot be negative
+                         */
+                        val uniqueId: Long
+) : Gene(name) {
 
     init {
-        if(uniqueId < 0){
+        if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
     }
 
     override fun copy() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-        gene.randomize(randomness, false)
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        gene.randomize(randomness, false, allGenes)
     }
 
     override fun copyValueFrom(other: Gene) {
-        if(other !is SqlPrimaryKeyGene){
+        if (other !is SqlPrimaryKeyGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.gene.copyValueFrom(other.gene)
     }
 
-    override fun getValueAsPrintableString() : String{
-        return gene.getValueAsPrintableString()
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SqlPrimaryKeyGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.gene.containsSameValueAs(other.gene)
     }
 
-    override fun getValueAsRawString() : String {
+
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+        return gene.getValueAsPrintableString(previousGenes, mode)
+    }
+
+    override fun getValueAsRawString(): String {
         return gene.getValueAsRawString()
     }
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(): List<Gene>{
+    override fun flatView(): List<Gene> {
         return listOf(this).plus(gene.flatView())
     }
 

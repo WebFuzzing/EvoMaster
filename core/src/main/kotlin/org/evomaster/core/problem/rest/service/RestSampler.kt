@@ -4,8 +4,10 @@ import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -14,8 +16,6 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -34,6 +34,10 @@ class RestSampler : Sampler<RestIndividual>() {
 
     @Inject
     private lateinit var rc: RemoteController
+
+    @Inject
+    private lateinit var configuration: EMConfig
+
 
     private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
 
@@ -63,14 +67,23 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.endpointsToSkip ?: listOf())
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
 
         setupAuthentication(infoDto)
 
         initAdHocInitialIndividuals()
 
-        if (infoDto.sqlSchemaDto != null) {
+        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
+        }
+
+        if(configuration.outputFormat == OutputFormat.DEFAULT){
+            try {
+                val format = OutputFormat.valueOf(infoDto.defaultOutputFormat?.toString()!!)
+                configuration.outputFormat = format
+            } catch (e : Exception){
+                throw SutProblemException("Failed to use test output format: " + infoDto.defaultOutputFormat)
+            }
         }
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
@@ -109,12 +122,12 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun getSwagger(infoDto: SutInfoDto): Swagger {
 
-        val swaggerURL = infoDto.swaggerJsonUrl ?: throw IllegalStateException("Cannot retrieve Swagger URL")
+        val swaggerURL = infoDto?.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
 
         val response = connectToSwagger(swaggerURL, 30)
 
         if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            throw IllegalStateException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
+            throw SutProblemException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
         }
 
         val json = response.readEntity(String::class.java)
@@ -122,7 +135,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val swagger = try {
             SwaggerParser().parse(json)
         } catch (e: Exception) {
-            throw IllegalStateException("Failed to parse Swagger JSON data", e)
+            throw SutProblemException("Failed to parse Swagger JSON data: $e")
         }
 
         return swagger
@@ -159,66 +172,9 @@ class RestSampler : Sampler<RestIndividual>() {
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
                 ?: throw IllegalStateException("No DB schema is available")
 
-        /*
-            At this point, SQL genes are particular, as they can have
-            references to each other (eg Foreign Keys)
-
-            FIXME: refactoring to put such concept at higher level directly in Gene.
-            And, in any case, shouldn't something specific just for Rest
-         */
-
-        val all = actions.flatMap { it.seeGenes() }
-        all.asSequence()
-                .filter { it.isMutable() }
-                .forEach {
-                    if (it is SqlPrimaryKeyGene) {
-                        val g = it.gene
-                        if (g is SqlForeignKeyGene) {
-                            g.randomize(randomness, false, all)
-                        } else {
-                            it.randomize(randomness, false)
-                        }
-                    } else if (it is SqlForeignKeyGene) {
-                        it.randomize(randomness, false, all)
-                    } else {
-                        it.randomize(randomness, false)
-                    }
-                }
-
-        if(javaClass.desiredAssertionStatus()) {
-            //TODO refactor if/when Kotlin will support lazy asserts
-            assert(verifyForeignKeys(actions))
-        }
+        DbAction.randomizeDbActionGenes(actions, randomness)
 
         return actions
-    }
-
-    private fun verifyForeignKeys(actions: List<DbAction>) : Boolean {
-
-        val all = actions.flatMap { it.seeGenes() }
-
-        for (i in 1 until actions.size) {
-
-            val previous = actions.subList(0, i)
-
-            actions[i].seeGenes().asSequence()
-                    .flatMap { it.flatView().asSequence() }
-                    .filterIsInstance<SqlForeignKeyGene>()
-                    .filter { it.isReferenceToNonPrintable(all) }
-                    .map { it.uniqueIdOfPrimaryKey }
-                    .forEach {
-                        val id = it
-                        val match = previous.asSequence()
-                                .flatMap { it.seeGenes().asSequence() }
-                                .filterIsInstance<SqlPrimaryKeyGene>()
-                                .any { it.uniqueId == id }
-
-                        if(! match){
-                            return false
-                        }
-                    }
-        }
-        return true
     }
 
     override fun sampleAtRandom(): RestIndividual {

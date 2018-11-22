@@ -4,7 +4,7 @@ import org.objectweb.asm.Opcodes;
 
 public class Constants {
 
-    public static final int ASM = Opcodes.ASM5;
+    public static final int ASM = Opcodes.ASM7;
 
     public static final String CLASS_INIT_METHOD = "<clinit>";
 

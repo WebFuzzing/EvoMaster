@@ -9,7 +9,7 @@ class MapGene<T>(
         val maxSize: Int = 5,
         var elements: MutableList<T> = mutableListOf()
 ) : Gene(name)
-where T : Gene {
+        where T : Gene {
 
     init {
         if (elements.size > maxSize) {
@@ -33,13 +33,24 @@ where T : Gene {
         this.elements = other.elements.map { e -> e.copy() as T }.toMutableList()
     }
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is MapGene<*>) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.elements.size == other.elements.size
+                && this.elements.zip(other.elements) { thisElem, otherElem ->
+            thisElem.containsSameValueAs(otherElem)
+        }.all { it == true }
+    }
+
+
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //maybe not so important here to complicate code to enable forceNewValue
 
         elements.clear()
         val n = randomness.nextInt(maxSize)
-        (0..n - 1).forEach {
+        (0 until n).forEach {
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             gene.name = "key_$it"
@@ -47,7 +58,7 @@ where T : Gene {
         }
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "{" +
                 elements.filter { f ->
                     f !is CycleObjectGene &&
@@ -56,7 +67,7 @@ where T : Gene {
                     """
                     "${f.name}":${f.getValueAsPrintableString()}
                     """
-                }.joinToString { "," } +
+                }.joinToString(",") +
                 "}";
     }
 

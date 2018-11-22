@@ -20,7 +20,7 @@ class OcvnTestNot {
         Assertions.assertTrue(ctr.stopSUT())
         Assertions.assertTrue(ctr.startSUT())
 
-        var targets = ctr.getTargetCoverage()
+        var targets = ctr.getTestResults()
         Assertions.assertTrue(targets!!.targets.isEmpty())
 
         val baseUrlOfSut = ctr.getSutInfo()!!.baseUrlOfSUT

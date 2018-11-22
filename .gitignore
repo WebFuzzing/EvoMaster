@@ -15,6 +15,7 @@ hs_err_pid*
 
 /.idea/
 *.iml
+spy.log
 *pom.xml.versionsBackup
 *dependency-reduced-pom.xml
 /e2e-tests/dropwizardExamples/src/em/

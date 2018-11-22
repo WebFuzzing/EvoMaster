@@ -21,23 +21,25 @@ class DateGene(
             month.copy() as IntegerGene,
             day.copy() as IntegerGene)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        year.randomize(randomness, forceNewValue)
-        month.randomize(randomness, forceNewValue)
-        day.randomize(randomness, forceNewValue)
+        year.randomize(randomness, forceNewValue, allGenes)
+        month.randomize(randomness, forceNewValue, allGenes)
+        day.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"${getValueAsRawString()}\""
     }
 
     override fun getValueAsRawString(): String {
-        return "${year.value}-${month.value}-${day.value}"
+        return GeneUtils.let {
+            "${it.padded(year.value, 4)}-${it.padded(month.value, 2)}-${it.padded(day.value, 2)}"
+        }
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is DateGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is DateGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.year.copyValueFrom(other.year)
@@ -45,7 +47,17 @@ class DateGene(
         this.day.copyValueFrom(other.day)
     }
 
-    override fun flatView(): List<Gene>{
+
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is DateGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.year.containsSameValueAs(other.year)
+                && this.month.containsSameValueAs(other.month)
+                && this.day.containsSameValueAs(other.day)
+    }
+
+    override fun flatView(): List<Gene> {
         return listOf(this, year, month, day)
     }
 

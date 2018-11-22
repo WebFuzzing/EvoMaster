@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -18,7 +19,7 @@ class RestStructureMutator : StructureMutator() {
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
 
-        if(! config.shouldGenerateSqlData()){
+        if (!config.shouldGenerateSqlData()) {
             return
         }
 
@@ -36,7 +37,7 @@ class RestStructureMutator : StructureMutator() {
 
         var missing = findMissing(es, ind)
 
-        while(! missing.isEmpty()){
+        while (!missing.isEmpty()) {
 
             val first = missing.entries.first()
 
@@ -57,9 +58,12 @@ class RestStructureMutator : StructureMutator() {
             missing = findMissing(es, ind)
         }
 
-        if(config.generateSqlDataWithDSE){
+        if (config.generateSqlDataWithDSE) {
             //TODO DSE could be plugged in here
         }
+
+        ind.repairInitializationActions(randomness)
+
     }
 
     private fun findMissing(es: EmptySelects, ind: RestIndividual): Map<String, Set<String>> {
@@ -103,7 +107,7 @@ class RestStructureMutator : StructureMutator() {
             SampleType.SMART -> throw IllegalStateException(
                     "SMART sampled individuals shouldn't be marked for structure mutations")
 
-        //this would be a bug
+            //this would be a bug
             else -> throw IllegalStateException("Cannot handle sample type ${individual.sampleType}")
         }
     }

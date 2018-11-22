@@ -1,5 +1,6 @@
 package org.evomaster.core.search.mutator
 
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Mutator
@@ -14,19 +15,17 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
-
-    override fun mutate(individual: T): T {
+    private fun innerMutate(individual: T): T {
         val copy = individual.copy() as T
-
         if (individual.canMutateStructure() &&
-                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1 ) {
+                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
             //usually, either delete an action, or add a new random one
             structureMutator.mutateStructure(copy)
             return copy
         }
 
-        val filter = if(config.generateSqlDataWithSearch) Individual.GENE_FILTER.ALL
-            else Individual.GENE_FILTER.NO_SQL
+        val filter = if (config.generateSqlDataWithSearch) Individual.GeneFilter.ALL
+        else Individual.GeneFilter.NO_SQL
 
         val genesToMutate = copy.seeGenes(filter).filter(Gene::isMutable)
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
@@ -35,7 +34,14 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
         }
 
-        val p = 1.0 / genesToMutate.size
+        /*
+        TODO: this likely will need experiments and a better formula.
+        The problem is that SQL could introduce a huge amount of genes, slowing
+        down the search
+     */
+        val n = Math.max(1, copy.seeGenes(Individual.GeneFilter.NO_SQL).filter(Gene::isMutable).count())
+
+        val p = 1.0 / n
 
         var mutated = false
 
@@ -57,7 +63,24 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         }
 
+        if (javaClass.desiredAssertionStatus()) {
+            //TODO refactor if/when Kotlin will support lazy asserts
+            assert(DbAction.verifyForeignKeys(
+                    individual.seeInitializingActions().filterIsInstance<DbAction>()))
+        }
+
         return copy
+
+    }
+
+    override fun mutate(individual: T): T {
+        // First mutate the individual
+        val mutatedIndividual = innerMutate(individual)
+        // Second repair the initialization actions (if needed)
+        mutatedIndividual.repairInitializationActions(randomness)
+        // Third check that repair was successful
+        assert(mutatedIndividual.verifyInitializationActions())
+        return mutatedIndividual
     }
 
     private fun mutateGene(gene: Gene, all: List<Gene>) {
@@ -70,7 +93,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             is DoubleGene -> handleDoubleGene(gene)
             is StringGene -> handleStringGene(gene, all)
             else ->
-                if(gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
+                if (gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
                     //FIXME: this needs refactoring
                     handleSqlForeignKeyGene(gene.gene, all)
                 } else {
@@ -103,11 +126,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 .filter { it != gene.value }
 
         gene.value = when {
-        //seeding: replace
+            //seeding: replace
             p < 0.02 && !others.isEmpty() -> {
                 randomness.choose(others)
             }
-        //change
+            //change
             p < 0.8 && s.isNotEmpty() -> {
                 val delta = getDelta(start = 6, end = 3)
                 val sign = randomness.choose(listOf(-1, +1))
@@ -116,11 +139,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                 array[i] = s[i] + (sign * delta)
                 String(array)
             }
-        //delete last
+            //delete last
             p < 0.9 && s.isNotEmpty() && s.length > gene.minLength -> {
                 s.dropLast(1)
             }
-        //append new
+            //append new
             s.length < gene.maxLength -> {
                 if (s.isEmpty() || randomness.nextBoolean(0.8)) {
                     s + randomness.nextWordChar()
@@ -158,11 +181,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         //TODO min/max for Double
 
         gene.value = when (randomness.choose(listOf(0, 1, 2))) {
-        //for small changes
+            //for small changes
             0 -> gene.value + randomness.nextGaussian()
-        //for large jumps
+            //for large jumps
             1 -> gene.value + (getDelta() * randomness.nextGaussian())
-        //to reduce precision, ie chop off digits after the "."
+            //to reduce precision, ie chop off digits after the "."
             2 -> BigDecimal(gene.value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
             else -> throw IllegalStateException("Regression bug")
         }

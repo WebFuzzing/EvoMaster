@@ -109,7 +109,6 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
     }
 
 
-
     @Test
     public void testBasicForeignKey() throws Exception {
 
@@ -149,7 +148,7 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
     }
 
     @Test
-    public void testRetrieveSchema() throws Exception{
+    public void testRetrieveSchema() throws Exception {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT); CREATE TABLE Bar(y INT)");
 
@@ -161,6 +160,76 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
                 .get(url + BASE_PATH + INFO_SUT_PATH)
                 .then()
                 .statusCode(200)
-                .body("sqlSchemaDto.tables.size()", is(2));
+                .body("data.sqlSchemaDto.tables.size()", is(2));
     }
+
+    @Test
+    public void testColumnUpperBoundConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (fooId INT, age_max integer check (age_max<=100));";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(2, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("fooId")));
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("age_max")));
+
+        // TODO check that the column constraint is actually extracted
+        ColumnDto columnDto = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("age_max")).findFirst().orElse(null);
+
+        assertEquals("INTEGER", columnDto.type);
+        assertNull(columnDto.lowerBound);
+        assertEquals(100, columnDto.upperBound.intValue());
+
+    }
+
+    @Test
+    public void testTableConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (fooId INT, age_max integer);"
+                + "ALTER TABLE FOO ADD CONSTRAINT CHK_AGE_MAX CHECK (age_max<=100);";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(2, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("fooId")));
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("age_max")));
+
+        // TODO check that the table constraint is actually extracted
+
+
+    }
+
+    @Test
+    public void testPrimaryKey() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (id INT, "
+                + "primary key (id));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("id")));
+
+        assertEquals(true, fooTable.columns.get(0).primaryKey);
+        assertEquals(false, fooTable.columns.get(0).unique);
+
+    }
+
 }

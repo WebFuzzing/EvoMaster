@@ -19,7 +19,7 @@ class FeaturesServiceTestNot {
         Assertions.assertTrue(ctr.stopSUT())
         Assertions.assertTrue(ctr.startSUT())
 
-        var targets = ctr.getTargetCoverage()
+        var targets = ctr.getTestResults()
         Assertions.assertTrue(targets!!.targets.isEmpty())
 
         val baseUrlOfSut = ctr.getSutInfo()!!.baseUrlOfSUT
@@ -29,7 +29,7 @@ class FeaturesServiceTestNot {
                 .then()
                 .statusCode(200);
 
-        targets = ctr.getTargetCoverage()
+        targets = ctr.getTestResults()
         Assertions.assertTrue(targets!!.targets.size > 0)
 
         targets!!.targets.forEach { t ->

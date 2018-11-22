@@ -31,9 +31,20 @@ abstract class Gene(var name: String) {
     open fun isPrintable() = true
 
 
-    // FIXME: refactoring by adding "allGenes: List<Gene> = listOf()"
+    /**
+     *   Randomize the content of this gene.
+     *
+     *   @param randomness the source of non-determinism
+     *   @param forceNewValue whether we should force the change of value. When we do mutation,
+     *          it could otherwise happen that a value is replace with itself
+     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
+     *          we need to refer to them
+     */
+    abstract fun randomize(
+            randomness: Randomness,
+            forceNewValue: Boolean,
+            allGenes: List<Gene> = listOf())
 
-    abstract fun randomize(randomness: Randomness, forceNewValue: Boolean)
 
     /**
      * Return the value as a printable string.
@@ -42,18 +53,17 @@ abstract class Gene(var name: String) {
      * 1 -> "1" -> printed as 1
      *
      * "foo" -> "\"foo\"" -> printed as "foo"
-     */
-    abstract fun getValueAsPrintableString() : String
-
-    //FIXME refactor below method into above
-
-    /**
+     *
      * @param previousGenes previous genes which are necessary to look at
      * to determine the actual value of this gene
+     * @param mode some genes could be printed in different ways, like an
+     * object printed as JSON or XML
      */
-    open fun getValueAsPrintableString(previousGenes: List<Gene>) : String {
-        return getValueAsPrintableString()
-    }
+    abstract fun getValueAsPrintableString(
+            previousGenes: List<Gene> = listOf(),
+            mode: String? = null
+    ) : String
+
 
     open fun getValueAsRawString() = getValueAsPrintableString()
 
@@ -71,4 +81,10 @@ abstract class Gene(var name: String) {
     open fun flatView(): List<Gene>{
         return listOf(this)
     }
+
+    /**
+     * Genes might contain a value that is also stored
+     * in another gene.
+     */
+    abstract fun containsSameValueAs(other: Gene): Boolean
 }

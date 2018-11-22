@@ -14,7 +14,7 @@ import java.net.URLEncoder
 class RestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
-        val parameters: List<out Param>,
+        val parameters: MutableList<Param>,
         var auth: AuthenticationInfo = NoAuth(),
         /**
          * If true, it means that it will
@@ -41,7 +41,8 @@ class RestCallAction(
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
     override fun copy(): Action {
-        return RestCallAction(verb, path, parameters.map(Param::copy), auth, saveLocation, locationId)
+        val p = parameters.asSequence().map(Param::copy).toMutableList()
+        return RestCallAction(verb, path, p, auth, saveLocation, locationId)
     }
 
     override fun getName(): String {
@@ -50,7 +51,7 @@ class RestCallAction(
 
     override fun seeGenes(): List<out Gene> {
 
-        return parameters.map(Param::gene)
+        return parameters.flatMap { it.seeGenes() }
     }
 
     override fun toString(): String {
@@ -104,12 +105,17 @@ class RestCallAction(
     https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
 
      */
-    fun getBodyFormData(): String {
-        return parameters.filter { p -> p is FormParam }
-                .filter { p -> p.gene !is OptionalGene || p.gene.isActive }
-                .map { p ->
-                    val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
-                    val value = URLEncoder.encode(p.gene.getValueAsRawString(), "UTF-8")
+    fun getBodyFormData(): String? {
+
+        val forms = parameters.filterIsInstance<FormParam>()
+        if(forms.isEmpty()){
+            return null
+        }
+
+        return forms.filter { it.gene !is OptionalGene || it.gene.isActive }
+                .map {
+                    val name = URLEncoder.encode(it.gene.getVariableName(), "UTF-8")
+                    val value = URLEncoder.encode(it.gene.getValueAsRawString(), "UTF-8")
                     "$name=$value"
                 }
                 .joinToString("&")

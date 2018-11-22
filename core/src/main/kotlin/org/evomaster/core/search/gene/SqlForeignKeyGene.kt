@@ -31,21 +31,18 @@ class SqlForeignKeyGene(
 ) : Gene(sourceColumn) {
 
     init {
-        if(uniqueId < 0){
+        if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
     }
 
     override fun copy() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-        throw IllegalStateException("Cannot randomize a foreign key without knowing the state of other SQL inserted data")
-    }
-
-    fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //All the ids of previous PKs for the target table
         val pks = allGenes.asSequence()
+                .flatMap { it.flatView().asSequence() }
                 .takeWhile { it !is SqlForeignKeyGene || it.uniqueId != uniqueId }
                 .filterIsInstance(SqlPrimaryKeyGene::class.java)
                 .filter { it.tableName == targetTable }
@@ -69,7 +66,7 @@ class SqlForeignKeyGene(
                 //only one possible option
                 pks.first()
             } else {
-                if(! forceNewValue){
+                if (!forceNewValue) {
                     randomness.choose(pks)
                 } else {
                     randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -81,14 +78,14 @@ class SqlForeignKeyGene(
         /*
             If it can be NULL, we have the option of NULL plus the PKs
          */
-        uniqueIdOfPrimaryKey = if(!isBound()){
+        uniqueIdOfPrimaryKey = if (!isBound()) {
             //not bound, ie NULL? choose from PKs
             randomness.choose(pks)
         } else if (randomness.nextBoolean(0.1)) {
             //currently bound, but with certain probability we set it to NULL
-             -1
+            -1
         } else {
-            if(! forceNewValue || pks.size == 1){
+            if (!forceNewValue || pks.size == 1) {
                 randomness.choose(pks)
             } else {
                 randomness.choose(pks.filter { it != uniqueIdOfPrimaryKey })
@@ -97,11 +94,8 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun getValueAsPrintableString(): String {
-        throw IllegalStateException("This method should never be called. Use version that takes as input genes instead")
-    }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
 
         if (!isBound()) {
             if (!nullable) {
@@ -114,26 +108,36 @@ class SqlForeignKeyGene(
         val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
-        if(! pk.isPrintable()){
+        if (!pk.isPrintable()) {
             //this can happen if the PK is autoincrement
             throw IllegalArgumentException("Trying to print a Foreign Key pointing to a non-printable Primary Key")
         }
 
-        return pk.getValueAsPrintableString()
+        return pk.getValueAsPrintableString(previousGenes, mode)
     }
 
-    fun isReferenceToNonPrintable(previousGenes: List<Gene>) : Boolean{
-        if(! isBound()){
+    fun isReferenceToNonPrintable(previousGenes: List<Gene>): Boolean {
+        if (!isBound()) {
             return false
         }
 
-        val pk = previousGenes.find { it is SqlPrimaryKeyGene && it.uniqueId == uniqueIdOfPrimaryKey }
+        val pk = previousGenes.filterIsInstance<SqlPrimaryKeyGene>()
+                .find { it.uniqueId == uniqueIdOfPrimaryKey }
                 ?: throw IllegalArgumentException("Input genes do not contain primary key with id $uniqueIdOfPrimaryKey")
 
-        return ! pk.isPrintable()
+
+        if (!pk.isPrintable()) {
+            return true
+        }
+
+        if (pk.gene is SqlForeignKeyGene) {
+            return pk.gene.isReferenceToNonPrintable(previousGenes)
+        }
+
+        return false
     }
 
-    private fun isBound() = uniqueIdOfPrimaryKey >= 0
+    fun isBound() = uniqueIdOfPrimaryKey >= 0
 
     override fun copyValueFrom(other: Gene) {
         if (other !is SqlForeignKeyGene) {
@@ -142,4 +146,30 @@ class SqlForeignKeyGene(
         this.uniqueIdOfPrimaryKey = other.uniqueIdOfPrimaryKey
     }
 
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is SqlForeignKeyGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.uniqueIdOfPrimaryKey == other.uniqueIdOfPrimaryKey
+    }
+
+
+    /**
+     * Reports if the current value of the fk gene is NULL.
+     * This procedure should be called only if the pk is valid.
+     */
+    fun isNull(): Boolean {
+        if (!hasValidUniqueIdOfPrimaryKey()) {
+            throw IllegalStateException("uniqueId of primary key not yet put")
+        }
+        return uniqueIdOfPrimaryKey == -1L
+    }
+
+    /**
+     * Returns if the pk unique Id is valid.
+     * A pk Id is valid if it has an Id greater or equals to 0,
+     * or if it is nullable and the Id is equal to -1
+     */
+    fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
+            (nullable && uniqueIdOfPrimaryKey == -1L)
 }

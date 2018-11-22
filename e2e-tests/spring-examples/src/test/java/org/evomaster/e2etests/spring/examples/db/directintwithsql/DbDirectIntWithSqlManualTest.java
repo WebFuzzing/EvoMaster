@@ -24,11 +24,12 @@ public class DbDirectIntWithSqlManualTest extends DbDirectIntWithSqlTestBase {
     @Test
     public void testCreateData() {
 
+        int id = 3;
         int x = 10;
         int y = 34;
 
         List<InsertionDto> insertions = sql()
-                .insertInto("DB_DIRECT_INT_ENTITY").d("X", ""+x).d("Y", ""+y)
+                .insertInto("DB_DIRECT_INT_ENTITY").d("X", ""+x).d("Y", ""+y).d("ID", ""+id)
                 .dtos();
 
         controller.execInsertionsIntoDatabase(insertions);

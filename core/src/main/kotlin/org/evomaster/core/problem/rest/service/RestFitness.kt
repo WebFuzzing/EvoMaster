@@ -2,25 +2,24 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
+import org.evomaster.clientJava.controllerApi.dto.AdditionalInfoDto
 import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
 import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
 import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto
-import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
-import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto
-import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionEntryDto
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.HeaderParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.FitnessFunction
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -149,6 +148,11 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             fv.emptySelects = EmptySelects.fromDtos(dbData)
         }
 
+        /*
+            TODO: this needs refactoring. Should be just one call to Controller,
+            and not several getExtraHeuristics() followed by getTargetCoverage(ids)
+         */
+
 
         /*
             We cannot request all non-covered targets, because:
@@ -158,7 +162,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         //TODO prioritized list
         val ids = randomness.choose(archive.notCoveredTargets(), 100)
 
-        val dto = rc.getTargetCoverage(ids)
+        val dto = rc.getTestResults(ids)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null
@@ -175,7 +179,61 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         handleResponseTargets(fv, individual.actions, actionResults)
 
+        expandIndividual(individual, dto.additionalInfoList)
+
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+
+        /*
+            TODO when dealing with seeding, might want to extend EvaluatedIndividual
+            to keep track of AdditionalInfo
+         */
+    }
+
+    /**
+     * Based on what executed by the test, we might need to add new genes to the individual.
+     * This for example can happen if we detected that the test is using headers or query
+     * params that were not specified in the Swagger schema
+     */
+    private fun expandIndividual(
+            individual: RestIndividual,
+            additionalInfoList: List<AdditionalInfoDto>
+    ) {
+
+        if (individual.actions.size < additionalInfoList.size) {
+            /*
+                Note: as not all actions might had been executed, it might happen that
+                there are less Info than declared actions.
+                But the other way round should not really happen
+             */
+            log.warn("Length mismatch between ${individual.actions.size} actions and ${additionalInfoList.size} info data")
+            return
+        }
+
+        for (i in 0 until additionalInfoList.size) {
+
+            val action = individual.actions[i]
+            val info = additionalInfoList[i]
+
+            if (action !is RestCallAction) {
+                continue
+            }
+
+            info.headers
+                    .filter { name ->
+                        ! action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
+                    }
+                    .forEach {
+                        action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false)))
+                    }
+
+            info.queryParameters
+                    .filter { name ->
+                        ! action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                    }
+                    .forEach { name ->
+                        action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
+                    }
+        }
     }
 
     private fun doInitializingActions(ind: RestIndividual) {
@@ -184,54 +242,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             return
         }
 
-        val list = mutableListOf<InsertionDto>()
-        val previous = mutableListOf<Gene>()
 
-        for (i in 0 until ind.dbInitialization.size) {
-
-            val action = ind.dbInitialization[i]
-            val insertion = InsertionDto().apply { targetTable = action.table.name }
-
-            for (g in action.seeGenes()) {
-                if (g is SqlPrimaryKeyGene) {
-                    /*
-                        If there is more than one primary key field, this
-                        will be overridden.
-                        But, as we need it only for automatically generated ones,
-                        this shouldn't matter, as in that case there should be just 1.
-                     */
-                    insertion.id = g.uniqueId
-                }
-
-                if (!g.isPrintable()) {
-                    continue
-                }
-
-                val entry = InsertionEntryDto()
-
-                if (g is SqlForeignKeyGene) {
-                    handleSqlForeignKey(g, previous, entry)
-                } else if (g is SqlPrimaryKeyGene) {
-                    val k = g.gene
-                    if (k is SqlForeignKeyGene) {
-                        handleSqlForeignKey(k, previous, entry)
-                    } else {
-                        entry.printableValue = g.getValueAsPrintableString()
-                    }
-                } else {
-                    entry.printableValue = g.getValueAsPrintableString()
-                }
-
-                entry.variableName = g.getVariableName()
-
-                insertion.data.add(entry)
-            }
-
-            list.add(insertion)
-            previous.addAll(action.seeGenes())
-        }
-
-        val dto = DatabaseCommandDto().apply { insertions = list }
+        val dto = DbActionTransformer.transform(ind.dbInitialization)
 
         val ok = rc.executeDatabaseCommand(dto)
         if (!ok) {
@@ -239,17 +251,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
     }
 
-    private fun handleSqlForeignKey(
-            g: SqlForeignKeyGene,
-            previous: List<Gene>,
-            entry: InsertionEntryDto
-    ) {
-        if (g.isReferenceToNonPrintable(previous)) {
-            entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
-        } else {
-            entry.printableValue = g.getValueAsPrintableString(previous)
-        }
-    }
 
     private fun isEmpty(dto: ExtraHeuristicDto): Boolean {
 
@@ -338,23 +339,32 @@ class RestFitness : FitnessFunction<RestIndividual>() {
          */
 
 
-        /*
-           TODO: need to handle also other formats in the body,
-           not just JSON and forms
-         */
         val body = a.parameters.find { p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
-        if (body != null && !forms.isBlank()) {
+        if (body != null && forms != null) {
             throw IllegalStateException("Issue in Swagger configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = when {
-            body != null -> Entity.json(body.gene.getValueAsPrintableString())
-            !forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-            else -> Entity.json("") //FIXME
+        val bodyEntity = if (body != null && body is BodyParam) {
+            val mode = when {
+                body.isJson() -> "json"
+            //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                body.isTextPlain() -> "text"
+                else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
+            }
+            Entity.entity(body.gene.getValueAsPrintableString(mode = mode), body.contentType())
+        } else if (forms != null) {
+            Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else if(a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH){
+            /*
+                PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
+                when objects like WebRequest are used. So we default to urlencoded
+             */
+            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+        } else {
+            null
         }
-
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()
@@ -374,7 +384,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         } catch (e: ProcessingException) {
 
             //this can happen for example if call ends up in an infinite redirection loop
-            if ((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException) {
+            if ((e.cause?.message?.contains("redirected too many") == true) && e.cause is ProtocolException) {
                 rcr.setInfiniteLoop(true)
                 rcr.setErrorMessage(e.cause!!.message!!)
                 return false

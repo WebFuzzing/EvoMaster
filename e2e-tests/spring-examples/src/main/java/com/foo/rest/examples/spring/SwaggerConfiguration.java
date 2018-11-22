@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.context.request.WebRequest;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
 import springfox.documentation.spi.DocumentationType;
@@ -16,7 +17,8 @@ public class SwaggerConfiguration {
                 .apiInfo(apiInfo())
                 .select()
                 .paths(regex("/api/.*"))
-                .build();
+                .build()
+                .ignoredParameterTypes(WebRequest.class);
     }
 
     private ApiInfo apiInfo() {

@@ -7,12 +7,11 @@ import org.evomaster.core.search.service.Randomness
  *
  * https://xml2rfc.tools.ietf.org/public/rfc/html/rfc3339.html#anchor14
  */
-class DateTimeGene(
+open class DateTimeGene(
         name: String,
         val date: DateGene = DateGene("date"),
         val time: TimeGene = TimeGene("time")
-): Gene(name) {
-
+) : Gene(name) {
 
     override fun copy(): Gene = DateTimeGene(
             name,
@@ -20,13 +19,20 @@ class DateTimeGene(
             time.copy() as TimeGene
     )
 
-    override fun randomize(randomness: Randomness, forceNewValue: Boolean) {
-
-        date.randomize(randomness, forceNewValue)
-        time.randomize(randomness, forceNewValue)
+    override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        /**
+         * If forceNewValue==true both date and time
+         * get a new value, but it only might need
+         * one to be different to get a new value.
+         *
+         * Shouldn't this method decide randomly if
+         * date, time or both get a new value?
+         */
+        date.randomize(randomness, forceNewValue, allGenes)
+        time.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
         return "\"${getValueAsRawString()}\""
     }
 
@@ -36,15 +42,24 @@ class DateTimeGene(
                 "${time.getValueAsRawString()}"
     }
 
-    override fun copyValueFrom(other: Gene){
-        if(other !is DateTimeGene){
+    override fun copyValueFrom(other: Gene) {
+        if (other !is DateTimeGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.date.copyValueFrom(other.date)
         this.time.copyValueFrom(other.time)
     }
 
-    override fun flatView(): List<Gene>{
+    override fun containsSameValueAs(other: Gene): Boolean {
+        if (other !is DateTimeGene) {
+            throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
+        }
+        return this.date.containsSameValueAs(other.date)
+                && this.time.containsSameValueAs(other.time)
+    }
+
+
+    override fun flatView(): List<Gene> {
         return listOf(this).plus(date.flatView()).plus(time.flatView())
     }
 

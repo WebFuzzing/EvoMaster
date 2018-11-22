@@ -73,6 +73,9 @@ public class AgentController {
                         handleActionIndex();
                         sendObject(Command.ACK);
                         break;
+                    case ADDITIONAL_INFO:
+                        handleAdditionalInfo();
+                        break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
                         return;
@@ -94,6 +97,15 @@ public class AgentController {
 
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling action index: "+e.getMessage());
+            return;
+        }
+    }
+
+    private static void handleAdditionalInfo(){
+        try {
+            out.writeObject(InstrumentationController.getAdditionalInfoList());
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling additional info: "+e.getMessage());
             return;
         }
     }
