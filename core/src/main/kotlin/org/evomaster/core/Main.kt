@@ -12,15 +12,16 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
+import org.evomaster.core.problem.rest.serviceII.RestIndividualII
+import org.evomaster.core.problem.rest.serviceII.RestModuleII
 import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.algorithms.MosaAlgorithm
-import org.evomaster.core.search.algorithms.RandomAlgorithm
-import org.evomaster.core.search.algorithms.WtsAlgorithm
+import org.evomaster.core.search.algorithms.*
+import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.exps.monitor.SearchProcessMonitor
@@ -168,6 +169,7 @@ class Main {
             val problemModule = when (problemType) {
                 EMConfig.ProblemType.REST -> RestModule()
                 EMConfig.ProblemType.WEB -> WebModule()
+                EMConfig.ProblemType.RESTII -> RestModuleII()
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
             }
@@ -201,17 +203,22 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            val key = when (config.algorithm) {
-                EMConfig.Algorithm.MIO -> Key.get(
-                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.RANDOM -> Key.get(
-                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.WTS -> Key.get(
-                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.MOSA -> Key.get(
-                        object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
-                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
-            }
+//            val key = when (config.algorithm) {
+//                EMConfig.Algorithm.MIO -> Key.get(
+//                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
+//                EMConfig.Algorithm.RANDOM -> Key.get(
+//                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
+//                EMConfig.Algorithm.WTS -> Key.get(
+//                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+//                EMConfig.Algorithm.MOSA -> Key.get(
+//                        object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+//                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
+//            }
+
+            val key = when(config.smartSampling) {
+                EMConfig.SmartSamplingCriterion.DEFAULT -> keyRestIndividual(config.algorithm.toString())
+                EMConfig.SmartSamplingCriterion.DEPENDENCE  -> keyRestIndividualII(config.algorithm.toString())
+            }  as Key<SearchAlgorithm<*>>
 
             val imp = injector.getInstance(key)
 
@@ -219,6 +226,56 @@ class Main {
             val solution = imp.search()
 
             return solution
+        }
+
+        fun <T : Individual> key(algo: String) : Any {
+            return when (EMConfig.Algorithm.valueOf(algo))  {
+                EMConfig.Algorithm.MIO ->  Key.get(
+                        object : TypeLiteral<MioAlgorithm<T>>() {})
+                EMConfig.Algorithm.RANDOM -> Key.get(
+                        object : TypeLiteral<RandomAlgorithm<T>>() {})
+                EMConfig.Algorithm.WTS -> Key.get(
+                        object : TypeLiteral<WtsAlgorithm<T>>() {})
+                EMConfig.Algorithm.MOSA -> Key.get(
+                        object : TypeLiteral<MosaAlgorithm<T>>() {})
+                EMConfig.Algorithm.SAMPLE -> Key.get(
+                        object : TypeLiteral<Sample<T>>() {})
+                else -> throw IllegalStateException("Unrecognized algorithm $algo")
+            }
+        }
+
+        //FIXME Guice binding a generic function
+        fun keyRestIndividualII(algo: String) : Any {
+            return when (EMConfig.Algorithm.valueOf(algo)) {
+                EMConfig.Algorithm.MIO ->  Key.get(
+                        object : TypeLiteral<MioAlgorithm<RestIndividualII>>() {})
+                EMConfig.Algorithm.RANDOM -> Key.get(
+                        object : TypeLiteral<RandomAlgorithm<RestIndividualII>>() {})
+                EMConfig.Algorithm.WTS -> Key.get(
+                        object : TypeLiteral<WtsAlgorithm<RestIndividualII>>() {})
+                EMConfig.Algorithm.MOSA -> Key.get(
+                        object : TypeLiteral<MosaAlgorithm<RestIndividualII>>() {})
+                EMConfig.Algorithm.SAMPLE -> Key.get(
+                        object : TypeLiteral<Sample<RestIndividualII>>() {})
+                else -> throw IllegalStateException("Unrecognized algorithm $algo")
+            }
+        }
+
+        //FIXME Guice binding a generic function
+        fun keyRestIndividual(algo: String) : Any {
+            return when (EMConfig.Algorithm.valueOf(algo)) {
+                EMConfig.Algorithm.MIO ->  Key.get(
+                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.RANDOM -> Key.get(
+                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.WTS -> Key.get(
+                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.MOSA -> Key.get(
+                        object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                EMConfig.Algorithm.SAMPLE -> Key.get(
+                        object : TypeLiteral<Sample<RestIndividual>>() {})
+                else -> throw IllegalStateException("Unrecognized algorithm $algo")
+            }
         }
 
         private fun checkExperimentalSettings(injector: Injector){

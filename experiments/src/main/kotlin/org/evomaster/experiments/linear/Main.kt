@@ -229,6 +229,7 @@ class Main {
                         object : TypeLiteral<MosaAlgorithm<LinearIndividual>>() {}))
                 WTS -> injector.getInstance(Key.get(
                         object : TypeLiteral<WtsAlgorithm<LinearIndividual>>() {}))
+                else -> throw IllegalArgumentException("select unsupported algorithms")
             }
             return Pair(injector, alg)
         }

@@ -311,7 +311,8 @@ class EMConfig {
 //--- properties
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA
+        MIO, RANDOM, WTS, MOSA,
+        @Experimental SAMPLE
     }
 
     @Cfg("The algorithm used to generate test cases")
@@ -501,9 +502,9 @@ class EMConfig {
     @Cfg("Specify a strategy to sample APIs")
     var smartSampling = SmartSamplingCriterion.DEFAULT
 
-    @Experimental
-    @Cfg("Specify whether record manipulated resource during sampling")
-    var recordResources = false
+//    @Experimental
+//    @Cfg("Specify whether record manipulated resource during sampling")
+//    var recordResources = false
 
     enum class StrategyControl{
         RANDOM, // probability is fixed
@@ -519,8 +520,10 @@ class EMConfig {
     var sampleControl = StrategyControl.RANDOM
 
     @Experimental
+    @Cfg("Specify whether archive details during search")
     var enableProcessMonitor = false
 
     @Experimental
+    @Cfg("Specify where archive details during search")
     var processFiles = "process_data"
 }
