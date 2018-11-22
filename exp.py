@@ -35,6 +35,17 @@
 # dusage -p <project>        List project disk usage
 # scontrol show job <id>     Details of a job
 
+###   If a job failed due to
+#       perl: warning: Setting locale failed.
+#       perl: warning: Please check that your locale settings:
+#   	    LANGUAGE = (unset),
+#   	    LC_ALL = (unset),
+#   	    LC_CTYPE = "UTF-8",
+#   	    LANG = "en_US.iso885915"
+#       are supported and installed on your system.
+#   you may fix it by executing
+#       export LANG=en_US.UTF-8
+#       export LC_ALL=en_US.UTF-8
 
 import io
 import os
