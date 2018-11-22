@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.exps.monitor.SearchProcessMonitor
 
 
 abstract class FitnessFunction<T>  where T : Individual {
@@ -26,11 +27,14 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var statistics: Statistics
 
+    @Inject
+    protected lateinit var processMonitor: SearchProcessMonitor
     /**
      * @return [null] if there were problems in calculating the coverage
      */
     fun calculateCoverage(individual: T) : EvaluatedIndividual<T>?{
         var ei = doCalculateCoverage(individual)
+        processMonitor.eval = ei
 
         if(ei == null){
             /*

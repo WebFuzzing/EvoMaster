@@ -9,6 +9,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
+import org.evomaster.exps.monitor.SearchProcessMonitor
 
 
 class Archive<T> where T : Individual {
@@ -27,6 +28,9 @@ class Archive<T> where T : Individual {
 
     @Inject
     private lateinit var time: SearchTimeController
+
+    @Inject
+    protected lateinit var processMonitor: SearchProcessMonitor
 
     /**
      * Key -> id of the target
@@ -251,6 +255,7 @@ class Archive<T> where T : Individual {
 
         val copy = ei.copy()
         var added = false
+        var anyBetter = false
 
         for ((k, v) in ei.fitness.getViewOfData()) {
 
@@ -333,6 +338,8 @@ class Archive<T> where T : Individual {
                     (v.distance == currh && extra > 0) ||
                     (v.distance == currh && extra == 0 && copySize < currsize)
 
+            anyBetter = anyBetter || better
+
             if (better) {
                 time.newActionImprovement()
                 reportImprovement(k)
@@ -357,6 +364,7 @@ class Archive<T> where T : Individual {
                 added = true
             }
         }
+        processMonitor.record(added, anyBetter, ei)
 
         return added
     }
@@ -396,5 +404,14 @@ class Archive<T> where T : Individual {
         }
 
         return current[0].fitness.doesCover(target)
+    }
+
+    //update: support to save archive at some time point
+    fun getSnapshotOfBestIndividuals(): MutableMap<Int, MutableList<EvaluatedIndividual<T>>>{
+        return populations
+    }
+
+    fun getSnapshotOfSamplingCounter() : MutableMap<Int, Int>{
+        return samplingCounter
     }
 }
