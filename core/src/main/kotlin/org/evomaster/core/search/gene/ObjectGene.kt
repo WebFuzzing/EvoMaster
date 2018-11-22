@@ -85,4 +85,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
         return listOf(this).plus(fields.flatMap { g -> g.flatView() })
     }
 
+    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
+        return if(predicate(this)) listOf(this) else listOf(this).plus(fields.flatMap { g -> g.flatViewWithTypeFilter(predicate) })
+    }
 }

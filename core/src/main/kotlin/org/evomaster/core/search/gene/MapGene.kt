@@ -75,4 +75,8 @@ class MapGene<T>(
         return listOf(this).plus(elements.flatMap { g -> g.flatView() })
     }
 
+    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
+        return if(predicate(this)) listOf(this) else listOf(this).plus(elements.flatMap { g -> g.flatViewWithTypeFilter(predicate) })
+    }
+
 }

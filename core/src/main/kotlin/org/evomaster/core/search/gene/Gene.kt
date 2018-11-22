@@ -87,4 +87,9 @@ abstract class Gene(var name: String) {
      * in another gene.
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
+
+    //filter to flat genes
+    open fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
+        return if(predicate(this)) listOf(this) else listOf()
+    }
 }
