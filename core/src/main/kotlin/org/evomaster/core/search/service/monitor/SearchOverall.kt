@@ -15,22 +15,18 @@ open class SearchOverall<T> where T : Individual{
     val stoppingCriterion:String
     val idMapper : IdMapper
 
-    val actionCluster: MutableList<Action> = mutableListOf()
+    //val actionCluster: MutableList<Action> = mutableListOf()
     val numOfEvaluations: Int
     val finalPopulations = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
 
     val startTime : Long
     val evalIndividual : EvaluatedIndividual<T>
 
-    constructor(_sampler:Sampler<*>, _stoppingCriterion:String, num : Int, _ind : T, _eval : EvaluatedIndividual<*>, _archive : Archive<*>, _idMaper : IdMapper, _startTime : Long){
+    constructor(_stoppingCriterion:String, num : Int, _ind : T, _eval : EvaluatedIndividual<*>, _archive : Archive<*>, _idMaper : IdMapper, _startTime : Long){
         this.startTime = _startTime
         this.stoppingCriterion = _stoppingCriterion
         this.evalIndividual = _eval as EvaluatedIndividual<T>
-        _sampler.seeAvailableActions().forEach {
-            t ->run {
-                actionCluster.add(t.copy())
-        }
-        }
+
         this.numOfEvaluations = num
         for(entries in _archive.getSnapshotOfBestIndividuals()){
             finalPopulations.put(entries.key, mutableListOf())

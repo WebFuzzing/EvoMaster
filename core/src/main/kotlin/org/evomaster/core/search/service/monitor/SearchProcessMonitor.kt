@@ -42,9 +42,6 @@ class SearchProcessMonitor: SearchListener {
     private lateinit var archive: Archive<*>
 
     @Inject
-    protected lateinit var sampler : Sampler<*>
-
-    @Inject
     private lateinit var idMapper: IdMapper
 
     private lateinit var overall : SearchOverall<*>
@@ -98,27 +95,34 @@ class SearchProcessMonitor: SearchListener {
     @PostConstruct
     fun postConstruct(){
         // TODO configure monitoring the details of search process
-        time.addListener(this)
+        if(config.enableProcessMonitor){
+            time.addListener(this)
 
-        setCS(config.statisticsColumnId)
-        initMonitorProcessOuputs()
+            setCS(config.statisticsColumnId)
+            initMonitorProcessOuputs()
+        }
     }
 
     override fun newActionEvaluated() {
-        evaluatedIndividuals.add(eval!!)
-        step = StepOfSearchProcess(archive, time.evaluatedIndividuals, eval!!.individual, eval!!, System.currentTimeMillis(),isMutated)
+        if(config.enableProcessMonitor){
+            evaluatedIndividuals.add(eval!!)
+            step = StepOfSearchProcess(archive, time.evaluatedIndividuals, eval!!.individual, eval!!, System.currentTimeMillis(),isMutated)
+        }
+
     }
 
     //TODO Man
     fun record(added: Boolean, improveArchive : Boolean, evalInd : EvaluatedIndividual<*>){
-        if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
-        if(doesSave){
-            if(time.evaluatedActions > tb * 100){
-                step!!.added = added
-                step!!.improvedArchive = improveArchive
-                saveStep(step!!.indexOfEvaluation, step!!)
-                println(step!!.populations.size)
-                tb++
+        if(config.enableProcessMonitor){
+            if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
+            if(doesSave){
+                if(time.evaluatedActions > tb * 100){
+                    step!!.added = added
+                    step!!.improvedArchive = improveArchive
+                    saveStep(step!!.indexOfEvaluation, step!!)
+                    println(step!!.populations.size)
+                    tb++
+                }
             }
         }
     }
@@ -127,7 +131,7 @@ class SearchProcessMonitor: SearchListener {
     private fun setOverall(){
         var stp = config.stoppingCriterion.toString()+"_"+
                 (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.maxTimeInSeconds.toString() else config.maxActionEvaluations)
-        this.overall = SearchOverall(sampler, stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
+        this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
 
     fun setCS(name : String){
