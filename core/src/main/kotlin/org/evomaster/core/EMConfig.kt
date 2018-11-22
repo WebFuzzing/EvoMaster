@@ -320,7 +320,8 @@ class EMConfig {
 
     enum class ProblemType {
         REST,
-        @Experimental WEB
+        @Experimental WEB,
+        @Experimental RESTII
     }
 
     @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
