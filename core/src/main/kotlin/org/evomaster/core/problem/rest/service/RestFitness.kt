@@ -217,6 +217,12 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
                 continue
             }
 
+            /*
+                Those are OptionalGenes, which MUST be off by default.
+                We are changing the genotype, but MUST not change the phenotype.
+                Otherwise, the fitness value we just computed would be wrong.
+             */
+
             info.headers
                     .filter { name ->
                         ! action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
