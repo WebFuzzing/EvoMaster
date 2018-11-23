@@ -193,7 +193,7 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
      * This for example can happen if we detected that the test is using headers or query
      * params that were not specified in the Swagger schema
      */
-    private fun expandIndividual(
+    protected fun expandIndividual(
             individual: RestIndividual,
             additionalInfoList: List<AdditionalInfoDto>
     ) {

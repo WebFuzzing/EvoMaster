@@ -28,4 +28,39 @@ class RestIndividualII(val resourceCalls: MutableList<RestResourceCalls>,
         return actions
     }
 
+    fun removeActionsFrom(last : Int) : Boolean{
+        //update
+        if(last != actions.size -1){
+            //remove resourceCalls
+            var loc = 0
+            var rloc = 0
+            resourceCalls.forEachIndexed { index, rrCalls ->
+                loc += rrCalls.actions.size
+                if(rloc == 0 && loc - 1 >= last){
+                    rloc = index
+                    loc = rrCalls.actions.size - (loc - 1 - last)
+                    while(rrCalls.actions.size != loc){
+                        rrCalls.actions.removeAt(rrCalls.actions.size - 1)
+                    }
+                }
+            }
+
+            if(rloc != resourceCalls.size -1){
+                while (resourceCalls.size != rloc+1)
+                    resourceCalls.removeAt(this.resourceCalls.size - 1)
+            }
+
+            while(actions.size != last + 1){
+                actions.removeAt(actions.size - 1)
+            }
+        }
+        return actions.size == resourceCalls.map { it.actions.size }.sum()
+    }
+
+    fun updateActionCluster(){
+        resourceCalls.forEach {rr->
+            rr.update()
+        }
+    }
+
 }

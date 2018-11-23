@@ -76,32 +76,7 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
             fv.emptySelects = EmptySelects.fromDtos(dbData)
         }
 
-        //update
-        if(last != individual.actions.size -1){
-            //remove resourceCalls
-            var loc = 0
-            var rloc = 0
-            individual.resourceCalls.forEachIndexed { index, rrCalls ->
-                loc += rrCalls.actions.size
-                if(rloc == 0 && loc - 1 >= last){
-                    rloc = index
-                    loc = rrCalls.actions.size - (loc - 1 - last)
-                    while(rrCalls.actions.size != loc){
-                        rrCalls.actions.removeAt(rrCalls.actions.size - 1)
-                    }
-
-                }
-            }
-
-            if(rloc != individual.resourceCalls.size -1){
-                while (individual.resourceCalls.size != rloc+1)
-                    individual.resourceCalls.removeAt(individual.resourceCalls.size - 1)
-            }
-
-            while(individual.actions.size != last + 1){
-                individual.actions.removeAt(individual.actions.size - 1)
-            }
-        }
+        individual.removeActionsFrom(last)
 
         /*
             We cannot request all non-covered targets, because:
@@ -128,9 +103,8 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
         }
 
         handleResponseTargets(fv, individual.actions, actionResults)
-        individual.seeActions()
-        if(individual.actions.size != actionResults.size)
-            println("check")
+
+        expandIndividual(individual, dto.additionalInfoList)
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividualII, actionResults)
     }
