@@ -1,6 +1,6 @@
 package com.foo.somedifferentpackage.examples.branches;
 
-import org.evomaster.clientJava.instrumentation.example.branches.Branches;
+import org.evomaster.client.java.instrumentation.example.branches.Branches;
 
 public class BranchesImp implements Branches{
 

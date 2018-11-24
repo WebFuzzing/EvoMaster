@@ -1,8 +1,8 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
-import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto
-import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionEntryDto
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionEntryDto
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
@@ -10,7 +10,7 @@ import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 
 object DbActionTransformer {
 
-    fun transform(insertions: List<DbAction>) : DatabaseCommandDto{
+    fun transform(insertions: List<DbAction>) : DatabaseCommandDto {
 
         val list = mutableListOf<InsertionDto>()
         val previous = mutableListOf<Gene>()

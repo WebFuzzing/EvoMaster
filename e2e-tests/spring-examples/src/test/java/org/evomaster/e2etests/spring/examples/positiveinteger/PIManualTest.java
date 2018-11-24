@@ -5,8 +5,8 @@ import com.foo.rest.examples.spring.positiveinteger.PostDto;
 import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
-import org.evomaster.clientJava.controllerApi.Formats;
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
+import org.evomaster.client.java.controller.api.Formats;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;

@@ -2,7 +2,7 @@ package com.foo.rest.examples.spring.db;
 
 import com.foo.rest.examples.spring.SpringController;
 import com.p6spy.engine.spy.P6SpyDriver;
-import org.evomaster.clientJava.controller.db.DbCleaner;
+import org.evomaster.client.java.controller.db.DbCleaner;
 import org.hibernate.dialect.H2Dialect;
 import org.springframework.boot.SpringApplication;
 import org.springframework.jdbc.core.JdbcTemplate;

@@ -1,6 +1,6 @@
 package com.foo.somedifferentpackage.examples.exceptions;
 
-import org.evomaster.clientJava.instrumentation.example.exceptions.ThrownExc;
+import org.evomaster.client.java.instrumentation.example.exceptions.ThrownExc;
 
 public class ThrownExcImp implements ThrownExc {
 

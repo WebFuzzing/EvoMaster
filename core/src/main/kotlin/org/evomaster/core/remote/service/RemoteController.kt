@@ -1,9 +1,9 @@
 package org.evomaster.core.remote.service
 
 import com.google.inject.Inject
-import org.evomaster.clientJava.controllerApi.ControllerConstants
-import org.evomaster.clientJava.controllerApi.dto.*
-import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.slf4j.Logger

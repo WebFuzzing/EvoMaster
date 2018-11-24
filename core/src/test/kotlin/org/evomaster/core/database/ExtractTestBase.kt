@@ -1,6 +1,6 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controller.db.SqlScriptRunner
+import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach

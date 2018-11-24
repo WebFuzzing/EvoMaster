@@ -1,12 +1,12 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.clientJava.controllerApi.EMTestUtils
-import org.evomaster.clientJava.controllerApi.dto.AdditionalInfoDto
-import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
-import org.evomaster.clientJava.controllerApi.dto.TestResultsDto
-import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto
+import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.database.execution.ReadDbDataDto
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*

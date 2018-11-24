@@ -1,6 +1,6 @@
 package com.foo.somedifferentpackage.examples.positiveinteger;
 
-import org.evomaster.clientJava.instrumentation.example.positiveinteger.PositiveInteger;
+import org.evomaster.client.java.instrumentation.example.positiveinteger.PositiveInteger;
 
 public class PositiveIntegerImp implements PositiveInteger {
 

@@ -1,6 +1,6 @@
 package org.evomaster.core.output
 
-import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import java.nio.file.Files

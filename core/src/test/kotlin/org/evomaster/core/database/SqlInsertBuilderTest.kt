@@ -1,14 +1,13 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controller.db.SqlScriptRunner
-import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.controller.db.SqlScriptRunner
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.sql.Connection
-import java.sql.Date
 import java.sql.DriverManager
 
 class SqlInsertBuilderTest {

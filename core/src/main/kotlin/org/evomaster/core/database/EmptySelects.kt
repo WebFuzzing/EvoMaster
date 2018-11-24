@@ -1,6 +1,6 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto
+import org.evomaster.client.java.controller.api.dto.database.execution.ReadDbDataDto
 
 /**
  * When a test case is executed, and the SUT does access a SQL database,

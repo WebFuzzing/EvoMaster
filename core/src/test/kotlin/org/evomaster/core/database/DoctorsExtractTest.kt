@@ -1,19 +1,9 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controller.db.SqlScriptRunner
-import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
-import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
-import org.evomaster.core.search.gene.SqlAutoIncrementGene
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.function.Executable
-import java.sql.Connection
-import java.sql.DriverManager
 
 class DoctorsExtractTest : ExtractTestBase() {
 

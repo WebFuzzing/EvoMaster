@@ -4,7 +4,7 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
-import org.evomaster.clientJava.controllerApi.ControllerConstants
+import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType

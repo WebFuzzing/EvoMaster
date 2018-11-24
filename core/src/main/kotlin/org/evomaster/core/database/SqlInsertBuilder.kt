@@ -1,7 +1,7 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
-import org.evomaster.clientJava.controllerApi.dto.database.schema.DbSchemaDto
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey

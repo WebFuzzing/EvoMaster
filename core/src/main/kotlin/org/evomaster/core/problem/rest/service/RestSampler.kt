@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder

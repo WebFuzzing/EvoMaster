@@ -1,6 +1,6 @@
 package org.evomaster.core
 
-import org.evomaster.clientJava.controllerApi.ControllerConstants
+import org.evomaster.client.java.controller.api.ControllerConstants
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -28,7 +28,7 @@ internal class EMConfigTest{
 
         val options = parser.parse()
 
-        assertEquals(""+ControllerConstants.DEFAULT_CONTROLLER_PORT, portOpt.value(options))
+        assertEquals(""+ ControllerConstants.DEFAULT_CONTROLLER_PORT, portOpt.value(options))
     }
 
     @Test
