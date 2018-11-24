@@ -26,9 +26,8 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public final void newTest(){
+    public final void newTestSpecificHandler(){
         InstrumentationController.resetForNewTest();
-        resetExtraHeuristics();
     }
 
     @Override
@@ -42,8 +41,7 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public final void newAction(int actionIndex){
+    public final void newActionSpecificHandler(int actionIndex){
         ExecutionTracer.setActionIndex(actionIndex);
-        resetExtraHeuristics();
     }
 }

@@ -299,11 +299,10 @@ public abstract class ExternalSutController extends SutController {
     }
 
     @Override
-    public final void newTest() {
+    public final void newTestSpecificHandler() {
         if (isInstrumentationActivated()) {
             serverController.resetForNewTest();
         }
-        resetExtraHeuristics();
     }
 
     @Override
@@ -320,11 +319,10 @@ public abstract class ExternalSutController extends SutController {
 
 
     @Override
-    public final void newAction(int actionIndex) {
+    public final void newActionSpecificHandler(int actionIndex) {
         if (isInstrumentationActivated()) {
             serverController.setActionIndex(actionIndex);
         }
-        resetExtraHeuristics();
     }
 
     //-----------------------------------------

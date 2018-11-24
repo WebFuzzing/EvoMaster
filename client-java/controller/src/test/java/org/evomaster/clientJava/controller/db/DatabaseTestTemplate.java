@@ -1,5 +1,6 @@
 package org.evomaster.clientJava.controller.db;
 
+import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.evomaster.clientJava.controller.InstrumentedSutStarter;
 import org.evomaster.clientJava.controllerApi.dto.SutRunDto;
@@ -28,6 +29,9 @@ public abstract class DatabaseTestTemplate {
 
     @BeforeAll
     public static void initClass() throws Exception {
+
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
+
         InstrumentingAgent.initP6Spy("org.h2.Driver");
 
         connection = DriverManager.getConnection("jdbc:p6spy:h2:mem:db_test", "sa", "");

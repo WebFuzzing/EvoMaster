@@ -6,6 +6,7 @@ import org.evomaster.clientJava.controller.db.DataRow;
 import org.evomaster.clientJava.controller.db.DatabaseTestTemplate;
 import org.evomaster.clientJava.controller.db.QueryResult;
 import org.evomaster.clientJava.controller.db.SqlScriptRunner;
+import org.evomaster.clientJava.controllerApi.dto.SutRunDto;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -89,43 +90,45 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
 
         try {
             String url = start(starter);
-            url += BASE_PATH + EXTRA_HEURISTICS;
+            url += BASE_PATH;
+
+            startNewTest(url);
 
             given().accept(ContentType.JSON)
-                    .get(url)
+                    .get(url + TEST_RESULTS)
                     .then()
                     .statusCode(200)
-                    .body("data.toMinimize.size()", is(0));
+                    .body("data.extraHeuristics.size()", is(1))
+                    .body("data.extraHeuristics[0].toMinimize.size()", is(0));
+
+            startNewTest(url);
 
             SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 12");
-
-            given().accept(ContentType.JSON)
-                    .get(url)
-                    .then()
-                    .statusCode(200)
-                    .body("data.toMinimize.size()", is(1))
-                    .body("data.toMinimize[0]", greaterThan(0f));
-
             SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 10");
 
             given().accept(ContentType.JSON)
-                    .get(url)
+                    .get(url + TEST_RESULTS)
                     .then()
                     .statusCode(200)
-                    .body("data.toMinimize.size()", is(2))
-                    .body("data.toMinimize[0]", greaterThan(0f))
-                    .body("data.toMinimize[1]", is(0f));
+                    .body("data.extraHeuristics.size()", is(1))
+                    .body("data.extraHeuristics[0].toMinimize.size()", is(2))
+                    .body("data.extraHeuristics[0].toMinimize[0]", greaterThan(0f))
+                    .body("data.extraHeuristics[0].toMinimize[1]", is(0f));
 
-            given().delete(url)
-                    .then()
-                    .statusCode(204);
+            startNewActionInSameTest(url, 1);
+
+            SqlScriptRunner.execCommand(getConnection(), "SELECT x FROM Foo WHERE x = 13");
 
             given().accept(ContentType.JSON)
-                    .get(url)
+                    .get(url + TEST_RESULTS)
                     .then()
                     .statusCode(200)
-                    .body("data.toMinimize.size()", is(0));
-
+                    .body("data.extraHeuristics.size()", is(2))
+                    .body("data.extraHeuristics[0].toMinimize.size()", is(2))
+                    .body("data.extraHeuristics[0].toMinimize[0]", greaterThan(0f))
+                    .body("data.extraHeuristics[0].toMinimize[1]", is(0f))
+                    .body("data.extraHeuristics[1].toMinimize.size()", is(1))
+                    .body("data.extraHeuristics[1].toMinimize[0]", greaterThan(0f));
         } finally {
             starter.stop();
         }
@@ -146,17 +149,19 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
 
         try {
             String url = start(starter);
-            url += BASE_PATH + EXTRA_HEURISTICS;
+            url += BASE_PATH;
+
+            startNewTest(url);
 
             SqlScriptRunner.execCommand(getConnection(), select);
 
-            double a = getFirstAndDelete(url);
+            double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")");
             SqlScriptRunner.execCommand(getConnection(), select);
 
-            double b = getFirstAndDelete(url);
+            double b = getFirstAndStartNew(url);
             assertTrue(b < a);
             assertEquals(0d, b, 0.0001);
 
@@ -185,31 +190,33 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
 
         try {
             String url = start(starter);
-            url += BASE_PATH + EXTRA_HEURISTICS;
+            url += BASE_PATH;
+
+            startNewTest(url);
 
             SqlScriptRunner.execCommand(getConnection(), select);
 
-            double a = getFirstAndDelete(url);
+            double a = getFirstAndStartNew(url);
             assertTrue(a > 0d);
 
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (1, " + x + ", 0)");
             SqlScriptRunner.execCommand(getConnection(), select);
 
-            double b = getFirstAndDelete(url);
+            double b = getFirstAndStartNew(url);
             assertTrue(b < a);
 
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (1, " + y + ")");
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (2, 0, 1)");
             SqlScriptRunner.execCommand(getConnection(), select);
 
-            double c = getFirstAndDelete(url);
+            double c = getFirstAndStartNew(url);
             assertTrue(c < b);
 
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Bar (id, value) VALUES (2, " + y + ")");
             SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (id, value, bar_id) VALUES (3, " + x + ", 2)");
             SqlScriptRunner.execCommand(getConnection(), select);
 
-            double d = getFirstAndDelete(url);
+            double d = getFirstAndStartNew(url);
             assertTrue(d < c);
             assertEquals(0d, d, 0.0001);
 
@@ -219,14 +226,37 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
     }
 
 
+    private void startNewActionInSameTest(String url, int index){
 
-    private Double getFirstAndDelete(String url) {
+        given().accept(ContentType.ANY)
+                .contentType(ContentType.JSON)
+                .body("" + index)
+                .put(url + NEW_ACTION)
+                .then()
+                .statusCode(204);
+    }
+
+    private void startNewTest(String url){
+
+        given().accept(ContentType.ANY)
+                .contentType(ContentType.JSON)
+                .body(new SutRunDto(true, true))
+                .put(url + RUN_SUT_PATH)
+                .then()
+                .statusCode(204);
+
+        startNewActionInSameTest(url, 0);
+    }
+
+    private Double getFirstAndStartNew(String url) {
+
         double value = Double.parseDouble(given().accept(ContentType.JSON)
-                .get(url)
+                .get(url + TEST_RESULTS)
                 .then()
                 .statusCode(200)
-                .extract().body().path("data.toMinimize[0]").toString());
-        given().delete(url).then().statusCode(204);
+                .extract().body().path("data.extraHeuristics[0].toMinimize[0]").toString());
+
+        startNewTest(url);
 
         return value;
     }

@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract class used to connect to the EvoMaster process, and
@@ -48,6 +49,13 @@ public abstract class SutController implements SutHandler{
      * If using a SQL Database, gather info about its schema
      */
     private DbSchemaDto schemaDto;
+
+    /**
+     * For each action in a test, keep track of the extra heuristics, if any
+     */
+    private final List<ExtraHeuristicDto> extras = new CopyOnWriteArrayList<>();
+
+    private int actionIndex = -1;
 
     /**
      * Start the controller as a RESTful server.
@@ -167,7 +175,16 @@ public abstract class SutController implements SutHandler{
         sqlHandler.reset();
     }
 
-    public final ExtraHeuristicDto getExtraHeuristics(){
+    public final List<ExtraHeuristicDto> getExtraHeuristics(){
+
+        if(extras.size() == actionIndex ) {
+            extras.add(computeExtraHeuristics());
+        }
+
+        return new ArrayList<>(extras);
+    }
+
+    public final ExtraHeuristicDto computeExtraHeuristics(){
 
         ExtraHeuristicDto dto = new ExtraHeuristicDto();
         dto.toMinimize.addAll(sqlHandler.getDistances());
@@ -222,20 +239,40 @@ public abstract class SutController implements SutHandler{
     /**
      * Re-initialize some internal data needed before running a new test
      */
-    public abstract void newTest();
+    public final void newTest(){
+
+        actionIndex = -1;
+        resetExtraHeuristics();
+        extras.clear();
+
+        newTestSpecificHandler();
+    }
 
     /**
      * As some heuristics are based on which action (eg HTTP call, or click of button)
      * in the test sequence is executed, and their order, we need to keep track of which
      * action does cover what.
      */
-    public abstract void newAction(int actionIndex);
+    public final void newAction(int actionIndex){
+
+        if(actionIndex > extras.size()){
+            extras.add(computeExtraHeuristics());
+        }
+        this.actionIndex = actionIndex;
+
+        resetExtraHeuristics();
+
+        newActionSpecificHandler(actionIndex);
+    }
+
+
+    public abstract void newTestSpecificHandler();
+
+    public abstract void newActionSpecificHandler(int actionIndex);
+
 
     /**
      * Check if bytecode instrumentation is on.
-     * <br>
-     * This method needs to be overwritten if SUT is started in
-     * a new process.
      *
      * @return
      */

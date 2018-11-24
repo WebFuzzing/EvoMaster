@@ -204,27 +204,11 @@ public class EMController {
             dto.additionalInfoList.add(info);
         });
 
-        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
-    }
-
-
-    @Path(ControllerConstants.EXTRA_HEURISTICS)
-    @GET
-    public Response getExtra() {
-
-        ExtraHeuristicDto dto = sutController.getExtraHeuristics();
+        dto.extraHeuristics = sutController.getExtraHeuristics();
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
-    @Path(ControllerConstants.EXTRA_HEURISTICS)
-    @DELETE
-    public Response deleteExtra() {
-
-        sutController.resetExtraHeuristics();
-
-        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
-    }
 
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
