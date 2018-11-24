@@ -11,6 +11,7 @@ import org.evomaster.core.TestUtils
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 
@@ -33,8 +34,8 @@ class RandomSearchTest {
 
             val solution = rs.search()
 
-            assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001);
-            assertEquals(1, solution.individuals.size)
+            assertEquals(3.0, solution.overall.computeFitnessScore(), 0.001)
+            assertTrue(solution.individuals.size <= 2)
         }
     }
 }
