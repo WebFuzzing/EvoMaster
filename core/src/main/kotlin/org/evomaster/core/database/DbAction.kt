@@ -50,42 +50,28 @@ class DbAction(
             return true
         }
 
-        //FIXME need refactoring
         fun randomizeDbActionGenes(actions: List<DbAction>, randomness: Randomness) {
             /*
                 At this point, SQL genes are particular, as they can have
                 references to each other (eg Foreign Keys)
-
-                FIXME: refactoring to put such concept at higher level directly in Gene.
-                And, in any case, shouldn't something specific just for Rest
              */
 
             val all = actions.flatMap { it.seeGenes() }
             all.asSequence()
                     .filter { it.isMutable() }
                     .forEach {
-                        if (it is SqlPrimaryKeyGene) {
-                            val g = it.gene
-                            if (g is SqlForeignKeyGene) {
-                                g.randomize(randomness, false, all)
-                            } else {
-                                it.randomize(randomness, false)
-                            }
-                        } else if (it is SqlForeignKeyGene) {
-                            it.randomize(randomness, false, all)
-                        } else {
-                            it.randomize(randomness, false)
-                        }
+                        it.randomize(randomness, false, all)
                     }
 
             if (javaClass.desiredAssertionStatus()) {
                 //TODO refactor if/when Kotlin will support lazy asserts
+                //https://youtrack.jetbrains.com/issue/KT-22292
                 assert(DbAction.verifyForeignKeys(actions))
             }
 
         }
 
-        private val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
+        private const val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
 
         /**
          * Some actions might break schema constraints
@@ -121,7 +107,7 @@ class DbAction(
             while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
 
                 val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
-                randomizeGene(geneToRepair, randomness, previousGenes)
+                geneToRepair.randomize(randomness, true, previousGenes)
 
                 if (actionIndexToRepair == previousActionIndexToRepair) {
                     //
@@ -148,20 +134,6 @@ class DbAction(
                 actions.clear()
                 actions.addAll(truncatedListOfActions)
                 return false
-            }
-        }
-
-        private fun randomizeGene(gene: Gene, randomness: Randomness, previousGenes: List<Gene>) {
-            when (gene) {
-                is SqlForeignKeyGene -> gene.randomize(randomness, true, previousGenes)
-                else ->
-                    if (gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
-                        //FIXME: this needs refactoring
-                        gene.gene.randomize(randomness, true, previousGenes)
-                    } else {
-                        //TODO other cases
-                        gene.randomize(randomness, true)
-                    }
             }
         }
 
