@@ -6,6 +6,7 @@ import io.swagger.parser.SwaggerParser
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
@@ -172,7 +173,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
                 ?: throw IllegalStateException("No DB schema is available")
 
-        DbAction.randomizeDbActionGenes(actions, randomness)
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         return actions
     }

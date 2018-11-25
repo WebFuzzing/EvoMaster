@@ -23,7 +23,7 @@ class DoctorsExtractTest : ExtractTestBase() {
 
         //force binding
         val randomness = Randomness()//.apply { updateSeed(1) }
-        DbAction.randomizeDbActionGenes(actions, randomness)
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         val dto = DbActionTransformer.transform(actions)
 

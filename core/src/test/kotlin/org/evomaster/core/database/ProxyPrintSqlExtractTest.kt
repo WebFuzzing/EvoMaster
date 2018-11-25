@@ -116,7 +116,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBase() {
 
         //force binding
         val randomness = Randomness()//.apply { updateSeed(1) }
-        DbAction.randomizeDbActionGenes(actions, randomness)
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         /*
            - PRINT_REQUESTS request has a FK to CONSUMER
