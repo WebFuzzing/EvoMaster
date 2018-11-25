@@ -179,7 +179,7 @@ class DbAction(
 
                         val genes = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
 
-                        if (genes.filter { otherGene -> otherGene.containsSameValueAs(g) }.isNotEmpty()) {
+                        if (genes.any { otherGene -> otherGene.containsSameValueAs(g) }) {
                             return Pair(g, actionIndex)
                         } else {
                             genes.add(g)
