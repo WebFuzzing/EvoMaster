@@ -1,5 +1,6 @@
 package org.evomaster.core.database
 
+import com.sun.org.apache.xpath.internal.operations.Bool
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
@@ -12,12 +13,42 @@ import org.evomaster.core.search.gene.*
  *  Typically, a SQL Insertion
  */
 class DbAction(
+        /**
+         * The involved table
+         */
         val table: Table,
+        /**
+         * Which columns we are inserting data into
+         */
         val selectedColumns: Set<Column>,
         private val id: Long,
-        //FIXME: this should not be exposed outside this class
+        /**
+         * Instead of a new INSERT action, we might have "fake" actions representing
+         * data already existing in the database.
+         * This is very helpful when dealing with Foreign Keys.
+         */
+        val representExistingData: Boolean = false,
         computedGenes: List<Gene>? = null
 ) : Action {
+
+    init {
+        /*
+            Existing data actions are very special, and can only contain PKs
+            with immutable data.
+         */
+        if(representExistingData){
+            if(computedGenes == null){
+                throw IllegalArgumentException("No defined genes")
+            }
+
+            for(pk in computedGenes){
+                if(pk !is SqlPrimaryKeyGene || pk.gene !is ImmutableDataHolderGene){
+                    throw IllegalArgumentException("Invalid gene: ${pk.name}")
+                }
+            }
+        }
+    }
+
 
     private
     val genes: List<Gene> = computedGenes ?: selectedColumns.map {
@@ -153,7 +184,7 @@ class DbAction(
 
 
     override fun getName(): String {
-        return "SQL_Insert_${table.name}_${selectedColumns.joinToString("_")}"
+        return "SQL_Insert_${table.name}_${selectedColumns.map { it.name }.joinToString("_")}"
     }
 
     override fun seeGenes(): List<out Gene> {
@@ -161,7 +192,7 @@ class DbAction(
     }
 
     override fun copy(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copy))
+        return DbAction(table, selectedColumns, id, representExistingData, genes.map(Gene::copy))
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {
