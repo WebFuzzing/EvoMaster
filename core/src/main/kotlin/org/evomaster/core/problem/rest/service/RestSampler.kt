@@ -3,9 +3,11 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.ExistingPKsExtractor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
@@ -45,6 +47,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private var sqlInsertBuilder: SqlInsertBuilder? = null
 
+    private var existingSqlData : List<DbAction> = listOf()
 
     @PostConstruct
     private fun initialize() {
@@ -75,6 +78,9 @@ class RestSampler : Sampler<RestIndividual>() {
 
         if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
+
+            val extractor = ExistingPKsExtractor(rc, infoDto.sqlSchemaDto)
+            existingSqlData = extractor.extractExistingPKs()
         }
 
         if(configuration.outputFormat == OutputFormat.DEFAULT){
@@ -172,7 +178,7 @@ class RestSampler : Sampler<RestIndividual>() {
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
                 ?: throw IllegalStateException("No DB schema is available")
 
-        DbAction.randomizeDbActionGenes(actions, randomness)
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         return actions
     }

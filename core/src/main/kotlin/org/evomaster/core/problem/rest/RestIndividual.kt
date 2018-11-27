@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -55,7 +56,7 @@ open class RestIndividual(val actions: MutableList<RestAction>,
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbAction.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
     }
 
 
@@ -67,10 +68,10 @@ open class RestIndividual(val actions: MutableList<RestAction>,
         GeneUtils.repairGenes(this.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
-         * Now repair databse constraints (primary keys, foreign keys, unique fields, etc.)
+         * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
          */
         if (!verifyInitializationActions()) {
-            DbAction.repairBrokenDbActionsList(dbInitialization, randomness)
+            DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
             assert(verifyInitializationActions())
         }
     }

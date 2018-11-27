@@ -4,7 +4,7 @@ import com.google.inject.Injector
 import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import org.evomaster.clientJava.controllerApi.dto.ControllerInfoDto
+import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed

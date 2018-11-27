@@ -1,11 +1,12 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.clientJava.controllerApi.EMTestUtils
-import org.evomaster.clientJava.controllerApi.dto.AdditionalInfoDto
-import org.evomaster.clientJava.controllerApi.dto.ExtraHeuristicDto
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
-import org.evomaster.clientJava.controllerApi.dto.database.execution.ReadDbDataDto
+import org.evomaster.client.java.controller.api.EMTestUtils
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.database.execution.ReadDbDataDto
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
@@ -105,8 +106,6 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
 
-        val dbData = mutableListOf<ReadDbDataDto>()
-
         //run the test, one action at a time
         for (i in 0 until individual.actions.size) {
 
@@ -124,34 +123,7 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
             if (!ok) {
                 break
             }
-
-            if (configuration.heuristicsForSQL) {
-                val extra = rc.getExtraHeuristics()
-                if (extra == null) {
-                    log.warn("Cannot retrieve extra heuristics")
-                    return null
-                }
-
-                if (!isEmpty(extra)) {
-                    //TODO handling of toMaximize
-                    fv.setExtraToMinimize(i, extra.toMinimize)
-                }
-
-                extra.readDbData?.let {
-                    dbData.add(it)
-                }
-            }
         }
-
-        if (!dbData.isEmpty()) {
-            fv.emptySelects = EmptySelects.fromDtos(dbData)
-        }
-
-        /*
-            TODO: this needs refactoring. Should be just one call to Controller,
-            and not several getExtraHeuristics() followed by getTargetCoverage(ids)
-         */
-
 
         /*
             We cannot request all non-covered targets, because:
@@ -176,6 +148,8 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
             fv.updateTarget(t.id, t.value, t.actionIndex)
         }
 
+        handleExtra(dto, fv)
+
         handleResponseTargets(fv, individual.actions, actionResults)
 
         expandIndividual(individual, dto.additionalInfoList)
@@ -186,6 +160,31 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
             TODO when dealing with seeding, might want to extend EvaluatedIndividual
             to keep track of AdditionalInfo
          */
+    }
+
+    private fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
+        if (configuration.heuristicsForSQL) {
+
+            val dbData = mutableListOf<ReadDbDataDto>()
+
+            for (i in 0 until dto.extraHeuristics.size) {
+
+                val extra = dto.extraHeuristics[i]
+
+                if (!isEmpty(extra)) {
+                    //TODO handling of toMaximize
+                    fv.setExtraToMinimize(i, extra.toMinimize)
+                }
+
+                extra.readDbData?.let {
+                    dbData.add(it)
+                }
+            }
+
+            if (!dbData.isEmpty()) {
+                fv.emptySelects = EmptySelects.fromDtos(dbData)
+            }
+        }
     }
 
     /**

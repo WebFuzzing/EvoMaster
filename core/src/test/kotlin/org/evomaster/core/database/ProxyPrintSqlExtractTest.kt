@@ -1,7 +1,7 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
-import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
@@ -116,7 +116,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBase() {
 
         //force binding
         val randomness = Randomness()//.apply { updateSeed(1) }
-        DbAction.randomizeDbActionGenes(actions, randomness)
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
 
         /*
            - PRINT_REQUESTS request has a FK to CONSUMER

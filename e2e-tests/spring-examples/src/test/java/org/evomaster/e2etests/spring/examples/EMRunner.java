@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples;
 
 import com.foo.rest.examples.spring.SpringController;
 import com.foo.rest.examples.spring.headerlocation.HeaderLocationController;
-import org.evomaster.clientJava.controller.InstrumentedSutStarter;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
 
 /**
  * Only used for manual debugging

@@ -1,9 +1,9 @@
 package org.evomaster.e2etests.utils;
 
-import org.evomaster.clientJava.controller.EmbeddedSutController;
-import org.evomaster.clientJava.controller.InstrumentedSutStarter;
-import org.evomaster.clientJava.controller.internal.SutController;
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto;
+import org.evomaster.client.java.controller.EmbeddedSutController;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
+import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Action;

@@ -1,9 +1,9 @@
 package org.evomaster.core.remote.service
 
 import com.google.inject.Inject
-import org.evomaster.clientJava.controllerApi.ControllerConstants
-import org.evomaster.clientJava.controllerApi.dto.*
-import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.slf4j.Logger
@@ -196,28 +196,6 @@ class RemoteController() {
         return dto?.data
     }
 
-    fun getExtraHeuristics(): ExtraHeuristicDto? {
-
-        val response = getWebTarget()
-                .path(ControllerConstants.EXTRA_HEURISTICS)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get()
-
-        if (!wasSuccess(response)) {
-            log.warn("Failed to retrieve extra heuristics. HTTP status: {}", response.status)
-            return null
-        }
-
-        val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<ExtraHeuristicDto>>() {})
-        } catch (e: Exception) {
-            log.warn("Failed to parse controller info dto", e)
-            null
-        }
-
-        return dto?.data
-    }
-
     fun registerNewAction(actionIndex: Int) {
 
         val response = getWebTarget()
@@ -260,18 +238,6 @@ class RemoteController() {
         return true
     }
 
-
-    fun resetExtraHeuristics() {
-
-        val response = getWebTarget()
-                .path(ControllerConstants.EXTRA_HEURISTICS)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .delete()
-
-        if (!wasSuccess(response)) {
-            log.warn("Failed to reset extra heuristics. HTTP status: {}", response.status)
-        }
-    }
 
     private fun wasSuccess(response: Response?): Boolean {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false

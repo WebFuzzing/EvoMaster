@@ -1,7 +1,7 @@
 package org.evomaster.core.database
 
-import org.evomaster.clientJava.controller.internal.db.SchemaExtractor
-import org.evomaster.clientJava.controllerApi.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
@@ -13,7 +13,7 @@ class CatwatchSqlExtractTest : ExtractTestBase(){
 
     @Test
     fun testCreateAndExtract() {
-        
+
         val schema = SchemaExtractor.extract(connection)
 
         assertNotNull(schema)

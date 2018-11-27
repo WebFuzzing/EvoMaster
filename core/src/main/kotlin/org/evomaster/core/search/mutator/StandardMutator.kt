@@ -1,6 +1,7 @@
 package org.evomaster.core.search.mutator
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Mutator
@@ -65,7 +66,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         if (javaClass.desiredAssertionStatus()) {
             //TODO refactor if/when Kotlin will support lazy asserts
-            assert(DbAction.verifyForeignKeys(
+            assert(DbActionUtils.verifyForeignKeys(
                     individual.seeInitializingActions().filterIsInstance<DbAction>()))
         }
 

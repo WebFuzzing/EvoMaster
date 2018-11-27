@@ -1,6 +1,6 @@
 package org.evomaster.core.output
 
-import org.evomaster.clientJava.controllerApi.dto.database.operations.InsertionDto
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import java.nio.file.Files
@@ -113,9 +113,9 @@ class TestSuiteWriter {
             //TODO check if those are used
             addImport("io.restassured.RestAssured", lines, format)
             addImport("static io.restassured.RestAssured.given", lines, format)
-            addImport("static org.evomaster.clientJava.controllerApi.EMTestUtils.*", lines, format)
-            addImport("org.evomaster.clientJava.controller.SutHandler", lines, format)
-            addImport("static org.evomaster.clientJava.controller.db.dsl.SqlDsl.sql", lines, format)
+            addImport("static org.evomaster.client.java.controllerApi.EMTestUtils.*", lines, format)
+            addImport("org.evomaster.client.java.controller.SutHandler", lines, format)
+            addImport("static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, format)
             addImport(InsertionDto::class.qualifiedName!!, lines, format)
             addImport("java.util.List", lines, format)
             //addImport("static org.hamcrest.core.Is.is", lines, format)
