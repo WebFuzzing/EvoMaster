@@ -1,6 +1,9 @@
-package org.evomaster.core.database
+package org.evomaster.core.database.extract
 
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test

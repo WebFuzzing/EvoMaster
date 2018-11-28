@@ -1,7 +1,8 @@
-package org.evomaster.core.database
+package org.evomaster.core.database.extract
 
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
