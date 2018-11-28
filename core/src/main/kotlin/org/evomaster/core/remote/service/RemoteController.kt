@@ -218,15 +218,15 @@ class RemoteController() {
         if (!wasSuccess(response)) {
             log.warn("Failed to execute database command. HTTP status: {}.", response.status)
 
-            val dto = try {
+            val responseDto = try {
                 response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
             } catch (e: Exception) {
                 log.warn("Failed to parse dto", e)
                 return false
             }
 
-            if(dto?.error != null) {
-                log.warn("Error message: " + dto.error)
+            if(responseDto?.error != null) {
+                log.warn("Error message: " + responseDto.error)
             }
             /*
                 TODO refactor all methods in this class to print error message, if any
@@ -236,6 +236,33 @@ class RemoteController() {
         }
 
         return true
+    }
+
+    fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): T? {
+
+        val response = getWebTarget()
+                .path(ControllerConstants.DATABASE_COMMAND)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+
+        val responseDto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<T>>() {})
+        } catch (e: Exception) {
+            log.warn("Failed to parse dto", e)
+            return null
+        }
+
+        if (!wasSuccess(response)) {
+            log.warn("Failed to execute database command. HTTP status: {}.", response.status)
+
+            if(responseDto?.error != null) {
+                log.warn("Error message: " + responseDto.error)
+            }
+
+            return null
+        }
+
+        return responseDto.data
     }
 
 

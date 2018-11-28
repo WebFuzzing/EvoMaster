@@ -238,7 +238,7 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
                 .body(dto)
                 .post(url + BASE_PATH + DATABASE_COMMAND)
                 .then()
-                .statusCode(204);
+                .statusCode(200);
     }
 
     @Test

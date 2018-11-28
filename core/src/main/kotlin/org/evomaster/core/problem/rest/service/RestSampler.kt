@@ -7,7 +7,6 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.database.ExistingPKsExtractor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
@@ -47,7 +46,8 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private var sqlInsertBuilder: SqlInsertBuilder? = null
 
-    private var existingSqlData : List<DbAction> = listOf()
+    var existingSqlData : List<DbAction> = listOf()
+        private set
 
     @PostConstruct
     private fun initialize() {
@@ -77,10 +77,9 @@ class RestSampler : Sampler<RestIndividual>() {
         initAdHocInitialIndividuals()
 
         if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
 
-            val extractor = ExistingPKsExtractor(rc, infoDto.sqlSchemaDto)
-            existingSqlData = extractor.extractExistingPKs()
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
 
         if(configuration.outputFormat == OutputFormat.DEFAULT){
@@ -94,6 +93,8 @@ class RestSampler : Sampler<RestIndividual>() {
 
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
+
+
 
 
     private fun setupAuthentication(infoDto: SutInfoDto) {

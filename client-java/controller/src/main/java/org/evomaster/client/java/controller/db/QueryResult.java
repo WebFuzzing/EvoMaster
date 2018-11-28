@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto;
+
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
@@ -100,5 +102,13 @@ public class QueryResult {
         return header + rows.stream()
                 .map(r -> "\n" + r.getAsLine())
                 .collect(Collectors.joining());
+    }
+
+    public QueryResultDto toDto(){
+
+        QueryResultDto dto = new QueryResultDto();
+        dto.rows = rows.stream().map(r -> r.toDto()).collect(Collectors.toList());
+
+        return dto;
     }
 }
