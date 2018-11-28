@@ -1,5 +1,6 @@
 package com.foo.rest.examples.spring.enums;
 
+import com.foo.rest.examples.spring.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -13,27 +14,11 @@ import static springfox.documentation.builders.PathSelectors.regex;
 
 @EnableSwagger2
 @SpringBootApplication
-public class EnumsApplication {
+public class EnumsApplication extends SwaggerConfiguration {
 
 
     public static void main(String[] args){
         SpringApplication.run(EnumsApplication.class, args);
     }
 
-    @Bean
-    public Docket piApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .apiInfo(apiInfo())
-                .select()
-                .paths(regex("/api/enums.*"))
-                .build();
-    }
-
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("API")
-                .description("Some description")
-                .version("1.0")
-                .build();
-    }
 }
