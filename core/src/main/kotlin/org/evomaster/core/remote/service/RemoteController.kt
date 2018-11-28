@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -239,7 +240,7 @@ class RemoteController() : DatabaseExecutor {
         return true
     }
 
-    override fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): T? {
+    override fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto? {
 
         val response = getWebTarget()
                 .path(ControllerConstants.DATABASE_COMMAND)
@@ -247,7 +248,7 @@ class RemoteController() : DatabaseExecutor {
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
         val responseDto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<T>>() {})
+            response.readEntity(object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
         } catch (e: Exception) {
             log.warn("Failed to parse dto", e)
             return null

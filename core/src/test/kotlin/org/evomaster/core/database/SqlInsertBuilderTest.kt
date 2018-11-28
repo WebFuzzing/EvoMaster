@@ -1,6 +1,7 @@
 package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
@@ -381,8 +382,8 @@ class SqlInsertBuilderTest {
 
     private class DirectDatabaseExecutor : DatabaseExecutor {
 
-        override fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): T? {
-            return SqlScriptRunner.execCommand(connection, dto.command).toDto() as T
+        override fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto? {
+            return SqlScriptRunner.execCommand(connection, dto.command).toDto()
         }
 
         override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
