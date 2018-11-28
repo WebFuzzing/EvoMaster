@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,7 +24,7 @@ import javax.ws.rs.core.Response
  * Class used to communicate with the remote RestController that does
  * handle the SUT.
  */
-class RemoteController() {
+class RemoteController() : DatabaseExecutor {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(RemoteController::class.java)
@@ -208,7 +209,7 @@ class RemoteController() {
         }
     }
 
-    fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
+    override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
         val response = getWebTarget()
                 .path(ControllerConstants.DATABASE_COMMAND)
@@ -238,7 +239,7 @@ class RemoteController() {
         return true
     }
 
-    fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): T? {
+    override fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): T? {
 
         val response = getWebTarget()
                 .path(ControllerConstants.DATABASE_COMMAND)

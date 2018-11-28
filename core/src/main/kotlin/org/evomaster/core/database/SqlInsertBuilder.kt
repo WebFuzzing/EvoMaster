@@ -17,7 +17,7 @@ import java.lang.IllegalStateException
 
 class SqlInsertBuilder(
         schemaDto: DbSchemaDto,
-        private val rc: RemoteController? = null
+        private val dbExecutor: DatabaseExecutor? = null
 ) {
 
     /**
@@ -200,8 +200,8 @@ class SqlInsertBuilder(
      */
     fun extractExistingPKs(): List<DbAction>{
 
-        if(rc == null){
-            throw IllegalStateException("No RemoteController registered for this object")
+        if(dbExecutor == null){
+            throw IllegalStateException("No Database Executor registered for this object")
         }
 
         val list = mutableListOf<DbAction>()
@@ -210,12 +210,12 @@ class SqlInsertBuilder(
 
             val pks = table.columns.filter { it.primaryKey }
 
-            val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM TABLE ${table.name}"
+            val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM ${table.name}"
 
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result : QueryResultDto = rc.executeDatabaseCommandAndGetResults(dto)
+            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
                     ?: continue
 
             result.rows.forEach { r ->
