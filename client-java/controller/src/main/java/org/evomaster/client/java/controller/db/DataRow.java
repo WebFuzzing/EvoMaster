@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.db;
 
+import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
 import org.evomaster.client.java.controller.internal.db.SelectHeuristics;
 
 import java.util.*;
@@ -92,5 +93,13 @@ public class DataRow {
 
     public String getAsLine() {
         return values.stream().map(obj -> obj.toString()).collect(Collectors.joining(","));
+    }
+
+    public DataRowDto toDto(){
+
+        DataRowDto dto = new DataRowDto();
+        dto.columnData = values.stream().map(obj -> obj.toString()).collect(Collectors.toList());
+
+        return dto;
     }
 }

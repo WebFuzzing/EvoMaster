@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal;
 
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -245,9 +246,11 @@ public class EMController {
         }
 
 
+        QueryResult result = null;
+
         try {
             if (dto.command != null) {
-                SqlScriptRunner.execCommand(connection, dto.command);
+                result = SqlScriptRunner.execCommand(connection, dto.command);
             } else {
                 SqlScriptRunner.execInsert(connection, dto.insertions);
             }
@@ -257,6 +260,10 @@ public class EMController {
             return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
-        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+        if( result == null) {
+            return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+        } else {
+            return Response.status(200).entity(WrappedResponseDto.withData(result.toDto())).build();
+        }
     }
 }

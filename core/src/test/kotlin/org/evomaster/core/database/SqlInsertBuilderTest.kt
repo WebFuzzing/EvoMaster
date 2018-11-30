@@ -1,5 +1,7 @@
 package org.evomaster.core.database
 
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
@@ -7,6 +9,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertAll
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -357,7 +360,7 @@ class SqlInsertBuilderTest {
     }
 
     @Test
-    fun testTableCalledUsers(){
+    fun testTableCalledUsers() {
 
         SqlScriptRunner.execCommand(connection, "CREATE TABLE Users(id  bigserial not null, primary key (id));")
 
@@ -374,5 +377,82 @@ class SqlInsertBuilderTest {
         assertEquals(1, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
         assertTrue((genes[0] as SqlPrimaryKeyGene).gene is SqlAutoIncrementGene)
+    }
+
+
+    private class DirectDatabaseExecutor : DatabaseExecutor {
+
+        override fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto? {
+            return SqlScriptRunner.execCommand(connection, dto.command).toDto()
+        }
+
+        override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
+            return false
+        }
+    }
+
+
+    @Test
+    fun testExtractExistingPKsEmpty() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Users(id  bigserial not null, primary key (id));")
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.extractExistingPKs()
+        assertEquals(0, actions.size)
+    }
+
+
+    @Test
+    fun testExtractExistingPKsOneTable() {
+
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Users(id  bigserial not null, primary key (id));")
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Users (id) VALUES (0)")
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Users (id) VALUES (1)")
+        SqlScriptRunner.execCommand(connection, "INSERT INTO Users (id) VALUES (2)")
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.extractExistingPKs()
+
+        assertAll(
+                {assertEquals(3, actions.size)},
+                { actions.all { it.representExistingData } },
+                { actions.all { it.seeGenes().size == 1 } },
+                { actions.all { it.seeGenes()[0] is SqlPrimaryKeyGene } },
+                { actions.all { (it.seeGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
+        )
+    }
+
+
+    @Test
+    fun testExtractExistingPKsMultiTables() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE X (id  bigserial not null, primary key (id));
+            CREATE TABLE Y (foo varchar(256), bar int, primary key(foo));
+            INSERT INTO X (id) VALUES (0);
+            INSERT INTO X (id) VALUES (1);
+            INSERT INTO X (id) VALUES (2);
+            INSERT INTO Y (foo,bar) VALUES ('a',5);
+            INSERT INTO Y (foo,bar) VALUES ('b',6);
+        """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.extractExistingPKs()
+
+        assertAll(
+                {assertEquals(5, actions.size)},
+                { actions.all { it.representExistingData } },
+                { assertEquals(2, actions.map { it.table.name }.distinct().count())},
+                { actions.all { it.seeGenes().size == 1 } },
+                { actions.all { it.seeGenes()[0] is SqlPrimaryKeyGene } },
+                { actions.all { (it.seeGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
+        )
     }
 }

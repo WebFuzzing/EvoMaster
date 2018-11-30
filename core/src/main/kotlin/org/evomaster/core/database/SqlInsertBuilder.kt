@@ -1,33 +1,49 @@
 package org.evomaster.core.database
 
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import java.lang.IllegalStateException
 
 
-class SqlInsertBuilder(schemaDto: DbSchemaDto) {
+class SqlInsertBuilder(
+        schemaDto: DbSchemaDto,
+        private val dbExecutor: DatabaseExecutor? = null
+) {
+
+    /**
+     * The counter used to give unique IDs to the DbActions.
+     * Should not be negative
+     */
+    private var counter: Long = 0
 
     /*
         All the objects here are immutable
      */
-
     private val tables = mutableMapOf<String, Table>()
 
     private val databaseType: DatabaseType
 
     private val name: String
 
-    private var counter: Long = 0
 
     init {
         /*
             Here, we need to transform (and validate) the input DTO
             into immutable domain objects
          */
-
+        if(counter < 0){
+            throw IllegalArgumentException("Invalid negative counter: $counter")
+        }
 
         if (schemaDto.databaseType == null) {
             throw IllegalArgumentException("Undefined database type")
@@ -174,5 +190,52 @@ class SqlInsertBuilder(schemaDto: DbSchemaDto) {
         }
 
         return actions
+    }
+
+
+    /**
+     * Check current state of database.
+     * For each row, create a DbAction containing only Primary Keys
+     * and immutable data
+     */
+    fun extractExistingPKs(): List<DbAction>{
+
+        if(dbExecutor == null){
+            throw IllegalStateException("No Database Executor registered for this object")
+        }
+
+        val list = mutableListOf<DbAction>()
+
+        for(table in tables.values){
+
+            val pks = table.columns.filter { it.primaryKey }
+
+            val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM ${table.name}"
+
+            val dto = DatabaseCommandDto()
+            dto.command = sql
+
+            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+                    ?: continue
+
+            result.rows.forEach { r ->
+
+                val id = counter++
+
+                val genes = mutableListOf<Gene>()
+
+                for(i in 0 until pks.size){
+                    val pkName = pks[i].name
+                    val data = ImmutableDataHolderGene(pkName, r.columnData[i])
+                    val pk = SqlPrimaryKeyGene(pkName, table.name, data, id)
+                    genes.add(pk)
+                }
+
+                val action = DbAction(table, pks.toSet(), id, genes, true)
+                list.add(action)
+            }
+        }
+
+        return list
     }
 }
