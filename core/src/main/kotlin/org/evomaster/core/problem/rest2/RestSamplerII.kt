@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.serviceII
 import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
@@ -11,7 +11,6 @@ import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.serviceII.resources.RestAResource
-import org.evomaster.core.problem.rest.serviceII.resources.RestResource
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
@@ -459,6 +458,12 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         }
 
         return action
+    }
+
+    fun handleAddResource(ind : RestIndividualII, maxTestSize : Int) : RestResourceCalls{
+        val existingRs = ind.resourceCalls.map { it.resource.ar.path.toString() }
+        val candidate = randomness.choose(resourceCluster.filterNot { r-> existingRs.contains(r.key) }.values)
+        return candidate.sampleAnyRestResourceCalls(randomness,maxTestSize )
     }
 
 

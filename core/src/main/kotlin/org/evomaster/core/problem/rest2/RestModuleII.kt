@@ -4,6 +4,8 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.problem.rest.service.RestStructureMutator
+import org.evomaster.core.problem.rest2.RestResourceMutator
+import org.evomaster.core.problem.rest2.RestResourceStructureMutator
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.mutator.StandardMutator
 import org.evomaster.core.search.service.*
@@ -42,11 +44,15 @@ class RestModuleII : AbstractModule(){
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Mutator<RestIndividualII>>() {})
-                .to(object : TypeLiteral<StandardMutator<RestIndividualII>>(){})
+                .to(RestResourceMutator::class.java)
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<StandardMutator<RestIndividualII>>() {})
+                .to(RestResourceMutator::class.java)
                 .asEagerSingleton()
 
         bind(StructureMutator::class.java)
-                .to(RestStructureMutator::class.java)
+                .to(RestResourceStructureMutator::class.java)
                 .asEagerSingleton()
 
     }

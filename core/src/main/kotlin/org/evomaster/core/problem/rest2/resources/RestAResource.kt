@@ -37,6 +37,15 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         }
     }
 
+    fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
+        val current = calls.actions.map { (it as RestCallAction).verb }.joinToString(HandleActionTemplate.SeparatorTemplate)
+        val rest = templates.filterNot { it.key == current }
+        if(rest.isEmpty()) return null
+        val selected = randomness.choose(rest.keys)
+        return genCalls(selected,randomness, maxTestSize)
+
+    }
+
     fun handleAdded(calls: RestResourceCalls) : RestResourceCalls?{
         if(templates.getValue(calls.actions.map { (it as RestCallAction).verb }.joinToString(HandleActionTemplate.SeparatorTemplate)).times == 1)
             return null
@@ -214,26 +223,6 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return RestResourceCalls(RestResource(this, copy.parameters), mutableListOf(copy))
     }
 
-    fun sampleRestResourceCallsOld(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
-        assert(maxTestSize > 0)
-
-        if(enableSkip) skipActions()
-        val chosen = templates.filter { e->
-            (e.key.split(HandleActionTemplate.SeparatorTemplate).size) in 2..maxTestSize
-        }
-        if(chosen.isEmpty())
-            return sampleIndResourceCall(randomness, maxTestSize)
-        if(existingResources.isEmpty()){
-            //there exists an issue when post failed
-            val chosenWithPost = chosen.filter { it.key.contains(HttpVerb.POST.toString()) }
-            return genCalls(randomness.choose(chosenWithPost).template,randomness, maxTestSize)
-        }else{
-            //FIXME Man, it should not be executed
-            val chosenWithoutPost = chosen.filter { !it.key.contains(HttpVerb.POST.toString()) }
-            return genCalls(randomness.choose(chosenWithoutPost).template,randomness, maxTestSize)
-        }
-    }
-
     fun sampleRestResourceCalls(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         assert(maxTestSize > 0)
         if(enableSkip) skipActions()
@@ -252,6 +241,16 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
             return genCalls(randomness.choose(chosenWithoutPost).template,randomness, maxTestSize)
         }
     }
+
+    fun sampleAnyRestResourceCalls(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
+        assert(maxTestSize > 0)
+        if(enableSkip) skipActions()
+        val chosen = templates.filter { it.value.size <= maxTestSize }
+        if(chosen.isEmpty())
+            return sampleOneAction(null,randomness, maxTestSize)
+        return genCalls(randomness.choose(chosen).template,randomness, maxTestSize)
+    }
+
 
 
     private fun genCalls(template : String, randomness: Randomness, maxTestSize : Int = 1, checkSize : Boolean = false, createResource : Boolean = true, additionalPatch : Boolean = true) : RestResourceCalls{

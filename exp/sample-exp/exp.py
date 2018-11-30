@@ -357,16 +357,16 @@ def addJobBody(port, sut_name, seed, algorithm, sampleType, probOfST, problemTyp
     params += " --sutControllerPort=" + str(port)
     params += " --outputFolder=" + TEST_DIR + "/" + sut_name
     params += " --statisticsFile=" + \
-              REPORT_DIR + "/statistics_" + sut_name + "_" + str(seed) + ".csv"
+              REPORT_DIR + "/statistics_" + sut_name+ "_" + label+ "_" + str(seed) + ".csv"
     params += " --snapshotInterval=1"
     params += " --snapshotStatisticsFile=" + \
-              REPORT_DIR + "/snapshot_" + sut_name + "_" + str(seed) + ".csv"
+              REPORT_DIR + "/snapshot_" + sut_name+ "_" + label + "_" + str(seed) + ".csv"
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
 
     params += " --processFiles=" + \
-              REPORT_DIR + "/process_data_" + sut_name + "_" + str(seed)
+              REPORT_DIR + "/process_data_" + sut_name+ "_" + label + "_" + str(seed)
 
 
     command = EVOMASTER + params + " >> " + em_log + " 2>&1"
@@ -388,7 +388,7 @@ def createJobs():
     ST = ["DEFAULT","DEPENDENCE"]
     PST = [0.5, 1.0]
     PT = ["REST", "RESTII"]
-    SC = ["RANDOM"]
+    SC = ["RANDOM","BasedOnActions"]
     # SC = ["RANDOM","BasedOnSpecified","BasedOnActions","BasedOnTimeBudgets","BasedOnArchive"]
 
     ### Here, we need to computer how many experiments we expect per SUT.

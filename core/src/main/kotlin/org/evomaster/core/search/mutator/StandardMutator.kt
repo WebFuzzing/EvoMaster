@@ -9,14 +9,14 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 
-class StandardMutator<T> : Mutator<T>() where T : Individual {
+open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     /**
      * List where each element at position "i" has value "2^i"
      */
     private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
-    private fun innerMutate(individual: T): T {
+    open fun innerMutate(individual: T): T {
         val copy = individual.copy() as T
         if (individual.canMutateStructure() &&
                 randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
@@ -84,7 +84,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         return mutatedIndividual
     }
 
-    private fun mutateGene(gene: Gene, all: List<Gene>) {
+    protected fun mutateGene(gene: Gene, all: List<Gene>) {
 
         when (gene) {
             is SqlForeignKeyGene -> handleSqlForeignKeyGene(gene, all)
@@ -165,7 +165,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
 
-    private fun handleOptionalGene(gene: OptionalGene, all: List<Gene>) {
+    protected fun handleOptionalGene(gene: OptionalGene, all: List<Gene>) {
         if (!gene.isActive) {
             gene.isActive = true
         } else {
