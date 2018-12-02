@@ -19,6 +19,10 @@ object DbActionTransformer {
 
             val action = insertions[i]
             if(action.representExistingData){
+                /*
+                    FIXME even if not "printable", should still be able
+                    to point to it. Logic below needs to be updated.
+                 */
                 continue
             }
 

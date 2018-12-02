@@ -35,8 +35,13 @@ public class AuthUtils {
         String encoded = encode64(userId + ":" + password);
         String headerValue = "Basic " + encoded;
 
+       return getForAuthorizationHeader(dtoName, headerValue);
+    }
+
+    public static AuthenticationDto getForAuthorizationHeader(String dtoName, String authorizationValue){
+
         AuthenticationDto dto = new AuthenticationDto(dtoName);
-        dto.headers.add(new HeaderDto("Authorization", headerValue));
+        dto.headers.add(new HeaderDto("Authorization", authorizationValue));
 
         return dto;
     }
