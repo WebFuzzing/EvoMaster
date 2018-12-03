@@ -20,9 +20,10 @@ object DbActionTransformer {
             val action = insertions[i]
             if(action.representExistingData){
                 /*
-                    FIXME even if not "printable", should still be able
-                    to point to it. Logic below needs to be updated.
+                    Even if not going to be part of the DTO, should still be able
+                    to point to it with FKs
                  */
+                previous.addAll(action.seeGenes())
                 continue
             }
 

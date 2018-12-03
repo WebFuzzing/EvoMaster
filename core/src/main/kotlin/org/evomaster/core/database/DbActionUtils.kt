@@ -152,7 +152,7 @@ object DbActionUtils {
         val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<Gene>>()
 
         for ((actionIndex, action) in actions.withIndex()) {
-            if (action !is DbAction) {
+            if (action !is DbAction || action.representExistingData) {
                 continue
             }
 

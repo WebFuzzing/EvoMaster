@@ -15,12 +15,12 @@ public class DbAuthEMTest extends DbAuthTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        //handleFlaky(() -> {
+        handleFlaky(() -> {
             String[] args = new String[]{
                     "--createTests", "true",
                     "--seed", "42",
                     "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "1000",
+                    "--maxActionEvaluations", "500",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",
                     "--heuristicsForSQL", "true",
                     "--generateSqlDataWithSearch", "true"
@@ -30,10 +30,10 @@ public class DbAuthEMTest extends DbAuthTestBase {
 
             assertTrue(solution.getIndividuals().size() >= 1);
 
-        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/users", null);
-        assertHasAtLeastOne(solution, HttpVerb.GET, 401, "/api/db/projects", null);
-        assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/projects", null);
-        assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/projects", null);
-        //});
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/auth/users", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 401, "/api/db/auth/projects", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/auth/projects", null);
+            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/auth/projects", null);
+        });
     }
 }

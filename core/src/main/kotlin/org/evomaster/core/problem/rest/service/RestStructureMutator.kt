@@ -58,8 +58,7 @@ class RestStructureMutator : StructureMutator() {
             missing = findMissing(es, ind)
         }
 
-        //TODO put back once bug fixed
-        //ind.dbInitialization.addAll(0, sampler.existingSqlData)
+        ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
         if (config.generateSqlDataWithDSE) {
             //TODO DSE could be plugged in here

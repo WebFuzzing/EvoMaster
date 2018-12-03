@@ -74,5 +74,11 @@ enum class ColumnDataType(dataTypeName: String) {
     /**
      * A Binary Large Object, typically images, audio or multimedia.
      */
-    BLOB("BLOB")
+    BLOB("BLOB");
+
+
+    fun shouldBePrintedInQuotes() : Boolean {
+
+        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP)
+    }
 }
