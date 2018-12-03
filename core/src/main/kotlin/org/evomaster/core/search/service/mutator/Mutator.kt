@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
@@ -6,6 +6,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.*
 
 
 abstract class Mutator<T> where T : Individual {

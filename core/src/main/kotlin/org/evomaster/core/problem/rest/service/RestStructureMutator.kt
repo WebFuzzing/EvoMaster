@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -9,7 +8,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.StructureMutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 
 class RestStructureMutator : StructureMutator() {

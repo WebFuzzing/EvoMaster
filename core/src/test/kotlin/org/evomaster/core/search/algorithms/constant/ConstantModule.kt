@@ -2,9 +2,11 @@ package org.evomaster.core.search.algorithms.constant
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.search.mutator.EmptyStructureMutator
-import org.evomaster.core.search.mutator.StandardMutator
+import org.evomaster.core.search.service.mutator.EmptyStructureMutator
+import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
+import org.evomaster.core.search.service.mutator.Mutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 /**
  * Created by arcuri82 on 20-Feb-17.

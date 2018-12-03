@@ -1,10 +1,9 @@
-package org.evomaster.core.search.mutator
+package org.evomaster.core.search.service.mutator
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.Mutator
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -39,7 +38,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         TODO: this likely will need experiments and a better formula.
         The problem is that SQL could introduce a huge amount of genes, slowing
         down the search
-     */
+         */
         val n = Math.max(1, copy.seeGenes(Individual.GeneFilter.NO_SQL).filter(Gene::isMutable).count())
 
         val p = 1.0 / n
