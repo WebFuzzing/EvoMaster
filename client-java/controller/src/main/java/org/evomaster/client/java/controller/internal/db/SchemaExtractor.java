@@ -4,6 +4,7 @@ import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
+import org.evomaster.client.java.controller.internal.db.constraint.ConstraintUtils;
 import org.evomaster.client.java.controller.internal.db.constraint.H2Constraints;
 
 import java.sql.*;
@@ -133,7 +134,7 @@ public class SchemaExtractor {
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
          */
-        addConstraints(connection, dt, schemaDto);
+        ConstraintUtils.addConstraints(connection, dt, schemaDto);
 
         return schemaDto;
     }
@@ -181,22 +182,6 @@ public class SchemaExtractor {
         return tableDto;
     }
 
-    /**
-     * Indicates the first column name that is a foreign key to an autoincrement column
-     *
-     * @param schema
-     * @param tableName
-     * @return
-     */
-    private static String getColumnNameForeignKeyToAutoIncrementColumn(DbSchemaDto schema, String tableName) {
-        TableDto tableDto = getTable(schema, tableName);
-        for (String pkColumnName : tableDto.primaryKeySequence) {
-            if (isFKToAutoIncrementColumn(schema, tableName, pkColumnName)) {
-                return pkColumnName;
-            }
-        }
-        return null;
-    }
 
     /**
      * Checks if the given tableName.columnName column is a foreign key to an autoincrement column
@@ -232,33 +217,7 @@ public class SchemaExtractor {
     }
 
 
-    /**
-     * Appends constraints that are database specific.
-     *
-     * @param connection
-     * @param dt
-     * @param schemaDto
-     * @throws Exception
-     */
-    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
-        switch (dt) {
-            case H2: {
-                H2Constraints.addH2Constraints(connection, schemaDto);
-                break;
-            }
-            case DERBY: {
-                // TODO Derby
-                break;
-            }
-            case OTHER: {
-                // TODO Other
-                break;
-            }
-            default: {
-                throw new IllegalArgumentException("Unknown database type " + dt);
-            }
-        }
-    }
+
 
 
 

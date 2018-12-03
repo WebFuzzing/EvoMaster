@@ -1,8 +1,19 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
+import net.sf.jsqlparser.JSQLParserException;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
+/*
+    JDBC MetaData is quite limited.
+    To check constraints, we need to do SQL queries on the system tables.
+    Unfortunately, this is database-dependent
+*/
 public class ConstraintUtils {
 
     /**
@@ -20,5 +31,34 @@ public class ConstraintUtils {
         }
 
         columnDto.unique = true;
+    }
+
+
+    /**
+     * Appends constraints that are database specific.
+     *
+     * @param connection
+     * @param dt
+     * @param schemaDto
+     * @throws Exception
+     */
+    public static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
+        switch (dt) {
+            case H2: {
+                H2Constraints.addH2Constraints(connection, schemaDto);
+                break;
+            }
+            case DERBY: {
+                // TODO Derby
+                break;
+            }
+            case OTHER: {
+                // TODO Other
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unknown database type " + dt);
+            }
+        }
     }
 }
