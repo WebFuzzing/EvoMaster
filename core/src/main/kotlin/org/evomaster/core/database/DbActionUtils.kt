@@ -5,7 +5,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
-
+import org.evomaster.core.Lazy
 
 object DbActionUtils {
 
@@ -51,12 +51,7 @@ object DbActionUtils {
                     it.randomize(randomness, false, all)
                 }
 
-        if (javaClass.desiredAssertionStatus()) {
-            //TODO refactor if/when Kotlin will support lazy asserts
-            //https://youtrack.jetbrains.com/issue/KT-22292
-            assert(verifyForeignKeys(actions))
-        }
-
+        Lazy.assert{verifyForeignKeys(actions)}
     }
 
     private const val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
@@ -116,7 +111,7 @@ object DbActionUtils {
         if (geneToRepair == null) {
             return true
         } else {
-            assert(actionIndexToRepair >= 0 && actionIndexToRepair < actions.size)
+            Lazy.assert{actionIndexToRepair >= 0 && actionIndexToRepair < actions.size}
             // truncate list of actions to make them valid
             val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
             actions.clear()

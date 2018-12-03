@@ -1,6 +1,7 @@
 package org.evomaster.core.output
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.RestCallAction
@@ -169,7 +170,7 @@ class TestCaseWriter {
          * At this point all pk Ids should be valid
          * (despite they being NULL or not)
          **/
-        assert(g.hasValidUniqueIdOfPrimaryKey())
+        Lazy.assert{g.hasValidUniqueIdOfPrimaryKey()}
         return if (g.isNull()) {
             ".d(\"$variableName\", \"NULL\")"
         } else {

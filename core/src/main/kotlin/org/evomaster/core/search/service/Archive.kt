@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -290,7 +291,7 @@ class Archive<T> where T : Individual {
                     partial, so this check on collateral coverage likely
                     will not be so effective
                  */
-                assert(current.size == 1) //if covered, should keep only one solution in buffer
+                Lazy.assert{current.size == 1} //if covered, should keep only one solution in buffer
 
                 val shorter = copy.individual.size() < current[0].individual.size()
                 val sameLengthButBetterScore = (copy.individual.size() == current[0].individual.size())

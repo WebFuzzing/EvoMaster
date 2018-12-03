@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Individual
@@ -63,10 +64,9 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         }
 
-        if (javaClass.desiredAssertionStatus()) {
-            //TODO refactor if/when Kotlin will support lazy asserts
-            assert(DbActionUtils.verifyForeignKeys(
-                    individual.seeInitializingActions().filterIsInstance<DbAction>()))
+        Lazy.assert {
+            DbActionUtils.verifyForeignKeys(
+                    individual.seeInitializingActions().filterIsInstance<DbAction>())
         }
 
         return copy
@@ -79,7 +79,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         // Second repair the initialization actions (if needed)
         mutatedIndividual.repairInitializationActions(randomness)
         // Third check that repair was successful
-        assert(mutatedIndividual.verifyInitializationActions())
+        Lazy.assert{mutatedIndividual.verifyInitializationActions()}
         return mutatedIndividual
     }
 
@@ -216,7 +216,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
     private fun handleIntegerGene(gene: IntegerGene) {
-        assert(gene.min < gene.max && gene.isMutable())
+        Lazy.assert{gene.min < gene.max && gene.isMutable()}
 
         //check maximum range. no point in having a delta greater than such range
         val range: Long = gene.max.toLong() - gene.min.toLong()
