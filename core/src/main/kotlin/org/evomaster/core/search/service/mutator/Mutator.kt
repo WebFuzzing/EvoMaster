@@ -7,7 +7,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
-
+import org.evomaster.core.Lazy
 
 abstract class Mutator<T> where T : Individual {
 
@@ -54,11 +54,11 @@ abstract class Mutator<T> where T : Individual {
 
             structureMutator.addInitializingActions(current)
 
-            val verifyAfterAdd = DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())
+            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutatedInd = mutate(current.individual)
 
-            val verifyOK = DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())
+            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue

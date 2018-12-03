@@ -436,6 +436,14 @@ class EMConfig {
     var structureMutationProbability = 0.5
 
 
+    enum class GeneMutationStrategy{
+        ONE_OVER_N,
+        ONE_OVER_N_BIASED_SQL
+    }
+
+    @Cfg("Strategy used to define the mutation probability")
+    var geneMutationStrategy = GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
+
     enum class FeedbackDirectedSampling {
         NONE,
         LAST,
