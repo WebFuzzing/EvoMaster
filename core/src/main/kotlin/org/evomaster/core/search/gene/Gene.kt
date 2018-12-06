@@ -78,8 +78,8 @@ abstract class Gene(var name: String) {
      * Genes might have other genes inside (eg, think of array).
      *  @return a recursive list of all nested genes, "this" included
      */
-    open fun flatView(): List<Gene>{
-        return listOf(this)
+    open fun flatView(predicate: (Gene) -> Boolean = {false}): List<Gene>{
+        return if(predicate(this)) listOf() else listOf(this)
     }
 
     /**
@@ -88,8 +88,4 @@ abstract class Gene(var name: String) {
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
-    //filter to flat genes
-    open fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this) else listOf()
-    }
 }

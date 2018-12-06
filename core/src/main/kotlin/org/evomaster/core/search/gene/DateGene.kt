@@ -57,15 +57,11 @@ class DateGene(
                 && this.day.containsSameValueAs(other.day)
     }
 
-    override fun flatView(): List<Gene> {
-        return listOf(this, year, month, day)
-    }
-
-    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
+    override fun flatView(predicate: (Gene) -> Boolean): List<Gene>{
         return if(predicate(this)) listOf(this)
-        else listOf(this).plus(year.flatViewWithTypeFilter(predicate))
-                .plus(month.flatViewWithTypeFilter(predicate))
-                .plus(day.flatViewWithTypeFilter(predicate))
+        else listOf(this).plus(year.flatView(predicate))
+                .plus(month.flatView(predicate))
+                .plus(day.flatView(predicate))
     }
 
 }
