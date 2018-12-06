@@ -6,27 +6,44 @@ import org.evomaster.core.search.service.Archive
 
 
 /**
- * @author: manzhang
- * @date: 2018/9/5
+ * This is used to record a step after executing a selected individual, i.e., evalIndividual
+ *      - population is for current archived population in Archive,
+ *      - samplingCounter is for current sampling counter in Archive
+ *      - added is for whether it is added to Archive
+ *      - improved is for whether it helps to improve fitness
+ *      - isMutated is for whether it is mutated
+ *
  */
 open class StepOfSearchProcess<T> where T : Individual{
 
+
+    /**
+     * Key -> id of the target
+     *
+     * Value -> sorted list of best individuals for that target
+     */
     val populations = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
 
+    /**
+     * Key -> id of the target
+     *
+     * Value -> how often we sampled from the buffer for that target since
+     *          last fitness improvement.
+     *          Note: such counter will be reset when a fitness improvement
+     *          is obtained for that target is obtained.
+     *          This means that an infeasible / hard target will not get
+     *          its counter reset once the final local optima is reached
+     */
     val samplingCounter = mutableMapOf<Int, Int>()
-
     val evalIndividual : EvaluatedIndividual<T>
 
     var added : Boolean = false
     var improvedArchive : Boolean = false
-
-    val indexOfEvaluation : Int
-
-    val time : Long
-
     val isMutated : Boolean
 
-    var timeCost : Double? = null
+    val indexOfEvaluation : Int
+    val time : Long
+
 
     constructor(_archive:Archive<*>,  _indexOfEvaluation : Int, _i : T, _eval: EvaluatedIndividual<*>, _time:Long, _isMutated : Boolean){
 

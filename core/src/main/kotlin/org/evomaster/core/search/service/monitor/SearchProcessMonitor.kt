@@ -48,6 +48,7 @@ class SearchProcessMonitor: SearchListener {
     var step :StepOfSearchProcess<*>? = null
     var isMutated : Boolean = false
 
+    //record the progress of saved steps
     private var tb = 1
 
     private val evaluatedIndividuals : MutableList<EvaluatedIndividual<*>> = mutableListOf()
@@ -81,7 +82,6 @@ class SearchProcessMonitor: SearchListener {
 
     }
 
-    //TODO Man
     fun record(added: Boolean, improveArchive : Boolean, evalInd : EvaluatedIndividual<*>){
         if(config.enableProcessMonitor){
             if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
@@ -103,7 +103,7 @@ class SearchProcessMonitor: SearchListener {
 
 
     private fun setOverall(){
-        var stp = config.stoppingCriterion.toString()+"_"+
+        val stp = config.stoppingCriterion.toString()+"_"+
                 (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.maxTimeInSeconds.toString() else config.maxActionEvaluations)
         this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
@@ -127,13 +127,11 @@ class SearchProcessMonitor: SearchListener {
     }
     fun saveOverall(){
         setOverall()
-        var overalltp = Paths.get(config.processFiles + File.separator + NAME  + FILE_TYPE)
-        writeByChannel(overalltp, gson.toJson(this.overall))
+        writeByChannel(Paths.get(config.processFiles + File.separator + NAME  + FILE_TYPE), gson.toJson(this.overall))
     }
 
     fun saveStep(index:Int, v : StepOfSearchProcess<*>){
-        var tp = Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+ getInt(index) + FILE_TYPE)
-        writeByChannel(tp, gson.toJson(v))
+        writeByChannel(Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+ getInt(index) + FILE_TYPE), gson.toJson(v))
     }
 
     fun writeByChannel(path : Path, value :String){
