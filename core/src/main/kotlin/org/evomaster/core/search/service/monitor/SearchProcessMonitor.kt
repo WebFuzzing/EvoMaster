@@ -10,6 +10,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.IOException
 import java.lang.IllegalStateException
@@ -54,6 +56,7 @@ class SearchProcessMonitor: SearchListener {
     private val evaluatedIndividuals : MutableList<EvaluatedIndividual<*>> = mutableListOf()
 
     companion object {
+        private val log: Logger = LoggerFactory.getLogger(SearchProcessMonitor::class.java)
         //step is saved under the <process-data-folder>/data
         val DATA_FOLDER = "data"
         val FILE_TYPE = ".json"
@@ -96,6 +99,7 @@ class SearchProcessMonitor: SearchListener {
                 step!!.added = added
                 step!!.improvedArchive = improveArchive
                 saveStep(step!!.indexOfEvaluation, step!!)
+                if(config.showProgress) log.info("number of targets: ${step!!.populations.size.toString()}")
                 tb++
             }
         }
@@ -110,7 +114,7 @@ class SearchProcessMonitor: SearchListener {
 
 
 
-    fun initMonitorProcessOuputs(){
+    private fun initMonitorProcessOuputs(){
         val path = Paths.get(config.processFiles)
 
         if(Files.exists(path)){
@@ -122,7 +126,7 @@ class SearchProcessMonitor: SearchListener {
                         t.delete()
                     } }
         }
-        if(config.showProgress) println("all files in ${path.toUri().toString()} are deleted")
+        if(config.showProgress) log.info("all files in ${path.toUri().toString()} are deleted")
 
     }
     fun saveOverall(){
@@ -130,11 +134,11 @@ class SearchProcessMonitor: SearchListener {
         writeByChannel(Paths.get(config.processFiles + File.separator + NAME  + FILE_TYPE), gson.toJson(this.overall))
     }
 
-    fun saveStep(index:Int, v : StepOfSearchProcess<*>){
+    private fun saveStep(index:Int, v : StepOfSearchProcess<*>){
         writeByChannel(Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+ getInt(index) + FILE_TYPE), gson.toJson(v))
     }
 
-    fun writeByChannel(path : Path, value :String){
+    private fun writeByChannel(path : Path, value :String){
         if (!Files.exists(path.parent)) Files.createDirectories(path.parent)
         Files.createFile(path)
         val buffer = ByteBuffer.wrap(value.toByteArray())
@@ -153,7 +157,7 @@ class SearchProcessMonitor: SearchListener {
     }
 
 
-    fun getInt(value : Int) :String{
+    private fun getInt(value : Int) :String{
         return String.format("%0${config.maxActionEvaluations.toString().length}"+"d", value)
     }
 
