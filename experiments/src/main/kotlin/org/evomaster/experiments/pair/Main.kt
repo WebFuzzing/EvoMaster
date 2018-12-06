@@ -9,6 +9,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.Algorithm.*
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.NONE
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
@@ -63,7 +64,7 @@ class Main {
                             optimaY = createOptima(nTargetsPerVar, range, seed.toLong())
                         }
 
-                        assert(optimaX.size + optimaY.size == nTargetsPerVar * 2)
+                        Lazy.assert{optimaX.size + optimaY.size == nTargetsPerVar * 2}
 
                         listOf(RANDOM, MOSA, WTS).forEach { a ->
                             runAlg(a, seed.toLong(), budget, range, optimaX, optimaY, inf, NONE, t)

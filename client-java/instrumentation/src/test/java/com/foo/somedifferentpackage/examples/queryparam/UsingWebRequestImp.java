@@ -1,6 +1,6 @@
 package com.foo.somedifferentpackage.examples.queryparam;
 
-import org.evomaster.clientJava.instrumentation.example.queryparam.UsingWebRequest;
+import org.evomaster.client.java.instrumentation.example.queryparam.UsingWebRequest;
 import org.springframework.web.context.request.WebRequest;
 
 public class UsingWebRequestImp implements UsingWebRequest {

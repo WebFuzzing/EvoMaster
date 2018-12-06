@@ -1,7 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.database.DbAction
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
@@ -9,7 +9,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.StructureMutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 
 class RestStructureMutator : StructureMutator() {
@@ -57,6 +57,8 @@ class RestStructureMutator : StructureMutator() {
              */
             missing = findMissing(es, ind)
         }
+
+        ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
         if (config.generateSqlDataWithDSE) {
             //TODO DSE could be plugged in here
@@ -124,9 +126,9 @@ class RestStructureMutator : StructureMutator() {
 
         (0 until ind.actions.size - 1).forEach {
             val a = ind.actions[it]
-            assert(a !is RestCallAction || a.verb == HttpVerb.POST)
+            Lazy.assert{a !is RestCallAction || a.verb == HttpVerb.POST}
         }
-        assert({ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET }())
+        Lazy.assert{ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET }
 
         val indices = ind.actions.indices
                 .filter { i ->
@@ -160,7 +162,7 @@ class RestStructureMutator : StructureMutator() {
             val idx = indices.last()
 
             val postTemplate = ind.actions[idx] as RestCallAction
-            assert(postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation)
+            Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
             val post = sampler.createActionFor(postTemplate, ind.actions.last() as RestCallAction)
 

@@ -170,9 +170,9 @@ install the snapshot version of the Java client into your local Maven repository
 (e.g., under *~/.m2*). 
 
 Once the client library is imported, you need to create a class that extends either
-`org.evomaster.clientJava.controller.EmbeddedSutController`
+`org.evomaster.client.java.controller.EmbeddedSutController`
  or
- `org.evomaster.clientJava.controller.ExternalSutController`.
+ `org.evomaster.client.java.controller.ExternalSutController`.
 Both these classes extend `SutController`.
 The difference is on whether the SUT is started in the same JVM of the EvoMaster
 driver (*embedded*), or in a separated JVM (*external*).
@@ -195,7 +195,7 @@ For example, those methods specify how to start the SUT, how it should be stoppe
 and how to reset its state.
 The EvoMaster Java client library also provides further utility classes to help
 writing those controllers/drivers.
-For example, `org.evomaster.clientJava.controller.db.DbCleaner` helps in resetting
+For example, `org.evomaster.client.java.controller.db.DbCleaner` helps in resetting
 the state of a database (if any is used by the SUT).
 
 Until better documentation and tutorials are provided,
@@ -206,7 +206,7 @@ and the existing examples in
 
 Once a class `X` that is a descendant of `SutController` is written, you need
 to be able to start the EvoMaster driver, by using the 
-`org.evomaster.clientJava.controller.InstrumentedSutStarter`
+`org.evomaster.client.java.controller.InstrumentedSutStarter`
 class. 
 For example, in the source code of the class `X`, you could add:
  

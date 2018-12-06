@@ -28,10 +28,10 @@ class DbActionRepairTest {
         val actions = mutableListOf(action0, action1)
 
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertTrue(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertTrue(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
 
     }
 
@@ -51,10 +51,10 @@ class DbActionRepairTest {
         val actions = mutableListOf(action0, action1)
 
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertTrue(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertTrue(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
 
     }
 
@@ -74,16 +74,16 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertFalse(DbAction.verifyActions(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
         val randomness = Randomness()
-        val listWasNotTruncated = DbAction.repairBrokenDbActionsList(actions, randomness)
+        val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
     }
 
 
@@ -102,13 +102,13 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertFalse(DbAction.verifyActions(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
         val randomness = Randomness()
-        val listWasNotTruncated = DbAction.repairBrokenDbActionsList(actions, randomness, maxNumberOfAttemptsToRepairAnAction = 0)
+        val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness, maxNumberOfAttemptsToRepairAnAction = 0)
 
         assertEquals(false, listWasNotTruncated)
     }
@@ -129,16 +129,16 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertFalse(DbAction.verifyActions(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
         val randomness = Randomness()
-        val listWasNotTruncated = DbAction.repairBrokenDbActionsList(actions, randomness)
+        val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
     }
 
     @Test
@@ -156,16 +156,16 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertFalse(DbAction.verifyActions(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
         val randomness = Randomness()
-        val listWasNotTruncated = DbAction.repairBrokenDbActionsList(actions, randomness)
+        val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
     }
 
 
@@ -173,7 +173,7 @@ class DbActionRepairTest {
     fun testIllegalMaxNumberOfAttempts() {
         val randomness = Randomness()
         try {
-            DbAction.repairBrokenDbActionsList(mutableListOf(), randomness, -1)
+            DbActionUtils.repairBrokenDbActionsList(mutableListOf(), randomness, -1)
             fail<Exception>("Expected IllegalArgumentException when maxNumberOfAttemptsToRepairAction argument is negative")
         } catch (e: IllegalArgumentException) {
             // expected
@@ -198,18 +198,18 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1, action2)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
-        assertFalse(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
         val randomness = Randomness()
-        val listWasNotTruncated = DbAction.repairBrokenDbActionsList(actions, randomness)
+        val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(false, listWasNotTruncated)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertTrue(DbAction.verifyUniqueColumns(actions))
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertTrue(DbActionUtils.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
 
         assertEquals(2,actions.size)
     }
@@ -234,16 +234,16 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertFalse(DbAction.verifyActions(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
         val randomness = Randomness()
-        val repairWasSuccessful = DbAction.repairBrokenDbActionsList(actions, randomness)
+        val repairWasSuccessful = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, repairWasSuccessful)
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
     }
 
     @Test
@@ -263,10 +263,10 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertTrue(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertTrue(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
 
     }
 
@@ -304,10 +304,10 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertTrue(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertTrue(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
 
     }
 
@@ -345,10 +345,10 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertTrue(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertTrue(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
 
     }
 
@@ -395,17 +395,17 @@ class DbActionRepairTest {
 
         val actions = mutableListOf<DbAction>(action0, action1, action2, action3)
 
-        assertTrue(DbAction.verifyForeignKeys(actions))
-        assertFalse(DbAction.verifyUniqueColumns(actions))
+        assertTrue(DbActionUtils.verifyForeignKeys(actions))
+        assertFalse(DbActionUtils.verifyUniqueColumns(actions))
 
-        assertFalse(DbAction.verifyActions(actions))
+        assertFalse(DbActionUtils.verifyActions(actions))
 
 
         val randomness = Randomness()
-        val listWasNotTruncated = DbAction.repairBrokenDbActionsList(actions, randomness)
+        val listWasNotTruncated = DbActionUtils.repairBrokenDbActionsList(actions, randomness)
 
         assertEquals(true, listWasNotTruncated)
-        assertTrue(DbAction.verifyActions(actions))
+        assertTrue(DbActionUtils.verifyActions(actions))
     }
 
 }

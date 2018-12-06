@@ -1,7 +1,9 @@
 package com.foo.rest.examples.spring.db.javatypes;
 
+import com.foo.rest.examples.spring.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
@@ -12,27 +14,11 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import static springfox.documentation.builders.PathSelectors.regex;
 
 @EnableSwagger2
-@SpringBootApplication
-public class JavaTypesApp {
+@SpringBootApplication(exclude = SecurityAutoConfiguration.class)
+public class JavaTypesApp extends SwaggerConfiguration {
 
     public static void main(String[] args) {
         SpringApplication.run(JavaTypesApp.class, args);
     }
 
-    @Bean
-    public Docket piApi() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .apiInfo(apiInfo())
-                .select()
-                .paths(regex("/api/db/javatypes.*"))
-                .build();
-    }
-
-    private ApiInfo apiInfo() {
-        return new ApiInfoBuilder()
-                .title("API")
-                .description("Some description")
-                .version("1.0")
-                .build();
-    }
 }

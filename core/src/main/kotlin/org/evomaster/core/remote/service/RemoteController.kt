@@ -1,10 +1,12 @@
 package org.evomaster.core.remote.service
 
 import com.google.inject.Inject
-import org.evomaster.clientJava.controllerApi.ControllerConstants
-import org.evomaster.clientJava.controllerApi.dto.*
-import org.evomaster.clientJava.controllerApi.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
+import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,7 +25,7 @@ import javax.ws.rs.core.Response
  * Class used to communicate with the remote RestController that does
  * handle the SUT.
  */
-class RemoteController() {
+class RemoteController() : DatabaseExecutor {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(RemoteController::class.java)
@@ -196,28 +198,6 @@ class RemoteController() {
         return dto?.data
     }
 
-    fun getExtraHeuristics(): ExtraHeuristicDto? {
-
-        val response = getWebTarget()
-                .path(ControllerConstants.EXTRA_HEURISTICS)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get()
-
-        if (!wasSuccess(response)) {
-            log.warn("Failed to retrieve extra heuristics. HTTP status: {}", response.status)
-            return null
-        }
-
-        val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<ExtraHeuristicDto>>() {})
-        } catch (e: Exception) {
-            log.warn("Failed to parse controller info dto", e)
-            null
-        }
-
-        return dto?.data
-    }
-
     fun registerNewAction(actionIndex: Int) {
 
         val response = getWebTarget()
@@ -230,7 +210,7 @@ class RemoteController() {
         }
     }
 
-    fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
+    override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
         val response = getWebTarget()
                 .path(ControllerConstants.DATABASE_COMMAND)
@@ -240,15 +220,15 @@ class RemoteController() {
         if (!wasSuccess(response)) {
             log.warn("Failed to execute database command. HTTP status: {}.", response.status)
 
-            val dto = try {
+            val responseDto = try {
                 response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
             } catch (e: Exception) {
                 log.warn("Failed to parse dto", e)
                 return false
             }
 
-            if(dto?.error != null) {
-                log.warn("Error message: " + dto.error)
+            if(responseDto?.error != null) {
+                log.warn("Error message: " + responseDto.error)
             }
             /*
                 TODO refactor all methods in this class to print error message, if any
@@ -260,18 +240,33 @@ class RemoteController() {
         return true
     }
 
-
-    fun resetExtraHeuristics() {
+    override fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto? {
 
         val response = getWebTarget()
-                .path(ControllerConstants.EXTRA_HEURISTICS)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .delete()
+                .path(ControllerConstants.DATABASE_COMMAND)
+                .request()
+                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+
+        val responseDto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
+        } catch (e: Exception) {
+            log.warn("Failed to parse dto", e)
+            return null
+        }
 
         if (!wasSuccess(response)) {
-            log.warn("Failed to reset extra heuristics. HTTP status: {}", response.status)
+            log.warn("Failed to execute database command. HTTP status: {}.", response.status)
+
+            if(responseDto?.error != null) {
+                log.warn("Error message: " + responseDto.error)
+            }
+
+            return null
         }
+
+        return responseDto.data
     }
+
 
     private fun wasSuccess(response: Response?): Boolean {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false

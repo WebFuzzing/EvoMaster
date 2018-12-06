@@ -6,217 +6,45 @@ import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.Randomness
 
 /**
  *  An action executed on the database.
  *  Typically, a SQL Insertion
  */
 class DbAction(
+        /**
+         * The involved table
+         */
         val table: Table,
+        /**
+         * Which columns we are inserting data into
+         */
         val selectedColumns: Set<Column>,
         private val id: Long,
-        //FIXME: this should not be exposed outside this class
-        computedGenes: List<Gene>? = null
+        computedGenes: List<Gene>? = null,
+        /**
+         * Instead of a new INSERT action, we might have "fake" actions representing
+         * data already existing in the database.
+         * This is very helpful when dealing with Foreign Keys.
+         */
+        val representExistingData: Boolean = false
 ) : Action {
 
-    companion object {
-
-        fun verifyForeignKeys(actions: List<DbAction>): Boolean {
-
-            val all = actions.flatMap { it.seeGenes() }
-
-            for (i in 1 until actions.size) {
-
-                val previous = actions.subList(0, i)
-
-                actions[i].seeGenes().asSequence()
-                        .flatMap { it.flatView().asSequence() }
-                        .filterIsInstance<SqlForeignKeyGene>()
-                        .filter { it.isReferenceToNonPrintable(all) }
-                        .map { it.uniqueIdOfPrimaryKey }
-                        .forEach {
-                            val id = it
-                            val match = previous.asSequence()
-                                    .flatMap { it.seeGenes().asSequence() }
-                                    .filterIsInstance<SqlPrimaryKeyGene>()
-                                    .any { it.uniqueId == id }
-
-                            if (!match) {
-                                return false
-                            }
-                        }
-            }
-            return true
-        }
-
-        //FIXME need refactoring
-        fun randomizeDbActionGenes(actions: List<DbAction>, randomness: Randomness) {
-            /*
-                At this point, SQL genes are particular, as they can have
-                references to each other (eg Foreign Keys)
-
-                FIXME: refactoring to put such concept at higher level directly in Gene.
-                And, in any case, shouldn't something specific just for Rest
-             */
-
-            val all = actions.flatMap { it.seeGenes() }
-            all.asSequence()
-                    .filter { it.isMutable() }
-                    .forEach {
-                        if (it is SqlPrimaryKeyGene) {
-                            val g = it.gene
-                            if (g is SqlForeignKeyGene) {
-                                g.randomize(randomness, false, all)
-                            } else {
-                                it.randomize(randomness, false)
-                            }
-                        } else if (it is SqlForeignKeyGene) {
-                            it.randomize(randomness, false, all)
-                        } else {
-                            it.randomize(randomness, false)
-                        }
-                    }
-
-            if (javaClass.desiredAssertionStatus()) {
-                //TODO refactor if/when Kotlin will support lazy asserts
-                assert(DbAction.verifyForeignKeys(actions))
-            }
-
-        }
-
-        private val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
-
-        /**
-         * Some actions might break schema constraints
-         * (such as unique columns, primary keys or foreign keys).
-         * This method tries to fix each action that is broken.
-         *
-         * In order to do so, it starts by finding the first action with a broken gene.
-         * This gene is randomize. If an action cannot be repaired after
-         * <code>maxNumberOfAttemptsToRepairAnAction</code> attempts
-         * (because it is not satisfiable given the current list of previous actions),
-         * the remaining actions (including the one that is broken) are removed
-         * from the list of actions.
-         *
-         * Returns true if the action list was fixed without removing any action.
-         * Returns false if actions needed to be removed
+    init {
+        /*
+            Existing data actions are very special, and can only contain PKs
+            with immutable data.
          */
-        fun repairBrokenDbActionsList(actions: MutableList<DbAction>,
-                                      randomness: Randomness,
-                                      maxNumberOfAttemptsToRepairAnAction: Int = DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS
-        ): Boolean {
-
-            if (maxNumberOfAttemptsToRepairAnAction < 0) {
-                throw IllegalArgumentException("Maximum umber of attempts to fix an action should be non negative but it is: $maxNumberOfAttemptsToRepairAnAction")
+        if(representExistingData){
+            if(computedGenes == null){
+                throw IllegalArgumentException("No defined genes")
             }
 
-            var attemptCounter = 0
-            var previousActionIndexToRepair = -1
-
-            var geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
-            var geneToRepair = geneToRepairAndActionIndex.first
-            var actionIndexToRepair = geneToRepairAndActionIndex.second
-
-            while (geneToRepair != null && attemptCounter < maxNumberOfAttemptsToRepairAnAction) {
-
-                val previousGenes = actions.subList(0, geneToRepairAndActionIndex.second).flatMap { it.seeGenes() }
-                randomizeGene(geneToRepair, randomness, previousGenes)
-
-                if (actionIndexToRepair == previousActionIndexToRepair) {
-                    //
-                    attemptCounter++
-                } else if (actionIndexToRepair > previousActionIndexToRepair) {
-                    attemptCounter = 0
-                    previousActionIndexToRepair = actionIndexToRepair
-                } else {
-                    throw IllegalStateException("Invalid last action repaired at position $previousActionIndexToRepair " +
-                            " but new action to repair at position $actionIndexToRepair")
+            for(pk in computedGenes){
+                if(pk !is SqlPrimaryKeyGene || pk.gene !is ImmutableDataHolderGene){
+                    throw IllegalArgumentException("Invalid gene: ${pk.name}")
                 }
-
-                geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
-                geneToRepair = geneToRepairAndActionIndex.first
-                actionIndexToRepair = geneToRepairAndActionIndex.second
             }
-
-            if (geneToRepair == null) {
-                return true
-            } else {
-                assert(actionIndexToRepair >= 0 && actionIndexToRepair < actions.size)
-                // truncate list of actions to make them valid
-                val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
-                actions.clear()
-                actions.addAll(truncatedListOfActions)
-                return false
-            }
-        }
-
-        private fun randomizeGene(gene: Gene, randomness: Randomness, previousGenes: List<Gene>) {
-            when (gene) {
-                is SqlForeignKeyGene -> gene.randomize(randomness, true, previousGenes)
-                else ->
-                    if (gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
-                        //FIXME: this needs refactoring
-                        gene.gene.randomize(randomness, true, previousGenes)
-                    } else {
-                        //TODO other cases
-                        gene.randomize(randomness, true)
-                    }
-            }
-        }
-
-        /**
-         * Returns true iff all action are valid wrt the schema.
-         * For example
-         */
-        fun verifyActions(actions: List<DbAction>): Boolean {
-            return verifyUniqueColumns(actions)
-                    && verifyForeignKeys(actions)
-        }
-
-        /**
-         * Returns true if a insertion tries to insert a repeated value
-         * in a unique column
-         */
-        fun verifyUniqueColumns(actions: List<DbAction>): Boolean {
-            val offendingGene = findFirstOffendingGeneWithIndex(actions)
-            return (offendingGene.first == null)
-        }
-
-        /**
-         * Returns the first offending gene found with the action index to the
-         * passed list where the gene was found.
-         * If no such gene is found, the function returns the tuple (-1,null).
-         */
-        private fun findFirstOffendingGeneWithIndex(actions: List<Action>): Pair<Gene?, Int> {
-            val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<Gene>>()
-
-            for ((actionIndex, action) in actions.withIndex()) {
-                if (action !is DbAction) {
-                    continue
-                }
-
-                val tableName = action.table.name
-
-                action.seeGenes().forEach { g ->
-                    val columnName = g.name
-                    if (action.table.columns.filter { c ->
-                                c.name == columnName && !c.autoIncrement && (c.unique || c.primaryKey)
-                            }.isNotEmpty()) {
-                        val key = Pair(tableName, columnName)
-
-                        val genes = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
-
-                        if (genes.filter { otherGene -> otherGene.containsSameValueAs(g) }.isNotEmpty()) {
-                            return Pair(g, actionIndex)
-                        } else {
-                            genes.add(g)
-                        }
-                    }
-                }
-
-            }
-            return Pair(null, -1)
         }
     }
 
@@ -355,7 +183,7 @@ class DbAction(
 
 
     override fun getName(): String {
-        return "SQL_Insert_${table.name}_${selectedColumns.joinToString("_")}"
+        return "SQL_Insert_${table.name}_${selectedColumns.map { it.name }.joinToString("_")}"
     }
 
     override fun seeGenes(): List<out Gene> {
@@ -363,7 +191,7 @@ class DbAction(
     }
 
     override fun copy(): Action {
-        return DbAction(table, selectedColumns, id, genes.map(Gene::copy))
+        return DbAction(table, selectedColumns, id, genes.map(Gene::copy), representExistingData)
     }
 
     override fun shouldCountForFitnessEvaluations(): Boolean {

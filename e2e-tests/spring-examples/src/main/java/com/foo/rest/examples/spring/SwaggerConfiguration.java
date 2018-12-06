@@ -1,6 +1,7 @@
 package com.foo.rest.examples.spring;
 
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.context.request.WebRequest;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
@@ -18,7 +19,7 @@ public class SwaggerConfiguration {
                 .select()
                 .paths(regex("/api/.*"))
                 .build()
-                .ignoredParameterTypes(WebRequest.class);
+                .ignoredParameterTypes(WebRequest.class, Authentication.class);
     }
 
     private ApiInfo apiInfo() {

@@ -4,8 +4,10 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.mutator.StandardMutator
+import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
+import org.evomaster.core.search.service.mutator.Mutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 
 class RestModule : AbstractModule(){

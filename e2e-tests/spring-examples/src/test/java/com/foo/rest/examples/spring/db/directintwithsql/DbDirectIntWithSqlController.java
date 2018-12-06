@@ -1,11 +1,10 @@
 package com.foo.rest.examples.spring.db.directintwithsql;
 
 import com.foo.rest.examples.spring.db.directint.DbDirectIntController;
-import org.evomaster.clientJava.controller.problem.ProblemInfo;
-import org.evomaster.clientJava.controller.problem.RestProblem;
+import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.controller.problem.RestProblem;
 
 import java.util.Arrays;
-import java.util.List;
 
 public class DbDirectIntWithSqlController extends DbDirectIntController {
 

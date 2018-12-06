@@ -1,6 +1,6 @@
 package com.foo.somedifferentpackage.examples.strings;
 
-import org.evomaster.clientJava.instrumentation.example.strings.StringCalls;
+import org.evomaster.client.java.instrumentation.example.strings.StringCalls;
 
 public class StringCallsImp implements StringCalls {
     @Override

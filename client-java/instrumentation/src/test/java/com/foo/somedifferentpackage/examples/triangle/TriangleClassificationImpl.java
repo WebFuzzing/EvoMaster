@@ -1,6 +1,6 @@
 package com.foo.somedifferentpackage.examples.triangle;
 
-import org.evomaster.clientJava.instrumentation.example.triangle.TriangleClassification;
+import org.evomaster.client.java.instrumentation.example.triangle.TriangleClassification;
 
 public class TriangleClassificationImpl implements TriangleClassification{
 

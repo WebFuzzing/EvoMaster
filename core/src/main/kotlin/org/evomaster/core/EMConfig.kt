@@ -4,7 +4,7 @@ import joptsimple.BuiltinHelpFormatter
 import joptsimple.OptionDescriptor
 import joptsimple.OptionParser
 import joptsimple.OptionSet
-import org.evomaster.clientJava.controllerApi.ControllerConstants
+import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
@@ -435,6 +435,14 @@ class EMConfig {
     @Min(0.0) @Max(1.0)
     var structureMutationProbability = 0.5
 
+
+    enum class GeneMutationStrategy{
+        ONE_OVER_N,
+        ONE_OVER_N_BIASED_SQL
+    }
+
+    @Cfg("Strategy used to define the mutation probability")
+    var geneMutationStrategy = GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 
     enum class FeedbackDirectedSampling {
         NONE,

@@ -2,7 +2,7 @@ package com.foo.rest.examples.spring.triangle;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import org.evomaster.clientJava.instrumentation.example.triangle.TriangleClassification;
+import org.evomaster.client.java.instrumentation.example.triangle.TriangleClassification;
 
 
 @ApiModel
