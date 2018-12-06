@@ -1,14 +1,12 @@
 package org.evomaster.core.search.service
 
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 
 
 /**
- * @author: manzhang
- * @date: 2018/9/10
+ *  @decription This is used to save final archive of search and last evaluated individual
+ *
  */
 open class SearchOverall<T> where T : Individual{
 

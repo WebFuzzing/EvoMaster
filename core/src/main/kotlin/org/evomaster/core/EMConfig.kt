@@ -499,14 +499,13 @@ class EMConfig {
     @Cfg("Whether to print how much search done so far")
     var showProgress = true
 
-    enum class SmartSamplingCriterion {
-        DEFAULT,
-        DEPENDENCE,
-    }
 
     @Experimental
     var enableProcessMonitor = false
 
     @Experimental
     var processFiles = "process_data"
+
+    @Experimental
+    var processInterval = 100
 }
