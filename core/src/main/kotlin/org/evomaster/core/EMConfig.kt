@@ -505,27 +505,6 @@ class EMConfig {
     }
 
     @Experimental
-    @Cfg("Specify a strategy to sample APIs")
-    var smartSampling = SmartSamplingCriterion.DEFAULT
-
-    @Experimental
-    @Cfg("Specify whether record manipulated resource during sampling")
-    var recordResources = false
-
-    enum class StrategyControl{
-        RANDOM, // probability is fixed
-        BasedOnSpecified,
-        BasedOnActions, //probability is fixed
-        //TODO Man
-        BasedOnTimeBudgets, // probability is adaptive with time
-        BasedOnArchive //probability is adaptive with performance
-    }
-
-    @Experimental
-    @Cfg("Specify how to select a sample strategy")
-    var sampleControl = StrategyControl.RANDOM
-
-    @Experimental
     var enableProcessMonitor = false
 
     @Experimental

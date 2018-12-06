@@ -62,6 +62,8 @@ class SearchProcessMonitor: SearchListener {
                 .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                 .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
                 .create()
+
+        //FIXME need to change accordingly
         var digit = 7
 
         fun getFileType() : String{
