@@ -1,7 +1,6 @@
 package org.evomaster.core.search.service
 
 import com.google.gson.*
-import io.swagger.util.Json
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
@@ -17,29 +16,26 @@ import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.jvmErasure
 
-/**
- * @author: manzhang
- * @date: 2018/9/11
- */
 
 class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
 
 
 
     companion object {
-        private val CLASSNAME = "CLASSNAME"
-        private val DATA = "DATA"
-
+        private const val CLASSNAME = "CLASSNAME"
+        private const val DATA = "DATA"
         private var fake : JsonObject? = null
 
+        //TODO it is required to fix for solving ArrayGene with Generic type
         private fun getFakeJson() : JsonObject{
-            var obj = JsonObject()
-            obj.addProperty("maxForRandomizantion", "16")
-            obj.addProperty("value", "fake")
-            obj.addProperty("minLength", "0")
-            obj.addProperty("maxLength", "16")
-            obj.addProperty("name", "fakeArrayGene")
-            return obj
+            return  JsonObject().apply {
+                addProperty("maxForRandomizantion", "16")
+                addProperty("value", "fake")
+                addProperty("minLength", "0")
+                addProperty("maxLength", "16")
+                addProperty("name", "fakeArrayGene")
+            }
+
         }
     }
 
@@ -47,7 +43,6 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
         fake = getFakeJson()
     }
 
-    @Throws(JsonParseException::class)
     override fun deserialize(jsonElement: JsonElement, type: Type, jsonDeserializationContext: JsonDeserializationContext): T {
         val jsonObject = jsonElement.asJsonObject
 
@@ -55,12 +50,10 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
         if(type.typeName.equals(Action::class.java.name) ){
             return jsonDeserializationContext.deserialize(jsonObject, RestCallAction::class.java)
         }
-        val prim = jsonObject.get(CLASSNAME) as JsonPrimitive
-        val className = prim.asString
-        val klass = getObjectClass(className)
+        val klass = getObjectClass((jsonObject.get(CLASSNAME) as JsonPrimitive).asString)
 
-        // FIXME MAN : the solution should be not hardcode as "gene" attribute.
-        var data =jsonObject.get(DATA).asJsonObject
+        //FIXME MAN : the solution should be not hardcode as "gene" attribute.
+        val data =jsonObject.get(DATA).asJsonObject
         if(containGenProperty(klass)){
             return deserializeGenProperty(data, klass, jsonDeserializationContext) as T
         }
@@ -68,19 +61,19 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
     }
 
     override fun serialize(jsonElement: T, type: Type, jsonSerializationContext: JsonSerializationContext): JsonElement {
-        val jsonObject = JsonObject()
-        jsonObject.addProperty(CLASSNAME, jsonElement.javaClass.name)
-        var data = jsonSerializationContext.serialize(jsonElement)
+        val jsonObject = JsonObject().apply {
+            addProperty(CLASSNAME, jsonElement.javaClass.name)
+        }
+        val data = jsonSerializationContext.serialize(jsonElement)
 
         if(jsonElement is Gene){
             // FIXME MAN : the solution should be not hardcode as "gene" attribute.
             // For some reasons, some genes are generic type, but some of them are not, such as SQL.
-            var dprops = jsonElement::class.declaredMemberProperties.filter {  f-> f.name.equals("gene") }
+            var dprops = jsonElement::class.declaredMemberProperties.filter {  it.name.equals("gene") }
 
             if(dprops.size == 1){
-                var prop = dprops[0]
-                    if(prop.visibility== KVisibility.PUBLIC){
-
+                val prop = dprops[0]
+                if(prop.visibility== KVisibility.PUBLIC){
                     var obj = prop.getter.call(jsonElement)
                     var geneJsonObject = JsonObject()
                     geneJsonObject.addProperty(CLASSNAME, obj!!.javaClass.name)
@@ -105,8 +98,7 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
 
     private fun <T> createEntity(clazz: Class<*> , constructor: Constructor<T>, vararg args: Any) : T {
         if (args.size > 1){
-            val props = getPropertyies(clazz)
-            var seq = manipulateSeqOfArgs(props, constructor.parameters)
+            val seq = manipulateSeqOfArgs(getPropertyies(clazz), constructor.parameters)
             return constructor.newInstance(*Array(seq.size){
                 i -> args[seq[i]]
             })
@@ -138,8 +130,8 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
     }
 
     private fun deserializeGenProperty( data:JsonObject, clazz: Class<*>,jsonDeserializationContext: JsonDeserializationContext) : Any {
-        var props = getPropertyies(clazz)
-        var elements = Array<Any>(props.size){
+        val props = getPropertyies(clazz)
+        val elements = Array<Any>(props.size){
             i-> run{
             if(props[i].name.equals("gene")){
                 var genJsonObject = data.get(props[i].name).asJsonObject
@@ -148,7 +140,6 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
                 if(containGenProperty(genClazz))
                     deserializeGenProperty(genJsonObject.get(DATA).asJsonObject, genClazz, jsonDeserializationContext)
                 else if(genClazzName.contains("ArrayGene")){
-                   // println(genClazzName)
                     jsonDeserializationContext.deserialize(fake!!, getObjectClass("org.evomaster.core.search.gene.StringGene"))
                 }else
                     jsonDeserializationContext.deserialize(genJsonObject.get(DATA), genClazz)
@@ -164,7 +155,7 @@ class InterfaceAdapter<T : Any> : JsonSerializer<T>, JsonDeserializer<T> {
     }
 
     private fun containGenProperty(clazz: Class<*>) : Boolean{
-        return getPropertyies(clazz).filter { t ->t.name.equals("gene") }.size == 1
+        return getPropertyies(clazz).filter { it.name.equals("gene") }.size == 1
     }
 
 }
