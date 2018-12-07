@@ -58,7 +58,7 @@ open class DateTimeGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
-    override fun flatView(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this) else listOf(this).plus(date.flatView(predicate)).plus(time.flatView(predicate))
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
     }
 }

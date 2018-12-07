@@ -57,11 +57,11 @@ class DateGene(
                 && this.day.containsSameValueAs(other.day)
     }
 
-    override fun flatView(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this)
-        else listOf(this).plus(year.flatView(predicate))
-                .plus(month.flatView(predicate))
-                .plus(day.flatView(predicate))
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf(this)
+        else listOf(this).plus(year.flatView(excludePredicate))
+                .plus(month.flatView(excludePredicate))
+                .plus(day.flatView(excludePredicate))
     }
 
 }

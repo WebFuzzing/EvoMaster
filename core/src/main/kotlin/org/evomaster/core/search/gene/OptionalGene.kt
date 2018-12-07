@@ -58,7 +58,7 @@ class OptionalGene(name: String,
     override fun getVariableName() = gene.getVariableName()
 
 
-    override fun flatView(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this) else listOf(this).plus(gene.flatView(predicate))
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(gene.flatView(excludePredicate))
     }
 }

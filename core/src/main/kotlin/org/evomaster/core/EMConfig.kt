@@ -499,13 +499,16 @@ class EMConfig {
     @Cfg("Whether to print how much search done so far")
     var showProgress = true
 
-
     @Experimental
+    @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search"+
+            "This is only needed when running experiments with different parameter settings")
     var enableProcessMonitor = false
 
     @Experimental
+    @Cfg("Specify a folder to save results when a search monitor is enabled")
     var processFiles = "process_data"
 
     @Experimental
+    @Cfg("Specify how often to save results when a search monitor is enabled ")
     var processInterval = 100
 }

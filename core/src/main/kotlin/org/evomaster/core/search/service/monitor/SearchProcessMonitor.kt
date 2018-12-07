@@ -50,19 +50,32 @@ class SearchProcessMonitor: SearchListener {
     var step :StepOfSearchProcess<*>? = null
     var isMutated : Boolean = false
 
-    //record the progress of saved steps
+    /**
+     * record the progress of saved steps
+     * */
     private var tb = 1
 
     private val evaluatedIndividuals : MutableList<EvaluatedIndividual<*>> = mutableListOf()
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(SearchProcessMonitor::class.java)
-        //step is saved under the <process-data-folder>/data
-        val DATA_FOLDER = "data"
-        val FILE_TYPE = ".json"
-        val NAME = "overall"
 
-        val gson =GsonBuilder().registerTypeAdapter(RestAction::class.java, InterfaceAdapter<RestAction>())
+        /**
+         * all steps of search are archived under the DATA_FOLDER, e.g., @see org.evomaster.core.EMConfig.processFiles/data
+         * */
+        private const val DATA_FOLDER = "data"
+
+        /**
+         * a name of a file to save final Archive, and it can be found in @see org.evomaster.core.EMConfig.processFiles/overall.json
+         * */
+        private const val NAME = "overall"
+
+        /**
+         * all steps and overall produced by a search monitor are saved as json files.
+         * */
+        private const val FILE_TYPE = ".json"
+
+        private val gson =GsonBuilder().registerTypeAdapter(RestAction::class.java, InterfaceAdapter<RestAction>())
                 .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                 .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
                 .create()
@@ -148,14 +161,12 @@ class SearchProcessMonitor: SearchListener {
 
     }
 
-    @Throws(IOException::class)
     private fun writeToChannel(channel: FileChannel, buffer: ByteBuffer) {
         while (buffer.hasRemaining()) {
             channel.write(buffer)
         }
         channel.close()
     }
-
 
     private fun getInt(value : Int) :String{
         return String.format("%0${config.maxActionEvaluations.toString().length}"+"d", value)

@@ -35,13 +35,24 @@ open class StepOfSearchProcess<T> where T : Individual{
      *          its counter reset once the final local optima is reached
      */
     val samplingCounter = mutableMapOf<Int, Int>()
+
+    /**
+     * the evaluated individual
+     */
     val evalIndividual : EvaluatedIndividual<T>
 
     var added : Boolean = false
     var improvedArchive : Boolean = false
     val isMutated : Boolean
 
+    /**
+     * an index of this evaluation
+     */
     val indexOfEvaluation : Int
+
+    /**
+     * a time to start this evaluation
+     */
     val time : Long
 
 
