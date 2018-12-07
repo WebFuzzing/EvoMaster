@@ -80,10 +80,9 @@ class SearchProcessMonitor: SearchListener {
 
     @PostConstruct
     fun postConstruct(){
-        // TODO configure monitoring the details of search process
+        initMonitorProcessOutputs()
         if(config.enableProcessMonitor){
             time.addListener(this)
-            initMonitorProcessOutputs()
         }
     }
 
