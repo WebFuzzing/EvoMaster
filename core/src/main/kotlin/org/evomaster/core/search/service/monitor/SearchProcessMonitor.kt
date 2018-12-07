@@ -2,18 +2,15 @@ package org.evomaster.exps.monitor
 
 import com.google.gson.GsonBuilder
 import com.google.inject.Inject
-import com.sun.org.apache.xpath.internal.operations.Bool
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.IOException
 import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -63,17 +60,17 @@ class SearchProcessMonitor: SearchListener {
         /**
          * all steps of search are archived under the DATA_FOLDER, e.g., @see org.evomaster.core.EMConfig.processFiles/data
          * */
-        private const val DATA_FOLDER = "data"
+        const val DATA_FOLDER = "data"
 
         /**
          * a name of a file to save final Archive, and it can be found in @see org.evomaster.core.EMConfig.processFiles/overall.json
          * */
-        private const val NAME = "overall"
+        const val NAME = "overall"
 
         /**
          * all steps and overall produced by a search monitor are saved as json files.
          * */
-        private const val FILE_TYPE = ".json"
+        const val FILE_TYPE = ".json"
 
         private val gson =GsonBuilder().registerTypeAdapter(RestAction::class.java, InterfaceAdapter<RestAction>())
                 .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
@@ -86,7 +83,7 @@ class SearchProcessMonitor: SearchListener {
         // TODO configure monitoring the details of search process
         if(config.enableProcessMonitor){
             time.addListener(this)
-            initMonitorProcessOuputs()
+            initMonitorProcessOutputs()
         }
     }
 
@@ -101,7 +98,7 @@ class SearchProcessMonitor: SearchListener {
     fun record(added: Boolean, improveArchive : Boolean, evalInd : EvaluatedIndividual<*>){
         if(config.enableProcessMonitor){
             if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
-            if(time.evaluatedActions > tb * config.maxActionEvaluations/config.processInterval){
+            if(time.evaluatedActions >= tb * config.maxActionEvaluations/config.processInterval){
                 /*
                 * step is assigned when an individual is evaluated (part of calculateCoverage of FitnessFunction),
                 * but in order to record if the evaluated individual added into Archive, we need to save it after executing addIfNeeded in Archive
@@ -127,7 +124,7 @@ class SearchProcessMonitor: SearchListener {
 
 
 
-    private fun initMonitorProcessOuputs(){
+    private fun initMonitorProcessOutputs(){
         val path = Paths.get(config.processFiles)
 
         if(Files.exists(path)){
@@ -144,12 +141,13 @@ class SearchProcessMonitor: SearchListener {
     }
     fun saveOverall(){
         setOverall()
-        writeByChannel(Paths.get(config.processFiles + File.separator + NAME  + FILE_TYPE), gson.toJson(this.overall))
+        writeByChannel(Paths.get(config.processFiles + File.separator + getOverallFileName()), gson.toJson(this.overall))
     }
 
     private fun saveStep(index:Int, v : StepOfSearchProcess<*>){
-        writeByChannel(Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+ getInt(index) + FILE_TYPE), gson.toJson(v))
+        writeByChannel(Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+ getStepFileName(index) ), gson.toJson(v))
     }
+
 
     private fun writeByChannel(path : Path, value :String){
         if (!Files.exists(path.parent)) Files.createDirectories(path.parent)
@@ -168,8 +166,12 @@ class SearchProcessMonitor: SearchListener {
         channel.close()
     }
 
-    private fun getInt(value : Int) :String{
-        return String.format("%0${config.maxActionEvaluations.toString().length}"+"d", value)
+    fun getStepFileName(value : Int) :String{
+        return String.format("%0${config.maxActionEvaluations.toString().length}"+"d", value) + FILE_TYPE
+    }
+
+    fun getOverallFileName() : String{
+        return NAME  + FILE_TYPE
     }
 
 }
