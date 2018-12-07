@@ -77,6 +77,8 @@ internal class GeneUtilsTest {
             assertFalse(this.contains(dateGene.year))
             assertFalse(this.contains(dateGene.month))
             assertFalse(this.contains(dateGene.day))
+            assert(this.contains(dateGene))
+            assert(this.contains(timeGene))
             assert(this.contains(timeGene.hour))
             assert(this.contains(timeGene.minute))
             assert(this.contains(timeGene.second))
