@@ -126,14 +126,14 @@ class ProcessMonitorTest{
 
         val turnsType = object : TypeToken<StepOfSearchProcess<OneMaxIndividual>>() {}.type
         GsonBuilder().create().fromJson<StepOfSearchProcess<OneMaxIndividual>>(data, turnsType).apply {
-            assertEquals(0, this.populations.size)
-            assertEquals(0, this.samplingCounter.size)
-            assertEquals(true, this.added)
-            assertEquals(false, this.isMutated)
-            assertEquals(1, this.indexOfEvaluation)
-            assertEquals(individual.seeGenes().size, this.evalIndividual.individual.seeGenes().size)
-            assertEquals(evalIndividual.fitness.coveredTargets(), this.evalIndividual.fitness.coveredTargets())
-            this.evalIndividual.fitness.getViewOfData().forEach { t, u ->
+            assertEquals(0, populations.size)
+            assertEquals(0, samplingCounter.size)
+            assertEquals(true, added)
+            assertEquals(false, isMutated)
+            assertEquals(1, indexOfEvaluation)
+            assertEquals(individual.seeGenes().size, evalIndividual.individual.seeGenes().size)
+            assertEquals(evalIndividual.fitness.coveredTargets(), evalIndividual.fitness.coveredTargets())
+            evalIndividual.fitness.getViewOfData().forEach { t, u ->
                 assertEquals(evalIndividual.fitness.getHeuristic(t) , u.distance)
             }
         }
@@ -182,24 +182,24 @@ class ProcessMonitorTest{
         val gson = GsonBuilder().create()
         gson.fromJson<StepOfSearchProcess<OneMaxIndividual>>(dataA, turnsType)
                 .apply {
-                    assertEquals(0, this.populations.size)
-                    assertEquals(0, this.samplingCounter.size)
+                    assertEquals(0, populations.size)
+                    assertEquals(0, samplingCounter.size)
                 }
 
         assert(Files.exists(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(2) )))
         val dataB = String(Files.readAllBytes(Paths.get(config.processFiles + File.separator + SearchProcessMonitor.DATA_FOLDER + File.separator + processMonitor.getStepFileName(2) )))
         gson.fromJson<StepOfSearchProcess<OneMaxIndividual>>(dataB, turnsType)
                 .apply {
-                    assertEquals(1, this.populations.size)
-                    assertEquals(0, this.samplingCounter.size)
+                    assertEquals(1, populations.size)
+                    assertEquals(0, samplingCounter.size)
                  }
 
         assert(Files.exists(Paths.get(config.processFiles + File.separator + processMonitor.getOverallFileName())))
         val overallData = String(Files.readAllBytes(Paths.get(config.processFiles + File.separator + processMonitor.getOverallFileName())))
 
         gson.fromJson<SearchOverall<OneMaxIndividual>>(overallData,  object : TypeToken<SearchOverall<OneMaxIndividual>>() {}.type).apply {
-            assertEquals(2, this.finalPopulations.size)
-            this.finalPopulations.forEach { t, _->
+            assertEquals(2, finalPopulations.size)
+            finalPopulations.forEach { t, _->
                 assert(archive.isCovered(t))
             }
         }
