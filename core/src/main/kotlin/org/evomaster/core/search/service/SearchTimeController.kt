@@ -88,4 +88,9 @@ class SearchTimeController {
                 throw IllegalStateException("Not supported stopping criterion")
         }
     }
+
+    fun getStartTime() : Long {
+        return startTime
+    }
+
 }

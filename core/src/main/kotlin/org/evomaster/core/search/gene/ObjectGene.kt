@@ -81,8 +81,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
 
     private fun closeXml(tagName: String) = "</$tagName>"
 
-    override fun flatView(): List<Gene> {
-        return listOf(this).plus(fields.flatMap { g -> g.flatView() })
-    }
 
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
+    }
 }

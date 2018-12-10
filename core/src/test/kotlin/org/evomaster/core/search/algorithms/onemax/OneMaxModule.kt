@@ -30,6 +30,10 @@ class OneMaxModule : AbstractModule() {
         bind(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<Archive<*>>() {})
+                .to(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
+                .asEagerSingleton()
+
         bind(StructureMutator::class.java)
                 .to(EmptyStructureMutator::class.java)
                 .asEagerSingleton()

@@ -23,6 +23,7 @@ import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
+import org.evomaster.exps.monitor.SearchProcessMonitor
 import java.lang.reflect.InvocationTargetException
 
 
@@ -130,6 +131,8 @@ class Main {
             val controllerInfo = checkState(injector)
 
             val solution = run(injector)
+
+            writeOverallProcessData(injector)
 
             writeTests(injector, solution, controllerInfo)
 
@@ -289,6 +292,18 @@ class Main {
             if(config.snapshotInterval > 0){
                 statistics.writeSnapshot()
             }
+        }
+
+        private fun writeOverallProcessData(injector: Injector) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.enableProcessMonitor) {
+                return
+            }
+
+            val process = injector.getInstance(SearchProcessMonitor::class.java)
+            process.saveOverall()
         }
     }
 }
