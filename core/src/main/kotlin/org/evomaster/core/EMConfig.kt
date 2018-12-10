@@ -500,7 +500,7 @@ class EMConfig {
     var showProgress = true
 
     @Experimental
-    @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search"+
+    @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. "+
             "This is only needed when running experiments with different parameter settings")
     var enableProcessMonitor = false
 

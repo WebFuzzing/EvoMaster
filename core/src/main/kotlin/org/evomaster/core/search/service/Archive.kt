@@ -407,12 +407,17 @@ class Archive<T> where T : Individual {
         return current[0].fitness.doesCover(target)
     }
 
-    //update: support to save archive at some time point
-    fun getSnapshotOfBestIndividuals(): MutableMap<Int, MutableList<EvaluatedIndividual<T>>>{
+    /**
+     * @return current population
+     */
+    fun getSnapshotOfBestIndividuals(): Map<Int, MutableList<EvaluatedIndividual<T>>>{
         return populations
     }
 
-    fun getSnapshotOfSamplingCounter() : MutableMap<Int, Int>{
+    /**
+     * @return current samplingCounter
+     */
+    fun getSnapshotOfSamplingCounter() : Map<Int, Int>{
         return samplingCounter
     }
 }

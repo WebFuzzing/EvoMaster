@@ -74,14 +74,14 @@ internal class GeneUtilsTest {
 
         val excludePredicate = {gene : Gene -> (gene is DateGene)}
         sqlTimestampGene.flatView(excludePredicate).apply {
-            assertFalse(this.contains(dateGene.year))
-            assertFalse(this.contains(dateGene.month))
-            assertFalse(this.contains(dateGene.day))
-            assert(this.contains(dateGene))
-            assert(this.contains(timeGene))
-            assert(this.contains(timeGene.hour))
-            assert(this.contains(timeGene.minute))
-            assert(this.contains(timeGene.second))
+            assertFalse(contains(dateGene.year))
+            assertFalse(contains(dateGene.month))
+            assertFalse(contains(dateGene.day))
+            assert(contains(dateGene))
+            assert(contains(timeGene))
+            assert(contains(timeGene.hour))
+            assert(contains(timeGene.minute))
+            assert(contains(timeGene.second))
         }
     }
 
