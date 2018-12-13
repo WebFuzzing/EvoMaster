@@ -20,7 +20,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
-    private fun innerMutate(individual: T): T {
+    open fun innerMutate(individual: T): T {
         val copy = individual.copy() as T
 
         if (individual.canMutateStructure() &&

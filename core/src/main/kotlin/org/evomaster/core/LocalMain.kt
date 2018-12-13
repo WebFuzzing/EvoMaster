@@ -1,11 +1,5 @@
 package org.evomaster.core
 
-import com.google.inject.Key
-import com.google.inject.TypeLiteral
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.serviceII.RestIndividualII
-import org.evomaster.core.search.algorithms.*
-
 class LocalMain {
     companion object {
         fun getArgs(algo : String,
@@ -13,7 +7,7 @@ class LocalMain {
                     enableProcessMonitor : Boolean = false,
                     run : Int = 1,
                     probOfSmartSampling : Double = 0.5,
-                    smartSampling : String = EMConfig.SmartSamplingCriterion.DEPENDENCE.toString(),
+                    smartSampling : String = EMConfig.SmartSamplingStrategy.RESOURCES.toString(),
                     maxTestSize : Int = 10,
                     isStoppedByActions : Boolean = true,
                     budget: Int = 10000,
@@ -41,7 +35,7 @@ class LocalMain {
                     "--snapshotInterval", "1",
                     "--statisticsFile",baseFolder + "/$cs/$label/reports/statistics.csv",
                     "--snapshotStatisticsFile",baseFolder + "/$cs/$label/reports/snapshot.csv",
-                    "--problemType",if(smartSampling == EMConfig.SmartSamplingCriterion.DEPENDENCE.toString()) "RESTII" else "REST",
+                    "--problemType",if(smartSampling == EMConfig.SmartSamplingStrategy.RESOURCES.toString()) "RESTII" else "REST",
                     "--maxTestSize", maxTestSize.toString() //dynamically control a size of test during a search
 
             );

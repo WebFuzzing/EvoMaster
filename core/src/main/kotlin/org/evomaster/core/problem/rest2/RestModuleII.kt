@@ -3,12 +3,13 @@ package org.evomaster.core.problem.rest.serviceII
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.problem.rest.service.RestFitness
-import org.evomaster.core.problem.rest.service.RestStructureMutator
 import org.evomaster.core.problem.rest2.RestResourceMutator
 import org.evomaster.core.problem.rest2.RestResourceStructureMutator
 import org.evomaster.core.remote.service.RemoteController
-import org.evomaster.core.search.mutator.StandardMutator
+import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
+import org.evomaster.core.search.service.mutator.Mutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 
 class RestModuleII : AbstractModule(){

@@ -169,7 +169,7 @@ class EMConfig {
         getConfigurationProperties().forEach { m ->
 
             val opt = options.valueOf(m.name)?.toString() ?:
-                    throw IllegalArgumentException("Value not found for property ${m.name}")
+            throw IllegalArgumentException("Value not found for property ${m.name}")
 
             val returnType = m.returnType.javaType as Class<*>
 
@@ -311,8 +311,7 @@ class EMConfig {
 //--- properties
 
     enum class Algorithm {
-        MIO, RANDOM, WTS, MOSA,
-        @Experimental SAMPLE
+        MIO, RANDOM, WTS, MOSA
     }
 
     @Cfg("The algorithm used to generate test cases")
@@ -321,8 +320,7 @@ class EMConfig {
 
     enum class ProblemType {
         REST,
-        @Experimental WEB,
-        @Experimental RESTII
+        @Experimental WEB
     }
 
     @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
@@ -338,14 +336,14 @@ class EMConfig {
     var createTests = true
 
     @Cfg("The path directory of where the generated test classes should be saved to")
-            //TODO check if can be created
+    //TODO check if can be created
     var outputFolder = "src/em"
 
 
     @Cfg("The name of generated file with the test cases, without file type extension. " +
             "In JVM languages, if the name contains '.', folders will be created to represent " +
             "the given package structure")
-            //TODO constrain of no spaces or weird characters, eg use regular expression
+    //TODO constrain of no spaces or weird characters, eg use regular expression
     var testSuiteFileName = "EvoMasterTest"
 
 
@@ -443,7 +441,7 @@ class EMConfig {
         ONE_OVER_N_BIASED_SQL
     }
 
-    @Cfg("Strategy used to define the mutation probability")
+    @Cfg("GeneMutationStrategy used to define the mutation probability")
     var geneMutationStrategy = GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 
     enum class FeedbackDirectedSampling {
@@ -501,3 +499,37 @@ class EMConfig {
     @Cfg("Whether to print how much search done so far")
     var showProgress = true
 
+    @Experimental
+    @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. "+
+            "This is only needed when running experiments with different parameter settings")
+    var enableProcessMonitor = false
+
+    @Experimental
+    @Cfg("Specify a folder to save results when a search monitor is enabled")
+    var processFiles = "process_data"
+
+    @Experimental
+    @Cfg("Specify how often to save results when a search monitor is enabled ")
+    var processInterval = 100
+
+
+    enum class SmartSamplingStrategy{
+        DEFAULT,
+        RESOURCES
+    }
+    @Experimental
+    @Cfg("Specify a strategy to sample an individual")
+    var smartSamplingStrategy = SmartSamplingStrategy.DEFAULT
+
+    enum class ResourceSamplingControl{
+        RANDOM, // probability is fixed
+        BasedOnSpecified,
+        BasedOnActions, //probability is fixed
+        BasedOnTimeBudgets, // probability is adaptive with time
+        BasedOnArchive //probability is adaptive with performance
+    }
+
+    @Experimental
+    @Cfg("Specify how to select a sample strategy")
+    var sampleControl = ResourceSamplingControl.RANDOM
+}

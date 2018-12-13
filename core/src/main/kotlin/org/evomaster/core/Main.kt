@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.problem.rest.serviceII.RestIndividualII
 import org.evomaster.core.problem.rest.serviceII.RestModuleII
+import org.evomaster.core.problem.rest.serviceII.SmartSamplingController
 import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
@@ -167,9 +168,8 @@ class Main {
             val problemType = base.getEMConfig().problemType
 
             val problemModule = when (problemType) {
-                EMConfig.ProblemType.REST -> RestModule()
+                EMConfig.ProblemType.REST -> if(base.getEMConfig().smartSamplingStrategy == EMConfig.SmartSamplingStrategy.RESOURCES) RestModuleII() else RestModule()
                 EMConfig.ProblemType.WEB -> WebModule()
-                EMConfig.ProblemType.RESTII -> RestModuleII()
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
             }
@@ -215,9 +215,9 @@ class Main {
 //                else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
 //            }
 
-            val key = when(config.smartSampling) {
-                EMConfig.SmartSamplingCriterion.DEFAULT -> keyRestIndividual(config.algorithm.toString())
-                EMConfig.SmartSamplingCriterion.DEPENDENCE  -> keyRestIndividualII(config.algorithm.toString())
+            val key = when(config.smartSamplingStrategy) {
+                EMConfig.SmartSamplingStrategy.DEFAULT -> keyRestIndividual(config.algorithm.toString())
+                EMConfig.SmartSamplingStrategy.RESOURCES  -> keyRestIndividualII(config.algorithm.toString())
             }  as Key<SearchAlgorithm<*>>
 
             val imp = injector.getInstance(key)
@@ -238,8 +238,6 @@ class Main {
                         object : TypeLiteral<WtsAlgorithm<T>>() {})
                 EMConfig.Algorithm.MOSA -> Key.get(
                         object : TypeLiteral<MosaAlgorithm<T>>() {})
-                EMConfig.Algorithm.SAMPLE -> Key.get(
-                        object : TypeLiteral<Sample<T>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm $algo")
             }
         }
@@ -255,8 +253,6 @@ class Main {
                         object : TypeLiteral<WtsAlgorithm<RestIndividualII>>() {})
                 EMConfig.Algorithm.MOSA -> Key.get(
                         object : TypeLiteral<MosaAlgorithm<RestIndividualII>>() {})
-                EMConfig.Algorithm.SAMPLE -> Key.get(
-                        object : TypeLiteral<Sample<RestIndividualII>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm $algo")
             }
         }
@@ -272,8 +268,6 @@ class Main {
                         object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
                 EMConfig.Algorithm.MOSA -> Key.get(
                         object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.SAMPLE -> Key.get(
-                        object : TypeLiteral<Sample<RestIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm $algo")
             }
         }

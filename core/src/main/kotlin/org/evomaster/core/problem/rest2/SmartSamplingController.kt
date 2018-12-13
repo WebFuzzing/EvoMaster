@@ -32,7 +32,7 @@ class SmartSamplingController {
     }
 
     private fun printApplicableStr(){
-        println("Applicable Strategy>>>")
+        println("Applicable SmartSampleStrategy>>>")
         println( SampleStrategy.values().filter { it.applicable }.map { "$it : ${it.probability}"}.joinToString (" - "))
     }
 
@@ -55,13 +55,13 @@ class SmartSamplingController {
     fun initProbability(mutableMap: MutableMap<String, RestAResource>){
         printSummaryOfResources(mutableMap)
         when(config.sampleControl){
-            EMConfig.StrategyControl.RANDOM -> SampleStrategy.values().filter { it.applicable }.let {
+            EMConfig.ResourceSamplingControl.RANDOM -> SampleStrategy.values().filter { it.applicable }.let {
                 l -> l.forEach { s -> s.probability = 1.0/l.size }
             }
-            EMConfig.StrategyControl.BasedOnSpecified -> initProbabilityWithSpecified()
-            EMConfig.StrategyControl.BasedOnActions -> initProbabilityWithActions(mutableMap)
-            EMConfig.StrategyControl.BasedOnTimeBudgets -> TODO()
-            EMConfig.StrategyControl.BasedOnArchive -> TODO()
+            EMConfig.ResourceSamplingControl.BasedOnSpecified -> initProbabilityWithSpecified()
+            EMConfig.ResourceSamplingControl.BasedOnActions -> initProbabilityWithActions(mutableMap)
+            EMConfig.ResourceSamplingControl.BasedOnTimeBudgets -> TODO()
+            EMConfig.ResourceSamplingControl.BasedOnArchive -> TODO()
         }
 
         printApplicableStr()
@@ -87,11 +87,11 @@ class SmartSamplingController {
 
     fun getSampleStrategy() : SampleStrategy{
         when(config.sampleControl){
-            EMConfig.StrategyControl.RANDOM -> select = random()
-            EMConfig.StrategyControl.BasedOnSpecified -> select =  relyOnSpecified()
-            EMConfig.StrategyControl.BasedOnActions -> select =  relyOnActions()
-            EMConfig.StrategyControl.BasedOnTimeBudgets -> select =  relyOnTB()
-            EMConfig.StrategyControl.BasedOnArchive -> select =  relyOnArchive()
+            EMConfig.ResourceSamplingControl.RANDOM -> select = random()
+            EMConfig.ResourceSamplingControl.BasedOnSpecified -> select =  relyOnSpecified()
+            EMConfig.ResourceSamplingControl.BasedOnActions -> select =  relyOnActions()
+            EMConfig.ResourceSamplingControl.BasedOnTimeBudgets -> select =  relyOnTB()
+            EMConfig.ResourceSamplingControl.BasedOnArchive -> select =  relyOnArchive()
         }
         select!!.times += 1
         return select!!

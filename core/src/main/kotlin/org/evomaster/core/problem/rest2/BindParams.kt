@@ -147,7 +147,7 @@ class BindParams {
             val maps = mutableMapOf<String, Gene>()
             val pred = {gene : Gene -> (gene is DateTimeGene)}
             parameters.forEach { p->
-                p.gene.flatViewWithTypeFilter(pred).filter {
+                p.gene.flatView(pred).filter {
                     !(it is ObjectGene ||
                             it is DisruptiveGene<*> ||
                             it is OptionalGene ||

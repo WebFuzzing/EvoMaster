@@ -80,7 +80,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         setupAuthentication(infoDto)
 
         //UpdatedByMan
-        if(config.smartSampling == EMConfig.SmartSamplingCriterion.DEPENDENCE){
+        if(config.smartSamplingStrategy == EMConfig.SmartSamplingStrategy.RESOURCES){
             initAbstractResources()
             initAdHocInitialIndividuals()
 
@@ -350,16 +350,16 @@ class RestSamplerII : Sampler<RestIndividualII>() {
     fun handleAddedRestIndividualII(ind : RestIndividualII) : MutableList<RestIndividualII>{
         //precondition calls.actions.size > 1 && calls.actions.size < resource.actions.size
         val dind = mutableListOf<RestIndividualII>()
-        if(ind.resourceCalls.size == 1 && ind.resourceCalls[0].actions.size > 1){
-            val call = ind.resourceCalls[0]
+        if(ind.getResourceCalls().size == 1 && ind.getResourceCalls()[0].actions.size > 1){
+            val call = ind.getResourceCalls()[0]
             if(call.resource.ar.actions.size > 1 && call.actions.size in 1..(call.resource.ar.actions.size-1)){
                 call.resource.ar.handleAdded(call)?.let {
                     dind.add(RestIndividualII( mutableListOf(it), SampleType.SMART_RESOURCE))
                 }
             }
-        }else if(ind.resourceCalls.size == 2){
+        }else if(ind.getResourceCalls().size == 2){
             //two resource
-            ind.resourceCalls.forEach {call->
+            ind.getResourceCalls().forEach {call->
                 if(call.resource.ar.actions.size > 1 && call.actions.size in 1..(call.resource.ar.actions.size-1)){
                     call.resource.ar.handleAdded(call)?.let {
                         dind.add(RestIndividualII(mutableListOf(it), SampleType.SMART_RESOURCE))
@@ -367,7 +367,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
                 }
             }
 
-            val firstCall = ind.resourceCalls[0]
+            val firstCall = ind.getResourceCalls()[0]
             val multiCalls = mutableListOf<RestResourceCalls>()
             var mfirstCall: RestResourceCalls? = null
             if((firstCall.actions.last() as RestCallAction).verb == HttpVerb.DELETE){
@@ -377,7 +377,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
             }
             if(mfirstCall != null){
                 multiCalls.add(mfirstCall)
-                multiCalls.add(ind.resourceCalls[1].copy())
+                multiCalls.add(ind.getResourceCalls()[1].copy())
                 dind.add(RestIndividualII( multiCalls, SampleType.SMART_RESOURCE))
             }
 
@@ -461,7 +461,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
     }
 
     fun handleAddResource(ind : RestIndividualII, maxTestSize : Int) : RestResourceCalls{
-        val existingRs = ind.resourceCalls.map { it.resource.ar.path.toString() }
+        val existingRs = ind.getResourceCalls().map { it.resource.ar.path.toString() }
         val candidate = randomness.choose(resourceCluster.filterNot { r-> existingRs.contains(r.key) }.values)
         return candidate.sampleAnyRestResourceCalls(randomness,maxTestSize )
     }
@@ -470,23 +470,4 @@ class RestSamplerII : Sampler<RestIndividualII>() {
     private fun randomizeActionGenes(action: Action) {
         action.seeGenes().forEach { it.randomize(randomness, false) }
     }
-    //        //FIXME temporal solution for news to update country params
-//        if(swagger.info.title == "API for REST News"){
-//            val list = Files.readAllLines(Paths.get("/Users/mazh001/Documents/GitHub/EvoMaster/core/src/main/resources/country_list.txt"))
-//            list.removeIf { it.isBlank() }
-//            actionCluster.forEach {
-//                k, a ->
-//                    if(a is RestCallAction && a.parameters.find { p -> p.name == "country"  } != null){
-//                        var genes = mutableListOf<Param>()
-//                        a.parameters.forEach {
-//                            ap ->
-//                            if(ap.name == "country") genes.add(QueryParam(ap.name, OptionalGene(ap.name, StringGene(ap.name, list.toTypedArray()))))
-//                            else genes.add(ap)
-//                        }
-//
-//                        actionCluster.replace(k, RestCallAction(a.verb, a.path, genes))
-//                    }
-//            }
-//        }
-
 }
