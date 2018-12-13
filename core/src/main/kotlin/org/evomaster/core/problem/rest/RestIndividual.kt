@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
@@ -72,7 +73,7 @@ open class RestIndividual(val actions: MutableList<RestAction>,
          */
         if (!verifyInitializationActions()) {
             DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
-            assert(verifyInitializationActions())
+            Lazy.assert{verifyInitializationActions()}
         }
     }
 

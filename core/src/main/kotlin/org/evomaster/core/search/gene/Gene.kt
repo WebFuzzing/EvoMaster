@@ -76,10 +76,13 @@ abstract class Gene(var name: String) {
 
     /**
      * Genes might have other genes inside (eg, think of array).
-     *  @return a recursive list of all nested genes, "this" included
+     * @param excludePredicate is used to configure which genes you do not want to show genes inside.
+     *      For instance, an excludePredicate is {gene : Gene -> (gene is TimeGene)}, then when flatView of a Gene including TimeGene,
+     *      the genes inside e.g., hour: IntegerGene will be not viewed, but TimeGene will be viewed.
+     * @return a recursive list of all nested genes, "this" included
      */
-    open fun flatView(): List<Gene>{
-        return listOf(this)
+    open fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
+        return if(excludePredicate(this)) listOf() else listOf(this)
     }
 
     /**
@@ -88,8 +91,4 @@ abstract class Gene(var name: String) {
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
-    //filter to flat genes
-    open fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this) else listOf()
-    }
 }

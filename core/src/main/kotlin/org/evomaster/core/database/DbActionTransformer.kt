@@ -19,6 +19,11 @@ object DbActionTransformer {
 
             val action = insertions[i]
             if(action.representExistingData){
+                /*
+                    Even if not going to be part of the DTO, should still be able
+                    to point to it with FKs
+                 */
+                previous.addAll(action.seeGenes())
                 continue
             }
 

@@ -1,9 +1,10 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.Randomness
 
 /**
  * Changing the structure of a test case will heavily depend

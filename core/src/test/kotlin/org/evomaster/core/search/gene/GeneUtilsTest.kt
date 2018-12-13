@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
 import java.util.*
 
@@ -64,4 +65,25 @@ internal class GeneUtilsTest {
             assertEquals(41, this.second.value)
         }
     }
+
+    @Test
+    fun testFlatViewWithExcludeDateGene(){
+        val dateGene = DateGene("date", IntegerGene("year", 1998), IntegerGene("month", 4), IntegerGene("day", 31))
+        val timeGene = TimeGene("time", IntegerGene("hour", 23), IntegerGene("minute", 13), IntegerGene("second", 41), false)
+        val sqlTimestampGene = SqlTimestampGene("timestamp", dateGene, timeGene)
+
+        val excludePredicate = {gene : Gene -> (gene is DateGene)}
+        sqlTimestampGene.flatView(excludePredicate).apply {
+            assertFalse(contains(dateGene.year))
+            assertFalse(contains(dateGene.month))
+            assertFalse(contains(dateGene.day))
+            assert(contains(dateGene))
+            assert(contains(timeGene))
+            assert(contains(timeGene.hour))
+            assert(contains(timeGene.minute))
+            assert(contains(timeGene.second))
+        }
+    }
+
+
 }

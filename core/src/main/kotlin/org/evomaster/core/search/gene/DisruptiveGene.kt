@@ -59,12 +59,8 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(): List<Gene> {
-        return listOf(this).plus(gene.flatView())
-    }
-
-    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this) else listOf(this).plus(gene.flatViewWithTypeFilter(predicate))
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(gene.flatView(excludePredicate))
     }
 
 }

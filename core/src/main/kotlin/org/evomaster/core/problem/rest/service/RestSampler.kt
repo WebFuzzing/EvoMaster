@@ -5,6 +5,7 @@ import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -293,7 +294,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun handleSmartPost(post: RestCallAction, test: MutableList<RestAction>): SampleType {
 
-        assert(post.verb == HttpVerb.POST)
+        Lazy.assert{post.verb == HttpVerb.POST}
 
         //as POST is used in all the others, maybe here we do not really need to handle it specially?
         test.add(post)
@@ -302,7 +303,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun handleSmartDelete(delete: RestCallAction, test: MutableList<RestAction>): SampleType {
 
-        assert(delete.verb == HttpVerb.DELETE)
+        Lazy.assert{delete.verb == HttpVerb.DELETE}
 
         createWriteOperationAfterAPost(delete, test)
 
@@ -311,7 +312,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun handleSmartPatch(patch: RestCallAction, test: MutableList<RestAction>): SampleType {
 
-        assert(patch.verb == HttpVerb.PATCH)
+        Lazy.assert{patch.verb == HttpVerb.PATCH}
 
         createWriteOperationAfterAPost(patch, test)
 
@@ -320,7 +321,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun handleSmartPut(put: RestCallAction, test: MutableList<RestAction>): SampleType {
 
-        assert(put.verb == HttpVerb.PUT)
+        Lazy.assert{put.verb == HttpVerb.PUT}
 
         /*
             A PUT might be used to update an existing resource, or to create a new one
@@ -343,7 +344,7 @@ class RestSampler : Sampler<RestIndividual>() {
      */
     private fun createWriteOperationAfterAPost(write: RestCallAction, test: MutableList<RestAction>) {
 
-        assert(write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH)
+        Lazy.assert{write.verb == HttpVerb.PUT || write.verb == HttpVerb.DELETE || write.verb == HttpVerb.PATCH}
 
         test.add(write)
 
@@ -369,7 +370,7 @@ class RestSampler : Sampler<RestIndividual>() {
 
     private fun handleSmartGet(get: RestCallAction, test: MutableList<RestAction>): SampleType {
 
-        assert(get.verb == HttpVerb.GET)
+        Lazy.assert{get.verb == HttpVerb.GET}
 
         /*
            A typical case is something like
@@ -415,7 +416,7 @@ class RestSampler : Sampler<RestIndividual>() {
         if (created && !get.path.isLastElementAParameter()) {
 
             val lastPost = test[test.size - 2] as RestCallAction
-            assert(lastPost.verb == HttpVerb.POST)
+            Lazy.assert{lastPost.verb == HttpVerb.POST}
 
             val available = config.maxTestSize - test.size
 

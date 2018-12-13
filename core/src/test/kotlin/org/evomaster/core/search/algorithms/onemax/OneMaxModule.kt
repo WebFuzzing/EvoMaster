@@ -2,9 +2,11 @@ package org.evomaster.core.search.algorithms.onemax
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.search.mutator.EmptyStructureMutator
-import org.evomaster.core.search.mutator.StandardMutator
+import org.evomaster.core.search.service.mutator.EmptyStructureMutator
+import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
+import org.evomaster.core.search.service.mutator.Mutator
+import org.evomaster.core.search.service.mutator.StructureMutator
 
 
 class OneMaxModule : AbstractModule() {
@@ -26,6 +28,10 @@ class OneMaxModule : AbstractModule() {
                 .asEagerSingleton()
 
         bind(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
+                .asEagerSingleton()
+
+        bind(object : TypeLiteral<Archive<*>>() {})
+                .to(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
                 .asEagerSingleton()
 
         bind(StructureMutator::class.java)

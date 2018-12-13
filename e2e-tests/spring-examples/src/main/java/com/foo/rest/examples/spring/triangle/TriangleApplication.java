@@ -4,6 +4,7 @@ package com.foo.rest.examples.spring.triangle;
 import com.foo.rest.examples.spring.SwaggerConfiguration;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import springfox.documentation.builders.ApiInfoBuilder;
 import springfox.documentation.service.ApiInfo;
@@ -14,7 +15,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import static springfox.documentation.builders.PathSelectors.regex;
 
 @EnableSwagger2
-@SpringBootApplication
+@SpringBootApplication(exclude = SecurityAutoConfiguration.class)
 public class TriangleApplication extends SwaggerConfiguration {
 
     public static void main(String[] args) {

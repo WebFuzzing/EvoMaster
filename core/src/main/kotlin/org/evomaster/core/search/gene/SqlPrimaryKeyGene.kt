@@ -54,8 +54,8 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun getVariableName() = gene.getVariableName()
 
-    override fun flatView(): List<Gene> {
-        return listOf(this).plus(gene.flatView())
+    override fun flatView(excludePredicate: (Gene)-> Boolean): List<Gene> {
+        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(gene.flatView(excludePredicate))
     }
 
     override fun isMutable() = gene.isMutable()

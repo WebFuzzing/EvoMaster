@@ -1,10 +1,14 @@
-package org.evomaster.core.search.mutator
+package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
+import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.GeneFilter.ALL
+import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.Mutator
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -16,8 +20,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
-    open fun innerMutate(individual: T): T {
+    private fun innerMutate(individual: T): T {
         val copy = individual.copy() as T
+
         if (individual.canMutateStructure() &&
                 randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
             //usually, either delete an action, or add a new random one
@@ -25,22 +30,21 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
         }
 
-        val filter = if (config.generateSqlDataWithSearch) Individual.GeneFilter.ALL
-        else Individual.GeneFilter.NO_SQL
-
-        val genesToMutate = copy.seeGenes(filter).filter(Gene::isMutable)
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
+
+        val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
+        val genesToMutate = copy.seeGenes(filterMutate).filter { it.isMutable() }
 
         if (genesToMutate.isEmpty()) {
             return copy
         }
 
-        /*
-        TODO: this likely will need experiments and a better formula.
-        The problem is that SQL could introduce a huge amount of genes, slowing
-        down the search
-     */
-        val n = Math.max(1, copy.seeGenes(Individual.GeneFilter.NO_SQL).filter(Gene::isMutable).count())
+        val filterN = when (config.geneMutationStrategy) {
+            ONE_OVER_N -> ALL
+            ONE_OVER_N_BIASED_SQL -> NO_SQL
+        }
+
+        val n = Math.max(1, copy.seeGenes(filterN).filter { it.isMutable() }.count())
 
         val p = 1.0 / n
 
@@ -64,10 +68,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             }
         }
 
-        if (javaClass.desiredAssertionStatus()) {
-            //TODO refactor if/when Kotlin will support lazy asserts
-            assert(DbActionUtils.verifyForeignKeys(
-                    individual.seeInitializingActions().filterIsInstance<DbAction>()))
+        Lazy.assert {
+            DbActionUtils.verifyForeignKeys(
+                    individual.seeInitializingActions().filterIsInstance<DbAction>())
         }
 
         return copy
@@ -75,12 +78,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     override fun mutate(individual: T): T {
+
         // First mutate the individual
         val mutatedIndividual = innerMutate(individual)
+
         // Second repair the initialization actions (if needed)
         mutatedIndividual.repairInitializationActions(randomness)
-        // Third check that repair was successful
-        assert(mutatedIndividual.verifyInitializationActions())
+
+        // Check that the repair was successful
+        Lazy.assert { mutatedIndividual.verifyInitializationActions() }
+
         return mutatedIndividual
     }
 
@@ -93,14 +100,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             is IntegerGene -> handleIntegerGene(gene)
             is DoubleGene -> handleDoubleGene(gene)
             is StringGene -> handleStringGene(gene, all)
-            else ->
-                if (gene is SqlPrimaryKeyGene && gene.gene is SqlForeignKeyGene) {
-                    //FIXME: this needs refactoring
-                    handleSqlForeignKeyGene(gene.gene, all)
-                } else {
-                    //TODO other cases
-                    gene.randomize(randomness, true)
-                }
+            else -> gene.randomize(randomness, true, all)
         }
     }
 
@@ -217,7 +217,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
     private fun handleIntegerGene(gene: IntegerGene) {
-        assert(gene.min < gene.max && gene.isMutable())
+        Lazy.assert { gene.min < gene.max && gene.isMutable() }
 
         //check maximum range. no point in having a delta greater than such range
         val range: Long = gene.max.toLong() - gene.min.toLong()

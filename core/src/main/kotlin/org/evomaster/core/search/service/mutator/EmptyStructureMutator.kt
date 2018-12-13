@@ -1,8 +1,7 @@
-package org.evomaster.core.search.mutator
+package org.evomaster.core.search.service.mutator
 
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.StructureMutator
 
 
 class EmptyStructureMutator : StructureMutator() {

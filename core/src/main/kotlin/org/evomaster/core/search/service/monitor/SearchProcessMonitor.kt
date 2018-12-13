@@ -2,16 +2,15 @@ package org.evomaster.exps.monitor
 
 import com.google.gson.GsonBuilder
 import com.google.inject.Inject
-import com.sun.org.apache.xpath.internal.operations.Bool
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.IOException
 import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.nio.channels.FileChannel
@@ -23,8 +22,6 @@ import javax.annotation.PostConstruct
 
 
 /**
- * @author: manzhang
- * @date: 31/08/2018
  * @decription: monitor 1) how are rest actions or rest individual selected regarding how to sampleAll
  *                      2) how does targets update
  */
@@ -50,56 +47,42 @@ class SearchProcessMonitor: SearchListener {
     var step :StepOfSearchProcess<*>? = null
     var isMutated : Boolean = false
 
-    private var cs = ""
+    /**
+     * record the progress of saved steps
+     * */
     private var tb = 1
 
     private val evaluatedIndividuals : MutableList<EvaluatedIndividual<*>> = mutableListOf()
 
     companion object {
-        var doesSave = true
-        val DATA_FOLDER = "data"
-        val gson =GsonBuilder().registerTypeAdapter(RestAction::class.java, InterfaceAdapter<RestAction>())
+        private val log: Logger = LoggerFactory.getLogger(SearchProcessMonitor::class.java)
+
+        /**
+         * all steps of search are archived under the DATA_FOLDER, e.g., @see org.evomaster.core.EMConfig.processFiles/data
+         * */
+        const val DATA_FOLDER = "data"
+
+        /**
+         * a name of a file to save final Archive, and it can be found in @see org.evomaster.core.EMConfig.processFiles/overall.json
+         * */
+        const val NAME = "overall"
+
+        /**
+         * all steps and overall produced by a search monitor are saved as json files.
+         * */
+        const val FILE_TYPE = ".json"
+
+        private val gson =GsonBuilder().registerTypeAdapter(RestAction::class.java, InterfaceAdapter<RestAction>())
                 .registerTypeAdapter(Param::class.java, InterfaceAdapter<Param>())
                 .registerTypeAdapter(Gene::class.java, InterfaceAdapter<Gene>())
                 .create()
-        var digit = 7
-
-        fun getFileType() : String{
-            return ".json"
-        }
-
-        fun getInt(digit:Int, value : Int) :String{
-            return String.format("%0$digit"+"d", value)
-        }
-
-        fun covertInt(digit: Int, value : String) : Int{
-            var s = value.indexOfFirst { it -> it.toInt() != 0 }
-            return value.substring(s).toInt()
-        }
-
-        fun getOverallName() : String{
-            return "overall"
-        }
-
-//        fun generateAlgoFolder(algo : String, stoppingCriterion: String, sampling: String, budget: Int, maxTestSize: Int, population : Int,  indexOfRun : Int= -1): String{
-//            return algo + "_"+stoppingCriterion+"_"+sampling+"_"+budget + "_"+ maxTestSize+ (if(population != 30) "_P"+population.toString() else "")+ (if(indexOfRun != -1) "_R"+indexOfRun.toString() else "")
-//        }
-
-//        fun generateAlgoFolder (_config : EMConfig, indexOfRun: Int): String{
-//            return generateAlgoFolder (_config.algorithm.name, _config.stoppingCriterion.toString(), _config.smartSampling.toString(),
-//                    (if(_config.stoppingCriterion.toString().toLowerCase().contains("time")) _config.maxTimeInSeconds else _config.maxActionEvaluations), _config.maxTestSize, _config.populationSize, indexOfRun)
-//
-//        }
     }
 
     @PostConstruct
     fun postConstruct(){
-        // TODO configure monitoring the details of search process
+        initMonitorProcessOutputs()
         if(config.enableProcessMonitor){
             time.addListener(this)
-
-            setCS(config.statisticsColumnId)
-            initMonitorProcessOuputs()
         }
     }
 
@@ -111,34 +94,36 @@ class SearchProcessMonitor: SearchListener {
 
     }
 
-    //TODO Man
     fun record(added: Boolean, improveArchive : Boolean, evalInd : EvaluatedIndividual<*>){
         if(config.enableProcessMonitor){
             if(evalInd != eval) throw IllegalStateException("Mismatched evaluated individual under monitor")
-            if(doesSave){
-                if(time.evaluatedActions > tb * 100){
-                    step!!.added = added
-                    step!!.improvedArchive = improveArchive
-                    saveStep(step!!.indexOfEvaluation, step!!)
-                    println(step!!.populations.size)
-                    tb++
-                }
+            if(time.evaluatedActions >= tb * config.maxActionEvaluations/config.processInterval){
+                /*
+                * step is assigned when an individual is evaluated (part of calculateCoverage of FitnessFunction),
+                * but in order to record if the evaluated individual added into Archive, we need to save it after executing addIfNeeded in Archive
+                * Since calculateCoverage is always followed by addIfNeed, the step should be not null.
+                *
+                * */
+
+                step!!.added = added
+                step!!.improvedArchive = improveArchive
+                saveStep(step!!.indexOfEvaluation, step!!)
+                if(config.showProgress) log.info("number of targets: ${step!!.populations.size.toString()}")
+                tb++
             }
         }
     }
 
 
     private fun setOverall(){
-        var stp = config.stoppingCriterion.toString()+"_"+
+        val stp = config.stoppingCriterion.toString()+"_"+
                 (if(config.stoppingCriterion.toString().toLowerCase().contains("time")) config.maxTimeInSeconds.toString() else config.maxActionEvaluations)
         this.overall = SearchOverall(stp, time.evaluatedIndividuals, eval!!.individual, eval!!, archive, idMapper, time.getStartTime())
     }
 
-    fun setCS(name : String){
-        this.cs = name
-    }
 
-    fun initMonitorProcessOuputs(){
+
+    private fun initMonitorProcessOutputs(){
         val path = Paths.get(config.processFiles)
 
         if(Files.exists(path)){
@@ -150,21 +135,20 @@ class SearchProcessMonitor: SearchListener {
                         t.delete()
                     } }
         }
-        if(config.showProgress) println("all files in ${path.toUri().toString()} are deleted")
+        if(config.showProgress) log.info("all files in ${path.toUri().toString()} are deleted")
 
     }
     fun saveOverall(){
         setOverall()
-        var overalltp = Paths.get(config.processFiles + File.separator + getOverallName()  + getFileType())
-        writeByChannel(overalltp, gson.toJson(this.overall))
+        writeByChannel(Paths.get(config.processFiles + File.separator + getOverallFileName()), gson.toJson(this.overall))
     }
 
-    fun saveStep(index:Int, v : StepOfSearchProcess<*>){
-        var tp = Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+if(digit < 1) index else getInt(digit, index) + getFileType())
-        writeByChannel(tp, gson.toJson(v))
+    private fun saveStep(index:Int, v : StepOfSearchProcess<*>){
+        writeByChannel(Paths.get(config.processFiles + File.separator+ DATA_FOLDER +File.separator + ""+ getStepFileName(index) ), gson.toJson(v))
     }
 
-    fun writeByChannel(path : Path, value :String){
+
+    private fun writeByChannel(path : Path, value :String){
         if (!Files.exists(path.parent)) Files.createDirectories(path.parent)
         Files.createFile(path)
         val buffer = ByteBuffer.wrap(value.toByteArray())
@@ -174,7 +158,6 @@ class SearchProcessMonitor: SearchListener {
 
     }
 
-    @Throws(IOException::class)
     private fun writeToChannel(channel: FileChannel, buffer: ByteBuffer) {
         while (buffer.hasRemaining()) {
             channel.write(buffer)
@@ -182,6 +165,13 @@ class SearchProcessMonitor: SearchListener {
         channel.close()
     }
 
+    fun getStepFileName(value : Int) :String{
+        return String.format("%0${config.maxActionEvaluations.toString().length}"+"d", value) + FILE_TYPE
+    }
+
+    fun getOverallFileName() : String{
+        return NAME  + FILE_TYPE
+    }
 
 }
 

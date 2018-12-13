@@ -438,6 +438,14 @@ class EMConfig {
     var structureMutationProbability = 0.5
 
 
+    enum class GeneMutationStrategy{
+        ONE_OVER_N,
+        ONE_OVER_N_BIASED_SQL
+    }
+
+    @Cfg("Strategy used to define the mutation probability")
+    var geneMutationStrategy = GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
+
     enum class FeedbackDirectedSampling {
         NONE,
         LAST,
@@ -493,37 +501,3 @@ class EMConfig {
     @Cfg("Whether to print how much search done so far")
     var showProgress = true
 
-    enum class SmartSamplingCriterion {
-        DEFAULT,
-        DEPENDENCE,
-    }
-
-    @Experimental
-    @Cfg("Specify a strategy to sample APIs")
-    var smartSampling = SmartSamplingCriterion.DEFAULT
-
-//    @Experimental
-//    @Cfg("Specify whether record manipulated resource during sampling")
-//    var recordResources = false
-
-    enum class StrategyControl{
-        RANDOM, // probability is fixed
-        BasedOnSpecified,
-        BasedOnActions, //probability is fixed
-        //TODO Man
-        BasedOnTimeBudgets, // probability is adaptive with time
-        BasedOnArchive //probability is adaptive with performance
-    }
-
-    @Experimental
-    @Cfg("Specify how to select a sample strategy")
-    var sampleControl = StrategyControl.RANDOM
-
-    @Experimental
-    @Cfg("Specify whether archive details during search")
-    var enableProcessMonitor = false
-
-    @Experimental
-    @Cfg("Specify where archive details during search")
-    var processFiles = "process_data"
-}

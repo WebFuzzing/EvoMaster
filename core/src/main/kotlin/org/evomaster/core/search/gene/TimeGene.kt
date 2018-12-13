@@ -71,14 +71,11 @@ class TimeGene(
                 && this.second.containsSameValueAs(other.second)
     }
 
-    override fun flatView(): List<Gene> {
-        return listOf(this, hour, minute, second)
-    }
 
-    override fun flatViewWithTypeFilter(predicate: (Gene) -> Boolean): List<Gene>{
-        return if(predicate(this)) listOf(this)
-        else listOf(this).plus(hour.flatViewWithTypeFilter(predicate))
-                .plus(minute.flatViewWithTypeFilter(predicate))
-                .plus(second.flatViewWithTypeFilter(predicate))
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf(this)
+        else listOf(this).plus(hour.flatView(excludePredicate))
+                .plus(minute.flatView(excludePredicate))
+                .plus(second.flatView(excludePredicate))
     }
 }
