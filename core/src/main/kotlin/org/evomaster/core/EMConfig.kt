@@ -362,9 +362,13 @@ class EMConfig {
     @Min(1.0)
     var archiveTargetLimit = 10
 
-    @Cfg("Probability of sampling a new individual at random")
+    @Cfg("Probability of sampling a new individual at random, at the start of the search")
     @Min(0.0) @Max(1.0)
     var probOfRandomSampling = 0.5
+
+    @Cfg("Probability of sampling a new individual at random, by the end of the search")
+    @Min(0.0) @Max(1.0)
+    var endProbOfRandomSampling = 0.0
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
     @Min(0.0) @Max(1.0)

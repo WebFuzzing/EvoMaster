@@ -181,7 +181,14 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
             val bp = params.find { p -> p is BodyParam }!! as BodyParam
             BindParams.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )})
         }
+        params.forEach { p->
+            params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.apply {
+                BindParams.bindParam(this, path, path, mutableListOf(p))
+            }
+
+        }
     }
+
 
     fun randomRestResourceCalls(randomness: Randomness, maxTestSize: Int): RestResourceCalls{
         val randomTemplates = templates.filter { e->
@@ -252,6 +259,10 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     }
 
 
+    fun sampleRestResourceCalls(template: String, randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
+        assert(maxTestSize > 0)
+        return genCalls(template,randomness, maxTestSize)
+    }
 
     private fun genCalls(template : String, randomness: Randomness, maxTestSize : Int = 1, checkSize : Boolean = false, createResource : Boolean = true, additionalPatch : Boolean = true) : RestResourceCalls{
         if(!templates.containsKey(template))

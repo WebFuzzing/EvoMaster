@@ -3,12 +3,16 @@ package org.evomaster.core.problem.rest.serviceII
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.search.gene.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
 
 class BindParams {
 
     companion object {
-        private val separator = "@"
+        private const val separator = "@"
+
+        private val log: Logger = LoggerFactory.getLogger(BindParams::class.java)
 
         fun bindCreatePost(target : Param, params: List<Param>){
             if(!(target is BodyParam) || params.size != 1 || !(params[0] is BodyParam))
@@ -25,7 +29,7 @@ class BindParams {
                 is HeaderParam -> BindParams.bindHeaderParam(target, targetPath,sourcePath, params)
             }
         }
-        fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+        private fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
             val k = params.find { pa -> pa is PathParam && pa.name == p.name }
             if(k != null) p.gene.copyValueFrom(k!!.gene)
             else{
@@ -33,12 +37,11 @@ class BindParams {
 //                    val targetGene = (p.gene as DisruptiveGene<*>).gene
                     bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false)
                 }else
-                    failedToBind(p.name)
+                    log.warn("fail to bind ${p.name}")
             }
         }
 
-        //bind GET with 1) DELETE, PUT, PATCH, 2) POST
-        fun bindQueryParm(p : QueryParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+        private fun bindQueryParm(p : QueryParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
             if(numOfBodyParam(params) == params.size){
                 //bindBodyParamWithGene(params.first{ pa -> pa is BodyParam }!! as BodyParam, p.name, p.gene, false)
                 bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false)
@@ -47,11 +50,11 @@ class BindParams {
                 if(sg != null)
                     p.gene.copyValueFrom(sg.gene)
                 else
-                    failedToBind(p.name)
+                    log.warn("fail to bind ${p.name}")
             }
         }
 
-        fun bindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+        private fun bindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
             if(numOfBodyParam(params) != params.size ){
                 params.filter { p -> !(p is BodyParam) }
                         .forEach {ip->
@@ -64,21 +67,21 @@ class BindParams {
 
                 //throw java.lang.IllegalArgumentException("it does not allow to bind POST $targetPath with POST $sourcePath")
             }
-
-
-
         }
 
-        fun bindHeaderParam(p : HeaderParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
-            //TODO
-
+        private fun bindHeaderParam(p : HeaderParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+            params.find { it is HeaderParam && p.name == it.name}?.apply {
+                p.gene.copyValueFrom(this.gene)
+            }
         }
 
-        fun bindFormParam(p : FormParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
-            //TODO
+        private fun bindFormParam(p : FormParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+            params.find { it is FormParam && p.name == it.name}?.apply {
+                p.gene.copyValueFrom(this.gene)
+            }
         }
 
-        fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean){
+        private fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean){
             val pathMap = geneNameMaps(listOf(other), otherPath.getStaticTokens().reversed())
             val bodyMap = geneNameMaps(listOf(body), bodyPath.getStaticTokens().reversed())
             pathMap.forEach { pathkey, pathGene ->
@@ -90,14 +93,10 @@ class BindParams {
                         val first = matched.first()
                         copyGene(bodyMap.getValue(first), pathGene, b2g)
                     }else{
-                        failedToBind(pathkey)
+                        log.warn("fail to bind ${pathkey}")
                     }
                 }
             }
-        }
-
-        fun failedToBind(msg : String = ""){
-            //println("$msg failed to bind anything")
         }
 
         //FIXME check whether params can contain two body params?
@@ -109,7 +108,7 @@ class BindParams {
         }
 
 
-        fun copyGene(b : Gene, g : Gene, b2g :Boolean){
+        private fun copyGene(b : Gene, g : Gene, b2g :Boolean){
             if(b::class.java.simpleName == g::class.java.simpleName){
                 if (b2g) b.copyValueFrom(g)
                 else g.copyValueFrom(b)
@@ -132,7 +131,7 @@ class BindParams {
             }
         }
 
-        fun scoreOfMatch(target : String, source : String) : Int{
+        private fun scoreOfMatch(target : String, source : String) : Int{
             //FIXME if "d_" is a real attribute of some classes
             val targets = target.split(separator).filter { it != "d_" }.toMutableList()
             val sources = source.split(separator).filter { it != "d_" }.toMutableList()
@@ -143,7 +142,7 @@ class BindParams {
             return targets.plus(sources).filter { targets.contains(it).xor(sources.contains(it)) }.size
         }
 
-        fun geneNameMaps(parameters: List<Param>, tokensInPath: List<String>?) : MutableMap<String, Gene>{
+        private fun geneNameMaps(parameters: List<Param>, tokensInPath: List<String>?) : MutableMap<String, Gene>{
             val maps = mutableMapOf<String, Gene>()
             val pred = {gene : Gene -> (gene is DateTimeGene)}
             parameters.forEach { p->
@@ -163,14 +162,14 @@ class BindParams {
             return maps
         }
 
-        fun genGeneNameInPath(names : MutableList<String>, tokensInPath : List<String>?) : String{
+        private fun genGeneNameInPath(names : MutableList<String>, tokensInPath : List<String>?) : String{
             tokensInPath?.let {
                 return names.plus(tokensInPath).joinToString(separator)
             }
             return names.joinToString(separator)
         }
 
-        fun getGeneNamesInPath(parameters: List<Param>, gene : Gene) : MutableList<String>? {
+        private fun getGeneNamesInPath(parameters: List<Param>, gene : Gene) : MutableList<String>? {
             parameters.forEach {  p->
                 val names = mutableListOf<String>()
                 if(handle(p.gene, gene, names)){
@@ -201,7 +200,6 @@ class BindParams {
                     names.add(it.name)
                     return true
                 }
-
             }
             return false
         }

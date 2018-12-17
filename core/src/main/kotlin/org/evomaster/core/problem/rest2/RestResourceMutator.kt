@@ -24,7 +24,7 @@ class RestResourceMutator : StandardMutator<RestIndividualII>() {
 //
 //        val genesToMutate = copy.seeGenes(filter).filter(Gene::isMutable)
 //
-        val genesToMutate = copy.getResourceCalls().flatMap { it.seeGeens() }.filter(Gene::isMutable)
+        val genesToMutate = copy.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
         if (genesToMutate.isEmpty()) {

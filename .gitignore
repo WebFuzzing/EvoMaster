@@ -38,3 +38,12 @@ experiments/target/
 /e2e-tests/dropwizard-examples/src/em/
 /snapshot.csv
 *.lst
+exp/
+*.R
+client-java/database-spy/target/maven-archiver/pom.properties
+core/.DS_Store
+exp/analysis/example.R
+*.R
+exp/exp/exp.py
+useful-comments
+*.R

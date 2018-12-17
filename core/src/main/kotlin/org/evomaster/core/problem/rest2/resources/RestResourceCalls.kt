@@ -14,18 +14,37 @@ class RestResourceCalls(val resource: RestResource, val actions: MutableList<Res
         return RestResourceCalls(resource.copy(), actions.map { a -> other.find { o -> a.getName() == o.getName() }!!}.toMutableList())
     }
 
-    //return genes of the first rest action
-    fun seeGeens() : List<out Gene>{
-        return actions.first().seeGenes()
+    /**
+     * return genes that represents this resource, i.e., longest action in this resource call
+     */
+    fun seeGenes() : List<out Gene>{
+        return longestPath().seeGenes()
+    }
+
+    fun repairGenesAfterMutation(gene: Gene? = null){
+        val target = longestPath()
+        repairGenePerAction(gene, target)
+        actions.filter { it is RestCallAction && it != target }
+                .forEach{a-> (a as RestCallAction).bindToSamePathResolution(target as RestCallAction)}
     }
 
     fun repairGenesAfterMutation(){
-        //bind all actions regarding first action
-        val first = actions.first() as RestCallAction
-        (1 until actions.size).forEach { i->
-            if(actions[i] is RestCallAction){
-                (actions[i] as RestCallAction).bindToSamePathResolution(first)
-            }
+        repairGenesAfterMutation(null)
+    }
+
+    private fun longestPath() : RestAction{
+        val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
+        val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
+        return candidates.first()
+    }
+
+    private fun repairGenePerAction(gene: Gene? = null, action : RestAction){
+        if(gene != null){
+            val genes = action.seeGenes().flatMap { g->g.flatView() }
+            if(genes.contains(gene))
+                genes.filter { ig-> ig != gene && ig.name == gene.name && ig::class.java.simpleName == gene::class.java.simpleName }.forEach {cg->
+                    cg.copyValueFrom(gene)
+                }
         }
     }
 }

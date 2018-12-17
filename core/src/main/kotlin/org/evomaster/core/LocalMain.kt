@@ -35,7 +35,7 @@ class LocalMain {
                     "--snapshotInterval", "1",
                     "--statisticsFile",baseFolder + "/$cs/$label/reports/statistics.csv",
                     "--snapshotStatisticsFile",baseFolder + "/$cs/$label/reports/snapshot.csv",
-                    "--problemType",if(smartSampling == EMConfig.SmartSamplingStrategy.RESOURCES.toString()) "RESTII" else "REST",
+                    "--problemType","REST",
                     "--maxTestSize", maxTestSize.toString() //dynamically control a size of test during a search
 
             );
@@ -44,5 +44,5 @@ class LocalMain {
 }
 
 fun main(args : Array<String>){
-    Main.main(LocalMain.getArgs("SAMPLE", "NCS", true, 71))
+    Main.main(LocalMain.getArgs("MIO", "feature-service", true, 1))
 }

@@ -21,7 +21,7 @@ class AdaptiveParameterControl {
     }
 
     fun getProbRandomSampling(): Double {
-        return getExploratoryValue(config.probOfRandomSampling , 0.0)
+        return getExploratoryValue(config.probOfRandomSampling , config.endProbOfRandomSampling)
     }
 
     fun getNumberOfMutations(): Int {
