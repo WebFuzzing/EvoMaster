@@ -6,17 +6,13 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.TestSuiteWriter
-import org.evomaster.core.problem.rest.ObjIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.experiments.objects.service.ObjModule
 import org.evomaster.experiments.objects.service.ObjRestSampler
-import java.lang.Integer.max
-import java.util.*
-import javax.swing.text.html.Option
+import org.evomaster.experiments.objects.ObjIndividual
+import org.evomaster.experiments.objects.writer.ObjTestSuiteWriter
 
 class Main {
     companion object {
@@ -73,52 +69,10 @@ class Main {
             println("Available callActions:")
             available.forEach{it ->
                 println("===============================================>")
-                //val action = it.copy() as ObjRestCallAction
 
                 val action = sampler.sampleRandomObjCallAction(0.0)
                 println(action.getName())
 
-
-/*
-                action.seeGenes().forEach {g ->
-
-                    println(" --- ")
-
-                    val restrictedModels = mutableMapOf<String, ObjectGene>()
-                    models.forEach{ k, model ->
-                        val fields = model.fields.filter { field ->
-                            when (g::class) {
-                                DisruptiveGene::class -> (field as OptionalGene).gene::class === (g as DisruptiveGene<*>).gene::class
-                                OptionalGene::class -> (field as OptionalGene).gene::class === (g as OptionalGene).gene::class
-                                else -> {
-                                    false
-                                }
-                            }
-                        }
-
-                        restrictedModels[k] = ObjectGene(model.name, fields)
-
-                    }
-
-
-                    val likely = likelyhoodsExtended(g.getVariableName(), restrictedModels).toList().sortedBy { (_, value) -> -value}.toMap()
-
-                    println("Likelyhoods: ${likely}")
-
-
-                    println(" -> ${g.getVariableName()}")
-                    val sel = pickWithProbability(likely as MutableMap<Pair<String, String>, Float>)
-
-                    println("Selected: ${sel.first} -> ${sel.second}")
-
-                    val selectedGene = models.get(sel.first)?.fields?.filter { g -> (g as OptionalGene).name === sel.second }?.single() as OptionalGene
-
-                    println(selectedGene.name)
-
-
-
-                }
-*/
                 println("Action after selection: ${action.resolvedPath()}")
 
             }
@@ -148,7 +102,6 @@ class Main {
             for (individual in solution.individuals) {
                 println(" --- ")
                 println("${individual.individual.debugginPrint()} => ${individual.individual.debugginPrintProcessed()} => ${individual.fitness.computeFitnessScore()}")
-
             }
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -159,13 +112,19 @@ class Main {
 
 
             /*
-            TODO: Writing the tests is a bloody mess at the moment (for a variety of reasons, some self-inflicted). Fix that.
-            TestSuiteWriter.writeTests(
+            TODO: dbInit ?
+            BMR: Writing tests appears to work, but dbInit has been removed (some gene problems emerging from the
+            current work being in a different folder. This should be reinstated later.
+            */
+
+            config.outputFolder = "experiments/bmr/test"
+
+            ObjTestSuiteWriter.writeTests(
                     solution,
                     controllerInfoDto.fullName,
                     config
             )
-            */
+
 
         }
 
