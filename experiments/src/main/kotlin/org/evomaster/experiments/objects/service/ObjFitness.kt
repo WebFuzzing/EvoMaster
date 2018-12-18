@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.experiments.objects.service
 
 import com.google.inject.Inject
 import org.evomaster.clientJava.controllerApi.EMTestUtils
@@ -31,6 +31,7 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import org.evomaster.experiments.objects.ObjIndividual
 
 
 class ObjFitness : FitnessFunction<ObjIndividual>() {
