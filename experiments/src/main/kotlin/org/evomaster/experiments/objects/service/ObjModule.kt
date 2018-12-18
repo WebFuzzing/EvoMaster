@@ -2,12 +2,12 @@ package org.evomaster.experiments.objects.service
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
-import org.evomaster.core.problem.rest.ObjIndividual
-import org.evomaster.core.problem.rest.service.ObjFitness
 import org.evomaster.core.search.mutator.EmptyStructureMutator
 import org.evomaster.core.search.mutator.StandardMutator
 import org.evomaster.core.search.service.*
 import org.evomaster.experiments.objects.ObjProblemDefinition
+import org.evomaster.experiments.objects.ObjIndividual
+import org.evomaster.experiments.objects.service.ObjFitness
 
 
 class ObjModule : AbstractModule(){
