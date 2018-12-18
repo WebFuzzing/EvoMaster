@@ -84,7 +84,7 @@ class ObjTestCaseWriter {
         //TODO: Remove this ASAP :D it's just meant to be a test of the usedObj and potential adding to TC
 
 
-        println("Individual: ${test.test.individual} uses => ${(test.test.individual as ObjIndividual).uo.displayInline()} ")
+        println("Individual: ${test.test.individual} uses => ${(test.test.individual as ObjIndividual).usedObj} ")
 
         return lines
     }
