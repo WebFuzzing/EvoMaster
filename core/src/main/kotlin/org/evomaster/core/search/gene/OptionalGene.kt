@@ -34,6 +34,9 @@ class OptionalGene(name: String,
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
+        gene.randomize(randomness, forceNewValue)
+        //TODO: BMR-> I've edited this to allow for all to be randomized. A more elegant solution is in order.
+        /*
         if (!forceNewValue) {
             isActive = randomness.nextBoolean()
             gene.randomize(randomness, false, allGenes)
@@ -45,6 +48,7 @@ class OptionalGene(name: String,
                 gene.randomize(randomness, true, allGenes)
             }
         }
+        */
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
