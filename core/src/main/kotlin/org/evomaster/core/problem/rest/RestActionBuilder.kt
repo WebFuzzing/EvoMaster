@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import io.swagger.models.*
 import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
+import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.param.*
@@ -120,7 +121,8 @@ class RestActionBuilder {
             val params: MutableList<Param> = mutableListOf()
             val operation = opEntry.value
 
-            operation.parameters.forEach { p ->
+            removeDuplicatedParams(operation.parameters)
+            .forEach { p ->
 
                 val name = p.name ?: "undefined"
 
@@ -449,6 +451,8 @@ class RestActionBuilder {
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
         }
-
+        private fun removeDuplicatedParams(params : List<Parameter>) : List<Parameter>{
+            return params.distinctBy { it.name}
+        }
     }
 }

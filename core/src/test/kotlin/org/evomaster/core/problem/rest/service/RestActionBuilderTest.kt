@@ -95,4 +95,12 @@ internal class RestActionBuilderTest {
         assertEquals(2, a.parameters.size)
         assertEquals(2, a.parameters.filter { p -> p is FormParam }.size)
     }
+
+    @Test
+    fun testDuplicatedParamsInFeaturesServices() {
+        val actions = loadAndAssertActions("/swagger/features_service.json", 18)
+        (actions["POST:/products/{productName}/configurations/{configurationName}/features/{featureName}"] as RestCallAction).apply {
+            assertEquals(3, parameters.size)
+        }
+    }
 }
