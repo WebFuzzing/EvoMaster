@@ -8,8 +8,9 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.service.tracer.TrackOperator
 
-abstract class Mutator<T> where T : Individual {
+abstract class Mutator<T> : TrackOperator where T : Individual {
 
     @Inject
     protected lateinit var randomness: Randomness
@@ -30,7 +31,7 @@ abstract class Mutator<T> where T : Individual {
     protected lateinit var config: EMConfig
 
     /**
-     * @return a mutated copy
+     * @return a mutated next
      */
     abstract fun mutate(individual: T): T
 
@@ -48,6 +49,9 @@ abstract class Mutator<T> where T : Individual {
 
         for (i in 0 until upToNTimes) {
 
+            //save ei before its individual is mutated
+            var trackedCurrent = current.copy(config.enableTrackEvaluatedIndividual)
+
             if (!time.shouldContinueSearch()) {
                 break
             }
@@ -63,11 +67,12 @@ abstract class Mutator<T> where T : Individual {
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
-            val reachNew = archive.wouldReachNewTarget(mutated)
+            val trackedMutated = if(config.enableTrackEvaluatedIndividual && trackedCurrent.isCapableOfTracking()) trackedCurrent.next(getTrackOperator(), mutated)!! else mutated
+            val reachNew = archive.wouldReachNewTarget(trackedMutated)
 
-            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
-                archive.addIfNeeded(mutated)
-                current = mutated
+            if (reachNew || !current.fitness.subsumes(trackedMutated.fitness, targets)) {
+                archive.addIfNeeded(trackedMutated)
+                current = trackedMutated
             }
         }
 
@@ -81,5 +86,9 @@ abstract class Mutator<T> where T : Individual {
 
         return ff.calculateCoverage(mutate(individual.individual))
                 ?.also { archive.addIfNeeded(it) }
+    }
+
+    override fun getTrackOperator(): String {
+        return Mutator::class.java.simpleName
     }
 }

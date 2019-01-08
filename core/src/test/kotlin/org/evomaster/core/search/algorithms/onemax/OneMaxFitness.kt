@@ -15,6 +15,6 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
         (0 until individual.n)
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
-        return EvaluatedIndividual(fv, individual.copy() as OneMaxIndividual, listOf())
+        return if(config.enableTrackEvaluatedIndividual) EvaluatedIndividual(fv, individual.copy(config.enableTrackIndividual) as OneMaxIndividual, listOf(), individual.getDescription(), mutableListOf()) else EvaluatedIndividual(fv, individual.copy(config.enableTrackIndividual) as OneMaxIndividual, listOf())
     }
 }
