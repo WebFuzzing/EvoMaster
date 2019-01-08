@@ -31,8 +31,12 @@ class Archive<T> where T : Individual {
     private lateinit var time: SearchTimeController
 
     @Inject
-    protected lateinit var processMonitor: SearchProcessMonitor
+    private lateinit var processMonitor: SearchProcessMonitor
 
+    /**
+     * a track of archive can be presented as a list of added EvaluatedIndividual
+     */
+    private val archiveTrack : MutableList<EvaluatedIndividual<T>> = mutableListOf()
     /**
      * Key -> id of the target
      *
@@ -97,7 +101,7 @@ class Archive<T> where T : Individual {
     fun isEmpty() = populations.isEmpty()
 
     /**
-     * Get a copy of an individual in the archive.
+     * Get a next of an individual in the archive.
      * Different kinds of heuristics are used to choose
      * the best "candidate" most useful for the search
      */
@@ -139,7 +143,7 @@ class Archive<T> where T : Individual {
             randomness.choose(candidates)
         }
 
-        return chosen.copy()
+        return if(config.enableTrackIndividual) chosen.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) else chosen.copy()
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
@@ -254,7 +258,7 @@ class Archive<T> where T : Individual {
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
-        val copy = ei.copy()
+        val copy = ei.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
         var added = false
         var anyBetter = false
 
@@ -359,7 +363,7 @@ class Archive<T> where T : Individual {
 
             if (better || equivalent) {
                 /*
-                    replace worst element, if copy is not worse than it (but not necessarily better).
+                    replace worst element, if next is not worse than it (but not necessarily better).
                  */
                 current[0] = copy
                 added = true
@@ -367,6 +371,7 @@ class Archive<T> where T : Individual {
         }
         processMonitor.record(added, anyBetter, ei)
 
+        if(added) archiveTrack.add(ei)
         return added
     }
 
@@ -420,4 +425,12 @@ class Archive<T> where T : Individual {
     fun getSnapshotOfSamplingCounter() : Map<Int, Int>{
         return samplingCounter
     }
+
+    enum class ArchiveUpdateCondition(value : Int){
+        NOT_FULL_POPULATION(0),
+        SHORTER_SOLUTION(1),
+        NEW_TARGETS(2),
+        FITNESS_IMPROVED(3),
+    }
+
 }

@@ -509,6 +509,21 @@ class EMConfig {
     var processFiles = "process_data"
 
     @Experimental
-    @Cfg("Specify how often to save results when a search monitor is enabled ")
+    @Cfg("Specify how often to save results when a search monitor is enabled")
     var processInterval = 100
+
+    @Experimental
+    @Cfg("Whether to track individual")
+    var enableTrackIndividual = false
+
+    @Experimental
+    @Cfg("Whether to track evaluated individual. " +
+            "Note that we recommend that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evalauted individual")
+    var enableTrackEvaluatedIndividual = false
+
+    @Experimental
+    @Cfg("Specify a length to track. " +
+            "-1 means track all history when track is enabled")
+    @Min(-1.0)
+    var trackLength : Int = -1
 }

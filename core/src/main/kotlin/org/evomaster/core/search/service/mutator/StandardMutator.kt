@@ -11,6 +11,7 @@ import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.util.function.Predicate
 
 
 class StandardMutator<T> : Mutator<T>() where T : Individual {
@@ -22,14 +23,14 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun innerMutate(individual: T): T {
 
-        val copy = individual.copy() as T
-
         if (individual.canMutateStructure() &&
                 randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
             //usually, either delete an action, or add a new random one
+            val copy = (if(config.enableTrackIndividual && individual.isCapableOfTracking()) individual.next(structureMutator.getTrackOperator()!!) else individual.copy()) as T
             structureMutator.mutateStructure(copy)
             return copy
         }
+        val copy = (if(config.enableTrackIndividual && individual.isCapableOfTracking()) individual.next(getTrackOperator()!!) else individual.copy()) as T
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -51,7 +52,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         var mutated = false
 
-        while (!mutated) { //no point in returning a copy that is not mutated
+        while (!mutated) { //no point in returning a next that is not mutated
 
             for (gene in genesToMutate) {
 
@@ -101,7 +102,9 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             is IntegerGene -> handleIntegerGene(gene)
             is DoubleGene -> handleDoubleGene(gene)
             is StringGene -> handleStringGene(gene, all)
-            else -> gene.randomize(randomness, true, all)
+            else -> {
+                gene.randomize(randomness, true, all)
+            }
         }
     }
 
@@ -181,7 +184,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun handleDoubleGene(gene: DoubleGene) {
         //TODO min/max for Double
-
+        val d = gene.value
         gene.value = when (randomness.choose(listOf(0, 1, 2))) {
             //for small changes
             0 -> gene.value + randomness.nextGaussian()
@@ -191,7 +194,6 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             2 -> BigDecimal(gene.value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
             else -> throw IllegalStateException("Regression bug")
         }
-
     }
 
 
@@ -218,6 +220,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
     private fun handleIntegerGene(gene: IntegerGene) {
+        val i = gene.value
         Lazy.assert { gene.min < gene.max && gene.isMutable() }
 
         //check maximum range. no point in having a delta greater than such range
@@ -239,5 +242,9 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             res < gene.min -> gene.min
             else -> res.toInt()
         }
+    }
+
+    override fun getTrackOperator(): String {
+        return StandardMutator::class.java.simpleName
     }
 }

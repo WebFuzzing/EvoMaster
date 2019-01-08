@@ -193,7 +193,7 @@ class RestSampler : Sampler<RestIndividual>() {
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-
+        if(config.enableTrackIndividual)  return RestIndividual(actions, SampleType.RANDOM, "sampleAtRandom::"+getTrackOperator()!!)
         return RestIndividual(actions, SampleType.RANDOM)
     }
 
@@ -278,6 +278,7 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         if (!test.isEmpty()) {
+            if(config.enableTrackIndividual)  return RestIndividual(test, sampleType, "smartSample::"+getTrackOperator()!!)
             return RestIndividual(test, sampleType)
         }
 
@@ -592,6 +593,10 @@ class RestSampler : Sampler<RestIndividual>() {
                     randomizeActionGenes(copy)
                     adHocInitialIndividuals.add(copy)
                 }
+    }
+
+    override fun getTrackOperator(): String {
+        return RestSampler::class.java.simpleName
     }
 
 }

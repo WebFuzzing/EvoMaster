@@ -197,4 +197,8 @@ class RestStructureMutator : StructureMutator() {
         }
 
     }
+
+    override fun getTrackOperator(): String {
+        return RestStructureMutator::class.java.simpleName
+    }
 }
