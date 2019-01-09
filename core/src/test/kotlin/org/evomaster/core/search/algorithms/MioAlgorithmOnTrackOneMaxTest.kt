@@ -12,7 +12,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.StandardMutator
-import org.evomaster.core.search.service.tracer.TrackService
+import org.evomaster.core.search.service.tracer.TrackingService
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -150,7 +150,7 @@ class MioAlgorithmOnTrackOneMaxTest {
 
         val sampler = injector.getInstance(OneMaxSampler::class.java)
 
-        val trackService = injector.getInstance(TrackService::class.java)
+        val trackService = injector.getInstance(TrackingService::class.java)
         trackService.init()
 
         val n = 20
@@ -181,7 +181,7 @@ class MioAlgorithmOnTrackOneMaxTest {
 
         val sampler = injector.getInstance(OneMaxSampler::class.java)
 
-        val trackService = injector.getInstance(TrackService::class.java)
+        val trackService = injector.getInstance(TrackingService::class.java)
         trackService.init()
 
         val n = 20

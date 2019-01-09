@@ -5,16 +5,18 @@ import org.evomaster.core.EMConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-class TrackService{
+/**
+ * Archive Tracking -> Archive, EvaluatedIndividual
+ * Individual
+ */
+class TrackingService{
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(TrackService::class.java)
+        private val log: Logger = LoggerFactory.getLogger(TrackingService::class.java)
     }
-    /**
-     * id: type of TraceableElement
-     * values: type of registered TrackOperator
-     * This map indicates what operators are registered to handle TraceableElement
-     */
+
+    private val operatorCounter : MutableMap<String, Int> = mutableMapOf()
+
     @Inject
     private lateinit var config: EMConfig
 
