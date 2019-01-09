@@ -7,7 +7,7 @@ import org.evomaster.core.EMConfig
  * This info is needed to have custom mutations of the
  * chromosome structures
  */
-enum class SampleType {
+enum class SampleType(var description : String = "") {
     RANDOM,
     SMART,
     @EMConfig.Experimental SMART_RESOURCE,

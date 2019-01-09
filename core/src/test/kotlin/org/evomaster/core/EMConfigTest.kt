@@ -89,7 +89,7 @@ internal class EMConfigTest{
         config.updateProperties(options)
         assertEquals("" + config.algorithm, x)
 
-        x = "RANDOM"
+        x = "EqualProbability"
         options = parser.parse("--algorithm", x)
         assertEquals(x, opt.value(options))
         config.updateProperties(options)

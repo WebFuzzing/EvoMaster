@@ -34,10 +34,6 @@ class Archive<T> where T : Individual {
     private lateinit var processMonitor: SearchProcessMonitor
 
     /**
-     * a track of archive can be presented as a list of added EvaluatedIndividual
-     */
-    private val archiveTrack : MutableList<EvaluatedIndividual<T>> = mutableListOf()
-    /**
      * Key -> id of the target
      *
      * Value -> sorted list of best individuals for that target
@@ -371,7 +367,6 @@ class Archive<T> where T : Individual {
         }
         processMonitor.record(added, anyBetter, ei)
 
-        if(added) archiveTrack.add(ei)
         return added
     }
 

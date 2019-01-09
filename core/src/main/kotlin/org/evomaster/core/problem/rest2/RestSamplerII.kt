@@ -190,7 +190,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         return sampleAtRandom(randomness.nextInt(1, config.maxTestSize))
     }
 
-    fun sampleAtRandom(size : Int): RestIndividualII {
+    private fun sampleAtRandom(size : Int): RestIndividualII {
         assert(size <= config.maxTestSize)
         val restCalls = mutableListOf<RestResourceCalls>()
         val n = randomness.nextInt(1, config.maxTestSize)
@@ -201,7 +201,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
             left -= call.actions.size
             restCalls.add(call)
         }
-        return RestIndividualII( restCalls, SampleType.RANDOM)
+        return RestIndividualII(restCalls, SampleType.RANDOM)
     }
 
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
@@ -270,7 +270,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         }
 
         if (!restCalls.isEmpty()) {
-            return RestIndividualII(restCalls,SampleType.SMART_RESOURCE)
+            return RestIndividualII(restCalls,SampleType.SMART_RESOURCE.also { it.description = strategy.name })
         }
 
         return sampleAtRandom()

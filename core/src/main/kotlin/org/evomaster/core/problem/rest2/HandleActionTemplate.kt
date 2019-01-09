@@ -11,7 +11,7 @@ object HandleActionTemplate{
 
    // companion object {
     val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE)
-    public const val SeparatorTemplate = "-"
+    const val SeparatorTemplate = "-"
 
 
     fun getTemplate(args : Array<HttpVerb>) : String{

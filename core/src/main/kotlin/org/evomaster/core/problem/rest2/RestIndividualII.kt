@@ -7,14 +7,19 @@ import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.tracer.TraceableElement
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
 
-class RestIndividualII(
-        private val resourceCalls: MutableList<RestResourceCalls>,
-        sampleType: SampleType,
-        dbInitialization: MutableList<DbAction> = mutableListOf()
-) : RestIndividual(resourceCalls.flatMap { it.actions }.toMutableList(), sampleType, dbInitialization) {
+class RestIndividualII : RestIndividual {
+
+    private val resourceCalls: MutableList<RestResourceCalls>
+
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, dbInitialization: MutableList<DbAction>, description: String, traces : MutableList<RestIndividualII>): super(restCalls.flatMap { it.actions }.toMutableList(), sampleType, dbInitialization, description, traces){
+        this.resourceCalls = restCalls
+    }
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, dbInitialization: MutableList<DbAction> = mutableListOf()): this(restCalls, sampleType, dbInitialization, sampleType.toString(), mutableListOf())
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, description: String, traces: MutableList<RestIndividualII>): this(restCalls, sampleType, mutableListOf(), description, traces)
 
     override fun copy(): Individual {
         val calls = resourceCalls.map { it.copy() }.toMutableList()
@@ -27,7 +32,8 @@ class RestIndividualII(
 
     override fun canMutateStructure(): Boolean {
         return sampleType == SampleType.RANDOM ||
-                sampleType == SampleType.SMART_GET_COLLECTION
+                sampleType == SampleType.SMART_GET_COLLECTION ||
+                sampleType == SampleType.SMART_RESOURCE
     }
 
     override fun seeActions(): List<out Action> {
@@ -105,6 +111,46 @@ class RestIndividualII(
 
     fun getTemplate() : String{
         return actions.map { (it as RestCallAction).verb.toString() }.joinToString(HandleActionTemplate.SeparatorTemplate)
+    }
+
+    override fun next(description : String) : TraceableElement?{
+        if(isCapableOfTracking()){
+            val copyTraces = mutableListOf<RestIndividualII>()
+            if(!isRoot()){
+                val size = getTrack()?.size?:0
+                (0 until if(maxlength != -1 && size > maxlength - 1) maxlength-1  else size).forEach {
+                    copyTraces.add(0, (getTrack()!![size-1-it] as RestIndividualII).copy() as RestIndividualII)
+                }
+            }
+            copyTraces.add(this)
+            return RestIndividualII(
+                    resourceCalls.map { it.copy() }.toMutableList(),
+                    sampleType,
+                    dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                    description,
+                    copyTraces)
+        }
+        return copy()
+    }
+
+    override fun copy(withTrack: Boolean): RestIndividualII {
+        when(withTrack){
+            false-> return copy() as RestIndividualII
+            else ->{
+                getTrack()?:return copy() as RestIndividualII
+                val copyTraces = mutableListOf<RestIndividualII>()
+                getTrack()?.forEach {
+                    copyTraces.add((it as RestIndividualII).copy() as RestIndividualII)
+                }
+                return RestIndividualII(
+                        resourceCalls.map { it.copy() }.toMutableList(),
+                        sampleType,
+                        dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                        getDescription(),
+                        copyTraces
+                )
+            }
+        }
     }
 
 }

@@ -12,30 +12,23 @@ import org.evomaster.core.search.service.tracer.TraceableElement
 
 
 
-open class RestIndividual : Individual() {
+open class RestIndividual : Individual {
 
     val actions: MutableList<RestAction>
     val sampleType: SampleType
     val dbInitialization: MutableList<DbAction>
 
-
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, dbInitialization: MutableList<DbAction> = mutableListOf()) : super(sampleType.toString()){
+    constructor(actions: MutableList<RestAction>, sampleType: SampleType, dbInitialization: MutableList<DbAction>, description: String, traces : MutableList<out RestIndividual>) : super(description, traces){
         this.actions = actions
         this.sampleType = sampleType
         this.dbInitialization = dbInitialization
     }
 
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, description: String) : super(description){
-        this.actions = actions
-        this.sampleType = sampleType
-        this.dbInitialization = mutableListOf()
-    }
+    constructor(actions: MutableList<RestAction>, sampleType: SampleType, description: String) :   this(actions, sampleType, mutableListOf(), description, mutableListOf())
+    constructor(actions: MutableList<RestAction>, sampleType: SampleType, dbInitialization: MutableList<DbAction> = mutableListOf()) : this(actions, sampleType, dbInitialization, sampleType.toString(), mutableListOf())
+    constructor(actions: MutableList<RestAction>, sampleType: SampleType, description: String, traces : MutableList<out RestIndividual>) : this(actions, sampleType, mutableListOf<DbAction>(), description, traces)
 
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, dbInitialization: MutableList<DbAction>, description: String, traces : MutableList<RestIndividual>) : super(description, traces){
-        this.actions = actions
-        this.sampleType = sampleType
-        this.dbInitialization = dbInitialization
-    }
+
 
     override fun copy(): Individual {
         return RestIndividual(

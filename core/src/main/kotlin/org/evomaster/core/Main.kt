@@ -206,7 +206,7 @@ class Main {
 //            val key = when (config.algorithm) {
 //                EMConfig.Algorithm.MIO -> Key.get(
 //                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
-//                EMConfig.Algorithm.RANDOM -> Key.get(
+//                EMConfig.Algorithm.EqualProbability -> Key.get(
 //                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
 //                EMConfig.Algorithm.WTS -> Key.get(
 //                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})

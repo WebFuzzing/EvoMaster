@@ -526,16 +526,31 @@ class EMConfig {
     var smartSamplingStrategy = SmartSamplingStrategy.DEFAULT
 
     enum class ResourceSamplingControl{
-        RANDOM, // probability is fixed
-        BasedOnSpecified,
-        BasedOnActions, //probability is fixed
-        BasedOnTimeBudgets, // probability is adaptive with time
-        BasedOnArchive //probability is adaptive with performance
+        /**
+         * probability for applicable strategy is specified
+         */
+        SpecifiedProbability,
+        /**
+         * probability for applicable strategy is equal
+         */
+        EqualProbability,
+        /**
+         * probability for applicable strategy is derived based on actions
+         */
+        BasedOnActions,
+        /**
+         * probability for applicable strategy is adaptive with time
+         */
+        BasedOnTimeBudgets,
+        /**
+         * probability for applicable strategy is adaptive with performance, i.e., Archive
+         */
+        BasedOnArchive
     }
 
     @Experimental
     @Cfg("Specify how to select a sample strategy")
-    var sampleControl = ResourceSamplingControl.RANDOM
+    var sampleControl = ResourceSamplingControl.EqualProbability
 
     @Experimental
     @Cfg("Whether to track individual")
