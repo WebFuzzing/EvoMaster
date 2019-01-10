@@ -152,18 +152,15 @@ where T : Individual {
         return list
     }
 
-    fun getTrackOfIndividual() : List<T>?{
-        return getTrack()?.map { (it as EvaluatedIndividual<T>).individual }
+    fun getViewOfImpacts(){
+
     }
 
-    fun getTrackOfFitness() : List<FitnessValue>?{
-        return getTrack()?.map { (it as EvaluatedIndividual<T>).fitness }
-    }
-    fun generateImpactOfGenes(){
-        TODO()
+    fun getViewOfImpactsOfStructure(){
+
     }
 
-    class AnImpactOfGene(val step : Int, val id : String, var impact : Double)
-    class ImpactsOfGenes(val impactsOfGenes: MutableMap<String, AnImpactOfGene> = mutableMapOf(), var impactOfStructure: Double = -1.0)
-    class ImpactsOfStructure(val impactsOfGenes: MutableMap<String, ImpactsOfGenes>)
+    class ImpactOfGene(val step : Int, val id : String, var impact : Double)
+    class ImpactOfIndividual(val impacts: MutableMap<String, ImpactOfGene> = mutableMapOf(), var impactOfStructure: Double = -1.0)
+    class ImpactOfStructure(val impacts: MutableMap<String, ImpactOfIndividual> = mutableMapOf())
 }

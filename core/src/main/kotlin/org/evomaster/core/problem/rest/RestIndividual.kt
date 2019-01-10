@@ -29,7 +29,6 @@ open class RestIndividual : Individual {
     constructor(actions: MutableList<RestAction>, sampleType: SampleType, description: String, traces : MutableList<out RestIndividual>) : this(actions, sampleType, mutableListOf<DbAction>(), description, traces)
 
 
-
     override fun copy(): Individual {
         return RestIndividual(
                 actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,

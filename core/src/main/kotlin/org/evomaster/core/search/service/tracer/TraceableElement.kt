@@ -41,7 +41,7 @@ abstract class TraceableElement(
 
     /**
      * @param description presents an operator to refine the TraceElement, i.e., current TraceElement is the latest history of returned TraceElement
-     * @param new presents next element which has been created in an indirectly way,
+     * @param next presents next element which has been created in an indirectly way,
      *           e.g., EvaluatedIndividual is always created from fitness function based on individual, which does not rely on previous Evaluated individual
      */
     open fun next(description: String, next : TraceableElement) : TraceableElement? = null
