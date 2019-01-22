@@ -13,7 +13,7 @@ import org.evomaster.core.problem.rest.SampleType
 
 class ObjIndividual(val callActions: MutableList<RestAction>,
                     val sampleType: SampleType,
-                    var uo: UsedObj,
+                    var usedObject: UsedObj,
                     val dbInitialization: MutableList<DbAction> = mutableListOf()
 
 ) : Individual() {
@@ -22,9 +22,10 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
         return ObjIndividual(
                 callActions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
-                uo.copy(),
+                usedObject.copy(),
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
-
+                //TODO: BMR rename uo
+                // BMR : this folds into RestIndividual
         )
     }
 
@@ -38,9 +39,9 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
 
         return when(filter){
             GeneFilter.ALL ->  dbInitialization.flatMap(DbAction::seeGenes)
-                    .plus(uo.usedObjects())
+                    .plus(usedObject.usedObjects())
 
-            GeneFilter.NO_SQL -> uo.usedObjects()
+            GeneFilter.NO_SQL -> usedObject.usedObjects()
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
         }
     }
