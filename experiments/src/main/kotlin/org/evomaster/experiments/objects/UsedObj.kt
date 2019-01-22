@@ -6,20 +6,26 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 
 class UsedObj(var mapping:MutableMap<Pair<ObjRestCallAction, Gene> , ObjectGene> = mutableMapOf(),
-              var selection:MutableMap<Pair<ObjRestCallAction, Gene>, Pair<String, String>> = mutableMapOf()){
+              var selection:MutableMap<Pair<ObjRestCallAction, Gene>, Pair<String, String>> = mutableMapOf(),
+              var select_body:MutableMap<ObjRestCallAction, ObjectGene> = mutableMapOf()){
 
     fun copy(): UsedObj{
         val mapcopy: MutableMap<Pair<ObjRestCallAction, Gene> , ObjectGene> = mutableMapOf()
         val selcopy: MutableMap<Pair<ObjRestCallAction, Gene>, Pair<String, String>> = mutableMapOf()
+        val bodycopy: MutableMap<ObjRestCallAction, ObjectGene> = mutableMapOf()
         mapping.forEach { k, v ->
-            mapcopy[Pair((k.first.copy() as ObjRestCallAction), (k.second.copy() as Gene))] = (v.copy() as ObjectGene)
+            mapcopy[Pair(k.first, k.second)] = v
         }
         selection.forEach{ k, v ->
-            val copykey = Pair((k.first.copy() as ObjRestCallAction), (k.second.copy() as Gene))
+            val copykey = Pair(k.first, k.second)
             val copyval = Pair(v.first, v.second)
             selcopy[copykey] = copyval
         }
-        return UsedObj(mapcopy, selcopy)
+        select_body.forEach { k, v ->
+            bodycopy[k] = v
+        }
+
+        return UsedObj(mapcopy, selcopy, bodycopy)
     }
 
     fun usedObjects(): List<Gene>{
@@ -43,6 +49,10 @@ class UsedObj(var mapping:MutableMap<Pair<ObjRestCallAction, Gene> , ObjectGene>
         selection[key] = selectedField
     }
 
+    fun selectbody(action:ObjRestCallAction, obj:ObjectGene){
+        select_body[action] = obj
+    }
+
 
     fun displayInline() : String{
         //display inline (mostly for debugging)
@@ -57,6 +67,7 @@ class UsedObj(var mapping:MutableMap<Pair<ObjRestCallAction, Gene> , ObjectGene>
     fun clearLists(){
         mapping.clear()
         selection.clear()
+        select_body.clear()
     }
 
 }
