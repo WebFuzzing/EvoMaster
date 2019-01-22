@@ -123,6 +123,7 @@ class ObjTestSuiteWriter {
             addImport(InsertionDto::class.qualifiedName!!, lines, format)
             addImport("java.util.List", lines, format)
             //addImport("static org.hamcrest.core.Is.is", lines, format)
+            addImport("org.hamcrest.MatcherAssert.assertThat", lines, format)
 
             lines.addEmpty(2)
 
