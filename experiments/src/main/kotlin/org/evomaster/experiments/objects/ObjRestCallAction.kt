@@ -16,7 +16,7 @@ import java.net.URLEncoder
 class ObjRestCallAction(
         val verb: HttpVerb,
         val path: RestPath,
-        val parameters: List<out Param>,
+        var parameters: List<out Param>,
         var auth: AuthenticationInfo = NoAuth(),
         /**
          * If true, it means that it will
