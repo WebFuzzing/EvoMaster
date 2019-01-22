@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.experiments.objects.*
 import org.evomaster.experiments.objects.RestPath
+import org.evomaster.experiments.objects.param.BodyParam
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
@@ -206,7 +207,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     }
 
 
-    private fun randomizeActionGenes(action: Action) {
+    private fun randomizeActionGenes(action: Action, probabilistic: Boolean = true) {
         action.seeGenes().forEach {g ->
 
             val restrictedModels = mutableMapOf<String, ObjectGene>()
@@ -225,13 +226,14 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
             }
 
-
+            /**
+            Selecting a likely model and a likely field to use for a parameter
+            */
             val likely = likelyhoodsExtended(g.getVariableName(), restrictedModels).toList().sortedBy { (_, value) -> -value}.toMap()
-            val sel = pickWithProbability(likely as MutableMap<Pair<String, String>, Float>)
+            //val sel = pickWithProbability(likely as MutableMap<Pair<String, String>, Float>)
+            val sel = pickObj(likely as MutableMap<Pair<String, String>, Float>, probabilistic)
             val temp = modelCluster.get(sel.first) as ObjectGene
             temp.randomize(randomness, forceNewValue = true)
-
-            //BMR-update: reversed the order-objects get mutated and I must find a way to propagate the changes back.
 
             val selectedGene = temp.fields.filter { g -> (g as OptionalGene).name === sel.second }?.single() as OptionalGene
 
@@ -240,10 +242,18 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
                 OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(selectedGene.gene)
             }
             uo.assign(Pair((action as ObjRestCallAction), g), temp, sel)
+            uo.selectbody((action as ObjRestCallAction), temp)
+
             //TODO: this is where the usedObj is set. Just FYI until the usedObj usage is sorted
+
+            /**BMR: can I add selected objects to the BodyParam list here, or should I handle it elsewhere?
+             * BMR: in general may be useful, but unclear how many applications use this.
+            */
         }
         uo.coherenceCheck()
     }
+
+    /*
 
     fun collectObjects(action: Action){
         /*
@@ -306,6 +316,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         return action
     }
 
+    */
 
     private fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
         if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
@@ -325,6 +336,9 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
+            //BMR: trying to fix the initial UO problem
+            uo.clearLists()
+            randomizeActionGenes(action, false)
             return ObjIndividual(mutableListOf(action), SampleType.SMART, uo)
         }
 
@@ -342,7 +356,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         val test = mutableListOf<RestAction>()
         uo.clearLists()
 
-        val action = sampleRandomObjCallAction(0.0)
+        var action = sampleRandomObjCallAction(0.0)
 
         /*
             TODO: each of these "smart" tests could end with a GET, to make
@@ -356,7 +370,9 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
         val sampleType = when (action.verb) {
             HttpVerb.GET -> handleSmartGet(action, test)
-            HttpVerb.POST -> handleSmartPost(action, test)
+            HttpVerb.POST -> {
+                handleSmartPost(action, test)
+            }
             HttpVerb.PUT -> handleSmartPut(action, test)
             HttpVerb.DELETE -> handleSmartDelete(action, test)
             HttpVerb.PATCH -> handleSmartPatch(action, test)
@@ -381,8 +397,10 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     private fun handleSmartPost(post: ObjRestCallAction, test: MutableList<RestAction>): SampleType {
 
         assert(post.verb == HttpVerb.POST)
-
         //as POST is used in all the others, maybe here we do not really need to handle it specially?
+        /*BMR: we may need to handle adding full objects (e.g. to the body of the call)
+            e.g. sending an complex object to the server, and then retrieving some of its member objects
+        */
         test.add(post)
         return SampleType.SMART
     }
@@ -725,6 +743,8 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     }
 
 
+
+
     fun <T> likelyhoodsExtended(parameter: String, candidates: MutableMap<String, T>): MutableMap<Pair<String, String>, Float>{
 
         val result = mutableMapOf<Pair<String, String>, Float>()
@@ -745,6 +765,15 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
 
         return result
+    }
+
+    fun pickObj(map: MutableMap<Pair<String, String>, Float>, probabilistic: Boolean = true ): Pair<String, String>{
+
+        var found = map.keys.first()
+        if (probabilistic) {
+            found = pickWithProbability(map)
+        }
+        return found
     }
 
 }
