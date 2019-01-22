@@ -7,12 +7,14 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.output.*
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.experiments.objects.ObjIndividual
 import org.evomaster.experiments.objects.ObjRestCallAction
 import org.evomaster.experiments.objects.param.Param
 import org.evomaster.experiments.objects.param.BodyParam
 import org.evomaster.experiments.objects.param.PathParam
 import org.evomaster.experiments.objects.param.HeaderParam
+import com.google.gson.Gson
 
 
 
@@ -83,8 +85,21 @@ class ObjTestCaseWriter {
 
         //TODO: Remove this ASAP :D it's just meant to be a test of the usedObj and potential adding to TC
 
+        println("Individual: ${test.test.individual} uses => ${(test.test.individual as ObjIndividual).usedObject.displayInline()} ")
+        val goodgets = test.test.results.filter {result ->
+            (result as RestCallResult).getStatusCode() == 200
+        }
 
-        println("Individual: ${test.test.individual} uses => ${(test.test.individual as ObjIndividual).uo.displayInline()} ")
+        val goodputs = test.test.results.filter { result ->
+            (result as RestCallResult).getStatusCode() == 201
+        }.forEach{ res ->
+            val goodput = (res as RestCallResult).getBody()
+        }
+
+        goodgets.forEach { res ->
+            val te = (res as RestCallResult).getBody()
+        }
+
 
         return lines
     }
@@ -343,7 +358,7 @@ class ObjTestCaseWriter {
         if (!res.failedCall()) {
             lines.add(".then()")
             lines.add(".statusCode(${res.getStatusCode()})")
-
+            //assertReturnSimple(lines, res)
             //TODO check on body
         }
     }
@@ -412,4 +427,23 @@ class ObjTestCaseWriter {
         return ".accept(\"*/*\")"
     }
 
+    private fun assertReturnSimple(lines: Lines, result: RestCallResult){
+
+        // .body("empty",equalTo(false))
+
+        lines.add(".assertThat()")
+        lines.indent(1)
+        //if (result.failedCall() || result.getStatusCode() != 200){
+        //   lines.add(".body(\"empty\", equalTo(true)")
+        //}
+        //else{
+        //    lines.add(".body(\"type\", equalTo(\"${result.getBodyType()}\")")
+        //}
+        //TODO: note the code below is not actually okay. Test purposes only
+        when{
+            (result.getStatusCode() == 200) -> lines.add(".body(\"type\", equalTo(\"${result.getBodyType()}\")")
+        //    (result.getStatusCode() != 200) -> lines.add(".body(\"empty\", equalTo(true)")
+        }
+        lines.deindent(1)
+    }
 }
