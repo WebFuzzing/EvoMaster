@@ -3,16 +3,16 @@ package org.evomaster.experiments.objects.service
 import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
-import org.evomaster.clientJava.controllerApi.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
@@ -49,6 +49,9 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
     private val adHocInitialIndividuals: MutableList<ObjRestCallAction> = mutableListOf()
 
     private var sqlInsertBuilder: SqlInsertBuilder? = null
+
+    var existingSqlData : List<DbAction> = listOf()
+        private set
 
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
@@ -90,7 +93,8 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         initAdHocInitialIndividuals()
 
         if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+//            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
 
         if(configuration.outputFormat == OutputFormat.DEFAULT){
@@ -102,7 +106,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
             }
         }
 
-        RestSampler.log.debug("Done initializing {}", RestSampler::class.simpleName)
+        ObjRestSampler.log.debug("Done initializing {}", ObjRestSampler::class.simpleName)
     }
 
     private fun setupAuthentication(infoDto: SutInfoDto) {
@@ -187,7 +191,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
                 ?: throw IllegalStateException("No DB schema is available")
 
-        DbAction.randomizeDbActionGenes(actions, randomness)
+        DbActionUtils.randomizeDbActionGenes(actions, randomness)
         return actions
     }
 
@@ -294,7 +298,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
         }
         uo.coherenceCheck()
     }
-
+    */
 
 
     fun sampleRandomAction(noAuthP: Double): RestAction {
@@ -307,6 +311,8 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
         return action
     }
+
+    /*
 
     private fun sampleRandomCallAction(noAuthP: Double): ObjRestCallAction {
         val action = randomness.choose(actionCluster.filter { a -> a.value is ObjRestCallAction }).copy() as ObjRestCallAction
