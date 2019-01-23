@@ -1,6 +1,8 @@
 package org.evomaster.experiments.objects
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -11,7 +13,7 @@ import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.SampleType
 
 
-class ObjIndividual(val callActions: MutableList<RestAction>,
+class ObjIndividual(val actions: MutableList<RestAction>,
                     val sampleType: SampleType,
                     var usedObject: UsedObj,
                     val dbInitialization: MutableList<DbAction> = mutableListOf()
@@ -20,7 +22,7 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
 
     override fun copy(): Individual {
         return ObjIndividual(
-                callActions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+                actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
                 usedObject.copy(),
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
@@ -52,14 +54,14 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
         need to think about it
      */
 
-    override fun size() = callActions.size
+    override fun size() = actions.size
 
     override fun seeActions(): List<out Action> {
-        return callActions
+        return actions
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbAction.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
     }
 
     override fun repairInitializationActions(randomness: Randomness) {
@@ -70,13 +72,12 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
         GeneUtils.repairGenes(this.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
-         * Now repair databse constraints (primary keys, foreign keys, unique fields, etc.)
+         * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)
          */
         if (!verifyInitializationActions()) {
-            DbAction.repairBrokenDbActionsList(dbInitialization, randomness)
-            assert(verifyInitializationActions())
+            DbActionUtils.repairBrokenDbActionsList(dbInitialization, randomness)
+            Lazy.assert{verifyInitializationActions()}
         }
-
     }
 
     override fun seeInitializingActions() : List<Action>{
@@ -85,7 +86,7 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
 
     fun debugginPrint() : String{
         var rez = ""
-        for(r in this.callActions){
+        for(r in this.actions){
             rez += r.getName() + "\n"
             //rez += r.seeGenes() + "\n"
         }
@@ -93,7 +94,7 @@ class ObjIndividual(val callActions: MutableList<RestAction>,
     }
     fun debugginPrintProcessed() : String{
         var rez = ""
-        for(r in this.callActions){
+        for(r in this.actions){
             rez += r.toString() + "\n"
         }
         return rez

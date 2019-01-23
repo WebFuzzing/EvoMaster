@@ -1,14 +1,13 @@
 package org.evomaster.experiments.objects
 
-import io.swagger.models.HttpMethod
-import io.swagger.models.Model
-import io.swagger.models.Operation
-import io.swagger.models.Swagger
+import io.swagger.models.*
 import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
+import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -130,55 +129,80 @@ class ObjRestActionBuilder {
 
 
         private fun extractParams(
-                o: Map.Entry<HttpMethod, Operation>,
+                opEntry: Map.Entry<HttpMethod, Operation>,
                 swagger: Swagger
         ): MutableList<Param> {
 
             val params: MutableList<Param> = mutableListOf()
+            val operation = opEntry.value
 
-            o.value.parameters.forEach { p ->
+            ObjRestActionBuilder.removeDuplicatedParams(operation.parameters)
+                    .forEach { p ->
 
-                val name = p.name ?: "undefined"
+                        val name = p.name ?: "undefined"
 
-                if (p is AbstractSerializableParameter<*>) {
+                        if (p is AbstractSerializableParameter<*>) {
 
-                    val type = p.getType() ?: run {
-                        ObjRestSampler.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
-                        "string"
+                            val type = p.getType() ?: run {
+                                ObjRestSampler.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
+                                "string"
+                            }
+
+                            var gene = ObjRestActionBuilder.getGene(name, type, p.getFormat(), swagger, null, p)
+                            if (!p.required && p.`in` != "path") {
+                                /*
+                                    Even if a "path" parameter might not be required, still
+                                    do not use an optional for it. Otherwise, might
+                                    end up in quite a few useless 405 errors.
+
+                                    Furthermore, "path" parameters must be "required" according
+                                    to specs.
+                                    TODO: could issue warning that Swagger is incorrect
+                                */
+                                gene = OptionalGene(name, gene)
+                            }
+
+                            //TODO could exploit "x-example" if available in Swagger
+
+                            when (p.`in`) {
+                                "query" -> params.add(QueryParam(name, gene))
+                                "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
+                                "header" -> params.add(HeaderParam(name, gene))
+                                "formData" -> params.add(FormParam(name, gene))
+                                else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
+                            }
+
+                        } else if (p is BodyParameter
+                                && !ObjRestActionBuilder.shouldAvoidCreatingObject(p, swagger)
+                                && opEntry.key != HttpMethod.GET
+                        ) {
+
+                            val name = "body"
+
+                            var gene = p.schema.reference?.let { ObjRestActionBuilder.createObjectFromReference(name, it, swagger) }
+                                    ?: (p.schema as ModelImpl).let {
+                                        if (it.type == "object") {
+                                            ObjRestActionBuilder.createObjectFromModel(p.schema, "body", swagger)
+                                        } else {
+                                            ObjRestActionBuilder.getGene(name, it.type, it.format, swagger)
+                                        }
+                                    }
+
+                            if (!p.required) {
+                                gene = OptionalGene(name, gene)
+                            }
+
+                            var types = operation.consumes
+                            if(types == null || types.isEmpty()){
+                                ObjRestSampler.log.warn("Missing consume types in body payload definition. Defaulting to JSON")
+                                types = listOf("application/json")
+                            }
+
+                            val contentTypeGene = EnumGene<String>("contentType", types)
+
+                            params.add(BodyParam(gene, contentTypeGene))
+                        }
                     }
-
-                    var gene = getGene(name, type, p.getFormat(), swagger, null, p)
-                    if (!p.required && p.`in` != "path") {
-                        /*
-                        Even if a "path" parameter might not be required, still
-                        do not use an optional for it. Otherwise, might
-                        end up in quite a few useless 405 errors.
-
-                        Furthermore, "path" parameters must be "required" according
-                        to specs.
-                        TODO: could issue warning that Swagger is incorrect
-                     */
-                        gene = OptionalGene(name, gene)
-                    }
-
-                    //TODO could exploit "x-example" if available in Swagger
-
-                    when (p.`in`) {
-                        "query" -> params.add(QueryParam(name, gene))
-                        "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
-                        "header" -> params.add(HeaderParam(name, gene))
-                        "formData" -> params.add(FormParam(name, gene))
-                        else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
-                    }
-
-                } else if (p is BodyParameter && !shouldAvoidCreatingObject(p, swagger)) {
-
-                    val gene = p.schema.reference?.let { createObjectFromReference("body", it, swagger) }
-                            ?: createObjectFromModel(p.schema, "body", swagger)
-
-                    params.add(BodyParam(gene))
-                }
-            }
 
             return params
         }
@@ -400,6 +424,9 @@ class ObjRestActionBuilder {
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
+        }
+        private fun removeDuplicatedParams(params : List<Parameter>) : List<Parameter>{
+            return params.distinctBy { it.name}
         }
 
     }

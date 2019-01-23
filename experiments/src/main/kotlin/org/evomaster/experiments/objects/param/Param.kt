@@ -12,4 +12,6 @@ abstract class Param(val name: String, val gene : Gene) {
     }
 
     abstract fun copy(): Param
+
+    open fun seeGenes() =  listOf<Gene>(gene)
 }
