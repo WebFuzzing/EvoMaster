@@ -133,9 +133,20 @@ class Main {
         }
 
         fun setStuffUp () : Injector{
+
+            val base = BaseModule()
+            //BMR: just to get it running (and to have a clue how to add the selector to it
+            val problemType = EMConfig.ProblemType.REST
+
+            val problemModule = when (problemType) {
+                EMConfig.ProblemType.REST -> ObjModule()
+                //this should never happen, unless we add new type and forget to add it here
+                else -> throw IllegalStateException("Unrecognized problem type: $problemType")
+            }
             val injector = LifecycleInjector.builder()
-                    .withModules(ObjModule(), BaseModule(arrayOf("--showProgress=false")))
-                    .build().createInjector()
+                    .withModules(base, problemModule)
+                    .build()
+                    .createInjector()
 
             return injector
 
