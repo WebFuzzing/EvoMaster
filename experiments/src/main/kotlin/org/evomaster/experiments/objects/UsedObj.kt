@@ -30,7 +30,7 @@ class UsedObj(var mapping:MutableMap<Pair<ObjRestCallAction, Gene> , ObjectGene>
 
     fun usedObjects(): List<Gene>{
         //return all objects for mutation and randomization purposes
-        return mapping.values.toMutableSet().flatMap(ObjectGene::flatView)
+        return mapping.values.flatMap{ it -> it.flatView()}
     }
 
     fun coherenceCheck(){
