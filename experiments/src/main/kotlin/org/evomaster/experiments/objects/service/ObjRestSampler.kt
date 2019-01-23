@@ -94,7 +94,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
         if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
             sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
-//            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
 
         if(configuration.outputFormat == OutputFormat.DEFAULT){
