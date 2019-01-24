@@ -117,7 +117,7 @@ class ObjTestSuiteWriter {
             //TODO check if those are used
             addImport("io.restassured.RestAssured", lines, format)
             addImport("static io.restassured.RestAssured.given", lines, format)
-            addImport("static org.evomaster.clientJava.controllerApi.EMTestUtils.*", lines, format)
+            addImport("static org.evomaster.client.java.controller.api.EMTestUtils.*", lines, format)
             addImport("org.evomaster.clientJava.controller.SutHandler", lines, format)
             addImport("static org.evomaster.clientJava.controller.db.dsl.SqlDsl.sql", lines, format)
             addImport(InsertionDto::class.qualifiedName!!, lines, format)
