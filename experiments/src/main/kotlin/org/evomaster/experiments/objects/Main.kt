@@ -119,6 +119,9 @@ class Main {
 
             config.outputFolder = "experiments/bmr/test"
 
+            /** TODO BMR: the usedObject appears to be filled (again) with unused objects (rather annoyingly).
+
+            */
             ObjTestSuiteWriter.writeTests(
                     solution,
                     controllerInfoDto.fullName,
