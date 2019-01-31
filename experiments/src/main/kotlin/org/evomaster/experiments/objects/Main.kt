@@ -29,7 +29,7 @@ class Main {
             printHeader()
 
             val injector = setStuffUp()
-            val sampler = injector.getInstance(ObjRestSampler::class.java)
+            //val sampler = injector.getInstance(ObjRestSampler::class.java)
 
             val key = Key.get( object : TypeLiteral<MioAlgorithm<ObjIndividual>>() {})
 
@@ -38,6 +38,8 @@ class Main {
             //BMR: debugginPrint uses .getName() which returns {variable} etc...
             //BMR: debugginPrintProcessed uses .toString(), and seems to return the {variable} values already processed.
 
+
+            /*
             val models = sampler.getModelCluster()
                     .filter { (_, m) -> !(m.fields.isEmpty()) } as MutableMap
             // TODO: this needs to be thought out better in future, but let's trim the model set to remove empties.
@@ -58,7 +60,7 @@ class Main {
             models.forEach{
                 println("${it.key} => ${it.value.getValueAsPrintableString()}")
             }
-
+            */
 
             //nameMatchExperiments(models)
 
@@ -66,6 +68,7 @@ class Main {
 
             println("===============================================>")
 
+            /*
             println("Available callActions:")
             available.forEach{it ->
                 println("===============================================>")
@@ -75,7 +78,7 @@ class Main {
 
                 println("Action after selection: ${action.resolvedPath()}")
 
-            }
+            }*/
 
             // TODO: when picking an object, make sure it has fields to match the data required by the action.
             // E.g. do not pick an object without any numerical values, if an Int id is required.
@@ -88,21 +91,11 @@ class Main {
             println("===============================================>")
             //swaggerishObjectExperiments(sampler, 50)
 
-            val smarts = sampler.smartSample()
-            println("One more try on smart: ${smarts.debugginPrint()} => ${smarts.debugginPrintProcessed()}")
+            //val smarts = sampler.smartSample()
+            //println("One more try on smart: ${smarts.debugginPrint()} => ${smarts.debugginPrintProcessed()}")
             //var smarts = sampler.getRandomObjIndividual()
             //println("Let's try to be smart again: ${smarts.debugginPrintProcessed()}")
             // TODO: Smart needs more work
-
-            println("===============================================>")
-            println("And a quick search, too:")
-
-            val solution = imp.search()
-            println("Solution: ${solution}:")
-            for (individual in solution.individuals) {
-                println(" --- ")
-                println("${individual.individual.debugginPrint()} => ${individual.individual.debugginPrintProcessed()} => ${individual.fitness.computeFitnessScore()}")
-            }
 
             val config = injector.getInstance(EMConfig::class.java)
             val rc = injector.getInstance(RemoteController::class.java)
@@ -110,7 +103,8 @@ class Main {
             throw IllegalStateException(
                     "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
 
-
+            config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+            config.maxActionEvaluations = 100
             /*
             TODO: dbInit ?
             BMR: Writing tests appears to work, but dbInit has been removed (some gene problems emerging from the
@@ -119,9 +113,19 @@ class Main {
 
             config.outputFolder = "experiments/bmr/test"
 
-            /** TODO BMR: the usedObject appears to be filled (again) with unused objects (rather annoyingly).
+            println("===============================================>")
+            println("The search:")
 
-            */
+            val solution = imp.search()
+            println("Solution: ${solution}:")
+            for (individual in solution.individuals) {
+                println(" --- ")
+                println("${individual.individual.debugginPrint()} => ${individual.individual.debugginPrintProcessed()} => ${individual.fitness.computeFitnessScore()}")
+                println("Valid? Well... ${individual.individual.checkCoherence()}")
+            }
+
+
+
             ObjTestSuiteWriter.writeTests(
                     solution,
                     controllerInfoDto.fullName,
@@ -146,6 +150,8 @@ class Main {
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
             }
+
+
             val injector = LifecycleInjector.builder()
                     .withModules(base, problemModule)
                     .build()
