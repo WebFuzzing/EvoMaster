@@ -5,12 +5,10 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.search.gene.*
 
 
 class ObjIndividual(val actions: MutableList<RestAction>,
@@ -26,7 +24,6 @@ class ObjIndividual(val actions: MutableList<RestAction>,
                 sampleType,
                 usedObject.copy(),
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
-                //TODO: BMR rename uo
                 // BMR : this folds into RestIndividual
         )
     }
@@ -61,7 +58,8 @@ class ObjIndividual(val actions: MutableList<RestAction>,
     }
 
     override fun verifyInitializationActions(): Boolean {
-        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+        return (DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+                && checkCoherence())
     }
 
     override fun repairInitializationActions(randomness: Randomness) {
@@ -98,5 +96,31 @@ class ObjIndividual(val actions: MutableList<RestAction>,
             rez += r.toString() + "\n"
         }
         return rez
+    }
+
+    fun checkCoherence(): Boolean{
+        //usedObject.pruneObjects(actions)
+        actions.forEach { action ->
+            action.seeGenes().forEach { gene ->
+                try {
+                    val relevantGene = (usedObject.getRelevantGene((action as ObjRestCallAction), gene) as OptionalGene).gene
+                    when (action::class) {
+                        ObjRestCallAction::class -> {
+                            when (gene::class) {
+                                OptionalGene::class -> (gene as OptionalGene).gene.copyValueFrom(relevantGene)
+                                DisruptiveGene::class -> (gene as DisruptiveGene<*>).gene.copyValueFrom(relevantGene)
+
+                            }
+
+                        }
+                    }
+                }
+                catch(e: Exception) {
+                    return false
+                }
+
+            }
+        }
+        return true
     }
 }
