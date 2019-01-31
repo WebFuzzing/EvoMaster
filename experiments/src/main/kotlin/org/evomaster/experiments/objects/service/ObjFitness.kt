@@ -104,6 +104,8 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
 
         doInitializingActions(individual)
 
+        individual.checkCoherence()
+
         val fv = FitnessValue(individual.size().toDouble())
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
