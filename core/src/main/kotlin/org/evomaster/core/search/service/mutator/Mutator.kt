@@ -8,6 +8,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.rest.serviceII.RestIndividualII
+import org.evomaster.core.problem.rest2.resources.ResourceManageService
 import org.evomaster.core.search.service.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -30,6 +32,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
+    @Inject
+    protected lateinit var rm : ResourceManageService
     /**
      * @return a mutated next
      */
@@ -71,9 +75,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val reachNew = archive.wouldReachNewTarget(trackedMutated)
 
             if (reachNew || !current.fitness.subsumes(trackedMutated.fitness, targets)) {
+                if(trackedMutated.individual is RestIndividualII)rm.updateRelevants(trackedMutated.individual, true)
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
-            }
+            }else
+                if(trackedMutated.individual is RestIndividualII)rm.updateRelevants(trackedMutated.individual, false)
         }
 
         return current
@@ -86,9 +92,5 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         return ff.calculateCoverage(mutate(individual.individual))
                 ?.also { archive.addIfNeeded(it) }
-    }
-
-    override fun getTrackOperator(): String {
-        return Mutator::class.java.simpleName
     }
 }

@@ -1,9 +1,11 @@
 package org.evomaster.core.problem.rest2
 
+import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.serviceII.RestIndividualII
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
+import org.evomaster.core.problem.rest2.resources.ResourceManageService
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.mutator.StandardMutator
 
@@ -11,9 +13,11 @@ class RestResourceMutator : StandardMutator<RestIndividualII>() {
 
     override fun innerMutate(individual: RestIndividualII): RestIndividualII {
         val copy = individual.copy() as RestIndividualII
+
         if (individual.canMutateStructure() &&
-                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
+                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1 && rm.onlyIndependentResource()?:true) {
             //usually, either delete an action, or add a new random one
+            val copy = (if(config.enableTrackIndividual && individual.isCapableOfTracking()) individual.next(structureMutator.getTrackOperator()!!) else individual.copy()) as RestIndividualII
             structureMutator.mutateStructure(copy)
             return copy
         }
@@ -54,9 +58,10 @@ class RestResourceMutator : StandardMutator<RestIndividualII>() {
                 if (gene is DisruptiveGene<*> && !randomness.nextBoolean(gene.probability)) {
                     continue
                 }
-
+                val copyGene = gene.copy()
                 mutateGene(gene, allGenes)
 
+                gene.mutated = copyGene.containsSameValueAs(gene)
                 mutated = true
             }
         }

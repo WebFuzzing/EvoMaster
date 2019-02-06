@@ -38,7 +38,4 @@ abstract class StructureMutator : TrackOperator{
      */
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>)
 
-    override fun getTrackOperator(): String {
-        return StructureMutator::class.java.simpleName
-    }
 }

@@ -14,6 +14,9 @@ class SearchStatusUpdater : SearchListener{
     @Inject
     private lateinit var config: EMConfig
 
+    @Inject
+    private lateinit var archive: Archive<*>
+
     private var passed = -1
 
     @PostConstruct
@@ -39,7 +42,7 @@ class SearchStatusUpdater : SearchListener{
              */
             print("\u001b[1A") // move up by 1 line
             print("\u001b[2K") // erase line
-            println("* Consumed search budget: $passed%")
+            println("* Consumed search budget: $passed%; Covered Targets: ${archive.numberOfCoveredTargets()} ; Reached Targets but not covered: ${archive.numberOfReachedButNotCoveredTargets()}")
         }
     }
 }

@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.tracer.WithImpacts
 
 /**
  * A variable-length individual will be composed by 1 or more "actions".
@@ -25,4 +26,5 @@ interface  Action {
      * eg like setting up a WireMock stub.
      */
     fun shouldCountForFitnessEvaluations(): Boolean
+
 }

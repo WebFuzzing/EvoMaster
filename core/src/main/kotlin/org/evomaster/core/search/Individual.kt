@@ -2,7 +2,9 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.tracer.Impact
 import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.WithImpacts
 
 /**
  * An individual for the search.
@@ -15,7 +17,7 @@ import org.evomaster.core.search.service.tracer.TraceableElement
  * @property description presents an operator to change an individual, e.g., mutator
  * @property track is a list of Individual, indicating its evolution
  */
-abstract class Individual : TraceableElement{
+abstract class Individual : TraceableElement, WithImpacts{
 
     constructor() : super()
     constructor(description : String) : super(description)
@@ -78,5 +80,6 @@ abstract class Individual : TraceableElement{
      * test after this method is invoked.
      */
     abstract fun repairInitializationActions(randomness: Randomness);
+
 }
 

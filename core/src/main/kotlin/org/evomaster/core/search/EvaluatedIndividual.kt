@@ -31,6 +31,8 @@ where T : Individual {
     val impactsOfGenes : MutableMap<String, Double> = mutableMapOf()
     val impactsOfStructure : MutableMap<String, Double> = mutableMapOf()
 
+    var makeAnyBetter = false
+
     /**
      * rules to score impact value of genes, baseline is always fitness of first evaluated individual
      * if only standard mutator is accepted, then ids of impactsOfGenes are not changed during search

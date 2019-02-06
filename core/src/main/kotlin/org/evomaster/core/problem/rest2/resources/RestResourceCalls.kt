@@ -1,7 +1,9 @@
 package org.evomaster.core.problem.rest.serviceII.resources
 
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.serviceII.HandleActionTemplate
 import org.evomaster.core.search.gene.Gene
 
 class RestResourceCalls(val resource: RestResource, val actions: MutableList<RestAction>){
@@ -33,8 +35,8 @@ class RestResourceCalls(val resource: RestResource, val actions: MutableList<Res
     }
 
     private fun longestPath() : RestAction{
-        val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
-        val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
+        val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.possibleLevels() }.max()!!
+        val candidates = actions.filter { a -> a is RestCallAction && a.path.possibleLevels() == max }
         return candidates.first()
     }
 
@@ -46,5 +48,14 @@ class RestResourceCalls(val resource: RestResource, val actions: MutableList<Res
                     cg.copyValueFrom(gene)
                 }
         }
+    }
+
+    fun getCallsTemplate() : RestAResource.CallsTemplate?{
+        val template = HandleActionTemplate.getTemplate(actions.filter { it is RestCallAction }.map { (it as RestCallAction).verb }.toTypedArray())
+        return resource.ar.templates.get(template)
+    }
+
+    fun getVerbs(): Array<HttpVerb>{
+        return actions.filter { it is RestCallAction }.map { (it as RestCallAction).verb }.toTypedArray()
     }
 }

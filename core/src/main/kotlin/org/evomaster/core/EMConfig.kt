@@ -545,7 +545,11 @@ class EMConfig {
         /**
          * probability for applicable strategy is adaptive with performance, i.e., Archive
          */
-        BasedOnArchive
+        BasedOnArchive,
+        /**
+         * probability for applicable strategy is adaptive with performance, i.e., Archive
+         */
+        BasedOnArchive2
     }
 
     @Experimental
@@ -566,5 +570,22 @@ class EMConfig {
             "-1 means track all history when track is enabled")
     @Min(-1.0)
     var trackLength : Int = -1
+
+    @Experimental
+    @Cfg("Specify a probability to apply S1iR")
+    @Min(0.0)@Max(1.0)
+    var S1iR : Double = 0.0
+    @Experimental
+    @Cfg("Specify a probability to apply S1dR")
+    @Min(0.0)@Max(1.0)
+    var S1dR : Double = 0.0
+    @Experimental
+    @Cfg("Specify a probability to apply S2dR")
+    @Min(0.0)@Max(1.0)
+    var S2dR : Double = 0.0
+    @Experimental
+    @Cfg("Specify a probability to apply SMdR")
+    @Min(0.0)@Max(1.0)
+    var SMdR : Double = 0.0
 
 }

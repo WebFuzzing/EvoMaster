@@ -1,12 +1,18 @@
 package org.evomaster.core.problem.rest.serviceII
 
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.tracer.Impact
+import org.evomaster.core.search.service.tracer.ImpactByTimes
 import org.evomaster.core.search.service.tracer.TraceableElement
 import java.lang.IllegalArgumentException
 import java.lang.IllegalStateException
@@ -94,6 +100,10 @@ class RestIndividualII : RestIndividual {
         return updateActions()
     }
 
+    fun canModifyCall() : Boolean{
+        return getResourceCalls().filter { it.resource.ar.templates.size > 1 }.isNotEmpty()
+    }
+
     fun swapResourceCall(position1: Int, position2: Int) :Boolean{
         if(position1 > resourceCalls.size || position2 > resourceCalls.size)
             throw IllegalArgumentException("position is out of range of list")
@@ -152,5 +162,23 @@ class RestIndividualII : RestIndividual {
             }
         }
     }
+    private val impactsOfParam : MutableMap<String, ImpactByTimes<Param>> = mutableMapOf()
+    private val impactsOfStructure : MutableMap<String, ImpactByTimes<List<RestActionBuilder>>> = mutableMapOf()
 
+    override fun initImpacts() {
+        if(impactsOfParam.isEmpty()){
+            actions.filter { it is RestCallAction }.forEach { a ->
+                (a as RestCallAction).parameters.forEach { p->
+                    val id = BindParams.getParamId(p, a.path)
+                    val impact = impactsOfParam.getOrPut(id){ImpactByTimes<Param>(id)}
+                    impact.weight +=1
+                }
+            }
+        }
+    }
+
+
+    private fun getStructureId() : String{
+        return actions.filter { it is RestCallAction }.map { it.getName() }.joinToString("@")
+    }
 }

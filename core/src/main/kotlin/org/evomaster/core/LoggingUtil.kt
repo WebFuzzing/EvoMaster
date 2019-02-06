@@ -16,5 +16,9 @@ class LoggingUtil {
         fun getInfoLogger(): Logger =
                 LoggerFactory.getLogger("info_logger") ?:
                         throw IllegalStateException("Failed to init logger")
+        fun setLevel(){
+            (LoggerFactory.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME) as ch.qos.logback.classic.Logger)
+                    .setLevel(ch.qos.logback.classic.Level.INFO);
+        }
     }
 }

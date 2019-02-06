@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest2
 import com.google.inject.Inject
 import org.evomaster.core.problem.rest.serviceII.RestIndividualII
 import org.evomaster.core.problem.rest.serviceII.RestSamplerII
+import org.evomaster.core.problem.rest2.resources.ResourceManageService
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -10,26 +11,34 @@ import org.evomaster.core.search.service.mutator.StructureMutator
 class RestResourceStructureMutator : StructureMutator() {
 
     @Inject
-    protected lateinit var sampler: RestSamplerII
+    private lateinit var sampler: RestSamplerII
+
+    @Inject
+    private lateinit var rm : ResourceManageService
+
 
     override fun mutateStructure(individual: Individual) {
         if(individual !is RestIndividualII)
             throw IllegalArgumentException("Invalid individual type")
 
-        //TODO Man
-        if (!individual.canMutateStructure()) {
-            return //if it is not mutable, it should not enter the structure mutator
-        }
+        mutateRestResourceCalls(individual)
     }
 
     private fun mutateRestResourceCalls(ind: RestIndividualII) {
         val num = ind.getResourceCalls().size
-        val type = randomness.choose(MutationType.values().filter { it.size >= num }.filterNot{ ind.seeActions().size == config.maxTestSize && it == MutationType.ADD })
+        val type = randomness.choose(MutationType.values().filter {  num >= it.size }
+                .filterNot{
+                    (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
+                            (ind.getResourceCalls().map { it.resource.getKey() }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
+                            (!ind.canModifyCall() && it == MutationType.MODIFY)
+                })
+        if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) ind.appendDescription(type.toString())
         when(type){
             MutationType.ADD -> handleAdd(ind)
             MutationType.DELETE -> handleDelete(ind)
             MutationType.SWAP -> handleSwap(ind)
             MutationType.REPLACE -> handleReplace(ind)
+            MutationType.MODIFY -> handleModify(ind)
         }
     }
 
@@ -37,7 +46,8 @@ class RestResourceStructureMutator : StructureMutator() {
         DELETE(2),
         SWAP(2),
         ADD(1),
-        REPLACE(1)
+        REPLACE(1),
+        MODIFY(1)
     }
 
     private fun handleDelete(ind: RestIndividualII){
@@ -47,9 +57,6 @@ class RestResourceStructureMutator : StructureMutator() {
 
     private fun handleSwap(ind: RestIndividualII){
         val cands = randomness.choose(Array(ind.getResourceCalls().size){i -> i}.toList(), 2)
-//        val first = ind.getResourceCalls()[cands[0]]
-//        ind.getResourceCalls().set(cands[0], ind.getResourceCalls()[cands[1]])
-//        ind.getResourceCalls().set(cands[1], first)
         ind.swapResourceCall(cands[0], cands[1])
     }
 
@@ -59,10 +66,17 @@ class RestResourceStructureMutator : StructureMutator() {
         val call = sampler.handleAddResource(ind, max)
         val pos = randomness.nextInt(0, ind.getResourceCalls().size)
         ind.addResourceCall(pos, call)
-
     }
 
     private fun handleReplace(ind: RestIndividualII){
+        var max = config.maxTestSize
+        ind.getResourceCalls().forEach { max -= it.actions.size }
+        val call = sampler.handleAddResource(ind, max)
+        val pos = randomness.nextInt(0, ind.getResourceCalls().size - 1)
+        ind.replaceResourceCall(pos, call)
+    }
+
+    private fun handleModify(ind: RestIndividualII){
         val pos = randomness.nextInt(0, ind.getResourceCalls().size-1)
         val old = ind.getResourceCalls()[pos]
         var max = config.maxTestSize
@@ -72,7 +86,6 @@ class RestResourceStructureMutator : StructureMutator() {
         if(new == null){
             new = old.resource.ar.sampleOneAction(null, randomness, max)
         }
-
         assert(new != null)
         ind.replaceResourceCall(pos, new)
     }

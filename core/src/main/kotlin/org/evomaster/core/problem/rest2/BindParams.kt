@@ -6,10 +6,14 @@ import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
+import kotlin.math.min
 
 class BindParams {
 
     companion object {
+
+        //FIXME
+        var disableLog = true
         private const val separator = "@"
 
         private val log: Logger = LoggerFactory.getLogger(BindParams::class.java)
@@ -20,45 +24,43 @@ class BindParams {
             (target as BodyParam).gene.copyValueFrom(params[0].gene)
         }
 
-        fun bindParam(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+        fun bindParam(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
             when(target){
-                is BodyParam -> BindParams.bindBodyParam(target, targetPath,sourcePath, params)
-                is PathParam -> BindParams.bindPathParm(target, targetPath,sourcePath, params)
-                is QueryParam -> BindParams.bindQueryParm(target, targetPath,sourcePath, params)
+                is BodyParam -> BindParams.bindBodyParam(target, targetPath,sourcePath, params, inner)
+                is PathParam -> BindParams.bindPathParm(target, targetPath,sourcePath, params, inner)
+                is QueryParam -> BindParams.bindQueryParm(target, targetPath,sourcePath, params, inner)
                 is FormParam -> BindParams.bindFormParam(target, targetPath,sourcePath, params)
                 is HeaderParam -> BindParams.bindHeaderParam(target, targetPath,sourcePath, params)
             }
         }
-        private fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+        private fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
             val k = params.find { pa -> pa is PathParam && pa.name == p.name }
             if(k != null) p.gene.copyValueFrom(k!!.gene)
             else{
                 if(numOfBodyParam(params) == params.size){
-//                    val targetGene = (p.gene as DisruptiveGene<*>).gene
-                    bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false)
+                    bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false, inner)
                 }else
-                    log.warn("fail to bind ${p.name}")
+                    if(!disableLog) log.warn("cannot find PathParam ${p.name} in params ${params.mapNotNull { it.name }.joinToString(" ")}")
             }
         }
 
-        private fun bindQueryParm(p : QueryParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
-            if(numOfBodyParam(params) == params.size){
-                //bindBodyParamWithGene(params.first{ pa -> pa is BodyParam }!! as BodyParam, p.name, p.gene, false)
-                bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false)
+        private fun bindQueryParm(p : QueryParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
+            if(params.isNotEmpty() && numOfBodyParam(params) == params.size){
+                bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false, inner)
             }else{
                 val sg = params.filter { pa -> !(pa is BodyParam) }.find { pa -> pa.name == p.name && p.gene::class.java.simpleName == pa.gene::class.java.simpleName}
                 if(sg != null)
                     p.gene.copyValueFrom(sg.gene)
                 else
-                    log.warn("fail to bind ${p.name}")
+                    if(!disableLog) log.warn("cannot find QueryParam ${p.name} in params ${params.map { it.name }.joinToString(" ")}")
             }
         }
 
-        private fun bindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+        private fun bindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
             if(numOfBodyParam(params) != params.size ){
                 params.filter { p -> !(p is BodyParam) }
                         .forEach {ip->
-                            bindBodyAndOther(bp, targetPath, ip, sourcePath, true)
+                            bindBodyAndOther(bp, targetPath, ip, sourcePath, true, inner)
                         }
             }else if(params.isNotEmpty()){
                 if((bp.gene as ObjectGene).fields.map { g -> g.name }.containsAll((params[0].gene as ObjectGene).fields.map { g -> g.name })){
@@ -81,19 +83,22 @@ class BindParams {
             }
         }
 
-        private fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean){
+        private fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean, inner : Boolean){
             val pathMap = geneNameMaps(listOf(other), otherPath.getStaticTokens().reversed())
             val bodyMap = geneNameMaps(listOf(body), bodyPath.getStaticTokens().reversed())
             pathMap.forEach { pathkey, pathGene ->
                 if(bodyMap.get(pathkey) != null){
                     copyGene(bodyMap.getValue(pathkey), pathGene, b2g)
                 }else{
-                    val matched = bodyMap.keys.filter { s -> scoreOfMatch(pathkey, s) == 0 }
+                    val matched = bodyMap.keys.filter { s -> scoreOfMatch(pathkey, s, inner) == 0 }
                     if(matched.isNotEmpty()){
                         val first = matched.first()
                         copyGene(bodyMap.getValue(first), pathGene, b2g)
                     }else{
-                        log.warn("fail to bind ${pathkey}")
+                        if(inner){
+                            if(!disableLog) log.info("cannot find ${pathkey} in its bodyParam ${bodyMap.keys.joinToString(" ")}")
+                        }else
+                            if(!disableLog) log.warn("cannot find ${pathkey} in bodyParam ${bodyMap.keys.joinToString(" ")}")
                     }
                 }
             }
@@ -131,15 +136,45 @@ class BindParams {
             }
         }
 
-        private fun scoreOfMatch(target : String, source : String) : Int{
+        private fun compareParamNames(a : String, b : String) : Boolean{
+            return a.toLowerCase().contains(b.toLowerCase()) || b.toLowerCase().contains(a.toLowerCase())
+        }
+
+        private fun scoreOfMatch(target : String, source : String, inner : Boolean) : Int{
             //FIXME if "d_" is a real attribute of some classes
-            val targets = target.split(separator).filter { it != "d_" }.toMutableList()
-            val sources = source.split(separator).filter { it != "d_" }.toMutableList()
-            if(targets.first() != sources.first()) return -1
+            val targets = target.split(separator).filter { it != "d_"  }.toMutableList()
+            val sources = source.split(separator).filter { it != "d_"  }.toMutableList()
+            //if(inner){
+            val removed = sources.map { it }.toMutableList()
+            removed.remove("register")
+            if(sources.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == sources.toHashSet().size)
+                return 0
+            if(removed.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == removed.toHashSet().size)
+                return 0
+
+            //}
             if(targets.toHashSet().size == sources.toHashSet().size){
                 if(targets.containsAll(sources)) return 0
             }
-            return targets.plus(sources).filter { targets.contains(it).xor(sources.contains(it)) }.size
+            if(sources.contains("body")){
+                val sources_rbody = sources.filter { it != "body"  }.toMutableList()
+                if(sources_rbody.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == sources_rbody.toHashSet().size)
+                    return 0
+                val removed = sources_rbody.map { it }.toMutableList()
+                removed.remove("register")
+                if(removed.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == removed.toHashSet().size)
+                    return 0
+//                removed.map { c -> if(c.contains("_")) c.split("_").first() else c }
+//                if(removed.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == removed.toHashSet().size)
+//                    return 0
+            }
+
+            //val repeat = targets.plus(sources).filter { targets.contains(it).xor(sources.contains(it)) }.size
+            if(targets.first() != sources.first())
+                return -1
+            else
+                return targets.plus(sources).filter { targets.contains(it).xor(sources.contains(it)) }.size
+
         }
 
         private fun geneNameMaps(parameters: List<Param>, tokensInPath: List<String>?) : MutableMap<String, Gene>{
@@ -237,6 +272,10 @@ class BindParams {
                 }
             }
             return false
+        }
+
+        fun getParamId(param : Param, path : RestPath) : String{
+            return listOf(param.name).plus(path.getStaticTokens().reversed()).joinToString(separator)
         }
     }
 }

@@ -18,6 +18,17 @@ abstract class TraceableElement(
         return description
     }
 
+    fun appendDescription(append : String){
+        description = append + TrackOperator.method_separator + description
+    }
+
+    fun getMethod() : String?{
+        description.split(TrackOperator.method_separator).apply {
+            if(size == 2) return this[0]
+            else return null
+        }
+    }
+
     protected fun setDescription(description : String){
         this.description = description
     }

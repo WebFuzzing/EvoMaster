@@ -10,12 +10,20 @@ import org.evomaster.core.problem.rest.serviceII.HandleActionTemplate
 import org.evomaster.core.problem.rest.serviceII.RestIndividualII
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.max
 
 class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, val maxResources: Int = 100, val countTempVisiting : Boolean = false){
 
+    companion object {
+        var CONFIG_MAX_TEST_SIZE = -1
+        private val log: Logger = LoggerFactory.getLogger(RestAResource::class.java)
+    }
     //ancestor is ordered, first is closest ancestor, and last is deepest one.
     private val ancestors : MutableList<RestAResource> = mutableListOf()
+
+    private val possibleCreation : MutableList<RestAResource> = mutableListOf()
 
     //this attribute makes sense when db exists
     private val existingResources : MutableList<RestResource> = mutableListOf()
@@ -34,7 +42,11 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     fun setAncestors(resources : List<RestAResource>){
         resources.forEach {r ->
             if(!r.path.isEquivalent(this.path) && r.path.isAncestorOf(this.path)) ancestors.add(r)
+            else if(!r.path.isEquivalent(this.path) && r.path.isPossibleAncestorOf(this.path, listOf("register"))){
+                possibleCreation.add(r)
+            }
         }
+
     }
 
     fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
@@ -177,9 +189,12 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     }
 
     private fun repairRandomGenes(params : List<Param>){
-        if(BindParams.numOfBodyParam(params) in 1..(params.size -1)){
-            val bp = params.find { p -> p is BodyParam }!! as BodyParam
-            BindParams.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )})
+        if(BindParams.numOfBodyParam(params) > 0){
+            params.filter { p -> p is BodyParam }.forEach { bp->
+                BindParams.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )}, true)
+            }
+//            val bp = params.find { p -> p is BodyParam }!! as BodyParam
+//            BindParams.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )})
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.apply {
@@ -264,7 +279,7 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return genCalls(template,randomness, maxTestSize)
     }
 
-    private fun genCalls(template : String, randomness: Randomness, maxTestSize : Int = 1, checkSize : Boolean = false, createResource : Boolean = true, additionalPatch : Boolean = true) : RestResourceCalls{
+    private fun genCalls(template : String, randomness: Randomness, maxTestSize : Int = 1, checkSize : Boolean = true, createResource : Boolean = true, additionalPatch : Boolean = true) : RestResourceCalls{
         if(!templates.containsKey(template))
             throw java.lang.IllegalArgumentException("$template does not exist in ${path.toString()}")
         val ats = HandleActionTemplate.parseTemplate(template)
@@ -278,22 +293,22 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
             val ac = getActionByHttpVerb(actions, if(nonPostIndex==-1) HttpVerb.POST else ats[nonPostIndex])!!.copy() as RestCallAction
             randomizeActionGenes(ac, randomness)
             result.add(ac)
-            var isCreated = createResourcesFor(ac, result, maxTestSize , randomness)
+            var isCreated = createResourcesFor(ac, result, maxTestSize , randomness, checkSize && (!templates.getValue(template).sizeAssured))
             when(isCreated){
                 -1 -> {
-                    println("exceed the allowed size!")
+                    //log.info("exceed the allowed size!")
                     //throw IllegalStateException("exceed the allowed size!")
                 }
                 -2 -> {
-                    println("cannot find the post action in this resource ${this.path} and its ancestor")//throw IllegalStateException("cannot find the post action in this resource ${this.path} and its ancestor")
+                    log.warn("cannot find the post action in this resource ${this.path} and its ancestor")//throw IllegalStateException("cannot find the post action in this resource ${this.path} and its ancestor")
                     //var isCreated = createResourcesFor(ac, result, maxTestSize , randomness)
                 }
                 -3 -> {
-                    println("cannot manipulate this resource ${this.path} due to failure to create dependent resource")//TODO report problems of SUT
+                    log.warn("cannot manipulate this resource ${this.path} due to failure to create dependent resource")//TODO report problems of SUT
                     //var isCreated = createResourcesFor(ac, result, maxTestSize , randomness)
                 }
             }
-            if(checkSize && isCreated == 0 ){
+            if(checkSize && (!templates.getValue(template).sizeAssured) && isCreated == 0 ){
                 if(result.size != if(nonPostIndex == -1) 1 else (nonPostIndex + 1)){
                     templates.filter { it.key.contains(HttpVerb.POST.toString()) }.forEach{temp->
                         temp.value.size = result.size + ats.size - (if(nonPostIndex == -1) 1 else (nonPostIndex + 1))
@@ -415,7 +430,9 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
 
         if (others.isEmpty()) {
-            return null
+            others = possibleCreation.flatMap { a -> a.actions } as List<RestCallAction>
+            if(others.isEmpty())
+                return null
         }
 
         return chooseLongestPath(others, randomness)
@@ -427,6 +444,17 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     }
 
     private fun sameOrAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
+        if(target.path.toString() == this.path.toString()) return ancestors.flatMap { a -> a.actions }.plus(actions) as List<RestCallAction>
+        else {
+            ancestors.find { it.path.toString() == target.path.toString() }?.let {
+                return it.ancestors.flatMap { a -> a.actions }.plus(it.actions) as List<RestCallAction>
+            }
+        }
+        return mutableListOf()
+    }
+
+
+    private fun assumAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
         if(target.path.toString() == this.path.toString()) return ancestors.flatMap { a -> a.actions }.plus(actions) as List<RestCallAction>
         else {
             ancestors.find { it.path.toString() == target.path.toString() }?.let {
@@ -457,13 +485,20 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return null
     }
 
-    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>, maxTestSize: Int, randomness: Randomness)
+    private fun createResourcesFor(target: RestCallAction, test: MutableList<RestAction>, maxTestSize: Int, randomness: Randomness, checkSize : Boolean)
             : Int {
 
-        if (test.size >= maxTestSize) {
-            return -1
+        if(checkSize){
+            if(test.size >= max(maxTestSize, CONFIG_MAX_TEST_SIZE))
+                return -1
+        }else{
+            if (test.size >= maxTestSize) {
+                return -1
+            }
         }
-        var template = chooseClosestAncestor(target, listOf(HttpVerb.POST), randomness)?:return (if(target.verb == HttpVerb.POST) 0 else -2)
+
+        var template = chooseClosestAncestor(target, listOf(HttpVerb.POST), randomness)?:
+                    return (if(target.verb == HttpVerb.POST) 0 else -2)
 
         val post = createActionFor(template, target, randomness)
 
@@ -476,7 +511,7 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         if (post.path.hasVariablePathParameters() &&
                 (!post.path.isLastElementAParameter()) ||
                 post.path.getVariableNames().size >= 2) {
-            val dependencyCreated = createResourcesFor(post, test, maxTestSize, randomness)
+            val dependencyCreated = createResourcesFor(post, test, maxTestSize, randomness, checkSize)
             if (0 != dependencyCreated) {
                 return -3
             }

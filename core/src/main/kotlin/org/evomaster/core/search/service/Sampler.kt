@@ -71,7 +71,7 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
                 .toList()
     }
 
-    override fun getTrackOperator(): String {
-        return Sampler::class.java.simpleName
+    open fun feedback(betterResult : Boolean) {
+        //do nothing
     }
 }

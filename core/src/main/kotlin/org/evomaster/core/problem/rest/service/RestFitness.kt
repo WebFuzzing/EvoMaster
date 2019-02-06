@@ -22,6 +22,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.Sampler
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -46,8 +47,11 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
     @Inject
     protected lateinit var rc: RemoteController
 
+//    @Inject
+//    private lateinit var sampler: RestSampler
+
     @Inject
-    private lateinit var sampler: RestSampler
+    private lateinit var sampler: Sampler<T>
 
 
     private val client: Client = {

@@ -35,8 +35,14 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     sampler.sample()
                 }
 
-                ff.calculateCoverage(ind)?.run { archive.addIfNeeded(this) }
+                ff.calculateCoverage(ind)?.run {
+                    archive.addIfNeeded(this)
 
+                    //FIXME
+                    if(config.smartSamplingStrategy == EMConfig.SmartSamplingStrategy.RESOURCES){
+                        sampler.feedback(this.makeAnyBetter)
+                    }
+                }
                 continue
             }
 

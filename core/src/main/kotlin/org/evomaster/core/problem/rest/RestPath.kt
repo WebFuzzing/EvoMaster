@@ -12,6 +12,7 @@ import java.net.URLEncoder
 
 class RestPath(path: String) {
 
+
     private data class Token(val name: String, val isParameter: Boolean) {
 
         override fun toString(): String {
@@ -52,6 +53,7 @@ class RestPath(path: String) {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestPath::class.java)
+        private val creation : List<String> = listOf("register")
     }
 
     override fun toString(): String {
@@ -127,6 +129,28 @@ class RestPath(path: String) {
         }
 
         return (0 until this.tokens.size).none { other.tokens[it] != this.tokens[it] }
+    }
+
+    fun isPossibleAncestorOf(other: RestPath, creation : List<String> = listOf("register")): Boolean {
+
+        var removed = this.tokens.map { it }.toMutableList()
+        if(creation.contains(removed.last().toString())){
+            removed.removeAt(this.tokens.size - 1)
+        }
+
+        if (removed.size > other.tokens.size) {
+            return false
+        }
+
+        return  (removed.size < this.tokens.size)&& (0 until removed.size).none { other.tokens[it] != removed[it] }
+    }
+
+    fun possibleLevels() : Int{
+        var removed = this.tokens.map { it }.toMutableList()
+        if(removed.isNotEmpty() && creation.contains(removed.last().toString())){
+            removed.removeAt(this.tokens.size - 1)
+        }
+        return removed.size
     }
 
     /**

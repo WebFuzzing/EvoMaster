@@ -6,8 +6,9 @@ class LocalMain {
                     cs : String,
                     enableProcessMonitor : Boolean = false,
                     run : Int = 1,
-                    probOfSmartSampling : Double = 0.5,
                     smartSampling : String = EMConfig.SmartSamplingStrategy.RESOURCES.toString(),
+                    sampleControl : String = EMConfig.ResourceSamplingControl.BasedOnActions.toString(),
+                    probOfSmartSampling : Double = 0.5,
                     maxTestSize : Int = 10,
                     isStoppedByActions : Boolean = true,
                     budget: Int = 10000,
@@ -30,12 +31,16 @@ class LocalMain {
                     "--enableProcessMonitor",enableProcessMonitor.toString(),
                     "--processFiles", baseFolder + "/$cs/$label/process",
                     "--probOfSmartSampling", probOfSmartSampling.toString(),
+//                    "--probOfRandomSampling","1.0",
+//                    "--endProbOfRandomSampling","1.0",
                     "--smartSampling",smartSampling,
+                    "--sampleControl", sampleControl,
                     "--writeStatistics",true.toString(),
                     "--snapshotInterval", "1",
                     "--statisticsFile",baseFolder + "/$cs/$label/reports/statistics.csv",
                     "--snapshotStatisticsFile",baseFolder + "/$cs/$label/reports/snapshot.csv",
                     "--problemType","REST",
+                    //"--showProgress", true.toString(),
                     "--maxTestSize", maxTestSize.toString() //dynamically control a size of test during a search
 
             );
@@ -44,5 +49,5 @@ class LocalMain {
 }
 
 fun main(args : Array<String>){
-    Main.main(LocalMain.getArgs("MIO", "feature-service", true, 1))
+    Main.main(LocalMain.getArgs("MIO", "proxyprint", true, 10002))
 }

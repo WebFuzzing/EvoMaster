@@ -1,11 +1,11 @@
 package org.evomaster.core.problem.rest
 
+import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.problem.rest.serviceII.BindParams
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
@@ -85,9 +85,13 @@ class RestCallAction(
     }
 
     fun bindToSamePathResolution(otherPath : RestPath, params : List<Param>) {
-        if (!this.path.isAncestorOf(otherPath)) {
+        if (!this.path.isAncestorOf(otherPath) && !this.path.isPossibleAncestorOf(otherPath)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same otherPath resolution: " +
                     "${this.path} vs ${otherPath}")
+        }
+        if(params.isEmpty()){
+            //no param is required to bind
+            return
         }
         //FIXME bind required parameter
         if(BindParams.numOfBodyParam(parameters) < parameters.size){

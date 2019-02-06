@@ -26,6 +26,7 @@ import org.evomaster.core.search.service.SearchAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.exps.monitor.SearchProcessMonitor
+import org.slf4j.LoggerFactory
 import java.lang.reflect.InvocationTargetException
 
 
@@ -202,6 +203,8 @@ class Main {
             rc.startANewSearch()
 
             val config = injector.getInstance(EMConfig::class.java)
+            if(config.showProgress)
+                LoggingUtil.setLevel()
 
 //            val key = when (config.algorithm) {
 //                EMConfig.Algorithm.MIO -> Key.get(
