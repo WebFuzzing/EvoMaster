@@ -453,7 +453,7 @@ class EMConfig {
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
     var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
 
-    @Cfg("Define the population size in the search algorithms that use populations (eg, Genetic Algorithms)")
+    @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
 
