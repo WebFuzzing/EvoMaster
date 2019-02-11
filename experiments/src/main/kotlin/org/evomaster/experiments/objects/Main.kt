@@ -104,7 +104,7 @@ class Main {
                     "Cannot retrieve Remote Controller info from ${rc.host}:${rc.port}")
 
             config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-            config.maxActionEvaluations = 100
+            config.maxActionEvaluations = 1000
             /*
             TODO: dbInit ?
             BMR: Writing tests appears to work, but dbInit has been removed (some gene problems emerging from the
