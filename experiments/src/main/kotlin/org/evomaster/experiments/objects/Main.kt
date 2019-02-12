@@ -8,10 +8,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.*
 import org.evomaster.experiments.objects.service.ObjModule
-import org.evomaster.experiments.objects.service.ObjRestSampler
-import org.evomaster.experiments.objects.ObjIndividual
 import org.evomaster.experiments.objects.writer.ObjTestSuiteWriter
 
 class Main {
