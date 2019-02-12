@@ -7,7 +7,6 @@ import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -15,11 +14,13 @@ import org.evomaster.experiments.objects.param.*
 import org.evomaster.experiments.objects.service.ObjRestSampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicInteger
 
 class ObjRestActionBuilder {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ObjRestActionBuilder::class.java)
+        private val idGenerator = AtomicInteger()
 
         fun addActionsFromSwagger(swagger: Swagger,
                                   actionCluster: MutableMap<String, Action>,
@@ -51,7 +52,7 @@ class ObjRestActionBuilder {
 
                             repairParams(params, restPath)
 
-                            val action = ObjRestCallAction(verb, restPath, params)
+                            val action = ObjRestCallAction("${verb}${restPath}${idGenerator.incrementAndGet()}", verb, restPath, params)
 
                             actionCluster.put(action.getName(), action)
                         }
