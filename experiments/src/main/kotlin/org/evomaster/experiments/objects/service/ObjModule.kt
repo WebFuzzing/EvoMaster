@@ -4,13 +4,10 @@ import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.search.service.mutator.StandardMutator
-import org.evomaster.core.problem.rest.service.RestStructureMutator
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.*
-import org.evomaster.experiments.objects.ObjProblemDefinition
 import org.evomaster.experiments.objects.ObjIndividual
-import org.evomaster.experiments.objects.service.ObjFitness
 
 
 class ObjModule : AbstractModule(){
