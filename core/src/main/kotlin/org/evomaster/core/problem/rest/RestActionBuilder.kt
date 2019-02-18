@@ -265,7 +265,15 @@ class RestActionBuilder {
                         history)
             }
 
-            //worst case, just create a map of strings
+            /*
+                worst case, just create a map of strings.
+                In JS/JSON, any object is in the end a map from strings (field names)
+                to values (any type).
+                If we have in Swagger an object definition, but then such definition has
+                no declared field (eg, problems with swagger), then an ObjectGene would
+                always be empty. Using a MapGene of strings would allow us to at least
+                try to add some fields to it
+             */
             return createMapGene(
                     name + "_map",
                     "string",
