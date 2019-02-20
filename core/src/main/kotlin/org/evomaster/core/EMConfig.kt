@@ -511,4 +511,8 @@ class EMConfig {
     @Experimental
     @Cfg("Specify how often to save results when a search monitor is enabled ")
     var processInterval = 100
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values")
+    var enableCompleteObjects = false
 }
