@@ -19,7 +19,10 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.experiments.objects.*
+import org.evomaster.experiments.objects.ObjIndividual
+import org.evomaster.experiments.objects.ObjRestActionBuilder
 import org.evomaster.experiments.objects.RestPath
+import org.evomaster.experiments.objects.UsedObj
 import org.evomaster.experiments.objects.param.BodyParam
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
