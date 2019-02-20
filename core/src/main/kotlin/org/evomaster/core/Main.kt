@@ -23,6 +23,7 @@ import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
+import org.evomaster.core.problem.rest.service.ObjModule
 import org.evomaster.exps.monitor.SearchProcessMonitor
 import java.lang.reflect.InvocationTargetException
 
@@ -166,7 +167,14 @@ class Main {
             val problemType = base.getEMConfig().problemType
 
             val problemModule = when (problemType) {
-                EMConfig.ProblemType.REST -> RestModule()
+                EMConfig.ProblemType.REST -> {
+                    if(base.getEMConfig().enableCompleteObjects){
+                        ObjModule()
+                    }
+                    else {
+                        RestModule()
+                    }
+                }
                 EMConfig.ProblemType.WEB -> WebModule()
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
@@ -200,6 +208,7 @@ class Main {
             rc.startANewSearch()
 
             val config = injector.getInstance(EMConfig::class.java)
+
 
             val key = when (config.algorithm) {
                 EMConfig.Algorithm.MIO -> Key.get(

@@ -12,6 +12,7 @@ import java.net.URLEncoder
 
 
 class RestCallAction(
+        val id:String,
         val verb: HttpVerb,
         val path: RestPath,
         val parameters: MutableList<Param>,
@@ -42,7 +43,7 @@ class RestCallAction(
 
     override fun copy(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(verb, path, p, auth, saveLocation, locationId)
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId)
     }
 
     override fun getName(): String {
