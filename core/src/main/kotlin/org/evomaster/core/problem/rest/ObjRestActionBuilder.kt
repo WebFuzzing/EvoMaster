@@ -6,8 +6,9 @@ import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.LoggingUtil
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.param.*
-import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.problem.rest.service.ObjRestSampler
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -15,11 +16,10 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
-
-class RestActionBuilder {
+class ObjRestActionBuilder {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ObjRestActionBuilder::class.java)
         private val idGenerator = AtomicInteger()
 
         fun addActionsFromSwagger(swagger: Swagger,
@@ -90,6 +90,23 @@ class RestActionBuilder {
         /**
          * Have seen some cases of (old?) Swagger wrongly marking path params as query params
          */
+        /*
+        fun getModelsFromSwagger(swagger: Swagger,
+                                 modelCluster: MutableMap<String, ObjectGene>){
+            modelCluster.clear()
+
+            if(swagger.definitions != null) {
+                swagger.definitions
+                        .forEach {
+                            val model = createObjectFromReference(it.key,
+                                    it.component1(),
+                                    swagger
+                            )
+                            modelCluster.put(it.component1(), model)
+                        }
+            }
+        }*/
+
         private fun repairParams(params: MutableList<Param>, restPath: RestPath) {
 
             restPath.getVariableNames().forEach { n ->
@@ -131,7 +148,7 @@ class RestActionBuilder {
                 if (p is AbstractSerializableParameter<*>) {
 
                     val type = p.getType() ?: run {
-                        RestSampler.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
+                        ObjRestSampler.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
                         "string"
                     }
 
@@ -181,7 +198,7 @@ class RestActionBuilder {
 
                     var types = operation.consumes
                     if(types == null || types.isEmpty()){
-                        RestSampler.log.warn("Missing consume types in body payload definition. Defaulting to JSON")
+                        ObjRestSampler.log.warn("Missing consume types in body payload definition. Defaulting to JSON")
                        types = listOf("application/json")
                     }
 
@@ -194,9 +211,6 @@ class RestActionBuilder {
             return params
         }
 
-        /**
-         *  Workaround for bug in Springfox
-         */
         private fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
 
             var ref: String = p.schema.reference ?: return false
@@ -246,8 +260,9 @@ class RestActionBuilder {
                                           name: String,
                                           swagger: Swagger,
                                           history: MutableList<String> = mutableListOf())
-                : Gene {
-
+                : ObjectGene {
+                //: Gene {
+                //
             if (model.properties != null) {
                 val fields = createFields(model.properties, swagger, history)
 
@@ -258,31 +273,28 @@ class RestActionBuilder {
                     && model.additionalProperties != null
                     && model.additionalProperties.type == "object") {
                 val ap = model.additionalProperties
-                return createMapGene(
+                val mapGene = createMapGene(
                         name + "_map",
                         ap.type,
                         ap.format,
                         swagger,
                         ap,
                         history)
+                return ObjectGene(name, mapGene.flatView())
             }
 
-            /*
-                worst case, just create a map of strings.
-                In JS/JSON, any object is in the end a map from strings (field names)
-                to values (any type).
-                If we have in Swagger an object definition, but then such definition has
-                no declared field (eg, problems with swagger), then an ObjectGene would
-                always be empty. Using a MapGene of strings would allow us to at least
-                try to add some fields to it
-             */
-            return createMapGene(
+            //worst case, just create a map of strings
+            // ObjectGenes could be created here, but might remain empty
+            //TODO: BMR removing this would be a last resort. Hopefully a more elegant solution exists.
+
+            val mapGene =  createMapGene(
                     name + "_map",
                     "string",
                     null,
                     swagger,
                     null,
                     history)
+            return ObjectGene(name, mapGene.flatView())
         }
 
         private fun createMapGene(
@@ -390,7 +402,7 @@ class RestActionBuilder {
                 "date" -> return DateGene(name)
                 "date-time" -> return DateTimeGene(name)
                 else -> if (format != null) {
-                    RestSampler.log.warn("Unhandled format '$format'")
+                    ObjRestSampler.log.warn("Unhandled format '$format'")
                 }
             }
 
@@ -442,15 +454,21 @@ class RestActionBuilder {
 
                     if (property is MapProperty) {
                         val ap = property.additionalProperties
-                        return createMapGene(
+                        val template = getGene(
                                 name + "_map",
                                 ap.type,
                                 ap.format,
                                 swagger,
                                 ap,
+                                null,
                                 history)
-                    }
 
+                        if (template is CycleObjectGene) {
+                            return CycleObjectGene("<map> ${template.name}")
+                        }
+
+                        return MapGene(name, template)
+                    }
 
                     if (property is ObjectProperty) {
 
@@ -458,6 +476,8 @@ class RestActionBuilder {
                         return ObjectGene(name, fields)
                     }
                 }
+                "file" -> return StringGene(name)
+                //TODO file is a hack. Find a more elegant way of dealing with it (BMR)
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
