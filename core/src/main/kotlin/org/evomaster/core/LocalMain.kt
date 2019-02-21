@@ -7,7 +7,7 @@ class LocalMain {
                     enableProcessMonitor : Boolean = false,
                     run : Int = 1,
                     smartSampling : String = EMConfig.SmartSamplingStrategy.RESOURCES.toString(),
-                    sampleControl : String = EMConfig.ResourceSamplingControl.BasedOnActions.toString(),
+                    sampleControl : String = EMConfig.ResourceSamplingControl.Actions.toString(),
                     probOfSmartSampling : Double = 0.5,
                     maxTestSize : Int = 10,
                     isStoppedByActions : Boolean = true,

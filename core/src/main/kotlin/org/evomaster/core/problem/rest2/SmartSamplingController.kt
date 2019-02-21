@@ -77,11 +77,11 @@ class SmartSamplingController {
         printSummaryOfResources(rm.getResourceCluster())
         when(config.sampleControl){
             EMConfig.ResourceSamplingControl.EqualProbability -> initEqualProbability()
-            EMConfig.ResourceSamplingControl.SpecifiedProbability -> initProbabilityWithSpecified()
-            EMConfig.ResourceSamplingControl.BasedOnActions -> initProbabilityWithActions(rm.getResourceCluster())
-            EMConfig.ResourceSamplingControl.BasedOnTimeBudgets -> initEqualProbability()
-            EMConfig.ResourceSamplingControl.BasedOnArchive -> initEqualProbability()
-            EMConfig.ResourceSamplingControl.BasedOnArchive2 -> initEqualProbability()
+            EMConfig.ResourceSamplingControl.Customized -> initProbabilityWithSpecified()
+            EMConfig.ResourceSamplingControl.Actions -> initProbabilityWithActions(rm.getResourceCluster())
+            EMConfig.ResourceSamplingControl.TimeBudgets -> initEqualProbability()
+            EMConfig.ResourceSamplingControl.Archive -> initEqualProbability()
+            EMConfig.ResourceSamplingControl.ConArchive -> initEqualProbability()
         }
         printApplicableStr()
         update()
@@ -117,11 +117,11 @@ class SmartSamplingController {
         selected =
             when(config.sampleControl){
                 EMConfig.ResourceSamplingControl.EqualProbability -> getStrategyWithItsProbability()
-                EMConfig.ResourceSamplingControl.SpecifiedProbability -> getStrategyWithItsProbability()
-                EMConfig.ResourceSamplingControl.BasedOnActions ->  getStrategyWithItsProbability()
-                EMConfig.ResourceSamplingControl.BasedOnTimeBudgets -> relyOnTB()
-                EMConfig.ResourceSamplingControl.BasedOnArchive -> relyOnArchive()
-                EMConfig.ResourceSamplingControl.BasedOnArchive2 -> relyOnArchive2()
+                EMConfig.ResourceSamplingControl.Customized -> getStrategyWithItsProbability()
+                EMConfig.ResourceSamplingControl.Actions ->  getStrategyWithItsProbability()
+                EMConfig.ResourceSamplingControl.TimeBudgets -> relyOnTB()
+                EMConfig.ResourceSamplingControl.Archive -> relyOnArchive()
+                EMConfig.ResourceSamplingControl.ConArchive -> relyOnArchive2()
             }
         selected.times += 1
         return selected

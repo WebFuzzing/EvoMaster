@@ -505,7 +505,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. "+
-            "This is only needed when running experiments with different parameter settings")
+            "This is only needed when running experiments with different parameter settings.")
     var enableProcessMonitor = false
 
     @Experimental
@@ -529,7 +529,7 @@ class EMConfig {
         /**
          * probability for applicable strategy is specified
          */
-        SpecifiedProbability,
+        Customized,
         /**
          * probability for applicable strategy is equal
          */
@@ -537,19 +537,19 @@ class EMConfig {
         /**
          * probability for applicable strategy is derived based on actions
          */
-        BasedOnActions,
+        Actions,
         /**
          * probability for applicable strategy is adaptive with time
          */
-        BasedOnTimeBudgets,
+        TimeBudgets,
         /**
          * probability for applicable strategy is adaptive with performance, i.e., Archive
          */
-        BasedOnArchive,
+        Archive,
         /**
          * probability for applicable strategy is adaptive with performance, i.e., Archive
          */
-        BasedOnArchive2
+        ConArchive
     }
 
     @Experimental
@@ -572,20 +572,20 @@ class EMConfig {
     var trackLength : Int = -1
 
     @Experimental
-    @Cfg("Specify a probability to apply S1iR")
+    @Cfg("Specify a probability to apply S1iR when sample control is Customized")
     @Min(0.0)@Max(1.0)
-    var S1iR : Double = 0.0
+    var S1iR : Double = 0.25
     @Experimental
-    @Cfg("Specify a probability to apply S1dR")
+    @Cfg("Specify a probability to apply S1dR when sample control is Customized")
     @Min(0.0)@Max(1.0)
-    var S1dR : Double = 0.0
+    var S1dR : Double = 0.25
     @Experimental
-    @Cfg("Specify a probability to apply S2dR")
+    @Cfg("Specify a probability to apply S2dR when sample control is Customized")
     @Min(0.0)@Max(1.0)
-    var S2dR : Double = 0.0
+    var S2dR : Double = 0.25
     @Experimental
-    @Cfg("Specify a probability to apply SMdR")
+    @Cfg("Specify a probability to apply SMdR when sample control is Customized")
     @Min(0.0)@Max(1.0)
-    var SMdR : Double = 0.0
+    var SMdR : Double = 0.25
 
 }
