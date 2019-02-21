@@ -5,10 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.DisruptiveGene
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
 
 
@@ -95,13 +92,14 @@ class RestIndividual(val actions: MutableList<RestAction>,
         actions.forEach { action ->
             action.seeGenes().forEach { gene ->
                 try {
-                    val relevantGene = (usedObject.getRelevantGene((action as RestCallAction), gene) as OptionalGene).gene
+                    val relevantGene = usedObject.getRelevantGene((action as RestCallAction), gene)
                     when (action::class) {
                         RestCallAction::class -> {
                             when (gene::class) {
-                                OptionalGene::class -> (gene as OptionalGene).gene.copyValueFrom(relevantGene)
-                                DisruptiveGene::class -> (gene as DisruptiveGene<*>).gene.copyValueFrom(relevantGene)
-
+                                OptionalGene::class -> (gene as OptionalGene).gene.copyValueFrom((relevantGene as OptionalGene).gene)
+                                DisruptiveGene::class -> (gene as DisruptiveGene<*>).gene.copyValueFrom((relevantGene as OptionalGene).gene)
+                                ObjectGene::class -> gene.copyValueFrom(relevantGene)
+                                else -> gene.copyValueFrom(relevantGene)
                             }
 
                         }
