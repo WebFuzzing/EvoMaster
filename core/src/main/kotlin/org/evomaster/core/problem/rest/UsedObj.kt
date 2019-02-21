@@ -20,7 +20,9 @@ class UsedObj(
 
     fun usedObjects(): List<Gene>{
         //return all objects for mutation and randomization purposes
-        return mapping.values.flatMap{ it.flatView() }
+        //return mapping.values.flatMap{ it.flatView() }
+        //return those fields used by actions
+        return mapping.keys.flatMap { it.second.flatView() }
     }
 
     fun coherenceCheck(){
@@ -77,11 +79,15 @@ class UsedObj(
     }
 
     fun getRelevantGene(action: RestCallAction, gene: Gene): Gene{
-        val selectedField = selection[Pair(action.id, gene)]
+        val selectedField = selection[Pair(action.id, gene)]!!
 
-        return (mapping[Pair(action.id, gene)] as ObjectGene).fields
-                .filter { f -> f.name === selectedField?.second }
-                .first()
+        val retGene = when (selectedField.second) {
+            "Complete_object" -> mapping[Pair(action.id, gene)]!!
+            else -> (mapping[Pair(action.id, gene)] as ObjectGene).fields
+                    .filter { f -> f.name === selectedField?.second }
+                    .first()
+        }
+        return retGene
     }
     fun isEmpty(): Boolean{
         return mapping.isEmpty()

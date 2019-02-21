@@ -344,7 +344,6 @@ class ObjRestSampler : Sampler<RestIndividual>() {
          */
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            //BMR: trying to fix the initial usedObject problem
             usedObject.clearLists()
             randomizeActionGenes(action, false)
             val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObject.copy())
