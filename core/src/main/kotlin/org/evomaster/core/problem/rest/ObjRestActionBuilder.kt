@@ -90,23 +90,6 @@ class ObjRestActionBuilder {
         /**
          * Have seen some cases of (old?) Swagger wrongly marking path params as query params
          */
-        /*
-        fun getModelsFromSwagger(swagger: Swagger,
-                                 modelCluster: MutableMap<String, ObjectGene>){
-            modelCluster.clear()
-
-            if(swagger.definitions != null) {
-                swagger.definitions
-                        .forEach {
-                            val model = createObjectFromReference(it.key,
-                                    it.component1(),
-                                    swagger
-                            )
-                            modelCluster.put(it.component1(), model)
-                        }
-            }
-        }*/
-
         private fun repairParams(params: MutableList<Param>, restPath: RestPath) {
 
             restPath.getVariableNames().forEach { n ->
@@ -211,6 +194,9 @@ class ObjRestActionBuilder {
             return params
         }
 
+        /**
+         *  Workaround for bug in Springfox
+         */
         private fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
 
             var ref: String = p.schema.reference ?: return false
@@ -454,21 +440,15 @@ class ObjRestActionBuilder {
 
                     if (property is MapProperty) {
                         val ap = property.additionalProperties
-                        val template = getGene(
+                        return createMapGene(
                                 name + "_map",
                                 ap.type,
                                 ap.format,
                                 swagger,
                                 ap,
-                                null,
                                 history)
-
-                        if (template is CycleObjectGene) {
-                            return CycleObjectGene("<map> ${template.name}")
-                        }
-
-                        return MapGene(name, template)
                     }
+
 
                     if (property is ObjectProperty) {
 
