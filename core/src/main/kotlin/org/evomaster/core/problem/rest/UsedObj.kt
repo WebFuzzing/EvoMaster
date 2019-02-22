@@ -3,13 +3,13 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.search.gene.*
 
 class UsedObj(
-              val mapping:MutableMap<Pair<String, Gene> , Gene> = mutableMapOf(),
-              val selection:MutableMap<Pair<String, Gene>, Pair<String, String>> = mutableMapOf(),
+              val mapping:MutableMap<Pair<String, String> , Gene> = mutableMapOf(),
+              val selection:MutableMap<Pair<String, String>, Pair<String, String>> = mutableMapOf(),
               val select_body:MutableMap<String, Gene> = mutableMapOf()){
 
     fun copy(): UsedObj {
-        val mapcopy: MutableMap<Pair<String, Gene> , Gene> = mutableMapOf()
-        val selcopy: MutableMap<Pair<String, Gene>, Pair<String, String>> = mutableMapOf()
+        val mapcopy: MutableMap<Pair<String, String> , Gene> = mutableMapOf()
+        val selcopy: MutableMap<Pair<String, String>, Pair<String, String>> = mutableMapOf()
         val bodycopy: MutableMap<String, Gene> = mutableMapOf()
         mapping.forEach { k, v -> mapcopy[k] = v.copy() }
         selection.forEach{ k, v ->  selcopy[k] = v.copy() }
@@ -22,10 +22,16 @@ class UsedObj(
         //return all objects for mutation and randomization purposes
         //return mapping.values.flatMap{ it.flatView() }
         //return those fields used by actions
-        return mapping.keys.flatMap { it.second.flatView() }
+        /*mapping.keys.forEach {key ->
+            val relevantObj = mapping[key]!!
+            val relevantField = selection[key]!!
+            val relevantGene = (relevantObj as ObjectGene).fields.filter { it.name == relevantField.second }!!
+
+        }*/
+        return mapping.keys.flatMap { (mapping[it] as ObjectGene).fields.filter { fi -> fi.name == selection[it]!!.second }  }
     }
 
-    fun coherenceCheck(){
+/*    fun coherenceCheck(){
         if (!mapping.isEmpty()){
             mapping.forEach { key, value ->
                 when (value::class){
@@ -50,11 +56,11 @@ class UsedObj(
 
             }
         }
-    }
+    }*/
 
     fun assign(key:Pair<RestCallAction, Gene>, value:Gene, selectedField:Pair<String, String>){
-        mapping[Pair(key.first.id, key.second)] = value
-        selection[Pair(key.first.id, key.second)] = selectedField
+        mapping[Pair(key.first.id, key.second.getVariableName())] = value
+        selection[Pair(key.first.id, key.second.getVariableName())] = selectedField
     }
 
     fun selectbody(action:RestCallAction, obj:Gene){
@@ -79,11 +85,11 @@ class UsedObj(
     }
 
     fun getRelevantGene(action: RestCallAction, gene: Gene): Gene{
-        val selectedField = selection[Pair(action.id, gene)]!!
+        val selectedField = selection[Pair(action.id, gene.getVariableName())]!!
 
         val retGene = when (selectedField.second) {
-            "Complete_object" -> mapping[Pair(action.id, gene)]!!
-            else -> (mapping[Pair(action.id, gene)] as ObjectGene).fields
+            "Complete_object" -> mapping[Pair(action.id, gene.getVariableName())]!!
+            else -> (mapping[Pair(action.id, gene.getVariableName())] as ObjectGene).fields
                     .filter { f -> f.name === selectedField?.second }
                     .first()
         }

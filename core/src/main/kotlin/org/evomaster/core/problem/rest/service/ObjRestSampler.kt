@@ -263,6 +263,12 @@ class ObjRestSampler : Sampler<RestIndividual>() {
             and which of its genes will be used.
             */
             val (proposed, field) = proposeObject(g)
+            val innerGene = when (g::class){
+                OptionalGene::class -> (g as OptionalGene).gene
+                DisruptiveGene::class -> (g as DisruptiveGene<*>).gene
+                else -> g
+            }
+
             when(field.second) {
                 "Single_gene" -> {
                     if (g.isMutable()) g.randomize(randomness, probabilistic)
