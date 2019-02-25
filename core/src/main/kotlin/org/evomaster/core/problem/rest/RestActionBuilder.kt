@@ -167,7 +167,7 @@ class RestActionBuilder {
                     var gene = p.schema.reference?.let { createObjectFromReference(name, it, swagger) }
                             ?: (p.schema as ModelImpl).let {
                                 if (it.type == "object") {
-                                    createObjectFromModel(p.schema, "body", swagger)
+                                    createObjectFromModel(p.schema, "body", swagger, it.type)
                                 } else {
                                     getGene(name, it.type, it.format, swagger)
                                 }
@@ -231,25 +231,26 @@ class RestActionBuilder {
             val model = swagger.definitions[classDef]
             if (model == null) {
                 log.warn("No $classDef among the object definitions in the Swagger file")
-                return ObjectGene(name, listOf())
+                return ObjectGene(name, listOf(), null)
             }
 
 
             //TODO referenced types might not necessarily objects???
 
-            return createObjectFromModel(model, name, swagger, history)
+            return createObjectFromModel(model, name, swagger, classDef, history)
         }
 
         private fun createObjectFromModel(model: Model,
                                           name: String,
                                           swagger: Swagger,
+                                          type: String?,
                                           history: MutableList<String> = mutableListOf())
                 : Gene {
 
             if (model.properties != null) {
                 val fields = createFields(model.properties, swagger, history)
 
-                return ObjectGene(name, fields)
+                return ObjectGene(name, fields, type)
             }
 
             if (model is ModelImpl
@@ -452,7 +453,7 @@ class RestActionBuilder {
                     if (property is ObjectProperty) {
 
                         val fields = createFields(property.properties, swagger, history)
-                        return ObjectGene(name, fields)
+                        return ObjectGene(name, fields, property.type)
                     }
                 }
             }

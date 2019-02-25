@@ -11,7 +11,7 @@ import org.evomaster.core.search.service.Randomness
  * TODO need to handle cases when some of those are
  * marked with "required"
  */
-class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
+class CycleObjectGene(name: String) : ObjectGene(name, listOf(), null) {
 
     override fun isMutable() = false
 
