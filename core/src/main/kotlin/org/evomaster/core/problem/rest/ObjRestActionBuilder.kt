@@ -457,7 +457,7 @@ class ObjRestActionBuilder {
                     }
                 }
                 "file" -> return StringGene(name)
-                //TODO file is a hack. Find a more elegant way of dealing with it (BMR)
+                //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
@@ -471,7 +471,6 @@ class ObjRestActionBuilder {
             modelCluster.clear()
 
             if(swagger.definitions != null) {
-
                 swagger.definitions
                         .forEach {
                             val model = createObjectFromReference(it.key,
@@ -480,16 +479,6 @@ class ObjRestActionBuilder {
                             )
                             modelCluster.put(it.component1(), (model as ObjectGene))
                         }
-               /* if (modelCluster.isNotEmpty()){
-
-                    //What happens if an action/param/whatever, uses something that is not in the Swagger.
-                    //I assume that it will revert to normal (i.e. non-object) behaviour.
-                    //TODO: BMR - Write a test for this. Then fix it.
-
-                    modelCluster.put("BasicInteger", ObjectGene("IntObject", mutableListOf(IntegerGene("BasicInteger", Int.MIN_VALUE))))
-                    modelCluster.put("BasicString", ObjectGene("StringObject", mutableListOf(StringGene("BasicString", "foo"))))
-                    modelCluster.put("BasicBoolean", ObjectGene("BoolObject", mutableListOf(BooleanGene("BasicBoolean", false))))
-                }*/
             }
         }
     }
