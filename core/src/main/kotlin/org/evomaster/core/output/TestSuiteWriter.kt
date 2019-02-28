@@ -113,7 +113,7 @@ class TestSuiteWriter {
             //TODO check if those are used
             addImport("io.restassured.RestAssured", lines, format)
             addImport("static io.restassured.RestAssured.given", lines, format)
-            addImport("static org.evomaster.client.java.controllerApi.EMTestUtils.*", lines, format)
+            addImport("static org.evomaster.client.java.controller.api.EMTestUtils.*", lines, format)
             addImport("org.evomaster.client.java.controller.SutHandler", lines, format)
             addImport("static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, format)
             addImport(InsertionDto::class.qualifiedName!!, lines, format)
