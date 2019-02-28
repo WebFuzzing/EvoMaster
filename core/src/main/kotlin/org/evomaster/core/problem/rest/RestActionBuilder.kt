@@ -276,13 +276,14 @@ class RestActionBuilder {
                 always be empty. Using a MapGene of strings would allow us to at least
                 try to add some fields to it
              */
-            return createMapGene(
+            val mapGene = createMapGene(
                     name + "_map",
                     "string",
                     null,
                     swagger,
                     null,
                     history)
+            return ObjectGene(name, mapGene.flatView())
         }
 
         private fun createMapGene(
@@ -458,6 +459,8 @@ class RestActionBuilder {
                         return ObjectGene(name, fields)
                     }
                 }
+                "file" -> return StringGene(name)
+                //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
