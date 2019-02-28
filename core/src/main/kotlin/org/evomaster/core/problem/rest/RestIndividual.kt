@@ -12,7 +12,7 @@ import org.evomaster.core.search.service.Randomness
 class RestIndividual(val actions: MutableList<RestAction>,
                      val sampleType: SampleType,
                      val dbInitialization: MutableList<DbAction> = mutableListOf(),
-                     var usedObject: UsedObj = UsedObj()
+                     val usedObject: UsedObjs = UsedObjs()
 ) : Individual() {
 
     override fun copy(): Individual {
@@ -30,7 +30,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
     }
 
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    fun seeGenes2(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
             GeneFilter.ALL -> {
@@ -45,6 +45,16 @@ class RestIndividual(val actions: MutableList<RestAction>,
                 if(usedObject.isEmpty()) actions.flatMap(RestAction::seeGenes)
                 else usedObject.usedObjects()
             }
+            GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
+
+        }
+    }
+
+    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+
+        return when (filter) {
+            GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(actions.flatMap(RestAction::seeGenes))
+            GeneFilter.NO_SQL -> actions.flatMap(RestAction::seeGenes)
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
 
         }
@@ -67,7 +77,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
     }
 
     override fun verifyInitializationActions(): Boolean {
-        checkCoherence()
+        enforceCoherence()
         return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
     }
 
@@ -88,9 +98,34 @@ class RestIndividual(val actions: MutableList<RestAction>,
         }
     }
 
-    fun checkCoherence(): Boolean{
+    fun enforceCoherence(): Boolean {
         actions.forEach { action ->
             action.seeGenes().forEach { gene ->
+                try {
+                    val relevantGene = usedObject.getRelevantGene((action as RestCallAction), gene)
+                    when (action::class) {
+                        RestCallAction::class -> {
+                            when (gene::class) {
+                                OptionalGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom((gene as OptionalGene).gene)
+                                DisruptiveGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom((gene as DisruptiveGene<*>).gene)
+                                ObjectGene::class -> relevantGene.copyValueFrom(gene)
+                                else -> relevantGene.copyValueFrom(gene)
+                            }
+                        }
+                    }
+                }
+                catch (e: Exception){
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    fun enforceCoherence2(): Boolean{
+        actions.forEach { action ->
+            action.seeGenes().forEach { gene ->
+                //TODO: simplify this
                 try {
                     val relevantGene = usedObject.getRelevantGene((action as RestCallAction), gene)
                     when (action::class) {
@@ -113,6 +148,4 @@ class RestIndividual(val actions: MutableList<RestAction>,
         }
         return true
     }
-
-
 }

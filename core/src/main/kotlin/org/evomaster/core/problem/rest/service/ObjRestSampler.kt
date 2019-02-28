@@ -53,7 +53,7 @@ class ObjRestSampler : Sampler<RestIndividual>() {
 
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
-    private val usedObject: UsedObj = UsedObj()
+    private val usedObjects: UsedObjs = UsedObjs()
 
     @PostConstruct
     private fun initialize() {
@@ -193,12 +193,12 @@ class ObjRestSampler : Sampler<RestIndividual>() {
         val actions = mutableListOf<RestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
-        usedObject.clearLists()
+        usedObjects.clearLists()
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-        val objInd = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), usedObject.copy())
-        usedObject.clearLists()
+        val objInd = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), usedObjects.copy())
+        usedObjects.clearLists()
         return objInd
     }
 
@@ -254,49 +254,57 @@ class ObjRestSampler : Sampler<RestIndividual>() {
         }
     }
 
-    private  fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
-        action.seeGenes().forEach { g ->
-            /*Obtain the object proposed for mutation. Can be:
-            1. Complete object - the entire object is used and needs to be mutated.
-            2. Just the gene g (wrapped in an ObjectGene) - an object match could not be found, g is mutated as such.
-            3. The object, plus a 2 string pair - model name, gene name. This identifies an object that needs to be mutated
-            and which of its genes will be used.
-            */
-            val (proposed, field) = proposeObject(g)
-            val innerGene = when (g::class){
-                OptionalGene::class -> (g as OptionalGene).gene
-                DisruptiveGene::class -> (g as DisruptiveGene<*>).gene
-                else -> g
-            }
-
-            when(field.second) {
-                "Single_gene" -> {
-                    if (g.isMutable()) g.randomize(randomness, probabilistic)
+    private fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
+        if(!config.enableCompleteObjects) {
+            action.seeGenes().forEach { it.randomize(randomness, false) }
+        }
+        else {
+            action.seeGenes().forEach { g ->
+                /*Obtain the object proposed for mutation. Can be:
+                1. Complete object - the entire object is used and needs to be mutated.
+                2. Just the gene g (wrapped in an ObjectGene) - an object match could not be found, g is mutated as such.
+                3. The object, plus a 2 string pair - model name, gene name. This identifies an object that needs to be mutated
+                and which of its genes will be used.
+                */
+                val (proposed, field) = proposeObject(g)
+                val innerGene = when (g::class){
+                    OptionalGene::class -> (g as OptionalGene).gene
+                    DisruptiveGene::class -> (g as DisruptiveGene<*>).gene
+                    else -> g
                 }
-                "Complete_object" -> {
-                    proposed.randomize(randomness, probabilistic)
-                    when(g::class) {
-                        ObjectGene::class -> g.copyValueFrom(proposed)
-                        OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(proposed)
-                        DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposed)
+
+                when(field.second) {
+                    "Single_gene" -> {
+                        if (g.isMutable()) g.randomize(randomness, probabilistic)
                     }
+                    "Complete_object" -> {
+                        proposed.randomize(randomness, probabilistic)
+                        innerGene.copyValueFrom(proposed)
+                        /* when(g::class) {
+                            ObjectGene::class -> g.copyValueFrom(proposed)
+                            OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(proposed)
+                            DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposed)
+                            else -> g.copyValueFrom(proposed)
+                        }*/
 
-                    usedObject.assign(Pair((action as RestCallAction), g), proposed, field)
-                    usedObject.selectbody(action, proposed)
-                }
-                else -> {
-                    proposed.randomize(randomness, probabilistic)
-                    val proposedGene = findSelectedGene(field)
-                    when (g::class) {
-                        DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposedGene)
-                        OptionalGene::class -> (g as OptionalGene).gene.copyValueFrom(proposedGene)
-                        else -> g.copyValueFrom(proposedGene)
+                        usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
+                        usedObjects.selectbody(action, proposed)
                     }
-                    usedObject.assign(Pair((action as RestCallAction), g), proposed, field)
-                    usedObject.selectbody(action, proposed)
+                    else -> {
+                        proposed.randomize(randomness, probabilistic)
+                        val proposedGene = findSelectedGene(field)
+                        innerGene.copyValueFrom(proposedGene)
+                        /*when (g::class) {
+                            DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposedGene)
+                            OptionalGene::class -> (g as OptionalGene).gene.copyValueFrom(proposedGene)
+                            else -> g.copyValueFrom(proposedGene)
+                        }*/
+                        usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
+                        usedObjects.selectbody(action, proposed)
+                    }
                 }
-            }
 
+            }
         }
 
     }
@@ -350,10 +358,10 @@ class ObjRestSampler : Sampler<RestIndividual>() {
          */
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            usedObject.clearLists()
+            usedObjects.clearLists()
             randomizeActionGenes(action, false)
-            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObject.copy())
-            usedObject.clearLists()
+            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObjects.copy())
+            usedObjects.clearLists()
             return objInd
         }
 
@@ -369,7 +377,7 @@ class ObjRestSampler : Sampler<RestIndividual>() {
 
 
         val test = mutableListOf<RestAction>()
-        usedObject.clearLists()
+        usedObjects.clearLists()
 
         val action = sampleRandomCallAction(0.0)
 
@@ -393,11 +401,11 @@ class ObjRestSampler : Sampler<RestIndividual>() {
         }
 
         if (!test.isEmpty()) {
-            val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObject.copy())
-            usedObject.clearLists()
+            val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy())
+            usedObjects.clearLists()
             return objInd
         }
-        usedObject.clearLists()
+        usedObjects.clearLists()
         return sampleAtRandom()
     }
 
@@ -775,12 +783,5 @@ class ObjRestSampler : Sampler<RestIndividual>() {
             found = pickWithProbability(map)
         }
         return found
-    }
-
-
-    fun debuggingOnly(individual: RestIndividual){
-        println(" -- Sampler has produced -- ")
-        println("${individual.toString()}: Uses => ${individual.usedObject.mapping.values.map { it.getValueAsPrintableString() }}")
-        println("Valid? Well... ${individual.checkCoherence()}")
     }
 }

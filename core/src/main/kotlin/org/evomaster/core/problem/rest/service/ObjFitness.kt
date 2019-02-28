@@ -100,7 +100,7 @@ class ObjFitness : FitnessFunction<RestIndividual>() {
 
         doInitializingActions(individual)
 
-        individual.checkCoherence()
+        individual.enforceCoherence()
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -242,7 +242,6 @@ class ObjFitness : FitnessFunction<RestIndividual>() {
                     }
         }
     }
-
 
     private fun doInitializingActions(ind: RestIndividual) {
 
