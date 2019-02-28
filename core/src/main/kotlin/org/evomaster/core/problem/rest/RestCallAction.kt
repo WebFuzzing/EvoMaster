@@ -12,6 +12,9 @@ import java.net.URLEncoder
 
 
 class RestCallAction(
+        /**
+         * Identifier unique within the individual
+         * **/
         val id:String,
         val verb: HttpVerb,
         val path: RestPath,

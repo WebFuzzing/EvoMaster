@@ -18,6 +18,10 @@ import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -50,6 +54,10 @@ class RestSampler : Sampler<RestIndividual>() {
     var existingSqlData : List<DbAction> = listOf()
         private set
 
+    private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
+
+    private val usedObjects: UsedObjs = UsedObjs()
+
     @PostConstruct
     private fun initialize() {
 
@@ -72,6 +80,9 @@ class RestSampler : Sampler<RestIndividual>() {
 
         actionCluster.clear()
         RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
+
+        modelCluster.clear()
+        RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
 
         setupAuthentication(infoDto)
 
@@ -190,18 +201,132 @@ class RestSampler : Sampler<RestIndividual>() {
         val actions = mutableListOf<RestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
+        usedObjects.clearLists()
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-
-        return RestIndividual(actions, SampleType.RANDOM)
+        val objInd = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), usedObjects.copy())
+        usedObjects.clearLists()
+        return objInd
     }
 
+    private fun proposeObject(g: Gene): Pair<ObjectGene, Pair<String, String>> {
+        var restrictedModels = mutableMapOf<String, ObjectGene>()
+        when (g::class) {
+            ObjectGene::class -> {
+                // If the gene is an object, select a suitable one from the Model CLuster (based on the Swagger)
+                restrictedModels = modelCluster.filter{ model ->
+                    (model.value as ObjectGene).fields
+                            .map{ it.name }
+                            .toSet().containsAll((g as ObjectGene).fields.map { it.name }) }.toMutableMap()
+                if (restrictedModels.isEmpty()) return Pair(ObjectGene("none", mutableListOf()), Pair("none", "Not_found"))
+                val ret = randomness.choose(restrictedModels)
+                return Pair(ret, Pair(ret.name, "Complete_object"))
+            }
+            else -> {
+                modelCluster.forEach { k, model ->
+                    val fields = model.fields.filter { field ->
+                        when (field::class) {
+                            OptionalGene::class -> g::class === (field as OptionalGene).gene::class
+                            else -> g::class === field::class
+                        }
+                    }
+                    restrictedModels[k] = ObjectGene(model.name, fields)
+                }
+            }
+        }
 
-    private fun randomizeActionGenes(action: Action) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
+        //Having filtered the objects, build the probability map.
+        val likely = likelyhoodsExtended(g.getVariableName(), restrictedModels)
+                .toList()
+                .sortedBy { (_, value) -> -value}
+                .toMap()
+
+        if (likely.isNotEmpty()){
+            // there is at least one likely match
+            val selected = pickObj((likely as MutableMap<Pair<String, String>, Float>), probabilistic = true)
+            val selObject = modelCluster.get(selected.first)!!
+            return Pair(selObject, selected)
+        }
+        else{
+            // there is no likely match
+            val fields = listOf(g)
+            val wrapper = ObjectGene("Gene_wrapper_object", fields)
+            return Pair(wrapper, Pair("", "Single_gene"))
+        }
     }
 
+    private fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
+        if(!config.enableCompleteObjects) {
+            action.seeGenes().forEach { it.randomize(randomness, false) }
+        }
+        else {
+            action.seeGenes().forEach { g ->
+                /*Obtain the object proposed for mutation. Can be:
+                1. Complete object - the entire object is used and needs to be mutated.
+                2. Just the gene g (wrapped in an ObjectGene) - an object match could not be found, g is mutated as such.
+                3. The object, plus a 2 string pair - model name, gene name. This identifies an object that needs to be mutated
+                and which of its genes will be used.
+                */
+
+                val innerGene = when (g::class){
+                    OptionalGene::class -> (g as OptionalGene).gene
+                    DisruptiveGene::class -> (g as DisruptiveGene<*>).gene
+                    else -> g
+                }
+
+                val (proposed, field) = proposeObject(innerGene)
+
+                when(field.second) {
+                    "Single_gene" -> {
+                        if (g.isMutable()) g.randomize(randomness, probabilistic)
+                    }
+                    "Complete_object" -> {
+                        proposed.randomize(randomness, probabilistic)
+                        innerGene.copyValueFrom(proposed)
+                        /* when(g::class) {
+                            ObjectGene::class -> g.copyValueFrom(proposed)
+                            OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(proposed)
+                            DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposed)
+                            else -> g.copyValueFrom(proposed)
+                        }*/
+
+                        usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
+                        usedObjects.selectbody(action, proposed)
+                    }
+                    "Not_found" -> {
+                        if (g.isMutable()) g.randomize(randomness, probabilistic)
+                    }
+                    else -> {
+                        proposed.randomize(randomness, probabilistic)
+                        val proposedGene = findSelectedGene(field)
+                        innerGene.copyValueFrom(proposedGene)
+                        /*when (g::class) {
+                            DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposedGene)
+                            OptionalGene::class -> (g as OptionalGene).gene.copyValueFrom(proposedGene)
+                            else -> g.copyValueFrom(proposedGene)
+                        }*/
+                        usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
+                        usedObjects.selectbody(action, proposed)
+                    }
+                }
+
+            }
+        }
+
+    }
+
+    private fun findSelectedGene(selectedGene: Pair<String, String>): Gene {
+
+        val foundGene = (modelCluster[selectedGene.first]!!).fields.filter{ field ->
+            field.name == selectedGene.second
+        }.first()
+        when (foundGene::class) {
+            OptionalGene::class -> return (foundGene as OptionalGene).gene
+            DisruptiveGene::class -> return (foundGene as DisruptiveGene<*>).gene
+            else -> return foundGene
+        }
+    }
 
     fun sampleRandomAction(noAuthP: Double): RestAction {
         val action = randomness.choose(actionCluster).copy() as RestAction
@@ -240,7 +365,11 @@ class RestSampler : Sampler<RestIndividual>() {
          */
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            return RestIndividual(mutableListOf(action), SampleType.SMART)
+            usedObjects.clearLists()
+            randomizeActionGenes(action, false)
+            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObjects.copy())
+            usedObjects.clearLists()
+            return objInd
         }
 
         if (config.maxTestSize <= 1) {
@@ -278,9 +407,11 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         if (!test.isEmpty()) {
-            return RestIndividual(test, sampleType)
+            val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy())
+            usedObjects.clearLists()
+            return objInd
         }
-
+        usedObjects.clearLists()
         return sampleAtRandom()
     }
 
@@ -594,4 +725,68 @@ class RestSampler : Sampler<RestIndividual>() {
                 }
     }
 
+
+
+    fun lcs(a: String, b: String): String {
+        if (a.length > b.length) return lcs(b, a)
+        var res = ""
+        for (ai in 0 until a.length) {
+            for (len in a.length - ai downTo 1) {
+                for (bi in 0 until b.length - len + 1) {
+                    if (a.regionMatches(ai, b, bi,len) && len > res.length) {
+                        res = a.substring(ai, ai + len)
+                    }
+                }
+            }
+        }
+        return res
+    }
+
+    fun pickWithProbability(map: MutableMap<Pair<String, String>, Float>): Pair<String, String>{
+        val randFl = randomness.nextFloat()
+        var temp = 0.toFloat()
+        var found = map.keys.first()
+
+        for((k, v) in map){
+            if(randFl <= (v + temp)){
+                found = k
+                break
+            }
+            temp += v
+        }
+        return found
+    }
+
+
+
+
+    fun <T> likelyhoodsExtended(parameter: String, candidates: MutableMap<String, T>): MutableMap<Pair<String, String>, Float>{
+        //TODO BMR: account for empty candidate sets.
+        val result = mutableMapOf<Pair<String, String>, Float>()
+        var sum : Float = 0.toFloat()
+
+        candidates.forEach { k, v ->
+            for (field in (v as ObjectGene).fields) {
+                val fieldName = field.name
+                val extendedName = "$k${fieldName}"
+                val temp = 1.toFloat() + lcs(parameter.toLowerCase(), extendedName.toLowerCase()).length.toFloat()/ Integer.max(parameter.length, extendedName.length).toFloat()
+                result[Pair(k, fieldName)] = temp
+                sum += temp
+            }
+        }
+        result.forEach { k, u ->
+            result[k] = u/sum
+        }
+
+        return result
+    }
+
+    fun pickObj(map: MutableMap<Pair<String, String>, Float>, probabilistic: Boolean = true ): Pair<String, String>{
+
+        var found = map.keys.first()
+        if (probabilistic) {
+            found = pickWithProbability(map)
+        }
+        return found
+    }
 }

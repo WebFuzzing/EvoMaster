@@ -167,14 +167,7 @@ class Main {
             val problemType = base.getEMConfig().problemType
 
             val problemModule = when (problemType) {
-                EMConfig.ProblemType.REST -> {
-                    if(base.getEMConfig().enableCompleteObjects){
-                        ObjModule()
-                    }
-                    else {
-                        RestModule()
-                    }
-                }
+                EMConfig.ProblemType.REST -> RestModule()
                 EMConfig.ProblemType.WEB -> WebModule()
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
