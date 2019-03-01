@@ -12,7 +12,7 @@ import org.evomaster.core.search.service.Randomness
 class RestIndividual(val actions: MutableList<RestAction>,
                      val sampleType: SampleType,
                      val dbInitialization: MutableList<DbAction> = mutableListOf(),
-                     val usedObject: UsedObjs = UsedObjs()
+                     val usedObjects: UsedObjs = UsedObjs()
 ) : Individual() {
 
     override fun copy(): Individual {
@@ -20,7 +20,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
                 actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObject.copy()
+                usedObjects.copy()
         )
     }
 
@@ -34,16 +34,16 @@ class RestIndividual(val actions: MutableList<RestAction>,
 
         return when (filter) {
             GeneFilter.ALL -> {
-                if(usedObject.isEmpty()) dbInitialization.flatMap(DbAction::seeGenes)
+                if(usedObjects.isEmpty()) dbInitialization.flatMap(DbAction::seeGenes)
                         .plus(actions.flatMap(RestAction::seeGenes))
                 else
                     dbInitialization.flatMap(DbAction::seeGenes)
-                            .plus(usedObject.usedObjects())
+                            .plus(usedObjects.usedObjects())
             }
 
             GeneFilter.NO_SQL -> {
-                if(usedObject.isEmpty()) actions.flatMap(RestAction::seeGenes)
-                else usedObject.usedObjects()
+                if(usedObjects.isEmpty()) actions.flatMap(RestAction::seeGenes)
+                else usedObjects.usedObjects()
             }
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
 
@@ -102,7 +102,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
         actions.forEach { action ->
             action.seeGenes().forEach { gene ->
                 try {
-                    val relevantGene = usedObject.getRelevantGene((action as RestCallAction), gene)
+                    val relevantGene = usedObjects.getRelevantGene((action as RestCallAction), gene)
                     when (action::class) {
                         RestCallAction::class -> {
                             when (gene::class) {
@@ -127,7 +127,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
             action.seeGenes().forEach { gene ->
                 //TODO: simplify this
                 try {
-                    val relevantGene = usedObject.getRelevantGene((action as RestCallAction), gene)
+                    val relevantGene = usedObjects.getRelevantGene((action as RestCallAction), gene)
                     when (action::class) {
                         RestCallAction::class -> {
                             when (gene::class) {
