@@ -209,7 +209,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
             actions.add(sampleRandomObjCallAction(0.05))
         }
         usedObject.coherenceCheck()
-        //usedObject.pruneObjects(actions)
+        //usedObjects.pruneObjects(actions)
         val objInd = ObjIndividual(actions, SampleType.RANDOM, usedObject.copy())
         usedObject.clearLists()
         objInd.checkCoherence()
@@ -264,7 +264,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
                         ObjectGene::class -> (g as ObjectGene).copyValueFrom(temp.gene)
                     }
                     usedObject.assign(Pair((action as ObjRestCallAction), g), temp.gene, sel)
-                    //usedObject.assign(Pair((action as ObjRestCallAction).resolvedPath(), g.getVariableName()), temp.gene, sel)
+                    //usedObjects.assign(Pair((action as ObjRestCallAction).resolvedPath(), g.getVariableName()), temp.gene, sel)
                     usedObject.selectbody((action as ObjRestCallAction), temp.gene)
                 }
                 catch(e: Exception){
@@ -378,7 +378,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            //BMR: trying to fix the initial usedObject problem
+            //BMR: trying to fix the initial usedObjects problem
             usedObject.clearLists()
             randomizeActionGenes(action, false)
             return ObjIndividual(mutableListOf(action), SampleType.SMART, usedObject)
@@ -421,7 +421,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
             else -> SampleType.RANDOM
         }
         usedObject.coherenceCheck()
-        //usedObject.pruneObjects(test)
+        //usedObjects.pruneObjects(test)
         if (!test.isEmpty()) {
             val objInd = ObjIndividual(test, sampleType, usedObject.copy())
             usedObject.clearLists()
