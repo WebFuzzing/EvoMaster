@@ -99,7 +99,7 @@ class ObjIndividual(val actions: MutableList<RestAction>,
     }
 
     fun checkCoherence(): Boolean{
-        //usedObject.pruneObjects(actions)
+        //usedObjects.pruneObjects(actions)
         actions.forEach { action ->
             action.seeGenes().forEach { gene ->
                 try {
