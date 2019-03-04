@@ -447,12 +447,8 @@ class RestSampler : Sampler<RestIndividual>() {
         if (!test.isEmpty()) {
             val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy())
 
-            val notPresent = usedObjects.notCoveredActions(objInd.actions)
-            if (notPresent.isNotEmpty()){
-                notPresent.forEach { missingAction ->
-                    addObjectsForAction((missingAction as RestCallAction), objInd)
-                }
-            }
+            if(config.enableCompleteObjects) addMissingObjects(objInd)
+
             usedObjects.clearLists()
             return objInd
         }
