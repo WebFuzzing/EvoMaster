@@ -282,8 +282,8 @@ class RestSampler : Sampler<RestIndividual>() {
                         if (g.isMutable()) g.randomize(randomness, probabilistic)
                     }
                     "Complete_object" -> {
-                        proposed.randomize(randomness, probabilistic)
-                        innerGene.copyValueFrom(proposed)
+                        //proposed.randomize(randomness, probabilistic)
+                        //innerGene.copyValueFrom(proposed)
                         /* when(g::class) {
                             ObjectGene::class -> g.copyValueFrom(proposed)
                             OptionalGene::class ->  (g as OptionalGene).gene.copyValueFrom(proposed)
@@ -291,16 +291,20 @@ class RestSampler : Sampler<RestIndividual>() {
                             else -> g.copyValueFrom(proposed)
                         }*/
 
-                        usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
-                        usedObjects.selectbody(action, proposed)
+                        innerGene.randomize(randomness, true)
+
+                        usedObjects.assign(Pair((action as RestCallAction), g), innerGene, field)
+                        usedObjects.selectbody(action, innerGene)
                     }
                     "Not_found" -> {
                         if (g.isMutable()) g.randomize(randomness, probabilistic)
                     }
                     else -> {
                         proposed.randomize(randomness, probabilistic)
+                        innerGene.randomize(randomness, true)
                         val proposedGene = findSelectedGene(field)
-                        innerGene.copyValueFrom(proposedGene)
+
+                        proposedGene.copyValueFrom(innerGene)
                         /*when (g::class) {
                             DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposedGene)
                             OptionalGene::class -> (g as OptionalGene).gene.copyValueFrom(proposedGene)
@@ -314,6 +318,40 @@ class RestSampler : Sampler<RestIndividual>() {
             }
         }
 
+    }
+
+    /** Add objects for given Action
+     * Some actions (e.g. Delete) can be added to a RestIndividual without randomization.
+     * This function (together with the RestIndividual's ensureCoherence() can be used to add missing objects.
+     * **/
+    private fun addObjectsForAction (action: RestCallAction, individual: RestIndividual) {
+        action.seeGenes().forEach { g ->
+            val innerGene = when (g::class){
+                OptionalGene::class -> (g as OptionalGene).gene
+                DisruptiveGene::class -> (g as DisruptiveGene<*>).gene
+                else -> g
+            }
+            val (proposed, field) = proposeObject(innerGene)
+
+            when(field.second) {
+                "Single_gene", "Not_found" -> {
+                    // In these cases, no object is created.
+                }
+                else -> {
+                    proposed.randomize(randomness, true)
+                    val proposedGene = findSelectedGene(field)
+
+                    proposedGene.copyValueFrom(innerGene)
+                    /*when (g::class) {
+                        DisruptiveGene::class -> (g as DisruptiveGene<*>).gene.copyValueFrom(proposedGene)
+                        OptionalGene::class -> (g as OptionalGene).gene.copyValueFrom(proposedGene)
+                        else -> g.copyValueFrom(proposedGene)
+                    }*/
+                    individual.usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
+                    individual.usedObjects.selectbody(action, proposed)
+                }
+            }
+        }
     }
 
     private fun findSelectedGene(selectedGene: Pair<String, String>): Gene {
@@ -408,6 +446,13 @@ class RestSampler : Sampler<RestIndividual>() {
 
         if (!test.isEmpty()) {
             val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy())
+
+            val notPresent = usedObjects.notCoveredActions(objInd.actions)
+            if (notPresent.isNotEmpty()){
+                notPresent.forEach { missingAction ->
+                    addObjectsForAction((missingAction as RestCallAction), objInd)
+                }
+            }
             usedObjects.clearLists()
             return objInd
         }
@@ -788,5 +833,17 @@ class RestSampler : Sampler<RestIndividual>() {
             found = pickWithProbability(map)
         }
         return found
+    }
+
+    fun addMissingObjects(individual: RestIndividual){
+        val missingActions = individual.usedObjects.notCoveredActions(individual.actions.filter { it::class == RestCallAction::class }.toMutableList())
+        if (missingActions.isEmpty()){
+            return // no actions are missing.
+        }
+        else{
+            missingActions.forEach { action ->
+                addObjectsForAction(action, individual)
+            }
+        }
     }
 }

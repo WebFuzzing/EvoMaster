@@ -72,4 +72,20 @@ class UsedObjs {
     fun isEmpty(): Boolean{
         return mapping.isEmpty()
     }
+    fun exists(action: RestCallAction): Boolean{
+        return mapping.keys.map { it.first }.contains((action as RestCallAction).id)
+    }
+    fun allExist(actions: MutableList<RestAction>): Boolean {
+        val restActions = actions.filter{ it::class == RestCallAction::class}
+        return mapping.keys.map { it.first }.containsAll(restActions.map { (it as RestCallAction).id })
+    }
+
+    fun notCoveredActions(actions: MutableList<RestAction>): MutableList<RestCallAction> {
+        val restActions = actions.filter{ it::class == RestCallAction::class}.map { (it as RestCallAction) }.toMutableList()
+        return restActions.filterNot { exists(it) }.toMutableList()
+    }
+
+    fun coveredActions(): List<out String> {
+        return mapping.keys.map { it.first }
+    }
 }
