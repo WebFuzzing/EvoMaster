@@ -81,20 +81,26 @@ class RestIndividual(val actions: MutableList<RestAction>,
         actions.forEach { action ->
             action.seeGenes().forEach { gene ->
                 try {
-                    val relevantGene = usedObjects.getRelevantGene((action as RestCallAction), gene)
+                    val innerGene = when (gene::class) {
+                        OptionalGene::class -> (gene as OptionalGene).gene
+                        DisruptiveGene::class -> (gene as DisruptiveGene<*>).gene
+                        else -> gene
+                    }
+                    val relevantGene = usedObjects.getRelevantGene((action as RestCallAction), innerGene)
                     when (action::class) {
                         RestCallAction::class -> {
-                            when (gene::class) {
-                                OptionalGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom((gene as OptionalGene).gene)
-                                DisruptiveGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom((gene as DisruptiveGene<*>).gene)
-                                ObjectGene::class -> relevantGene.copyValueFrom(gene)
-                                else -> relevantGene.copyValueFrom(gene)
+                            when (relevantGene::class) {
+                                OptionalGene::class -> (relevantGene as OptionalGene).gene.copyValueFrom(innerGene)
+                                DisruptiveGene::class -> (relevantGene as DisruptiveGene<*>).gene.copyValueFrom(innerGene)
+                                ObjectGene::class -> relevantGene.copyValueFrom(innerGene)
+                                else -> relevantGene.copyValueFrom(innerGene)
                             }
                         }
                     }
                 }
                 catch (e: Exception){
-                    return false
+                    // TODO BMR: EnumGene is not handled well and ends up here.
+                     return false
                 }
             }
         }
