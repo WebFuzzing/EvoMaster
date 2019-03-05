@@ -291,7 +291,7 @@ class RestSampler : Sampler<RestIndividual>() {
                             else -> g.copyValueFrom(proposed)
                         }*/
 
-                        innerGene.randomize(randomness, true)
+                        if (innerGene.isMutable()) innerGene.randomize(randomness, true)
 
                         usedObjects.assign(Pair((action as RestCallAction), g), innerGene, field)
                         usedObjects.selectbody(action, innerGene)
@@ -301,7 +301,7 @@ class RestSampler : Sampler<RestIndividual>() {
                     }
                     else -> {
                         proposed.randomize(randomness, probabilistic)
-                        innerGene.randomize(randomness, true)
+                        if (innerGene.isMutable()) innerGene.randomize(randomness, true)
                         val proposedGene = findSelectedGene(field)
 
                         proposedGene.copyValueFrom(innerGene)
@@ -324,7 +324,7 @@ class RestSampler : Sampler<RestIndividual>() {
      * Some actions (e.g. Delete) can be added to a RestIndividual without randomization.
      * This function (together with the RestIndividual's ensureCoherence() can be used to add missing objects.
      * **/
-    private fun addObjectsForAction (action: RestCallAction, individual: RestIndividual) {
+    fun addObjectsForAction (action: RestCallAction, individual: RestIndividual) {
         action.seeGenes().forEach { g ->
             val innerGene = when (g::class){
                 OptionalGene::class -> (g as OptionalGene).gene
@@ -336,6 +336,12 @@ class RestSampler : Sampler<RestIndividual>() {
             when(field.second) {
                 "Single_gene", "Not_found" -> {
                     // In these cases, no object is created.
+                }
+                "Complete_object" -> {
+                    if (innerGene.isMutable()) innerGene.randomize(randomness, true)
+
+                    individual.usedObjects.assign(Pair((action as RestCallAction), g), innerGene, field)
+                    individual.usedObjects.selectbody(action, innerGene)
                 }
                 else -> {
                     proposed.randomize(randomness, true)
@@ -832,7 +838,7 @@ class RestSampler : Sampler<RestIndividual>() {
     }
 
     fun addMissingObjects(individual: RestIndividual){
-        val missingActions = individual.usedObjects.notCoveredActions(individual.actions.filter { it::class == RestCallAction::class }.toMutableList())
+        val missingActions = individual.usedObjects.notCoveredActions(individual.actions.filter { it is RestCallAction }.toMutableList())
         if (missingActions.isEmpty()){
             return // no actions are missing.
         }
