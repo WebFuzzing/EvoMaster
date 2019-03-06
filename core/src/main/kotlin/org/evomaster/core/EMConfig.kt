@@ -539,4 +539,14 @@ class EMConfig {
      */
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
+
+    @Experimental
+    @Cfg("Enable Expectation Generation. If enabled, an expectation that fails will cause the test case containing it to fail.")
+    var expectationsActive = false
+
+    @Experimental
+    @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
+            "NOTE: this should not cause any tests to fail.")
+    var enableBasicAssertions = false
+
 }

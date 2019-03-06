@@ -101,5 +101,12 @@ class UsedObjects {
     fun coveredActions(): List<out String> {
         return mapping.keys.map { it.first }
     }
+    fun getAllRelevantObjects(action: RestCallAction): List<Gene>{
+
+        //Can an argument be made that even object from other verbs may be relevant
+        //e.g. a GET for an obj with a previous POST that fails may indicate a problem?
+        //return mapping.filter{ it.key.first == action.id}.map{ it.value }
+        return mapping.map{it.value}
+    }
 
 }

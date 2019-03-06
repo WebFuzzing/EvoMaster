@@ -9,7 +9,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.experiments.objects.service.ObjModule
-import org.evomaster.experiments.objects.writer.ObjTestSuiteWriter
 
 class Main {
     companion object {
@@ -123,11 +122,11 @@ class Main {
 
 
 
-            ObjTestSuiteWriter.writeTests(
+            /*ObjTestSuiteWriter.writeTests(
                     solution,
                     controllerInfoDto.fullName,
                     config
-            )
+            )*/
 
 
         }

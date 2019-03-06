@@ -1,13 +1,11 @@
 package org.evomaster.core.output
 
-
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import java.lang.IllegalArgumentException
 
 /**
  * This class is responsible to decide the order in which
