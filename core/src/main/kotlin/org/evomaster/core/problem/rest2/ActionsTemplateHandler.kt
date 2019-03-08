@@ -2,15 +2,16 @@ package org.evomaster.core.problem.rest.serviceII
 
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.serviceII.resources.RestAResource
+import org.evomaster.core.problem.rest2.resources.CallsTemplate
 import org.evomaster.core.search.service.Randomness
 
 
-object HandleActionTemplate{
+object ActionsTemplateHandler{
 
     private val maps = mutableMapOf<String, MutableList<String>>()
 
    // companion object {
-    val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE)
+    val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE, HttpVerb.OPTIONS, HttpVerb.HEAD)
     const val SeparatorTemplate = "-"
 
 
@@ -73,17 +74,17 @@ object HandleActionTemplate{
 
         return result
     }
-    fun initSampleSpaceOnlyPOST(_space : Array<Boolean>, maps : MutableMap<String , RestAResource.CallsTemplate>) {
+    fun initSampleSpaceOnlyPOST(_space : Array<Boolean>, maps : MutableMap<String , CallsTemplate>) {
         val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
         (if(_space.first() && !_space.last())space.subList(1, space.size) else space).forEach {v->
-            maps.getOrPut(v.toString()){ RestAResource.CallsTemplate(v.toString(), v != HttpVerb.POST, 1)}
+            maps.getOrPut(v.toString()){ CallsTemplate(v.toString(), v != HttpVerb.POST, 1)}
         }
 
         if(_space.first()){
-            val chosen = space.filter { v-> v!=HttpVerb.POST }.toTypedArray()
+            val chosen = space.filter { v-> v!=HttpVerb.POST && v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
             chosen.forEach {
                 maps.getOrPut(HttpVerb.POST.toString()+ SeparatorTemplate+it.toString()){
-                    RestAResource.CallsTemplate(HttpVerb.POST.toString()+ SeparatorTemplate+it.toString().toString(), false, 2)
+                   CallsTemplate(HttpVerb.POST.toString()+ SeparatorTemplate+it.toString().toString(), false, 2)
                 }
             }
         }
@@ -204,7 +205,7 @@ enum class WithGet{
 
 //fun main(args: Array<String>){
 //    var results : MutableMap<String, Int> = mutableMapOf()
-//    HandleActionTemplate.initSampleSpace(arrayOf(true, true, true, false, true, false), results)
+//    ActionsTemplateHandler.initSampleSpace(arrayOf(true, true, true, false, true, false), results)
 //    println(results.size)
 //    results.forEach(::println)
 //}

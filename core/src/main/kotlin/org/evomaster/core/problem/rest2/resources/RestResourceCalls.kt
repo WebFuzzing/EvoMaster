@@ -1,19 +1,33 @@
 package org.evomaster.core.problem.rest.serviceII.resources
 
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.serviceII.HandleActionTemplate
+import org.evomaster.core.problem.rest.serviceII.ActionsTemplateHandler
+import org.evomaster.core.problem.rest2.resources.CallsTemplate
 import org.evomaster.core.search.gene.Gene
 
-class RestResourceCalls(val resource: RestResource, val actions: MutableList<RestAction>){
+class RestResourceCalls(
+        val template : CallsTemplate,
+        val resource: RestResource,
+        val actions: MutableList<RestAction>
+){
+
+    /**
+     * [doesCompareDB] is to control whether to compare db data after executing calls
+     */
+    var doesCompareDB : Boolean = false
+
+    val dbActions = mutableListOf<DbAction>()
+    var isDataFromBD = false
 
     fun copy() : RestResourceCalls{
-        return RestResourceCalls(resource.copy(), actions.map { a -> a.copy() as RestAction}.toMutableList())
+        return RestResourceCalls(template, resource.copy(), actions.map { a -> a.copy() as RestAction}.toMutableList())
     }
 
     fun copy(other: MutableList<RestAction>) : RestResourceCalls{
-        return RestResourceCalls(resource.copy(), actions.map { a -> other.find { o -> a.getName() == o.getName() }!!}.toMutableList())
+        return RestResourceCalls(template, resource.copy(), actions.map { a -> other.find { o -> a.getName() == o.getName() }!!}.toMutableList())
     }
 
     /**
@@ -50,10 +64,10 @@ class RestResourceCalls(val resource: RestResource, val actions: MutableList<Res
         }
     }
 
-    fun getCallsTemplate() : RestAResource.CallsTemplate?{
-        val template = HandleActionTemplate.getTemplate(actions.filter { it is RestCallAction }.map { (it as RestCallAction).verb }.toTypedArray())
-        return resource.ar.templates.get(template)
-    }
+//    fun getCallsTemplate() : RestAResource.CallsTemplate?{
+//        val template = ActionsTemplateHandler.getTemplate(actions.filter { it is RestCallAction }.map { (it as RestCallAction).verb }.toTypedArray())
+//        return resource.ar.templates.get(template)
+//    }
 
     fun getVerbs(): Array<HttpVerb>{
         return actions.filter { it is RestCallAction }.map { (it as RestCallAction).verb }.toTypedArray()

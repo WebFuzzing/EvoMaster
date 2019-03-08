@@ -5,120 +5,173 @@ import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.param.PathParam
-import org.evomaster.core.problem.rest.serviceII.BindParams
-import org.evomaster.core.problem.rest.serviceII.HandleActionTemplate
+import org.evomaster.core.problem.rest.serviceII.ParamHandler
+import org.evomaster.core.problem.rest.serviceII.ActionsTemplateHandler
 import org.evomaster.core.problem.rest.serviceII.RestIndividualII
+import org.evomaster.core.problem.rest2.resources.CallsTemplate
+import org.evomaster.core.problem.rest2.resources.dependency.CreationChain
+import org.evomaster.core.problem.rest2.resources.dependency.ParamRelatedToTable
+import org.evomaster.core.problem.rest2.resources.token.parser.ParserUtil
+import org.evomaster.core.problem.rest2.resources.token.parser.PathRToken
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import kotlin.math.max
 
-class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, val maxResources: Int = 100, val countTempVisiting : Boolean = false){
+/**
+ * @property path resource path
+ * @property actions actions under the resource, with references of tables
+ */
+class RestAResource {
+
+    val path : RestPath
+    val actions: MutableList<RestAction>
+    val isNoParamGet : Boolean
 
     companion object {
         var CONFIG_MAX_TEST_SIZE = -1
+        val PROB_EXTRA_PATCH = 0.8
         private val log: Logger = LoggerFactory.getLogger(RestAResource::class.java)
     }
-    //ancestor is ordered, first is closest ancestor, and last is deepest one.
+
+    constructor(path: RestPath, actions: MutableList<RestAction>){
+        this.path = path
+        this.actions = actions
+        initTokens()
+        val action = getActionByHttpVerb(actions, HttpVerb.GET)
+        isNoParamGet = (action != null) && (action is RestCallAction) && (action.parameters.size == 0)
+    }
+
+
+    /**
+     * [ancestors] is ordered, first is closest ancestor, and last is deepest one.
+     */
     private val ancestors : MutableList<RestAResource> = mutableListOf()
 
-    private val possibleCreation : MutableList<RestAResource> = mutableListOf()
+    var creation : CreationChain = CreationChain(mutableListOf(), false)
+    val paramsToTables : MutableMap<String, ParamRelatedToTable> = mutableMapOf()
+    val tokens : MutableMap<String, PathRToken> = mutableMapOf()
 
-    //this attribute makes sense when db exists
-    private val existingResources : MutableList<RestResource> = mutableListOf()
+    /**
+     * HTTP methods under the resource, including possible POST in its ancestors'
+     */
+    var verbs : Array<Boolean> = Array(8){false}
+    /**
+     * possible templates
+     */
     val templates : MutableMap<String, CallsTemplate> = mutableMapOf()
 
-    //By default, a RestAbstractResource is independent, and it also has independent actions
+    val countTempVisiting = false
+
+    /**
+     *  By default, a RestAbstractResource is independent, and it also has independent actions
+     */
     var independent = true
     var hasIndependentAction = true
 
-    private var probInd = 0.0
-    private val unspecifiedPr = -1.0
+    fun init(){
+        initVerbs()
+        initCreationPoints()
+        updateTemplateSize()
+    }
 
-    var enableSkip = false
-    var verbs : Array<Boolean> = Array(6){false}
+    private fun initCreationPoints(){
 
-    fun setAncestors(resources : List<RestAResource>){
+        val posts = actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}
+        val post = if(posts.isEmpty()){
+            chooseClosestAncestor(path, listOf(HttpVerb.POST))
+        }else if(posts.size == 1){
+            posts[0]
+        }else null
+
+        if(post != null){
+            this.creation.actions.add(0, post)
+            if ((post as RestCallAction).path.hasVariablePathParameters() &&
+                    (!post.path.isLastElementAParameter()) ||
+                    post.path.getVariableNames().size >= 2) {
+                nextCreationPoints(post.path, this.creation.actions)
+            }else
+                this.creation.confirmComplete()
+        }else{
+            if(path.hasVariablePathParameters()) {
+                this.creation.confirmIncomplete(path.toString())
+            }else
+                this.creation.confirmComplete()
+        }
+
+    }
+
+    fun initTokens(){
+        if(path.getStaticTokens().isNotEmpty()){
+            tokens.clear()
+            ParserUtil.parsePathTokens(this.path.toString(), tokens)
+        }
+    }
+
+    private fun nextCreationPoints(path:RestPath, points: MutableList<Action>){
+        val post = chooseClosestAncestor(path, listOf(HttpVerb.POST))
+        if(post != null){
+            points.add(0, post)
+            if (post.path.hasVariablePathParameters() &&
+                    (!post.path.isLastElementAParameter()) ||
+                    post.path.getVariableNames().size >= 2) {
+                nextCreationPoints(post.path, points)
+            }else
+                this.creation.confirmComplete()
+        }else{
+            this.creation.confirmIncomplete(path.toString())
+        }
+    }
+
+    fun initAncestors(resources : List<RestAResource>){
         resources.forEach {r ->
-            if(!r.path.isEquivalent(this.path) && r.path.isAncestorOf(this.path)) ancestors.add(r)
-            else if(!r.path.isEquivalent(this.path) && r.path.isPossibleAncestorOf(this.path, listOf("register"))){
-                possibleCreation.add(r)
-            }
+            if(!r.path.isEquivalent(this.path) && r.path.isAncestorOf(this.path))
+                ancestors.add(r)
         }
-
     }
-
-    fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
-        val current = calls.actions.map { (it as RestCallAction).verb }.joinToString(HandleActionTemplate.SeparatorTemplate)
-        val rest = templates.filterNot { it.key == current }
-        if(rest.isEmpty()) return null
-        val selected = randomness.choose(rest.keys)
-        return genCalls(selected,randomness, maxTestSize)
-
-    }
-
-    fun handleAdded(calls: RestResourceCalls) : RestResourceCalls?{
-        if(templates.getValue(calls.actions.map { (it as RestCallAction).verb }.joinToString(HandleActionTemplate.SeparatorTemplate)).times == 1)
-            return null
-        val excluded = actions.filter { a -> !calls.actions.map { it.getName() }.contains(a.getName())}
-        val first = calls.actions.first()
-        val last = calls.actions.last()
-        if(first is RestCallAction && first.verb == HttpVerb.POST){
-            if(last is RestCallAction){
-                val actions = mutableListOf<RestAction>()
-                //POST...DELETE -> POST excluded Action
-                val resource = calls.resource.copy()
-                if(last.verb == HttpVerb.DELETE || !verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.DELETE)]){
-                    excluded.asSequence().sortedBy { actionSorted(it) }.forEach {
-                        if(it is RestCallAction){
-                            val a = it.copy() as RestCallAction
-                            a.bindToSamePathResolution(a.path.copy(), resource.params)
-                            actions.add(a)
-                        }
-                    }
-                }
-                //POST, GET/PATCH/PUT -> DELETE, POST, excluded Actions
-                else{
-                    if(verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.DELETE)]){
-                        excluded.asSequence().sortedBy { actionSorted(it, true) }.forEach {
-                            if(it is RestCallAction){
-                                val a = it.copy() as RestCallAction
-                                a.bindToSamePathResolution(a.path.copy(), resource.params)
-                                actions.add(a)
-                            }
-                        }
-                    }
-                }
-                if(actions.isNotEmpty()) return RestResourceCalls(resource,actions)
-            }
-        }
-        return null
-    }
-
-
-    fun initVerbs(){
+    private fun initVerbs(){
         actions.forEach { a->
             when((a as RestCallAction).verb){
-                HttpVerb.POST -> verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.POST)] = true
-                HttpVerb.GET -> verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.GET)] = true
-                HttpVerb.PUT -> verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.PUT)] = true
-                HttpVerb.PATCH -> verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.PATCH)] = true
-                HttpVerb.DELETE ->verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.DELETE)] = true
+                HttpVerb.POST -> verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.POST)] = true
+                HttpVerb.GET -> verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.GET)] = true
+                HttpVerb.PUT -> verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.PUT)] = true
+                HttpVerb.PATCH -> verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.PATCH)] = true
+                HttpVerb.DELETE ->verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.DELETE)] = true
+                HttpVerb.OPTIONS ->verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.OPTIONS)] = true
+                HttpVerb.HEAD -> verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.HEAD)] = true
             }
         }
-        verbs[5] = verbs[0]
+        verbs[verbs.size - 1] = verbs[0]
         if (!verbs[0]){
             verbs[0] = if(ancestors.isEmpty()) false
             else ancestors.filter{ p -> p.actions.filter { a -> (a as RestCallAction).verb == HttpVerb.POST }.isNotEmpty() }.isNotEmpty()
         }
 
-        HandleActionTemplate.initSampleSpaceOnlyPOST(verbs, templates)
+        ActionsTemplateHandler.initSampleSpaceOnlyPOST(verbs, templates)
 
         templates.values.find { !it.independent }?.let {
             independent = false
             hasIndependentAction = (templates.size != it.size)
         }
+
+        assert(templates.isNotEmpty())
+
+    }
+
+    private fun updateTemplateSize(){
+        if(creation.actions.size > 1){
+            templates.values.filter { it.template.contains("POST") }.forEach {
+                it.size = it.size + creation.actions.size - 1
+            }
+        }
+    }
+    fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
+        val current = calls.actions.map { (it as RestCallAction).verb }.joinToString(ActionsTemplateHandler.SeparatorTemplate)
+        val rest = templates.filterNot { it.key == current }
+        if(rest.isEmpty()) return null
+        val selected = randomness.choose(rest.keys)
+        return genCalls(selected,randomness, maxTestSize)
 
     }
 
@@ -166,7 +219,7 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     }
 
     fun doesExecuteEveryAction(time : Int) : Boolean{
-        templates.filter { e->!e.key.contains(HandleActionTemplate.SeparatorTemplate) }.values.forEach {
+        templates.filter { e->!e.key.contains(ActionsTemplateHandler.SeparatorTemplate) }.values.forEach {
             if( it.times < time) return false
         }
         return true
@@ -189,16 +242,16 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     }
 
     private fun repairRandomGenes(params : List<Param>){
-        if(BindParams.numOfBodyParam(params) > 0){
+        if(ParamHandler.numOfBodyParam(params) > 0){
             params.filter { p -> p is BodyParam }.forEach { bp->
-                BindParams.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )}, true)
+                ParamHandler.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )}, true)
             }
 //            val bp = params.find { p -> p is BodyParam }!! as BodyParam
-//            BindParams.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )})
+//            ParamHandler.bindParam(bp, path, path, params.filter { p -> !(p is BodyParam )})
         }
         params.forEach { p->
             params.find { sp -> sp != p && p.name == sp.name && p::class.java.simpleName == sp::class.java.simpleName }?.apply {
-                BindParams.bindParam(this, path, path, mutableListOf(p))
+                ParamHandler.bindParam(this, path, path, mutableListOf(p))
             }
 
         }
@@ -214,7 +267,6 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
     }
 
     fun sampleIndResourceCall(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
-        if(enableSkip) skipActions()
         selectTemplate({ call : CallsTemplate -> call.independent || (call.template == HttpVerb.POST.toString() && call.size > 1)}, randomness)?.let {
             return genCalls(it.template, randomness, maxTestSize, false, false)
         }
@@ -225,11 +277,12 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
 
 
     fun createCallByVerb(verb : HttpVerb, resources: RestResource) : RestResourceCalls?{
-        val exist = verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(verb)]
+        val exist = verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(verb)]
         if(exist){
+            val template = templates[verb.toString()]?: return null
             var ac = getActionByHttpVerbUntil(verb)!!.copy()
             (ac as RestCallAction).bindToSamePathResolution(ac.path, resources.params)
-            return RestResourceCalls(resources.copy(), mutableListOf(ac))
+            return RestResourceCalls(template, resources.copy(), mutableListOf(ac))
         }
         return null
     }
@@ -240,33 +293,39 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
 
     fun sampleOneAction(action : RestAction, randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         assert(maxTestSize > 0)
-        val copy = action.copy()
-        randomizeActionGenes(copy as RestCallAction, randomness)
-        return RestResourceCalls(RestResource(this, copy.parameters), mutableListOf(copy))
+        return sampleOneAction(action, randomness)
     }
 
+    fun sampleOneAction(action : RestAction, randomness: Randomness) : RestResourceCalls{
+        val copy = action.copy()
+        randomizeActionGenes(copy as RestCallAction, randomness)
+        val template = templates[copy.verb.toString()]
+                ?: throw IllegalArgumentException("${copy.verb} is not one of templates")
+        return RestResourceCalls(template, RestResource(this, copy.parameters), mutableListOf(copy))
+    }
+
+    /**
+     * sample a sequence of actions according to a non-independent template selected at random
+     * if there does not exist non-independent template whose size < required size, use independent template
+     *
+     * to manipulate the resource, creation is prior to selection from db.
+     */
     fun sampleRestResourceCalls(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         assert(maxTestSize > 0)
-        if(enableSkip) skipActions()
         val chosen = templates.filter { !it.value.independent && it.value.size <= maxTestSize }
         if(chosen.isEmpty())
             return sampleIndResourceCall(randomness, maxTestSize)
-        if(existingResources.isEmpty()){
+
             val chosenWithPost = selectTemplate({call : CallsTemplate -> !call.independent && call.size <= maxTestSize}, randomness, chosen)
             chosenWithPost?.let {
                 return genCalls(it.template,randomness, maxTestSize)
             }
             return sampleIndResourceCall(randomness, maxTestSize)
 
-        }else{
-            val chosenWithoutPost = chosen.filter { !it.key.contains(HttpVerb.POST.toString()) && it.value.size <= maxTestSize}
-            return genCalls(randomness.choose(chosenWithoutPost).template,randomness, maxTestSize)
-        }
     }
 
     fun sampleAnyRestResourceCalls(randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
         assert(maxTestSize > 0)
-        if(enableSkip) skipActions()
         val chosen = templates.filter { it.value.size <= maxTestSize }
         if(chosen.isEmpty())
             return sampleOneAction(null,randomness, maxTestSize)
@@ -279,97 +338,74 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return genCalls(template,randomness, maxTestSize)
     }
 
-    private fun genCalls(template : String, randomness: Randomness, maxTestSize : Int = 1, checkSize : Boolean = true, createResource : Boolean = true, additionalPatch : Boolean = true) : RestResourceCalls{
-        if(!templates.containsKey(template))
-            throw java.lang.IllegalArgumentException("$template does not exist in ${path.toString()}")
-        val ats = HandleActionTemplate.parseTemplate(template)
-        val result : MutableList<RestAction> = mutableListOf()
-        var resource : RestResource? = generateResource(template)
+    fun genPostChain(randomness: Randomness) : RestResourceCalls?{
+        val template = templates["POST"]?:
+            return null
 
-        val skipBind : MutableList<RestAction> = mutableListOf()
+        if(creation.actions.isEmpty())
+            throw IllegalArgumentException("creation is not initialized!")
 
-        if(createResource && ats[0] == HttpVerb.POST){
-            val nonPostIndex = ats.indexOfFirst { it != HttpVerb.POST }
-            val ac = getActionByHttpVerb(actions, if(nonPostIndex==-1) HttpVerb.POST else ats[nonPostIndex])!!.copy() as RestCallAction
-            randomizeActionGenes(ac, randomness)
-            result.add(ac)
-            var isCreated = createResourcesFor(ac, result, maxTestSize , randomness, checkSize && (!templates.getValue(template).sizeAssured))
-            when(isCreated){
-                -1 -> {
-                    //log.info("exceed the allowed size!")
-                    //throw IllegalStateException("exceed the allowed size!")
-                }
-                -2 -> {
-                    log.warn("cannot find the post action in this resource ${this.path} and its ancestor")//throw IllegalStateException("cannot find the post action in this resource ${this.path} and its ancestor")
-                    //var isCreated = createResourcesFor(ac, result, maxTestSize , randomness)
-                }
-                -3 -> {
-                    log.warn("cannot manipulate this resource ${this.path} due to failure to create dependent resource")//TODO report problems of SUT
-                    //var isCreated = createResourcesFor(ac, result, maxTestSize , randomness)
-                }
-            }
-            if(checkSize && (!templates.getValue(template).sizeAssured) && isCreated == 0 ){
-                if(result.size != if(nonPostIndex == -1) 1 else (nonPostIndex + 1)){
-                    templates.filter { it.key.contains(HttpVerb.POST.toString()) }.forEach{temp->
-                        temp.value.size = result.size + ats.size - (if(nonPostIndex == -1) 1 else (nonPostIndex + 1))
-                        temp.value.sizeAssured = true
-                    }
-                }else{
-                    templates.getValue(template).sizeAssured = true
-                }
-            }
-            val lastPost = result.last()
-            resource = RestResource(this, (lastPost as RestCallAction).parameters)
-            skipBind.addAll(result)
-            if(nonPostIndex == -1){
-                (1 until ats.size).forEach{
-                    result.add(lastPost.copy().also {
-                        skipBind.add(it as RestAction)
-                    } as RestAction)
-                }
-            }else{
-                if(nonPostIndex != ats.size -1){
-                    (nonPostIndex + 1 until ats.size).forEach {
-                        val ac = getActionByHttpVerb(actions, ats[it])!!.copy() as RestCallAction
-                        randomizeActionGenes(ac, randomness)
-                        result.add(ac)
-                    }
-                }
-            }
+        val actions = creation.actions.filter { it is RestCallAction }.map { it.copy() }.toMutableList()
+        actions.forEach { randomizeActionGenes(it, randomness) }
 
-        }else{
-            ats.forEach {at->
-                val ac = getActionByHttpVerb(actions, at)!!.copy() as RestCallAction
-                randomizeActionGenes(ac, randomness)
-                result.add(ac)
-            }
-
-            if(resource == null)
-                resource = RestResource(this, chooseLongestPath(result, randomness).also {
-                    skipBind.add(it)
-                }.parameters)
-
-            if(checkSize){
-                templates.getValue(template).sizeAssured = (result.size  == templates.getValue(template).size)
-            }
-        }
-
-        result.filterNot { ac -> skipBind.contains(ac) }.forEach { ac ->
+        val resource = RestResource(this, (actions.last() as RestCallAction).parameters)
+        (1 until actions.size - 1).forEach {
+            val ac = actions[it]
             if((ac as RestCallAction).parameters.isNotEmpty()){
                 ac.bindToSamePathResolution(ac.path, resource!!.params)
             }
         }
-        //FIXME repair params?
-        assert(resource!=null)
-        assert(result.isNotEmpty())
+        return RestResourceCalls(template, resource!!, actions as MutableList<RestAction>)
+    }
 
-        if(additionalPatch && !templates.getValue(template).independent && template.contains(HttpVerb.PATCH.toString())&&result.size + 1 <= maxTestSize){
+    private fun genCalls(
+
+            template : String,
+            randomness: Randomness,
+            maxTestSize : Int = 1,
+            createResource : Boolean = true,
+            additionalPatch : Boolean = true
+
+    ) : RestResourceCalls{
+
+        val callTemplate = templates[template]?:
+        throw java.lang.IllegalArgumentException("$template does not exist in $path")
+
+        val result : MutableList<RestAction> = mutableListOf()
+        var resource : RestResource? = generateResource(template)
+
+
+        val ats = ActionsTemplateHandler.parseTemplate(template)
+
+        ats.forEachIndexed { index, httpVerb ->
+            if(createResource && index == 0 && httpVerb == HttpVerb.POST){
+                result.addAll(creation.actions.filter { it is RestCallAction }.map { it.copy() as RestAction })
+            }else{
+                result.add(getActionByHttpVerb(actions,httpVerb)!!.copy() as RestAction)
+            }
+        }
+        result.forEach { randomizeActionGenes(it, randomness) }
+
+        val action = chooseLongestPath(result, randomness)
+        resource = RestResource(this, action.parameters)
+
+        result.filter { it != action }.forEach { ac ->
+            if((ac as RestCallAction).parameters.isNotEmpty()){
+                ac.bindToSamePathResolution(ac.path, resource!!.params)
+            }
+        }
+
+        if(additionalPatch
+                && !templates.getValue(template).independent
+                && template.contains(HttpVerb.PATCH.toString())
+                && result.size + 1 <= maxTestSize
+                && randomness.nextBoolean(PROB_EXTRA_PATCH)
+        ){
             val index = result.indexOfFirst { (it is RestCallAction) && it.verb == HttpVerb.PATCH }
             val copy = result.get(index).copy() as RestAction
             result.add(index, copy)
         }
-        return RestResourceCalls(resource!!, result)
-
+        return RestResourceCalls(callTemplate, resource!!, result)
 
     }
 
@@ -390,7 +426,7 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         if(ts.isEmpty())
             return null
         var template =  if(countTempVisiting) ts.asSequence().sortedBy { it.value.times }.first().value
-        else randomness.choose(ts.values)
+                    else randomness.choose(ts.values)
         templateSelected(template)
         return template
     }
@@ -412,7 +448,7 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return null
     }
 
-    private fun chooseLongestPath(actions: List<RestAction>, randomness: Randomness): RestCallAction {
+    private fun chooseLongestPath(actions: List<RestAction>, randomness: Randomness? = null): RestCallAction {
 
         if (actions.isEmpty()) {
             throw IllegalArgumentException("Cannot choose from an empty collection")
@@ -421,22 +457,34 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         val max = actions.filter { it is RestCallAction }.asSequence().map { a -> (a as RestCallAction).path.levels() }.max()!!
         val candidates = actions.filter { a -> a is RestCallAction && a.path.levels() == max }
 
-        return randomness.choose(candidates).copy() as RestCallAction
+        if(randomness == null){
+            return candidates.first() as RestCallAction
+        }else
+            return randomness.choose(candidates).copy() as RestCallAction
     }
 
     private fun chooseClosestAncestor(target: RestCallAction, verbs: List<HttpVerb>, randomness: Randomness): RestCallAction? {
 
         var others = sameOrAncestorEndpoints(target)
         others = hasWithVerbs(others, verbs).filter { t -> t.getName() != target.getName() }
-
-        if (others.isEmpty()) {
-            others = possibleCreation.flatMap { a -> a.actions } as List<RestCallAction>
-            if(others.isEmpty())
-                return null
-        }
-
+        if(others.isEmpty()) return null
         return chooseLongestPath(others, randomness)
     }
+
+    private fun chooseClosestAncestor(path: RestPath, verbs: List<HttpVerb>): RestCallAction? {
+        val ar = if(path.toString() == this.path.toString()){
+            this
+        }else{
+            ancestors.find { it.path.toString() == path.toString() }
+        }
+        ar?.let{
+            val others = hasWithVerbs(it.ancestors.flatMap { it.actions }.filter { it is RestCallAction } as List<RestCallAction>, verbs)
+            if(others.isEmpty()) return null
+            return chooseLongestPath(others)
+        }
+        return null
+    }
+
     private fun hasWithVerbs(actions: List<RestCallAction>, verbs: List<HttpVerb>): List<RestCallAction> {
         return actions.filter { a ->
             verbs.contains(a.verb)
@@ -453,16 +501,6 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return mutableListOf()
     }
 
-
-    private fun assumAncestorEndpoints(target: RestCallAction): List<RestCallAction> {
-        if(target.path.toString() == this.path.toString()) return ancestors.flatMap { a -> a.actions }.plus(actions) as List<RestCallAction>
-        else {
-            ancestors.find { it.path.toString() == target.path.toString() }?.let {
-                return it.ancestors.flatMap { a -> a.actions }.plus(it.actions) as List<RestCallAction>
-            }
-        }
-        return mutableListOf()
-    }
 
     private fun createActionFor(template: RestCallAction, target: RestCallAction, randomness: Randomness): RestCallAction {
         val restAction = template.copy() as RestCallAction
@@ -564,27 +602,125 @@ class RestAResource (val path : RestPath, val actions: MutableList<RestAction>, 
         return -2
     }
 
-    //TODO skip Action based on probability i.e., prob = 0.0
-    private fun skipActions(){
-        if(verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.GET)]){
-            val action = getActionByHttpVerb(actions, HttpVerb.GET)
-            if(action is RestCallAction){
-                if(action.parameters.size == 0){
-                    verbs[HandleActionTemplate.arrayHttpVerbs.indexOf(HttpVerb.GET)] = false
-                    templates.remove(HttpVerb.GET.toString())
-                }
-            }
-        }
-    }
-
     fun isAnyAction() : Boolean{
-        skipActions()
-        verbs.forEach {
-            if (it) return true
-        }
-        return false
+        return !(actions.size == 1 && isNoParamGet)
     }
 
-    class CallsTemplate (val template: String, val independent : Boolean, var size : Int = 1, var probability : Double = -1.0, var times : Int = 0, var sizeAssured : Boolean = false)
+//    private fun genCalls(
+//
+//            template : String,
+//            randomness: Randomness,
+//            maxTestSize : Int = 1,
+//            checkSize : Boolean = true,
+//            createResource : Boolean = true,
+//            additionalPatch : Boolean = true
+//
+//    ) : RestResourceCalls{
+//        val callTemplate = templates[template]?:
+//        throw java.lang.IllegalArgumentException("$template does not exist in $path")
+//        val ats = ActionsTemplateHandler.parseTemplate(template)
+//        val result : MutableList<RestAction> = mutableListOf()
+//        var resource : RestResource? = generateResource(template)
+//
+//        val skipBind : MutableList<RestAction> = mutableListOf()
+//
+//        if(createResource && ats[0] == HttpVerb.POST){
+//            val nonPostIndex = ats.indexOfFirst { it != HttpVerb.POST }
+//            val ac = getActionByHttpVerb(actions, if(nonPostIndex==-1) HttpVerb.POST else ats[nonPostIndex])!!.copy() as RestCallAction
+//            randomizeActionGenes(ac, randomness)
+//            result.add(ac)
+//            var isCreated = createResourcesFor(ac, result, maxTestSize , randomness, checkSize )
+//
+//            val lastPost = result.last()
+//            resource = RestResource(this, (lastPost as RestCallAction).parameters)
+//            skipBind.addAll(result)
+//            if(nonPostIndex == -1){
+//                (1 until ats.size).forEach{
+//                    result.add(lastPost.copy().also {
+//                        skipBind.add(it as RestAction)
+//                    } as RestAction)
+//                }
+//            }else{
+//                if(nonPostIndex != ats.size -1){
+//                    (nonPostIndex + 1 until ats.size).forEach {
+//                        val ac = getActionByHttpVerb(actions, ats[it])!!.copy() as RestCallAction
+//                        randomizeActionGenes(ac, randomness)
+//                        result.add(ac)
+//                    }
+//                }
+//            }
+//
+//        }else{
+//            ats.forEach {at->
+//                val ac = getActionByHttpVerb(actions, at)!!.copy() as RestCallAction
+//                randomizeActionGenes(ac, randomness)
+//                result.add(ac)
+//            }
+//
+//            if(resource == null)
+//                resource = RestResource(this, chooseLongestPath(result, randomness).also {
+//                    skipBind.add(it)
+//                }.parameters)
+//
+//        }
+//
+//        result.filterNot { ac -> skipBind.contains(ac) }.forEach { ac ->
+//            if((ac as RestCallAction).parameters.isNotEmpty()){
+//                ac.bindToSamePathResolution(ac.path, resource!!.params)
+//            }
+//        }
+//        //FIXME repair params?
+//        assert(resource!=null)
+//        assert(result.isNotEmpty())
+//
+//        if(additionalPatch && !templates.getValue(template).independent && template.contains(HttpVerb.PATCH.toString())&&result.size + 1 <= maxTestSize){
+//            val index = result.indexOfFirst { (it is RestCallAction) && it.verb == HttpVerb.PATCH }
+//            val copy = result.get(index).copy() as RestAction
+//            result.add(index, copy)
+//        }
+//        return RestResourceCalls(callTemplate, resource!!, result)
+//
+//
+//    }
+
+    //    fun handleAdded(calls: RestResourceCalls) : RestResourceCalls?{
+//        if(templates.getValue(calls.actions.map { (it as RestCallAction).verb }.joinToString(ActionsTemplateHandler.SeparatorTemplate)).times == 1)
+//            return null
+//        val excluded = actions.filter { a -> !calls.actions.map { it.getName() }.contains(a.getName())}
+//        val first = calls.actions.first()
+//        val last = calls.actions.last()
+//        if(first is RestCallAction && first.verb == HttpVerb.POST){
+//            if(last is RestCallAction){
+//                val actions = mutableListOf<RestAction>()
+//                //POST...DELETE -> POST excluded Action
+//                val resource = calls.resource.copy()
+//                if(last.verb == HttpVerb.DELETE || !verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.DELETE)]){
+//                    excluded.asSequence().sortedBy { actionSorted(it) }.forEach {
+//                        if(it is RestCallAction){
+//                            val a = it.copy() as RestCallAction
+//                            a.bindToSamePathResolution(a.path.copy(), resource.params)
+//                            actions.add(a)
+//                        }
+//                    }
+//                }
+//                //POST, GET/PATCH/PUT -> DELETE, POST, excluded Actions
+//                else{
+//                    if(verbs[ActionsTemplateHandler.arrayHttpVerbs.indexOf(HttpVerb.DELETE)]){
+//                        excluded.asSequence().sortedBy { actionSorted(it, true) }.forEach {
+//                            if(it is RestCallAction){
+//                                val a = it.copy() as RestCallAction
+//                                a.bindToSamePathResolution(a.path.copy(), resource.params)
+//                                actions.add(a)
+//                            }
+//                        }
+//                    }
+//                }
+//                if(actions.isNotEmpty()) return RestResourceCalls(resource,actions)
+//            }
+//        }
+//        return null
+//    }
+
+
 
 }

@@ -29,11 +29,9 @@ internal class RestResourceTest{
             }
 
         }
-        resourceCluster.forEach { k, ar->
-            ar.setAncestors(resourceCluster.values.toList())
-            ar.initVerbs()
-        }
+        resourceCluster.values.forEach { it.initAncestors(resourceCluster.values.toList())}
 
+        resourceCluster.values.forEach{it.init()}
         assertEquals(expectedNum, resourceCluster.size)
         return resourceCluster
     }

@@ -15,18 +15,15 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               */
                              val results: List<out ActionResult>,
                              nextDescription: String? = null,
-                             previous : MutableList<EvaluatedIndividual<T>>? = null)
+                             previous : MutableList<EvaluatedIndividual<T>>? = null,
+                             val undoTrack : MutableList<EvaluatedIndividual<T>>? = null
+)
     : TraceableElement(nextDescription?:individual.getDescription(),  previous)
 where T : Individual {
 
     companion object {
         const val SEPARATOR_GENE_ID = "::"
     }
-    /**
-     * key -> id of target
-     * value -> compared result
-     */
-    val compareWithArchive : MutableMap<Int, String> = mutableMapOf()
 
     val impactsOfGenes : MutableMap<String, Double> = mutableMapOf()
     val impactsOfStructure : MutableMap<String, Double> = mutableMapOf()
@@ -38,7 +35,7 @@ where T : Individual {
      * if only standard mutator is accepted, then ids of impactsOfGenes are not changed during search
      * but if structure mutator is also accepted, then ids of impactOfGenes are changed regarding added or removal of genes
      */
-    private fun updateImpactOfGenes(next: EvaluatedIndividual<T>){
+    fun updateImpactOfGenes(next: EvaluatedIndividual<T>){
         if(impactsOfGenes.isEmpty()){
             val initValue = fitness.computeFitnessScore()
             next.individual.seeActions().distinctBy { it.getName() }.forEach { na ->
@@ -69,8 +66,10 @@ where T : Individual {
     }
 
     private fun increaseGeneImpact(key : String, delta : Double){
-        impactsOfGenes.replace(key, impactsOfGenes.getOrElse(key){0.0} + delta)
+        val previous = impactsOfGenes.getOrPut(key){0.0}
+        impactsOfGenes.replace(key, previous + delta)
     }
+
     override fun copy(withTrack: Boolean): EvaluatedIndividual<T> {
         when(withTrack){
             false-> return copy()
@@ -85,12 +84,18 @@ where T : Individual {
                 getTrack()?.forEach {
                     copyTraces.add((it as EvaluatedIndividual<T> ).copy())
                 }
+
+                val copyUndoTraces = mutableListOf<EvaluatedIndividual<T>>()
+                undoTrack?.forEach {
+                    copyUndoTraces.add(it.copy())
+                }
                 return EvaluatedIndividual(
                         fitness.copy(),
                         individual.copy(withTrack) as T,
                         results.map(ActionResult::copy),
                         getDescription(),
-                        copyTraces
+                        copyTraces,
+                        copyUndoTraces
                 )
             }
         }
@@ -152,14 +157,6 @@ where T : Individual {
         }
 
         return list
-    }
-
-    fun getViewOfImpacts(){
-
-    }
-
-    fun getViewOfImpactsOfStructure(){
-
     }
 
     class ImpactOfGene(val step : Int, val id : String, var impact : Double)

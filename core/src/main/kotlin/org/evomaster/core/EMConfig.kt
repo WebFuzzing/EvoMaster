@@ -241,6 +241,10 @@ class EMConfig {
                     "collecting heuristics with 'heuristicsForSQL'")
         }
 
+        if(enableTrackEvaluatedIndividual && enableTrackIndividual){
+            throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
+        }
+
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -503,6 +507,8 @@ class EMConfig {
     @Cfg("Whether to print how much search done so far")
     var showProgress = true
 
+
+    //archive search
     @Experimental
     @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. "+
             "This is only needed when running experiments with different parameter settings.")
@@ -516,11 +522,17 @@ class EMConfig {
     @Cfg("Specify how often to save results when a search monitor is enabled")
     var processInterval = 100
 
+    //db
+    @Experimental
+    @Cfg("Whether to allow search to use data from db")
+    var allowDataFromDB = false
 
+    //resource-based mio
     enum class SmartSamplingStrategy{
         DEFAULT,
         RESOURCES
     }
+
     @Experimental
     @Cfg("Specify a strategy to sample an individual")
     var smartSamplingStrategy = SmartSamplingStrategy.DEFAULT
@@ -557,21 +569,6 @@ class EMConfig {
     var sampleControl = ResourceSamplingControl.EqualProbability
 
     @Experimental
-    @Cfg("Whether to track individual")
-    var enableTrackIndividual = false
-
-    @Experimental
-    @Cfg("Whether to track evaluated individual. " +
-            "Note that we recommend that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evalauted individual")
-    var enableTrackEvaluatedIndividual = false
-
-    @Experimental
-    @Cfg("Specify a length to track. " +
-            "-1 means track all history when track is enabled")
-    @Min(-1.0)
-    var trackLength : Int = -1
-
-    @Experimental
     @Cfg("Specify a probability to apply S1iR when sample control is Customized")
     @Min(0.0)@Max(1.0)
     var S1iR : Double = 0.25
@@ -588,4 +585,23 @@ class EMConfig {
     @Min(0.0)@Max(1.0)
     var SMdR : Double = 0.25
 
+    //track
+    @Experimental
+    @Cfg("Whether to track individual")
+    var enableTrackIndividual = false
+
+    @Experimental
+    @Cfg("Whether to track evaluated individual. " +
+            "Note that we recommend that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
+    var enableTrackEvaluatedIndividual = false
+
+    @Experimental
+    @Cfg("Specify a maximum length of track. " +
+            "-1 means track all history when track is enabled")
+    @Min(-1.0)
+    var trackLength : Int = -1
+
+    @Experimental
+    @Cfg("Specify whether to enable archive-based mutation")
+    var archiveMutation = false
 }

@@ -166,7 +166,7 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
          */
     }
 
-    private fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
+    protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
         if (configuration.heuristicsForSQL) {
 
             val dbData = mutableListOf<ReadDbDataDto>()

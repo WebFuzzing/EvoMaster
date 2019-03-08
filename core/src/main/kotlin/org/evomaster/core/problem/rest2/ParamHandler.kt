@@ -1,22 +1,27 @@
 package org.evomaster.core.problem.rest.serviceII
 
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.rest2.resources.token.parser.ParserUtil
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
-import kotlin.math.min
+import kotlin.IllegalArgumentException
 
-class BindParams {
+class ParamHandler {
 
     companion object {
 
         //FIXME
         var disableLog = true
-        private const val separator = "@"
 
-        private val log: Logger = LoggerFactory.getLogger(BindParams::class.java)
+        private const val DISRUPTIVE_NAME = "d_"
+        private const val BODYGENE_NAME = "body"
+        const val separator = "@"
+        var GENERAL_NAMES = mutableListOf("id", "name")
+
+        private val log: Logger = LoggerFactory.getLogger(ParamHandler::class.java)
 
         fun bindCreatePost(target : Param, params: List<Param>){
             if(!(target is BodyParam) || params.size != 1 || !(params[0] is BodyParam))
@@ -26,11 +31,11 @@ class BindParams {
 
         fun bindParam(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
             when(target){
-                is BodyParam -> BindParams.bindBodyParam(target, targetPath,sourcePath, params, inner)
-                is PathParam -> BindParams.bindPathParm(target, targetPath,sourcePath, params, inner)
-                is QueryParam -> BindParams.bindQueryParm(target, targetPath,sourcePath, params, inner)
-                is FormParam -> BindParams.bindFormParam(target, targetPath,sourcePath, params)
-                is HeaderParam -> BindParams.bindHeaderParam(target, targetPath,sourcePath, params)
+                is BodyParam -> bindBodyParam(target, targetPath,sourcePath, params, inner)
+                is PathParam -> bindPathParm(target, targetPath,sourcePath, params, inner)
+                is QueryParam -> bindQueryParm(target, targetPath,sourcePath, params, inner)
+                is FormParam -> bindFormParam(target, targetPath,sourcePath, params)
+                is HeaderParam -> bindHeaderParam(target, targetPath,sourcePath, params)
             }
         }
         private fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
@@ -63,10 +68,15 @@ class BindParams {
                             bindBodyAndOther(bp, targetPath, ip, sourcePath, true, inner)
                         }
             }else if(params.isNotEmpty()){
-                if((bp.gene as ObjectGene).fields.map { g -> g.name }.containsAll((params[0].gene as ObjectGene).fields.map { g -> g.name })){
-                    bp.gene.copyValueFrom(params[0].gene)
-                }
+                val valueGene = getValueGene(bp.gene)
+                val pValueGene = getValueGene(params[0].gene)
+                if(valueGene !is ObjectGene
+                        || pValueGene !is ObjectGene)
+                    throw IllegalArgumentException("cannot bind")
 
+                if((valueGene as ObjectGene).fields.map { g -> g.name }.containsAll((pValueGene as ObjectGene).fields.map { g -> g.name })){
+                    valueGene.copyValueFrom(pValueGene)
+                }
                 //throw java.lang.IllegalArgumentException("it does not allow to bind POST $targetPath with POST $sourcePath")
             }
         }
@@ -104,7 +114,6 @@ class BindParams {
             }
         }
 
-        //FIXME check whether params can contain two body params?
         fun numOfBodyParam(params: List<Param>) : Int{
             params.filter { it is BodyParam }?.let {
                 return it.size
@@ -118,22 +127,118 @@ class BindParams {
                 if (b2g) b.copyValueFrom(g)
                 else g.copyValueFrom(b)
             }else{
-                val first = if(b2g) b else g
-                val second = if(b2g) g else b
-                //FIXME covert StringGene to other type if required, and currently only support StringGene to LongGene for handling "id" attribute in some cases
-                if(first is StringGene)
-                    first.value = second.getValueAsRawString()
-                else{
-                    if (first is LongGene){
-                        val sv = second.getValueAsRawString().toLongOrNull()
-                        if(sv != null)
-                            first.value = sv
-                        else if(second is StringGene){
-                            second.value = first.getValueAsRawString()
-                        }
-                    }
+                //TODO
+                val result = if(b2g) copyWithTypeAdapter(b, g)
+                            else copyWithTypeAdapter(g, b)
+                if(!result){
+                    if(!disableLog) log.info("$g fails to copy value from gene $g")
                 }
             }
+        }
+
+        /**
+         * bind [b] based on [g].
+         * [b] can be one of types : DoubleGene, FloatGene, IntegerGene, LongGene, StringGene
+         * [g] can be all types of [b] plus ImmutableDataHolderGene
+         */
+        private fun copyWithTypeAdapter(b : Gene, g : Gene) : Boolean{
+            return when(b){
+                is DoubleGene -> covertToDouble(b,g)
+                is FloatGene -> covertToFloat(b,g)
+                is IntegerGene -> covertToInteger(b,g)
+                is LongGene -> covertToLong(b,g)
+                is StringGene -> covertToString(b,g)
+                else -> false
+            }
+        }
+
+        private fun covertToDouble(b: DoubleGene, g : Gene) : Boolean{
+            when(g){
+                is DoubleGene -> b.value = g.value
+                is FloatGene -> b.value = g.value.toDouble()
+                is IntegerGene -> b.value = g.value.toDouble()
+                is LongGene -> b.value = g.value.toDouble()
+                is StringGene -> {
+                    val value = g.value.toDoubleOrNull() ?: return false
+                    b.value = value
+                }
+                is ImmutableDataHolderGene -> {
+                    val value = g.value.toDoubleOrNull() ?: return false
+                    b.value = value
+                }
+                else -> return false
+            }
+            return true
+        }
+
+        private fun covertToFloat(b: FloatGene, g : Gene) : Boolean{
+            when(g){
+                is FloatGene -> b.value = g.value
+                is DoubleGene -> b.value = g.value.toFloat()
+                is IntegerGene -> b.value = g.value.toFloat()
+                is LongGene -> b.value = g.value.toFloat()
+                is StringGene -> {
+                    val value = g.value.toFloatOrNull() ?: return false
+                    b.value = value
+                }
+                is ImmutableDataHolderGene -> {
+                    val value = g.value.toFloatOrNull() ?: return false
+                    b.value = value
+                }
+                else -> return false
+            }
+            return true
+        }
+
+        private fun covertToInteger(b: IntegerGene, g : Gene) : Boolean{
+            when(g){
+                is IntegerGene -> b.value = g.value
+                is FloatGene -> b.value = g.value.toInt()
+                is DoubleGene -> b.value = g.value.toInt()
+                is LongGene -> b.value = g.value.toInt()
+                is StringGene -> {
+                    val value = g.value.toIntOrNull() ?: return false
+                    b.value = value
+                }
+                is ImmutableDataHolderGene -> {
+                    val value = g.value.toIntOrNull() ?: return false
+                    b.value = value
+                }
+                else -> return false
+            }
+            return true
+        }
+
+        private fun covertToLong(b: LongGene, g : Gene) : Boolean{
+            when(g){
+                is LongGene -> b.value = g.value
+                is FloatGene -> b.value = g.value.toLong()
+                is IntegerGene -> b.value = g.value.toLong()
+                is DoubleGene -> b.value = g.value.toLong()
+                is StringGene -> {
+                    val value = g.value.toLongOrNull() ?: return false
+                    b.value = value
+                }
+                is ImmutableDataHolderGene -> {
+                    val value = g.value.toLongOrNull() ?: return false
+                    b.value = value
+                }
+                else -> return false
+            }
+            return true
+        }
+
+        private fun covertToString(b: StringGene, g : Gene) : Boolean{
+            when(g){
+                is StringGene -> b.value = g.value
+                is FloatGene -> b.value = g.value.toString()
+                is IntegerGene -> b.value = g.value.toString()
+                is LongGene -> b.value = g.value.toString()
+                is DoubleGene -> b.value = g.value.toString()
+                is ImmutableDataHolderGene -> b.value = g.value
+                else -> return false
+            }
+            return true
         }
 
         private fun compareParamNames(a : String, b : String) : Boolean{
@@ -141,35 +246,20 @@ class BindParams {
         }
 
         private fun scoreOfMatch(target : String, source : String, inner : Boolean) : Int{
-            //FIXME if "d_" is a real attribute of some classes
-            val targets = target.split(separator).filter { it != "d_"  }.toMutableList()
-            val sources = source.split(separator).filter { it != "d_"  }.toMutableList()
-            //if(inner){
-            val removed = sources.map { it }.toMutableList()
-            removed.remove("register")
-            if(sources.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == sources.toHashSet().size)
-                return 0
-            if(removed.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == removed.toHashSet().size)
-                return 0
-
-            //}
+            val targets = target.split(separator).filter { it != DISRUPTIVE_NAME  }.toMutableList()
+            val sources = source.split(separator).filter { it != DISRUPTIVE_NAME  }.toMutableList()
+            if(inner){
+                if(sources.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == sources.toHashSet().size)
+                    return 0
+            }
             if(targets.toHashSet().size == sources.toHashSet().size){
                 if(targets.containsAll(sources)) return 0
             }
-            if(sources.contains("body")){
-                val sources_rbody = sources.filter { it != "body"  }.toMutableList()
+            if(sources.contains(BODYGENE_NAME)){
+                val sources_rbody = sources.filter { it != BODYGENE_NAME  }.toMutableList()
                 if(sources_rbody.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == sources_rbody.toHashSet().size)
                     return 0
-                val removed = sources_rbody.map { it }.toMutableList()
-                removed.remove("register")
-                if(removed.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == removed.toHashSet().size)
-                    return 0
-//                removed.map { c -> if(c.contains("_")) c.split("_").first() else c }
-//                if(removed.toHashSet().map { s -> if(target.toLowerCase().contains(s.toLowerCase()))1 else 0}.sum() == removed.toHashSet().size)
-//                    return 0
             }
-
-            //val repeat = targets.plus(sources).filter { targets.contains(it).xor(sources.contains(it)) }.size
             if(targets.first() != sources.first())
                 return -1
             else
@@ -195,6 +285,45 @@ class BindParams {
             }
 
             return maps
+        }
+
+        fun bindParam(dbAction: DbAction, param : Param, previousToken: String){
+            var gene  : Gene? = null
+            var similarity = 0.0
+            dbAction.seeGenes().forEach findGene@{
+                val score = compareDBGene(dbAction, it, param.name, previousToken)
+                if(score>similarity){
+                    similarity = score
+                    gene = it
+                }
+                if(score == 1.0) return@findGene
+            }
+            if(similarity > ParserUtil.SimilarityThreshold ){
+                copyGene(getValueGene(gene!!),  getValueGene(param.gene), false)
+            }
+        }
+
+        fun compareDBGene(dbAction: DbAction, gene: Gene, pName: String, previousToken : String) : Double{
+            val list = mutableListOf<Double>()
+            ParserUtil.stringSimilarityScore(gene.name, pName).apply {
+                list.add(this)
+                if(this == 1.0) return this
+            }
+            if(isGeneralName(gene.name)){
+                ParserUtil.stringSimilarityScore(dbAction.table.name+gene.name, pName).apply {
+                    list.add(this)
+                    if(this == 1.0) return this
+                }
+                ParserUtil.stringSimilarityScore(gene.name, previousToken+pName).apply {
+                    list.add(this)
+                    if(this == 1.0) return this
+                }
+            }
+            return list.max()!!
+        }
+
+        private fun isGeneralName(text : String) : Boolean{
+            return GENERAL_NAMES.contains(text.toLowerCase())
         }
 
         private fun genGeneNameInPath(names : MutableList<String>, tokensInPath : List<String>?) : String{
@@ -276,6 +405,16 @@ class BindParams {
 
         fun getParamId(param : Param, path : RestPath) : String{
             return listOf(param.name).plus(path.getStaticTokens().reversed()).joinToString(separator)
+        }
+
+        fun getValueGene(gene : Gene) : Gene{
+            if(gene is OptionalGene){
+                return getValueGene(gene.gene)
+            }else if(gene is DisruptiveGene<*>)
+                return getValueGene(gene.gene)
+            else if(gene is SqlPrimaryKeyGene)
+                return getValueGene(gene.gene)
+            return gene
         }
     }
 }

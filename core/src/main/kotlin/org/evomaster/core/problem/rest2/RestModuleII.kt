@@ -22,7 +22,6 @@ class RestModuleII : AbstractModule(){
                 .to(RestSamplerII::class.java)
                 .asEagerSingleton()
 
-        //UpdatedByMan
         bind(object : TypeLiteral<Sampler<*>>() {})
                 .to(RestSamplerII::class.java)
                 .asEagerSingleton()

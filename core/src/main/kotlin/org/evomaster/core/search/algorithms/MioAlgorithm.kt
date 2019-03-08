@@ -14,7 +14,6 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
         return EMConfig.Algorithm.MIO
     }
 
-
     override fun search(): Solution<T> {
 
         time.startSearch()
@@ -36,6 +35,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 }
 
                 ff.calculateCoverage(ind)?.run {
+
                     archive.addIfNeeded(this)
 
                     //FIXME

@@ -9,9 +9,6 @@ import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.tracer.Impact
 import org.evomaster.core.search.service.tracer.ImpactByTimes
 import org.evomaster.core.search.service.tracer.TraceableElement
 import java.lang.IllegalArgumentException
@@ -120,7 +117,7 @@ class RestIndividualII : RestIndividual {
     }
 
     fun getTemplate() : String{
-        return actions.map { (it as RestCallAction).verb.toString() }.joinToString(HandleActionTemplate.SeparatorTemplate)
+        return actions.map { (it as RestCallAction).verb.toString() }.joinToString(ActionsTemplateHandler.SeparatorTemplate)
     }
 
     override fun next(description : String) : TraceableElement?{
@@ -169,7 +166,7 @@ class RestIndividualII : RestIndividual {
         if(impactsOfParam.isEmpty()){
             actions.filter { it is RestCallAction }.forEach { a ->
                 (a as RestCallAction).parameters.forEach { p->
-                    val id = BindParams.getParamId(p, a.path)
+                    val id = ParamHandler.getParamId(p, a.path)
                     val impact = impactsOfParam.getOrPut(id){ImpactByTimes<Param>(id)}
                     impact.weight +=1
                 }

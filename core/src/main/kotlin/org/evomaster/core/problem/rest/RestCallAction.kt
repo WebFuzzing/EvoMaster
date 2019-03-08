@@ -1,12 +1,13 @@
 package org.evomaster.core.problem.rest
 
-import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.serviceII.BindParams
+import org.evomaster.core.problem.rest.serviceII.ParamHandler
+import org.evomaster.core.problem.rest2.resources.token.parser.ActionRToken
+import org.evomaster.core.problem.rest2.resources.token.parser.ParserUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
@@ -37,6 +38,9 @@ class RestCallAction(
          */
         var locationId: String? = null
 ) : RestAction {
+
+    val tokens : MutableMap<String, ActionRToken> = mutableMapOf()
+
 
     override fun shouldCountForFitnessEvaluations(): Boolean = true
 
@@ -94,13 +98,13 @@ class RestCallAction(
             return
         }
         //FIXME bind required parameter
-        if(BindParams.numOfBodyParam(parameters) < parameters.size){
+        if(ParamHandler.numOfBodyParam(parameters) < parameters.size){
             parameters.filter { param -> !(param is BodyParam) }.forEach { param->
-                BindParams.bindParam(param, this.path, otherPath, params)
+                ParamHandler.bindParam(param, this.path, otherPath, params)
             }
         }else{
             parameters.forEach {param->
-                BindParams.bindParam(param, this.path, otherPath, params)
+                ParamHandler.bindParam(param, this.path, otherPath, params)
             }
 
         }
@@ -144,5 +148,14 @@ class RestCallAction(
                     "$name=$value"
                 }
                 .joinToString("&")
+    }
+
+    fun initTokens(description : String?){
+        if(description!= null){
+            tokens.clear()
+            ParserUtil.parseAction(this, description, tokens)
+        }
+
+
     }
 }

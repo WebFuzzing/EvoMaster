@@ -56,6 +56,8 @@ class RestActionBuilder {
                             val action = RestCallAction(verb, restPath, params)
 
                             actionCluster.put(action.getName(), action)
+
+                            action.initTokens(o.value.description)
                         }
                     }
 

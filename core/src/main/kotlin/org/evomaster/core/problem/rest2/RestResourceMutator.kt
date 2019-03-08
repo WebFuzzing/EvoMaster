@@ -10,6 +10,8 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.mutator.StandardMutator
 
 class RestResourceMutator : StandardMutator<RestIndividualII>() {
+    @Inject
+    private lateinit var rm :ResourceManageService
 
     override fun innerMutate(individual: RestIndividualII): RestIndividualII {
         val copy = individual.copy() as RestIndividualII
@@ -27,8 +29,12 @@ class RestResourceMutator : StandardMutator<RestIndividualII>() {
 //        else Individual.GeneFilter.NO_SQL
 //
 //        val genesToMutate = copy.seeGenes(filter).filter(Gene::isMutable)
-//
-        val genesToMutate = copy.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
+
+        //TODO archive-based mutation
+        val genesToMutate = if(config.archiveMutation)
+                                TODO()
+                            else copy.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
+
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
         if (genesToMutate.isEmpty()) {
@@ -59,6 +65,8 @@ class RestResourceMutator : StandardMutator<RestIndividualII>() {
                     continue
                 }
                 val copyGene = gene.copy()
+
+                //TODO archive-based mutation
                 mutateGene(gene, allGenes)
 
                 gene.mutated = copyGene.containsSameValueAs(gene)

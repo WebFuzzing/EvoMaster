@@ -7,11 +7,11 @@ class LocalMain {
                     enableProcessMonitor : Boolean = false,
                     run : Int = 1,
                     smartSampling : String = EMConfig.SmartSamplingStrategy.RESOURCES.toString(),
-                    sampleControl : String = EMConfig.ResourceSamplingControl.Actions.toString(),
+                    sampleControl : String = EMConfig.ResourceSamplingControl.ConArchive.toString(),
                     probOfSmartSampling : Double = 0.5,
                     maxTestSize : Int = 10,
                     isStoppedByActions : Boolean = true,
-                    budget: Int = 10000,
+                    budget: Int = 1000,
                     population: Int = 30,
                     port : Int = 40100,
                     baseFolder : String = "/Users/mazh001/Documents/Workspace/temp-results"
@@ -30,11 +30,26 @@ class LocalMain {
                     "--populationSize",population.toString(),
                     "--enableProcessMonitor",enableProcessMonitor.toString(),
                     "--processFiles", baseFolder + "/$cs/$label/process",
+
+                    //resource-based samplping
                     "--probOfSmartSampling", probOfSmartSampling.toString(),
 //                    "--probOfRandomSampling","1.0",
 //                    "--endProbOfRandomSampling","1.0",
                     "--smartSampling",smartSampling,
                     "--sampleControl", sampleControl,
+
+                    //track
+                    "--enableTrackEvaluatedIndividual", true.toString(),
+
+                    //allowDataFromDB
+                    "--allowDataFromDB", true.toString(),
+
+
+                    //disable db
+                    "--heuristicsForSQL", false.toString(),
+                    "--generateSqlDataWithDSE",false.toString(),
+                    "--generateSqlDataWithSearch", false.toString(),
+
                     "--writeStatistics",true.toString(),
                     "--snapshotInterval", "1",
                     "--statisticsFile",baseFolder + "/$cs/$label/reports/statistics.csv",

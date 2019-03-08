@@ -5,6 +5,7 @@ import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
@@ -49,9 +50,10 @@ class RestSamplerII : Sampler<RestIndividualII>() {
 
     private val adHocInitialIndividuals: MutableList<RestIndividualII> = mutableListOf()
 
-    private var sqlInsertBuilder: SqlInsertBuilder? = null
+    var sqlInsertBuilder: SqlInsertBuilder? = null
+    var existingSqlData : List<DbAction> = listOf()
+        private set
 
-    //UpdatedByMan
     private val samplingResourceCounter : MutableMap<String , Int> = mutableMapOf()
     private val samplingComResourceCounter : MutableMap<String , Int> = mutableMapOf()
     private val separatorResources = "::"
@@ -77,22 +79,25 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         }
         actionCluster.clear()
 
-        //FIXME check if it is required to update the RestActionBuilder for initializing resourceCluster resourceCategories and so on
         RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
 
         setupAuthentication(infoDto)
 
-        //UpdatedByMan
+        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
+
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+            existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
+        }
+
         if(config.smartSamplingStrategy == EMConfig.SmartSamplingStrategy.RESOURCES){
+            if(config.allowDataFromDB){
+                if(infoDto.sqlSchemaDto != null && sqlInsertBuilder == null)
+                    sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
+            }
+
             initAbstractResources()
             initAdHocInitialIndividuals()
             ssc.initialize()
-//            ssc.initApplicableStrategies()
-//            ssc.initProbability()
-        }
-
-        if (infoDto.sqlSchemaDto != null && configuration.shouldGenerateSqlData()) {
-            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto)
         }
 
         log.debug("Done initializing {}", RestSamplerII::class.simpleName)
@@ -223,18 +228,8 @@ class RestSamplerII : Sampler<RestIndividualII>() {
             At the beginning, sampleAll from this set, until it is empty
          */
         if (!adHocInitialIndividuals.isEmpty()) {
-            val ind = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
+            val ind = adHocInitialIndividuals.removeAt(0)
             return ind
-        }
-        //FIXME
-        rm.getResourceCluster().forEach { t, u ->  u.enableSkip = true}
-
-        rm.getResourceCluster().values.forEach { r->
-            r.templates.forEach { t, u ->
-                if(!u.sizeAssured){
-                    println(r.path.toString()+" "+t)
-                }
-            }
         }
 
         val restCalls = mutableListOf<RestResourceCalls>()
@@ -246,8 +241,6 @@ class RestSamplerII : Sampler<RestIndividualII>() {
             SmartSamplingController.SampleStrategy.S2dR -> sampleComResource(restCalls)
             SmartSamplingController.SampleStrategy.SMdR -> sampleManyResources(restCalls)
         }
-
-
 
         if(authentications.isNotEmpty()){
             val auth = getRandomAuth(0.0)
@@ -275,27 +268,21 @@ class RestSamplerII : Sampler<RestIndividualII>() {
 
     private fun sampleIndependentAction(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAResource(randomness)
-        //samplingResourceCounter.getValue(key).plus(1)
         val resource = rm.getResourceCluster().getValue(key)
         resourceCalls.add(resource.sampleIndResourceCall(randomness, config.maxTestSize))
     }
 
     private fun sampleOneResource(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAResource(randomness)
-        //samplingResourceCounter.getValue(key).plus(1)
-        val resource = rm.getResourceCluster().getValue(key)
-        resourceCalls.add(resource.sampleRestResourceCalls(randomness, config.maxTestSize))
+        rm.generateCall(key, resourceCalls, config.maxTestSize)
     }
 
     private fun sampleComResource(resourceCalls: MutableList<RestResourceCalls>){
         val keys = selectAComResource(randomness)
-        //samplingComResourceCounter.getValue(keys).plus(1)
         var size = config.maxTestSize
         var num = 0
         for (key in keys.split(separatorResources)){
-            val temp = rm.getResourceCluster().getValue(key)
-            resourceCalls.add(temp.sampleRestResourceCalls(randomness, size))
-            //samplingResourceCounter.getValue(key).plus(1)
+            rm.generateCall(key, resourceCalls, size)
             size -= resourceCalls.last().actions.size
             num++
         }
@@ -308,7 +295,8 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         var num = 0
         while(size > 1 && executed.size < candR.size){
             val key = randomness.choose(candR.keys.filter { !executed.contains(it) })
-            resourceCalls.add(candR.getValue(key).sampleRestResourceCalls(randomness, size))
+//            resourceCalls.add(candR.getValue(key).sampleRestResourceCalls(randomness, size))
+            rm.generateCall(key, resourceCalls, size)
             size -= resourceCalls.last().actions.size
             executed.add(key)
             num++
@@ -328,91 +316,52 @@ class RestSamplerII : Sampler<RestIndividualII>() {
 
     }
 
-    //UpdatedByMan add all resources in adHocIntialIndividuals, each resources with a sequence of actions maps an individual
-    private fun initAdHocInitialIndividuals() {
-
+    //TEST MAN
+    private fun initSpecifiedAdHocInitialIndividuals() {
         adHocInitialIndividuals.clear()
-        createSingleResourceOnEachEndpoint(NoAuth(), arrayOf(3,1))
+        val specified = arrayOf("POST:/admin/seed")
         authentications.forEach { auth ->
-            createSingleResourceOnEachEndpoint(auth, arrayOf(3,1))
-        }
-//        if(authentications.isNotEmpty()) randomness.choose(authentications)?.let {
-//            createSingleResourceOnEachEndpoint(it, 1)
-//        }else
-//            createSingleResourceOnEachEndpoint(NoAuth(), 1)
-    }
-
-
-    fun handleAddedRestIndividualII(ind : RestIndividualII) : MutableList<RestIndividualII>{
-        //precondition calls.actions.size > 1 && calls.actions.size < resource.actions.size
-        val dind = mutableListOf<RestIndividualII>()
-        if(ind.getResourceCalls().size == 1 && ind.getResourceCalls()[0].actions.size > 1){
-            val call = ind.getResourceCalls()[0]
-            if(call.resource.ar.actions.size > 1 && call.actions.size in 1..(call.resource.ar.actions.size-1)){
-                call.resource.ar.handleAdded(call)?.let {
-                    dind.add(RestIndividualII( mutableListOf(it), SampleType.SMART_RESOURCE))
-                }
-            }
-        }else if(ind.getResourceCalls().size == 2){
-            //two resource
-            ind.getResourceCalls().forEach {call->
-                if(call.resource.ar.actions.size > 1 && call.actions.size in 1..(call.resource.ar.actions.size-1)){
-                    call.resource.ar.handleAdded(call)?.let {
-                        dind.add(RestIndividualII(mutableListOf(it), SampleType.SMART_RESOURCE))
-                    }
-                }
-            }
-
-            val firstCall = ind.getResourceCalls()[0]
-            val multiCalls = mutableListOf<RestResourceCalls>()
-            var mfirstCall: RestResourceCalls? = null
-            if((firstCall.actions.last() as RestCallAction).verb == HttpVerb.DELETE){
-                mfirstCall = firstCall.resource.ar.createCallByVerb(HttpVerb.POST, firstCall.resource)
-            }else if((firstCall.actions.last() as RestCallAction).verb == HttpVerb.POST){
-                mfirstCall = firstCall.resource.ar.createCallByVerb(HttpVerb.DELETE, firstCall.resource)
-            }
-            if(mfirstCall != null){
-                multiCalls.add(mfirstCall)
-                multiCalls.add(ind.getResourceCalls()[1].copy())
-                dind.add(RestIndividualII( multiCalls, SampleType.SMART_RESOURCE))
-            }
-
-        }
-        return dind
-    }
-
-    //TODO use str : int to decide which strategy to initialize ad hoc individual
-    private fun createSingleResourceOnEachEndpoint(auth: AuthenticationInfo, strs : Array<Int>) {
-        //TODO get strategy to initialize adHocInitialIndividuals
-        strs.forEach { str ->
-            rm.getResourceCluster().values.forEach {rar->
-                rar.initialIndividuals(str, auth, adHocInitialIndividuals, randomness, config.maxTestSize)
+            specified.forEach {
+                createSingleResourceOnEachEndpoint(actionCluster.getValue(it) as RestAction, auth)
             }
         }
 
     }
-
-    fun checkIfAllGets(actions: List<RestAction>) : Boolean{
-        actions.forEach {
-            if(it is RestCallAction && it.verb != HttpVerb.GET) return false
-        }
-        return true
+    //TEST MAN
+    private fun createSingleResourceOnEachEndpoint(actionKey: RestAction, auth: AuthenticationInfo) {
+        rm.createSingleResourceOnEachEndpoint(actionKey,  auth, adHocInitialIndividuals)
     }
 
-    //updatedbyMan
+    private fun initAdHocInitialIndividuals() {
+        adHocInitialIndividuals.clear()
+
+        //one action
+        createSingleResourceOnEachEndpoint(NoAuth())
+        authentications.forEach { auth ->
+            createSingleResourceOnEachEndpoint(auth)
+        }
+
+        //template that has more than one actions
+        createSingleResourceBasedOnTemplate(NoAuth())
+        authentications.forEach { auth ->
+            createSingleResourceBasedOnTemplate(auth)
+        }
+
+    }
+
+    private fun createSingleResourceOnEachEndpoint(auth: AuthenticationInfo) {
+        rm.createSingleResourceOnEachEndpoint(auth, adHocInitialIndividuals)
+    }
+
+    private fun createSingleResourceBasedOnTemplate(auth: AuthenticationInfo) {
+        rm.createSingleResourceBasedOnTemplate(auth, adHocInitialIndividuals)
+    }
+
     private fun initAbstractResources(){
-//        actionCluster.values.forEach { u ->
-//            if(u is RestCallAction){
-//                resourceCluster.getOrPut(u.path.toString()){ RestAResource(u.path.copy(), mutableListOf()) }.actions.add(u)
-//            }
-//
-//        }
         rm.initAbstractResources(actionCluster)
 
-        rm.getResourceCluster().forEach { k, ar->
+        rm.getResourceCluster().keys.forEach { k->
             samplingResourceCounter.getOrPut(k){0}
-            ar.setAncestors(rm.getResourceCluster().values.toList())
-            ar.initVerbs()
         }
 
         samplingResourceCounter.keys.forEach { k ->
@@ -423,6 +372,25 @@ class RestSamplerII : Sampler<RestIndividualII>() {
             }
         }
     }
+
+    override fun hasSpecialInit(): Boolean {
+        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+    }
+
+    override fun resetSpecialInit() {
+        initAdHocInitialIndividuals()
+    }
+
+    fun handleAddResource(ind : RestIndividualII, maxTestSize : Int) : RestResourceCalls{
+        val existingRs = ind.getResourceCalls().map { it.resource.ar.path.toString() }
+        val candidate = randomness.choose(rm.getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.values)
+        return candidate.sampleAnyRestResourceCalls(randomness,maxTestSize )
+    }
+
+    override fun feedback(betterResult: Boolean) {
+        if(betterResult) ssc.reportImprovement()
+    }
+
 
     private fun updateSamplingResourceCounter(actions: List<RestAction>) {
         actions
@@ -437,38 +405,42 @@ class RestSamplerII : Sampler<RestIndividualII>() {
                 }
     }
 
-    override fun hasSpecialInit(): Boolean {
-        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
-    }
 
-    override fun resetSpecialInit() {
-        initAdHocInitialIndividuals()
-    }
-
-    //FIXME copy from RestSampler for mutation
-    fun sampleRandomAction(noAuthP: Double): RestAction {
-        val action = randomness.choose(actionCluster).copy() as RestAction
-        randomizeActionGenes(action)
-
-        if (action is RestCallAction) {
-            action.auth = getRandomAuth(noAuthP)
-        }
-
-        return action
-    }
-
-    fun handleAddResource(ind : RestIndividualII, maxTestSize : Int) : RestResourceCalls{
-        val existingRs = ind.getResourceCalls().map { it.resource.ar.path.toString() }
-        val candidate = randomness.choose(rm.getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.values)
-        return candidate.sampleAnyRestResourceCalls(randomness,maxTestSize )
-    }
-
-
-    private fun randomizeActionGenes(action: Action) {
-        action.seeGenes().forEach { it.randomize(randomness, false) }
-    }
-
-    override fun feedback(betterResult: Boolean) {
-        if(betterResult) ssc.reportImprovement()
-    }
+//    fun handleAddedRestIndividualII(ind : RestIndividualII) : MutableList<RestIndividualII>{
+//        //precondition calls.actions.size > 1 && calls.actions.size < resource.actions.size
+//        val dind = mutableListOf<RestIndividualII>()
+//        if(ind.getResourceCalls().size == 1 && ind.getResourceCalls()[0].actions.size > 1){
+//            val call = ind.getResourceCalls()[0]
+//            if(call.resource.ar.actions.size > 1 && call.actions.size in 1..(call.resource.ar.actions.size-1)){
+//                call.resource.ar.handleAdded(call)?.let {
+//                    dind.add(RestIndividualII( mutableListOf(it), SampleType.SMART_RESOURCE))
+//                }
+//            }
+//        }else if(ind.getResourceCalls().size == 2){
+//            //two resource
+//            ind.getResourceCalls().forEach {call->
+//                if(call.resource.ar.actions.size > 1 && call.actions.size in 1..(call.resource.ar.actions.size-1)){
+//                    call.resource.ar.handleAdded(call)?.let {
+//                        dind.add(RestIndividualII(mutableListOf(it), SampleType.SMART_RESOURCE))
+//                    }
+//                }
+//            }
+//
+//            val firstCall = ind.getResourceCalls()[0]
+//            val multiCalls = mutableListOf<RestResourceCalls>()
+//            var mfirstCall: RestResourceCalls? = null
+//            if((firstCall.actions.last() as RestCallAction).verb == HttpVerb.DELETE){
+//                mfirstCall = firstCall.resource.ar.createCallByVerb(HttpVerb.POST, firstCall.resource)
+//            }else if((firstCall.actions.last() as RestCallAction).verb == HttpVerb.POST){
+//                mfirstCall = firstCall.resource.ar.createCallByVerb(HttpVerb.DELETE, firstCall.resource)
+//            }
+//            if(mfirstCall != null){
+//                multiCalls.add(mfirstCall)
+//                multiCalls.add(ind.getResourceCalls()[1].copy())
+//                dind.add(RestIndividualII( multiCalls, SampleType.SMART_RESOURCE))
+//            }
+//
+//        }
+//        return dind
+//    }
 }

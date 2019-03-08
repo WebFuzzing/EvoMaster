@@ -1,5 +1,8 @@
 package org.evomaster.core.database
 
+import ch.qos.logback.classic.db.SQLBuilder
+import org.apache.commons.lang3.mutable.Mutable
+import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
@@ -8,6 +11,7 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest2.db.SQLGenerator
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
@@ -238,5 +242,108 @@ class SqlInsertBuilder(
         }
 
         return list
+    }
+
+    /**
+     * get existing data in db, select * from table
+     */
+    fun extractExisting(dataInDB : MutableMap<String, MutableList<DataRowDto>>){
+
+        if(dbExecutor == null){
+            throw IllegalStateException("No Database Executor registered for this object")
+        }
+
+        dataInDB.clear()
+
+        for(table in tables.values){
+            val sql = SQLGenerator.genSelectAll(table)
+
+            val dto = DatabaseCommandDto()
+            dto.command = sql
+
+            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+                    ?: continue
+            dataInDB.getOrPut(table.name){ result.rows.map { it }.toMutableList()}
+        }
+    }
+
+    /**
+     * get existing pks in db
+     */
+    fun extractExistingPKs(dataInDB : MutableMap<String, MutableList<DataRowDto>>){
+
+        if(dbExecutor == null){
+            throw IllegalStateException("No Database Executor registered for this object")
+        }
+
+        dataInDB.clear()
+
+        for(table in tables.values){
+            val pks = table.columns.filter { it.primaryKey }
+            val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM ${table.name}"
+
+            val dto = DatabaseCommandDto()
+            dto.command = sql
+
+            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+                    ?: continue
+            dataInDB.getOrPut(table.name){ result.rows.map { it }.toMutableList()}
+        }
+    }
+
+
+    /**
+     * bind genes for the case missing creation, dbaction includes all values of columns
+     */
+    fun extractExistingByCols(tableName: String, pkValues : DataRowDto): DbAction{
+
+        if(dbExecutor == null){
+            throw IllegalStateException("No Database Executor registered for this object")
+        }
+
+        val table = tables[tableName]!!
+
+        val pks = table.columns.filter { it.primaryKey }
+
+        val cols = table.columns.toList()
+
+        val condition = SQLGenerator.composeAndConditions(
+                SQLGenerator.genConditions(
+                        pks.map { it.name }.toTypedArray(),
+                        pkValues.columnData,
+                        table)
+        )
+
+        val sql = SQLGenerator.genSelect(cols.map { it.name }.toTypedArray(),table, condition)
+
+        val dto = DatabaseCommandDto()
+        dto.command = sql
+
+        val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+                ?: throw IllegalArgumentException("rows regarding pks can not be found")
+        if(result.rows.size != 1){
+            throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
+        }
+
+        val id = counter++
+
+        val row = result.rows.first()
+        val genes = mutableListOf<Gene>()
+
+        for(i in 0 until cols.size){
+
+            val colName= cols[i].name
+            val inQuotes = cols[i].type.shouldBePrintedInQuotes()
+
+            val gene = if(cols[i].primaryKey){
+                SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row.columnData[i], inQuotes), id)
+            }else{
+                ImmutableDataHolderGene(colName, row.columnData[i], inQuotes)
+            }
+            genes.add(gene)
+        }
+
+        return DbAction(table, pks.toSet(), id, genes, true)
+
     }
 }

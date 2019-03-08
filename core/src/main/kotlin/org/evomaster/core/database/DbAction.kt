@@ -41,7 +41,7 @@ class DbAction(
             }
 
             for(pk in computedGenes){
-                if(pk !is SqlPrimaryKeyGene || pk.gene !is ImmutableDataHolderGene){
+                if(!((pk is SqlPrimaryKeyGene && pk.gene is ImmutableDataHolderGene) || pk is ImmutableDataHolderGene)) {
                     throw IllegalArgumentException("Invalid gene: ${pk.name}")
                 }
             }

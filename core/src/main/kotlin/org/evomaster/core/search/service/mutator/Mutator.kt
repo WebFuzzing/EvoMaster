@@ -8,8 +8,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.serviceII.RestIndividualII
-import org.evomaster.core.problem.rest2.resources.ResourceManageService
 import org.evomaster.core.search.service.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -32,8 +30,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
-    @Inject
-    protected lateinit var rm : ResourceManageService
     /**
      * @return a mutated next
      */
@@ -48,41 +44,50 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
             : EvaluatedIndividual<T> {
 
-        var current = individual
+        var curEval = individual
         var targets = archive.notCoveredTargets()
 
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            var trackedCurrent = current.copy(config.enableTrackEvaluatedIndividual)
+            var evalBeforeMutated = curEval.copy(config.enableTrackEvaluatedIndividual)
 
             if (!time.shouldContinueSearch()) {
                 break
             }
 
-            structureMutator.addInitializingActions(current)
+            structureMutator.addInitializingActions(curEval)
 
-            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert{DbActionUtils.verifyActions(curEval.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedInd = mutate(current.individual)
+            val mutatedInd = mutate(curEval.individual)
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
-            val trackedMutated = if(config.enableTrackEvaluatedIndividual && trackedCurrent.isCapableOfTracking()) trackedCurrent.next(getTrackOperator(), mutated)!! else mutated
-            val reachNew = archive.wouldReachNewTarget(trackedMutated)
+            val reachNew = archive.wouldReachNewTarget(mutated)
 
-            if (reachNew || !current.fitness.subsumes(trackedMutated.fitness, targets)) {
-                if(trackedMutated.individual is RestIndividualII)rm.updateRelevants(trackedMutated.individual, true)
-                archive.addIfNeeded(trackedMutated)
-                current = trackedMutated
-            }else
-                if(trackedMutated.individual is RestIndividualII)rm.updateRelevants(trackedMutated.individual, false)
+            if (reachNew || !curEval.fitness.subsumes(mutated.fitness, targets)) {
+
+                val mutatedWithTracks = if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()){
+                    evalBeforeMutated.next(getTrackOperator(), mutated)!!
+                }else mutated
+
+                if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()) mutatedWithTracks.updateImpactOfGenes(mutated)
+                val added = archive.addIfNeeded(mutatedWithTracks)
+                if(!added){
+                    //TODO check if the individual is not added into archive
+                }
+                curEval = mutatedWithTracks
+
+            }else{
+                if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()) evalBeforeMutated.updateImpactOfGenes(mutated)
+            }
         }
 
-        return current
+        return curEval
     }
 
     fun mutateAndSave(individual: EvaluatedIndividual<T>, archive: Archive<T>)

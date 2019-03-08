@@ -18,6 +18,10 @@ class ConstantModule : AbstractModule() {
                 .to(ConstantSampler::class.java)
                 .asEagerSingleton()
 
+        bind(object : TypeLiteral<Sampler<*>>() {})
+                .to(ConstantSampler::class.java)
+                .asEagerSingleton()
+
         bind(ConstantSampler::class.java)
                 .asEagerSingleton()
 
@@ -32,6 +36,9 @@ class ConstantModule : AbstractModule() {
 
         bind(object : TypeLiteral<Archive<ConstantIndividual>>() {})
                 .asEagerSingleton()
+
+        bind(object : TypeLiteral<Archive<*>>() {})
+                .to(object : TypeLiteral<Archive<ConstantIndividual>>() {})
 
         bind(StructureMutator::class.java)
                 .to(EmptyStructureMutator::class.java)
