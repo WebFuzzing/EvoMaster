@@ -210,6 +210,15 @@ class SqlInsertBuilder(
 
             val pks = table.columns.filter { it.primaryKey }
 
+            if(pks.isEmpty()){
+                /*
+                    In some very special cases, it might happen that a table has no defined
+                    primary key. It's rare, but it is technically legal.
+                    We can just skip those tables.
+                 */
+                continue
+            }
+
             val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM ${table.name}"
 
             val dto = DatabaseCommandDto()
