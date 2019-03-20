@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest2.resources.CallsTemplate
 import org.evomaster.core.search.service.Randomness
 
 
-object ActionsTemplateHandler{
+object RTemplateHandler{
 
     private val maps = mutableMapOf<String, MutableList<String>>()
 
@@ -76,7 +76,7 @@ object ActionsTemplateHandler{
     }
     fun initSampleSpaceOnlyPOST(_space : Array<Boolean>, maps : MutableMap<String , CallsTemplate>) {
         val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
-        (if(_space.first() && !_space.last())space.subList(1, space.size) else space).forEach {v->
+        (if(_space.first() && !_space.last()) space.subList(1, space.size) else space).forEach {v->
             maps.getOrPut(v.toString()){ CallsTemplate(v.toString(), v != HttpVerb.POST, 1)}
         }
 
@@ -88,7 +88,6 @@ object ActionsTemplateHandler{
                 }
             }
         }
-
     }
 
     fun initSampleSpace(_space : Array<Boolean>, maps : MutableMap<String , Int>) {
@@ -205,7 +204,7 @@ enum class WithGet{
 
 //fun main(args: Array<String>){
 //    var results : MutableMap<String, Int> = mutableMapOf()
-//    ActionsTemplateHandler.initSampleSpace(arrayOf(true, true, true, false, true, false), results)
+//    RTemplateHandler.initSampleSpace(arrayOf(true, true, true, false, true, false), results)
 //    println(results.size)
 //    results.forEach(::println)
 //}

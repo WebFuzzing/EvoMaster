@@ -1,11 +1,10 @@
 package org.evomaster.core.problem.rest2
 
 import com.google.inject.Inject
-import org.evomaster.core.database.DbAction
-import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.serviceII.RestIndividualII
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
 import org.evomaster.core.problem.rest2.resources.ResourceManageService
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.mutator.StandardMutator
 
@@ -13,76 +12,28 @@ class RestResourceMutator : StandardMutator<RestIndividualII>() {
     @Inject
     private lateinit var rm :ResourceManageService
 
-    override fun innerMutate(individual: RestIndividualII): RestIndividualII {
-        val copy = individual.copy() as RestIndividualII
-
-        if (individual.canMutateStructure() &&
-                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1 && rm.onlyIndependentResource()?:true) {
-            //usually, either delete an action, or add a new random one
-            val copy = (if(config.enableTrackIndividual && individual.isCapableOfTracking()) individual.next(structureMutator.getTrackOperator()!!) else individual.copy()) as RestIndividualII
-            structureMutator.mutateStructure(copy)
-            return copy
-        }
-
-        //ignore sql
-//        val filter = if (config.generateSqlDataWithSearch) Individual.GeneFilter.ALL
-//        else Individual.GeneFilter.NO_SQL
-//
-//        val genesToMutate = copy.seeGenes(filter).filter(Gene::isMutable)
-
-        //TODO archive-based mutation
-        val genesToMutate = if(config.archiveMutation)
-                                TODO()
-                            else copy.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
-
-        val allGenes = copy.seeGenes().flatMap { it.flatView() }
-
-        if (genesToMutate.isEmpty()) {
-            return copy
-        }
-
-        /*
-        TODO: this likely will need experiments and a better formula.
-        The problem is that SQL could introduce a huge amount of genes, slowing
-        down the search
-        */
-
-        val n = Math.max(1, genesToMutate.size)
-
-        val p = 1.0 / n
-
-        var mutated = false
-
-        while (!mutated) { //no point in returning a copy that is not mutated
-
-            for (gene in genesToMutate) {
-
-                if (!randomness.nextBoolean(p)) {
-                    continue
-                }
-
-                if (gene is DisruptiveGene<*> && !randomness.nextBoolean(gene.probability)) {
-                    continue
-                }
-                val copyGene = gene.copy()
-
-                //TODO archive-based mutation
-                mutateGene(gene, allGenes)
-
-                gene.mutated = copyGene.containsSameValueAs(gene)
-                mutated = true
-            }
-        }
-
-        if (javaClass.desiredAssertionStatus()) {
-            //TODO refactor if/when Kotlin will support lazy asserts
-            assert(DbActionUtils.verifyForeignKeys(
-                    individual.seeInitializingActions().filterIsInstance<DbAction>()))
-        }
-
-        //repair genes in each resource call
-        copy.getResourceCalls().forEach(RestResourceCalls::repairGenesAfterMutation)
-        return copy
-
+    override fun repairAfterMutation(individual: RestIndividualII) {
+        super.repairAfterMutation(individual)
+        individual.getResourceCalls().forEach(RestResourceCalls::repairGenesAfterMutation)
+        individual.getResourceCalls().forEach { rm.repairRestResourceCalls(it) }
     }
+
+    override fun doesStructureMutation(individual : RestIndividualII): Boolean {
+
+        return individual.canMutateStructure() &&
+                (!rm.onlyIndependentResource()) && // if all resources are asserted independent, there is no point to do structure mutation
+                config.maxTestSize > 1 &&
+                randomness.nextBoolean(config.structureMutationProbability)
+    }
+
+    override fun genesToMutation(individual: RestIndividualII, evi : EvaluatedIndividual<RestIndividualII>): List<Gene> {
+        //if data of resource call is existing from db, select other row
+        val selectAction = individual.getResourceCalls().filter { it.dbActions.isNotEmpty() && it.dbActions.last().representExistingData }
+        if(selectAction.isNotEmpty())
+            return randomness.choose(selectAction).seeGenes()
+        return individual.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
+    }
+
+
+
 }

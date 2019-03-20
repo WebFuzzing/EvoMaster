@@ -2,6 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.impact.ImpactOfGene
 import org.evomaster.core.search.service.tracer.Impact
 import org.evomaster.core.search.service.tracer.TraceableElement
 import org.evomaster.core.search.service.tracer.WithImpacts
@@ -80,6 +81,10 @@ abstract class Individual : TraceableElement, WithImpacts{
      * test after this method is invoked.
      */
     abstract fun repairInitializationActions(randomness: Randomness);
+
+    open fun seeGenesIdMap() : Map<Gene, String>{
+        return seeActions().flatMap { a -> a.seeGenes().map { it to ImpactOfGene.generateId(a, it)}}.toMap()
+    }
 
 }
 

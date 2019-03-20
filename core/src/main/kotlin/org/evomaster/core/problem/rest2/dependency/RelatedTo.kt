@@ -10,6 +10,7 @@ open class RelatedTo(
 ){
     companion object {
         private const val separator =  "$->$"
+
     }
 
     open fun notateKey() : String = key
@@ -26,7 +27,12 @@ open class RelatedTo(
 class ParamRelatedToTable (key: String, target: MutableList<String>, probability: Double, info: String="")
     :RelatedTo(key, target, probability, info){
 
-    override fun notateKey() : String = "PARM:${originalKey()}"
+    companion object {
+        fun getNotateKey(paramName : String): String = "PARM:$paramName"
+
+    }
+
+    override fun notateKey() : String = getNotateKey(originalKey())
 
 
 }

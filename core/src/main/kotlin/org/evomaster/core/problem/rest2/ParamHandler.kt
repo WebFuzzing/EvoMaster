@@ -287,7 +287,7 @@ class ParamHandler {
             return maps
         }
 
-        fun bindParam(dbAction: DbAction, param : Param, previousToken: String){
+        fun bindParam(dbAction: DbAction, param : Param, previousToken: String, isExistingData : Boolean) : Boolean{
             var gene  : Gene? = null
             var similarity = 0.0
             dbAction.seeGenes().forEach findGene@{
@@ -299,8 +299,23 @@ class ParamHandler {
                 if(score == 1.0) return@findGene
             }
             if(similarity > ParserUtil.SimilarityThreshold ){
-                copyGene(getValueGene(gene!!),  getValueGene(param.gene), false)
-            }
+                if(gene!! is SqlPrimaryKeyGene || gene!! is SqlForeignKeyGene || gene!! is SqlAutoIncrementGene){
+                    /*
+                        if gene of dbaction is PK, FK or AutoIncrementGene,
+                            bind gene of Param according to the gene from dbaction
+                     */
+                    copyGene(getValueGene(gene!!),  getValueGene(param.gene), false)
+                }else{
+                    /*
+                        If the data is existing in db, bind gene of Param according to the gene from dbaction
+                        otherwise, bind gene of action according to rest action, i.e., Gene of Param
+                     */
+                    copyGene(getValueGene(gene!!),  getValueGene(param.gene), !isExistingData)
+                }
+
+            }else
+                return false
+            return true
         }
 
         fun compareDBGene(dbAction: DbAction, gene: Gene, pName: String, previousToken : String) : Double{
@@ -416,5 +431,8 @@ class ParamHandler {
                 return getValueGene(gene.gene)
             return gene
         }
+
+
+
     }
 }

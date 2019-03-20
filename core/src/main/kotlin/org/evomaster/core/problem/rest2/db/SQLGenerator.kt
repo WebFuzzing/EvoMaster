@@ -21,11 +21,12 @@ class SQLGenerator{
         /**
          * select rows of specified columns, i.e., SELECT COL1, COL2 FROM TABLE
          */
-        fun genSelect(cols : Array<String>, table: Table, condition: String? = null) : String{
-            return genSelect(table.columns.filter { cols.contains(it.name) }.map { it.name }.joinToString(","), table, condition)
+        fun genSelect(cols : Array<String>?, table: Table, condition: String? = null) : String{
+            val selected = if(cols == null) "*" else table.columns.filter { cols.contains(it.name) }.map { it.name }.joinToString(",")
+            return genSelect(selected, table, condition)
         }
 
-        fun composeAndConditions(conditions : Array<String>) : String{
+        fun composeAndConditions(conditions : List<String>) : String{
             return conditions.joinToString(SQLKey.AND.key)
         }
 
@@ -34,15 +35,17 @@ class SQLGenerator{
             return conditions.joinToString(operator)
         }
 
-        fun genConditions(cols: Array<String>, values: List<String>, table: Table) : Array<String>{
+        fun genConditions(cols: Array<String>, values: List<String>, table: Table) : List<String>{
             if(cols.size != values.size)
                 IllegalArgumentException("sizes of values ${values.size} and columns ${cols.size} are not matched")
 
-            val array = Array<String>(cols.size){""}
+            val array = mutableListOf<String>()
 
             for(i in 0 until cols.size){
                 val col = table.columns.find { it.name == cols[i] }?:throw IllegalArgumentException("column ${cols[i]} can not be found in the table ${table.name}")
-                array[i] = genCondition(col, values[i])
+                val condition =  genCondition(col, values[i])
+                if(condition.isNotBlank()) array.add(condition)
+
             }
             return array
         }
@@ -59,8 +62,10 @@ class SQLGenerator{
                 ColumnDataType.DECIMAL-> equalCondition(col.name, value)
                 ColumnDataType.CHAR,
                 ColumnDataType.VARCHAR -> equalCondition(col.name, "\'$value\'")
-                else ->
-                    TODO("not sure whether to handle the types, i.e., TIMESTAMP, VARBINARY, CLOB, BLOB")
+                else -> {
+                    ""
+                    //TODO("not sure whether to handle the types, i.e., TIMESTAMP, VARBINARY, CLOB, BLOB")
+                }
             }
         }
 
@@ -70,7 +75,7 @@ class SQLGenerator{
          */
         private  fun genSelect(col : String, table: Table, condition: String? = null):String {
             val sql = "${SQLKey.SELECT.key} $col ${SQLKey.FROM} ${table.name}"
-            condition?: return sql
+            if(condition == null || condition.isBlank()) return sql
             return sql +" " + SQLKey.WHERE.key+ " "+ condition
         }
 
@@ -97,7 +102,7 @@ enum class SQLKey(val key : String){
     WHERE("WHERE"),
     FROM("FROM"),
     ALL("*"),
-    AND("AND")
+    AND(" AND ")
 }
 
 

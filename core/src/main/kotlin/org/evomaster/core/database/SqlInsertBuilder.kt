@@ -7,13 +7,17 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.problem.rest2.db.SQLGenerator
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import java.lang.IllegalStateException
@@ -197,6 +201,8 @@ class SqlInsertBuilder(
     }
 
 
+
+
     /**
      * Check current state of database.
      * For each row, create a DbAction containing only Primary Keys
@@ -292,8 +298,70 @@ class SqlInsertBuilder(
     }
 
 
+    fun executeInsertSql(dbActions: List<DbAction>) : Boolean?{
+
+        if(dbExecutor == null){
+            throw IllegalStateException("No Database Executor registered for this object")
+        }
+
+        val dto = DbActionTransformer.transform(dbActions)
+
+        return dbExecutor.executeDatabaseCommand(dto)
+    }
+
+    fun createSqlInsertionActionWithRandomizedData(tableName: String): List<DbAction> {
+
+        val table = getTable(tableName)
+        val columnNames = table.columns.map { it.name }.toSet()
+
+        val takeAll = columnNames.contains("*")
+
+        if (takeAll && columnNames.size > 1) {
+            throw IllegalArgumentException("Invalid column description: more than one entry when using '*'")
+        }
+
+        for (cn in columnNames) {
+            if (cn != "*" && !table.columns.any { it.name == cn }) {
+                throw IllegalArgumentException("No column called $cn in table $tableName")
+            }
+        }
+
+        val selectedColumns = mutableSetOf<Column>()
+
+        for (c in table.columns) {
+            /*
+                we need to take primaryKey even if autoIncrement.
+                Point is, even if value will be set by DB, and so could skip it,
+                we would still need a non-modifiable, non-printable Gene to
+                store it, as we can have other Foreign Key genes pointing to it
+             */
+
+            if (takeAll || columnNames.contains(c.name) || !c.nullable || c.primaryKey) {
+                //TODO are there also other constraints to consider?
+                selectedColumns.add(c)
+            }
+        }
+
+        val insertion = DbAction(table, selectedColumns, counter++)
+        val actions = mutableListOf(insertion)
+
+        for (fk in table.foreignKeys) {
+            /*
+                Assumption: in a valid Schema, this should never end up
+                in a infinite loop?
+             */
+            val pre = createSqlInsertionActionWithRandomizedData(fk.targetTable)
+            actions.addAll(0, pre)
+        }
+
+
+
+
+        return actions
+    }
+
     /**
-     * bind genes for the case missing creation, dbaction includes all values of columns
+     * bind genes for the case missing postCreation, dbaction includes all values of columns
      */
     fun extractExistingByCols(tableName: String, pkValues : DataRowDto): DbAction{
 
@@ -324,6 +392,8 @@ class SqlInsertBuilder(
         if(result.rows.size != 1){
             throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
         }
+
+
 
         val id = counter++
 

@@ -11,7 +11,8 @@ import org.evomaster.core.search.Action
 open class CreationChain(
         val actions: MutableList<Action>,
         private var isComplete : Boolean,
-        var additionalInfo : String = ""
+        var additionalInfo : String = "",
+        var type : CreationType = CreationType.NONE
 ){
     fun confirmComplete(){
         isComplete = true
@@ -30,10 +31,21 @@ open class CreationChain(
 }
 
 class PossibleCreationChain(
-        val actions: MutableList<Action>,
+        actions: MutableList<Action>,
         var probability : Double
-){
+): CreationChain(actions, probability == 1.0){
     init {
         assert(probability in 0.0..1.0)
     }
+}
+
+enum class CreationType{
+    NONE,
+    DB,
+    POST,
+    /**
+     * [MIXED] represents an option to include dbaction(s) and post action(s) to prepare required resources in a creation chain.
+     * In the chain, dbaction(s) is always in front of post action(s). it mostly exists when post action is incomplete.
+     */
+    MIXED
 }

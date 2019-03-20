@@ -158,7 +158,9 @@ open class RestFitness<T> : FitnessFunction<T>() where T : RestIndividual {
 
         expandIndividual(individual, dto.additionalInfoList)
 
-        return EvaluatedIndividual(fv, individual.copy() as T, actionResults)
+        return if(config.enableTrackEvaluatedIndividual)
+                    EvaluatedIndividual(fv, individual.copy() as T, actionResults, null, mutableListOf(), mutableListOf())
+                else EvaluatedIndividual(fv, individual.copy() as T, actionResults)
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual

@@ -8,6 +8,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -33,8 +34,26 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     /**
      * @return a mutated next
      */
-    abstract fun mutate(individual: T): T
+    abstract fun mutate(individual: EvaluatedIndividual<T>, mutatedGene: MutableList<Gene>): T
 
+    /**
+     * @param individual an individual to mutate
+     * @param evi a reference of the individual to mutate
+     * @return a list of genes that are allowed to mutate
+     */
+    abstract fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene>
+
+    /**
+     * @param individual an individual to mutate
+     * @param evi a reference of the individual to mutate
+     * @return a list of genes that are selected to mutate
+     */
+    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>
+
+    /**
+     * @return whether do a structure mutation
+     */
+    abstract fun doesStructureMutation(individual : T) : Boolean
 
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
@@ -60,7 +79,15 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{DbActionUtils.verifyActions(curEval.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedInd = mutate(curEval.individual)
+
+            /*
+               what genes are mutated within "mutate" function
+             */
+            val mutatedGenes = mutableListOf<Gene>()
+            val mutatedInd = mutate(curEval, mutatedGenes)
+            val mutatedGenesId = mutatedInd.seeGenesIdMap().let {map->
+                        mutatedGenes.map { map.getValue(it) }.toMutableList()
+                    }
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
@@ -71,11 +98,13 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             if (reachNew || !curEval.fitness.subsumes(mutated.fitness, targets)) {
 
-                val mutatedWithTracks = if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()){
-                    evalBeforeMutated.next(getTrackOperator(), mutated)!!
-                }else mutated
+                val mutatedWithTracks =
+                        if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()){
+                            evalBeforeMutated.next(getTrackOperator(), mutated)!!
+                        }else mutated
 
-                if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()) mutatedWithTracks.updateImpactOfGenes(mutated)
+                if(config.probOfArchiveMutation > 0.0)
+                    mutatedWithTracks.updateImpactOfGenes(true)
                 val added = archive.addIfNeeded(mutatedWithTracks)
                 if(!added){
                     //TODO check if the individual is not added into archive
@@ -83,7 +112,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 curEval = mutatedWithTracks
 
             }else{
-                if(config.enableTrackEvaluatedIndividual && evalBeforeMutated.isCapableOfTracking()) evalBeforeMutated.updateImpactOfGenes(mutated)
+                if(config.probOfArchiveMutation > 0.0){
+                    evalBeforeMutated.undoTrack!!.add(mutated)
+                    evalBeforeMutated.updateImpactOfGenes(false)
+                }
             }
         }
 
@@ -95,7 +127,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         structureMutator.addInitializingActions(individual)
 
-        return ff.calculateCoverage(mutate(individual.individual))
+        return ff.calculateCoverage(mutate(individual, mutableListOf()))
                 ?.also { archive.addIfNeeded(it) }
     }
 }

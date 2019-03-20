@@ -244,7 +244,12 @@ class EMConfig {
         if(enableTrackEvaluatedIndividual && enableTrackIndividual){
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
-
+        /**
+         * if enable [archiveMutation], [enableTrackEvaluatedIndividual] must be enabled
+         */
+        if (probOfArchiveMutation > 0.0 && !enableTrackEvaluatedIndividual){
+            throw IllegalArgumentException("When archive-based mutation is enabled, tracking evaluated individual must be enabled")
+        }
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -527,6 +532,15 @@ class EMConfig {
     @Cfg("Whether to allow search to use data from db")
     var allowDataFromDB = false
 
+    @Experimental
+    @Cfg("Specify a minimal number of rows in a table")
+    var minRowOfTable = 10
+
+    @Experimental
+    @Cfg("Specify a probability that enables selection of data from db")
+    @Min(0.0) @Max(1.0)
+    var probOfSelectFromDB = 0.1
+
     //resource-based mio
     enum class SmartSamplingStrategy{
         DEFAULT,
@@ -602,6 +616,23 @@ class EMConfig {
     var trackLength : Int = -1
 
     @Experimental
+    @Cfg("Specify a probability to enable archive-based mutation")
+    @Min(0.0) @Max(1.0)
+    var probOfArchiveMutation = 0.0
+
+    @Experimental
+    @Cfg("Specify a percentage to prepare candidates of genes to mutate")
+    @Min(0.0) @Max(1.0)
+    var perOfCandidateGenesToMutate = 0.1
+
+    @Experimental
     @Cfg("Specify whether to enable archive-based mutation")
-    var archiveMutation = false
+    var geneSelectionMethod = GeneSelectionMethod.NONE
+
+    enum class GeneSelectionMethod {
+        NONE,
+        AWAY_BAD,
+        APPROACH_GOOD,
+        FEED_BACK
+    }
 }

@@ -392,7 +392,7 @@ class RestSampler : Sampler<RestIndividual>() {
            would be better to have a PUT instead of a POST.
 
            Note: we prefer a POST to create a resource, as that is the
-           most common case, and not all PUTs allow creation
+           most common case, and not all PUTs allow postCreation
          */
 
         test.add(get)
@@ -405,7 +405,7 @@ class RestSampler : Sampler<RestIndividual>() {
                 This could happen if the API is "read-only".
 
                 TODO: In such case, would really need to handle things like
-                direct creation of data in the DB (for example)
+                direct postCreation of data in the DB (for example)
              */
         } else {
             //only lock path params if it is not a single GET
@@ -466,7 +466,7 @@ class RestSampler : Sampler<RestIndividual>() {
         test.add(0, post)
 
         /*
-            Check if POST depends itself on the creation of
+            Check if POST depends itself on the postCreation of
             some intermediate resource
          */
         if (post.path.hasVariablePathParameters() &&

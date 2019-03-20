@@ -37,7 +37,7 @@ class SmartSamplingController {
 
     private fun initApplicableStrategies(){
         SampleStrategy.S1iR.applicable = true //mutableMap.values.filter { r -> r.hasIndependentAction }.isNotEmpty()
-        rm.getResourceCluster().values.filter { r -> !r.independent }?.let {
+        rm.getResourceCluster().values.filter { r -> !r.isIndependent() }?.let {
             SampleStrategy.S1dR.applicable = it.isNotEmpty()
             SampleStrategy.S2dR.applicable = it.size > 1
             SampleStrategy.SMdR.applicable = it.size > 2
@@ -56,9 +56,9 @@ class SmartSamplingController {
         println("Summary of abstract resources and actions>>>")
         val message ="""
             #Rs ${mutableMap.size}
-            #IndRs ${mutableMap.values.filter { it.independent }.size}
-            #hasIndActionRs ${mutableMap.values.filter { it.hasIndependentAction }.size}
-            #DepRs ${mutableMap.values.filterNot { it.independent }.size}
+            #IndRs ${mutableMap.values.filter { it.isIndependent() }.size}
+            #hasIndActionRs ${mutableMap.values.filter { it.hasIndependentAction() }.size}
+            #DepRs ${mutableMap.values.filterNot { it.isIndependent() }.size}
 
             #Actions ${mutableMap.values.map { it.actions.size }.sum()}
             #IndActions ${mutableMap.values.map { it.templates.filter { t -> t.value.independent }.size }.sum()}

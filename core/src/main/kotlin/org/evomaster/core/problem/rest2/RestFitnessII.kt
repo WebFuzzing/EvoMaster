@@ -2,8 +2,11 @@ package org.evomaster.core.problem.rest.serviceII
 
 
 import com.google.inject.Inject
+import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestFitness
+import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
 import org.evomaster.core.problem.rest2.resources.ResourceManageService
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -27,7 +30,7 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
 
         rc.resetSUT()
 
-        doInitializingActions(individual)
+        //doInitializingActions(individual)
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -39,6 +42,9 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
         //run the test, one action at a time
         var indexOfAction = 0
         for (call in individual.getResourceCalls()) {
+
+            doInitializingCalls(call)
+
             if(call.doesCompareDB)
                 rm.snapshotDB()
 
@@ -98,11 +104,27 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
 
         expandIndividual(individual, dto.additionalInfoList)
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividualII, actionResults)
+        return if(config.enableTrackEvaluatedIndividual)
+            EvaluatedIndividual(fv, individual.copy() as RestIndividualII, actionResults, null, mutableListOf(), mutableListOf())
+        else EvaluatedIndividual(fv, individual.copy() as RestIndividualII, actionResults)
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual
             to keep track of AdditionalInfo
          */
+    }
+
+    fun doInitializingCalls(calls: RestResourceCalls) {
+
+        if (calls.dbActions.isEmpty()) {
+            return
+        }
+
+        val dto = DbActionTransformer.transform(calls.dbActions)
+
+        val ok = rc.executeDatabaseCommand(dto)
+        if (!ok) {
+            log.warn("Failed in executing database command")
+        }
     }
 }

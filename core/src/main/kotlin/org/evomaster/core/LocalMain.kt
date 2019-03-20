@@ -11,7 +11,7 @@ class LocalMain {
                     probOfSmartSampling : Double = 0.5,
                     maxTestSize : Int = 10,
                     isStoppedByActions : Boolean = true,
-                    budget: Int = 1000,
+                    budget: Int = 10000,
                     population: Int = 30,
                     port : Int = 40100,
                     baseFolder : String = "/Users/mazh001/Documents/Workspace/temp-results"
@@ -28,22 +28,26 @@ class LocalMain {
                     "--outputFolder", baseFolder + "/$cs/$label/tests",
                     "--algorithm",algo,
                     "--populationSize",population.toString(),
-                    "--enableProcessMonitor",enableProcessMonitor.toString(),
+                    "--enableProcessMonitor",false.toString(),
                     "--processFiles", baseFolder + "/$cs/$label/process",
 
                     //resource-based samplping
                     "--probOfSmartSampling", probOfSmartSampling.toString(),
 //                    "--probOfRandomSampling","1.0",
 //                    "--endProbOfRandomSampling","1.0",
-                    "--smartSampling",smartSampling,
+                    "--smartSamplingStrategy",smartSampling,
                     "--sampleControl", sampleControl,
 
+
+                    //archive-based mutation
+                    "--probOfArchiveMutation", "0.0",
+
                     //track
-                    "--enableTrackEvaluatedIndividual", true.toString(),
+                    "--enableTrackEvaluatedIndividual", false.toString(),
 
                     //allowDataFromDB
-                    "--allowDataFromDB", true.toString(),
-
+                    "--allowDataFromDB", false.toString(),
+                    "--probOfSelectFromDB", "0.1",
 
                     //disable db
                     "--heuristicsForSQL", false.toString(),

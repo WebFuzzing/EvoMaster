@@ -36,6 +36,8 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
 
                 ff.calculateCoverage(ind)?.run {
 
+                    if(config.probOfArchiveMutation > 0.0) initImpacts()
+
                     archive.addIfNeeded(this)
 
                     //FIXME

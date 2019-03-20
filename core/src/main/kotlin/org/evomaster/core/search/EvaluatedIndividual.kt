@@ -1,6 +1,10 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.impact.ImpactOfGene
+import org.evomaster.core.search.service.impact.ImpactOfStructure
 import org.evomaster.core.search.service.tracer.TraceableElement
+import kotlin.math.absoluteValue
 
 /**
  * EvaluatedIndividual allows to track its evolution.
@@ -21,56 +25,189 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     : TraceableElement(nextDescription?:individual.getDescription(),  previous)
 where T : Individual {
 
-    companion object {
-        const val SEPARATOR_GENE_ID = "::"
-    }
+    /**
+     * key -> action name : gene name
+     * value -> impact degree
+     */
+    val impactsOfGenes : MutableMap<String, ImpactOfGene> = mutableMapOf()
 
-    val impactsOfGenes : MutableMap<String, Double> = mutableMapOf()
-    val impactsOfStructure : MutableMap<String, Double> = mutableMapOf()
+    /**
+     * key -> action names that join with ";"
+     * value -> impact degree
+     */
+    val impactsOfStructure : MutableMap<String, ImpactOfStructure> = mutableMapOf()
+
+    val reachedTargets : MutableMap<Int, Double> = mutableMapOf()
 
     var makeAnyBetter = false
 
-    /**
-     * rules to score impact value of genes, baseline is always fitness of first evaluated individual
-     * if only standard mutator is accepted, then ids of impactsOfGenes are not changed during search
-     * but if structure mutator is also accepted, then ids of impactOfGenes are changed regarding added or removal of genes
-     */
-    fun updateImpactOfGenes(next: EvaluatedIndividual<T>){
-        if(impactsOfGenes.isEmpty()){
-            val initValue = fitness.computeFitnessScore()
-            next.individual.seeActions().distinctBy { it.getName() }.forEach { na ->
-                na.seeGenes().forEach { nag ->
-                    val id = nag.getVariableName()+ SEPARATOR_GENE_ID + na.getName()
-                    impactsOfGenes.putIfAbsent(id, initValue)
-                }
+
+    fun initImpacts(){
+        getTrack()?.apply {
+            assert(size == 0)
+        }
+        individual.seeActions().forEach { a->
+            a.seeGenes().forEach { g->
+                val id = ImpactOfGene.generateId(a, g)
+                impactsOfGenes.putIfAbsent(id, ImpactOfGene(id, 0.0))
             }
         }
-        val targets = fitness.getViewOfData().keys.plus(next.fitness.getViewOfData().keys)
-        if(next.fitness.subsumes(fitness, targets) || fitness.subsumes(next.fitness, targets)){
-            val value = next.fitness.computeFitnessScore()
-            next.individual.seeActions().forEach { na ->
-                na.seeGenes().forEach { nag ->
-                    val id = nag.getVariableName()+ SEPARATOR_GENE_ID + na.getName()
-                    val sameGenes = individual.seeActions().filter { a->a.getName()==na.getName() }.flatMap { a->a.seeGenes() }
-                            .filter { ag ->ag.getVariableName() == nag.getVariableName() }
-                    if(sameGenes.isEmpty()){
-                        increaseGeneImpact(id, value)
-                    }else{
-                        sameGenes.find { it.containsSameValueAs(nag) }?.apply {
-                            increaseGeneImpact(id, value)
-                        }
+        /*
+            empty action?
+         */
+        if(individual.seeActions().isEmpty()){
+            individual.seeGenes().forEach {
+                val id = ImpactOfGene.generateId(it)
+                impactsOfGenes.putIfAbsent(id, ImpactOfGene(id, 0.0))
+            }
+        }
+
+        getTrack()?.apply {
+            assert(size == 0)
+        }
+
+        if(individual.seeActions().isNotEmpty()){
+            val id = ImpactOfStructure.generateId(individual)
+            impactsOfStructure.putIfAbsent(id, ImpactOfStructure(id, 0.0))
+        }
+
+        fitness.getViewOfData().forEach { t, u ->
+            reachedTargets.put(t, u.distance)
+        }
+    }
+
+    /**
+     * compare current with latest
+     */
+    fun updateImpactOfGenes(inTrack : Boolean){
+        assert(getTrack() != null)
+        assert(undoTrack != null)
+
+        if(inTrack) assert(getTrack()!!.isNotEmpty())
+        else assert(undoTrack!!.isNotEmpty())
+
+        val previous = if(inTrack) getTrack()!!.last() as EvaluatedIndividual<T> else this
+        val next = if(inTrack) this else undoTrack!!.last()
+
+        val isAnyOverallImprovement = updateReachedTargets(fitness)
+        val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
+
+        compareWithLatest(next, previous, (isAnyOverallImprovement || comparedFitness != 0.0), inTrack)
+    }
+
+    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, isNextThis : Boolean){
+        val delta = (next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()).absoluteValue
+
+        if(impactsOfStructure.isNotEmpty()){
+
+            val nextSeq = ImpactOfStructure.generateId(next.individual)
+            val previousSeq = ImpactOfStructure.generateId(previous.individual)
+
+            /*
+                a sequence of an individual is used to present its structure,
+                    the degree of impact of the structure is evaluated as the max fitness value.
+                In this case, we only find best and worst structure.
+             */
+            val structureId = if(isNextThis)nextSeq else previousSeq
+            if(nextSeq != previousSeq){
+                val impact = impactsOfStructure.getOrPut(structureId){ImpactOfStructure(structureId, 0.0)}
+                val degree = (if(isNextThis)next else previous).fitness.computeFitnessScore()
+                if( degree > impact.degree)
+                    impact.degree = degree
+            }
+            impactsOfStructure[structureId]!!.countImpact(isAnyChange)
+        }
+
+        val geneIds = generateMap(next.individual)
+        val latestIds = generateMap(previous.individual)
+
+        //following is to detect genes to mutate, and update the impact of the detected genes.
+        /*
+            same gene, but the value is different.
+            In this case, we increase the degree impact based on
+                absoluteValue of difference between next and previous regarding fitness, i.e., delta
+         */
+        geneIds.keys.intersect(latestIds.keys).forEach { keyId->
+            val curGenes = ImpactOfGene.extractGeneById(next.individual.seeActions(), keyId)
+            val latestGenes = ImpactOfGene.extractGeneById(previous.individual.seeActions(), keyId)
+
+            curGenes.forEach { cur ->
+                latestGenes.find { ImpactOfGene.isAnyChange(cur, it) }?.let {
+                    impactsOfGenes.getOrPut(keyId){
+                        ImpactOfGene(keyId, 0.0)
+                    }.apply{
+                        if(isAnyChange) increaseDegree(delta)
+                        countImpact(isAnyChange)
                     }
                 }
             }
+
+        }
+
+        /*
+            new gene, we increase its impact by delta
+         */
+        geneIds.filter { !latestIds.containsKey(it.key) }.forEach { t, _ ->
+            impactsOfGenes.getOrPut(t){
+                ImpactOfGene(t, 0.0)
+            }.apply{
+                if(isAnyChange) increaseDegree(delta)
+                countImpact(isAnyChange)
+            }
+        }
+
+        /*
+           removed gene, we increase its impact by delta
+        */
+        latestIds.filter { !geneIds.containsKey(it.key) }.forEach { t, _ ->
+            impactsOfGenes.getOrPut(t){
+                ImpactOfGene(t, 0.0)
+            }.apply{
+                if(isAnyChange) increaseDegree(delta)
+                countImpact(isAnyChange)
+            }
         }
     }
 
-    private fun increaseGeneImpact(key : String, delta : Double){
-        val previous = impactsOfGenes.getOrPut(key){0.0}
-        impactsOfGenes.replace(key, previous + delta)
+
+    private fun generateMap(individual: T) : MutableMap<String, MutableList<Gene>>{
+        val map = mutableMapOf<String, MutableList<Gene>>()
+        if(individual.seeActions().isNotEmpty()){
+            individual.seeActions().forEachIndexed {i, a ->
+                a.seeGenes().forEach {g->
+                    val genes = map.getOrPut(ImpactOfGene.generateId(a, g)){ mutableListOf()}
+                    genes.add(g)
+                }
+            }
+        }else{
+            individual.seeGenes().forEach {g->
+                val genes = map.getOrPut(ImpactOfGene.generateId(g)){ mutableListOf()}
+                genes.add(g)
+            }
+        }
+
+        return map
+    }
+
+    private fun updateReachedTargets(fitness: FitnessValue) : Boolean{
+        var isAnyOverallImprovement = false
+        fitness.getViewOfData().forEach { t, u ->
+            var previous = reachedTargets[t]
+            if(previous == null){
+                isAnyOverallImprovement = true
+                previous = 0.0
+                reachedTargets.put(t, previous)
+            }
+            isAnyOverallImprovement = isAnyOverallImprovement || u.distance > previous
+            if(u.distance > previous)
+                reachedTargets[t] = u.distance
+        }
+        return isAnyOverallImprovement
     }
 
     override fun copy(withTrack: Boolean): EvaluatedIndividual<T> {
+        if(withTrack) assert(getTrack()!=null)
+
         when(withTrack){
             false-> return copy()
             else ->{
@@ -80,26 +217,30 @@ where T : Individual {
                         results.map(ActionResult::copy)
                 )
 
-                val copyTraces = mutableListOf<EvaluatedIndividual<T>>()
-                getTrack()?.forEach {
-                    copyTraces.add((it as EvaluatedIndividual<T> ).copy())
-                }
-
-                val copyUndoTraces = mutableListOf<EvaluatedIndividual<T>>()
-                undoTrack?.forEach {
-                    copyUndoTraces.add(it.copy())
-                }
-                return EvaluatedIndividual(
-                        fitness.copy(),
-                        individual.copy(withTrack) as T,
-                        results.map(ActionResult::copy),
-                        getDescription(),
-                        copyTraces,
-                        copyUndoTraces
-                )
+               return deepCopy()
             }
         }
 
+    }
+
+    private fun deepCopy() : EvaluatedIndividual<T>{
+        val copyTraces = getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf()
+        val copyUndoTraces = undoTrack?.map {it.copy()}?.toMutableList()?: mutableListOf()
+
+        val copy =  EvaluatedIndividual(
+                fitness.copy(),
+                individual.copy() as T,
+                results.map(ActionResult::copy),
+                getDescription(),
+                copyTraces,
+                copyUndoTraces
+        )
+
+        if(impactsOfGenes.isNotEmpty()) copy.impactsOfGenes.putAll(impactsOfGenes.map { it.key to it.value.copy() }.toMap())
+        if(impactsOfStructure.isNotEmpty()) copy.impactsOfStructure.putAll(impactsOfStructure.map { it.key to it.value.copy() }.toMap())
+        if(reachedTargets.isNotEmpty()) copy.reachedTargets.putAll(reachedTargets.map { it.key to it.value }.toMap())
+
+        return copy
     }
 
     override fun next(description: String, next: TraceableElement): EvaluatedIndividual<T>? {
@@ -107,22 +248,39 @@ where T : Individual {
         when(isCapableOfTracking()){
             false-> return null
             else ->{
-                val size = getTrack()?.size?: 0
-                val copyTraces = mutableListOf<EvaluatedIndividual<T>>()
-                (0 until if(maxlength != -1 && size > maxlength - 1) maxlength-1  else size).forEach {
-                    copyTraces.add(0, (getTrack()!![size-1-it] as EvaluatedIndividual<T> ).copy())
-                }
+                //TODO MAN maxsize of traces
+                val copyTraces = getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf()
                 copyTraces.add(this.copy())
-                return EvaluatedIndividual(
+                val copyUndoTraces = undoTrack?.map {it.copy()}?.toMutableList()?: mutableListOf()
+
+                val copy =  EvaluatedIndividual(
                         next.fitness.copy(),
                         next.individual.copy(true) as T,
                         next.results.map(ActionResult::copy),
-                        description,
-                        copyTraces
+                        getDescription(),
+                        copyTraces,
+                        copyUndoTraces
                 )
+
+                copy.impactsOfGenes.putAll(impactsOfGenes.map { it.key to it.value.copy() as ImpactOfGene }.toMap())
+                copy.impactsOfStructure.putAll(impactsOfStructure.map { it.key to it.value.copy() as ImpactOfStructure }.toMap())
+                copy.reachedTargets.putAll(reachedTargets.map { it.key to it.value }.toMap())
+
+                return copy
             }
         }
     }
+
+//    fun nextIsUndo(undo : EvaluatedIndividual<T>): EvaluatedIndividual<T> {
+//        if(undoTrack == null){
+//            val copy = deepCopy()
+//            copy.undoTrack!!.add(undo.copy())
+//            return copy
+//        }else{
+//            undoTrack.add(undo.copy(false))
+//            return this
+//        }
+//    }
 
 
     override fun isCapableOfTracking(): Boolean = true
@@ -159,7 +317,16 @@ where T : Individual {
         return list
     }
 
-    class ImpactOfGene(val step : Int, val id : String, var impact : Double)
-    class ImpactOfIndividual(val impacts: MutableMap<String, ImpactOfGene> = mutableMapOf(), var impactOfStructure: Double = -1.0)
-    class ImpactOfStructure(val impacts: MutableMap<String, ImpactOfIndividual> = mutableMapOf())
+    fun percentageOfGenesToMutate() : Double?{
+        if(impactsOfGenes.isEmpty()) return null
+        return impactsOfGenes.filter { it.value.timesToManipulate > 0 }.size.toDouble()/impactsOfGenes.size
+    }
+
+    fun percentageOfGenesToMutate(geneIds : List<String>) : Double?{
+        impactsOfGenes.filter { geneIds.contains(it.key) }.apply {
+            return  if(isEmpty())  null
+                    else filter { it.value.timesToManipulate > 0 }.size.toDouble()/size
+        }
+    }
+
 }
