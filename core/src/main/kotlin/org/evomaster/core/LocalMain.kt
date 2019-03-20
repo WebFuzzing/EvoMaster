@@ -46,7 +46,7 @@ class LocalMain {
                     "--enableTrackEvaluatedIndividual", false.toString(),
 
                     //allowDataFromDB
-                    "--allowDataFromDB", false.toString(),
+                    "--allowDataFromDB", true.toString(),
                     "--probOfSelectFromDB", "0.1",
 
                     //disable db

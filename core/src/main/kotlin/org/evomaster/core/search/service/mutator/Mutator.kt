@@ -85,9 +85,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
              */
             val mutatedGenes = mutableListOf<Gene>()
             val mutatedInd = mutate(curEval, mutatedGenes)
-            val mutatedGenesId = mutatedInd.seeGenesIdMap().let {map->
-                        mutatedGenes.map { map.getValue(it) }.toMutableList()
-                    }
+//            val mutatedGenesId = mutatedInd.seeGenesIdMap().let {map->
+//                        mutatedGenes.map { map.getValue(it) }.toMutableList()
+//                    }
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 

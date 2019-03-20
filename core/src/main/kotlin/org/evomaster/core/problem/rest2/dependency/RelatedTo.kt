@@ -1,7 +1,5 @@
 package org.evomaster.core.problem.rest2.resources.dependency
 
-import org.evomaster.core.database.schema.Table
-
 open class RelatedTo(
         private val key: String,
         val targets : MutableList<out Any>,

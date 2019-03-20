@@ -206,7 +206,6 @@ where T : Individual {
     }
 
     override fun copy(withTrack: Boolean): EvaluatedIndividual<T> {
-        if(withTrack) assert(getTrack()!=null)
 
         when(withTrack){
             false-> return copy()
@@ -257,7 +256,7 @@ where T : Individual {
                         next.fitness.copy(),
                         next.individual.copy(true) as T,
                         next.results.map(ActionResult::copy),
-                        getDescription(),
+                        description,
                         copyTraces,
                         copyUndoTraces
                 )
@@ -295,8 +294,9 @@ where T : Individual {
         return EvaluatedIndividual(
                 fitness.copy(),
                 individual.copy() as T,
-                results.map(ActionResult::copy)
-                )
+                results.map(ActionResult::copy),
+                getDescription()
+        )
     }
 
     /**

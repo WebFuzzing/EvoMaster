@@ -43,10 +43,10 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
         var indexOfAction = 0
         for (call in individual.getResourceCalls()) {
 
-            doInitializingCalls(call)
-
             if(call.doesCompareDB)
                 rm.snapshotDB()
+
+            doInitializingCalls(call)
 
             for (a in call.actions){
                 rc.registerNewAction(indexOfAction)
