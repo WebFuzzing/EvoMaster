@@ -12,7 +12,7 @@ import org.evomaster.core.search.service.Randomness
 class RestIndividual(val actions: MutableList<RestAction>,
                      val sampleType: SampleType,
                      val dbInitialization: MutableList<DbAction> = mutableListOf(),
-                     val usedObjects: UsedObjs = UsedObjs()
+                     val usedObjects: UsedObjects = UsedObjects()
 ) : Individual() {
 
     override fun copy(): Individual {
@@ -77,7 +77,15 @@ class RestIndividual(val actions: MutableList<RestAction>,
         }
     }
 
+
+    /**
+     * During mutation, the values used for parameters are changed, but the values attached to the respective used objects are not.
+     * This function copies the new (mutated) values of the parameters into the respective used objects, to ensure that the objects and parameters are coherent.
+     * The return value is true if everything went well, and false if some values could not be copied. It is there for debugging only.
+     */
     fun enforceCoherence(): Boolean {
+
+        //BMR: not sure I can use flatMap here. I am using a reference to the action object to get the relevant gene.
         actions.forEach { action ->
             action.seeGenes().forEach { gene ->
                 try {

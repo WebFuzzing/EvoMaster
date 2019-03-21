@@ -276,14 +276,13 @@ class RestActionBuilder {
                 always be empty. Using a MapGene of strings would allow us to at least
                 try to add some fields to it
              */
-            val mapGene = createMapGene(
+            return createMapGene(
                     name + "_map",
                     "string",
                     null,
                     swagger,
                     null,
                     history)
-            return ObjectGene(name, mapGene.flatView())
         }
 
         private fun createMapGene(
@@ -480,7 +479,12 @@ class RestActionBuilder {
                                     it.component1(),
                                     swagger
                             )
-                            modelCluster.put(it.component1(), (model as ObjectGene))
+                            when (model) {
+                                //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+                                is ObjectGene ->  modelCluster.put(it.component1(), (model as ObjectGene))
+                                is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                            }
+
                         }
             }
         }
