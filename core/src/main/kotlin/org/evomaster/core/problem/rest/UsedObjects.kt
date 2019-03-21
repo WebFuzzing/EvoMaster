@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest
 
 import org.evomaster.core.search.gene.*
 
-class UsedObjs {
+class UsedObjects {
     /**
      * Mapping stores a link between the Action-parameter pair and the object being used as data.
      * The key is a pair of strings.
@@ -23,7 +23,20 @@ class UsedObjs {
      * **/
     private val selection:MutableMap<Pair<String, String>, Pair<String, String>> = mutableMapOf()
     private val select_body:MutableMap<String, Gene> = mutableMapOf()
-    fun copy(): UsedObjs {
+
+    object GeneSpecialCases {
+        /**
+         * Some parameters require complete objects. Instead of the regular object-field pair, a complete object is returned.
+         */
+        const val COMPLETE_OBJECT: String = "Complete_object"
+        /**
+         * If a matching object cannot be found, for whatever reason, the process should continue. The gene is generated and mutated
+         * as usual. It is not accompanied by any used objects, but is otherwise normal.
+         */
+        const val NOT_FOUND: String = "Not_found"
+    }
+
+    fun copy(): UsedObjects {
         val mapcopy: MutableMap<Pair<String, String> , Gene> = mutableMapOf()
         val selcopy: MutableMap<Pair<String, String>, Pair<String, String>> = mutableMapOf()
         val bodycopy: MutableMap<String, Gene> = mutableMapOf()
@@ -31,7 +44,7 @@ class UsedObjs {
         selection.forEach{ k, v ->  selcopy[k] = v.copy() }
         select_body.forEach { k, v -> bodycopy[k] = v }
 
-        val obj = UsedObjs()
+        val obj = UsedObjects()
         obj.mapping.putAll(mapcopy)
         obj.selection.putAll(selcopy)
         obj.select_body.putAll(bodycopy)
@@ -52,7 +65,7 @@ class UsedObjs {
         select_body[action.id] = obj
     }
 
-    fun clearLists(){
+    fun clear(){
         mapping.clear()
         selection.clear()
         select_body.clear()
@@ -62,7 +75,7 @@ class UsedObjs {
         val selectedField = selection[Pair(action.id, gene.getVariableName())]!!
 
         val retGene = when (selectedField.second) {
-            "Complete_object" -> mapping[Pair(action.id, gene.getVariableName())]!!
+            GeneSpecialCases.COMPLETE_OBJECT -> mapping[Pair(action.id, gene.getVariableName())]!!
             else -> (mapping[Pair(action.id, gene.getVariableName())] as ObjectGene).fields
                     .filter { it.name === selectedField?.second }
                     .first()
@@ -88,4 +101,5 @@ class UsedObjs {
     fun coveredActions(): List<out String> {
         return mapping.keys.map { it.first }
     }
+
 }
