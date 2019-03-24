@@ -1,21 +1,22 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.experiments.objects.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.HttpVerb
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.experiments.objects.ObjIndividual
+import org.evomaster.experiments.objects.ObjRestCallAction
 
 
-class RestStructureMutator : StructureMutator() {
+
+class ObjRestStructureMutator : StructureMutator() {
 
     @Inject
-    private lateinit var sampler: RestSampler
+    private lateinit var sampler: ObjRestSampler
 
     override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
 
@@ -23,7 +24,7 @@ class RestStructureMutator : StructureMutator() {
             return
         }
 
-        val ind = individual.individual as? RestIndividual
+        val ind = individual.individual as? ObjIndividual
                 ?: throw IllegalArgumentException("Invalid individual type")
 
         val es = individual.fitness.emptySelects
@@ -68,7 +69,7 @@ class RestStructureMutator : StructureMutator() {
 
     }
 
-    private fun findMissing(es: EmptySelects, ind: RestIndividual): Map<String, Set<String>> {
+    private fun findMissing(es: EmptySelects, ind: ObjIndividual): Map<String, Set<String>> {
 
         return es.queriedData.filter { e ->
             //shouldn't have already an action adding such SQL data
@@ -87,7 +88,7 @@ class RestStructureMutator : StructureMutator() {
 
 
     override fun mutateStructure(individual: Individual) {
-        if (individual !is RestIndividual) {
+        if (individual !is ObjIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
 
@@ -114,7 +115,7 @@ class RestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun mutateForSmartGetCollection(ind: RestIndividual) {
+    private fun mutateForSmartGetCollection(ind: ObjIndividual) {
         /*
             recall: in this case, we have 1 or more POST on same
             collection, followed by a single GET
@@ -126,9 +127,9 @@ class RestStructureMutator : StructureMutator() {
 
         (0 until ind.actions.size - 1).forEach {
             val a = ind.actions[it]
-            Lazy.assert{a !is RestCallAction || a.verb == HttpVerb.POST}
+            Lazy.assert{a !is ObjRestCallAction || a.verb == HttpVerb.POST}
         }
-        Lazy.assert{ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET }
+        Lazy.assert{ val a = ind.actions.last(); a is ObjRestCallAction && a.verb == HttpVerb.GET }
 
         val indices = ind.actions.indices
                 .filter { i ->
@@ -137,7 +138,7 @@ class RestStructureMutator : StructureMutator() {
                         one simple way to distinguish the POST on collection is that
                         they are not chaining a location, as GET is on same endpoint
                     */
-                    a is RestCallAction && !a.saveLocation && a.verb == HttpVerb.POST
+                    a is ObjRestCallAction && !a.saveLocation && a.verb == HttpVerb.POST
                 }
 
         if (indices.isEmpty()) {
@@ -161,10 +162,10 @@ class RestStructureMutator : StructureMutator() {
             //insert a new POST on the collection
             val idx = indices.last()
 
-            val postTemplate = ind.actions[idx] as RestCallAction
+            val postTemplate = ind.actions[idx] as ObjRestCallAction
             Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
-            val post = sampler.createActionFor(postTemplate, ind.actions.last() as RestCallAction)
+            val post = sampler.createActionFor(postTemplate, ind.actions.last() as ObjRestCallAction)
 
             /*
                 where it is inserted should not matter, as long as
@@ -175,12 +176,10 @@ class RestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun mutateForRandomType(ind: RestIndividual) {
+    private fun mutateForRandomType(ind: ObjIndividual) {
 
         if (ind.actions.size == 1) {
-            val sampledAction = sampler.sampleRandomAction(0.05)
-            ind.actions.add(sampledAction)
-            if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
+            ind.actions.add(sampler.sampleRandomAction(0.05))
             return
         }
 
@@ -193,12 +192,9 @@ class RestStructureMutator : StructureMutator() {
         } else {
 
             //add one at random
-            val sampledAction = sampler.sampleRandomAction(0.05)
+            val action = sampler.sampleRandomAction(0.05)
             val chosen = randomness.nextInt(ind.actions.size)
-            ind.actions.add(chosen, sampledAction)
-            if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
-            // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both
-            // adding the action and the associated objects and help encapsulate the individual more?
+            ind.actions.add(chosen, action)
         }
 
     }

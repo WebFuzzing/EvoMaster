@@ -15,6 +15,5 @@ internal class MapGeneTest{
 
         assertTrue(mapstring.contains(s1.getValueAsPrintableString(), ignoreCase = true))
         assertTrue(mapstring.contains(s2.getValueAsPrintableString(), ignoreCase = true))
-
     }
 }

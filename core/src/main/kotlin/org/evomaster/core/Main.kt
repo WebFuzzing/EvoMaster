@@ -201,6 +201,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
+
             val key = when (config.algorithm) {
                 EMConfig.Algorithm.MIO -> Key.get(
                         object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})

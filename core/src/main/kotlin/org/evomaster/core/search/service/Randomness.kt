@@ -99,6 +99,31 @@ class Randomness {
 
 
     /**
+     * Choose a value from the [map] based on the associated probabilities.
+     * The highest the associated probability, the *more* chances to be selected.
+     * If an element [K] is not present in the map, then
+     * its probability is 0.
+     *
+     * Note: as [K] is used as a key, make sure that [equals] and [hashCode]
+     * are well defined for it (eg, no problem if it is a [Int] or a [String])
+     */
+    fun <K> chooseByProbability(map: Map<K, Float>): K {
+
+        val randFl = random.nextFloat()*map.values.sum()
+        var temp = 0.toFloat()
+        var found = map.keys.first()
+
+        for((k, v) in map){
+            if(randFl <= (v + temp)){
+                found = k
+                break
+            }
+            temp += v
+        }
+        return found
+    }
+
+    /**
      * Choose a value from the [list] based on its weight in the [weights] map.
      * The highest the weight, the *less* chances to be selected.
      * If an element [K] is not present in the map [weights], then

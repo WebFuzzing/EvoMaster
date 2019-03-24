@@ -1,21 +1,20 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.experiments.objects
 
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.param.FormParam
-import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.experiments.objects.param.FormParam
+import org.evomaster.experiments.objects.param.Param
+import org.evomaster.experiments.objects.param.PathParam
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
+import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestAction
 import java.net.URLEncoder
 
 
-class RestCallAction(
-        /**
-         * Identifier unique within the individual
-         * **/
-        val id:String,
+class ObjRestCallAction(
+        val id: String,
         val verb: HttpVerb,
         val path: RestPath,
         val parameters: MutableList<Param>,
@@ -46,7 +45,7 @@ class RestCallAction(
 
     override fun copy(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId)
+        return ObjRestCallAction(id, verb, path, p, auth, saveLocation, locationId)
     }
 
     override fun getName(): String {
@@ -70,7 +69,7 @@ class RestCallAction(
      * Make sure that the path params are resolved to the same concrete values of "other".
      * Note: "this" can be just an ancestor of "other"
      */
-    fun bindToSamePathResolution(other: RestCallAction) {
+    fun bindToSamePathResolution(other: ObjRestCallAction) {
         if (!this.path.isAncestorOf(other.path)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
@@ -109,19 +108,15 @@ class RestCallAction(
     https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
 
      */
-    fun getBodyFormData(): String? {
-
-        val forms = parameters.filterIsInstance<FormParam>()
-        if(forms.isEmpty()){
-            return null
-        }
-
-        return forms.filter { it.gene !is OptionalGene || it.gene.isActive }
-                .map {
-                    val name = URLEncoder.encode(it.gene.getVariableName(), "UTF-8")
-                    val value = URLEncoder.encode(it.gene.getValueAsRawString(), "UTF-8")
+    fun getBodyFormData(): String {
+        return parameters.filter { p -> p is FormParam }
+                .filter { p -> p.gene !is OptionalGene || p.gene.isActive }
+                .map { p ->
+                    val name = URLEncoder.encode(p.gene.getVariableName(), "UTF-8")
+                    val value = URLEncoder.encode(p.gene.getValueAsRawString(), "UTF-8")
                     "$name=$value"
                 }
                 .joinToString("&")
     }
+
 }

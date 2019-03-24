@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest
+package org.evomaster.experiments.objects
 
 import io.swagger.models.*
 import io.swagger.models.parameters.AbstractSerializableParameter
@@ -6,20 +6,20 @@ import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.LoggingUtil
-import org.evomaster.core.problem.rest.param.*
-import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
+import org.evomaster.experiments.objects.param.*
+import org.evomaster.experiments.objects.service.ObjRestSampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicInteger
 
-
-class RestActionBuilder {
+class ObjRestActionBuilder {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ObjRestActionBuilder::class.java)
         private val idGenerator = AtomicInteger()
 
         fun addActionsFromSwagger(swagger: Swagger,
@@ -28,12 +28,9 @@ class RestActionBuilder {
 
             actionCluster.clear()
 
-            val version = swagger.swagger
-            if (version != "2.0") {
-                throw SutProblemException("EvoMaster does not support Swagger version '$version'")
-            }
+            //TODO check Swagger version
 
-            val skipped = mutableListOf<String>()
+            var skipped = mutableListOf<String>()
 
             swagger.paths
                     .filter { e ->
@@ -55,7 +52,7 @@ class RestActionBuilder {
 
                             repairParams(params, restPath)
 
-                            val action = RestCallAction("${verb}${restPath}${idGenerator.incrementAndGet()}", verb, restPath, params)
+                            val action = ObjRestCallAction("${verb}${restPath}${idGenerator.incrementAndGet()}", verb, restPath, params)
 
                             actionCluster.put(action.getName(), action)
                         }
@@ -90,11 +87,28 @@ class RestActionBuilder {
         /**
          * Have seen some cases of (old?) Swagger wrongly marking path params as query params
          */
+
+        fun getModelsFromSwagger(swagger: Swagger,
+                                 modelCluster: MutableMap<String, ObjectGene>){
+            modelCluster.clear()
+
+            if(swagger.definitions != null) {
+                swagger.definitions
+                        .forEach {
+                            val model = createObjectFromReference(it.key,
+                                    it.component1(),
+                                    swagger
+                            )
+                            modelCluster.put(it.component1(), model)
+                        }
+            }
+        }
+
         private fun repairParams(params: MutableList<Param>, restPath: RestPath) {
 
             restPath.getVariableNames().forEach { n ->
 
-                val p = params.find { p -> p is PathParam && p.name == n }
+                var p = params.find { p -> p is PathParam && p.name == n }
                 if (p == null) {
                     log.warn("No path parameter for variable '$n'")
 
@@ -123,80 +137,77 @@ class RestActionBuilder {
             val params: MutableList<Param> = mutableListOf()
             val operation = opEntry.value
 
-            removeDuplicatedParams(operation.parameters)
-            .forEach { p ->
+            ObjRestActionBuilder.removeDuplicatedParams(operation.parameters)
+                    .forEach { p ->
 
-                val name = p.name ?: "undefined"
+                        val name = p.name ?: "undefined"
 
-                if (p is AbstractSerializableParameter<*>) {
+                        if (p is AbstractSerializableParameter<*>) {
 
-                    val type = p.getType() ?: run {
-                        RestSampler.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
-                        "string"
-                    }
-
-                    var gene = getGene(name, type, p.getFormat(), swagger, null, p)
-                    if (!p.required && p.`in` != "path") {
-                        /*
-                            Even if a "path" parameter might not be required, still
-                            do not use an optional for it. Otherwise, might
-                            end up in quite a few useless 405 errors.
-
-                            Furthermore, "path" parameters must be "required" according
-                            to specs.
-                            TODO: could issue warning that Swagger is incorrect
-                        */
-                        gene = OptionalGene(name, gene)
-                    }
-
-                    //TODO could exploit "x-example" if available in Swagger
-
-                    when (p.`in`) {
-                        "query" -> params.add(QueryParam(name, gene))
-                        "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
-                        "header" -> params.add(HeaderParam(name, gene))
-                        "formData" -> params.add(FormParam(name, gene))
-                        else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
-                    }
-
-                } else if (p is BodyParameter
-                        && !shouldAvoidCreatingObject(p, swagger)
-                        && opEntry.key != HttpMethod.GET
-                ) {
-
-                    val name = "body"
-
-                    var gene = p.schema.reference?.let { createObjectFromReference(name, it, swagger) }
-                            ?: (p.schema as ModelImpl).let {
-                                if (it.type == "object") {
-                                    createObjectFromModel(p.schema, "body", swagger)
-                                } else {
-                                    getGene(name, it.type, it.format, swagger)
-                                }
+                            val type = p.getType() ?: run {
+                                ObjRestSampler.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
+                                "string"
                             }
 
-                    if (!p.required) {
-                        gene = OptionalGene(name, gene)
+                            var gene = ObjRestActionBuilder.getGene(name, type, p.getFormat(), swagger, null, p)
+                            if (!p.required && p.`in` != "path") {
+                                /*
+                                    Even if a "path" parameter might not be required, still
+                                    do not use an optional for it. Otherwise, might
+                                    end up in quite a few useless 405 errors.
+
+                                    Furthermore, "path" parameters must be "required" according
+                                    to specs.
+                                    TODO: could issue warning that Swagger is incorrect
+                                */
+                                gene = OptionalGene(name, gene)
+                            }
+
+                            //TODO could exploit "x-example" if available in Swagger
+
+                            when (p.`in`) {
+                                "query" -> params.add(QueryParam(name, gene))
+                                "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
+                                "header" -> params.add(HeaderParam(name, gene))
+                                "formData" -> params.add(FormParam(name, gene))
+                                else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
+                            }
+
+                        } else if (p is BodyParameter
+                                && !ObjRestActionBuilder.shouldAvoidCreatingObject(p, swagger)
+                                && opEntry.key != HttpMethod.GET
+                        ) {
+
+                            val name = "body"
+
+                            var gene = p.schema.reference?.let { ObjRestActionBuilder.createObjectFromReference(name, it, swagger) }
+                                    ?: (p.schema as ModelImpl).let {
+                                        if (it.type == "object") {
+                                            ObjRestActionBuilder.createObjectFromModel(p.schema, "body", swagger)
+                                        } else {
+                                            ObjRestActionBuilder.getGene(name, it.type, it.format, swagger)
+                                        }
+                                    }
+
+                            if (!p.required) {
+                                gene = OptionalGene(name, gene)
+                            }
+
+                            var types = operation.consumes
+                            if(types == null || types.isEmpty()){
+                                ObjRestSampler.log.warn("Missing consume types in body payload definition. Defaulting to JSON")
+                                types = listOf("application/json")
+                            }
+
+                            val contentTypeGene = EnumGene<String>("contentType", types)
+
+                            params.add(BodyParam(gene, contentTypeGene))
+                        }
                     }
-
-                    var types = operation.consumes
-                    if(types == null || types.isEmpty()){
-                        RestSampler.log.warn("Missing consume types in body payload definition. Defaulting to JSON")
-                       types = listOf("application/json")
-                    }
-
-                    val contentTypeGene = EnumGene<String>("contentType", types)
-
-                    params.add(BodyParam(gene, contentTypeGene))
-                }
-            }
 
             return params
         }
 
-        /**
-         *  Workaround for bug in Springfox
-         */
         private fun shouldAvoidCreatingObject(p: BodyParameter, swagger: Swagger): Boolean {
 
             var ref: String = p.schema.reference ?: return false
@@ -205,10 +216,10 @@ class RestActionBuilder {
             if (listOf("Principal", "WebRequest").contains(classDef)) {
 
                 /*
-                    This is/was a bug in Swagger for Spring, in which Spring request
-                    handlers wrongly ended up in Swagger as body parts, albeit
-                    missing from the definition list
-                */
+                This is/was a bug in Swagger for Spring, in which Spring request
+                handlers wrongly ended up in Swagger as body parts, albeit
+                missing from the definition list
+             */
 
                 swagger.definitions[classDef] ?: return true
             }
@@ -220,7 +231,7 @@ class RestActionBuilder {
                                               reference: String,
                                               swagger: Swagger,
                                               history: MutableList<String> = mutableListOf()
-        ): Gene {
+        ): ObjectGene {
 
             if (history.contains(reference)) {
                 return CycleObjectGene("Cycle for: $reference")
@@ -246,68 +257,13 @@ class RestActionBuilder {
                                           name: String,
                                           swagger: Swagger,
                                           history: MutableList<String> = mutableListOf())
-                : Gene {
+                : ObjectGene {
 
-            if (model.properties != null) {
-                val fields = createFields(model.properties, swagger, history)
+            //TODO need to handle additionalProperties
 
-                return ObjectGene(name, fields)
-            }
+            val fields = createFields(model.properties, swagger, history)
 
-            if (model is ModelImpl
-                    && model.additionalProperties != null
-                    && model.additionalProperties.type == "object") {
-                val ap = model.additionalProperties
-                return createMapGene(
-                        name + "_map",
-                        ap.type,
-                        ap.format,
-                        swagger,
-                        ap,
-                        history)
-            }
-
-            /*
-                worst case, just create a map of strings.
-                In JS/JSON, any object is in the end a map from strings (field names)
-                to values (any type).
-                If we have in Swagger an object definition, but then such definition has
-                no declared field (eg, problems with swagger), then an ObjectGene would
-                always be empty. Using a MapGene of strings would allow us to at least
-                try to add some fields to it
-             */
-            return createMapGene(
-                    name + "_map",
-                    "string",
-                    null,
-                    swagger,
-                    null,
-                    history)
-        }
-
-        private fun createMapGene(
-                name: String,
-                type: String,
-                format: String?,
-                swagger: Swagger,
-                property: Property? = null,
-                history: MutableList<String> = mutableListOf()
-        ): Gene {
-
-            val template = getGene(
-                    name + "_map",
-                    type,
-                    format,
-                    swagger,
-                    property,
-                    null,
-                    history)
-
-            if (template is CycleObjectGene) {
-                return CycleObjectGene("<map> ${template.name}")
-            }
-
-            return MapGene(name, template)
+            return ObjectGene(name, fields)
         }
 
         private fun createFields(properties: Map<String, Property>?,
@@ -370,9 +326,9 @@ class RestActionBuilder {
         dateTime	    string	date-time	As defined by date-time - RFC3339
         password	    string	password	Used to hint UIs the input needs to be obscured.
 
-            */
+        */
 
-            if (type == "string" && parameter?.getEnum()?.isEmpty() == false) {
+            if (type == "string" && !(parameter?.getEnum()?.isEmpty() ?: true)) {
                 //TODO enum can be for any type, not just strings
                 //Besides the defined values, add one to test robustness
                 return EnumGene(name, parameter!!.getEnum().apply { add("EVOMASTER") })
@@ -390,14 +346,14 @@ class RestActionBuilder {
                 "date" -> return DateGene(name)
                 "date-time" -> return DateTimeGene(name)
                 else -> if (format != null) {
-                    RestSampler.log.warn("Unhandled format '$format'")
+                    ObjRestSampler.log.warn("Unhandled format '$format'")
                 }
             }
 
             /*
-                If a format is not defined, the type should default to
-                the JSON Schema definition
-            */
+            If a format is not defined, the type should default to
+            the JSON Schema definition
+         */
             when (type) {
                 "integer" -> return IntegerGene(name)
                 "number" -> return DoubleGene(name)
@@ -437,20 +393,26 @@ class RestActionBuilder {
                 "object" -> {
                     if (property == null) {
                         //TODO somehow will need to handle it
-                        throw IllegalStateException("Cannot handle object out of a property")
+                        throw IllegalStateException("Cannot handle array out of a property")
                     }
 
                     if (property is MapProperty) {
                         val ap = property.additionalProperties
-                        return createMapGene(
+                        val template = getGene(
                                 name + "_map",
                                 ap.type,
                                 ap.format,
                                 swagger,
                                 ap,
+                                null,
                                 history)
-                    }
 
+                        if (template is CycleObjectGene) {
+                            return CycleObjectGene("<map> ${template.name}")
+                        }
+
+                        return MapGene(name, template)
+                    }
 
                     if (property is ObjectProperty) {
 
@@ -459,7 +421,7 @@ class RestActionBuilder {
                     }
                 }
                 "file" -> return StringGene(name)
-                //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
+                //TODO file is a hack. Find a more elegant way of dealing with it (BMR)
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
@@ -468,25 +430,5 @@ class RestActionBuilder {
             return params.distinctBy { it.name}
         }
 
-        fun getModelsFromSwagger(swagger: Swagger,
-                                 modelCluster: MutableMap<String, ObjectGene>){
-            modelCluster.clear()
-
-            if(swagger.definitions != null) {
-                swagger.definitions
-                        .forEach {
-                            val model = createObjectFromReference(it.key,
-                                    it.component1(),
-                                    swagger
-                            )
-                            when (model) {
-                                //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                                is ObjectGene ->  modelCluster.put(it.component1(), (model as ObjectGene))
-                                is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
-                            }
-
-                        }
-            }
-        }
     }
 }

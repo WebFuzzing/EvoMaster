@@ -1,4 +1,4 @@
-package org.evomaster.core.problem.rest.service
+package org.evomaster.experiments.objects.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
@@ -11,9 +11,9 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.EmptySelects
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
-import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
@@ -22,6 +22,9 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.experiments.objects.ObjRestCallAction
+import org.evomaster.experiments.objects.service.ObjRestSampler
+import org.evomaster.experiments.objects.param.BodyParam
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -36,19 +39,20 @@ import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import org.evomaster.experiments.objects.ObjIndividual
 
 
-class RestFitness : FitnessFunction<RestIndividual>() {
+class ObjFitness : FitnessFunction<ObjIndividual>() {
 
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ObjFitness::class.java)
     }
 
     @Inject
     private lateinit var rc: RemoteController
 
     @Inject
-    private lateinit var sampler: RestSampler
+    private lateinit var sampler: ObjRestSampler
 
 
     private val client: Client = {
@@ -66,7 +70,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     @PostConstruct
     private fun initialize() {
 
-        log.debug("Initializing {}", RestFitness::class.simpleName)
+        log.debug("Initializing {}", ObjFitness::class.simpleName)
 
         rc.checkConnection()
 
@@ -78,7 +82,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        log.debug("Done initializing {}", RestFitness::class.simpleName)
+        log.debug("Done initializing {}", ObjFitness::class.simpleName)
     }
 
     override fun reinitialize(): Boolean {
@@ -94,13 +98,13 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         return true
     }
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: ObjIndividual): EvaluatedIndividual<ObjIndividual>? {
 
         rc.resetSUT()
 
         doInitializingActions(individual)
 
-        individual.enforceCoherence()
+        individual.checkCoherence()
 
         val fv = FitnessValue(individual.size().toDouble())
 
@@ -117,7 +121,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
             var ok = false
 
-            if (a is RestCallAction) {
+            if (a is ObjRestCallAction) {
                 ok = handleRestCall(a, actionResults, chainState)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
@@ -138,7 +142,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         val dto = rc.getTestResults(ids)
         if (dto == null) {
-            log.warn("Cannot retrieve coverage")
+            ObjFitness.log.warn("Cannot retrieve coverage")
             return null
         }
 
@@ -157,7 +161,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         expandIndividual(individual, dto.additionalInfoList)
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+        return EvaluatedIndividual(fv, individual.copy() as ObjIndividual, actionResults)
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual
@@ -196,7 +200,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
      * params that were not specified in the Swagger schema
      */
     private fun expandIndividual(
-            individual: RestIndividual,
+            individual: ObjIndividual,
             additionalInfoList: List<AdditionalInfoDto>
     ) {
 
@@ -206,7 +210,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 there are less Info than declared actions.
                 But the other way round should not really happen
              */
-            log.warn("Length mismatch between ${individual.actions.size} actions and ${additionalInfoList.size} info data")
+            ObjFitness.log.warn("Length mismatch between ${individual.actions.size} actions and ${additionalInfoList.size} info data")
             return
         }
 
@@ -243,12 +247,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
     }
 
-    private fun doInitializingActions(ind: RestIndividual) {
+
+    private fun doInitializingActions(ind: ObjIndividual) {
 
         if (ind.dbInitialization.isEmpty()) {
             return
         }
-
 
         val dto = DbActionTransformer.transform(ind.dbInitialization)
 
@@ -273,16 +277,16 @@ class RestFitness : FitnessFunction<RestIndividual>() {
      */
     private fun handleResponseTargets(
             fv: FitnessValue,
-            actions: MutableList<RestAction>,
+            callActions: MutableList<RestAction>,
             actionResults: MutableList<ActionResult>) {
 
         (0 until actionResults.size)
-                .filter { actions[it] is RestCallAction }
+                .filter { callActions[it] is RestAction }
                 .filter { actionResults[it] is RestCallResult }
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
                             .getStatusCode() ?: -1
-                    val desc = "$status:${actions[it].getName()}"
+                    val desc = "$status:${callActions[it].getName()}"
                     val id = idMapper.handleLocalTarget(desc)
                     fv.updateTarget(id, 1.0, it)
                 }
@@ -293,7 +297,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    private fun handleRestCall(a: RestCallAction,
+    private fun handleRestCall(a: ObjRestCallAction,
                                actionResults: MutableList<ActionResult>,
                                chainState: MutableMap<String, String>)
             : Boolean {
@@ -346,32 +350,24 @@ class RestFitness : FitnessFunction<RestIndividual>() {
          */
 
 
+        /*
+           TODO: need to handle also other formats in the body,
+           not just JSON and forms
+         */
         val body = a.parameters.find { p -> p is BodyParam }
+        a.parameters.find{ p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
-        if (body != null && forms != null) {
+        if (body != null && !forms.isBlank()) {
             throw IllegalStateException("Issue in Swagger configuration: both Body and FormData definitions in the same endpoint")
         }
 
-        val bodyEntity = if (body != null && body is BodyParam) {
-            val mode = when {
-                body.isJson() -> "json"
-            //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-                body.isTextPlain() -> "text"
-                else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
-            }
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode), body.contentType())
-        } else if (forms != null) {
-            Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if(a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH){
-            /*
-                PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
-                when objects like WebRequest are used. So we default to urlencoded
-             */
-            Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else {
-            null
+        val bodyEntity = when {
+            body != null -> Entity.json(body.gene.getValueAsPrintableString())
+            !forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
+            else -> Entity.json("") //FIXME
         }
+
 
         val invocation = when (a.verb) {
             HttpVerb.GET -> builder.buildGet()
@@ -391,7 +387,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         } catch (e: ProcessingException) {
 
             //this can happen for example if call ends up in an infinite redirection loop
-            if ((e.cause?.message?.contains("redirected too many") == true) && e.cause is ProtocolException) {
+            if ((e.cause?.message?.contains("redirected too many") ?: false) && e.cause is ProtocolException) {
                 rcr.setInfiniteLoop(true)
                 rcr.setErrorMessage(e.cause!!.message!!)
                 return false
@@ -455,12 +451,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         return true
     }
 
-    private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
+    private fun handleSaveLocation(a: ObjRestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
             if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
                 /*
-                    If this failed, and following actions require the "location" header
+                    If this failed, and following callActions require the "location" header
                     of this call, there is no point whatsoever to continue evaluating
                     the remaining calls
                  */
@@ -494,9 +490,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         return true
     }
 
-    private fun hasParameterChild(a: RestCallAction): Boolean {
+    private fun hasParameterChild(a: ObjRestCallAction): Boolean {
         return sampler.seeAvailableActions()
-                .filterIsInstance<RestCallAction>()
+                .filterIsInstance<ObjRestCallAction>()
                 .map { it.path }
                 .any { it.isDirectChildOf(a.path) && it.isLastElementAParameter() }
     }
