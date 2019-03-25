@@ -529,4 +529,8 @@ class EMConfig {
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
     var enableTrackEvaluatedIndividual = false
 
+
+    @Experimental
+    @Cfg("Enable custom naming and sorting criteria")
+    var customNaming = false
 }
