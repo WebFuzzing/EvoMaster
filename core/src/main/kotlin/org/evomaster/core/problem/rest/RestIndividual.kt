@@ -57,7 +57,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
 
     override fun verifyInitializationActions(): Boolean {
         enforceCoherence()
-        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
+        return DbActionUtils.verifyActions(dbInitialization)
     }
 
 

@@ -160,40 +160,17 @@ public class SqlScriptRunner {
 
             InsertionDto insDto = insertions.get(i);
 
-            StringBuilder sql = new StringBuilder(insertSql);
-            sql.append(insDto.targetTable).append(" (");
+            String sql = prepareSqlInsertionCommand(insertSql, map, i, insDto);
 
-            sql.append(insDto.data.stream()
-                    .map(e -> e.variableName)
-                    .collect(Collectors.joining(",")));
+            Long id;
 
-            sql.append(" )  VALUES (");
-
-            for (InsertionEntryDto e : insDto.data) {
-                if (e.printableValue == null && e.foreignKeyToPreviouslyGeneratedRow != null) {
-                    if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {
-                        throw new IllegalArgumentException(
-                                "Insertion operation at position " + i
-                                        + " has a foreign key reference to key "
-                                        + e.foreignKeyToPreviouslyGeneratedRow
-                                        + " but that was not processed."
-                                        + " Processed primary keys: "
-                                        + map.keySet().stream().map(v -> v.toString()).collect(Collectors.joining(", "))
-                        );
-                    }
-                }
+            try {
+                id = execInsert(conn, sql);
+            } catch (SQLException e){
+                String msg = "Failed to execute insertion with index " + i + " with SQL: " + sql + ". Error: " + e.getMessage();
+                throw new SQLException(msg, e);
             }
 
-            sql.append(insDto.data.stream()
-                    .map(e -> e.printableValue != null
-                            ? replaceQuotes(e.printableValue)
-                            : map.get(e.foreignKeyToPreviouslyGeneratedRow).toString()
-                    ).collect(Collectors.joining(",")));
-
-            sql.append(");");
-
-
-            Long id = execInsert(conn, sql.toString());
             if (id == null) {
                 /*
                     check if we need to keep the auto generated value.
@@ -212,6 +189,42 @@ public class SqlScriptRunner {
                 map.put(insDto.id, id);
             }
         }
+    }
+
+    private static String prepareSqlInsertionCommand(String insertSql, Map<Long, Long> map, int i, InsertionDto insDto) {
+        StringBuilder sql = new StringBuilder(insertSql);
+        sql.append(insDto.targetTable).append(" (");
+
+        sql.append(insDto.data.stream()
+                .map(e -> e.variableName)
+                .collect(Collectors.joining(",")));
+
+        sql.append(" )  VALUES (");
+
+        for (InsertionEntryDto e : insDto.data) {
+            if (e.printableValue == null && e.foreignKeyToPreviouslyGeneratedRow != null) {
+                if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {
+                    throw new IllegalArgumentException(
+                            "Insertion operation at position " + i
+                                    + " has a foreign key reference to key "
+                                    + e.foreignKeyToPreviouslyGeneratedRow
+                                    + " but that was not processed."
+                                    + " Processed primary keys: "
+                                    + map.keySet().stream().map(v -> v.toString()).collect(Collectors.joining(", "))
+                    );
+                }
+            }
+        }
+
+        sql.append(insDto.data.stream()
+                .map(e -> e.printableValue != null
+                        ? replaceQuotes(e.printableValue)
+                        : map.get(e.foreignKeyToPreviouslyGeneratedRow).toString()
+                ).collect(Collectors.joining(",")));
+
+        sql.append(");");
+
+        return sql.toString();
     }
 
     /**
