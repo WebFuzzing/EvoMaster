@@ -30,7 +30,6 @@ class SearchTimeController {
 
     private val listeners = mutableListOf<SearchListener>()
 
-
     fun startSearch(){
         searchStarted = true
         startTime = System.currentTimeMillis()
@@ -66,6 +65,21 @@ class SearchTimeController {
         return ((System.currentTimeMillis() - startTime) / 1000.0).toInt()
     }
 
+    fun getElapsedTime() : String{
+
+        val seconds = getElapsedSeconds()
+
+        val minutes = seconds / 60.0
+
+        val hours = minutes / 60.0
+
+        val ps = "%d".format(seconds % 60)
+        val pm = "%d".format(minutes.toInt() % 60)
+        val ph = "%d".format(hours.toInt())
+
+        return "${ph}h ${pm}m ${ps}s"
+    }
+
     fun shouldContinueSearch(): Boolean{
 
         return percentageUsedBudget() < 1.0
@@ -93,4 +107,13 @@ class SearchTimeController {
         return startTime
     }
 
+    fun neededBudget() : String{
+
+        if(evaluatedActions <=0 || lastActionImprovement <= 0){
+            return "100%"
+        } else {
+            val percentage = ((lastActionImprovement / evaluatedActions.toDouble()) * 100.0).toInt()
+            return "$percentage%"
+        }
+    }
 }
