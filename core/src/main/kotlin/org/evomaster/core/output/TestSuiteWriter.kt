@@ -84,6 +84,8 @@ class TestSuiteWriter {
             lines.add(" * <br>")
             lines.add(" * The generated test suite contains ${solution.individuals.size} tests")
             lines.add(" * <br>")
+            lines.add(" * Covered targets: ${solution.overall.coveredTargets()}")
+            lines.add(" * <br>")
             lines.add(" * Used time: ${stc.getElapsedTime()}")
             lines.add(" * <br>")
             lines.add(" * Needed budget for current results: ${stc.neededBudget()}")
