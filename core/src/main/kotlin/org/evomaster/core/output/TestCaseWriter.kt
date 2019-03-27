@@ -38,7 +38,7 @@ class TestCaseWriter {
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
         }
 
-        addMetaDataComments(test, lines)
+        //addMetaDataComments(test, lines)
 
         lines.indent()
 
