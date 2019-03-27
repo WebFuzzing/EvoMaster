@@ -515,4 +515,8 @@ class EMConfig {
     @Experimental
     @Cfg("Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values")
     var enableCompleteObjects = false
+
+    @Experimental
+    @Cfg("Enable non-standard naming and sorting criteria")
+    var namingAndSorting = false
 }

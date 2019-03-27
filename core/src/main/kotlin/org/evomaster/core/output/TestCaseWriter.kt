@@ -38,6 +38,8 @@ class TestCaseWriter {
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
         }
 
+        addMetaDataComments(test, lines)
+
         lines.indent()
 
         if (test.test.individual is RestIndividual) {
@@ -422,6 +424,14 @@ class TestCaseWriter {
          *  TODO: get the type from the REST call
          */
         return ".accept(\"*/*\")"
+    }
+
+    private fun addMetaDataComments(test: TestCase, lines: Lines){
+        lines.add("/**")
+        lines.add("* Targets this test covers   : " + test.test.fitness.coveredTargets())
+        lines.add("* db initializations         : " + test.test.individual.seeInitializingActions().size)
+        lines.add("*  number of actions         : " + test.test.individual.seeActions().size)
+        lines.add("*/")
     }
 
 }
