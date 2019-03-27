@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import java.lang.IllegalArgumentException
+import java.rmi.Naming
 
 /**
  * This class is responsible to decide the order in which
@@ -29,7 +30,10 @@ class TestSuiteOrganizer {
             //TODO here in the future we will have something bit smarter
             // TODO: The comparators are listed in reverse order of priority. Not sure if this is okay.
             //return sortByComparatorList(solution, mutableListOf(maxNumberOfActionsComparatorInd, maxStatusCodeComparatorInd))
-            return SortingHelper().sort(solution, false)
+            val sortingHelper = SortingHelper()
+            val namingHelper = NamingHelper()
+
+            return sortingHelper.sort(solution, namingHelper, false)
         }
     }
 }
@@ -68,7 +72,14 @@ class NamingHelper {
         return "_" + (individual.individual as RestIndividual).sampleType + "_"
     }
 
-    val namingCriteria =  mutableListOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling)
+    private fun criterion4_dbInit(individual: EvaluatedIndividual<*>): String{
+        if ((individual.individual as RestIndividual).dbInitialization.isNotEmpty()){
+            return "_" + "hasDbInit" + "_"
+        }
+        else return ""
+    }
+
+    val namingCriteria =  mutableListOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
@@ -97,22 +108,32 @@ class SortingHelper {
         ind.individual.seeActions().size
     }.reversed()
 
+    val dbInitSize = compareBy<EvaluatedIndividual<*>>{ ind ->
+        (ind.individual as RestIndividual).dbInitialization.size
+    }.reversed()
+
+    val coveredTargets = compareBy<EvaluatedIndividual<*>> {
+        it.fitness.coveredTargets()
+    }
+
     /**
      *  [comparatorList] holds those comparators that are currently selected for sorting
      *  Note that (currently) the order of the comparators is inverse to their importance/priority
      */
 
-    val comparatorList = mutableListOf(maxNumberOfActionsComparatorInd, maxStatusCodeComparatorInd)
+    var comparatorList = mutableListOf( dbInitSize, maxStatusCodeComparatorInd)
 
     /**
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
      */
     fun sortByComparatorList (solution: Solution<*>,
+                              namingHelper: NamingHelper,
                               comparators: MutableList<Comparator<EvaluatedIndividual<*>>> = mutableListOf(maxStatusCodeComparatorInd)
+
     ): List<TestCase> {
         var counter = 0
         comparators.forEach { solution.individuals.sortWith(it) }
-        return solution.individuals.map{ ind -> TestCase(ind, NamingHelper().suggestName(ind) + (counter++))}
+        return solution.individuals.map{ ind -> TestCase(ind, namingHelper.suggestName(ind) + (counter++))}
     }
 
     /**
@@ -125,11 +146,11 @@ class SortingHelper {
         return solution.individuals.map { ind -> TestCase(ind, "test" + (counter++)) }
     }
 
-    fun sort(solution: Solution<*>, naive: Boolean = false): List<TestCase> {
+    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), naive: Boolean = false): List<TestCase> {
         if (naive){
             return naiveSorting(solution)
         }
-        return sortByComparatorList(solution, comparatorList)
+        return sortByComparatorList(solution, namingHelper, comparatorList)
     }
 
 }
