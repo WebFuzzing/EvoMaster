@@ -1,12 +1,12 @@
 package org.evomaster.core.problem.rest.serviceII.resources
 
-import ch.qos.logback.classic.db.DBAppender
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest2.resources.CallsTemplate
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.impact.ImpactOfGene
 
 class RestResourceCalls(
@@ -25,6 +25,7 @@ class RestResourceCalls(
      */
     val dbActions = mutableListOf<DbAction>()
 
+    var status = ResourceStatus.NOT_FOUND
 
     fun copy() : RestResourceCalls{
         val copy = RestResourceCalls(template, resource.copy(), actions.map { a -> a.copy() as RestAction}.toMutableList())
@@ -36,6 +37,12 @@ class RestResourceCalls(
         copy.doesCompareDB = doesCompareDB
 
         return copy
+    }
+
+    fun randomizeResourceCallGenes(randomness: Randomness){
+        actions.forEach {
+            resource.ar.randomizeActionGenes(it, randomness)
+        }
     }
 
     fun copy(other: MutableList<RestAction>) : RestResourceCalls{
@@ -63,6 +70,7 @@ class RestResourceCalls(
 
     }
 
+
     fun repairGenesAfterMutation(){
         repairGenesAfterMutation(null)
     }
@@ -87,4 +95,13 @@ class RestResourceCalls(
         return actions.filter { it is RestCallAction }.map { (it as RestCallAction).verb }.toTypedArray()
     }
 
+
+    enum class ResourceStatus{
+        NOT_EXISTING,
+        EXISTING,
+        CREATED,
+        NOT_ENOUGH_LENGTH,
+        NOT_FOUND,
+        NOT_FOUND_DEPENDENT
+    }
 }

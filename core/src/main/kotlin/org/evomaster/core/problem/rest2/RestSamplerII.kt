@@ -203,8 +203,19 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         return RestIndividualII(restCalls, SampleType.RANDOM)
     }
 
+//    private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
+//        val r = randomness.choose(rm.getResourceCluster())
+//        val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness, left) else r.randomRestResourceCalls(randomness,left)
+//        rc.actions.forEach {
+//            if(it is RestCallAction){
+//                it.auth = getRandomAuth(noAuthP)
+//            }
+//        }
+//        return rc
+//    }
+
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
-        val r = randomness.choose(rm.getResourceCluster())
+        val r = randomness.choose(rm.getResourceCluster().filter { it.value.isAnyAction() })
         val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness, left) else r.randomRestResourceCalls(randomness,left)
         rc.actions.forEach {
             if(it is RestCallAction){
@@ -235,13 +246,16 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         }
 
         val restCalls = mutableListOf<RestResourceCalls>()
+        val withDependency = config.probOfEnablingResourceDependencyHeuristics > 0.0
+                    && rm.isDependencyNotEmpty()
+                    && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
 
         val strategy = ssc.getSampleStrategy()
         when(strategy){
             SmartSamplingController.SampleStrategy.S1iR -> sampleIndependentAction(restCalls)
             SmartSamplingController.SampleStrategy.S1dR -> sampleOneResource(restCalls)
-            SmartSamplingController.SampleStrategy.S2dR -> sampleComResource(restCalls)
-            SmartSamplingController.SampleStrategy.SMdR -> sampleManyResources(restCalls)
+            SmartSamplingController.SampleStrategy.S2dR -> sampleRandomComResource(restCalls, withDependency)
+            SmartSamplingController.SampleStrategy.SMdR -> sampleManyResources(restCalls, withDependency)
         }
 
         //auth management
@@ -259,10 +273,14 @@ class RestSamplerII : Sampler<RestIndividualII>() {
             }
         }
 
+        val dependencies = if(withDependency && restCalls.size > 1)
+                                restCalls.map { it.resource.ar.path.toString() }.toHashSet()
+                        else mutableSetOf<String>()
+
         if (!restCalls.isEmpty()) {
             return if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual){
-                RestIndividualII(restCalls,SampleType.SMART_RESOURCE.also { it.description = strategy.name }, appendMethod(strategy.name), mutableListOf())
-            }else RestIndividualII(restCalls,SampleType.SMART_RESOURCE.also { it.description = strategy.name })
+                RestIndividualII(restCalls,SampleType.SMART_RESOURCE.also { it.description = strategy.name },  dependencies, appendMethod(strategy.name), mutableListOf())
+            }else RestIndividualII(restCalls,SampleType.SMART_RESOURCE.also { it.description = strategy.name }, dependencies)
         }
 
         return sampleAtRandom()
@@ -271,43 +289,47 @@ class RestSamplerII : Sampler<RestIndividualII>() {
 
     private fun sampleIndependentAction(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAResource(randomness)
-//        val resource = rm.getResourceCluster().getValue(key)
-//        resourceCalls.add(resource.sampleIndResourceCall(randomness, config.maxTestSize))
         rm.sampleCall(key, false, resourceCalls, config.maxTestSize)
     }
 
     private fun sampleOneResource(resourceCalls: MutableList<RestResourceCalls>){
         val key = selectAIndResourceHasNonInd(randomness)
-        //rm.generateCall(key, resourceCalls, config.maxTestSize)
         rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
 
     }
 
-    private fun sampleComResource(resourceCalls: MutableList<RestResourceCalls>){
-        val keys = selectAComResource(randomness)
-        var size = config.maxTestSize
-        var num = 0
-        for (key in keys.split(separatorResources)){
-            //rm.generateCall(key, resourceCalls, size)
-            rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
-            size -= resourceCalls.last().actions.size
-            num++
+    private fun sampleRandomComResource(resourceCalls: MutableList<RestResourceCalls>, withDependency : Boolean){
+        if(withDependency){
+            rm.sampleRelatedResources(resourceCalls, 2, config.maxTestSize)
+        }else{
+            sampleRandomComResource(resourceCalls)
+//            val keys = selectAComResource(randomness)
+//            var size = config.maxTestSize
+//            for (key in keys.split(separatorResources)){
+//                rm.sampleCall(key, true, resourceCalls, size)
+//                size -= resourceCalls.last().actions.size
+//            }
         }
+
     }
 
-    private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>){
-        val executed = mutableListOf<String>()
-        var size = randomness.nextInt(3, config.maxTestSize)
-        val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() && !r.value.isIndependent()}
-        var num = 0
-        while(size > 1 && executed.size < candR.size){
-            val key = randomness.choose(candR.keys.filter { !executed.contains(it) })
-//            resourceCalls.add(candR.getValue(key).sampleRestResourceCalls(randomness, size))
-            //rm.generateCall(key, resourceCalls, size)
-            rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
-            size -= resourceCalls.last().actions.size
-            executed.add(key)
-            num++
+    private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>, withDependency: Boolean){
+        if(withDependency){
+            val num = randomness.nextInt(3, config.maxTestSize)
+            rm.sampleRelatedResources(resourceCalls, num, config.maxTestSize)
+        }else{
+            sampleManyResources(resourceCalls)
+//            val executed = mutableListOf<String>()
+//            var size = randomness.nextInt(3, config.maxTestSize)
+//            val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() && !r.value.isIndependent()}
+//            var num = 0
+//            while(size > 1 && executed.size < candR.size){
+//                val key = randomness.choose(candR.keys.filter { !executed.contains(it) })
+//                rm.sampleCall(key, true, resourceCalls, size)
+//                size -= resourceCalls.last().actions.size
+//                executed.add(key)
+//                num++
+//            }
         }
     }
 
@@ -315,10 +337,6 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         return randomness.choose(rm.getResourceCluster().filter { r -> r.value.isAnyAction() }.keys)
     }
 
-//    private fun selectAResourceHasInd(randomness: Randomness) : String{
-//        return randomness.choose(rm.getResourceCluster().filter { r -> r.value.isAnyAction() && r.value.hasIndependentAction }.keys)
-//    }
-//
     private fun selectAIndResourceHasNonInd(randomness: Randomness) : String{
         return randomness.choose(rm.getResourceCluster().filter { r -> r.value.isAnyAction() && !r.value.isIndependent() }.keys)
     }
@@ -335,7 +353,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
     private fun initAdHocInitialIndividuals() {
         adHocInitialIndividuals.clear()
 
-        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
+        //rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
         authentications.forEach { auth ->
             rm.createAdHocIndividuals(auth, adHocInitialIndividuals)
         }
@@ -367,11 +385,7 @@ class RestSamplerII : Sampler<RestIndividualII>() {
         initAdHocInitialIndividuals()
     }
 
-    fun handleAddResource(ind : RestIndividualII, maxTestSize : Int) : RestResourceCalls{
-        val existingRs = ind.getResourceCalls().map { it.resource.ar.path.toString() }
-        val candidate = randomness.choose(rm.getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.values)
-        return candidate.sampleAnyRestResourceCalls(randomness,maxTestSize )
-    }
+
 
     override fun feedback(betterResult: Boolean) {
         if(betterResult) ssc.reportImprovement()
@@ -389,6 +403,36 @@ class RestSamplerII : Sampler<RestIndividualII>() {
                 .forEach {
                     samplingResourceCounter.replace(it, samplingResourceCounter.getValue(it) + 1)
                 }
+    }
+
+    private fun sampleRandomComResource(resourceCalls: MutableList<RestResourceCalls>){
+        val keys = selectAComResource(randomness)
+        //samplingComResourceCounter.getValue(keys).plus(1)
+        var size = config.maxTestSize
+        var num = 0
+        for (key in keys.split(separatorResources)){
+            //val temp = rm.getResourceCluster().getValue(key)
+            //resourceCalls.add(temp.sampleRestResourceCalls(randomness, size))
+            rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
+            //samplingResourceCounter.getValue(key).plus(1)
+            size -= resourceCalls.last().actions.size
+            num++
+        }
+    }
+
+    private fun sampleManyResources(resourceCalls: MutableList<RestResourceCalls>){
+        val executed = mutableListOf<String>()
+        var size = randomness.nextInt(3, config.maxTestSize)
+        val candR = rm.getResourceCluster().filter { r -> r.value.isAnyAction() }
+        var num = 0
+        while(size > 1 && executed.size < candR.size){
+            val key = randomness.choose(candR.keys.filter { !executed.contains(it) })
+            rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
+            //resourceCalls.add(candR.getValue(key).sampleRestResourceCalls(randomness, size))
+            size -= resourceCalls.last().actions.size
+            executed.add(key)
+            num++
+        }
     }
 
 

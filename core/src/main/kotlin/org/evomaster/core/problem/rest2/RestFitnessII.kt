@@ -43,10 +43,11 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
         var indexOfAction = 0
         for (call in individual.getResourceCalls()) {
 
-            if(call.doesCompareDB)
-                rm.snapshotDB()
+//            if(call.doesCompareDB)
+//                rm.snapshotDB()
 
             doInitializingCalls(call)
+            //TODO shall we bind actions with data from db after dbactions.
 
             for (a in call.actions){
                 rc.registerNewAction(indexOfAction)
@@ -65,13 +66,13 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
                 indexOfAction++
             }
 
-            if(call.doesCompareDB){
-                /*
-                    TODO Man: 1) check whether data is changed regarding actions. Note that call.dbaction saved previous data of row of all columned
-                              2) if only check only one row regarding pks and its related table instead of all tables
-                 */
-                rm.compareDB(call)
-            }
+//            if(call.doesCompareDB){
+//                /*
+//                    TODO Man: 1) check whether data is changed regarding actions. Note that call.dbaction saved previous data of row of all columned
+//                              2) if only check only one row regarding pks and its related table instead of all tables
+//                 */
+//                rm.compareDB(call)
+//            }
 
         }
 
@@ -119,12 +120,19 @@ class RestFitnessII : RestFitness<RestIndividualII>() {
         if (calls.dbActions.isEmpty()) {
             return
         }
+        val actions = calls.dbActions.filter { !it.representExistingData }
 
-        val dto = DbActionTransformer.transform(calls.dbActions)
+        if(actions.isNotEmpty()){
+            val dto = DbActionTransformer.transform(actions)
 
-        val ok = rc.executeDatabaseCommand(dto)
-        if (!ok) {
-            log.warn("Failed in executing database command")
+            val ok = rc.executeDatabaseCommand(dto)
+            if (!ok) {
+                log.warn("Failed in executing database command")
+            }
         }
+
+
+
+
     }
 }

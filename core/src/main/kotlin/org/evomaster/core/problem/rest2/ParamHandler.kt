@@ -126,7 +126,11 @@ class ParamHandler {
             if(b::class.java.simpleName == g::class.java.simpleName){
                 if (b2g) b.copyValueFrom(g)
                 else g.copyValueFrom(b)
-            }else{
+            }else if(b2g && g is SqlPrimaryKeyGene){
+                copyWithTypeAdapter(b, g)
+            }else if(!b2g && b is SqlPrimaryKeyGene)
+                copyWithTypeAdapter(g, b)
+            else{
                 //TODO
                 val result = if(b2g) copyWithTypeAdapter(b, g)
                             else copyWithTypeAdapter(g, b)
@@ -166,6 +170,9 @@ class ParamHandler {
                     val value = g.value.toDoubleOrNull() ?: return false
                     b.value = value
                 }
+                is SqlPrimaryKeyGene ->{
+                    b.value = g.uniqueId.toDouble()
+                }
                 else -> return false
             }
             return true
@@ -184,6 +191,9 @@ class ParamHandler {
                 is ImmutableDataHolderGene -> {
                     val value = g.value.toFloatOrNull() ?: return false
                     b.value = value
+                }
+                is SqlPrimaryKeyGene ->{
+                    b.value = g.uniqueId.toFloat()
                 }
                 else -> return false
             }
@@ -204,6 +214,9 @@ class ParamHandler {
                     val value = g.value.toIntOrNull() ?: return false
                     b.value = value
                 }
+                is SqlPrimaryKeyGene ->{
+                    b.value = g.uniqueId.toInt()
+                }
                 else -> return false
             }
             return true
@@ -223,6 +236,9 @@ class ParamHandler {
                     val value = g.value.toLongOrNull() ?: return false
                     b.value = value
                 }
+                is SqlPrimaryKeyGene ->{
+                    b.value = g.uniqueId
+                }
                 else -> return false
             }
             return true
@@ -236,6 +252,9 @@ class ParamHandler {
                 is LongGene -> b.value = g.value.toString()
                 is DoubleGene -> b.value = g.value.toString()
                 is ImmutableDataHolderGene -> b.value = g.value
+                is SqlPrimaryKeyGene ->{
+                    b.value = g.uniqueId.toString()
+                }
                 else -> return false
             }
             return true
@@ -427,8 +446,11 @@ class ParamHandler {
                 return getValueGene(gene.gene)
             }else if(gene is DisruptiveGene<*>)
                 return getValueGene(gene.gene)
-            else if(gene is SqlPrimaryKeyGene)
-                return getValueGene(gene.gene)
+            else if(gene is SqlPrimaryKeyGene){
+                if(gene.gene is SqlAutoIncrementGene)
+                    return gene
+                else return getValueGene(gene.gene)
+            }
             return gene
         }
 

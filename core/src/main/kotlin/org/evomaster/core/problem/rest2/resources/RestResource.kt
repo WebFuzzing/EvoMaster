@@ -12,6 +12,8 @@ class RestResource (val ar : RestAResource, val params: List<Param>){
         return ar.path.resolve(params)
     }
 
+    fun getAResourceKey() : String = ar.path.toString()
+
     fun copy() : RestResource{//keep same ar, but copy new param
         return RestResource(ar, params.map { param -> param.copy() })
     }

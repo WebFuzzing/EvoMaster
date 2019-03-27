@@ -19,8 +19,9 @@ import org.evomaster.core.problem.rest.serviceII.RestIndividualII
 import org.evomaster.core.problem.rest.serviceII.RestSamplerII
 import org.evomaster.core.problem.rest.serviceII.resources.RestAResource
 import org.evomaster.core.problem.rest.serviceII.resources.RestResourceCalls
+import org.evomaster.core.problem.rest2.resources.dependency.MutualResourcesRelations
 import org.evomaster.core.problem.rest2.resources.dependency.ParamRelatedToTable
-import org.evomaster.core.problem.rest2.resources.dependency.PossibleCreationChain
+import org.evomaster.core.problem.rest2.resources.dependency.ResourceRelatedToResources
 import org.evomaster.core.problem.rest2.resources.token.parser.ParserUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
@@ -61,9 +62,15 @@ class ResourceManageService {
      * key is table name
      * value is a list of existing data of PKs in DB
      */
-    private var dataInDB : MutableMap<String, MutableList<DataRowDto>> = mutableMapOf()
+    private val dataInDB : MutableMap<String, MutableList<DataRowDto>> = mutableMapOf()
 
-    private val missingCreation : MutableMap<String, MutableList<PossibleCreationChain>> = mutableMapOf()
+//    private val missingCreation : MutableMap<String, MutableList<PossibleCreationChain>> = mutableMapOf()
+
+    /**
+     * key is either a path of one resource, or a list of paths of resources
+     * value is a list of related to resources
+     */
+    private val dependencies : MutableMap<String, MutableList<ResourceRelatedToResources>> = mutableMapOf()
 
     fun initAbstractResources(actionCluster : MutableMap<String, Action>) {
         if (!initialized) {
@@ -79,11 +86,11 @@ class ResourceManageService {
 
             resourceCluster.values.forEach{it.init()}
 
-            resourceCluster.forEach { t, u ->
-                if(!u.postCreation.isComplete()){
-                    missingCreation.put(t, mutableListOf())
-                }
-            }
+//            resourceCluster.forEach { t, u ->
+//                if(!u.postCreation.isComplete()){
+//                    missingCreation.put(t, mutableListOf())
+//                }
+//            }
 
             if(hasDBHandler()){
                 snapshotDB()
@@ -97,8 +104,64 @@ class ResourceManageService {
                 }
             }
 
+            if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
+                initDependency()
+
             initialized = true
         }
+    }
+
+    private fun initDependency(){
+        //1. based on resourceTables to identify mutual relations among resources
+        val tables = resourceTables.values.flatten().toSet()
+
+        tables.forEach { tab->
+            val mutualResources = resourceTables.filter { it.value.contains(tab) }.map { it.key }.toList()
+            if(mutualResources.isNotEmpty() && mutualResources.size > 1){
+                val mutualRelation = MutualResourcesRelations(mutualResources, 1.0, tab)
+
+                mutualResources.forEach { res ->
+                    val relations = dependencies.getOrPut(res){ mutableListOf()}
+                    relations.add(mutualRelation)
+                }
+            }
+        }
+
+        //2. for each resource, identify relations based on derived table
+        resourceCluster.values
+                .flatMap { it.paramsToTables.values.flatMap { p2table-> p2table.targets as MutableList<String> }.toSet() }
+                .forEach { derivedTab->
+                    //get probability of res -> derivedTab, we employ the max to represent the probability
+                    val relatedResources = paramToSameTable(null, derivedTab)
+                    if(relatedResources.size > 1){
+                        for(i  in 0..(relatedResources.size-1)){
+                            val res = relatedResources[i]
+                            val prob = probOfResToTable(res, derivedTab)
+                            for(j in i ..relatedResources.size){
+                                val relatedRes = relatedResources[j]
+                                val relatedProb = probOfResToTable(relatedRes, derivedTab)
+
+                                val res2Res = MutualResourcesRelations(mutableListOf(res, relatedRes), ((prob + relatedProb)/2.0), derivedTab)
+
+                                dependencies.getOrPut(res){ mutableListOf()}.add(res2Res)
+                                dependencies.getOrPut(relatedRes){ mutableListOf()}.add(res2Res)
+                            }
+                        }
+                    }
+                }
+    }
+
+    private fun probOfResToTable(resourceKey: String, tableName: String) : Double{
+        return resourceCluster[resourceKey]!!.paramsToTables.values.filter { it.targets.contains(tableName) }.map { it.probability}.max()!!
+    }
+
+    private fun paramToSameTable(resourceKey: String?, tableName: String) : List<String>{
+        return resourceCluster
+                .filter { resourceKey!= null || it.key != resourceKey }
+                .filter {
+                    it.value.paramsToTables.values
+                        .find { p -> p.targets.contains(tableName) } != null
+                }.keys.toList()
     }
 
     /**
@@ -130,7 +193,7 @@ class ResourceManageService {
         sortedResources
                 .filter { it.actions.find { a -> a is RestCallAction && a.verb == HttpVerb.POST } != null && it.postCreation.actions.size > 1   }
                 .forEach { ar->
-                    ar.genPostChain(randomness)?.let {call->
+                    ar.genPostChain(randomness, config.maxTestSize)?.let {call->
                         call.actions.forEach { (it as RestCallAction).auth = auth }
                         call.doesCompareDB = hasDBHandler()
                         adHocInitialIndividuals.add(RestIndividualII(mutableListOf(call), SampleType.SMART_RESOURCE))
@@ -158,46 +221,108 @@ class ResourceManageService {
 
     }
 
+    fun isDependencyNotEmpty() : Boolean{
+        return dependencies.isNotEmpty()
+    }
 
-    fun sampleCall(resourceKey: String, doesCreateResource: Boolean, calls : MutableList<RestResourceCalls>, size : Int){
+    fun handleAddResource(ind : RestIndividualII, maxTestSize : Int, fromDependencies : Boolean) : RestResourceCalls{
+        val existingRs = ind.getResourceCalls().map { it.resource.ar.path.toString() }
+        var candidate =
+                if(fromDependencies){
+                    val candidates = dependencies.filterKeys { existingRs.contains(it) }.keys
+                    if(candidates.isNotEmpty()){
+                        randomness.choose(dependencies[randomness.choose(candidates)]!!.flatMap { it.targets as MutableList<String> })
+                    } else null
+                }else null
+        if (candidate == null) candidate = randomness.choose(getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.keys)
+        return resourceCluster[candidate]!!.sampleAnyRestResourceCalls(randomness,maxTestSize )
+    }
+
+    fun sampleRelatedResources(calls : MutableList<RestResourceCalls>, sizeOfResource : Int, maxSize : Int) {
+        var start = - calls.sumBy { it.actions.size }
+
+        val first = randomness.choose(dependencies.keys)
+        sampleCall(first, true, calls, maxSize)
+        var sampleSize = 1
+        var size = calls.sumBy { it.actions.size } + start
+        val excluded = mutableListOf<String>()
+        while (sampleSize < sizeOfResource && size < maxSize){
+            val candidates = dependencies[first]!!.flatMap { it.targets as MutableList<String> }.filter { !excluded.contains(it) }
+            if(candidates.isEmpty())
+                break
+
+            val related = randomness.choose(candidates)
+            excluded.add(related)
+            sampleCall(related, true, calls, size)
+            size = calls.sumBy { it.actions.size } + start
+        }
+    }
+
+    fun sampleCall(resourceKey: String, doesCreateResource: Boolean, calls : MutableList<RestResourceCalls>, size : Int, bindWith : RestResourceCalls? = null){
         val ar = resourceCluster[resourceKey]
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
 
 
         if(!doesCreateResource ){
-            calls.add(ar.sampleIndResourceCall(randomness,size))
+            val call = ar.sampleIndResourceCall(randomness,size)
+            calls.add(call)
+            //TODO shall we control the probability to sample GET with an existing resource.
+            if(hasDBHandler() && call.template.template == HttpVerb.GET.toString() && randomness.nextBoolean(0.5)){
+                val created = handleCallWithDBAction(ar, call, false, true)
+            }
             return
         }
 
         assert(!ar.isIndependent())
         var candidateForInsertion : String? = null
 
-        if(ar.paramsToTables.isNotEmpty() && randomness.nextBoolean(0.5)){
+        if(hasDBHandler() && ar.paramsToTables.isNotEmpty() && randomness.nextBoolean(0.5)){
             //Insert - GET/PUT/PATCH
             val candidates = ar.templates.filter { it.value.independent }
             candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
         }
 
 
-        val candidate = if(candidateForInsertion.isNullOrBlank())
-            randomness.choose(ar.templates.keys) else candidateForInsertion
+        val candidate = if(candidateForInsertion.isNullOrBlank()) {
+            //prior to select the template with POST
+            ar.templates.filter { !it.value.independent }.run {
+                if(isNotEmpty())
+                    randomness.choose(this.keys)
+                else
+                    randomness.choose(ar.templates.keys)
+            }
+        } else candidateForInsertion
 
         val call = ar.genCalls(candidate,randomness,size,true,true)
         calls.add(call)
 
-        if(hasDBHandler()){
-            if(!ar.postCreation.isComplete() || checkIfDeriveTable(call) || candidateForInsertion != null){
-                call.doesCompareDB = true
-                /*
-                    derive possible db, and bind value according to db
-                */
-                val created = handleCallWithDBAction(ar, call, false)
-                if(!created){
-                    //TODO MAN record the call when postCreation fails
+        if(bindWith == null) {
+            if(hasDBHandler()){
+                if(
+                        //!ar.postCreation.isComplete()
+                        call.status != RestResourceCalls.ResourceStatus.CREATED
+                        || checkIfDeriveTable(call)
+                        || candidateForInsertion != null){
+                    call.doesCompareDB = true
+                    /*
+                        derive possible db, and bind value according to db
+                    */
+                    val created = handleCallWithDBAction(ar, call, false, false)
+                    if(!created){
+                        //TODO MAN record the call when postCreation fails
+                    }
+                }else{
+                    call.doesCompareDB = (!call.template.independent) && (resourceTables[ar.path.toString()] == null)
                 }
-            }else{
-                call.doesCompareDB = (!call.template.independent) && (resourceTables[ar.path.toString()] == null)
             }
+        }else{
+            bindCallWithCall(call, bindWith)
+        }
+    }
+
+    private fun bindCallWithCall(call: RestResourceCalls, target: RestResourceCalls){
+        if(target.dbActions.isNotEmpty()){
+            TODO("bind data of call with a specific call")
         }
     }
 
@@ -303,12 +428,14 @@ class ResourceManageService {
         }
     }
 
-    private fun handleCallWithDBAction(ar: RestAResource, call: RestResourceCalls, forceInsert : Boolean) : Boolean{
-
+    private fun handleCallWithDBAction(ar: RestAResource, call: RestResourceCalls, forceInsert : Boolean, forceSelect : Boolean) : Boolean{
+        //TODO whether we need to check the similarity of the param name at this stage?
         if(ar.paramsToTables.values.find { it.probability < ParserUtil.SimilarityThreshold || it.targets.isEmpty()} == null){
             var failToLinkWithResource = false
 
-            val paramsToBind = ar.actions.filter { (it is RestCallAction) && it.verb != HttpVerb.POST }.flatMap { (it as RestCallAction).parameters.map { p-> ParamRelatedToTable.getNotateKey(p.name.toLowerCase()).toLowerCase()  } }
+            val paramsToBind =
+                    ar.actions.filter { (it is RestCallAction) && it.verb != HttpVerb.POST }
+                            .flatMap { (it as RestCallAction).parameters.map { p-> ParamRelatedToTable.getNotateKey(p.name.toLowerCase()).toLowerCase()  } }
             val targets = ar.paramsToTables.filter { paramsToBind.contains(it.key.toLowerCase())}
             snapshotDB()
 
@@ -319,6 +446,9 @@ class ResourceManageService {
 
                 if(forceInsert){
                     if(!handleCallWithInsert(tableName, ps, call)) failToLinkWithResource = true
+                }else if(forceSelect) {
+                    if(dataInDB[tableName] == null || dataInDB[tableName]!!.isEmpty() || !handleCallWithSelect(tableName, ps, call))
+                        failToLinkWithResource = true
                 }else{
                     if(dataInDB[tableName]!= null ){
                         val size = dataInDB[tableName]!!.size
@@ -383,7 +513,7 @@ class ResourceManageService {
             val ar = resourceCluster[key]
                     ?: throw IllegalArgumentException("resource path $key does not exist!")
             call.dbActions.clear()
-            handleCallWithDBAction(ar, call, true)
+            handleCallWithDBAction(ar, call, true, false)
         }
         return true
     }
@@ -393,7 +523,7 @@ class ResourceManageService {
         val insertDbAction =
                 (sampler as RestSamplerII).sqlInsertBuilder!!
                         .createSqlInsertionActionWithRandomizedData(tableName)
-        var ok : Boolean? = null
+//        var ok : Boolean? = null
         if(insertDbAction.isNotEmpty()){
             DbActionUtils.randomizeDbActionGenes(insertDbAction, randomness)
             repairDbActions(insertDbAction.toMutableList())
@@ -424,6 +554,7 @@ class ResourceManageService {
         return true
     }
 
+    //TODO handle SqlAutoIncrementGene
     private fun bindCallActionsWithDBAction(ps: List<String>, call: RestResourceCalls, dbActions : List<DbAction>, bindParamBasedOnDB : Boolean){
         call.dbActions.addAll(dbActions)
 

@@ -5,5 +5,7 @@ class CallsTemplate (
         val independent : Boolean,
         var size : Int = 1,
         var probability : Double = -1.0,
-        var times : Int = 0
+        var times : Int = 0,
+
+        var sizeAssured : Boolean= false
 )

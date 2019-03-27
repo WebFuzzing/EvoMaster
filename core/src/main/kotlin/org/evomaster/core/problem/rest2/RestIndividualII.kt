@@ -15,19 +15,24 @@ import java.lang.IllegalStateException
 class RestIndividualII : RestIndividual {
 
     private val resourceCalls: MutableList<RestResourceCalls>
+    private val possibleRelated : MutableSet<String>
 
-    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, dbInitialization: MutableList<DbAction>, description: String, traces : MutableList<RestIndividualII>): super(restCalls.flatMap { it.actions }.toMutableList(), sampleType, dbInitialization, description, traces){
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, dbInitialization: MutableList<DbAction>, possibleRelated : MutableSet<String>, description: String, traces : MutableList<RestIndividualII>): super(restCalls.flatMap { it.actions }.toMutableList(), sampleType, dbInitialization, description, traces){
         this.resourceCalls = restCalls
+        this.possibleRelated = possibleRelated
     }
-    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, dbInitialization: MutableList<DbAction> = mutableListOf()): this(restCalls, sampleType, dbInitialization, sampleType.toString(), mutableListOf())
-    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, description: String, traces: MutableList<RestIndividualII>): this(restCalls, sampleType, mutableListOf(), description, traces)
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, dbInitialization: MutableList<DbAction> = mutableListOf(), related : MutableSet<String> = mutableSetOf()): this(restCalls, sampleType, dbInitialization, related, sampleType.toString(), mutableListOf())
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType,related : MutableSet<String>,  description: String, traces: MutableList<RestIndividualII>): this(restCalls, sampleType, mutableListOf(), related, description, traces)
+
+    constructor(restCalls: MutableList<RestResourceCalls>, sampleType: SampleType, related : MutableSet<String> = mutableSetOf()): this(restCalls, sampleType, mutableListOf(), related, sampleType.toString(), mutableListOf())
 
     override fun copy(): Individual {
         val calls = resourceCalls.map { it.copy() }.toMutableList()
         return RestIndividualII(
                 calls,
                 sampleType,
-                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>
+                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                possibleRelated.toHashSet()
         )
     }
 
@@ -138,6 +143,7 @@ class RestIndividualII : RestIndividual {
                     resourceCalls.map { it.copy() }.toMutableList(),
                     sampleType,
                     dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                    possibleRelated.toHashSet(),
                     description,
                     copyTraces)
         }
@@ -157,6 +163,7 @@ class RestIndividualII : RestIndividual {
                         resourceCalls.map { it.copy() }.toMutableList(),
                         sampleType,
                         dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                        possibleRelated.toHashSet(),
                         getDescription(),
                         copyTraces
                 )

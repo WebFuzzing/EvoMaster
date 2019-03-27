@@ -25,11 +25,15 @@ class RestResourceStructureMutator : StructureMutator() {
     }
 
     private fun mutateRestResourceCalls(ind: RestIndividualII) {
+
         val num = ind.getResourceCalls().size
         val type = randomness.choose(MutationType.values().filter {  num >= it.size }
                 .filterNot{
                     (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
-                            (ind.getResourceCalls().map { it.resource.getKey() }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
+                            (ind.getResourceCalls().map {
+                                //it.resource.getAResourceKey()
+                                it.resource.getKey()
+                            }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
                             (!ind.canModifyCall() && it == MutationType.MODIFY)
                 })
         if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) ind.appendDescription(type.toString())
@@ -53,6 +57,7 @@ class RestResourceStructureMutator : StructureMutator() {
     private fun handleDelete(ind: RestIndividualII){
         val pos = randomness.nextInt(0, ind.getResourceCalls().size-1)
         ind.removeResourceCall(pos)
+
     }
 
     private fun handleSwap(ind: RestIndividualII){
@@ -61,9 +66,15 @@ class RestResourceStructureMutator : StructureMutator() {
     }
 
     private fun handleAdd(ind: RestIndividualII){
+
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
-        val call = sampler.handleAddResource(ind, max)
+        val fromDependency = rm.isDependencyNotEmpty() && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
+        val call = rm.handleAddResource(ind, max, fromDependency)
+
+        if(fromDependency)
+            TODO("bind related resources with same data if possible")
+
         val pos = randomness.nextInt(0, ind.getResourceCalls().size)
         ind.addResourceCall(pos, call)
     }
@@ -71,7 +82,12 @@ class RestResourceStructureMutator : StructureMutator() {
     private fun handleReplace(ind: RestIndividualII){
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
-        val call = sampler.handleAddResource(ind, max)
+        val fromDependency = rm.isDependencyNotEmpty() && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
+        val call = rm.handleAddResource(ind, max, fromDependency)
+
+        if(fromDependency)
+            TODO("bind related resources with same data if possible")
+
         val pos = randomness.nextInt(0, ind.getResourceCalls().size - 1)
         ind.replaceResourceCall(pos, call)
     }

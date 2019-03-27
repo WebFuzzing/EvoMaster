@@ -14,6 +14,7 @@ import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.problem.rest2.db.SQLGenerator
+import org.evomaster.core.problem.rest2.db.SQLKey
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -21,6 +22,7 @@ import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import java.lang.IllegalStateException
+import javax.xml.crypto.Data
 
 
 class SqlInsertBuilder(
@@ -286,7 +288,8 @@ class SqlInsertBuilder(
 
         for(table in tables.values){
             val pks = table.columns.filter { it.primaryKey }
-            val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM ${table.name}"
+            val selected = if(pks.isEmpty()) SQLKey.ALL.key else pks.map { it.name }.joinToString(",")
+            val sql = "SELECT $selected FROM ${table.name}"
 
             val dto = DatabaseCommandDto()
             dto.command = sql
@@ -354,9 +357,6 @@ class SqlInsertBuilder(
             actions.addAll(0, pre)
         }
 
-
-
-
         return actions
     }
 
@@ -372,45 +372,52 @@ class SqlInsertBuilder(
         val table = tables[tableName]!!
 
         val pks = table.columns.filter { it.primaryKey }
-
         val cols = table.columns.toList()
 
-        val condition = SQLGenerator.composeAndConditions(
-                SQLGenerator.genConditions(
-                        pks.map { it.name }.toTypedArray(),
-                        pkValues.columnData,
-                        table)
-        )
+        var row : DataRowDto? = null
+        if(pks.isNotEmpty()){
 
-        val sql = SQLGenerator.genSelect(cols.map { it.name }.toTypedArray(),table, condition)
 
-        val dto = DatabaseCommandDto()
-        dto.command = sql
+            val condition = SQLGenerator.composeAndConditions(
+                    SQLGenerator.genConditions(
+                            pks.map { it.name }.toTypedArray(),
+                            pkValues.columnData,
+                            table)
+            )
 
-        val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
-                ?: throw IllegalArgumentException("rows regarding pks can not be found")
-        if(result.rows.size != 1){
-            throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
-        }
+            val sql = SQLGenerator.genSelect(cols.map { it.name }.toTypedArray(),table, condition)
 
+            val dto = DatabaseCommandDto()
+            dto.command = sql
+
+            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+                    ?: throw IllegalArgumentException("rows regarding pks can not be found")
+            if(result.rows.size != 1){
+                throw IllegalArgumentException("the size of rows regarding pks is ${result.rows.size}, and except is 1")
+            }
+            row = result.rows.first()
+        }else
+            row = pkValues
 
 
         val id = counter++
 
-        val row = result.rows.first()
         val genes = mutableListOf<Gene>()
 
         for(i in 0 until cols.size){
 
-            val colName= cols[i].name
-            val inQuotes = cols[i].type.shouldBePrintedInQuotes()
+            if(row!!.columnData[i] != "NULL"){
 
-            val gene = if(cols[i].primaryKey){
-                SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row.columnData[i], inQuotes), id)
-            }else{
-                ImmutableDataHolderGene(colName, row.columnData[i], inQuotes)
+                val colName= cols[i].name
+                val inQuotes = cols[i].type.shouldBePrintedInQuotes()
+
+                val gene = if(cols[i].primaryKey){
+                    SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row!!.columnData[i], inQuotes), id)
+                }else{
+                    ImmutableDataHolderGene(colName, row!!.columnData[i], inQuotes)
+                }
+                genes.add(gene)
             }
-            genes.add(gene)
         }
 
         return DbAction(table, pks.toSet(), id, genes, true)
