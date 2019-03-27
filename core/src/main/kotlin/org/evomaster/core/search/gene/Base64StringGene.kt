@@ -33,4 +33,7 @@ class Base64StringGene(
     }
 
 
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf() else listOf(this).plus(data.flatView(excludePredicate))
+    }
 }

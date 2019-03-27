@@ -43,4 +43,9 @@ class SqlTimestampGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if(excludePredicate(this)) listOf() else
+            listOf(this).plus(date.flatView(excludePredicate))
+                    .plus(time.flatView(excludePredicate))
+    }
 }
