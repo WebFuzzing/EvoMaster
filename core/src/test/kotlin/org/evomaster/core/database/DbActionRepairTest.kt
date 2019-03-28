@@ -72,7 +72,7 @@ class DbActionRepairTest {
         val gene1 = gene0.copy()
         val action1 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
@@ -100,7 +100,7 @@ class DbActionRepairTest {
         val gene1 = gene0.copy()
         val action1 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
@@ -127,7 +127,7 @@ class DbActionRepairTest {
         val gene1 = gene0.copy()
         val action1 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
@@ -154,7 +154,7 @@ class DbActionRepairTest {
         val gene1 = gene0.copy()
         val action1 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
@@ -196,7 +196,7 @@ class DbActionRepairTest {
         val gene2 = gene0.copy()
         val action2 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene2))
 
-        val actions = mutableListOf<DbAction>(action0, action1, action2)
+        val actions = mutableListOf(action0, action1, action2)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
@@ -211,7 +211,7 @@ class DbActionRepairTest {
         assertTrue(DbActionUtils.verifyUniqueColumns(actions))
         assertTrue(DbActionUtils.verifyActions(actions))
 
-        assertEquals(2,actions.size)
+        assertEquals(2, actions.size)
     }
 
 
@@ -232,7 +232,7 @@ class DbActionRepairTest {
         val gene1 = gene0.copy()
         val action1 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))
@@ -261,7 +261,7 @@ class DbActionRepairTest {
         val gene1 = SqlAutoIncrementGene(uniqueColumn.name)
         val action1 = DbAction(aTable, setOf(uniqueColumn), 1L, mutableListOf(gene1))
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertTrue(DbActionUtils.verifyUniqueColumns(actions))
@@ -302,7 +302,7 @@ class DbActionRepairTest {
         val action1 = DbAction(table1, setOf(fkColumn), insertId1, listOf(pkGeneTable1))
 
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertTrue(DbActionUtils.verifyUniqueColumns(actions))
@@ -343,7 +343,7 @@ class DbActionRepairTest {
         val action1 = DbAction(table1, setOf(fkColumn), insertId1, listOf(pkGeneTable1))
 
 
-        val actions = mutableListOf<DbAction>(action0, action1)
+        val actions = mutableListOf(action0, action1)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertTrue(DbActionUtils.verifyUniqueColumns(actions))
@@ -393,7 +393,7 @@ class DbActionRepairTest {
         val action3 = DbAction(table1, setOf(fkColumn), insertId3, listOf(pkGene3))
 
 
-        val actions = mutableListOf<DbAction>(action0, action1, action2, action3)
+        val actions = mutableListOf(action0, action1, action2, action3)
 
         assertTrue(DbActionUtils.verifyForeignKeys(actions))
         assertFalse(DbActionUtils.verifyUniqueColumns(actions))

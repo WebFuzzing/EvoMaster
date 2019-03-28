@@ -137,6 +137,7 @@ class SqlForeignKeyGene(
         return false
     }
 
+
     fun isBound() = uniqueIdOfPrimaryKey >= 0
 
     override fun copyValueFrom(other: Gene) {

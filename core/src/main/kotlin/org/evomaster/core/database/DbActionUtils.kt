@@ -144,10 +144,18 @@ object DbActionUtils {
      * If no such gene is found, the function returns the tuple (-1,null).
      */
     private fun findFirstOffendingGeneWithIndex(actions: List<Action>): Pair<Gene?, Int> {
-        val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<Gene>>()
+
+        /*
+            Key -> tableName/columnName
+            Value -> raw gene value
+         */
+        val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<String>>()
+
+        val all = actions.flatMap { it.seeGenes() }
 
         for ((actionIndex, action) in actions.withIndex()) {
-            if (action !is DbAction || action.representExistingData) {
+
+            if (action !is DbAction) {
                 continue
             }
 
@@ -155,17 +163,40 @@ object DbActionUtils {
 
             action.seeGenes().forEach { g ->
                 val columnName = g.name
-                if (action.table.columns.filter { c ->
-                            c.name == columnName && !c.autoIncrement && (c.unique || c.primaryKey)
-                        }.isNotEmpty()) {
+
+
+                /*
+                    TODO: following check is not taking into account that a PK could be multi-column
+                 */
+                if (action.table.columns.any {
+                            it.name == columnName && !it.autoIncrement && (it.unique || it.primaryKey)
+                        }) {
+
                     val key = Pair(tableName, columnName)
 
-                    val genes = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
+                    val pks = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
 
-                    if (genes.any { otherGene -> otherGene.containsSameValueAs(g) }) {
+                    /*
+                        The code here cannot use Gene#ontainsSameValueAs, as the same type of
+                        values could be represented with different gene structures.
+                        For example, in the case of PKs, those could be regular genes, or
+                        immutable ones when representing existing data in the DB.
+                        So, the check for uniqueness is based on value representation...
+                        but not all values can be printed... in those case we use an ad-hoc
+                        string with the unique ids.
+                     */
+                    val value = if(g is SqlForeignKeyGene && g.isReferenceToNonPrintable(all)){
+                        "FK_REFERENCE_ " + g.uniqueIdOfPrimaryKey
+                    } else if((g is SqlPrimaryKeyGene && g.isReferenceToNonPrintable(all))){
+                        "FK_REFERENCE_ " + (g.gene as SqlForeignKeyGene).uniqueIdOfPrimaryKey
+                    } else {
+                        g.getValueAsPrintableString(all)
+                    }
+
+                    if (pks.contains(value)) {
                         return Pair(g, actionIndex)
                     } else {
-                        genes.add(g)
+                        pks.add(value)
                     }
                 }
             }

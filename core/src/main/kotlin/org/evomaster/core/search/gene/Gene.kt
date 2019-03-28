@@ -87,7 +87,7 @@ abstract class Gene(var name: String) {
 
     /**
      * Genes might contain a value that is also stored
-     * in another gene.
+     * in another gene of the same type.
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
