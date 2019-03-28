@@ -49,7 +49,7 @@ class ArrayGene<T>(
 
         elements.clear()
         val n = randomness.nextInt(maxSize)
-        (0..n - 1).forEach {
+        (0 until n).forEach {
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             elements.add(gene)
