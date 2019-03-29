@@ -9,7 +9,115 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class DbActionRepairTest {
+class DbActionUtilsTest {
+
+
+    @Test
+    fun testMultiColumnPrimaryKey(){
+
+        val x = Column("x", ColumnDataType.INTEGER, 10,
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false)
+
+        val y = Column("y", ColumnDataType.INTEGER, 10,
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false)
+
+        val tableName = "ATable"
+        val table = Table(tableName, setOf(x,y), setOf())
+
+
+        val gx0 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 1)
+        val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 2)
+        val action0 = DbAction(table, setOf(x,y), 0L, listOf(gx0,gy0))
+
+        assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0)))
+
+        //second action with exact same PK
+        val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 3)
+        val gy1 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 4)
+        val action1 = DbAction(table, setOf(x,y), 1L, listOf(gx1,gy1))
+
+        //validation should fail
+        assertFalse(DbActionUtils.verifyUniqueColumns(listOf(action0, action1)))
+
+
+        //third action with inverted values
+        val gx2 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 66), 5)
+        val gy2 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 42), 6)
+        val action2 = DbAction(table, setOf(x,y), 2L, listOf(gx2,gy2))
+
+        //should be fine
+        assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0, action2)))
+
+
+        //fourth action with one column as same value
+        val gx3 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 7)
+        val gy3 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 1234), 8)
+        val action3 = DbAction(table, setOf(x,y), 3L, listOf(gx3,gy3))
+
+        //should still be fine, as PK is composed of 2 columns
+        assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0, action3)))
+    }
+
+    @Test
+    fun testMultiColumnPrimaryKeyWithUnique(){
+
+        /*
+            2 columns x and y
+            They both define the PK, but x is also unique.
+            Likely this would not make much sense, as then could just have
+            x as PK. but as it is easy to support, we just handle it
+         */
+        val x = Column("x", ColumnDataType.INTEGER, 10,
+                primaryKey = true,
+                autoIncrement = false,
+                unique = true)
+
+        val y = Column("y", ColumnDataType.INTEGER, 10,
+                primaryKey = true,
+                autoIncrement = false,
+                unique = false)
+
+        val tableName = "ATable"
+        val table = Table(tableName, setOf(x,y), setOf())
+
+
+        val gx0 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 1)
+        val gy0 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 2)
+        val action0 = DbAction(table, setOf(x,y), 0L, listOf(gx0,gy0))
+
+        assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0)))
+
+        //second action with exact same PK
+        val gx1 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 3)
+        val gy1 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 4)
+        val action1 = DbAction(table, setOf(x,y), 1L, listOf(gx1,gy1))
+
+        //validation should fail
+        assertFalse(DbActionUtils.verifyUniqueColumns(listOf(action0, action1)))
+
+
+        //third action with different y
+        val gx2 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 42), 5)
+        val gy2 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 77), 6)
+        val action2 = DbAction(table, setOf(x,y), 2L, listOf(gx2,gy2))
+
+        //should still fail, due to unique x
+        assertFalse(DbActionUtils.verifyUniqueColumns(listOf(action0, action2)))
+
+
+        //fourth action with same y, and different x
+        val gx3 = SqlPrimaryKeyGene(x.name, tableName, IntegerGene(x.name, 1234), 7)
+        val gy3 = SqlPrimaryKeyGene(y.name, tableName, IntegerGene(y.name, 66), 8)
+        val action3 = DbAction(table, setOf(x,y), 3L, listOf(gx3,gy3))
+
+        //should be fine, as PK is composed of 2 columns, and y does not need to be unique
+        assertTrue(DbActionUtils.verifyUniqueColumns(listOf(action0, action3)))
+    }
+
 
 
     @Test

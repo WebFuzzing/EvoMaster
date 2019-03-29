@@ -10,4 +10,7 @@ data class Table(
         val columns: Set<Column>,
 
         val foreignKeys: Set<ForeignKey>
-)
+){
+
+    fun primaryKeys() = columns.filter { it.primaryKey }
+}

@@ -51,7 +51,7 @@ object DbActionUtils {
                     it.randomize(randomness, false, all)
                 }
 
-        Lazy.assert{verifyForeignKeys(actions)}
+        Lazy.assert { verifyForeignKeys(actions) }
     }
 
     private const val DEFAULT_MAX_NUMBER_OF_ATTEMPTS_TO_REPAIR_ACTIONS = 5
@@ -111,7 +111,7 @@ object DbActionUtils {
         if (geneToRepair == null) {
             return true
         } else {
-            Lazy.assert{actionIndexToRepair >= 0 && actionIndexToRepair < actions.size}
+            Lazy.assert { actionIndexToRepair >= 0 && actionIndexToRepair < actions.size }
             // truncate list of actions to make them valid
             val truncatedListOfActions = actions.subList(0, actionIndexToRepair).toMutableList()
             actions.clear()
@@ -151,7 +151,13 @@ object DbActionUtils {
          */
         val uniqueColumnValues = mutableMapOf<Pair<String, String>, MutableSet<String>>()
 
-        val all = actions.flatMap { it.seeGenes() }
+        /*
+            Key -> tableName
+            Value -> concatenated values of raw genes, in order
+         */
+        val pksValues = mutableMapOf<String, MutableSet<String>>()
+
+        val allGenes = actions.flatMap { it.seeGenes() }
 
         for ((actionIndex, action) in actions.withIndex()) {
 
@@ -159,49 +165,120 @@ object DbActionUtils {
                 continue
             }
 
-            val tableName = action.table.name
-
-            action.seeGenes().forEach { g ->
-                val columnName = g.name
-
-
-                /*
-                    TODO: following check is not taking into account that a PK could be multi-column
-                 */
-                if (action.table.columns.any {
-                            it.name == columnName && !it.autoIncrement && (it.unique || it.primaryKey)
-                        }) {
-
-                    val key = Pair(tableName, columnName)
-
-                    val pks = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
-
-                    /*
-                        The code here cannot use Gene#ontainsSameValueAs, as the same type of
-                        values could be represented with different gene structures.
-                        For example, in the case of PKs, those could be regular genes, or
-                        immutable ones when representing existing data in the DB.
-                        So, the check for uniqueness is based on value representation...
-                        but not all values can be printed... in those case we use an ad-hoc
-                        string with the unique ids.
-                     */
-                    val value = if(g is SqlForeignKeyGene && g.isReferenceToNonPrintable(all)){
-                        "FK_REFERENCE_ " + g.uniqueIdOfPrimaryKey
-                    } else if((g is SqlPrimaryKeyGene && g.isReferenceToNonPrintable(all))){
-                        "FK_REFERENCE_ " + (g.gene as SqlForeignKeyGene).uniqueIdOfPrimaryKey
-                    } else {
-                        g.getValueAsPrintableString(all)
-                    }
-
-                    if (pks.contains(value)) {
-                        return Pair(g, actionIndex)
-                    } else {
-                        pks.add(value)
-                    }
-                }
-            }
-
+            handleUnique(action, actionIndex, uniqueColumnValues, allGenes)?.let { return it }
+            handlePKs(action, actionIndex, pksValues, allGenes)?.let { return it }
         }
+
+        //if reached here, then there was no problem
         return Pair(null, -1)
     }
+
+    private fun handleUnique(
+            action: DbAction,
+            actionIndex: Int,
+            uniqueColumnValues : MutableMap<Pair<String, String>, MutableSet<String>>,
+            all: List<Gene>
+            ) : Pair<Gene?, Int>?{
+
+        val tableName = action.table.name
+
+        //handle unique constraint
+        action.seeGenes().forEach { g ->
+            val columnName = g.name
+
+            /*
+                Is the current gene representing a column in database for which we need
+                to enforce a unique constraint?
+             */
+            val isUnique = action.table.columns.any {
+                it.name == columnName && !it.autoIncrement && it.unique
+            }
+
+            if (isUnique) {
+
+                val key = Pair(tableName, columnName)
+
+                val existing = uniqueColumnValues.getOrPut(key) { mutableSetOf() }
+
+                val value = getStringValue(g, all)
+
+                if (!existing.contains(value)) {
+                    existing.add(value)
+                } else {
+                    //we have a problem
+                    return Pair(g, actionIndex)
+                }
+            }
+        }
+
+        return null
+    }
+
+    private fun handlePKs(
+            action: DbAction,
+            actionIndex: Int,
+            pksValues: MutableMap<String, MutableSet<String>>,
+            all: List<Gene>
+    ) : Pair<Gene?, Int>?{
+
+        if(action.table.primaryKeys().isEmpty()){
+            //it can happen that a table has no PK
+            return null
+        }
+
+        if(action.table.primaryKeys().any { it.autoIncrement }){
+            //auto-increment should never lead to unique violations
+            return null
+        }
+
+        val tableName = action.table.name
+
+        /*
+           Primary Keys are unique as well. However, a PK could be
+           defined by several columns, i.e by a tuple.
+           So, here we concatenate all PK columns into a single string
+           to check for uniqueness
+         */
+
+        val pkGenes = action.seeGenes()
+                .filterIsInstance<SqlPrimaryKeyGene>()
+
+        val pk = pkGenes.sortedBy { it.name }
+                .map { it.name + "=" + getStringValue(it, all)}
+                .joinToString("__")
+
+        val existing = pksValues.getOrPut(tableName) { mutableSetOf() }
+
+        return if (!existing.contains(pk)) {
+            existing.add(pk)
+            null
+        } else {
+            /*
+                we have a problem.
+                TODO could take one of the offending genes at random?
+             */
+            Pair(pkGenes.first(), actionIndex)
+        }
+    }
+
+    private fun getStringValue(g: Gene, all: List<Gene>): String {
+        /*
+               The code here cannot use Gene#containsSameValueAs, as the same type of
+               values could be represented with different gene structures.
+               For example, in the case of PKs, those could be regular genes, or
+               immutable ones when representing existing data in the DB.
+               So, the check for uniqueness is based on value representation...
+               but not all values can be printed... in those case we use an ad-hoc
+               string with the unique ids.
+        */
+        return if (g is SqlForeignKeyGene && g.isReferenceToNonPrintable(all)) {
+            "FK_REFERENCE_ " + g.uniqueIdOfPrimaryKey
+        } else if ((g is SqlPrimaryKeyGene && g.isReferenceToNonPrintable(all))) {
+            "FK_REFERENCE_ " + (g.gene as SqlForeignKeyGene).uniqueIdOfPrimaryKey
+        } else {
+            g.getValueAsPrintableString(all)
+        }
+    }
+
+
 }
