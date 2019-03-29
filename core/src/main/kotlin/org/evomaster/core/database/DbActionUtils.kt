@@ -12,19 +12,25 @@ object DbActionUtils {
 
     fun verifyForeignKeys(actions: List<DbAction>): Boolean {
 
-        val all = actions.flatMap { it.seeGenes() }
+        for (i in 0 until actions.size) {
 
-        for (i in 1 until actions.size) {
+            val fks = actions[i].seeGenes()
+                    .flatMap { it.flatView() }
+                    .filterIsInstance<SqlForeignKeyGene>()
+
+            if (fks.any { !it.nullable && !it.isBound() }) {
+                return false
+            }
+
+            if(i == 0){
+                continue
+            }
 
             val previous = actions.subList(0, i)
 
-            actions[i].seeGenes().asSequence()
-                    .flatMap { it.flatView().asSequence() }
-                    .filterIsInstance<SqlForeignKeyGene>()
-                    .filter { it.isReferenceToNonPrintable(all) }
+            fks.filter { it.isBound() }
                     .map { it.uniqueIdOfPrimaryKey }
-                    .forEach {
-                        val id = it
+                    .forEach { id ->
                         val match = previous.asSequence()
                                 .flatMap { it.seeGenes().asSequence() }
                                 .filterIsInstance<SqlPrimaryKeyGene>()
@@ -35,6 +41,7 @@ object DbActionUtils {
                         }
                     }
         }
+
         return true
     }
 
@@ -176,9 +183,9 @@ object DbActionUtils {
     private fun handleUnique(
             action: DbAction,
             actionIndex: Int,
-            uniqueColumnValues : MutableMap<Pair<String, String>, MutableSet<String>>,
+            uniqueColumnValues: MutableMap<Pair<String, String>, MutableSet<String>>,
             all: List<Gene>
-            ) : Pair<Gene?, Int>?{
+    ): Pair<Gene?, Int>? {
 
         val tableName = action.table.name
 
@@ -219,14 +226,14 @@ object DbActionUtils {
             actionIndex: Int,
             pksValues: MutableMap<String, MutableSet<String>>,
             all: List<Gene>
-    ) : Pair<Gene?, Int>?{
+    ): Pair<Gene?, Int>? {
 
-        if(action.table.primaryKeys().isEmpty()){
+        if (action.table.primaryKeys().isEmpty()) {
             //it can happen that a table has no PK
             return null
         }
 
-        if(action.table.primaryKeys().any { it.autoIncrement }){
+        if (action.table.primaryKeys().any { it.autoIncrement }) {
             //auto-increment should never lead to unique violations
             return null
         }
@@ -244,7 +251,7 @@ object DbActionUtils {
                 .filterIsInstance<SqlPrimaryKeyGene>()
 
         val pk = pkGenes.sortedBy { it.name }
-                .map { it.name + "=" + getStringValue(it, all)}
+                .map { it.name + "=" + getStringValue(it, all) }
                 .joinToString("__")
 
         val existing = pksValues.getOrPut(tableName) { mutableSetOf() }
