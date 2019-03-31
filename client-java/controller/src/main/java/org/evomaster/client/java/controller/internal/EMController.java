@@ -1,16 +1,16 @@
 package org.evomaster.client.java.controller.internal;
 
+import org.evomaster.client.java.controller.api.ControllerConstants;
+import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
-import org.evomaster.client.java.controller.api.ControllerConstants;
-import org.evomaster.client.java.controller.api.Formats;
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
-import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -50,12 +50,12 @@ public class EMController {
         dto.defaultOutputFormat = sutController.getPreferredOutputFormat();
 
         ProblemInfo info = sutController.getProblemInfo();
-        if(info == null){
+        if (info == null) {
             String msg = "Undefined problem type in the EM Controller";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
 
-        } else if (info instanceof RestProblem){
+        } else if (info instanceof RestProblem) {
             RestProblem rp = (RestProblem) info;
             dto.restProblem = new RestProblemDto();
             dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
@@ -102,10 +102,27 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            boolean newlyStarted = false;
+            boolean doReset = dto.resetState != null && dto.resetState;
 
             synchronized (this) {
-                if (dto.run) {
+
+                if (!dto.run) {
+                    if (doReset) {
+                        String msg = "Invalid JSON: cannot reset state and stop service at same time";
+                        SimpleLogger.warn(msg);
+                        return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+                    }
+
+                    //if on, we want to shut down the server
+                    if (sutController.isSutRunning()) {
+                        sutController.stopSut();
+                        baseUrlOfSUT = null;
+                    }
+
+                } else {
+                    /*
+                        If SUT is not up and running, let's start it
+                     */
                     if (!sutController.isSutRunning()) {
                         baseUrlOfSUT = sutController.startSut();
                         if (baseUrlOfSUT == null) {
@@ -115,30 +132,27 @@ public class EMController {
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         sutController.initSqlHandler();
-                        sutController.newTest();
-                        newlyStarted = true;
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
                     }
-                } else {
-                    if (sutController.isSutRunning()) {
-                        sutController.stopSut();
-                        baseUrlOfSUT = null;
-                    }
-                }
 
-                if (dto.resetState != null && dto.resetState) {
-                    if (!dto.run) {
-                        String msg = "Invalid JSON: cannot reset state and stop service at same time";
-                        SimpleLogger.warn(msg);
-                        return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-                    }
-
-                    if (!newlyStarted) { //no point resetting if fresh start
+                    /*
+                        regardless of where it was running or not, need to reset state.
+                        this is controlled by a boolean, although most likely we ll always
+                        want to do it
+                     */
+                    if (dto.resetState != null && dto.resetState) {
                         sutController.resetStateOfSUT();
                         sutController.newTest();
                     }
+
+                    /*
+                        Note: here even if we start the SUT, the starting of a "New Search"
+                        cannot be done here, as in this endpoint we also deal with the reset
+                        of state. When we reset state for a new test run, we do not want to
+                        reset all the other data regarding the whole search
+                     */
                 }
             }
         } catch (RuntimeException e) {
@@ -149,7 +163,7 @@ public class EMController {
              */
 
             String msg = e.getMessage();
-            SimpleLogger.error(msg );
+            SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
@@ -164,49 +178,62 @@ public class EMController {
             @DefaultValue("")
                     String idList) {
 
-        TestResultsDto dto = new TestResultsDto();
-
-        Set<Integer> ids;
-
         try {
-            ids = Arrays.stream(idList.split(","))
-                    .filter(s -> !s.trim().isEmpty())
-                    .map(Integer::parseInt)
-                    .collect(Collectors.toSet());
-        } catch (NumberFormatException e) {
-            String msg = "Invalid parameter 'ids': " + e.getMessage();
-            SimpleLogger.warn(msg);
-            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-        }
+            TestResultsDto dto = new TestResultsDto();
 
-        List<TargetInfo> list = sutController.getTargetInfos(ids);
-        if (list == null) {
-            String msg = "Failed to collect target information for " + ids.size() + " ids";
+            Set<Integer> ids;
+
+            try {
+                ids = Arrays.stream(idList.split(","))
+                        .filter(s -> !s.trim().isEmpty())
+                        .map(Integer::parseInt)
+                        .collect(Collectors.toSet());
+            } catch (NumberFormatException e) {
+                String msg = "Invalid parameter 'ids': " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            List<TargetInfo> list = sutController.getTargetInfos(ids);
+            if (list == null) {
+                String msg = "Failed to collect target information for " + ids.size() + " ids";
+                SimpleLogger.error(msg);
+                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            list.forEach(t -> {
+                TargetInfoDto info = new TargetInfoDto();
+                info.id = t.mappedId;
+                info.value = t.value;
+                info.descriptiveId = t.descriptiveId;
+                info.actionIndex = t.actionIndex;
+
+                dto.targets.add(info);
+            });
+
+            sutController.getAdditionalInfoList().forEach(a -> {
+                AdditionalInfoDto info = new AdditionalInfoDto();
+                info.queryParameters = new HashSet<>(a.getQueryParametersView());
+                info.headers = new HashSet<>(a.getHeadersView());
+
+                dto.additionalInfoList.add(info);
+            });
+
+            dto.extraHeuristics = sutController.getExtraHeuristics();
+
+            return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
+
+        } catch (RuntimeException e) {
+            /*
+                FIXME: ideally, would not need to do a try/catch on each single endpoint,
+                as could configure Jetty/Jackson to log all errors.
+                But even after spending hours googling it, haven't managed to configure it
+             */
+
+            String msg = e.getMessage();
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
-
-        list.forEach(t -> {
-            TargetInfoDto info = new TargetInfoDto();
-            info.id = t.mappedId;
-            info.value = t.value;
-            info.descriptiveId = t.descriptiveId;
-            info.actionIndex = t.actionIndex;
-
-            dto.targets.add(info);
-        });
-
-        sutController.getAdditionalInfoList().forEach(a -> {
-            AdditionalInfoDto info = new AdditionalInfoDto();
-            info.queryParameters = new HashSet<>(a.getQueryParametersView());
-            info.headers = new HashSet<>(a.getHeadersView());
-
-            dto.additionalInfoList.add(info);
-        });
-
-        dto.extraHeuristics = sutController.getExtraHeuristics();
-
-        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 
 
@@ -260,7 +287,7 @@ public class EMController {
             return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
-        if( result == null) {
+        if (result == null) {
             return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
         } else {
             return Response.status(200).entity(WrappedResponseDto.withData(result.toDto())).build();

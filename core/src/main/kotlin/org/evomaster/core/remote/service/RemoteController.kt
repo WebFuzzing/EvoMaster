@@ -139,12 +139,18 @@ class RemoteController() : DatabaseExecutor {
         return success
     }
 
+    /*
+        Starting implies a clean reset state.
+        Reset needs SUT to be up and running.
+        If SUT already running, no need to restart it, we can reset its state.
+        So, start and reset have same functionality here.
+    */
 
-    fun startSUT() = changeState(true, false)
+    fun startSUT() = changeState(true, true)
 
     fun stopSUT() = changeState(false, false)
 
-    fun resetSUT() = changeState(true, true)
+    fun resetSUT() = startSUT()
 
     fun checkConnection() {
 
