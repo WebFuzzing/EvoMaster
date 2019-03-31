@@ -1,4 +1,4 @@
-package org.evomaster.core.outputformatter
+package org.evomaster.core.output.formatter
 
 import org.evomaster.core.output.formatter.MismatchedFormatException
 import org.evomaster.core.output.formatter.OutputFormatter
@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.assertThrows
 
 
-class TestJSONFormatter {
+class OutputFormatterTest {
 
     @Test
     fun test(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1 ?:false)
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val body = """
                 {
                    "authorId": "VZyJz8z_Eu2",
@@ -19,13 +19,14 @@ class TestJSONFormatter {
                    "newsId": "L"
                 }
                 """
+        //should throw no exception
         OutputFormatter.JSON_FORMATTER.getFormatted(body)
     }
 
 
     @Test
     fun testMismatched(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1 ?:false)
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val body = """
 
                    "authorId": "VZyJz8z_Eu2",
