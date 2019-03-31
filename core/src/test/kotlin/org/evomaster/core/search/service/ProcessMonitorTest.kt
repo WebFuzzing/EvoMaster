@@ -45,6 +45,7 @@ class ProcessMonitorTest{
         config = injector.getInstance(EMConfig::class.java)
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        config.processFiles = "target/process_data"
     }
 
 
