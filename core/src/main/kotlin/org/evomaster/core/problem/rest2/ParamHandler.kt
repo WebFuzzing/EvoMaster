@@ -23,12 +23,13 @@ class ParamHandler {
 
         private val log: Logger = LoggerFactory.getLogger(ParamHandler::class.java)
 
-        fun bindCreatePost(target : Param, params: List<Param>){
-            if(!(target is BodyParam) || params.size != 1 || !(params[0] is BodyParam))
-                throw IllegalArgumentException("select wrong bind enter point")
-            (target as BodyParam).gene.copyValueFrom(params[0].gene)
-        }
 
+        /**
+         * @param target bind [target] based on other params, i.e., [params]
+         * @param targetPath is the path of [target]
+         * @param sourcePath
+         * @param params
+         */
         fun bindParam(target : Param, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean = false){
             when(target){
                 is BodyParam -> bindBodyParam(target, targetPath,sourcePath, params, inner)
@@ -42,7 +43,7 @@ class ParamHandler {
             val k = params.find { pa -> pa is PathParam && pa.name == p.name }
             if(k != null) p.gene.copyValueFrom(k!!.gene)
             else{
-                if(numOfBodyParam(params) == params.size){
+                if(numOfBodyParam(params) == params.size && params.isNotEmpty()){
                     bindBodyAndOther(params.first{ pa -> pa is BodyParam }!! as BodyParam, sourcePath, p, targetPath,false, inner)
                 }else
                     if(!disableLog) log.warn("cannot find PathParam ${p.name} in params ${params.mapNotNull { it.name }.joinToString(" ")}")

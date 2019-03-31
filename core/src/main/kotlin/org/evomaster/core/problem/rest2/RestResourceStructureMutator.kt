@@ -69,24 +69,39 @@ class RestResourceStructureMutator : StructureMutator() {
 
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
-        val fromDependency = rm.isDependencyNotEmpty() && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
-        val call = rm.handleAddResource(ind, max, fromDependency)
 
-        if(fromDependency)
-            TODO("bind related resources with same data if possible")
+        val fromDependency = rm.isDependencyNotEmpty()
+                && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
 
-        val pos = randomness.nextInt(0, ind.getResourceCalls().size)
-        ind.addResourceCall(pos, call)
+        var call = if(fromDependency){
+                        rm.handleAddDepResource(ind, max)
+                    }else null
+
+        if(call == null){
+            call =  rm.handleAddResource(ind, max)
+            val pos = randomness.nextInt(0, ind.getResourceCalls().size)
+            ind.addResourceCall(pos, call)
+        }else{
+            rm.bindCallWithFront(call, ind.getResourceCalls().toMutableList())
+
+            //if call is to create new resource, and the related resource is not related to any resource, it might need to put the call in the front of ind,
+            //else add last position if it has dependency with existing resources
+            val pos = if(ind.getResourceCalls().filter { !it.template.independent }.isNotEmpty())
+                ind.getResourceCalls().size
+            else
+                0
+
+            ind.addResourceCall( pos, call)
+        }
+
+
     }
 
     private fun handleReplace(ind: RestIndividualII){
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
-        val fromDependency = rm.isDependencyNotEmpty() && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
-        val call = rm.handleAddResource(ind, max, fromDependency)
 
-        if(fromDependency)
-            TODO("bind related resources with same data if possible")
+        val call = rm.handleAddResource(ind, max)
 
         val pos = randomness.nextInt(0, ind.getResourceCalls().size - 1)
         ind.replaceResourceCall(pos, call)
