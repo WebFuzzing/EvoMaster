@@ -14,4 +14,8 @@ cache:
 notifications:
   email: true
 
+services:
+  - docker
+
+
 script: mvn clean verify --quiet
