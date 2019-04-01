@@ -100,6 +100,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         doInitializingActions(individual)
 
+        individual.enforceCoherence()
+
         val fv = FitnessValue(individual.size().toDouble())
 
         val actionResults: MutableList<ActionResult> = mutableListOf()

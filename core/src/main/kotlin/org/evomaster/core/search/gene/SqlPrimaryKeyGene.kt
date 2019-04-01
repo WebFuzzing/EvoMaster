@@ -62,4 +62,12 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun isPrintable() = gene.isPrintable()
 
+
+    fun isReferenceToNonPrintable(previousGenes: List<Gene>): Boolean {
+        if(gene !is SqlForeignKeyGene){
+            return false
+        }
+
+        return gene.isReferenceToNonPrintable(previousGenes)
+    }
 }

@@ -13,12 +13,14 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.concurrent.atomic.AtomicInteger
 
 
 class RestActionBuilder {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
+        private val idGenerator = AtomicInteger()
 
         fun addActionsFromSwagger(swagger: Swagger,
                                   actionCluster: MutableMap<String, Action>,
@@ -53,7 +55,7 @@ class RestActionBuilder {
 
                             repairParams(params, restPath)
 
-                            val action = RestCallAction(verb, restPath, params)
+                            val action = RestCallAction("${verb}${restPath}${idGenerator.incrementAndGet()}", verb, restPath, params)
 
                             actionCluster.put(action.getName(), action)
                         }
@@ -265,7 +267,15 @@ class RestActionBuilder {
                         history)
             }
 
-            //worst case, just create a map of strings
+            /*
+                worst case, just create a map of strings.
+                In JS/JSON, any object is in the end a map from strings (field names)
+                to values (any type).
+                If we have in Swagger an object definition, but then such definition has
+                no declared field (eg, problems with swagger), then an ObjectGene would
+                always be empty. Using a MapGene of strings would allow us to at least
+                try to add some fields to it
+             */
             return createMapGene(
                     name + "_map",
                     "string",
@@ -441,18 +451,42 @@ class RestActionBuilder {
                                 history)
                     }
 
+
                     if (property is ObjectProperty) {
 
                         val fields = createFields(property.properties, swagger, history)
                         return ObjectGene(name, fields)
                     }
                 }
+                "file" -> return StringGene(name)
+                //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
             }
 
             throw IllegalArgumentException("Cannot handle combination $type/$format")
         }
         private fun removeDuplicatedParams(params : List<Parameter>) : List<Parameter>{
             return params.distinctBy { it.name}
+        }
+
+        fun getModelsFromSwagger(swagger: Swagger,
+                                 modelCluster: MutableMap<String, ObjectGene>){
+            modelCluster.clear()
+
+            if(swagger.definitions != null) {
+                swagger.definitions
+                        .forEach {
+                            val model = createObjectFromReference(it.key,
+                                    it.component1(),
+                                    swagger
+                            )
+                            when (model) {
+                                //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+                                is ObjectGene ->  modelCluster.put(it.component1(), (model as ObjectGene))
+                                is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                            }
+
+                        }
+            }
         }
     }
 }

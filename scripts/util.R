@@ -2,7 +2,7 @@
 # Recursively search for all files given the [filePattern] into the given [directory].
 # Return a new single table in which all such data is combined together.
 # You might specify some columns with [ignoreColumns] if you need to skip them.
-gatherAllTables <- function(directory,ignoreColumns=NULL,filePattern="^statistics(\\w|-|_)*\\.csv$"){
+gatherAllTables <- function(directory,ignoreColumns=NULL,filePattern="^statistics(\\w|-|_|\\.)*\\.csv$"){
 	allTables = NULL
 
 	for(table in list.files(directory,recursive=TRUE,full.names=TRUE,pattern=filePattern) ){
@@ -34,7 +34,7 @@ gatherAllTables <- function(directory,ignoreColumns=NULL,filePattern="^statistic
 
 # Recursively gather all data from [directory] given the [filePattern] name.
 # Output such data in a zipped file with path [zipFile].
-gatherAndSaveData <- function(directory,zipFile,ignoreColumns=NULL,filePattern="^statistics(\\w|-|_)*\\.csv$"){
+gatherAndSaveData <- function(directory,zipFile,ignoreColumns=NULL,filePattern="^statistics(\\w|-|_|\\.)*\\.csv$"){
 	cat("Loading data...",date(),"\n")
 
 	dt = gatherAllTables(directory,ignoreColumns,filePattern)

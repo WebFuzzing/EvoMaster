@@ -20,11 +20,11 @@ data class Column(
 
         val autoIncrement: Boolean = false,
 
-        var foreignKeyToAutoIncrement: Boolean = false,
+        val foreignKeyToAutoIncrement: Boolean = false,
 
-        var lowerBound: Int? = null,
+        val lowerBound: Int? = null,
 
-        var upperBound: Int? = null
+        val upperBound: Int? = null
 
         // public boolean identity;
 

@@ -144,7 +144,7 @@ class Main {
                 val stc = injector.getInstance(SearchTimeController::class.java)
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
-                info("Last action improvement: ${stc.lastActionImprovement}")
+                info("Needed budget: ${stc.neededBudget()}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                 info("Covered targets: ${solution.overall.coveredTargets()}")
 
@@ -200,6 +200,7 @@ class Main {
             rc.startANewSearch()
 
             val config = injector.getInstance(EMConfig::class.java)
+
 
             val key = when (config.algorithm) {
                 EMConfig.Algorithm.MIO -> Key.get(
@@ -268,12 +269,15 @@ class Main {
             val n = solution.individuals.size
             val tests = if (n == 1) "1 test" else "$n tests"
 
+            val stc = injector.getInstance(SearchTimeController::class.java)
+
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             TestSuiteWriter.writeTests(
                     solution,
                     controllerInfoDto.fullName,
-                    config
+                    config,
+                    stc
             )
         }
 

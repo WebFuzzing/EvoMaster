@@ -453,7 +453,7 @@ class EMConfig {
     @Cfg("Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement")
     var feedbackDirectedSampling = FeedbackDirectedSampling.LAST
 
-    @Cfg("Define the population size in the search algorithms that use populations (eg, Genetic Algorithms)")
+    @Cfg("Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO)")
     @Min(1.0)
     var populationSize = 30
 
@@ -509,8 +509,12 @@ class EMConfig {
     var processFiles = "process_data"
 
     @Experimental
-    @Cfg("Specify how often to save results when a search monitor is enabled")
+    @Cfg("Specify how often to save results when a search monitor is enabled ")
     var processInterval = 100
+
+    @Experimental
+    @Cfg("Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values")
+    var enableCompleteObjects = false
 
     @Experimental
     @Cfg("Whether to track individual")

@@ -33,6 +33,12 @@ class RestStructureMutator : StructureMutator() {
             return
         }
 
+        if(ind.dbInitialization.isEmpty()
+                || ! ind.dbInitialization.any { it.representExistingData }) {
+            //add existing data only once
+            ind.dbInitialization.addAll(0, sampler.existingSqlData)
+        }
+
         val max = config.maxSqlInitActionsPerMissingData
 
         var missing = findMissing(es, ind)
@@ -45,7 +51,12 @@ class RestStructureMutator : StructureMutator() {
 
             (0 until k).forEach {
                 val insertions = sampler.sampleSqlInsertion(first.key, first.value)
-                ind.dbInitialization.addAll(0, insertions)
+                /*
+                    New action should be before existing one, but still after the
+                    initializing ones
+                 */
+                val position = sampler.existingSqlData.size
+                ind.dbInitialization.addAll(position, insertions)
             }
 
             /*
@@ -57,8 +68,6 @@ class RestStructureMutator : StructureMutator() {
              */
             missing = findMissing(es, ind)
         }
-
-        ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
         if (config.generateSqlDataWithDSE) {
             //TODO DSE could be plugged in here
@@ -178,7 +187,9 @@ class RestStructureMutator : StructureMutator() {
     private fun mutateForRandomType(ind: RestIndividual) {
 
         if (ind.actions.size == 1) {
-            ind.actions.add(sampler.sampleRandomAction(0.05))
+            val sampledAction = sampler.sampleRandomAction(0.05)
+            ind.actions.add(sampledAction)
+            if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
         }
 
@@ -191,9 +202,12 @@ class RestStructureMutator : StructureMutator() {
         } else {
 
             //add one at random
-            val action = sampler.sampleRandomAction(0.05)
+            val sampledAction = sampler.sampleRandomAction(0.05)
             val chosen = randomness.nextInt(ind.actions.size)
-            ind.actions.add(chosen, action)
+            ind.actions.add(chosen, sampledAction)
+            if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
+            // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both
+            // adding the action and the associated objects and help encapsulate the individual more?
         }
 
     }
