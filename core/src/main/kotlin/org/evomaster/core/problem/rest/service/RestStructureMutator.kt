@@ -33,6 +33,12 @@ class RestStructureMutator : StructureMutator() {
             return
         }
 
+        if(ind.dbInitialization.isEmpty()
+                || ! ind.dbInitialization.any { it.representExistingData }) {
+            //add existing data only once
+            ind.dbInitialization.addAll(0, sampler.existingSqlData)
+        }
+
         val max = config.maxSqlInitActionsPerMissingData
 
         var missing = findMissing(es, ind)
@@ -45,7 +51,12 @@ class RestStructureMutator : StructureMutator() {
 
             (0 until k).forEach {
                 val insertions = sampler.sampleSqlInsertion(first.key, first.value)
-                ind.dbInitialization.addAll(0, insertions)
+                /*
+                    New action should be before existing one, but still after the
+                    initializing ones
+                 */
+                val position = sampler.existingSqlData.size
+                ind.dbInitialization.addAll(position, insertions)
             }
 
             /*
@@ -57,8 +68,6 @@ class RestStructureMutator : StructureMutator() {
              */
             missing = findMissing(es, ind)
         }
-
-        ind.dbInitialization.addAll(0, sampler.existingSqlData)
 
         if (config.generateSqlDataWithDSE) {
             //TODO DSE could be plugged in here
