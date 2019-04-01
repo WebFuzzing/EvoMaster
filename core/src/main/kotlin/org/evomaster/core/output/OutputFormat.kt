@@ -10,12 +10,12 @@ enum class OutputFormat {
      */
     DEFAULT,
     JAVA_JUNIT_5,
-    JAVA_JUNIT_4
+    JAVA_JUNIT_4,
+    KOTLIN_JUNIT_5
     ;
 
     /*
         TODO:
-        KOTLIN_JUNIT_5
         JAVA_TESTNG
         KOTLIN_TESTNG
 
