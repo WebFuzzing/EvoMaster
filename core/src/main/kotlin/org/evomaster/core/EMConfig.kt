@@ -518,5 +518,5 @@ class EMConfig {
 
     @Experimental
     @Cfg("Enable non-standard naming and sorting criteria")
-    var namingAndSorting = false
+    var customNaming = false
 }

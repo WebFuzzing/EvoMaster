@@ -29,27 +29,29 @@ class TestSuiteWriter {
 
             val name = TestSuiteFileName(config.testSuiteFileName)
 
-            val content = convertToCompilableTestCode(solution, config.outputFormat, name, controllerName, stc)
+            val content = convertToCompilableTestCode(solution, config, name, controllerName, stc)
             saveToDisk(content, config, name)
         }
 
 
         private fun convertToCompilableTestCode(
                 solution: Solution<*>,
-                format: OutputFormat,
+                config: EMConfig,
                 testSuiteFileName: TestSuiteFileName,
                 controllerName: String,
                 stc: SearchTimeController)
                 : String {
 
             val lines = Lines()
+            val format = config.outputFormat
 
             header(solution, format, testSuiteFileName, lines, stc)
             lines.indent()
 
             beforeAfterMethods(format, controllerName, lines)
 
-            val tests = TestSuiteOrganizer.sortTests(solution)
+            val tests = TestSuiteOrganizer.sortTests(solution, config.customNaming)
+
 
             for (test in tests) {
                 lines.addEmpty(2)

@@ -8,7 +8,6 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import java.lang.IllegalArgumentException
-import java.rmi.Naming
 
 /**
  * This class is responsible to decide the order in which
@@ -21,19 +20,15 @@ import java.rmi.Naming
  * name each test will have
  */
 class TestSuiteOrganizer {
-
-
-
     companion object {
-        fun sortTests(solution: Solution<*>): List<TestCase> {
+        val sortingHelper = SortingHelper()
+        val namingHelper = NamingHelper()
+
+
+        fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
 
             //TODO here in the future we will have something bit smarter
-            // TODO: The comparators are listed in reverse order of priority. Not sure if this is okay.
-            //return sortByComparatorList(solution, mutableListOf(maxNumberOfActionsComparatorInd, maxStatusCodeComparatorInd))
-            val sortingHelper = SortingHelper()
-            val namingHelper = NamingHelper()
-
-            return sortingHelper.sort(solution, namingHelper, false)
+            return sortingHelper.sort(solution, namingHelper, customNaming)
         }
     }
 }
@@ -45,11 +40,9 @@ class NamingHelper {
             if((it as RestCallResult).getStatusCode() == 500) found500 = true
         }
         val suggestedName = when (found500) {
-            true ->  "_with500_"
+            true ->  "_with500"
             false ->  ""
-            else -> throw IllegalArgumentException("This should not happen")
-            // else ->  "wat?"
-            // throw Exception instead?
+            else -> throw IllegalStateException("This should not happen")
         }
         return suggestedName
     }
@@ -60,21 +53,20 @@ class NamingHelper {
             if ((it as RestCallAction).verb == HttpVerb.POST ) foundPost=true
         }
         val suggestedName = when (foundPost) {
-            true ->  "_hasPost_"
+            true ->  "_hasPost"
             false ->  ""
-            else -> throw IllegalArgumentException("This should not happen")
-            //else ->  "wat?"
+            else -> throw IllegalStateException("This should not happen")
         }
         return suggestedName
     }
 
     private fun criterion3_sampling(individual: EvaluatedIndividual<*>): String{
-        return "_" + (individual.individual as RestIndividual).sampleType + "_"
+        return "_" + (individual.individual as RestIndividual).sampleType
     }
 
     private fun criterion4_dbInit(individual: EvaluatedIndividual<*>): String{
         if ((individual.individual as RestIndividual).dbInitialization.isNotEmpty()){
-            return "_" + "hasDbInit" + "_"
+            return "_" + "hasDbInit"
         }
         else return ""
     }
@@ -83,7 +75,7 @@ class NamingHelper {
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
-        var suggestedName = "test"
+        var suggestedName = ""
         namingCriteria.forEach {
             suggestedName += it(individual)
         }
@@ -121,7 +113,8 @@ class SortingHelper {
      *  Note that (currently) the order of the comparators is inverse to their importance/priority
      */
 
-    var comparatorList = mutableListOf( dbInitSize, maxStatusCodeComparatorInd)
+    val comparatorList = mutableListOf(  maxStatusCodeComparatorInd, dbInitSize)
+
 
     /**
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
@@ -132,25 +125,26 @@ class SortingHelper {
 
     ): List<TestCase> {
         var counter = 0
+
         comparators.forEach { solution.individuals.sortWith(it) }
-        return solution.individuals.map{ ind -> TestCase(ind, namingHelper.suggestName(ind) + (counter++))}
+
+        return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
     }
 
     /**
      * No sorting, and just basic name with incremental counter
      */
     fun naiveSorting(solution: Solution<*>): List<TestCase> {
-
         var counter = 0
-
         return solution.individuals.map { ind -> TestCase(ind, "test" + (counter++)) }
     }
 
-    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), naive: Boolean = false): List<TestCase> {
-        if (naive){
-            return naiveSorting(solution)
+    fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), customNaming: Boolean = false): List<TestCase> {
+        if (customNaming){
+            return sortByComparatorList(solution, namingHelper, comparatorList)
         }
-        return sortByComparatorList(solution, namingHelper, comparatorList)
+        return naiveSorting(solution)
+
     }
 
 }
