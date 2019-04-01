@@ -18,4 +18,4 @@ services:
   - docker
 
 
-script: mvn clean verify --quiet
+script: mvn clean verify
