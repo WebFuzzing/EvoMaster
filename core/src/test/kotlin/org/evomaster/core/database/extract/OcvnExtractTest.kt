@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
 
 
-class OcvnExtractTest : ExtractTestBase() {
+class OcvnExtractTest : ExtractTestBaseH2() {
 
     override fun getSchemaLocation() = "/sql_schema/ocvn.sql"
 

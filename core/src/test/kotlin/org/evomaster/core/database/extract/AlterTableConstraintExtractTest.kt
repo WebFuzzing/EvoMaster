@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
 
-class AlterTableConstraintExtractTest : ExtractTestBase() {
+class AlterTableConstraintExtractTest : ExtractTestBaseH2() {
 
     override fun getSchemaLocation()= "/sql_schema/passports.sql"
 

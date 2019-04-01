@@ -8,7 +8,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 
 
-abstract class ExtractTestBase {
+abstract class ExtractTestBaseH2 {
 
     companion object {
 

@@ -52,6 +52,10 @@ public class ConstraintUtils {
                 // TODO Derby
                 break;
             }
+            case POSTGRES:{
+                //TODO Postgres
+                break;
+            }
             case OTHER: {
                 // TODO Other
                 break;
