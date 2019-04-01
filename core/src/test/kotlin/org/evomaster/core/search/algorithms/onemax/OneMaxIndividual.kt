@@ -6,45 +6,33 @@ import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 
 class OneMaxIndividual : Individual {
     val n: Int
     private val list : MutableList<EnumGene<Double>> = mutableListOf()
 
-    constructor(n : Int) : super(){
+
+    constructor(n : Int, trackOperator: TrackOperator? = null, traces : MutableList<OneMaxIndividual>? = null) : super(trackOperator,traces){
         this.n = n
         init()
     }
 
-    constructor(n : Int, description: String) : super(description){
-        this.n = n
-        init()
-    }
-
-    constructor(n : Int, description: String, traces : MutableList<OneMaxIndividual>) : super(description,traces){
-        this.n = n
-        init()
-    }
-
-    override fun isCapableOfTracking(): Boolean = true
-
-    override fun next(description: String): TraceableElement? {
-        if(isCapableOfTracking()){
-            val copyTraces = mutableListOf<OneMaxIndividual>()
-            if(!isRoot()){
-                val size = getTrack()?.size?:0
-                (0 until if(maxlength!= -1 && size > maxlength - 1) maxlength-1  else size).forEach {
-                    copyTraces.add(0, (getTrack()!![size-1-it] as OneMaxIndividual).copy() as OneMaxIndividual)
-                }
+    override fun next(trackOperator: TrackOperator): TraceableElement? {
+        getTrack()?: return OneMaxIndividual(n, trackOperator)
+        val copyTraces = mutableListOf<OneMaxIndividual>()
+        if(!isRoot()){
+            val size = getTrack()?.size?:0
+            (0 until size).forEach {
+                copyTraces.add(0, (getTrack()!![size-1-it] as OneMaxIndividual).copy() as OneMaxIndividual)
             }
-            copyTraces.add(this.copy() as OneMaxIndividual)
-            return OneMaxIndividual(
-                    n,
-                    description,
-                    copyTraces)
         }
-        return copy()
+        copyTraces.add(this.copy() as OneMaxIndividual)
+        return OneMaxIndividual(
+                n,
+                trackOperator,
+                copyTraces)
     }
 
     override fun copy(withTrack: Boolean): TraceableElement {
@@ -58,7 +46,7 @@ class OneMaxIndividual : Individual {
                 }
                 return OneMaxIndividual(
                         n,
-                        getDescription(),
+                        trackOperator,
                         copyTraces)
             }
         }
@@ -73,7 +61,7 @@ class OneMaxIndividual : Individual {
 
     override fun copy(): Individual {
 
-        var copy = OneMaxIndividual(n, getDescription())
+        var copy = OneMaxIndividual(n, trackOperator)
         (0 until n).forEach {
             copy.list[it].index = this.list[it].index
         }

@@ -12,180 +12,99 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.StandardMutator
-import org.evomaster.core.search.service.tracer.TrackingService
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-
+import org.junit.jupiter.api.assertThrows
+import java.lang.IllegalArgumentException
 
 class MioAlgorithmOnTrackOneMaxTest {
 
-    val injector: Injector = LifecycleInjector.builder()
-                    .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
-                    .build().createInjector()
 
-    @Test
-    fun testTrackWithAllHistory(){
-        val mio = injector.getInstance(Key.get(
+    private lateinit var config: EMConfig
+    private lateinit var mio: MioAlgorithm<OneMaxIndividual>
+
+
+    @BeforeEach
+    fun init(){
+
+        val injector: Injector = LifecycleInjector.builder()
+                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+                .build().createInjector()
+
+        mio = injector.getInstance(Key.get(
                 object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
-        val config = injector.getInstance(EMConfig::class.java)
-        config.enableTrackIndividual = true
-        config.enableTrackEvaluatedIndividual = true
-        config.trackLength = -1
-        config.maxActionEvaluations = 30000
+        config = injector.getInstance(EMConfig::class.java)
+
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
 
         val randomness = injector.getInstance(Randomness::class.java)
         randomness.updateSeed(42)
 
         val sampler = injector.getInstance(OneMaxSampler::class.java)
-
-
         val n = 20
         sampler.n = n
 
-        val solution = mio.search()
-
-        solution.individuals.forEach { s->
-            Assertions.assertNotNull(s.getTrack())
-            Assertions.assertNotNull(s.individual.getTrack())
-            s.individual.getTrack()?.apply {
-                assert(size == s.getTrack()?.size)
-                forEachIndexed { index, t ->
-                    if(index == 0)
-                        assert(t.getDescription().contains(OneMaxSampler::class.java.simpleName))
-                    else
-                        Assertions.assertEquals(StandardMutator::class.java.simpleName, t.getDescription())
-            }
-            }
-        }
     }
 
-    @Test
-    fun testTrackWithAllHistoryWithoutEvaluated(){
-        val mio = injector.getInstance(Key.get(
-                object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
-        val config = injector.getInstance(EMConfig::class.java)
+    @Test
+    fun testIndividualWithTrack(){
+
         config.enableTrackIndividual = true
         config.enableTrackEvaluatedIndividual = false
-        config.trackLength = -1
-        config.maxActionEvaluations = 30000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        val randomness = injector.getInstance(Randomness::class.java)
-        randomness.updateSeed(42)
-
-        val sampler = injector.getInstance(OneMaxSampler::class.java)
-
-
-        val n = 20
-        sampler.n = n
 
         val solution = mio.search()
 
         solution.individuals.forEach { s->
             Assertions.assertNull(s.getTrack())
             Assertions.assertNotNull(s.individual.getTrack())
-            s.individual.getTrack()!!.apply {
+            s.individual.getTrack()?.apply {
                 forEachIndexed { index, t ->
                     if(index == 0)
-                        assert(t.getDescription().contains(OneMaxSampler::class.java.simpleName))
+                        assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
                     else
-                        Assertions.assertEquals(StandardMutator::class.java.simpleName, t.getDescription())
+                        assert(t.trackOperator!!.operatorTag().contains("Mutator"))
                 }
             }
         }
     }
 
     @Test
-    fun testTrackWithAllHistoryWithoutIndividual(){
-        val mio = injector.getInstance(Key.get(
-                object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
+    fun testEvaluatedIndividualWithTrack(){
 
-        val config = injector.getInstance(EMConfig::class.java)
         config.enableTrackIndividual = false
         config.enableTrackEvaluatedIndividual = true
-        config.trackLength = -1
-        config.maxActionEvaluations = 30000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        val randomness = injector.getInstance(Randomness::class.java)
-        randomness.updateSeed(42)
-
-        val sampler = injector.getInstance(OneMaxSampler::class.java)
-
-
-        val n = 20
-        sampler.n = n
 
         val solution = mio.search()
 
         solution.individuals.forEach {  s->
-            Assertions.assertNotNull(s.getTrack())
             Assertions.assertNull(s.individual.getTrack())
-            s.getTrack()!!.forEachIndexed{index, t->
+            /**
+             * [s] might be null when the individual is never mutated
+             */
+            if(s.getTrack() == null){
+                Assertions.assertNotNull(s.individual.trackOperator != null)
+                assert(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
+            }
+            s.getTrack()?.forEachIndexed{index, t->
+                Assertions.assertNotNull(t.trackOperator)
                 if(index == 0)
-                    assert(t.getDescription().contains(OneMaxSampler::class.java.simpleName))
+                    assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
                 else
-                    Assertions.assertEquals(StandardMutator::class.java.simpleName, t.getDescription())
+                    Assertions.assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
             }
         }
     }
 
-    @Test
-    fun testTrackWithSpecifiedHistory(){
-        val mio = injector.getInstance(Key.get(
-                object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
-
-        val config = injector.getInstance(EMConfig::class.java)
-        config.enableTrackIndividual = true
-        config.enableTrackEvaluatedIndividual = false
-        config.trackLength = 10
-        config.maxActionEvaluations = 30000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        val randomness = injector.getInstance(Randomness::class.java)
-        randomness.updateSeed(42)
-
-        val sampler = injector.getInstance(OneMaxSampler::class.java)
-
-        val trackService = injector.getInstance(TrackingService::class.java)
-        trackService.init()
-
-        val n = 20
-        sampler.n = n
-
-        val solution = mio.search()
-
-        solution.individuals.forEach { s->
-            s.individual.getTrack()!!.apply {
-                assert(size in 0..10)
-            }
-        }
-    }
 
     @Test
     fun testTrackWithoutTrack(){
-        val mio = injector.getInstance(Key.get(
-                object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
 
-        val config = injector.getInstance(EMConfig::class.java)
         config.enableTrackIndividual = false
         config.enableTrackEvaluatedIndividual = false
-        config.maxActionEvaluations = 30000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        val randomness = injector.getInstance(Randomness::class.java)
-        randomness.updateSeed(42)
-
-        val sampler = injector.getInstance(OneMaxSampler::class.java)
-
-        val trackService = injector.getInstance(TrackingService::class.java)
-        trackService.init()
-
-        val n = 20
-        sampler.n = n
 
         val solution = mio.search()
 

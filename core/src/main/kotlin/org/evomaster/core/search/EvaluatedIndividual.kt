@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 /**
  * EvaluatedIndividual allows to track its evolution.
@@ -14,111 +15,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               * results than actions
                               */
                              val results: List<out ActionResult>,
-                             nextDescription: String? = null,
-                             previous : MutableList<EvaluatedIndividual<T>>? = null)
-    : TraceableElement(nextDescription?:individual.getDescription(),  previous)
-where T : Individual {
-
-    companion object {
-        const val SEPARATOR_GENE_ID = "::"
-    }
-    /**
-     * key -> id of target
-     * value -> compared result
-     */
-    val compareWithArchive : MutableMap<Int, String> = mutableMapOf()
-
-    val impactsOfGenes : MutableMap<String, Double> = mutableMapOf()
-    val impactsOfStructure : MutableMap<String, Double> = mutableMapOf()
-
-    /**
-     * rules to score impact value of genes, baseline is always fitness of first evaluated individual
-     * if only standard mutator is accepted, then ids of impactsOfGenes are not changed during search
-     * but if structure mutator is also accepted, then ids of impactOfGenes are changed regarding added or removal of genes
-     */
-    private fun updateImpactOfGenes(next: EvaluatedIndividual<T>){
-        if(impactsOfGenes.isEmpty()){
-            val initValue = fitness.computeFitnessScore()
-            next.individual.seeActions().distinctBy { it.getName() }.forEach { na ->
-                na.seeGenes().forEach { nag ->
-                    val id = nag.getVariableName()+ SEPARATOR_GENE_ID + na.getName()
-                    impactsOfGenes.putIfAbsent(id, initValue)
-                }
-            }
-        }
-        val targets = fitness.getViewOfData().keys.plus(next.fitness.getViewOfData().keys)
-        if(next.fitness.subsumes(fitness, targets) || fitness.subsumes(next.fitness, targets)){
-            val value = next.fitness.computeFitnessScore()
-            next.individual.seeActions().forEach { na ->
-                na.seeGenes().forEach { nag ->
-                    val id = nag.getVariableName()+ SEPARATOR_GENE_ID + na.getName()
-                    val sameGenes = individual.seeActions().filter { a->a.getName()==na.getName() }.flatMap { a->a.seeGenes() }
-                            .filter { ag ->ag.getVariableName() == nag.getVariableName() }
-                    if(sameGenes.isEmpty()){
-                        increaseGeneImpact(id, value)
-                    }else{
-                        sameGenes.find { it.containsSameValueAs(nag) }?.apply {
-                            increaseGeneImpact(id, value)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun increaseGeneImpact(key : String, delta : Double){
-        impactsOfGenes.replace(key, impactsOfGenes.getOrElse(key){0.0} + delta)
-    }
-    override fun copy(withTrack: Boolean): EvaluatedIndividual<T> {
-        when(withTrack){
-            false-> return copy()
-            else ->{
-                getTrack()?:return EvaluatedIndividual(
-                        fitness.copy(),
-                        individual.copy(withTrack) as T,
-                        results.map(ActionResult::copy)
-                )
-
-                val copyTraces = mutableListOf<EvaluatedIndividual<T>>()
-                getTrack()?.forEach {
-                    copyTraces.add((it as EvaluatedIndividual<T> ).copy())
-                }
-                return EvaluatedIndividual(
-                        fitness.copy(),
-                        individual.copy(withTrack) as T,
-                        results.map(ActionResult::copy),
-                        getDescription(),
-                        copyTraces
-                )
-            }
-        }
-
-    }
-
-    override fun next(description: String, next: TraceableElement): EvaluatedIndividual<T>? {
-        if(next !is EvaluatedIndividual<*>) return null
-        when(isCapableOfTracking()){
-            false-> return null
-            else ->{
-                val size = getTrack()?.size?: 0
-                val copyTraces = mutableListOf<EvaluatedIndividual<T>>()
-                (0 until if(maxlength != -1 && size > maxlength - 1) maxlength-1  else size).forEach {
-                    copyTraces.add(0, (getTrack()!![size-1-it] as EvaluatedIndividual<T> ).copy())
-                }
-                copyTraces.add(this.copy())
-                return EvaluatedIndividual(
-                        next.fitness.copy(),
-                        next.individual.copy(true) as T,
-                        next.results.map(ActionResult::copy),
-                        description,
-                        copyTraces
-                )
-            }
-        }
-    }
-
-
-    override fun isCapableOfTracking(): Boolean = true
+                             trackOperator: TrackOperator? = null,
+                             track : MutableList<EvaluatedIndividual<T>>? = null,
+                             undoTack : MutableList<EvaluatedIndividual<T>>? = null)
+    : TraceableElement(trackOperator,  track, undoTack) where T : Individual {
 
     init{
         if(individual.seeActions().size < results.size){
@@ -126,13 +26,16 @@ where T : Individual {
         }
     }
 
+
     fun copy(): EvaluatedIndividual<T> {
         return EvaluatedIndividual(
                 fitness.copy(),
                 individual.copy() as T,
-                results.map(ActionResult::copy)
-                )
+                results.map(ActionResult::copy),
+                trackOperator
+        )
     }
+
 
     /**
      * Note: if a test execution was prematurely stopped,
@@ -152,15 +55,54 @@ where T : Individual {
         return list
     }
 
-    fun getViewOfImpacts(){
+    override fun copy(withTrack: Boolean): EvaluatedIndividual<T> {
+
+        when(withTrack){
+            false-> return copy()
+            else ->{
+                /**
+                 * if the [getTrack] is null, which means the tracking option is attached on individual not evaluated individual
+                 */
+                getTrack()?:return EvaluatedIndividual(
+                        fitness.copy(),
+                        individual.copy(withTrack) as T,
+                        results.map(ActionResult::copy),
+                        trackOperator
+                )
+
+                return forceCopyWithTrack()
+
+            }
+        }
 
     }
 
-    fun getViewOfImpactsOfStructure(){
-
+    fun forceCopyWithTrack(): EvaluatedIndividual<T> {
+        return EvaluatedIndividual(
+                fitness.copy(),
+                individual.copy() as T,
+                results.map(ActionResult::copy),
+                trackOperator?:individual.trackOperator,
+                getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(),
+                undoTrack?.map { (it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+        )
     }
 
-    class ImpactOfGene(val step : Int, val id : String, var impact : Double)
-    class ImpactOfIndividual(val impacts: MutableMap<String, ImpactOfGene> = mutableMapOf(), var impactOfStructure: Double = -1.0)
-    class ImpactOfStructure(val impacts: MutableMap<String, ImpactOfIndividual> = mutableMapOf())
+
+    override fun next(trackOperator: TrackOperator, next: TraceableElement): EvaluatedIndividual<T>? {
+        val copyTraces = getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf()
+        copyTraces.add(this.copy())
+        val copyUndoTraces = undoTrack?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+
+
+        return  EvaluatedIndividual(
+                (next as EvaluatedIndividual<T>).fitness.copy(),
+                next.individual.copy(false) as T,
+                next.results.map(ActionResult::copy),
+                trackOperator,
+                copyTraces,
+                copyUndoTraces
+        )
+    }
+
 }

@@ -70,8 +70,4 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
                 .map { e -> e.value }
                 .toList()
     }
-
-    override fun getTrackOperator(): String {
-        return Sampler::class.java.simpleName
-    }
 }

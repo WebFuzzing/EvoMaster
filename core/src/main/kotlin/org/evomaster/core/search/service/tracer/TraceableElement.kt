@@ -1,26 +1,17 @@
 package org.evomaster.core.search.service.tracer
 
 /**
- * @property description presents an operator to initialize the TraceElement
- * @property track presents history of the TraceElement
+ * @property trackOperator is used to attach additional information regarding how it evolved, e.g., mutator.
+ * @property track presents a history of the [TraceableElement]. In addition, [track] is nullable. When tracking is not enabled, the [track] is null.
+ * @property undoTrack presents a undo history of the [TraceableElement].
  */
 
 abstract class TraceableElement(
-        private var description : String = UNDEFENDED_OPERATOR,
-        private val track : MutableList<out TraceableElement>? = null) {
+        val trackOperator: TrackOperator? = null,
+        private val track : MutableList<out TraceableElement>? = null,
+        val undoTrack : MutableList<out TraceableElement>? = null
+) {
 
-    companion object {
-        const val UNDEFENDED_OPERATOR = "undefined"
-        var maxlength = -1
-    }
-
-    fun getDescription():String{
-        return description
-    }
-
-    protected fun setDescription(description : String){
-        this.description = description
-    }
     open fun isRoot() : Boolean{
         return track?.isEmpty()?:false
     }
@@ -30,30 +21,18 @@ abstract class TraceableElement(
     }
 
     /**
-     * return true when function next(description) further override with non-null return value
+     * @param trackOperator presents an operatorTag to refine the TraceElement, i.e., current TraceElement is the latest history of returned TraceElement
      */
-    open fun isCapableOfTracking() : Boolean = false
+    open fun next(trackOperator: TrackOperator) : TraceableElement? = null
 
     /**
-     * @param description presents an operator to refine the TraceElement, i.e., current TraceElement is the latest history of returned TraceElement
-     */
-    open fun next(description: String) : TraceableElement? = null
-
-    /**
-     * @param description presents an operator to refine the TraceElement, i.e., current TraceElement is the latest history of returned TraceElement
+     * @param trackOperator presents an operatorTag to refine the TraceElement, i.e., current TraceElement is the latest history of returned TraceElement
      * @param next presents next element which has been created in an indirectly way,
      *           e.g., EvaluatedIndividual is always created from fitness function based on individual, which does not rely on previous Evaluated individual
      */
-    open fun next(description: String, next : TraceableElement) : TraceableElement? = null
+    open fun next(trackOperator: TrackOperator, next : TraceableElement) : TraceableElement? = null
 
     abstract fun copy(withTrack : Boolean) : TraceableElement
 
 
-//    Need to further check whether it is required to implement deep next of TraceElement
-//    /**
-//     * return true when 1) isCapableOfTracking is true,
-//     *                  and 2) maxDepthOfHistory() is not -1
-//     *                  and 3) every element in [org.evomaster.core.search.service.tracer.TraceElement.track] also records track
-//     */
-//    open fun doesDeepCopy() : Boolean = false
 }

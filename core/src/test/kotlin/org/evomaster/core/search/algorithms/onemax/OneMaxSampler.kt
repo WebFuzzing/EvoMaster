@@ -9,7 +9,8 @@ class OneMaxSampler : Sampler<OneMaxIndividual>(){
 
     override fun sampleAtRandom(): OneMaxIndividual {
 
-        val sampled = if(config.enableTrackIndividual) OneMaxIndividual(n, "sampleAtRandom::"+getTrackOperator()!!, mutableListOf()) else OneMaxIndividual(n,"sampleAtRandom::"+getTrackOperator()!!)
+        val sampled =  OneMaxIndividual(n, if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
+
         (0 until n).forEach {
             sampled.setValue(it, randomness.choose(listOf(0.0, 0.25, 0.5, 0.75, 1.0)))
         }
@@ -17,8 +18,5 @@ class OneMaxSampler : Sampler<OneMaxIndividual>(){
         return sampled
     }
 
-    override fun getTrackOperator(): String {
-        return OneMaxSampler::class.java.simpleName
-    }
 
 }

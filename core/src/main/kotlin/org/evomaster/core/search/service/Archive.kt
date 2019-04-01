@@ -143,7 +143,7 @@ class Archive<T> where T : Individual {
             randomness.choose(candidates)
         }
 
-        return if(config.enableTrackIndividual) chosen.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) else chosen.copy()
+        return chosen.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {

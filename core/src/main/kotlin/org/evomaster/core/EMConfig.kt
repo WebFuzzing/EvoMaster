@@ -241,6 +241,10 @@ class EMConfig {
                     "collecting heuristics with 'heuristicsForSQL'")
         }
 
+        if(enableTrackEvaluatedIndividual && enableTrackIndividual){
+            throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
+        }
+
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -525,9 +529,4 @@ class EMConfig {
             "Note that we recommend that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evalauted individual")
     var enableTrackEvaluatedIndividual = false
 
-    @Experimental
-    @Cfg("Specify a length to track. " +
-            "-1 means track all history when track is enabled")
-    @Min(-1.0)
-    var trackLength : Int = -1
 }

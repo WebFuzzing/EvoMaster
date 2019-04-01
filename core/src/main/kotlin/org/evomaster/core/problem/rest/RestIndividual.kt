@@ -5,33 +5,38 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 
 class RestIndividual : Individual {
 
-class RestIndividual(val actions: MutableList<RestAction>,
-                     val sampleType: SampleType,
-                     val dbInitialization: MutableList<DbAction> = mutableListOf(),
-                     val usedObjects: UsedObjects = UsedObjects()
-) : Individual() {
-
     val actions: MutableList<RestAction>
     val sampleType: SampleType
     val dbInitialization: MutableList<DbAction>
+    val usedObjects: UsedObjects
 
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, dbInitialization: MutableList<DbAction>, description: String, traces : MutableList<out RestIndividual>) : super(description, traces){
+    constructor(
+            actions: MutableList<RestAction>,
+            sampleType: SampleType,
+            dbInitialization: MutableList<DbAction> = mutableListOf(),
+            usedObjects: UsedObjects = UsedObjects(),
+            trackOperator: TrackOperator? = null,
+            traces : MutableList<out RestIndividual>? = null
+    ) : super(trackOperator, traces){
+
         this.actions = actions
         this.sampleType = sampleType
         this.dbInitialization = dbInitialization
+        this.usedObjects = usedObjects
     }
 
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, description: String) :   this(actions, sampleType, mutableListOf(), description, mutableListOf())
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, dbInitialization: MutableList<DbAction> = mutableListOf()) : this(actions, sampleType, dbInitialization, sampleType.toString(), mutableListOf())
-    constructor(actions: MutableList<RestAction>, sampleType: SampleType, description: String, traces : MutableList<out RestIndividual>) : this(actions, sampleType, mutableListOf<DbAction>(), description, traces)
+    constructor(actions: MutableList<RestAction>,
+                sampleType: SampleType,
+                dbInitialization: MutableList<DbAction> ,
+                usedObjects : UsedObjects) : this(actions, sampleType, dbInitialization, usedObjects, null, null)
 
 
     override fun copy(): Individual {
@@ -39,7 +44,8 @@ class RestIndividual(val actions: MutableList<RestAction>,
                 actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObjects.copy()
+                usedObjects.copy(),
+                trackOperator
         )
     }
 
@@ -96,24 +102,30 @@ class RestIndividual(val actions: MutableList<RestAction>,
         }
     }
 
-    override fun next(description : String) : TraceableElement?{
-        if(isCapableOfTracking()){
-            val copyTraces = mutableListOf<RestIndividual>()
-            if(!isRoot()){
-                val size = getTrack()?.size?:0
-                (0 until if(maxlength != -1 && size > maxlength - 1) maxlength-1  else size).forEach {
-                    copyTraces.add(0, (getTrack()!![size-1-it] as RestIndividual).copy() as RestIndividual)
-                }
-            }
-            copyTraces.add(this)
+    override fun next(trackOperator: TrackOperator) : TraceableElement?{
+        if(getTrack() == null)
             return RestIndividual(
                     actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                     sampleType,
                     dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                    description,
-                    copyTraces)
+                    usedObjects,
+                    trackOperator)
+
+        val copyTraces = mutableListOf<RestIndividual>()
+        if(!isRoot()){
+            val size = getTrack()?.size?:0
+            (0 until size).forEach {
+                copyTraces.add(0, (getTrack()!![size-1-it] as RestIndividual).copy() as RestIndividual)
+            }
         }
-        return copy()
+        copyTraces.add(this)
+        return RestIndividual(
+                actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+                sampleType,
+                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                usedObjects,
+                trackOperator,
+                copyTraces)
     }
 
     override fun copy(withTrack: Boolean): RestIndividual {
@@ -121,6 +133,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
             false-> return copy() as RestIndividual
             else ->{
                 getTrack()?:return copy() as RestIndividual
+
                 val copyTraces = mutableListOf<RestIndividual>()
                 getTrack()?.forEach {
                     copyTraces.add((it as RestIndividual).copy() as RestIndividual)
@@ -129,7 +142,8 @@ class RestIndividual(val actions: MutableList<RestAction>,
                         actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                         sampleType,
                         dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                        getDescription(),
+                        usedObjects,
+                        trackOperator!!,
                         copyTraces
                 )
             }

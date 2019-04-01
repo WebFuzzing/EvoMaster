@@ -3,6 +3,7 @@ package org.evomaster.core.search
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 /**
  * An individual for the search.
@@ -12,14 +13,12 @@ import org.evomaster.core.search.service.tracer.TraceableElement
  * to a RESTful API, SQL operations on a database or WireMock setup)
  *
  * Individual allows to track its evolution, created by sampler, changed by mutator or crossover
- * @property description presents an operator to change an individual, e.g., mutator
+ * @property trackOperator presents an operatorTag to change an individual, e.g., mutator
  * @property track is a list of Individual, indicating its evolution
  */
 abstract class Individual : TraceableElement{
 
-    constructor() : super()
-    constructor(description : String) : super(description)
-    constructor(description : String, traces : MutableList<out Individual>) : super(description, traces)
+    constructor(trackOperator: TrackOperator? = null, traces : MutableList<out Individual>? = null) : super(trackOperator, traces)
 
     /**
      * Make a deep next of this individual

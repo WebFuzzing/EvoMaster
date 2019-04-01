@@ -11,7 +11,6 @@ import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import java.math.BigDecimal
 import java.math.RoundingMode
-import java.util.function.Predicate
 
 
 class StandardMutator<T> : Mutator<T>() where T : Individual {
@@ -26,11 +25,11 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
         if (individual.canMutateStructure() &&
                 randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
             //usually, either delete an action, or add a new random one
-            val copy = (if(config.enableTrackIndividual && individual.isCapableOfTracking()) individual.next(structureMutator.getTrackOperator()!!) else individual.copy()) as T
+            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individual.next(structureMutator!!) else individual.copy()) as T
             structureMutator.mutateStructure(copy)
             return copy
         }
-        val copy = (if(config.enableTrackIndividual && individual.isCapableOfTracking()) individual.next(getTrackOperator()!!) else individual.copy()) as T
+        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individual.next(this) else individual.copy()) as T
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -242,9 +241,5 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             res < gene.min -> gene.min
             else -> res.toInt()
         }
-    }
-
-    override fun getTrackOperator(): String {
-        return StandardMutator::class.java.simpleName
     }
 }

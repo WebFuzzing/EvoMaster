@@ -13,7 +13,7 @@ import org.evomaster.core.search.service.tracer.TrackOperator
  * And to generate new action, that as well will depend on the
  * addressed problem, and can't really be abstracted away
  */
-abstract class StructureMutator : TrackOperator{
+abstract class StructureMutator : TrackOperator {
 
     @Inject
     protected lateinit var config : EMConfig
@@ -38,7 +38,4 @@ abstract class StructureMutator : TrackOperator{
      */
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>)
 
-    override fun getTrackOperator(): String {
-        return StructureMutator::class.java.simpleName
-    }
 }

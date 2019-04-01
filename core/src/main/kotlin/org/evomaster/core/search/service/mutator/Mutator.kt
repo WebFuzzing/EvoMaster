@@ -50,7 +50,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            var trackedCurrent = current.copy(config.enableTrackEvaluatedIndividual)
+            var trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -67,15 +67,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
-            val trackedMutated = if(config.enableTrackEvaluatedIndividual && trackedCurrent.isCapableOfTracking()) trackedCurrent.next(getTrackOperator(), mutated)!! else mutated
-            val reachNew = archive.wouldReachNewTarget(trackedMutated)
+            val reachNew = archive.wouldReachNewTarget(mutated)
 
-            if (reachNew || !current.fitness.subsumes(trackedMutated.fitness, targets)) {
+            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
+                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
             }
         }
-
         return current
     }
 
@@ -88,7 +87,4 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 ?.also { archive.addIfNeeded(it) }
     }
 
-    override fun getTrackOperator(): String {
-        return Mutator::class.java.simpleName
-    }
 }
