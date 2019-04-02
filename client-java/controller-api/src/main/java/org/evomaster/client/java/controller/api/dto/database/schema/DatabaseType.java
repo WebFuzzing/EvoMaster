@@ -6,6 +6,8 @@ public enum DatabaseType {
 
     DERBY,
 
+    POSTGRES,
+
     /**
      * In case used database is not listed in this enum, can
      * still try to build SQL queries, although cannot guarantee

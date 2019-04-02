@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
 
-class ScoutApiSqlExtractTest : ExtractTestBase() {
+class ScoutApiSqlExtractTest : ExtractTestBaseH2() {
 
     override fun getSchemaLocation() = "/sql_schema/scout-api.sql"
 

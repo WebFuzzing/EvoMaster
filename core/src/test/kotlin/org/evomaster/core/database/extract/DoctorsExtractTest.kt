@@ -8,7 +8,7 @@ import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class DoctorsExtractTest : ExtractTestBase() {
+class DoctorsExtractTest : ExtractTestBaseH2() {
 
     override fun getSchemaLocation() = "/sql_schema/doctors.sql"
 
