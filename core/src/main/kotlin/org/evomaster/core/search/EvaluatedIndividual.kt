@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.tracer.TraceableElement
 import org.evomaster.core.search.service.tracer.TrackOperator
 
@@ -24,6 +25,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if(individual.seeActions().size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
+        if(track!=null && track.isNotEmpty() && track.first().trackOperator !is Sampler<*>){
+            throw IllegalArgumentException("First track operator must be sampler")
+        }
     }
 
 
@@ -35,7 +39,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 trackOperator
         )
     }
-
 
     /**
      * Note: if a test execution was prematurely stopped,
