@@ -31,7 +31,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     protected lateinit var config: EMConfig
 
     /**
-     * @return a mutated next
+     * @return a mutated copy
      */
     abstract fun mutate(individual: T): T
 

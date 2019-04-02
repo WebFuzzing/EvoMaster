@@ -74,7 +74,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 )
 
                 return forceCopyWithTrack()
-
             }
         }
 

@@ -9,14 +9,18 @@ import org.evomaster.core.search.service.tracer.TraceableElement
 import org.evomaster.core.search.service.tracer.TrackOperator
 
 
-class OneMaxIndividual : Individual {
-    val n: Int
+class OneMaxIndividual(
+        val n : Int,
+        trackOperator: TrackOperator? = null,
+        traces : MutableList<OneMaxIndividual>? = null)
+    : Individual (trackOperator,traces) {
+
     private val list : MutableList<EnumGene<Double>> = mutableListOf()
 
-
-    constructor(n : Int, trackOperator: TrackOperator? = null, traces : MutableList<OneMaxIndividual>? = null) : super(trackOperator,traces){
-        this.n = n
-        init()
+    init {
+        (0 until n).forEach {
+            list.add(EnumGene<Double>("$it", listOf(0.0, 0.25, 0.5, 0.75, 1.0), 0))
+        }
     }
 
     override fun next(trackOperator: TrackOperator): TraceableElement? {

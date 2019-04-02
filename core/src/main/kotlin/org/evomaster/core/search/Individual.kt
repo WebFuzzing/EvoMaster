@@ -16,12 +16,11 @@ import org.evomaster.core.search.service.tracer.TrackOperator
  * @property trackOperator presents an operatorTag to change an individual, e.g., mutator
  * @property track is a list of Individual, indicating its evolution
  */
-abstract class Individual : TraceableElement{
-
-    constructor(trackOperator: TrackOperator? = null, traces : MutableList<out Individual>? = null) : super(trackOperator, traces)
+abstract class Individual (trackOperator: TrackOperator? = null, traces : MutableList<out Individual>? = null)
+    : TraceableElement (trackOperator, traces){
 
     /**
-     * Make a deep next of this individual
+     * Make a deep copy of this individual
      */
     abstract fun copy(): Individual
 

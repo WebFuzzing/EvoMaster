@@ -101,7 +101,7 @@ class Archive<T> where T : Individual {
     fun isEmpty() = populations.isEmpty()
 
     /**
-     * Get a next of an individual in the archive.
+     * Get a copy of an individual in the archive.
      * Different kinds of heuristics are used to choose
      * the best "candidate" most useful for the search
      */
@@ -363,7 +363,7 @@ class Archive<T> where T : Individual {
 
             if (better || equivalent) {
                 /*
-                    replace worst element, if next is not worse than it (but not necessarily better).
+                    replace worst element, if copy is not worse than it (but not necessarily better).
                  */
                 current[0] = copy
                 added = true

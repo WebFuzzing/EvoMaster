@@ -11,33 +11,14 @@ import org.evomaster.core.search.service.tracer.TraceableElement
 import org.evomaster.core.search.service.tracer.TrackOperator
 
 
-class RestIndividual : Individual {
-
-    val actions: MutableList<RestAction>
-    val sampleType: SampleType
-    val dbInitialization: MutableList<DbAction>
-    val usedObjects: UsedObjects
-
-    constructor(
-            actions: MutableList<RestAction>,
-            sampleType: SampleType,
-            dbInitialization: MutableList<DbAction> = mutableListOf(),
-            usedObjects: UsedObjects = UsedObjects(),
-            trackOperator: TrackOperator? = null,
-            traces : MutableList<out RestIndividual>? = null
-    ) : super(trackOperator, traces){
-
-        this.actions = actions
-        this.sampleType = sampleType
-        this.dbInitialization = dbInitialization
-        this.usedObjects = usedObjects
-    }
-
-    constructor(actions: MutableList<RestAction>,
-                sampleType: SampleType,
-                dbInitialization: MutableList<DbAction> ,
-                usedObjects : UsedObjects) : this(actions, sampleType, dbInitialization, usedObjects, null, null)
-
+class RestIndividual (
+        val actions: MutableList<RestAction>,
+        val sampleType: SampleType,
+        val dbInitialization: MutableList<DbAction> = mutableListOf(),
+        val usedObjects: UsedObjects = UsedObjects(),
+        trackOperator: TrackOperator? = null,
+        traces : MutableList<out RestIndividual>? = null
+): Individual (trackOperator, traces) {
 
     override fun copy(): Individual {
         return RestIndividual(

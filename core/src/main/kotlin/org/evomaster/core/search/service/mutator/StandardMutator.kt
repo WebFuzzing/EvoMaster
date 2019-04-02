@@ -51,7 +51,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         var mutated = false
 
-        while (!mutated) { //no point in returning a next that is not mutated
+        while (!mutated) { //no point in returning a copy that is not mutated
 
             for (gene in genesToMutate) {
 
@@ -183,7 +183,7 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun handleDoubleGene(gene: DoubleGene) {
         //TODO min/max for Double
-        val d = gene.value
+
         gene.value = when (randomness.choose(listOf(0, 1, 2))) {
             //for small changes
             0 -> gene.value + randomness.nextGaussian()
@@ -219,7 +219,6 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
 
     private fun handleIntegerGene(gene: IntegerGene) {
-        val i = gene.value
         Lazy.assert { gene.min < gene.max && gene.isMutable() }
 
         //check maximum range. no point in having a delta greater than such range

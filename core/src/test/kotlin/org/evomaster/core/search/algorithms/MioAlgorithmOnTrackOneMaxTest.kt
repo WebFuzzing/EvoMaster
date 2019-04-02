@@ -12,11 +12,9 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.StandardMutator
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
-import java.lang.IllegalArgumentException
 
 class MioAlgorithmOnTrackOneMaxTest {
 
@@ -59,8 +57,8 @@ class MioAlgorithmOnTrackOneMaxTest {
         val solution = mio.search()
 
         solution.individuals.forEach { s->
-            Assertions.assertNull(s.getTrack())
-            Assertions.assertNotNull(s.individual.getTrack())
+            assertNull(s.getTrack())
+            assertNotNull(s.individual.getTrack())
             s.individual.getTrack()?.apply {
                 forEachIndexed { index, t ->
                     if(index == 0)
@@ -81,20 +79,20 @@ class MioAlgorithmOnTrackOneMaxTest {
         val solution = mio.search()
 
         solution.individuals.forEach {  s->
-            Assertions.assertNull(s.individual.getTrack())
+            assertNull(s.individual.getTrack())
             /**
              * [s] might be null when the individual is never mutated
              */
             if(s.getTrack() == null){
-                Assertions.assertNotNull(s.individual.trackOperator != null)
+                assertNotNull(s.individual.trackOperator != null)
                 assert(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
             }
             s.getTrack()?.forEachIndexed{index, t->
-                Assertions.assertNotNull(t.trackOperator)
+                assertNotNull(t.trackOperator)
                 if(index == 0)
                     assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
                 else
-                    Assertions.assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
+                    assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
             }
         }
     }
@@ -109,8 +107,8 @@ class MioAlgorithmOnTrackOneMaxTest {
         val solution = mio.search()
 
         solution.individuals.forEach { s->
-            Assertions.assertNull(s.getTrack())
-            Assertions.assertNull(s.individual.getTrack())
+            assertNull(s.getTrack())
+            assertNull(s.individual.getTrack())
         }
     }
 }
