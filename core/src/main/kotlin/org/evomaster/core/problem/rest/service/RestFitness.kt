@@ -245,10 +245,15 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     private fun doInitializingActions(ind: RestIndividual) {
 
-        if (ind.dbInitialization.isEmpty()) {
+        if (ind.dbInitialization.none { !it.representExistingData }) {
+            /*
+                We are going to do an initialization of database only if there
+                is data to add.
+                Note that current data structure also keeps info on already
+                existing data (which of course should not be re-inserted...)
+             */
             return
         }
-
 
         val dto = DbActionTransformer.transform(ind.dbInitialization)
 
