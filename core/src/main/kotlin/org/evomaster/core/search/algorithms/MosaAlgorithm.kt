@@ -5,7 +5,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchAlgorithm
-import org.evomaster.core.LoggingUtil
+import org.evomaster.core.logging.LoggingUtil
 import java.util.ArrayList
 
 

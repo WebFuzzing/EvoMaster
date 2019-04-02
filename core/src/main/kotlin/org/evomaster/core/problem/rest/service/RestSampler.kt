@@ -35,7 +35,7 @@ import javax.ws.rs.core.Response
 class RestSampler : Sampler<RestIndividual>() {
 
     companion object {
-        val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
+        private val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
     }
 
     @Inject

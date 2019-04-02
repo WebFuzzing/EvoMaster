@@ -2,9 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.LoggingUtil
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory

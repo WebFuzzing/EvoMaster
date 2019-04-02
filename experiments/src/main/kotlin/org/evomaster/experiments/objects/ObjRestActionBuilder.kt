@@ -5,7 +5,7 @@ import io.swagger.models.parameters.AbstractSerializableParameter
 import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
-import org.evomaster.core.LoggingUtil
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action

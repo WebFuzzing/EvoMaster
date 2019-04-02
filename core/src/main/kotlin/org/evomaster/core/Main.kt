@@ -9,6 +9,7 @@ import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule

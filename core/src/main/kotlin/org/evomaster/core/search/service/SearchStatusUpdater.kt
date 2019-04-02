@@ -2,7 +2,6 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
-import org.evomaster.core.LoggingUtil
 import javax.annotation.PostConstruct
 
 
