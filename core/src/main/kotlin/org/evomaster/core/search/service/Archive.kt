@@ -31,8 +31,12 @@ class Archive<T> where T : Individual {
     private lateinit var time: SearchTimeController
 
     @Inject
-    protected lateinit var processMonitor: SearchProcessMonitor
+    private lateinit var processMonitor: SearchProcessMonitor
 
+    /**
+     * a track of archive can be presented as a list of added EvaluatedIndividual
+     */
+    private val archiveTrack : MutableList<EvaluatedIndividual<T>> = mutableListOf()
     /**
      * Key -> id of the target
      *
@@ -139,7 +143,7 @@ class Archive<T> where T : Individual {
             randomness.choose(candidates)
         }
 
-        return chosen.copy()
+        return chosen.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
@@ -254,7 +258,7 @@ class Archive<T> where T : Individual {
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
-        val copy = ei.copy()
+        val copy = ei.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
         var added = false
         var anyBetter = false
 
@@ -367,6 +371,7 @@ class Archive<T> where T : Individual {
         }
         processMonitor.record(added, anyBetter, ei)
 
+        if(added) archiveTrack.add(ei)
         return added
     }
 
@@ -420,4 +425,12 @@ class Archive<T> where T : Individual {
     fun getSnapshotOfSamplingCounter() : Map<Int, Int>{
         return samplingCounter
     }
+
+    enum class ArchiveUpdateCondition(value : Int){
+        NOT_FULL_POPULATION(0),
+        SHORTER_SOLUTION(1),
+        NEW_TARGETS(2),
+        FITNESS_IMPROVED(3),
+    }
+
 }

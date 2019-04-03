@@ -22,7 +22,7 @@ import javax.annotation.PostConstruct
 
 
 /**
- * @decription: monitor 1) how are rest actions or rest individual selected regarding how to sampleAll
+ * @description: monitor 1) how are rest actions or rest individual selected regarding how to sampleAll
  *                      2) how does targets update
  */
 

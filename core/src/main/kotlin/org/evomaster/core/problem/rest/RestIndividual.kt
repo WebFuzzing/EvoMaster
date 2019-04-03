@@ -7,20 +7,26 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 
-class RestIndividual(val actions: MutableList<RestAction>,
-                     val sampleType: SampleType,
-                     val dbInitialization: MutableList<DbAction> = mutableListOf(),
-                     val usedObjects: UsedObjects = UsedObjects()
-) : Individual() {
+class RestIndividual (
+        val actions: MutableList<RestAction>,
+        val sampleType: SampleType,
+        val dbInitialization: MutableList<DbAction> = mutableListOf(),
+        val usedObjects: UsedObjects = UsedObjects(),
+        trackOperator: TrackOperator? = null,
+        traces : MutableList<out RestIndividual>? = null
+): Individual (trackOperator, traces) {
 
     override fun copy(): Individual {
         return RestIndividual(
                 actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObjects.copy()
+                usedObjects.copy(),
+                trackOperator
         )
     }
 
@@ -28,6 +34,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
         return sampleType == SampleType.RANDOM ||
                 sampleType == SampleType.SMART_GET_COLLECTION
     }
+
 
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
@@ -56,8 +63,7 @@ class RestIndividual(val actions: MutableList<RestAction>,
     }
 
     override fun verifyInitializationActions(): Boolean {
-        enforceCoherence()
-        return DbActionUtils.verifyActions(dbInitialization)
+        return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
     }
 
 
@@ -77,6 +83,53 @@ class RestIndividual(val actions: MutableList<RestAction>,
         }
     }
 
+    override fun next(trackOperator: TrackOperator) : TraceableElement?{
+        if(getTrack() == null)
+            return RestIndividual(
+                    actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+                    sampleType,
+                    dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                    usedObjects,
+                    trackOperator)
+
+        val copyTraces = mutableListOf<RestIndividual>()
+        if(!isRoot()){
+            val size = getTrack()?.size?:0
+            (0 until size).forEach {
+                copyTraces.add(0, (getTrack()!![size-1-it] as RestIndividual).copy() as RestIndividual)
+            }
+        }
+        copyTraces.add(this)
+        return RestIndividual(
+                actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+                sampleType,
+                dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                usedObjects,
+                trackOperator,
+                copyTraces)
+    }
+
+    override fun copy(withTrack: Boolean): RestIndividual {
+        when(withTrack){
+            false-> return copy() as RestIndividual
+            else ->{
+                getTrack()?:return copy() as RestIndividual
+
+                val copyTraces = mutableListOf<RestIndividual>()
+                getTrack()?.forEach {
+                    copyTraces.add((it as RestIndividual).copy() as RestIndividual)
+                }
+                return RestIndividual(
+                        actions.map { a -> a.copy() as RestAction } as MutableList<RestAction>,
+                        sampleType,
+                        dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
+                        usedObjects,
+                        trackOperator!!,
+                        copyTraces
+                )
+            }
+        }
+    }
 
     /**
      * During mutation, the values used for parameters are changed, but the values attached to the respective used objects are not.

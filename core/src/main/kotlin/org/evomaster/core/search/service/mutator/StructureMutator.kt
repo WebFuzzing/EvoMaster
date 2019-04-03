@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 /**
  * Changing the structure of a test case will heavily depend
@@ -12,7 +13,7 @@ import org.evomaster.core.search.service.Randomness
  * And to generate new action, that as well will depend on the
  * addressed problem, and can't really be abstracted away
  */
-abstract class StructureMutator {
+abstract class StructureMutator : TrackOperator {
 
     @Inject
     protected lateinit var config : EMConfig
@@ -36,4 +37,5 @@ abstract class StructureMutator {
      * might change.
      */
     abstract fun addInitializingActions(individual: EvaluatedIndividual<*>)
+
 }

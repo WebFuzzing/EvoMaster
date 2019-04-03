@@ -8,8 +8,9 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.service.tracer.TrackOperator
 
-abstract class Mutator<T> where T : Individual {
+abstract class Mutator<T> : TrackOperator where T : Individual {
 
     @Inject
     protected lateinit var randomness: Randomness
@@ -48,6 +49,9 @@ abstract class Mutator<T> where T : Individual {
 
         for (i in 0 until upToNTimes) {
 
+            //save ei before its individual is mutated
+            var trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
+
             if (!time.shouldContinueSearch()) {
                 break
             }
@@ -66,11 +70,11 @@ abstract class Mutator<T> where T : Individual {
             val reachNew = archive.wouldReachNewTarget(mutated)
 
             if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
-                archive.addIfNeeded(mutated)
-                current = mutated
+                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
+                archive.addIfNeeded(trackedMutated)
+                current = trackedMutated
             }
         }
-
         return current
     }
 
@@ -82,4 +86,5 @@ abstract class Mutator<T> where T : Individual {
         return ff.calculateCoverage(mutate(individual.individual))
                 ?.also { archive.addIfNeeded(it) }
     }
+
 }

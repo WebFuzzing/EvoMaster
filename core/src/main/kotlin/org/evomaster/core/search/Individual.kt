@@ -2,6 +2,8 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.tracer.TraceableElement
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 /**
  * An individual for the search.
@@ -9,14 +11,22 @@ import org.evomaster.core.search.service.Randomness
  * In our context, most of the time an Individual will represent
  * a single test case, composed by 1 or more "actions" (eg, calls
  * to a RESTful API, SQL operations on a database or WireMock setup)
+ *
+ * Individual allows to track its evolution, created by sampler, changed by mutator or crossover
+ * @property trackOperator presents an operatorTag to change an individual, e.g., mutator
+ * @property track is a list of Individual, indicating its evolution
  */
-abstract class Individual {
+abstract class Individual (trackOperator: TrackOperator? = null, traces : MutableList<out Individual>? = null)
+    : TraceableElement (trackOperator, traces){
 
     /**
      * Make a deep copy of this individual
      */
     abstract fun copy(): Individual
 
+    override fun copy(withTrack: Boolean): TraceableElement {
+        return copy()
+    }
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 
     /**
