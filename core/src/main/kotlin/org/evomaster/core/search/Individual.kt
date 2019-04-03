@@ -2,8 +2,8 @@ package org.evomaster.core.search
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.tracer.TraceableElement
-import org.evomaster.core.search.service.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.TrackOperator
 
 /**
  * An individual for the search.

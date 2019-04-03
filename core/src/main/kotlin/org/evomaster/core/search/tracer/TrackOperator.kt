@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.tracer
+package org.evomaster.core.search.tracer
 
 /**
  * in order to refine the trace element, and further put the refined in its tracked list

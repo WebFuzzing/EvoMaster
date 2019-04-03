@@ -5,8 +5,8 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.tracer.TraceableElement
-import org.evomaster.core.search.service.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.TrackOperator
 
 
 class OneMaxIndividual(
@@ -25,18 +25,11 @@ class OneMaxIndividual(
 
     override fun next(trackOperator: TrackOperator): TraceableElement? {
         getTrack()?: return OneMaxIndividual(n, trackOperator)
-        val copyTraces = mutableListOf<OneMaxIndividual>()
-        if(!isRoot()){
-            val size = getTrack()?.size?:0
-            (0 until size).forEach {
-                copyTraces.add(0, (getTrack()!![size-1-it] as OneMaxIndividual).copy() as OneMaxIndividual)
-            }
-        }
-        copyTraces.add(this.copy() as OneMaxIndividual)
         return OneMaxIndividual(
                 n,
                 trackOperator,
-                copyTraces)
+                getTrack()!!.plus(this).map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
+        )
     }
 
     override fun copy(withTrack: Boolean): TraceableElement {
@@ -44,14 +37,11 @@ class OneMaxIndividual(
             false-> return copy()
             else ->{
                 getTrack()?:return copy()
-                val copyTraces = mutableListOf<OneMaxIndividual>()
-                getTrack()?.forEach {
-                    copyTraces.add((it as OneMaxIndividual).copy() as OneMaxIndividual)
-                }
                 return OneMaxIndividual(
                         n,
                         trackOperator,
-                        copyTraces)
+                        getTrack()!!.map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
+                )
             }
         }
     }
