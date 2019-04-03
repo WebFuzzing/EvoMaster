@@ -219,7 +219,7 @@ class SqlInsertBuilder(
                 continue
             }
 
-            val sql = "SELECT ${pks.map { it.name }.joinToString(",")} FROM ${table.name}"
+            val sql = "SELECT ${pks.map { "\"${it.name}\"" }.joinToString(",")} FROM \"${table.name}\""
 
             val dto = DatabaseCommandDto()
             dto.command = sql
