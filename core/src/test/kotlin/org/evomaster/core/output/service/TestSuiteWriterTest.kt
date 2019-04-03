@@ -42,14 +42,17 @@ class TestSuiteWriterTest{
         config.testSuiteFileName = "Foo_testEmptySuite"
 
         //make sure we delete any existing folder from previous test runs
-        val folder = File(config.outputFolder)
-        folder.deleteRecursively()
+        val srcFolder = File(config.outputFolder)
+        srcFolder.deleteRecursively()
 
-        //compiled file should not exists yet
-        val expectedCompiledFile = folder.toPath()
+        //this is what used by Maven and IntelliJ
+        val testClassFolder = File("target/test-classes")
+        val expectedCompiledFile = testClassFolder.toPath()
                 .resolve("${config.testSuiteFileName}.class")
                 .toFile()
+        expectedCompiledFile.delete()
         assertFalse(expectedCompiledFile.exists())
+
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
 
@@ -61,11 +64,22 @@ class TestSuiteWriterTest{
 
         CompilerForTestGenerated.compile(
                 OutputFormat.KOTLIN_JUNIT_5,
-                folder,
-                folder // for simplicity we compile into the same folder
+                srcFolder,
+                testClassFolder
                 )
 
-        //now the compiled filed should exist
+        //now the compiled file should exist
         assertTrue(expectedCompiledFile.exists())
+
+        /*
+            as compiled directly into a folder of the classpath, current
+            classloader should be able to load it
+         */
+        val testSuiteClass = this.javaClass.classLoader.loadClass(config.testSuiteFileName)
+
+        val methods = testSuiteClass.declaredMethods
+        assertTrue(methods.any { it.name == "initClass" })
+        assertTrue(methods.any { it.name == "tearDown" })
+        assertTrue(methods.any { it.name == "initTest" })
     }
 }
