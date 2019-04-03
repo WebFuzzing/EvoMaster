@@ -37,5 +37,6 @@ class OneMaxModule : AbstractModule() {
         bind(StructureMutator::class.java)
                 .to(EmptyStructureMutator::class.java)
                 .asEagerSingleton()
+
     }
 }

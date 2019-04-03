@@ -32,7 +32,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 
-class RestSampler : Sampler<RestIndividual>() {
+class RestSampler : Sampler<RestIndividual>(){
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
@@ -204,10 +204,12 @@ class RestSampler : Sampler<RestIndividual>() {
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-        val objInd = RestIndividual(actions, SampleType.RANDOM, mutableListOf(), usedObjects.copy())
+        val objInd =  RestIndividual(actions, SampleType.RANDOM, mutableListOf(), usedObjects.copy()
+                , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
         usedObjects.clear()
         return objInd
     }
+
 
     private fun proposeObject(g: Gene): Pair<ObjectGene, Pair<String, String>> {
         var restrictedModels = mutableMapOf<String, ObjectGene>()
@@ -389,7 +391,8 @@ class RestSampler : Sampler<RestIndividual>() {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
             usedObjects.clear()
             randomizeActionGenes(action, false)
-            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObjects.copy())
+            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObjects.copy()
+                    , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
             usedObjects.clear()
             return objInd
         }
@@ -429,7 +432,9 @@ class RestSampler : Sampler<RestIndividual>() {
         }
 
         if (!test.isEmpty()) {
-            val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy())
+            val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy()
+                    , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
+
 
             if(config.enableCompleteObjects) addMissingObjects(objInd)
 

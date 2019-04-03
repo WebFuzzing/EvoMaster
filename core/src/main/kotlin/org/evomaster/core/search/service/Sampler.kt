@@ -4,9 +4,10 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.tracer.TrackOperator
 
 
-abstract class Sampler<T> where T : Individual {
+abstract class Sampler<T> : TrackOperator where T : Individual {
 
     @Inject
     protected lateinit var randomness: Randomness

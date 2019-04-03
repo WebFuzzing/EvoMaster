@@ -22,14 +22,14 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun innerMutate(individual: T): T {
 
-        val copy = individual.copy() as T
-
         if (individual.canMutateStructure() &&
                 randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
             //usually, either delete an action, or add a new random one
+            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individual.next(structureMutator!!) else individual.copy()) as T
             structureMutator.mutateStructure(copy)
             return copy
         }
+        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individual.next(this) else individual.copy()) as T
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -101,7 +101,9 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             is IntegerGene -> handleIntegerGene(gene)
             is DoubleGene -> handleDoubleGene(gene)
             is StringGene -> handleStringGene(gene, all)
-            else -> gene.randomize(randomness, true, all)
+            else -> {
+                gene.randomize(randomness, true, all)
+            }
         }
     }
 
@@ -191,7 +193,6 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
             2 -> BigDecimal(gene.value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
             else -> throw IllegalStateException("Regression bug")
         }
-
     }
 
 
