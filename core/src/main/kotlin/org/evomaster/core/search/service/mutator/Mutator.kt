@@ -8,6 +8,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -31,10 +32,31 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     protected lateinit var config: EMConfig
 
     /**
+     * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
      */
-    abstract fun mutate(individual: T): T
+    abstract fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene> = mutableListOf()): T
 
+    /**
+     * @param individual an individual to mutate
+     * @param evi a reference of the individual to mutate
+     * @return a list of genes that are allowed to mutate
+     */
+    abstract fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene>
+
+    /**
+     * @param individual an individual to mutate
+     * @param evi a reference of the individual to mutate
+     * @return a list of genes that are selected to mutate
+     */
+    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>
+
+    /**
+     * @return whether do a structure mutation
+     */
+    abstract fun doesStructureMutation(individual : T) : Boolean
+
+    open fun postActionAfterMutation(individual: T){}
 
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
@@ -60,7 +82,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedInd = mutate(current.individual)
+            val mutatedGenes = mutableListOf<Gene>()
+            val mutatedInd = mutate(current, mutatedGenes)
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
@@ -83,7 +106,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         structureMutator.addInitializingActions(individual)
 
-        return ff.calculateCoverage(mutate(individual.individual))
+        return ff.calculateCoverage(mutate(individual))
                 ?.also { archive.addIfNeeded(it) }
     }
 
