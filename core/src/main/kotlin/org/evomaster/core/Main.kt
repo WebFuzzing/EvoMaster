@@ -10,7 +10,7 @@ import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.output.TestSuiteWriter
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.problem.web.service.WebModule
@@ -270,15 +270,13 @@ class Main {
             val n = solution.individuals.size
             val tests = if (n == 1) "1 test" else "$n tests"
 
-            val stc = injector.getInstance(SearchTimeController::class.java)
-
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            TestSuiteWriter.writeTests(
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+            writer.writeTests(
                     solution,
-                    controllerInfoDto.fullName,
-                    config,
-                    stc
+                    controllerInfoDto.fullName
             )
         }
 

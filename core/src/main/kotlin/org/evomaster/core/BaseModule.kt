@@ -4,17 +4,26 @@ import com.google.inject.AbstractModule
 import com.google.inject.Provides
 import com.google.inject.Singleton
 import com.google.inject.TypeLiteral
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.exps.monitor.SearchProcessMonitor
 
 
+/**
+ * When we were the application, there is going to a be a set of
+ * default beans/services which are used regardless of the kind
+ * of testing we do.
+ */
 class BaseModule(val args: Array<String>) : AbstractModule() {
 
     constructor() : this(emptyArray())
 
     override fun configure() {
+
+        bind(TestSuiteWriter::class.java)
+                .asEagerSingleton()
 
         bind(SearchTimeController::class.java)
                 .asEagerSingleton()
