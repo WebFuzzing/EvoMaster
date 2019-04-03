@@ -1,4 +1,4 @@
-package org.evomaster.core.search.service.tracer
+package org.evomaster.core.search.tracer
 
 /**
  * TraceableElement represents an element whose history can be tracked.

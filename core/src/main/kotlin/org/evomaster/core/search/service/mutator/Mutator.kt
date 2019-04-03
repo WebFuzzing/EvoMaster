@@ -8,7 +8,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.*
 import org.evomaster.core.Lazy
-import org.evomaster.core.search.service.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
 

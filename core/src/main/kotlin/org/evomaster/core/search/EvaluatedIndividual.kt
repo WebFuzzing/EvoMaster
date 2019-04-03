@@ -1,8 +1,8 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.search.service.Sampler
-import org.evomaster.core.search.service.tracer.TraceableElement
-import org.evomaster.core.search.service.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TraceableElement
+import org.evomaster.core.search.tracer.TrackOperator
 
 /**
  * EvaluatedIndividual allows to track its evolution.

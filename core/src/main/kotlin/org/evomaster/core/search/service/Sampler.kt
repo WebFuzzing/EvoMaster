@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TrackOperator
 
 
 abstract class Sampler<T> : TrackOperator where T : Individual {

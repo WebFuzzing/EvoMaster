@@ -5,7 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.tracer.TrackOperator
+import org.evomaster.core.search.tracer.TrackOperator
 
 /**
  * Changing the structure of a test case will heavily depend
