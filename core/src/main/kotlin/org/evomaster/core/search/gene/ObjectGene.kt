@@ -2,11 +2,13 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.search.service.Randomness
 
-
-open class ObjectGene(name: String, val fields: List<out Gene>) : Gene(name) {
+/**
+ * @property refType presents the name of reference type of the object
+ */
+open class ObjectGene(name: String, val fields: List<out Gene>, val refType : String? = null) : Gene(name) {
 
     override fun copy(): Gene {
-        return ObjectGene(name, fields.map(Gene::copy))
+        return ObjectGene(name, fields.map(Gene::copy), refType)
     }
 
     override fun copyValueFrom(other: Gene) {
