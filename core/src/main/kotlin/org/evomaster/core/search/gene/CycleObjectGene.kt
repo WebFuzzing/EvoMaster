@@ -10,6 +10,8 @@ import org.evomaster.core.search.service.Randomness
  *
  * TODO need to handle cases when some of those are
  * marked with "required"
+ *
+ * Note that for [CycleObjectGene], its [refType] is null
  */
 class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
 
