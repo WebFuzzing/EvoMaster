@@ -49,21 +49,21 @@ class TestSuiteWriter {
         val lines = Lines()
 
         header(solution, testSuiteFileName, lines)
-        lines.indent()
+        lines.indented {
 
-        beforeAfterMethods(controllerName, lines)
+            beforeAfterMethods(controllerName, lines)
 
-        val tests = TestSuiteOrganizer.sortTests(solution)
+            val tests = TestSuiteOrganizer.sortTests(solution)
 
-        for (test in tests) {
-            lines.addEmpty(2)
+            for (test in tests) {
+                lines.addEmpty(2)
 
-            val testLines = TestCaseWriter()
-                    .convertToCompilableTestCode(config.outputFormat, test, baseUrlOfSut)
-            lines.add(testLines)
+                val testLines = TestCaseWriter()
+                        .convertToCompilableTestCode(config.outputFormat, test, baseUrlOfSut)
+                lines.add(testLines)
+            }
         }
 
-        lines.deindent()
         footer(lines)
 
         return lines.toString()
@@ -162,11 +162,12 @@ class TestSuiteWriter {
             format.isJUnit5() -> lines.add("@BeforeAll")
         }
         lines.add("public static void initClass() {")
-        lines.indent()
-        lines.add("baseUrlOfSut = $controller.startSut();")
-        lines.add("assertNotNull(baseUrlOfSut);")
-        lines.add("RestAssured.urlEncodingEnabled = false;")
-        lines.deindent()
+
+        lines.indented {
+            lines.add("baseUrlOfSut = $controller.startSut();")
+            lines.add("assertNotNull(baseUrlOfSut);")
+            lines.add("RestAssured.urlEncodingEnabled = false;")
+        }
         lines.add("}")
 
         lines.addEmpty(2)
@@ -176,9 +177,9 @@ class TestSuiteWriter {
             format.isJUnit5() -> lines.add("@AfterAll")
         }
         lines.add("public static void tearDown() {")
-        lines.indent()
-        lines.add("$controller.stopSut();")
-        lines.deindent()
+        lines.indented {
+            lines.add("$controller.stopSut();")
+        }
         lines.add("}")
 
         lines.addEmpty(2)
@@ -188,9 +189,9 @@ class TestSuiteWriter {
             format.isJUnit5() -> lines.add("@BeforeEach")
         }
         lines.add("public void initTest() {")
-        lines.indent()
-        lines.add("$controller.resetStateOfSUT();")
-        lines.deindent()
+        lines.indented {
+            lines.add("$controller.resetStateOfSUT();")
+        }
         lines.add("}")
 
         lines.addEmpty(2)

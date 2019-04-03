@@ -7,10 +7,16 @@ package org.evomaster.core.output
  */
 class Lines {
 
-    val buffer: MutableList<String> = mutableListOf()
+    private val buffer: MutableList<String> = mutableListOf()
 
     var indentation = 0
         private set
+
+    fun indented(times: Int = 1, expression: () -> Any){
+        indent(times)
+        expression.invoke()
+        deindent(times)
+    }
 
     fun indent(times: Int = 1) {
         indentation += times

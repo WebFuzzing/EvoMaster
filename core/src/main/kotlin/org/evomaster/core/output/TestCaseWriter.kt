@@ -38,46 +38,40 @@ class TestCaseWriter {
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
         }
 
-        lines.indent()
+        lines.indented {
 
-        if (test.test.individual is RestIndividual) {
-
-            if (!test.test.individual.dbInitialization.isEmpty()) {
-
-                handleDbInitialization(format, test.test.individual.dbInitialization, lines)
-
+            if (test.test.individual is RestIndividual) {
+                if (!test.test.individual.dbInitialization.isEmpty()) {
+                    handleDbInitialization(format, test.test.individual.dbInitialization, lines)
+                }
             }
-        }
 
 
-        if (test.hasChainedLocations()) {
-            lines.addEmpty()
+            if (test.hasChainedLocations()) {
+                lines.addEmpty()
 
-
-            test.test.evaluatedActions()
-                    .map { it.action }
-                    .filterIsInstance(RestCallAction::class.java)
-                    .filter { it.locationId != null }
-                    .map { it.locationId }
-                    .distinct()
-                    .forEach { id ->
-                        val name = locationVar(id!!)
-                        when {
-                            format.isJava() -> lines.add("String $name = \"\";")
-                            format.isKotlin() -> lines.add("var $name = \"\"")
+                test.test.evaluatedActions()
+                        .map { it.action }
+                        .filterIsInstance(RestCallAction::class.java)
+                        .filter { it.locationId != null }
+                        .map { it.locationId }
+                        .distinct()
+                        .forEach { id ->
+                            val name = locationVar(id!!)
+                            when {
+                                format.isJava() -> lines.add("String $name = \"\";")
+                                format.isKotlin() -> lines.add("var $name = \"\"")
+                            }
                         }
-                    }
-        }
+            }
 
-
-        test.test.evaluatedActions().forEach { a ->
-            when (a.action) {
-                is RestCallAction -> handleRestCall(a, lines, baseUrlOfSut)
-                else -> throw IllegalStateException("Cannot handle " + a.action.getName())
+            test.test.evaluatedActions().forEach { a ->
+                when (a.action) {
+                    is RestCallAction -> handleRestCall(a, lines, baseUrlOfSut)
+                    else -> throw IllegalStateException("Cannot handle " + a.action.getName())
+                }
             }
         }
-
-        lines.deindent()
         lines.add("}")
 
         return lines
@@ -98,33 +92,33 @@ class TestCaseWriter {
                 lines.indent()
             }
 
-            lines.indent()
-            dbAction.seeGenes().forEach { g ->
+            lines.indented {
+                dbAction.seeGenes().forEach { g ->
 
-                if (g.isPrintable()) {
+                    if (g.isPrintable()) {
 
-                    when {
-                        g is SqlForeignKeyGene -> {
-                            val line = handleFK(g, dbAction)
-                            lines.add(line)
-                        }
-                        g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
-                            /*
+                        when {
+                            g is SqlForeignKeyGene -> {
+                                val line = handleFK(g, dbAction)
+                                lines.add(line)
+                            }
+                            g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
+                                /*
                                 TODO: this will need to be refactored when Gene system
                                 will have "previousGenes"-based methods on all genes
                              */
-                            val line = handleFK(g.gene, dbAction)
-                            lines.add(line)
-                        }
-                        else -> {
-                            val variableName = g.getVariableName()
-                            val printableValue = getPrintableValue(g)
-                            lines.add(".d(\"$variableName\", \"$printableValue\")")
+                                val line = handleFK(g.gene, dbAction)
+                                lines.add(line)
+                            }
+                            else -> {
+                                val variableName = g.getVariableName()
+                                val printableValue = getPrintableValue(g)
+                                lines.add(".d(\"$variableName\", \"$printableValue\")")
+                            }
                         }
                     }
                 }
             }
-            lines.deindent()
 
             if (index == dbInitialization.size - 1) {
                 lines.add(".dtos()" +
@@ -215,24 +209,24 @@ class TestCaseWriter {
                                       baseUrlOfSut: String) {
 
         lines.add("try{")
-        lines.indent()
+        lines.indented {
+            addRestCallLines(call, lines, res, baseUrlOfSut)
 
-        addRestCallLines(call, lines, res, baseUrlOfSut)
-
-        if (!res.getTimedout()) {
-            /*
+            if (!res.getTimedout()) {
+                /*
                 Fail test if exception is not thrown, but not if it was a timeout,
                 otherwise the test would become flaky
               */
-            lines.add("fail(\"Expected exception\");")
+                lines.add("fail(\"Expected exception\");")
+            }
         }
-        lines.deindent()
 
         lines.add("} catch(Exception e){")
+
         res.getErrorMessage()?.let {
-            lines.indent()
-            lines.add("//$it")
-            lines.deindent()
+            lines.indented {
+                lines.add("//$it")
+            }
         }
         lines.add("}")
     }
@@ -321,10 +315,10 @@ class TestCaseWriter {
 
                 lines.append("\"$path?\" + ")
 
-                lines.indent()
-                (0 until elements.lastIndex).forEach { i -> lines.add("\"${elements[i]}&\" + ") }
-                lines.add("\"${elements.last()}\"")
-                lines.deindent()
+                lines.indented {
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${elements[i]}&\" + ") }
+                    lines.add("\"${elements.last()}\"")
+                }
             }
         }
         lines.append(")")
@@ -373,12 +367,12 @@ class TestCaseWriter {
                     lines.add(".body(${bodyLines.first()})")
                 } else {
                     lines.add(".body(${bodyLines.first()} + ")
-                    lines.indent()
-                    (1 until bodyLines.lastIndex).forEach { i ->
-                        lines.add("${bodyLines[i]} + ")
+                    lines.indented {
+                        (1 until bodyLines.lastIndex).forEach { i ->
+                            lines.add("${bodyLines[i]} + ")
+                        }
+                        lines.add("${bodyLines.last()})")
                     }
-                    lines.add("${bodyLines.last()})")
-                    lines.deindent()
                 }
 
             } /* else if(bodyParam.isXml()) {
