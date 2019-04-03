@@ -104,8 +104,7 @@ class TestSuiteWriter {
         val format = config.outputFormat
 
         if (name.hasPackage() && format.isJavaOrKotlin()) {
-            lines.add("package ${name.getPackage()}")
-            appendSemicolon(lines)
+            addStatement("package ${name.getPackage()}", lines)
         }
 
         lines.addEmpty(2)
@@ -115,22 +114,22 @@ class TestSuiteWriter {
             addImport("org.junit.jupiter.api.BeforeAll", lines)
             addImport("org.junit.jupiter.api.BeforeEach", lines)
             addImport("org.junit.jupiter.api.Test", lines)
-            addImport("static org.junit.jupiter.api.Assertions.*", lines)
+            addImport("org.junit.jupiter.api.Assertions.*", lines, true)
         }
         if (format.isJUnit4()) {
             addImport("org.junit.AfterClass", lines)
             addImport("org.junit.BeforeClass", lines)
             addImport("org.junit.Before", lines)
             addImport("org.junit.Test", lines)
-            addImport("static org.junit.Assert.*", lines)
+            addImport("org.junit.Assert.*", lines, true)
         }
 
         //TODO check if those are used
         addImport("io.restassured.RestAssured", lines)
-        addImport("static io.restassured.RestAssured.given", lines)
-        addImport("static org.evomaster.client.java.controller.api.EMTestUtils.*", lines)
+        addImport("io.restassured.RestAssured.given", lines, true)
+        addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
         addImport("org.evomaster.client.java.controller.SutHandler", lines)
-        addImport("static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines)
+        addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
         addImport(InsertionDto::class.qualifiedName!!, lines)
         addImport("java.util.List", lines)
         //addImport("static org.hamcrest.core.Is.is", lines, format)
@@ -145,15 +144,18 @@ class TestSuiteWriter {
         }
     }
 
+    private fun staticVariables(controllerName: String, lines: Lines){
 
-    private fun beforeAfterMethods(controllerName: String, lines: Lines) {
+        if(config.outputFormat.isJava()) {
+            lines.add("private static final SutHandler $controller = new $controllerName();")
+            lines.add("private static String $baseUrlOfSut;")
+        } else if(config.outputFormat.isKotlin()) {
+            lines.add("private val $controller : SutHandler = $controllerName()")
+            lines.add("private lateinit var $baseUrlOfSut: String")
+        }
+    }
 
-        //TODO check format
-
-        lines.addEmpty()
-        lines.add("private static SutHandler $controller = new $controllerName();")
-        lines.add("private static String $baseUrlOfSut;")
-        lines.addEmpty(2)
+    private fun initClassMethod(lines: Lines){
 
         val format = config.outputFormat
 
@@ -161,39 +163,80 @@ class TestSuiteWriter {
             format.isJUnit4() -> lines.add("@BeforeClass")
             format.isJUnit5() -> lines.add("@BeforeAll")
         }
-        lines.add("public static void initClass() {")
-
-        lines.indented {
-            lines.add("baseUrlOfSut = $controller.startSut();")
-            lines.add("assertNotNull(baseUrlOfSut);")
-            lines.add("RestAssured.urlEncodingEnabled = false;")
+        if(format.isJava()) {
+            lines.add("public static void initClass()")
+        } else if(format.isKotlin()){
+            lines.add("@JvmStatic")
+            lines.add("fun initClass()")
         }
-        lines.add("}")
 
-        lines.addEmpty(2)
+        lines.block {
+            addStatement("baseUrlOfSut = $controller.startSut()", lines)
+            addStatement("assertNotNull(baseUrlOfSut)", lines)
+            addStatement("RestAssured.urlEncodingEnabled = false", lines)
+        }
+    }
+
+    private fun tearDownMethod(lines: Lines){
+
+        val format = config.outputFormat
 
         when {
             format.isJUnit4() -> lines.add("@AfterClass")
             format.isJUnit5() -> lines.add("@AfterAll")
         }
-        lines.add("public static void tearDown() {")
-        lines.indented {
-            lines.add("$controller.stopSut();")
+        if(format.isJava()) {
+            lines.add("public static void tearDown()")
+        } else if(format.isKotlin()){
+            lines.add("@JvmStatic")
+            lines.add("fun tearDown()")
         }
-        lines.add("}")
+        lines.block {
+            addStatement("$controller.stopSut()", lines)
+        }
+    }
 
-        lines.addEmpty(2)
+    private fun initTestMethod(lines: Lines){
+
+        val format = config.outputFormat
 
         when {
             format.isJUnit4() -> lines.add("@Before")
             format.isJUnit5() -> lines.add("@BeforeEach")
         }
-        lines.add("public void initTest() {")
-        lines.indented {
-            lines.add("$controller.resetStateOfSUT();")
+        if(format.isJava()) {
+            lines.add("public void initTest()")
+        } else if(format.isKotlin()){
+            lines.add("fun initTest()")
         }
-        lines.add("}")
+        lines.block {
+            addStatement("$controller.resetStateOfSUT()", lines)
+        }
+    }
 
+    private fun beforeAfterMethods(controllerName: String, lines: Lines) {
+
+        lines.addEmpty()
+
+        val staticInit = {
+            staticVariables(controllerName, lines)
+            lines.addEmpty(2)
+
+            initClassMethod(lines)
+            lines.addEmpty(2)
+
+            tearDownMethod(lines)
+        }
+
+        if(config.outputFormat.isKotlin()){
+            lines.add("companion object")
+            lines.block(1, staticInit)
+        } else {
+            staticInit.invoke()
+        }
+        lines.addEmpty(2)
+
+        initTestMethod(lines)
         lines.addEmpty(2)
     }
 
@@ -217,12 +260,16 @@ class TestSuiteWriter {
         lines.append("class ${name.getClassName()} {")
     }
 
-    private fun addImport(klass: Class<*>, lines: Lines) {
-        addImport(klass.name, lines)
+    private fun addImport(klass: String, lines: Lines, static: Boolean = false) {
+
+        //Kotlin for example does not use "static" in the imports
+        val s = if(static && config.outputFormat.isJava()) "static" else ""
+
+        addStatement("import $s $klass", lines)
     }
 
-    private fun addImport(klass: String, lines: Lines) {
-        lines.add("import $klass")
+    private fun addStatement(statement: String, lines: Lines){
+        lines.add(statement)
         appendSemicolon(lines)
     }
 

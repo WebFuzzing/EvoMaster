@@ -12,6 +12,12 @@ class Lines {
     var indentation = 0
         private set
 
+    fun block(indentention: Int = 1, expression: () -> Any){
+        append(" {")
+        indented(indentention, expression)
+        add("}")
+    }
+
     fun indented(times: Int = 1, expression: () -> Any){
         indent(times)
         expression.invoke()
