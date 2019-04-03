@@ -67,7 +67,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         var mutated = false
 
-        while (!mutated) { //no point in returning a next that is not mutated
+        while (!mutated) { //no point in returning a copy that is not mutated
 
             for (gene in genesToMutate) {
 
