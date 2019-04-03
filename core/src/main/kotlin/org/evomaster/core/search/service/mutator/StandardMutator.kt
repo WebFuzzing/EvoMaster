@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
@@ -12,46 +13,61 @@ import org.evomaster.core.search.gene.*
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-
-class StandardMutator<T> : Mutator<T>() where T : Individual {
+/**
+ * make the standard mutator open for extending the mutator,
+ *
+ * e.g., in order to handle resource rest individual
+ */
+open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     /**
      * List where each element at position "i" has value "2^i"
      */
     private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
-    private fun innerMutate(individual: T): T {
+    override fun doesStructureMutation(individual : T): Boolean {
+        return individual.canMutateStructure() &&
+                config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
+                randomness.nextBoolean(config.structureMutationProbability)
+    }
 
-        if (individual.canMutateStructure() &&
-                randomness.nextBoolean(config.structureMutationProbability) && config.maxTestSize > 1) {
-            //usually, either delete an action, or add a new random one
-            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individual.next(structureMutator!!) else individual.copy()) as T
-            structureMutator.mutateStructure(copy)
-            return copy
-        }
-        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individual.next(this) else individual.copy()) as T
-
-        val allGenes = copy.seeGenes().flatMap { it.flatView() }
-
+    override fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        val genesToMutate = copy.seeGenes(filterMutate).filter { it.isMutable() }
+        return individual.seeGenes(filterMutate).filter { it.isMutable() }
+    }
 
-        if (genesToMutate.isEmpty()) {
-            return copy
-        }
+    /**
+     * Select genes to mutate based on Archive, there are several options:
+     *      1. remove bad genes
+     *      2. select good genes,
+     *      3. recent good genes, similar with feed-back sampling
+     */
+    override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
+        val genesToMutate = genesToMutation(individual, evi)
+        if(genesToMutate.isEmpty()) return mutableListOf()
 
+        //TODO update the archive-based mutation here
+
+        return selectGenesByDefault(genesToMutate, individual)
+    }
+
+    private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{
         val filterN = when (config.geneMutationStrategy) {
             ONE_OVER_N -> ALL
             ONE_OVER_N_BIASED_SQL -> NO_SQL
         }
+        val n = Math.max(1, individual.seeGenes(filterN).filter { it.isMutable() }.count())
+        return selectGenesByOneDivNum(genesToMutate, n)
+    }
 
-        val n = Math.max(1, copy.seeGenes(filterN).filter { it.isMutable() }.count())
+    private fun selectGenesByOneDivNum(genesToMutate : List<Gene>, n : Int): List<Gene>{
+        val genesToSelect = mutableListOf<Gene>()
 
         val p = 1.0 / n
 
         var mutated = false
 
-        while (!mutated) { //no point in returning a copy that is not mutated
+        while (!mutated) { //no point in returning a next that is not mutated
 
             for (gene in genesToMutate) {
 
@@ -63,33 +79,67 @@ class StandardMutator<T> : Mutator<T>() where T : Individual {
                     continue
                 }
 
-                mutateGene(gene, allGenes)
+                genesToSelect.add(gene)
 
                 mutated = true
             }
         }
+        return genesToSelect
+    }
 
-        Lazy.assert {
-            DbActionUtils.verifyForeignKeys(
-                    individual.seeInitializingActions().filterIsInstance<DbAction>())
+    private fun innerMutate(individual: EvaluatedIndividual<T>, mutatedGene: MutableList<Gene>) : T{
+
+        val individualToMutate = individual.individual
+
+        if(doesStructureMutation(individualToMutate)){
+            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator!!) else individualToMutate.copy()) as T
+            structureMutator.mutateStructure(copy)
+            return copy
         }
+
+        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(this) else individualToMutate.copy()) as T
+
+        val allGenes = copy.seeGenes().flatMap { it.flatView() }
+
+        val selectGeneToMutate = selectGenesToMutate(copy, individual)
+
+        if(selectGeneToMutate.isEmpty())
+            return copy
+
+        for (gene in selectGeneToMutate){
+            mutatedGene.add(gene)
+            mutateGene(gene, allGenes)
+        }
+
+        postActionAfterMutation(individualToMutate)
 
         return copy
 
     }
 
-    override fun mutate(individual: T): T {
+    override fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene>): T {
 
         // First mutate the individual
-        val mutatedIndividual = innerMutate(individual)
+        val mutatedIndividual = innerMutate(individual, mutatedGenes)
 
-        // Second repair the initialization actions (if needed)
-        mutatedIndividual.repairInitializationActions(randomness)
-
-        // Check that the repair was successful
-        Lazy.assert { mutatedIndividual.verifyInitializationActions() }
+        postActionAfterMutation(mutatedIndividual)
 
         return mutatedIndividual
+    }
+
+    override fun postActionAfterMutation(mutatedIndividual: T) {
+
+        Lazy.assert {
+            DbActionUtils.verifyForeignKeys(
+                    mutatedIndividual.seeInitializingActions().filterIsInstance<DbAction>())
+        }
+
+        // repair the initialization actions (if needed)
+        mutatedIndividual.repairInitializationActions(randomness)
+
+        //Check that the repair was successful
+        Lazy.assert { mutatedIndividual.verifyInitializationActions() }
+
     }
 
     private fun mutateGene(gene: Gene, all: List<Gene>) {
