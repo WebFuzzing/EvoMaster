@@ -25,7 +25,7 @@ class TestSuiteFileName(
             return name
         }
 
-        return name.substring(name.lastIndexOf('.'), name.length)
+        return name.substring(name.lastIndexOf('.') + 1, name.length)
     }
 
 

@@ -1,13 +1,18 @@
 package org.evomaster.e2etests.spring.examples.positiveinteger;
 
+import org.evomaster.client.java.instrumentation.ClassName;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
+import org.evomaster.e2etests.utils.JUnitTestRunner;
 import org.junit.jupiter.api.Test;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PIEMTest extends PITestBase {
 
@@ -59,16 +64,25 @@ public class PIEMTest extends PITestBase {
     @Test
     public void testCreateTest() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "20",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS"
-        };
+        String outputFolderName = "PIEM";
+        ClassName className = new ClassName("org.PIEM_Create");
+        clearGeneratedFiles(outputFolderName, className);
 
-       Main.initAndRun(args);
+        Class<?> klass = loadClass(className);
+        assertNull(klass);
 
-       //TODO check file
+        List<String> args = getArgsWithCompilation(20, outputFolderName, className);
+        Solution<RestIndividual> solution =initAndRun(args);
+
+        assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+
+        compile(outputFolderName);
+        klass = loadClass(className);
+        assertNotNull(klass);
+
+        TestExecutionSummary summary = JUnitTestRunner.runTestsInClass(klass);
+        assertTrue(summary.getContainersFoundCount() > 0);
+        assertEquals(0, summary.getContainersFailedCount());
+        assertTrue(summary.getContainersSucceededCount() > 0);
     }
 }

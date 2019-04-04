@@ -1,9 +1,15 @@
 package org.evomaster.e2etests.utils;
 
+import com.google.common.collect.Lists;
+import org.apache.commons.io.FileUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.core.Main;
+import org.evomaster.core.output.OutputFormat;
+import org.evomaster.core.output.compiler.CompilerForTestGenerated;
 import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.remote.service.RemoteController;
 import org.evomaster.core.search.Action;
@@ -13,7 +19,9 @@ import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -26,6 +34,60 @@ public abstract class RestTestBase {
     protected static SutController controller;
     protected static RemoteController remoteController;
     protected static int controllerPort;
+
+
+    protected Solution<RestIndividual> initAndRun(List<String> args){
+        return (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[0]));
+    }
+
+    protected String outputFolderPath(String outputFolderName){
+        return "target/em-tests/" + outputFolderName;
+    }
+
+    protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
+
+        File folder = new File(outputFolderPath(outputFolderName));
+        try{
+            FileUtils.deleteDirectory(folder);
+        }catch (Exception e){
+            throw new RuntimeException(e);
+        }
+
+        String bytecodePath = "target/test-classes/" + testClassName.getAsResourcePath();
+        File compiledFile = new File(bytecodePath);
+        compiledFile.delete();
+    }
+
+    protected Class<?> loadClass(ClassName className){
+        try {
+            return this.getClass().getClassLoader().loadClass(className.getFullNameWithDots());
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
+
+    protected void compile(String outputFolderName){
+
+        CompilerForTestGenerated.INSTANCE.compile(
+                OutputFormat.KOTLIN_JUNIT_5,
+                new File(outputFolderPath(outputFolderName)),
+                new File("target/test-classes")
+        );
+    }
+
+    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
+
+        return Arrays.asList(
+                "--createTests", "true",
+                "--seed", "42",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxActionEvaluations", "" + iterations,
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--outputFolder", outputFolderPath(outputFolderName),
+                "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
+                "--testSuiteFileName", testClassName.getFullNameWithDots()
+        );
+    }
 
     protected static void initClass(EmbeddedSutController controller) throws Exception {
 

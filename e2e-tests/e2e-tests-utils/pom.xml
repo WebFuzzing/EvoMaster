@@ -21,7 +21,17 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core</artifactId>
-            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core</artifactId>
+            <type>test-jar</type>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-compiler-embeddable</artifactId>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
