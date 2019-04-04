@@ -68,21 +68,12 @@ public class PIEMTest extends PITestBase {
         ClassName className = new ClassName("org.PIEM_Create");
         clearGeneratedFiles(outputFolderName, className);
 
-        Class<?> klass = loadClass(className);
-        assertNull(klass);
 
         List<String> args = getArgsWithCompilation(20, outputFolderName, className);
-        Solution<RestIndividual> solution =initAndRun(args);
+        Solution<RestIndividual> solution = initAndRun(args);
 
         assertHasAtLeastOne(solution, HttpVerb.GET, 200);
 
-        compile(outputFolderName);
-        klass = loadClass(className);
-        assertNotNull(klass);
-
-        TestExecutionSummary summary = JUnitTestRunner.runTestsInClass(klass);
-        assertTrue(summary.getContainersFoundCount() > 0);
-        assertEquals(0, summary.getContainersFailedCount());
-        assertTrue(summary.getContainersSucceededCount() > 0);
+        compileRunAndVerifyTests(outputFolderName, className);
     }
 }

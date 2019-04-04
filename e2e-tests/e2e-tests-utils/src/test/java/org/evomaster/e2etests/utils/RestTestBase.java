@@ -18,14 +18,14 @@ import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public abstract class RestTestBase {
 
@@ -42,6 +42,21 @@ public abstract class RestTestBase {
 
     protected String outputFolderPath(String outputFolderName){
         return "target/em-tests/" + outputFolderName;
+    }
+
+    protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){
+
+        Class<?> klass = loadClass(className);
+        assertNull(klass);
+
+        compile(outputFolderName);
+        klass = loadClass(className);
+        assertNotNull(klass);
+
+        TestExecutionSummary summary = JUnitTestRunner.runTestsInClass(klass);
+        assertTrue(summary.getContainersFoundCount() > 0);
+        assertEquals(0, summary.getContainersFailedCount());
+        assertTrue(summary.getContainersSucceededCount() > 0);
     }
 
     protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
