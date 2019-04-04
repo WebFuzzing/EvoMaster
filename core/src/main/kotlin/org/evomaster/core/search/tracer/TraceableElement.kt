@@ -5,12 +5,16 @@ package org.evomaster.core.search.tracer
  * @property trackOperator is used to attach additional information regarding how it evolved, e.g., mutator.
  * @property track presents a history of the [TraceableElement]. In addition, [track] is nullable. When tracking is not enabled, the [track] is null.
  * @property undoTrack presents a undo history of the [TraceableElement].
+ *
+ * Note that [undoTrack] is only enabled for evaluated individual, not for individual.
+ * Because evaluated individual has a metric (i.e., fitness) to identify whether the "modified" individual is on the list of [undoTrack],
+ *      and individual does not have one.
  */
 
 abstract class TraceableElement(
         val trackOperator: TrackOperator? = null,
         private val track : MutableList<out TraceableElement>? = null,
-        val undoTrack : MutableList<out TraceableElement>? = null
+        private val undoTrack : MutableList<out TraceableElement>? = null
 ) {
 
     open fun isRoot() : Boolean{
@@ -40,5 +44,6 @@ abstract class TraceableElement(
 
     abstract fun copy(withTrack : Boolean) : TraceableElement
 
+    open fun getUndoTrack() : MutableList<out TraceableElement>? = undoTrack
 
 }

@@ -18,7 +18,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                              val results: List<out ActionResult>,
                              trackOperator: TrackOperator? = null,
                              track : MutableList<EvaluatedIndividual<T>>? = null,
-                             undoTack : MutableList<EvaluatedIndividual<T>>? = null)
+                             private val undoTack : MutableList<EvaluatedIndividual<T>>? = null)
     : TraceableElement(trackOperator,  track, undoTack) where T : Individual {
 
     init{
@@ -76,7 +76,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 return forceCopyWithTrack()
             }
         }
-
     }
 
     fun forceCopyWithTrack(): EvaluatedIndividual<T> {
@@ -86,7 +85,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 results.map(ActionResult::copy),
                 trackOperator?:individual.trackOperator,
                 getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(),
-                undoTrack?.map { (it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+                getUndoTrack()?.map { it.copy()}?.toMutableList()?: mutableListOf()
         )
     }
 
@@ -94,7 +93,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     override fun next(trackOperator: TrackOperator, next: TraceableElement): EvaluatedIndividual<T>? {
         val copyTraces = getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf()
         copyTraces.add(this.copy())
-        val copyUndoTraces = undoTrack?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+        val copyUndoTraces = getUndoTrack()?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
 
 
         return  EvaluatedIndividual(
@@ -105,6 +104,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 copyTraces,
                 copyUndoTraces
         )
+    }
+
+    override fun getUndoTrack(): MutableList<EvaluatedIndividual<T>>? {
+        undoTack?: return null
+        return undoTack
     }
 
 }
