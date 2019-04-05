@@ -5,7 +5,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TrackOperator
 
 /**
- * EvaluatedIndividual allows to track its evolution.
+ * EvaluatedIndividual allows to tracking its evolution.
  * Note that tracking EvaluatedIndividual can be enabled by set EMConfig.enableTrackEvaluatedIndividual true.
  */
 class EvaluatedIndividual<T>(val fitness: FitnessValue,
@@ -17,16 +17,16 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               */
                              val results: List<out ActionResult>,
                              trackOperator: TrackOperator? = null,
-                             track : MutableList<EvaluatedIndividual<T>>? = null,
-                             private val undoTack : MutableList<EvaluatedIndividual<T>>? = null)
-    : TraceableElement(trackOperator,  track, undoTack) where T : Individual {
+                             tracking : MutableList<EvaluatedIndividual<T>>? = null,
+                             private val undoTracking : MutableList<EvaluatedIndividual<T>>? = null)
+    : TraceableElement(trackOperator,  tracking, undoTracking) where T : Individual {
 
     init{
         if(individual.seeActions().size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
-        if(track!=null && track.isNotEmpty() && track.first().trackOperator !is Sampler<*>){
-            throw IllegalArgumentException("First track operator must be sampler")
+        if(tracking!=null && tracking.isNotEmpty() && tracking.first().trackOperator !is Sampler<*>){
+            throw IllegalArgumentException("First tracking operator must be sampler")
         }
     }
 
@@ -107,8 +107,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
     override fun getUndoTrack(): MutableList<EvaluatedIndividual<T>>? {
-        undoTack?: return null
-        return undoTack
+        undoTracking?: return null
+        return undoTracking
     }
 
 }
