@@ -24,6 +24,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -42,6 +44,25 @@ public abstract class RestTestBase {
 
     protected String outputFolderPath(String outputFolderName){
         return "target/em-tests/" + outputFolderName;
+    }
+
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable{
+
+        ClassName className = new ClassName(fullClassName);
+        clearGeneratedFiles(outputFolderName, className);
+
+        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
+
+        handleFlaky(
+                () -> lambda.accept(new ArrayList<>(args))
+        );
+
+        compileRunAndVerifyTests(outputFolderName, className);
     }
 
     protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){
@@ -92,7 +113,7 @@ public abstract class RestTestBase {
 
     protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
 
-        return Arrays.asList(
+        return new ArrayList<>(Arrays.asList(
                 "--createTests", "true",
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
@@ -101,7 +122,7 @@ public abstract class RestTestBase {
                 "--outputFolder", outputFolderPath(outputFolderName),
                 "--outputFormat", OutputFormat.KOTLIN_JUNIT_5.toString(),
                 "--testSuiteFileName", testClassName.getFullNameWithDots()
-        );
+        ));
     }
 
     protected static void initClass(EmbeddedSutController controller) throws Exception {

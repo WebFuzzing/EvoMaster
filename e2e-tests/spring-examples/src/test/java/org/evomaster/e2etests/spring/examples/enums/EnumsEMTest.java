@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class EnumsEMTest extends SpringTestBase{
+public class EnumsEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
@@ -22,21 +22,18 @@ public class EnumsEMTest extends SpringTestBase{
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "50",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
-            };
+        runTestHandlingFlakyAndCompilation(
+                "EnumEM",
+                "org.bar.EnumEM",
+                50,
+                (args) -> {
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/enums/{target}", "0");
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/enums/{target}", "1");
-        });
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/enums/{target}", "0");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/enums/{target}", "1");
+                });
     }
 }

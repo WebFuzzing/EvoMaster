@@ -22,22 +22,19 @@ public class PCEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "1000",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
-            };
+        runTestHandlingFlakyAndCompilation(
+                "PcEM",
+                "org.bar.PcEM",
+                1_000,
+                (args) -> {
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
-            assertHasAtLeastOne(solution, HttpVerb.POST, 201);
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400);
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200);
-        });
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 201);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+                });
     }
 }

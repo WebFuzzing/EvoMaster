@@ -12,20 +12,16 @@ public class WebRequestEMTest extends WebRequestTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
+        runTestHandlingFlakyAndCompilation(
+                "WebRequestEM",
+                "org.bar.WebRequestEM",
+                500,
+                (args) -> {
 
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "500",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
-            };
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
-
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/webrequest", "FALSE");
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/webrequest", "TRUE");
-        });
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/webrequest", "FALSE");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/webrequest", "TRUE");
+                });
     }
 }

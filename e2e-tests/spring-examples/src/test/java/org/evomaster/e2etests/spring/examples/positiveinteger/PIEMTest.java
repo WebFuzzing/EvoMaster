@@ -41,23 +41,24 @@ public class PIEMTest extends PITestBase {
 
     private void testRunEM(EMConfig.Algorithm alg, int iterations) throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "" + iterations,
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                    "--algorithm", alg.toString()
-            };
+        String outputFolderName = "PIEM_" + alg.toString();
+        ClassName className = new ClassName("org.PIEM_Run_" + alg.toString());
+        clearGeneratedFiles(outputFolderName, className);
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+        handleFlaky(() -> {
+            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
+            args.add("--algorithm");
+            args.add(alg.toString());
+
+            Solution<RestIndividual> solution = initAndRun(args);
 
             assertTrue(solution.getIndividuals().size() >= 1);
 
             assertHasAtLeastOne(solution, HttpVerb.GET, 200);
             assertHasAtLeastOne(solution, HttpVerb.POST, 200);
         });
+
+        compileRunAndVerifyTests(outputFolderName, className);
     }
 
 

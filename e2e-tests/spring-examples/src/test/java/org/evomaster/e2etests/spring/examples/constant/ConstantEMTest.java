@@ -29,42 +29,39 @@ public class ConstantEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "2000",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
-            };
+        runTestHandlingFlakyAndCompilation(
+                "ConstantEM",
+                "org.foo.ConstantEM",
+                2000,
+                (args) -> {
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
-            ObjectMapper mapper = new ObjectMapper();
+                    ObjectMapper mapper = new ObjectMapper();
 
-            //get number of distinct response values
-            List<Boolean> responses = solution.getIndividuals().stream()
-                    .flatMap(i -> i.getResults().stream())
-                    .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
-                    .filter(s -> s != null)
-                    .map(s -> {
-                        try {
-                            return mapper.readValue(s, ConstantResponseDto.class);
-                        } catch (IOException e) {
-                            return null;
-                        }
-                    })
-                    .filter(b -> b != null)
-                    .map(b -> b.ok)
-                    .distinct()
-                    .sorted()
-                    .collect(Collectors.toList());
+                    //get number of distinct response values
+                    List<Boolean> responses = solution.getIndividuals().stream()
+                            .flatMap(i -> i.getResults().stream())
+                            .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
+                            .filter(s -> s != null)
+                            .map(s -> {
+                                try {
+                                    return mapper.readValue(s, ConstantResponseDto.class);
+                                } catch (IOException e) {
+                                    return null;
+                                }
+                            })
+                            .filter(b -> b != null)
+                            .map(b -> b.ok)
+                            .distinct()
+                            .sorted()
+                            .collect(Collectors.toList());
 
-            long n = responses.size();
+                    long n = responses.size();
 
-            assertEquals(2, n);
-        });
+                    assertEquals(2, n);
+                });
     }
 }

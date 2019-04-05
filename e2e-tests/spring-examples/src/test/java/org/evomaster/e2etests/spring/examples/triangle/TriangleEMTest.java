@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foo.rest.examples.spring.triangle.TriangleController;
 import com.foo.rest.examples.spring.triangle.TriangleResponseDto;
 import org.evomaster.client.java.instrumentation.example.triangle.TriangleClassification;
-import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.RestCallResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -30,42 +29,39 @@ public class TriangleEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "7000",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
-            };
+        runTestHandlingFlakyAndCompilation(
+                "TriangleEM",
+                "org.bar.TriangleEM",
+                7_000,
+                (args) -> {
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
-            ObjectMapper mapper = new ObjectMapper();
+                    ObjectMapper mapper = new ObjectMapper();
 
-            //get number of distinct response values
-            List<TriangleClassification.Classification> responses = solution.getIndividuals().stream()
-                    .flatMap(i -> i.getResults().stream())
-                    .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
-                    .filter(s -> s != null)
-                    .map(s -> {
-                        try {
-                            return mapper.readValue(s, TriangleResponseDto.class);
-                        } catch (IOException e) {
-                            return null;
-                        }
-                    })
-                    .filter(b -> b != null)
-                    .map(b -> b.classification)
-                    .distinct()
-                    .sorted()
-                    .collect(Collectors.toList());
+                    //get number of distinct response values
+                    List<TriangleClassification.Classification> responses = solution.getIndividuals().stream()
+                            .flatMap(i -> i.getResults().stream())
+                            .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
+                            .filter(s -> s != null)
+                            .map(s -> {
+                                try {
+                                    return mapper.readValue(s, TriangleResponseDto.class);
+                                } catch (IOException e) {
+                                    return null;
+                                }
+                            })
+                            .filter(b -> b != null)
+                            .map(b -> b.classification)
+                            .distinct()
+                            .sorted()
+                            .collect(Collectors.toList());
 
-            long n = responses.size();
+                    long n = responses.size();
 
-            assertEquals(4, n);
-        });
+                    assertEquals(4, n);
+                });
     }
 }

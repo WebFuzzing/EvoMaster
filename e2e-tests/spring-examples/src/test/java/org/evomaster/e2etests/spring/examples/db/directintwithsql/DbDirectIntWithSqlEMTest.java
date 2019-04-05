@@ -45,30 +45,28 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
+        runTestHandlingFlakyAndCompilation(
+                "DbDirectWithSqlEM",
+                "org.bar.db.DirectWithSqlEM",
+                2_000,
+                (args) -> {
 
-            String[] args = new String[]{
-                    "--createTests", "true",
-                    "--outputFormat", "JAVA_JUNIT_5",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "2000",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                    "--heuristicsForSQL", "true",
-                    "--generateSqlDataWithSearch", "true"
-            };
+                    args.add("--heuristicsForSQL");
+                    args.add("true");
+                    args.add("--generateSqlDataWithSearch");
+                    args.add("true");
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
-            //the POST is deactivated in the controller
-            assertNone(solution, HttpVerb.POST, 200);
+                    //the POST is deactivated in the controller
+                    assertNone(solution, HttpVerb.POST, 200);
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
-            assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
-        });
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+                    assertInsertionIntoTable(solution, "DB_DIRECT_INT_ENTITY");
+                });
 
     }
 

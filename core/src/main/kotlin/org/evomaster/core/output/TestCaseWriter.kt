@@ -19,11 +19,17 @@ class TestCaseWriter {
 
     private var counter = 0
 
+    //TODO: refactor in constructor, and take out of convertToCompilableTestCode
+    private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
+
     fun convertToCompilableTestCode(
             format: OutputFormat,
             test: TestCase,
             baseUrlOfSut: String)
             : Lines {
+
+        //TODO: refactor remove once changes merged
+        this.format = format
 
         counter = 0
 
@@ -77,7 +83,7 @@ class TestCaseWriter {
         return lines
     }
 
-    fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
+    private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
 
 
         dbInitialization.forEachIndexed { index, dbAction ->
@@ -263,7 +269,7 @@ class TestCaseWriter {
                 lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
             } else {
 
-                lines.add(".extract().body().path(\"${res.getResourceIdName()}\").toString();")
+                lines.add(".extract().body().path<Object>(\"${res.getResourceIdName()}\").toString();")
                 lines.addEmpty()
                 lines.deindent(2)
 
@@ -289,7 +295,11 @@ class TestCaseWriter {
             if (!res.getHeuristicsForChainedLocation()) {
                 lines.append("${locationVar(call.path.lastElement())} = ")
             } else {
-                lines.append("String id_$counter = ")
+                if(format.isJava()) {
+                    lines.append("String id_$counter = ")
+                } else {
+                    lines.append("val id_$counter: String = ")
+                }
             }
         }
         lines.append("given()" + getAcceptHeader())

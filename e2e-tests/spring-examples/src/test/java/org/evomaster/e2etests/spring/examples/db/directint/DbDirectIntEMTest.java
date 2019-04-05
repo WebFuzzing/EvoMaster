@@ -15,24 +15,24 @@ public class DbDirectIntEMTest extends DbDirectIntTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "true",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "7000",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                    "--heuristicsForSQL", "true",
-                    "--generateSqlDataWithSearch", "false"
-            };
+        runTestHandlingFlakyAndCompilation(
+                "DbDirectEM",
+                "org.bar.db.DirectEM",
+                7_000,
+                (args) -> {
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    args.add("--heuristicsForSQL");
+                    args.add("true");
+                    args.add("--generateSqlDataWithSearch");
+                    args.add("false");
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
-            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/directint/", null);
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
-        });
+                    assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 400, "/api/db/directint/{x}/{y}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/db/directint/", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/db/directint/{x}/{y}", null);
+                });
     }
 }

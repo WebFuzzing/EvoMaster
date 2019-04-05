@@ -16,31 +16,28 @@ public class NREMTest extends NRTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        handleFlaky(() -> {
-            String[] args = new String[]{
-                    "--createTests", "false",
-                    "--seed", "42",
-                    "--sutControllerPort", "" + controllerPort,
-                    "--maxActionEvaluations", "3000",
-                    "--stoppingCriterion", "FITNESS_EVALUATIONS"
-            };
+        runTestHandlingFlakyAndCompilation(
+                "NrEM",
+                "org.bar.NrEM",
+                3_000,
+                (args) -> {
 
-            Solution<RestIndividual> solution = (Solution<RestIndividual>) Main.initAndRun(args);
+                    Solution<RestIndividual> solution = initAndRun(args);
 
-            assertTrue(solution.getIndividuals().size() >= 1);
+                    assertTrue(solution.getIndividuals().size() >= 1);
 
-            //easy cases
-            assertHasAtLeastOne(solution, HttpVerb.GET, 404);
-            assertHasAtLeastOne(solution, HttpVerb.DELETE, 404);
-            assertHasAtLeastOne(solution, HttpVerb.PATCH, 404);
-            assertHasAtLeastOne(solution, HttpVerb.PUT, 201);
-            assertHasAtLeastOne(solution, HttpVerb.POST, 201);
+                    //easy cases
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 404);
+                    assertHasAtLeastOne(solution, HttpVerb.DELETE, 404);
+                    assertHasAtLeastOne(solution, HttpVerb.PATCH, 404);
+                    assertHasAtLeastOne(solution, HttpVerb.PUT, 201);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 201);
 
-            //need smart sampling
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200);
-            assertHasAtLeastOne(solution, HttpVerb.DELETE, 204);
-            assertHasAtLeastOne(solution, HttpVerb.PATCH, 204);
-            assertHasAtLeastOne(solution, HttpVerb.PUT, 204);
-        });
+                    //need smart sampling
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200);
+                    assertHasAtLeastOne(solution, HttpVerb.DELETE, 204);
+                    assertHasAtLeastOne(solution, HttpVerb.PATCH, 204);
+                    assertHasAtLeastOne(solution, HttpVerb.PUT, 204);
+                });
     }
 }
