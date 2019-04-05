@@ -17,7 +17,8 @@ jobs: # a collection of steps
           # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
           key: evomaster-build-{{ checksum "pom.xml" }}
 
-      - run: mvn dependency:go-offline # gets the project dependencies
+      # gets the project dependencies
+      - run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 
       - save_cache: # saves the project dependencies
           paths:
