@@ -44,6 +44,6 @@ abstract class TraceableElement(
 
     abstract fun copy(withTrack : Boolean) : TraceableElement
 
-    open fun getUndoTrack() : MutableList<out TraceableElement>? = undoTracking
+    open fun getUndoTracking() : MutableList<out TraceableElement>? = undoTracking
 
 }

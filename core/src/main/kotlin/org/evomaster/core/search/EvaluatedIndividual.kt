@@ -18,7 +18,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                              val results: List<out ActionResult>,
                              trackOperator: TrackOperator? = null,
                              tracking : MutableList<EvaluatedIndividual<T>>? = null,
-                             private val undoTracking : MutableList<EvaluatedIndividual<T>>? = null)
+                             undoTracking : MutableList<EvaluatedIndividual<T>>? = null)
     : TraceableElement(trackOperator,  tracking, undoTracking) where T : Individual {
 
     init{
@@ -85,7 +85,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 results.map(ActionResult::copy),
                 trackOperator?:individual.trackOperator,
                 getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(),
-                getUndoTrack()?.map { it.copy()}?.toMutableList()?: mutableListOf()
+                getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
         )
     }
 
@@ -93,7 +93,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     override fun next(trackOperator: TrackOperator, next: TraceableElement): EvaluatedIndividual<T>? {
         val copyTraces = getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf()
         copyTraces.add(this.copy())
-        val copyUndoTraces = getUndoTrack()?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+        val copyUndoTraces = getUndoTracking()?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
 
 
         return  EvaluatedIndividual(
@@ -106,9 +106,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
-    override fun getUndoTrack(): MutableList<EvaluatedIndividual<T>>? {
-        undoTracking?: return null
-        return undoTracking
+    override fun getUndoTracking(): MutableList<EvaluatedIndividual<T>>? {
+        if(super.getUndoTracking() == null) return null
+        return super.getUndoTracking() as MutableList<EvaluatedIndividual<T>>
     }
 
 }
