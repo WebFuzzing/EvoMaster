@@ -5,7 +5,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TrackOperator
 
 /**
- * EvaluatedIndividual allows to track its evolution.
+ * EvaluatedIndividual allows to tracking its evolution.
  * Note that tracking EvaluatedIndividual can be enabled by set EMConfig.enableTrackEvaluatedIndividual true.
  */
 class EvaluatedIndividual<T>(val fitness: FitnessValue,
@@ -17,16 +17,16 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                               */
                              val results: List<out ActionResult>,
                              trackOperator: TrackOperator? = null,
-                             track : MutableList<EvaluatedIndividual<T>>? = null,
-                             undoTack : MutableList<EvaluatedIndividual<T>>? = null)
-    : TraceableElement(trackOperator,  track, undoTack) where T : Individual {
+                             tracking : MutableList<EvaluatedIndividual<T>>? = null,
+                             undoTracking : MutableList<EvaluatedIndividual<T>>? = null)
+    : TraceableElement(trackOperator,  tracking, undoTracking) where T : Individual {
 
     init{
         if(individual.seeActions().size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
-        if(track!=null && track.isNotEmpty() && track.first().trackOperator !is Sampler<*>){
-            throw IllegalArgumentException("First track operator must be sampler")
+        if(tracking!=null && tracking.isNotEmpty() && tracking.first().trackOperator !is Sampler<*>){
+            throw IllegalArgumentException("First tracking operator must be sampler")
         }
     }
 
@@ -76,7 +76,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 return forceCopyWithTrack()
             }
         }
-
     }
 
     fun forceCopyWithTrack(): EvaluatedIndividual<T> {
@@ -86,7 +85,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 results.map(ActionResult::copy),
                 trackOperator?:individual.trackOperator,
                 getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(),
-                undoTrack?.map { (it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+                getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
         )
     }
 
@@ -94,7 +93,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     override fun next(trackOperator: TrackOperator, next: TraceableElement): EvaluatedIndividual<T>? {
         val copyTraces = getTrack()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf()
         copyTraces.add(this.copy())
-        val copyUndoTraces = undoTrack?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+        val copyUndoTraces = getUndoTracking()?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
 
 
         return  EvaluatedIndividual(
@@ -105,6 +104,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 copyTraces,
                 copyUndoTraces
         )
+    }
+
+    override fun getUndoTracking(): MutableList<EvaluatedIndividual<T>>? {
+        if(super.getUndoTracking() == null) return null
+        return super.getUndoTracking() as MutableList<EvaluatedIndividual<T>>
     }
 
 }
