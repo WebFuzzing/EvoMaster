@@ -34,38 +34,39 @@ class TestSuiteOrganizer {
 }
 
 class NamingHelper {
+    /**
+     * The presence of a call with a 500 status code will be added to the test name.
+     */
     private fun criterion1_500 (individual: EvaluatedIndividual<*>): String{
-        var found500 = false
-        individual.results.forEach {
-            if((it as RestCallResult).getStatusCode() == 500) found500 = true
+        if (individual.results.filterIsInstance<RestCallResult>().any{ it.getStatusCode() == 500 }){
+            return "_with500"
         }
-        val suggestedName = when (found500) {
-            true ->  "_with500"
-            false ->  ""
-            else -> throw IllegalStateException("This should not happen")
-        }
-        return suggestedName
+        return ""
     }
 
     private fun criterion2_hasPost (individual: EvaluatedIndividual<*>): String{
-        var foundPost = false
-        individual.individual.seeActions().forEach {
-            if ((it as RestCallAction).verb == HttpVerb.POST ) foundPost=true
+        if(individual.individual.seeActions().filterIsInstance<RestCallAction>().any{it.verb == HttpVerb.POST} ){
+            return "_hasPost"
         }
-        val suggestedName = when (foundPost) {
-            true ->  "_hasPost"
-            false ->  ""
-            else -> throw IllegalStateException("This should not happen")
-        }
-        return suggestedName
+
+        return ""
     }
 
+    /**
+     * The type of sample is added to the name. This is tied to the the [RestIndividual] and will change with a new problem.
+     */
     private fun criterion3_sampling(individual: EvaluatedIndividual<*>): String{
-        return "_" + (individual.individual as RestIndividual).sampleType
+        if(individual.individual is RestIndividual)
+            return "_" + individual.individual.sampleType
+        else return ""
     }
 
+    /**
+     * The presence of separate steps for DB initialization will be added to the test name. This is currently tied to
+     * the [RestIndividual] and will change with a new problem
+     */
     private fun criterion4_dbInit(individual: EvaluatedIndividual<*>): String{
-        if ((individual.individual as RestIndividual).dbInitialization.isNotEmpty()){
+        if ((individual.individual is RestIndividual) && individual.individual.dbInitialization.isNotEmpty()){
             return "_" + "hasDbInit"
         }
         else return ""
@@ -75,11 +76,7 @@ class NamingHelper {
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
-        var suggestedName = ""
-        namingCriteria.forEach {
-            suggestedName += it(individual)
-        }
-        return suggestedName
+        return namingCriteria.map { it(individual) }.joinToString("")
     }
 
 }
@@ -87,11 +84,11 @@ class NamingHelper {
 
 class SortingHelper {
     /** maxStatusCodeComparatorInd sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
+     *
      * **/
     val maxStatusCodeComparatorInd = compareBy<EvaluatedIndividual<*>>{ind ->
-        val max = ind.results.maxBy { (it as RestCallResult).getStatusCode()!! }
-        (max as RestCallResult).getStatusCode() ?: 0
-        //there might be a Null Pointer Exception being thrown from here.
+        val max = ind.results.filterIsInstance<RestCallResult>().maxBy { it.getStatusCode()!! }
+            (max as RestCallResult).getStatusCode() ?: 0
     }.reversed()
 
     /** maxNumberOfActionsComparatorInd sorts Evaluated individuals based on the number of actions (most actions first).
@@ -100,10 +97,22 @@ class SortingHelper {
         ind.individual.seeActions().size
     }.reversed()
 
+    /**
+     * dbInitSize sorts [EvaluatedIndividual] objects on the basis of the presence (and number) of db initialization actions.
+     * Currently, this is only supported for [RestIndividual].
+     * Note, writing the comparator as [EvaluatedIndividual<RestIndividual>>] seems to break the .sortWith() later on.
+     */
     val dbInitSize = compareBy<EvaluatedIndividual<*>>{ ind ->
-        (ind.individual as RestIndividual).dbInitialization.size
+        if(ind.individual is RestIndividual) {
+            ind.individual.dbInitialization.size
+        }
+        else 0
     }.reversed()
 
+    /**
+     * coveredTargets sorts [EvaluatedIndividual] objects on the basis of the number of covered targets.
+     * The purpose is to give an example of sorting based on fitness information.
+     */
     val coveredTargets = compareBy<EvaluatedIndividual<*>> {
         it.fitness.coveredTargets()
     }
