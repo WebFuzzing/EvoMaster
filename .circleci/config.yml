@@ -1,0 +1,43 @@
+version: 2 # use CircleCI 2.0
+
+jobs: # a collection of steps
+
+  build: # runs not using Workflows must have a `build` job as entry point
+
+    working_directory: ~/evomaster-build
+
+    docker: # run the steps with Docker
+      - image: circleci/openjdk:8-jdk-browsers
+
+    steps: # a collection of executable commands
+
+      - checkout # check out source code to working directory
+
+      - restore_cache: # restore the saved cache after the first run or if `pom.xml` has changed
+          # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+          key: evomaster-build-{{ checksum "pom.xml" }}
+
+      - run: mvn dependency:go-offline # gets the project dependencies
+
+      - save_cache: # saves the project dependencies
+          paths:
+            - ~/.m2
+          key: evomaster-build-{{ checksum "pom.xml" }}
+
+      # do the actual build
+      - run: mvn verify
+
+      - store_artifacts: # store the uberjar as an artifact
+          path: core/target/evomaster.jar
+
+      # Collect and export test results
+      - run:
+        name: Save test results
+        command: |
+          mkdir -p ~/test-results/junit/
+          find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/test-results/junit/ \;
+        when: always
+      - store_test_results:
+          path: ~/test-results
+      - store_artifacts:
+          path: ~/test-results/junit
