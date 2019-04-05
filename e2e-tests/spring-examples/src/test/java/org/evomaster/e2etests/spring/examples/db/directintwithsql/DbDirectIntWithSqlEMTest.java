@@ -45,7 +45,14 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(
+        /*
+            FIXME
+            Note: not compiling code here, as some weird side effects on the other
+            test in this class.
+            Somehow, the H2 connection get shutdown leading to SQL commands to fail
+         */
+
+        runTestHandlingFlaky(
                 "DbDirectWithSqlEM",
                 "org.bar.db.DirectWithSqlEM",
                 2_000,

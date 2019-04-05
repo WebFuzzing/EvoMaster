@@ -1,11 +1,10 @@
 package org.evomaster.e2etests.utils;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.ClassName;
 import org.evomaster.core.Main;
 import org.evomaster.core.output.OutputFormat;
@@ -24,7 +23,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +36,24 @@ public abstract class RestTestBase {
     protected static int controllerPort;
 
 
+    @AfterAll
+    public static void tearDown() {
+
+        boolean stopped = remoteController.stopSUT();
+        stopped = embeddedStarter.stop() && stopped;
+
+        assertTrue(stopped);
+    }
+
+
+    @BeforeEach
+    public void initTest() {
+
+        boolean reset = remoteController.resetSUT();
+        assertTrue(reset);
+    }
+
+
     protected Solution<RestIndividual> initAndRun(List<String> args){
         return (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[0]));
     }
@@ -47,7 +63,7 @@ public abstract class RestTestBase {
     }
 
 
-    protected void runTestHandlingFlakyAndCompilation(
+    protected void runTestHandlingFlaky(
             String outputFolderName,
             String fullClassName,
             int iterations,
@@ -61,7 +77,17 @@ public abstract class RestTestBase {
         handleFlaky(
                 () -> lambda.accept(new ArrayList<>(args))
         );
+    }
 
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, lambda);
+
+        ClassName className = new ClassName(fullClassName);
         compileRunAndVerifyTests(outputFolderName, className);
     }
 
@@ -148,22 +174,7 @@ public abstract class RestTestBase {
         System.out.println("SUT listening on " + baseUrlOfSut);
     }
 
-    @AfterAll
-    public static void tearDown() {
 
-        boolean stopped = remoteController.stopSUT();
-        stopped = embeddedStarter.stop() && stopped;
-
-        assertTrue(stopped);
-    }
-
-
-    @BeforeEach
-    public void initTest() {
-
-        boolean reset = remoteController.resetSUT();
-        assertTrue(reset);
-    }
 
     protected List<Integer> getIndexOfHttpCalls(Individual ind, HttpVerb verb) {
 
