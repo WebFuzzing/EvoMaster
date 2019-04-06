@@ -36,7 +36,7 @@ jobs: # a collection of steps
 
 
       # do the actual build
-      - run: mvn verify
+      - run: mvn verify --fae
 
       - store_artifacts: # store the uberjar as an artifact
           path: core/target/evomaster.jar
