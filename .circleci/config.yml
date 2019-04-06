@@ -53,3 +53,14 @@ jobs: # a collection of steps
           path: ~/test-results
       - store_artifacts:
           path: ~/test-results/junit
+
+
+      # Collect and export test ouputs... needed for debugging
+      - run:
+          name: Save test outputs
+          command: |
+                  mkdir -p ~/test-results/outputs/
+                  find . -type f -regex ".*/target/surefire-reports/.*txt" -exec cp {} ~/test-results/outputs/ \;
+                when: always
+      - store_artifacts:
+          path: ~/test-results/outputs
