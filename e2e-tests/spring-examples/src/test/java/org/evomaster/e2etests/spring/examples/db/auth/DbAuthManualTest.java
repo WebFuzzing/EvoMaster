@@ -12,8 +12,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 
 public class DbAuthManualTest extends DbAuthTestBase{
 
+
     @Test
     public void testGetUsers() {
+
 
         String url = baseUrlOfSut + "/api/db/auth/users";
 

@@ -41,18 +41,22 @@ public abstract class RestTestBase {
     @AfterAll
     public static void tearDown() {
 
-        boolean stopped = remoteController.stopSUT();
-        stopped = embeddedStarter.stop() && stopped;
+        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+            boolean stopped = remoteController.stopSUT();
+            stopped = embeddedStarter.stop() && stopped;
 
-        assertTrue(stopped);
+            assertTrue(stopped);
+        });
     }
 
 
     @BeforeEach
     public void initTest() {
 
-        boolean reset = remoteController.resetSUT();
-        assertTrue(reset);
+        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+            boolean reset = remoteController.resetSUT();
+            assertTrue(reset);
+        });
     }
 
 
