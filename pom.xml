@@ -22,6 +22,7 @@
         <module>client-java</module>
         <module>e2e-tests</module>
         <module>experiments</module>
+        <module>report</module>
     </modules>
 
     <issueManagement>
@@ -532,7 +533,7 @@
                         <forkCount>1</forkCount>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
-                        <argLine>-Xms1024m -Xmx2048m</argLine>
+                        <argLine>@{argLine} -Xms1024m -Xmx2048m</argLine>
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
@@ -676,8 +677,43 @@
                     <artifactId>go-offline-maven-plugin</artifactId>
                     <version>1.1.0</version>
                 </plugin>
+
+                <!--
+                  Used to calculate code-coverage of the tests.
+                  Note: Kotlin still has problems, as its compiler not marking
+                  yet the automatically generated/added functions
+                  -->
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.8.3</version>
+                    <executions>
+                        <execution>
+                            <id>default-prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>default-report</id>
+                            <phase>prepare-package</phase>
+                            <goals>
+                                <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
             </plugins>
         </pluginManagement>
+
+
+        <plugins>
+            <!-- Executed JaCoCo in all the modules. Default binding is on "verify" -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
     </build>
 
 
