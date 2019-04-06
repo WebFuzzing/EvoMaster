@@ -30,8 +30,9 @@ jobs: # a collection of steps
           key: evomaster-build-{{ checksum "pom.xml" }}
 
 
-      # we need Docker in some of the tests
-      - setup_remote_docker
+      # We need Docker in some of the tests.
+      # But following option is not needed if using "executorType: machine"
+      # - setup_remote_docker
 
 
       # do the actual build
