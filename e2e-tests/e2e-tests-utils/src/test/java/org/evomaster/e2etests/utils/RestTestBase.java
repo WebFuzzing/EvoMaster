@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -69,14 +71,20 @@ public abstract class RestTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable{
 
-        ClassName className = new ClassName(fullClassName);
-        clearGeneratedFiles(outputFolderName, className);
+        /*
+            Years have passed, still JUnit 5 does not handle global test timeouts :(
+            https://github.com/junit-team/junit5/issues/80
+         */
+        assertTimeoutPreemptively(Duration.ofMinutes(3), () -> {
+            ClassName className = new ClassName(fullClassName);
+            clearGeneratedFiles(outputFolderName, className);
 
-        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
+            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
 
-        handleFlaky(
-                () -> lambda.accept(new ArrayList<>(args))
-        );
+            handleFlaky(
+                    () -> lambda.accept(new ArrayList<>(args))
+            );
+        });
     }
 
     protected void runTestHandlingFlakyAndCompilation(
@@ -87,8 +95,10 @@ public abstract class RestTestBase {
 
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, lambda);
 
-        ClassName className = new ClassName(fullClassName);
-        compileRunAndVerifyTests(outputFolderName, className);
+        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+            ClassName className = new ClassName(fullClassName);
+            compileRunAndVerifyTests(outputFolderName, className);
+        });
     }
 
     protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){
