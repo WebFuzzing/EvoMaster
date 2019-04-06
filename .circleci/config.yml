@@ -1,5 +1,9 @@
 version: 2 # use CircleCI 2.0
 
+# To enable TestContainers
+executorType: machine
+
+
 jobs: # a collection of steps
 
   build: # runs not using Workflows must have a `build` job as entry point
