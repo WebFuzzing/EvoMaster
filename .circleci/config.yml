@@ -55,12 +55,16 @@ jobs: # a collection of steps
           path: ~/test-results/junit
 
 
-      # Collect and export test ouputs... needed for debugging
+      # Collect and export test outputs... needed for debugging
       - run:
           name: Save test outputs
           command: |
                   mkdir -p ~/test-results/outputs/
                   find . -type f -regex ".*/target/surefire-reports/.*txt" -exec cp {} ~/test-results/outputs/ \;
-                when: always
+          when: always
       - store_artifacts:
           path: ~/test-results/outputs
+
+      # Save coverage
+      - store_artifacts:
+          path: report/target/site/jacoco-aggregate
