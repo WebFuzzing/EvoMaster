@@ -25,11 +25,17 @@ jobs: # a collection of steps
             - ~/.m2
           key: evomaster-build-{{ checksum "pom.xml" }}
 
+
+      # we need Docker in some of the tests
+      - setup_remote_docker
+
+
       # do the actual build
       - run: mvn verify
 
       - store_artifacts: # store the uberjar as an artifact
           path: core/target/evomaster.jar
+
 
       # Collect and export test results
       - run:
