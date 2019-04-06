@@ -53,7 +53,7 @@ class TestSuiteWriter {
 
             beforeAfterMethods(controllerName, lines)
 
-            val tests = TestSuiteOrganizer.sortTests(solution)
+            val tests = TestSuiteOrganizer.sortTests(solution, config.customNaming)
 
             for (test in tests) {
                 lines.addEmpty(2)
