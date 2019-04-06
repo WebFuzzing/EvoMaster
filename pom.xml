@@ -533,6 +533,8 @@
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <rerunFailingTestsCount>2</rerunFailingTestsCount>
                         <argLine>-Xms1024m -Xmx2048m</argLine>
+                        <!-- Needed for some weird bug in JDK used in CircleCI-->
+                        <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
 
                 </plugin>
