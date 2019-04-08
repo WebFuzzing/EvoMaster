@@ -25,8 +25,6 @@ public abstract class DatabaseTestTemplate {
 
     private static Connection connection;
 
-
-
     @BeforeAll
     public static void initClass() throws Exception {
 
