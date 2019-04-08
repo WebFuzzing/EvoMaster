@@ -5,8 +5,9 @@
 
 [![Build Status](https://travis-ci.org/EMResearch/EvoMaster.svg?branch=master)](https://travis-ci.org/EMResearch/EvoMaster)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
+[JaCoCo](https://circleci.com/api/v1.1/project/github/arcuri82/evomaster/latest/artifacts/0/home/circleci/evomaster-build/report/target/site/jacoco-aggregate/index.html)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
-
+<button name="button" onclick="http://www.google.com">JaCoCo</button>
 
 
 <!--
