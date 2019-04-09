@@ -29,13 +29,15 @@ class SearchStatusUpdater : SearchListener{
 
     private val r = String(byteArrayOf(0xF0.toByte(), 0x9F.toByte(), 0x8C.toByte(), 0x88.toByte()), utf8)
 
+    private val consumedMessage = "* Consumed search budget:"
+
+    /*
+       Make sure that, when we print, we are using UTF-8 and not the default encoding
+     */
+    private val out = PrintStream(System.out, true, "UTF-8")
+
     @PostConstruct
     fun postConstruct(){
-        /*
-            Make sure that, when we print, we are using UTF-8 and not the default encoding
-         */
-        System.setOut(PrintStream(System.out, true, "UTF-8"))
-
         if(config.showProgress) {
             time.addListener(this)
         }
@@ -45,6 +47,7 @@ class SearchStatusUpdater : SearchListener{
         val current = (time.percentageUsedBudget() * 100).toInt()
 
         if(passed < -1){
+
             println()
             if(config.e_u1f984){
                 println()
@@ -59,29 +62,44 @@ class SearchStatusUpdater : SearchListener{
             }
 
             upLineAndErase()
-            println("* Consumed search budget: $passed%")
+            println("$consumedMessage $passed%")
 
             if(config.e_u1f984){
                 updateExtra()
-                println(extra)
+                out.println(extra)
             }
         }
     }
 
     private fun updateExtra(){
-        if(extra.isBlank()){
+        if(extra.isBlank() || extra.length > 22){
+            //going more than a line makes thing very complicated... :(
             extra = u
         } else {
             extra = p + r  + extra
         }
     }
 
-    private fun upLineAndErase(){
-        /*
+    /*
               Using: ANSI/VT100 Terminal Control Escape Sequences
               http://www.termsys.demon.co.uk/vtansi.htm
-         */
-        print("\u001b[1A") // move up by 1 line
+
+              Note: unfortunately, many terminals do not support saving/restoring the cursor :(
+              ie, following does not work for example in GitBash:
+               print("\u001b[u")
+               print("\u001b[s")
+     */
+
+    private fun eraseLine(){
         print("\u001b[2K") // erase line
+    }
+
+    private fun moveUp(){
+        print("\u001b[1A") // move up by 1 line
+    }
+
+    private fun upLineAndErase(){
+        moveUp()
+        eraseLine()
     }
 }
