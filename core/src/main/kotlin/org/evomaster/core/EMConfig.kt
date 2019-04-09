@@ -533,4 +533,7 @@ class EMConfig {
     @Experimental
     @Cfg("Enable custom naming and sorting criteria")
     var customNaming = false
+
+    @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
+    var e_u1f984 = false
 }
