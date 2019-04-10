@@ -107,4 +107,19 @@ public abstract class DbCleanerTestBase {
         assertEquals(id, regeneratedId);
     }
 
+
+    @Test
+    public void testAvoidViews() throws Exception{
+
+        /*
+            A db might have "views". Trying to delete data in those makes no-sense,
+            and would result in an error when using TRUNCATE on them
+         */
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x int, y int, primary key (x));");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE VIEW AView AS SELECT y FROM Foo;");
+
+        //this should work without throwing any exception
+        clearDatabase(null);
+    }
 }
