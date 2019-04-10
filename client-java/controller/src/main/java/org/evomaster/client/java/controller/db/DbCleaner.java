@@ -49,10 +49,10 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection) {
-        clearDatabase_H2(connection, null);
+        clearDatabase_H2(connection, "PUBLIC", null);
     }
 
-    public static void clearDatabase_H2(Connection connection, List<String> tablesToSkip) {
+    public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tablesToSkip) {
         /*
             Code based on
             https://stackoverflow.com/questions/8523423/reset-embedded-h2-database-periodically
@@ -67,9 +67,9 @@ public class DbCleaner {
              */
             s.execute("SET REFERENTIAL_INTEGRITY FALSE");
 
-            truncateTables(tablesToSkip, s, "PUBLIC", false);
+            truncateTables(tablesToSkip, s, schemaName, false);
 
-            resetSequences(s, "PUBLIC");
+            resetSequences(s, schemaName);
 
             s.execute("SET REFERENTIAL_INTEGRITY TRUE");
             s.close();
@@ -79,17 +79,17 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_Postgres(Connection connection) {
-        clearDatabase_Postgres(connection, null);
+        clearDatabase_Postgres(connection, "public", null);
     }
 
-    public static void clearDatabase_Postgres(Connection connection, List<String> tablesToSkip) {
+    public static void clearDatabase_Postgres(Connection connection, String schemaName, List<String> tablesToSkip) {
 
         try {
             Statement s = connection.createStatement();
 
-            truncateTables(tablesToSkip, s, "public", true);
+            truncateTables(tablesToSkip, s, schemaName, true);
 
-            resetSequences(s, "public");
+            resetSequences(s, schemaName);
 
             s.close();
         } catch (Exception e) {
@@ -101,7 +101,7 @@ public class DbCleaner {
 
         // Find all tables and truncate them
         Set<String> tables = new HashSet<>();
-        ResultSet rs = s.executeQuery("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES  where TABLE_SCHEMA='" + schema + "'");
+        ResultSet rs = s.executeQuery("SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES  where TABLE_SCHEMA='" + schema + "' AND (TABLE_TYPE='TABLE' OR TABLE_TYPE='BASE TABLE')");
         while (rs.next()) {
             tables.add(rs.getString(1));
         }
@@ -114,7 +114,10 @@ public class DbCleaner {
         if (tablesToSkip != null) {
             for (String skip : tablesToSkip) {
                 if (!tables.stream().anyMatch(t -> t.equalsIgnoreCase(skip))) {
-                    throw new IllegalStateException("Asked to skip table '" + skip + "', but it does not exist");
+                    String msg = "Asked to skip table '" + skip + "', but it does not exist.";
+                    msg += " Existing tables in schema '"+schema+"': [" +
+                            tables.stream().collect(Collectors.joining(", ")) + "]";
+                    throw new IllegalStateException(msg);
                 }
             }
         }
