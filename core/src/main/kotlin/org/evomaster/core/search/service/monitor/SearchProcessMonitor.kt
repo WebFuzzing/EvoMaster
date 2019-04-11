@@ -125,18 +125,17 @@ class SearchProcessMonitor: SearchListener {
 
     private fun initMonitorProcessOutputs(){
         val path = Paths.get(config.processFiles)
+        if(config.showProgress) log.info("Deleting all files in ${path.toUri()}")
 
         if(Files.exists(path)){
             Files.walk(path)
                     .sorted(Comparator.reverseOrder())
                     .map(Path::toFile)
                     .forEach{
-                        t -> run{
-                        t.delete()
-                    } }
+                        if(!it.delete())
+                            log.warn("Fail to delete ${it.path}")
+                    }
         }
-        if(config.showProgress) log.info("all files in ${path.toUri().toString()} are deleted")
-
     }
     fun saveOverall(){
         setOverall()
