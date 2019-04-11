@@ -43,9 +43,6 @@ class ProcessMonitorTest{
 
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
-
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-        config.processFiles = "target/process_data"
     }
 
 
@@ -75,6 +72,7 @@ class ProcessMonitorTest{
     @Test
     fun testEnableProcessMonitor(){
 
+        config.processFiles = "target/process_data"
         config.enableProcessMonitor = true
         config.showProgress = true
         config.processInterval = config.maxActionEvaluations
@@ -103,7 +101,7 @@ class ProcessMonitorTest{
 
     @Test
     fun testSerializedOneStep(){
-
+        config.processFiles = "target/process_data_1s"
         config.enableProcessMonitor = true
         config.showProgress = true
         config.processInterval = config.maxActionEvaluations
@@ -138,11 +136,11 @@ class ProcessMonitorTest{
                 assertEquals(evalIndividual.fitness.getHeuristic(t) , u.distance)
             }
         }
-
     }
 
     @Test
     fun testSerializedTwoStepsAndOverall(){
+        config.processFiles = "target/process_data_2s"
 
         config.enableProcessMonitor = true
         config.showProgress = true
