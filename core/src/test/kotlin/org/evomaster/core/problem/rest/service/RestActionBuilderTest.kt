@@ -28,6 +28,13 @@ internal class RestActionBuilderTest {
         return actions
     }
 
+
+    @Test
+    fun testMultiParamPath() {
+        loadAndAssertActions("/swagger/multi_param_path.json", 1)
+    }
+
+
     @Test
     fun testNews() {
         loadAndAssertActions("/swagger/news.json", 7)

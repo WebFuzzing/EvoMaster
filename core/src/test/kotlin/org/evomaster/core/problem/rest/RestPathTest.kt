@@ -10,6 +10,38 @@ import org.junit.jupiter.api.Test
 
 internal class RestPathTest{
 
+
+    @Test
+    fun testResolveMultiVariableInterluded(){
+
+        val x = 7
+        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGene("x", x), 1.0))
+
+        val y = 42
+        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGene("y", y), 1.0))
+
+        val path = "/api/foo/{x}/{y}/x-{x}/{y}-y/a{x}b{y}c"
+        val restPath = RestPath(path)
+
+        val resolved = restPath.resolve(listOf(yParam,xParam))
+        assertEquals("/api/foo/$x/$y/x-$x/$y-y/a${x}b${y}c", resolved)
+    }
+
+    @Test
+    fun testResolveMultiVariable(){
+        val x = 7
+        val xParam = PathParam("x", DisruptiveGene("d_", IntegerGene("x", x), 1.0))
+
+        val y = 42
+        val yParam = PathParam("y", DisruptiveGene("d_", IntegerGene("y", y), 1.0))
+
+        val path = "/api/foo/{x}{y}"
+        val restPath = RestPath(path)
+
+        val resolved = restPath.resolve(listOf(yParam,xParam))
+        assertEquals("/api/foo/$x$y", resolved)
+    }
+
     @Test
     fun testResolvePathWithVariable(){
 
@@ -20,14 +52,14 @@ internal class RestPathTest{
         val restPath = RestPath(path)
 
         val resolved = restPath.resolve(listOf(pathParam))
-        assertEquals("/api/foo/"+id, resolved)
+        assertEquals("/api/foo/$id", resolved)
     }
 
     @Test
     fun testExtraSlashes(){
 
         val path = "/x/y/z"
-        val restPath = RestPath("//" + path)
+        val restPath = RestPath("//$path")
 
         val toS = restPath.toString()
         assertEquals(path, toS)
