@@ -31,6 +31,8 @@ class SearchStatusUpdater : SearchListener{
 
     private val consumedMessage = "* Consumed search budget:"
 
+    private var first = true
+
     /*
        Make sure that, when we print, we are using UTF-8 and not the default encoding
      */
@@ -46,12 +48,12 @@ class SearchStatusUpdater : SearchListener{
     override fun newActionEvaluated() {
         val current = (time.percentageUsedBudget() * 100).toInt()
 
-        if(passed < -1){
-
+        if(first){
             println()
             if(config.e_u1f984){
                 println()
             }
+            first = false
         }
 
         if(current != passed){
