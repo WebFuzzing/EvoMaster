@@ -49,7 +49,11 @@ public class DbCleaner {
     }
 
     public static void clearDatabase_H2(Connection connection) {
-        clearDatabase_H2(connection, "PUBLIC", null);
+        clearDatabase_H2(connection, null);
+    }
+
+    public static void clearDatabase_H2(Connection connection, List<String> tablesToSkip) {
+        clearDatabase_H2(connection, "PUBLIC", tablesToSkip);
     }
 
     public static void clearDatabase_H2(Connection connection, String schemaName, List<String> tablesToSkip) {
