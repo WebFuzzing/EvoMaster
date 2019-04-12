@@ -15,6 +15,46 @@ public class CheckExprExtractor implements ExpressionVisitor {
 
     private final List<SchemaConstraint> constraints = new ArrayList<SchemaConstraint>();
 
+    /**
+     * Return the constraints collected during the visit to the AST
+     *
+     * @return
+     */
+    public List<SchemaConstraint> getConstraints() {
+        return this.constraints;
+    }
+
+
+    @Override
+    public void visit(BitwiseRightShift aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(BitwiseLeftShift aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(NextValExpression aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(CollateExpression aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(ValueListExpression valueList) {
+
+    }
+
+//    @Override
+//    public void visit(WithinGroupExpression wgexpr) {
+//
+//    }
+
     @Override
     public void visit(NullValue nullValue) {
         // TODO This translation should be implemented
@@ -93,12 +133,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
 
     @Override
     public void visit(Parenthesis parenthesis) {
-        if (parenthesis.isNot()) {
-            // TODO This translation should be implemented
-            throw new RuntimeException("Extraction of condition not yet implemented");
-        } else {
-            parenthesis.getExpression().accept(this);
-        }
+        parenthesis.getExpression().accept(this);
     }
 
     @Override
@@ -436,12 +471,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
-    @Override
-    public void visit(WithinGroupExpression withinGroupExpression) {
 
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
 
     @Override
     public void visit(ExtractExpression extractExpression) {
@@ -520,6 +550,8 @@ public class CheckExprExtractor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
+
+
     @Override
     public void visit(RowConstructor rowConstructor) {
 
@@ -555,12 +587,5 @@ public class CheckExprExtractor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
-    /**
-     * Return the constraints collected during the visit to the AST
-     *
-     * @return
-     */
-    public List<SchemaConstraint> getConstraints() {
-        return this.constraints;
-    }
+
 }
