@@ -184,12 +184,12 @@ public class SelectHeuristicsTest {
 
         String sql = "select x from Foo";
 
-        QueryResult data = new QueryResult(Arrays.asList("x"));
+        QueryResult data = new QueryResult(Arrays.asList("x"), "Foo");
 
         double dist = SelectHeuristics.computeDistance(sql, data);
         assertTrue(dist > 0);
 
-        DataRow row = new DataRow("x", "9");
+        DataRow row = new DataRow("x", "9", "Foo");
         data.addRow(row);
 
         dist = SelectHeuristics.computeDistance(sql, data);
@@ -201,12 +201,12 @@ public class SelectHeuristicsTest {
                                             Object solution,
                                             String sql) {
 
-        QueryResult data = new QueryResult(Arrays.asList(name));
+        QueryResult data = new QueryResult(Arrays.asList(name), "Foo");
 
         double prev = -1;
 
         for (Object val : values) {
-            data.addRow(new DataRow(name, val));
+            data.addRow(new DataRow(name, val, "Foo"));
             double dist = SelectHeuristics.computeDistance(sql, data);
             assertTrue(dist > 0);
             if (prev >= 0) {
@@ -215,7 +215,7 @@ public class SelectHeuristicsTest {
             prev = dist;
         }
 
-        data.addRow(new DataRow(name, solution));
+        data.addRow(new DataRow(name, solution, "Foo"));
         double target = SelectHeuristics.computeDistance(sql, data);
         assertTrue(target < prev);
         assertEquals(0d, target);

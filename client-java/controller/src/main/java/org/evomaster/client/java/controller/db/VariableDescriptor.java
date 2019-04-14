@@ -1,6 +1,8 @@
 package org.evomaster.client.java.controller.db;
 
 /**
+ * A descriptor representing a column in a SQL table.
+ *
  * Immutable. Names are case-insensitive.
  * At least column name, which might have alias
  */

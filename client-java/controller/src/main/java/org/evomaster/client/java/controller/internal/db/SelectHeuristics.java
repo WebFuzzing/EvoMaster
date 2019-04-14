@@ -15,8 +15,6 @@ import java.util.*;
 
 public class SelectHeuristics {
 
-    public static final String UNNAMED_TABLE = "___unnamed_table___";
-
 
     /**
      *
@@ -196,11 +194,9 @@ public class SelectHeuristics {
             return 0;
         }
 
-        /*
-            FIXME: aliases should be part of QueryResult
-         */
-        Map<String, String> aliases = getTableAliases(stmt);
-        HeuristicsCalculator calculator = new HeuristicsCalculator(aliases);
+
+        SqlNameContext context = new SqlNameContext(stmt);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context);
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {
@@ -216,84 +212,7 @@ public class SelectHeuristics {
         return min;
     }
 
-    /**
-     * Workaround to JDBC limitations: it does not provide any API to
-     * query meta-data on table aliases!!! ad-hoc solutions for each
-     * possible imaginable DB are not scalable.
-     * So, we just try to do some best effort to cover most cases
-     *
-     * @param select the string containing the SQL SELECT command
-     * @return map from alias to table name
-     */
-    public static Map<String, String> getTableAliases(Select select) {
 
-        Map<String, String> aliases = new HashMap<>();
-
-        SelectBody selectBody = select.getSelectBody();
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-
-            FromItem fromItem = plainSelect.getFromItem();
-            fromItem.accept(new FromVisitor(aliases));
-
-            List<Join> joins = plainSelect.getJoins();
-            if (joins != null) {
-                joins.forEach(j -> j.getRightItem().accept(new FromVisitor(aliases)));
-            }
-        }
-
-        return aliases;
-    }
-
-    private static class FromVisitor extends FromItemVisitorAdapter{
-
-        private final Map<String, String> aliases;
-
-        private FromVisitor(Map<String, String> aliases) {
-            this.aliases = aliases;
-        }
-
-        @Override
-        public void visit(Table table) {
-            handleAlias(aliases, table);
-        }
-
-        @Override
-        public void visit(SubSelect subSelect) {
-            handleAlias(aliases, subSelect);
-        }
-
-    }
-
-
-
-    private static void handleAlias(Map<String, String> aliases, SubSelect subSelect) {
-        Alias alias = subSelect.getAlias();
-        if (alias != null) {
-            String aliasName = alias.getName();
-            if (aliasName != null) {
-                /*
-                    FIXME: need to generalize,
-                    ie for when there can be several un-named sub-selects referring
-                    to columns with same names
-                 */
-                String tableName = UNNAMED_TABLE;
-                aliases.put(aliasName.trim().toLowerCase(), tableName.trim().toLowerCase());
-            }
-        }
-    }
-
-
-    private static void handleAlias(Map<String, String> aliases, Table table) {
-        Alias alias = table.getAlias();
-        if (alias != null) {
-            String aliasName = alias.getName();
-            if (aliasName != null) {
-                String tableName = table.getName();
-                aliases.put(aliasName.trim().toLowerCase(), tableName.trim().toLowerCase());
-            }
-        }
-    }
 
     private static Expression getWhere(Select select) {
 

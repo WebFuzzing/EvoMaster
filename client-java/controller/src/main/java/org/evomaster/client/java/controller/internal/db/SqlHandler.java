@@ -177,6 +177,11 @@ public class SqlHandler {
             return Double.MAX_VALUE;
         }
 
+        /*
+           TODO
+           following does not handle the case of sub-selects involving other
+           tables... but likely that is not something we need to support right now
+         */
         String modified = SelectHeuristics.addFieldsToSelect(select);
         modified = SelectHeuristics.removeConstraints(modified);
         modified = SelectHeuristics.removeOperations(modified);

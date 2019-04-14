@@ -242,40 +242,4 @@ public class SchemaExtractor {
         return false;
     }
 
-
-
-
-
-
-
 }
-
-
-//TODO remove once code finalized
-//    QueryResult columns = SqlScriptRunner.execCommand(connection,
-//                "select * from INFORMATION_SCHEMA.Columns");
-//
-//        /*
-//            No clear check if a column is an "identity".
-//            So, here we see if:
-//            - it is a primary key
-//            - no autoincrement
-//            - has a system sequence
-//         */
-//        for (TableDto table : schemaDto.tables) {
-//            for (ColumnDto column : table.columns) {
-//                if (!column.primaryKey || column.autoIncrement) {
-//                    continue;
-//                }
-//
-//                DataRow descriptor = columns.seeRows().stream()
-//                        .filter(r -> table.name.equalsIgnoreCase(r.getValueByName("table_name").toString())
-//                                && column.name.equalsIgnoreCase(r.getValueByName("column_name").toString()))
-//                        .findFirst().get();
-//
-//                String sequenceName = descriptor.getValueByName("sequence_name").toString();
-//                if(sequenceName != null && sequenceName.startsWith("SYSTEM_SEQUENCE_")){
-//                    column.identity = true;
-//                }
-//            }
-//        }

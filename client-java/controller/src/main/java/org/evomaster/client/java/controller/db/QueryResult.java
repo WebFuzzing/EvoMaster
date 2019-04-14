@@ -9,15 +9,23 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+
+/**
+ * The results of a SQL Select query, in a easy to parse/manipulate data structure
+ * compared to java.sql.ResultSet.
+ */
 public class QueryResult {
 
     private final List<VariableDescriptor> variableDescriptors = new ArrayList<>();
     private final List<DataRow> rows = new ArrayList<>();
 
-    public QueryResult(List<String> names) {
-        Objects.requireNonNull(names);
-        for (String n : names) {
-            variableDescriptors.add(new VariableDescriptor(n));
+    /**
+     * Constructor only needed for testing
+     */
+    public QueryResult(List<String> columnNames, String tableName) {
+        Objects.requireNonNull(columnNames);
+        for (String c : columnNames) {
+            variableDescriptors.add(new VariableDescriptor(c, null, tableName));
         }
     }
 
