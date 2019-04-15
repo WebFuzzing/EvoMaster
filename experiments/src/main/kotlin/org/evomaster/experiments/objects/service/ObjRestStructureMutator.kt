@@ -27,45 +27,45 @@ class ObjRestStructureMutator : StructureMutator() {
         val ind = individual.individual as? ObjIndividual
                 ?: throw IllegalArgumentException("Invalid individual type")
 
-        val es = individual.fitness.emptySelects
-                ?: return
-
-        if (es.queriedData.isEmpty()) {
-            return
-        }
-
-        val max = config.maxSqlInitActionsPerMissingData
-
-        var missing = findMissing(es, ind)
-
-        while (!missing.isEmpty()) {
-
-            val first = missing.entries.first()
-
-            val k = randomness.nextInt(1, max)
-
-            (0 until k).forEach {
-                val insertions = sampler.sampleSqlInsertion(first.key, first.value)
-                ind.dbInitialization.addAll(0, insertions)
-            }
-
-            /*
-                When we miss A and B, and we add for A, it can still happen that
-                then B is covered as well. For example, if A has a non-null
-                foreign key to B, then generating an action for A would also
-                imply generating an action for B as well.
-                So, we need to recompute "missing" each time
-             */
-            missing = findMissing(es, ind)
-        }
-
-        ind.dbInitialization.addAll(0, sampler.existingSqlData)
-
-        if (config.generateSqlDataWithDSE) {
-            //TODO DSE could be plugged in here
-        }
-
-        ind.repairInitializationActions(randomness)
+//        val es = individual.fitness.emptySelects
+//                ?: return
+//
+//        if (es.queriedData.isEmpty()) {
+//            return
+//        }
+//
+//        val max = config.maxSqlInitActionsPerMissingData
+//
+//        var missing = findMissing(es, ind)
+//
+//        while (!missing.isEmpty()) {
+//
+//            val first = missing.entries.first()
+//
+//            val k = randomness.nextInt(1, max)
+//
+//            (0 until k).forEach {
+//                val insertions = sampler.sampleSqlInsertion(first.key, first.value)
+//                ind.dbInitialization.addAll(0, insertions)
+//            }
+//
+//            /*
+//                When we miss A and B, and we add for A, it can still happen that
+//                then B is covered as well. For example, if A has a non-null
+//                foreign key to B, then generating an action for A would also
+//                imply generating an action for B as well.
+//                So, we need to recompute "missing" each time
+//             */
+//            missing = findMissing(es, ind)
+//        }
+//
+//        ind.dbInitialization.addAll(0, sampler.existingSqlData)
+//
+//        if (config.generateSqlDataWithDSE) {
+//            //TODO DSE could be plugged in here
+//        }
+//
+//        ind.repairInitializationActions(randomness)
 
     }
 
