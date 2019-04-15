@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.internal.db;
 
-import net.sf.jsqlparser.expression.Alias;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.expression.Function;
@@ -13,13 +12,11 @@ import org.evomaster.client.java.controller.db.QueryResult;
 
 import java.util.*;
 
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
+
 public class SelectHeuristics {
 
 
-    /**
-     *
-     * @return
-     */
     public static Map<String, Set<String>> getReadDataFields(String select){
 
         Map<String, Set<String>> map = new HashMap<>();
@@ -214,14 +211,5 @@ public class SelectHeuristics {
 
 
 
-    private static Expression getWhere(Select select) {
 
-        SelectBody selectBody = select.getSelectBody();
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-            return plainSelect.getWhere();
-        }
-
-        return null;
-    }
 }

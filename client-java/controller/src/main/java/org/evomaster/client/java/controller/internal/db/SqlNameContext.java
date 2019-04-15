@@ -39,7 +39,7 @@ public class SqlNameContext {
 
     private final Statement statement;
 
-    //TODO will need refactoring
+    //TODO will need refactoring when supporting nested SELECTs
     public static final String UNNAMED_TABLE = "___unnamed_table___";
 
 
@@ -59,6 +59,11 @@ public class SqlNameContext {
         computeAliases();
     }
 
+
+    /*
+        TODO
+        code here is not supporting nested SELECTs, for the moment
+     */
 
     /**
      * Determine the name of the table that this column belongs to

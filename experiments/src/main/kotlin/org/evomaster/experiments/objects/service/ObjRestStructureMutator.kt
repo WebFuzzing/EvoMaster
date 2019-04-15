@@ -2,7 +2,7 @@ package org.evomaster.experiments.objects.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.EmptySelects
+import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
@@ -69,7 +69,7 @@ class ObjRestStructureMutator : StructureMutator() {
 
     }
 
-    private fun findMissing(es: EmptySelects, ind: ObjIndividual): Map<String, Set<String>> {
+    private fun findMissing(es: DatabaseExecution, ind: ObjIndividual): Map<String, Set<String>> {
 
         return es.queriedData.filter { e ->
             //shouldn't have already an action adding such SQL data

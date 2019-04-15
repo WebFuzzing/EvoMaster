@@ -162,7 +162,7 @@ public class DbCleaner {
             have used a different value.
             In most cases (99.99%), this should not be a problem.
             We could allow using different values in this API... but, maybe just easier
-            for use to reset it manually if really needed?
+            for the user to reset it manually if really needed?
          */
     }
 }

@@ -1,6 +1,6 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.database.EmptySelects
+import org.evomaster.core.database.DatabaseExecution
 
 /**
 As the number of targets is unknown, we cannot have
@@ -42,32 +42,61 @@ class FitnessValue(
      * covering target.
      * An example is rewarding SQL Select commands that return non-empty
      *
-     * Note: these values are sorted.
+     * Note: these values are SORTED.
      */
     private val extraToMinimize: MutableMap<Int, List<Double>> = mutableMapOf()
 
+
     /**
-     * Needed to keep track if the SUT does access a SQL database
+     * Key -> action Id
+     *
+     * Value -> info on how the SQL database was accessed
      */
-    var emptySelects: EmptySelects? = null
+    private val databaseExecutions: MutableMap<Int, DatabaseExecution> = mutableMapOf()
+
+    /**
+     * When SUT does SQL commands using WHERE, keep track of when those "fails" (ie evaluate
+     * to false), in particular the tables and columns in them involved
+     */
+    private val aggregatedFailedWhere: MutableMap<String, Set<String>> = mutableMapOf()
 
 
     fun copy(): FitnessValue {
         val copy = FitnessValue(size)
         copy.targets.putAll(this.targets)
         copy.extraToMinimize.putAll(this.extraToMinimize)
-        copy.emptySelects = this.emptySelects //note: supposed to be immutable
+        copy.databaseExecutions.putAll(this.databaseExecutions) //note: DatabaseExecution supposed to be immutable
+        copy.aggregateDatabaseData()
         return copy
     }
 
-    fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
+    /**
+     * We keep track of DB interactions per action.
+     * However, there are are cases in which we only care of aggregated data for all actions.
+     * Instead of re-computing them each time, we just do it once and save the results
+     */
+    fun aggregateDatabaseData(){
 
+        aggregatedFailedWhere.clear()
+        aggregatedFailedWhere.putAll(DatabaseExecution.mergeData(
+                databaseExecutions.values,
+                {x ->  x.failedWhere}
+        ))
+    }
+
+    fun setExtraToMinimize(actionIndex: Int, list: List<Double>) {
         extraToMinimize[actionIndex] = list.sorted()
+    }
+
+    fun setDatabaseExecution(actionIndex: Int, databaseExecution: DatabaseExecution){
+        databaseExecutions[actionIndex] = databaseExecution
     }
 
     fun getViewOfData(): Map<Int, Heuristics> {
         return targets
     }
+
+    fun getViewOfAggregatedFailedWhere() = aggregatedFailedWhere
 
     fun doesCover(target: Int): Boolean {
         return targets[target]?.distance == MAX_VALUE
@@ -188,6 +217,9 @@ class FitnessValue(
         }
     }
 
+    /*
+        TODO: add back and fix. Use for experiments.
+     */
 
 //    private fun compareByRewardMore(other: FitnessValue): Int {
 //        val thisLength = this.extraToMinimize.size

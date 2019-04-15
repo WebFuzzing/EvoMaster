@@ -15,7 +15,7 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.ReadDbDataDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -190,14 +190,8 @@ public abstract class SutController implements SutHandler {
         dto.toMinimize.addAll(sqlHandler.getDistances());
         //TODO toMaximize
 
-        ReadDbDataDto readDbDataDto = new ReadDbDataDto();
-        readDbDataDto.queriedData = sqlHandler.getReadData();
-        readDbDataDto.emptySqlSelects = sqlHandler.getEmptySqlSelects();
-
-        if(! readDbDataDto.queriedData.isEmpty() ||
-                !readDbDataDto.emptySqlSelects.isEmpty()) {
-            dto.readDbData = readDbDataDto;
-        }
+        ExecutionDto executionDto = sqlHandler.getExecutionDto();
+        dto.databaseExecutionDto = executionDto;
 
         return dto;
     }
