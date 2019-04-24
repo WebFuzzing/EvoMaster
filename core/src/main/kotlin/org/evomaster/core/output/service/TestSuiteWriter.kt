@@ -25,6 +25,7 @@ class TestSuiteWriter {
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
+        private const val activeExpectations = "activeExpectations"
     }
 
     fun writeTests(
@@ -59,7 +60,7 @@ class TestSuiteWriter {
                 lines.addEmpty(2)
 
                 val testLines = TestCaseWriter()
-                        .convertToCompilableTestCode(config.outputFormat, test, baseUrlOfSut)
+                        .convertToCompilableTestCode(config, test, baseUrlOfSut)
                 lines.add(testLines)
             }
         }
@@ -132,6 +133,11 @@ class TestSuiteWriter {
         addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
         addImport(InsertionDto::class.qualifiedName!!, lines)
         addImport("java.util.List", lines)
+        // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
+        if(config.expectationsActive) {
+            addImport("org.hamcrest.Matchers.*", lines, true)
+            addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
+        }
         //addImport("static org.hamcrest.core.Is.is", lines, format)
 
         lines.addEmpty(2)
@@ -149,10 +155,14 @@ class TestSuiteWriter {
         if(config.outputFormat.isJava()) {
             lines.add("private static final SutHandler $controller = new $controllerName();")
             lines.add("private static String $baseUrlOfSut;")
+            lines.add("private static boolean activeExpectations = false;")
         } else if(config.outputFormat.isKotlin()) {
             lines.add("private val $controller : SutHandler = $controllerName()")
             lines.add("private lateinit var $baseUrlOfSut: String")
+            lines.add("private val $activeExpectations = false")
         }
+        //Note: ${config.expectationsActive} can be used to get the active setting, but the default
+        // for generated code should be false.
     }
 
     private fun initClassMethod(lines: Lines){

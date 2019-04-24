@@ -1,12 +1,16 @@
 package org.evomaster.core.output
 
+import com.google.gson.Gson
+import com.google.gson.internal.LinkedTreeMap
 import org.apache.commons.lang3.StringEscapeUtils
+import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.UsedObjects
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
@@ -18,18 +22,25 @@ import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 class TestCaseWriter {
 
     private var counter = 0
+    private var usedObjects = UsedObjects()
+    //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
+    private lateinit var configuration: EMConfig
+
 
     fun convertToCompilableTestCode(
-            format: OutputFormat,
+            //format: OutputFormat,
+            config: EMConfig,
             test: TestCase,
             baseUrlOfSut: String)
             : Lines {
 
         //TODO: refactor remove once changes merged
-        this.format = format
+        configuration = config
+        this.format = config.outputFormat
+
 
         counter = 0
 
@@ -44,11 +55,17 @@ class TestCaseWriter {
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
         }
 
-        //addMetaDataComments(test, lines)
-
         lines.indented {
 
             if (test.test.individual is RestIndividual) {
+                // BMR: test.test should have the used objects attached (if any).
+                //usedObjects = test.test.individual.usedObjects
+
+                if (config.enableCompleteObjects) {
+                    usedObjects = test.test.individual.usedObjects
+                }
+
+
                 if (!test.test.individual.dbInitialization.isEmpty()) {
                     handleDbInitialization(format, test.test.individual.dbInitialization, lines)
                 }
@@ -72,6 +89,7 @@ class TestCaseWriter {
                             }
                         }
             }
+
 
             test.test.evaluatedActions().forEach { a ->
                 when (a.action) {
@@ -258,6 +276,14 @@ class TestCaseWriter {
 
         //finally, handle the last line(s)
         handleLastLine(call, res, lines)
+
+        //BMR should expectations be here?
+        // Having them at the end of a test makes some sense...
+        if(configuration.expectationsActive){
+            handleExpectations(res, lines, true)
+        }
+
+
     }
 
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines) {
@@ -341,8 +367,85 @@ class TestCaseWriter {
             lines.add(".then()")
             lines.add(".statusCode(${res.getStatusCode()})")
 
+            if(configuration.enableBasicAssertions) {
+                handleResponseContents(lines, res)
+            }
+
+
+
             //TODO check on body
         }
+    }
+
+    private fun handleFieldValues(resContentsItem: Any): String{
+        when(resContentsItem::class) {
+            //Double::class -> return "equalTo(${resContentsItem})"
+            //Double::class -> return "is(closeTo(${resContentsItem}, 0.1))"
+            //Double::class -> return "equalsNumerically(${"" + resContentsItem})"
+
+            Double::class -> return "equalTo(${(resContentsItem as Double).toInt()})"
+            String::class -> return "containsString(\"${resContentsItem}\")"
+            else -> return "NotCoveredYet"
+        }
+    }
+
+    private fun handleResponseContents(lines: Lines, res: RestCallResult) {
+        // TODO BMR this appears to cause problems for CPGEMTest
+
+
+        lines.indented{
+            lines.add(".assertThat()")
+                if(res.getBodyType()==null) lines.add(".contentType(\"\")")
+                else lines.add(".contentType(\"${res.getBodyType()}\")")
+                val bodyString = res.getBody()
+
+                when (res.getStatusCode()) {
+                    200 -> {
+                        //TODO BMR: check on JSON content - WiP - to be refined
+
+                        when (bodyString?.first()) {
+                            '[' -> {
+                                // This would be run if the JSON contains an array of objects
+                                val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                            }
+                            '{' -> {
+                                // This would be run if the JSON contains a single object
+                                val resContents = Gson().fromJson(res.getBody(), Object::class.java)
+
+                                (resContents as LinkedTreeMap<*, *>).keys.forEach {
+                                    val actualValue = resContents[it]
+
+
+                                    val printableTh = handleFieldValues(resContents[it]!!)
+                                    if(printableTh != "null" && printableTh != "NotCoveredYet"){
+                                        lines.add(".body(\"${it}\", ${printableTh})")
+                                    }
+
+                                    //lines.add(".body(\"${it}\", containsString(\"${resContents[it]}\"))")
+                                    //resContents[it]
+                                }
+                            }
+                            else -> {
+                                // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
+                            }
+                        }
+
+                    }
+                    201 -> {
+                        val contents = res.toString()
+                        //res.getBodyType() == null*/
+                    }
+                    500 -> {
+                        val contents = res.toString()
+                        //res.getBodyType().isCompatible(MediaType.TEXT_HTML_TYPE)
+                    }
+                    204 -> {
+                        val contents = res.toString()
+                        //res.getBodyType() == null
+                    }
+                }
+        }
+        //handleExpectations(res, lines, true)
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
@@ -428,6 +531,35 @@ class TestCaseWriter {
          *  TODO: get the type from the REST call
          */
         return ".accept(\"*/*\")"
+    }
+
+    private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean){
+
+        /*
+        TODO: This is a WiP to show the basic idea of the expectations:
+        An exception is thrown ONLY if the expectations are set to active.
+        If inactive, the condition will still be processed (with a goal to later adding to summaries or
+        other information processing/handling that might be needed), but it does not cause
+        the test case to fail regardless of truth value.
+
+        The example below aims to show this behaviour and provide a reminder.
+        As it is still work in progress, expect quite significant changes to this.
+        */
+
+        lines.add("expectationHandler()")
+        lines.indented {
+            lines.add(".expect()")
+            lines.add(".that(activeExpectations, true)")
+            lines.add(".that(activeExpectations, false)")
+            lines.append(when {
+                format.isJava() -> ";"
+                else -> ""
+            })
+        }
+
+
+
+
     }
 
     private fun addMetaDataComments(test: TestCase, lines: Lines){
