@@ -155,7 +155,7 @@ class TestSuiteWriter {
         if(config.outputFormat.isJava()) {
             lines.add("private static final SutHandler $controller = new $controllerName();")
             lines.add("private static String $baseUrlOfSut;")
-            lines.add("private static Boolean activeExpectations = false;")
+            lines.add("private static boolean activeExpectations = false;")
         } else if(config.outputFormat.isKotlin()) {
             lines.add("private val $controller : SutHandler = $controllerName()")
             lines.add("private lateinit var $baseUrlOfSut: String")

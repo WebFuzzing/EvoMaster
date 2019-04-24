@@ -541,7 +541,8 @@ class EMConfig {
     var e_u1f984 = false
 
     @Experimental
-    @Cfg("Enable Expectation Generation. If enabled, an expectation that fails will cause the test case containing it to fail.")
+    @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
+            "A variable called activeExpectations is added to each test case, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
     var expectationsActive = false
 
     @Experimental
