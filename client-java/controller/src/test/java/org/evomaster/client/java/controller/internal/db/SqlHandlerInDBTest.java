@@ -63,4 +63,71 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
             starter.stop();
         }
     }
+
+
+    @Test
+    public void testInsertTable() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+            String url = start(starter);
+            url += BASE_PATH;
+
+            startNewTest(url);
+
+            ExecutionDto dto = getSqlExecutionDto(0,url);
+
+            assertTrue(dto == null || dto.insertedData == null || dto.insertedData.isEmpty());
+
+            startNewActionInSameTest(url, 1);
+
+            SqlScriptRunner.execCommand(getConnection(), "insert into Foo (x) values (42)");
+
+            dto = getSqlExecutionDto(1,url);
+
+            assertNotNull(dto);
+            assertNotNull(dto.insertedData);
+            assertEquals(1, dto.insertedData.size());
+            assertTrue(dto.insertedData.containsKey("Foo"));
+
+        } finally {
+            starter.stop();
+        }
+    }
+
+    @Test
+    public void testUpdateTable() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+            String url = start(starter);
+            url += BASE_PATH;
+
+            startNewTest(url);
+
+            ExecutionDto dto = getSqlExecutionDto(0,url);
+
+            assertTrue(dto == null || dto.updatedData == null || dto.updatedData.isEmpty());
+
+            startNewActionInSameTest(url, 1);
+
+            SqlScriptRunner.execCommand(getConnection(), "update Foo set x=42");
+
+            dto = getSqlExecutionDto(1,url);
+
+            assertNotNull(dto);
+            assertNotNull(dto.updatedData);
+            assertEquals(1, dto.updatedData.size());
+            assertTrue(dto.updatedData.containsKey("Foo"));
+
+        } finally {
+            starter.stop();
+        }
+    }
 }

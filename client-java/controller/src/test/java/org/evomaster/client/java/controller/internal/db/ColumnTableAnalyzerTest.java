@@ -14,6 +14,31 @@ public class ColumnTableAnalyzerTest {
 
 
     @Test
+    public void testInsertInSimpleTable(){
+
+        String sql = "insert into Foo (x) values (42)";
+
+        Map<String, Set<String>> data = ColumnTableAnalyzer.getInsertedDataFields(sql);
+
+        assertEquals(1, data.size());
+        assertTrue(data.containsKey("Foo"));
+        //TODO check on actual fields when implemented
+    }
+
+    @Test
+    public void testUpdateInSimpleTable(){
+
+        String sql = "update Foo set x=42";
+
+        Map<String, Set<String>> data = ColumnTableAnalyzer.getUpdatedDataFields(sql);
+
+        assertEquals(1, data.size());
+        assertTrue(data.containsKey("Foo"));
+        //TODO check on actual fields when implemented
+    }
+
+
+    @Test
     public void testDeleteSimpleTable(){
 
         String sql = "delete from Foo";

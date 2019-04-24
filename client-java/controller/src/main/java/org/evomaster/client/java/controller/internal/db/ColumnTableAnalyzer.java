@@ -2,7 +2,9 @@ package org.evomaster.client.java.controller.internal.db;
 
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.statement.update.Update;
 
 import java.util.*;
 
@@ -11,6 +13,11 @@ import java.util.*;
  */
 public class ColumnTableAnalyzer {
 
+
+    /*
+        TODO code in this class is incomplete. For the moment, we just extract
+        the name of the tables involved, and not full column info.
+     */
 
     public static Set<String> getDeletedTables(String delete){
 
@@ -30,6 +37,52 @@ public class ColumnTableAnalyzer {
         }
 
         return set;
+    }
+
+
+    public static Map<String, Set<String>> getInsertedDataFields(String insert){
+
+        if(! ParserUtils.isInsert(insert)){
+            throw new IllegalArgumentException("Input string is not a valid SQL INSERT: " + insert);
+        }
+
+        Map<String, Set<String>> map = new HashMap<>();
+
+        Insert stmt = (Insert) ParserUtils.asStatement(insert);
+
+        Table table = stmt.getTable();
+        if(table != null){
+            handleTable(map, table);
+        } else {
+            //TODO all other cases
+            throw new IllegalArgumentException("Cannot handle: " + insert);
+        }
+
+        return map;
+    }
+
+
+    public static Map<String, Set<String>> getUpdatedDataFields(String update){
+
+        if(! ParserUtils.isUpdate(update)){
+            throw new IllegalArgumentException("Input string is not a valid SQL INSERT: " + update);
+        }
+
+        Map<String, Set<String>> map = new HashMap<>();
+
+        Update stmt = (Update) ParserUtils.asStatement(update);
+
+        List<Table> tables = stmt.getTables();
+        if(tables!=null && !tables.isEmpty()){
+            for(Table t: tables){
+                handleTable(map, t);
+            }
+        } else {
+            //TODO all other cases
+            throw new IllegalArgumentException("Cannot handle: " + update);
+        }
+
+        return map;
     }
 
 
@@ -83,14 +136,18 @@ public class ColumnTableAnalyzer {
         return map;
     }
 
+    private static void handleTable(Map<String, Set<String>> map, Table table){
+        Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
+        //TODO: should check actual fields... would likely need to pass SelectBody as input as well
+        if(! columns.contains("*")) {
+            columns.add("*");
+        }
+    }
+
     private static void extractUsedColumnsAndTables(Map<String, Set<String>> map, FromItem fromItem) {
         if(fromItem instanceof Table){
             Table table = (Table) fromItem;
-            Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
-            //TODO: should check actual fields... would likely need to pass SelectBody as input as well
-            if(! columns.contains("*")) {
-                columns.add("*");
-            }
+            handleTable(map, table);
         } else {
             // TODO handle other cases, eg sub-selects
             throw new IllegalArgumentException("Cannot handle: " + fromItem.toString());

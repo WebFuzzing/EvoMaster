@@ -25,11 +25,11 @@ public class ParserUtils {
     }
 
     public static boolean isUpdate(String sql) {
-        return startsWithIgnoreCase(sql, "insert");
+        return startsWithIgnoreCase(sql, "update");
     }
 
     public static boolean isInsert(String sql) {
-        return startsWithIgnoreCase(sql, "update");
+        return startsWithIgnoreCase(sql, "insert");
     }
 
     private static boolean startsWithIgnoreCase(String input, String prefix){

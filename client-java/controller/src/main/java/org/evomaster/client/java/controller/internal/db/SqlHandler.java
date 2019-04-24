@@ -17,8 +17,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import static org.evomaster.client.java.controller.internal.db.ParserUtils.isDelete;
-import static org.evomaster.client.java.controller.internal.db.ParserUtils.isSelect;
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
 
 /**
  * Class used to act upon SQL commands executed by the SUT
@@ -77,11 +76,14 @@ public class SqlHandler {
 
         buffer.add(sql);
 
-        //TODO Insert/Update
         if (isSelect(sql)) {
             mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
         } else if(isDelete(sql)){
             deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));
+        } else if(isInsert(sql)){
+            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));
+        } else if(isUpdate(sql)){
+            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
     }
 
