@@ -122,7 +122,7 @@ public class InstrumentingAgent {
         //see http://p6spy.readthedocs.io/en/latest/configandusage.html
         System.setProperty("p6spy.config.driverlist", driver);
         System.setProperty("p6spy.config.filter", "true");
-        System.setProperty("p6spy.config.include", "select, insert, update, delete");
+        System.setProperty("p6spy.config.include", "select,insert,update,delete");
         System.setProperty("p6spy.config.autoflush", "true");
         System.setProperty("p6spy.config.appender", "com.p6spy.engine.spy.appender.StdoutLogger");
         System.setProperty("p6spy.config.jmx", "false");

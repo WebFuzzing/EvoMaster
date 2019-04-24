@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.*;
 
 import java.util.*;
@@ -9,6 +10,27 @@ import java.util.*;
  * Created by arcuri82 on 24-Apr-19.
  */
 public class ColumnTableAnalyzer {
+
+
+    public static Set<String> getDeletedTables(String delete){
+
+        if(! ParserUtils.isDelete(delete)){
+            throw new IllegalArgumentException("Input string is not a valid SQL DELETE: " + delete);
+        }
+
+        Set<String> set = new HashSet<>();
+        Delete stmt = (Delete) ParserUtils.asStatement(delete);
+
+        Table table = stmt.getTable();
+        if(table != null){
+            set.add(table.getName());
+        } else {
+            //TODO need to handle special cases of multi-tables with JOINs
+            throw new IllegalArgumentException("Cannot handle: " + delete);
+        }
+
+        return set;
+    }
 
 
     /**

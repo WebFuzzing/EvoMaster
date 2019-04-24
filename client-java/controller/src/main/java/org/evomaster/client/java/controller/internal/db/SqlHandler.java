@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.isDelete;
 import static org.evomaster.client.java.controller.internal.db.ParserUtils.isSelect;
 
 /**
@@ -76,9 +77,11 @@ public class SqlHandler {
 
         buffer.add(sql);
 
-        //TODO Delete/Insert/Update
+        //TODO Insert/Update
         if (isSelect(sql)) {
             mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
+        } else if(isDelete(sql)){
+            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));
         }
     }
 

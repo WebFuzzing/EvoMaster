@@ -17,23 +17,23 @@ public class ParserUtils {
 
 
     public static boolean isSelect(String sql) {
-        return startsWithIgnoreCase("select");
+        return startsWithIgnoreCase(sql, "select");
     }
 
     public static boolean isDelete(String sql) {
-        return startsWithIgnoreCase("delete");
+        return startsWithIgnoreCase(sql, "delete");
     }
 
     public static boolean isUpdate(String sql) {
-        return startsWithIgnoreCase("insert");
+        return startsWithIgnoreCase(sql, "insert");
     }
 
     public static boolean isInsert(String sql) {
-        return startsWithIgnoreCase("update");
+        return startsWithIgnoreCase(sql, "update");
     }
 
-    private static boolean startsWithIgnoreCase(String s){
-        return s!= null && s.trim().toLowerCase().startsWith(s);
+    private static boolean startsWithIgnoreCase(String input, String prefix){
+        return input!= null && input.trim().toLowerCase().startsWith(prefix);
     }
 
 

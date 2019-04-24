@@ -12,8 +12,21 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class ColumnTableAnalyzerTest {
 
+
     @Test
-    public void testReadAllFromSingleTable(){
+    public void testDeleteSimpleTable(){
+
+        String sql = "delete from Foo";
+
+        Set<String> tables = ColumnTableAnalyzer.getDeletedTables(sql);
+
+        assertEquals(1, tables.size());
+        assertTrue(tables.contains("Foo"));
+    }
+
+
+    @Test
+    public void testSelectReadAllFromSingleTable(){
 
         String select = "select *  from Foo";
 
@@ -29,7 +42,7 @@ public class ColumnTableAnalyzerTest {
 
 
     @Test
-    public void testReadFromJoinedTables(){
+    public void testSelectReadFromJoinedTables(){
 
         String select = "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate" +
                 " FROM Orders " +
