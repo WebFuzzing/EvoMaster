@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
@@ -20,13 +21,17 @@ class TestCaseWriterTest {
     @Test
     fun testEmptyDbInitialization() {
 
+
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(emptyList<DbAction>().toMutableList())
+
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -52,12 +57,14 @@ class TestCaseWriterTest {
         val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -116,12 +123,14 @@ class TestCaseWriterTest {
 
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -162,12 +171,14 @@ class TestCaseWriterTest {
         val insertIntoTableAction = DbAction(aTable, setOf(column0, column1), id, mutableListOf(gene0, gene1))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -205,12 +216,14 @@ class TestCaseWriterTest {
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(integerGene, stringGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -250,12 +263,14 @@ class TestCaseWriterTest {
         val insertIntoTableAction = DbAction(aTable, setOf(idColumn, nameColumn), id, listOf(primaryKeyGene, stringGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -300,12 +315,14 @@ class TestCaseWriterTest {
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -348,12 +365,14 @@ class TestCaseWriterTest {
         val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -397,12 +416,14 @@ class TestCaseWriterTest {
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -447,12 +468,14 @@ class TestCaseWriterTest {
         val dbInitialization = mutableListOf(insertIntoTableAction)
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -494,12 +517,14 @@ class TestCaseWriterTest {
         val insertIntoTableAction2 = DbAction(aTable, setOf(aColumn), 2L, mutableListOf(gene2))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1, insertIntoTableAction2))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -551,12 +576,14 @@ class TestCaseWriterTest {
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
@@ -615,12 +642,14 @@ class TestCaseWriterTest {
         val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(fkGene1))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert0, insert1, insert2))
+        val config = EMConfig()
+        config.outputFormat = format
 
         val test = TestCase(test = ei, name = "test")
 
         val writer = TestCaseWriter()
 
-        val lines = writer.convertToCompilableTestCode(format, test, baseUrlOfSut)
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
             add("@Test")
