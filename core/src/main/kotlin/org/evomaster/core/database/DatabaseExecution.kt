@@ -32,7 +32,7 @@ class DatabaseExecution(
                     cloneData(dto?.updatedData),
                     cloneData(dto?.insertedData),
                     cloneData(dto?.failedWhere),
-                    cloneData(dto?.deletedData)
+                    dto?.deletedData?.toList() ?: listOf()
             )
         }
 
