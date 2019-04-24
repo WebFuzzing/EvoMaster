@@ -38,10 +38,10 @@ public class SqlHandler {
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
-    private final  Map<String, Set<String>> updatedData;
-    private final  Map<String, Set<String>> insertedData;
-    private final  Map<String, Set<String>> failedWhere;
-    private final  List<String> deletedData;
+    private final Map<String, Set<String>> updatedData;
+    private final Map<String, Set<String>> insertedData;
+    private final Map<String, Set<String>> failedWhere;
+    private final List<String> deletedData;
 
 
     private volatile Connection connection;
@@ -77,12 +77,12 @@ public class SqlHandler {
         buffer.add(sql);
 
         //TODO Delete/Insert/Update
-        if(isSelect(sql)) {
-            mergeNewData(queriedData, SelectHeuristics.getReadDataFields(sql));
+        if (isSelect(sql)) {
+            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));
         }
     }
 
-    public ExecutionDto getExecutionDto(){
+    public ExecutionDto getExecutionDto() {
         ExecutionDto executionDto = new ExecutionDto();
         executionDto.queriedData.putAll(queriedData);
         executionDto.failedWhere.putAll(failedWhere);
@@ -109,7 +109,7 @@ public class SqlHandler {
                         we are iterating on (copy on write), and we clear
                         the buffer after this loop.
                      */
-                    if(isSelect(sql)) { //TODO Delete/Insert/Update
+                    if (isSelect(sql)) { //TODO Delete/Insert/Update
                         double dist = computeDistance(sql);
                         distances.add(dist);
                     }
@@ -119,8 +119,6 @@ public class SqlHandler {
 
         return distances;
     }
-
-
 
 
     public Double computeDistance(String command) {
@@ -133,7 +131,7 @@ public class SqlHandler {
 
         try {
             statement = CCJSqlParserUtil.parse(command);
-        } catch (Exception  e) {
+        } catch (Exception e) {
             SimpleLogger.uniqueWarn("Cannot handle command: " + command + "\n" + e.toString());
             return Double.MAX_VALUE;
         }
@@ -163,25 +161,25 @@ public class SqlHandler {
 
         double dist = SelectHeuristics.computeDistance(command, data);
 
-        if(dist > 0){
+        if (dist > 0) {
             mergeNewData(failedWhere, extractColumnsInvolvedInWhere(statement));
         }
 
         return dist;
     }
 
-    private static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement){
+    private static Map<String, Set<String>> extractColumnsInvolvedInWhere(Statement statement) {
 
         Map<String, Set<String>> data = new HashMap<>();
 
         SqlNameContext context = new SqlNameContext(statement);
 
         Expression where = ParserUtils.getWhere(statement);
-        if(where == null){
+        if (where == null) {
             return data;
         }
 
-        ExpressionVisitor visitor = new ExpressionVisitorAdapter(){
+        ExpressionVisitor visitor = new ExpressionVisitorAdapter() {
             @Override
             public void visit(Column column) {
                 String cn = column.getColumnName();
@@ -201,27 +199,27 @@ public class SqlHandler {
     private static void mergeNewData(
             Map<String, Set<String>> current,
             Map<String, Set<String>> toAdd
-    ){
+    ) {
 
-        for(Map.Entry<String, Set<String>> e : toAdd.entrySet()){
+        for (Map.Entry<String, Set<String>> e : toAdd.entrySet()) {
             String key = e.getKey();
             Set<String> values = e.getValue();
 
             Set<String> existing = current.get(key);
 
-            if(existing != null && existing.contains("*")){
+            if (existing != null && existing.contains("*")) {
                 //nothing to do
                 continue;
             }
 
-            if(existing == null){
+            if (existing == null) {
                 existing = new HashSet<>(values);
                 current.put(key, existing);
             } else {
                 existing.addAll(values);
             }
 
-            if(existing.size() > 1 && existing.contains("*")){
+            if (existing.size() > 1 && existing.contains("*")) {
                 /*
                     remove unnecessary columns, as anyway we take
                     everything with *

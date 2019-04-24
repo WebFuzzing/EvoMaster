@@ -11,14 +11,23 @@ import java.util.*;
  * from Table Name (key) to Column Name sets (value).
  * The value "*" means all columns in the table.
  *
- * Note: we keep track of the SUT tried to execute on the database, but
+ * Note: we keep track of what the SUT tried to execute on the database, but
  * not the result, eg, a DELETE might have deleted nothing if its WHERE
  * clause was not satisfied.
  */
 public class ExecutionDto {
 
     /**
-     * What was tried to be retrieved in a SELECT
+     * What was tried to be retrieved in a SELECT.
+     * Something like "select x from Foo" would give info on "Foo->{x}".
+     *
+     * However, at times, what is returned is not directly the content of a column, but
+     * rather some computations on it.
+     * For example, in "select avg(x) from Foo", we would still be just interested in
+     * the info that the data in "Foo->{x}" was used to compute the result.
+     *
+     * Note: this does NOT include what was used in the WHERE clauses.
+     * For example, "select a,b from Foo where c>0" would give info just for "Foo->{a,b}"
      */
     public Map<String, Set<String>> queriedData = new HashMap<>();
 
@@ -38,7 +47,7 @@ public class ExecutionDto {
     /**
      * Names of tables on which DELETE was applied
      */
-    public List<String> deletedData = new ArrayList<>();
+    public Set<String> deletedData = new HashSet<>();
 
 
     /**

@@ -3,9 +3,8 @@ package org.evomaster.client.java.controller.internal.db;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.expression.Function;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.*;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
@@ -17,51 +16,6 @@ import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWh
 public class SelectHeuristics {
 
 
-    public static Map<String, Set<String>> getReadDataFields(String select){
-
-        Map<String, Set<String>> map = new HashMap<>();
-
-        /*
-            TODO: for now, we just use * for all read Tables.
-            But, we should look at actual read columns.
-         */
-
-        Select stmt = asStatement(select);
-        SelectBody selectBody = stmt.getSelectBody();
-
-        if (selectBody instanceof PlainSelect) {
-
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-
-            FromItem fromItem = plainSelect.getFromItem();
-            if(fromItem == null){
-                //is this even possible?
-                return map;
-            }
-
-            handleFromItem(map, fromItem);
-
-            List<Join> joins = plainSelect.getJoins();
-            if(joins != null) {
-                for (Join join : joins) {
-                    FromItem rightItem = join.getRightItem();
-                    handleFromItem(map, rightItem);
-                }
-            }
-        }
-
-        return map;
-    }
-
-    private static void handleFromItem(Map<String, Set<String>> map, FromItem fromItem) {
-        if(fromItem instanceof Table){
-            Table table = (Table) fromItem;
-            Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
-            //TODO: should check actual fields
-            columns.add("*");
-
-        } // TODO handle other cases, eg sub-selects
-    }
 
     /**
      * The constraints in the WHERE clause might reference
@@ -74,7 +28,7 @@ public class SelectHeuristics {
      */
     public static String addFieldsToSelect(String select) {
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
 
         SelectBody selectBody = stmt.getSelectBody();
         if (selectBody instanceof PlainSelect) {
@@ -125,7 +79,7 @@ public class SelectHeuristics {
      */
     public static String removeOperations(String select){
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
         SelectBody selectBody = stmt.getSelectBody();
 
         if (selectBody instanceof PlainSelect) {
@@ -142,7 +96,7 @@ public class SelectHeuristics {
 
     public static String removeConstraints(String select) {
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
 
         SelectBody selectBody = stmt.getSelectBody();
         handleSelectBody(selectBody);
@@ -150,14 +104,12 @@ public class SelectHeuristics {
         return stmt.toString();
     }
 
-    private static Select asStatement(String select) {
-        Select stmt;
-        try {
-            stmt = (Select) CCJSqlParserUtil.parse(select);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid Select SQL: " + select + "\n" + e.getMessage(), e);
+    private static Select asSelectStatement(String select) {
+        Statement stmt = ParserUtils.asStatement(select);
+        if(! (stmt instanceof Select)){
+            throw new IllegalArgumentException("SQL statement is not a SELECT: " + select);
         }
-        return stmt;
+        return (Select) stmt;
     }
 
     private static void handleSelectBody(SelectBody selectBody) {
@@ -178,7 +130,7 @@ public class SelectHeuristics {
 
     public static double computeDistance(String select, QueryResult data) {
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
 
         if (data.isEmpty()) {
             //if no data, we have no info whatsoever

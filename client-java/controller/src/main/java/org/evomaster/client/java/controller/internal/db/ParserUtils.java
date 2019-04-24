@@ -1,28 +1,39 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 public class ParserUtils {
 
 
     public static boolean isSelect(String sql) {
-        return sql.trim().toLowerCase().startsWith("select");
+        return startsWithIgnoreCase("select");
     }
 
     public static boolean isDelete(String sql) {
-        return sql.trim().toLowerCase().startsWith("delete");
+        return startsWithIgnoreCase("delete");
     }
 
     public static boolean isUpdate(String sql) {
-        return sql.trim().toLowerCase().startsWith("insert");
+        return startsWithIgnoreCase("insert");
     }
 
     public static boolean isInsert(String sql) {
-        return sql.trim().toLowerCase().startsWith("update");
+        return startsWithIgnoreCase("update");
+    }
+
+    private static boolean startsWithIgnoreCase(String s){
+        return s!= null && s.trim().toLowerCase().startsWith(s);
     }
 
 
@@ -38,5 +49,15 @@ public class ParserUtils {
         }
 
         throw new IllegalArgumentException("Cannot handle: " + statement.toString());
+    }
+
+    public static Statement asStatement(String statement) {
+        Statement stmt;
+        try {
+            stmt = CCJSqlParserUtil.parse(statement);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid SQL statement: " + statement + "\n" + e.getMessage(), e);
+        }
+        return stmt;
     }
 }
