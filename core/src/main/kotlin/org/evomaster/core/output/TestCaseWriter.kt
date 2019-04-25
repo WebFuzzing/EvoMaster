@@ -17,6 +17,8 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import java.awt.PageAttributes
+import javax.ws.rs.core.MediaType
 
 
 class TestCaseWriter {
@@ -399,10 +401,9 @@ class TestCaseWriter {
                 else lines.add(".contentType(\"${res.getBodyType()}\")")
                 val bodyString = res.getBody()
 
-                when (res.getStatusCode()) {
-                    200 -> {
-                        //TODO BMR: check on JSON content - WiP - to be refined
-
+                if(res.getBodyType()!= null){
+                    val type = res.getBodyType()!!
+                    if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)){
                         when (bodyString?.first()) {
                             '[' -> {
                                 // This would be run if the JSON contains an array of objects
@@ -429,19 +430,6 @@ class TestCaseWriter {
                                 // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             }
                         }
-
-                    }
-                    201 -> {
-                        val contents = res.toString()
-                        //res.getBodyType() == null*/
-                    }
-                    500 -> {
-                        val contents = res.toString()
-                        //res.getBodyType().isCompatible(MediaType.TEXT_HTML_TYPE)
-                    }
-                    204 -> {
-                        val contents = res.toString()
-                        //res.getBodyType() == null
                     }
                 }
         }
