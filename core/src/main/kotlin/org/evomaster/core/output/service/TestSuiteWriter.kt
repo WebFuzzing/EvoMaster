@@ -37,6 +37,9 @@ class TestSuiteWriter {
 
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
+
+        val numberMatcher = addAdditionalNumberMatcher()
+        saveToDisk(numberMatcher, config, TestSuiteFileName("NumberMatcher"))
     }
 
 
@@ -50,6 +53,7 @@ class TestSuiteWriter {
         val lines = Lines()
 
         header(solution, testSuiteFileName, lines)
+
         lines.indented {
 
             beforeAfterMethods(controllerName, lines)
@@ -136,12 +140,21 @@ class TestSuiteWriter {
         // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
         if(config.enableBasicAssertions){
             addImport("org.hamcrest.Matchers.*", lines, true)
+            //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
+            addImport("io.restassured.config.JsonConfig", lines)
+            addImport("io.restassured.path.json.config.JsonPathConfig", lines)
         }
 
         if(config.expectationsActive) {
             addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
         }
         //addImport("static org.hamcrest.core.Is.is", lines, format)
+
+        lines.addEmpty(2)
+
+        /*if(config.enableBasicAssertions && config.outputFormat.isJava()){
+            addAdditionalNumberMatcher(lines)
+        }*/
 
         lines.addEmpty(2)
 
@@ -192,6 +205,10 @@ class TestSuiteWriter {
             addStatement("baseUrlOfSut = $controller.startSut()", lines)
             addStatement("assertNotNull(baseUrlOfSut)", lines)
             addStatement("RestAssured.urlEncodingEnabled = false", lines)
+
+            if (config.enableBasicAssertions){
+                addStatement("RestAssured.config = RestAssured.config().jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))", lines)
+            }
         }
     }
 
@@ -295,6 +312,54 @@ class TestSuiteWriter {
         if (config.outputFormat.isJava()) {
             lines.append(";")
         }
+    }
+
+    private fun addAdditionalNumberMatcher(): String{
+        val lines = Lines()
+        if(config.enableBasicAssertions){
+
+            addImport("org.hamcrest.TypeSafeMatcher", lines)
+            addImport("org.hamcrest.Description", lines)
+            addImport("org.hamcrest.Matcher", lines)
+
+            lines.addEmpty(2)
+
+            lines.add("class NumberMatcher extends TypeSafeMatcher<Number> {")
+            lines.indented {
+                lines.add("private double value;")
+                lines.add("public NumberMatcher(double value) {")
+                lines.indented {
+                    lines.add("this.value = value;")
+                }
+                lines.add("}")
+                // override describeTo
+                lines.add("@Override")
+                lines.add("public void describeTo(Description description) {")
+                lines.indented {
+                    lines.add("//The point of the matcher is to allow comparisons between int and double " +
+                            "that have the same value" +
+                            "E.g. that (int) 0 == (double) 0.0")
+                }
+                lines.add("}")
+
+                //override matchesSafely
+                lines.add("@Override")
+                lines.add("protected boolean matchesSafely (Number item) {")
+                lines.indented {
+                    lines.add("return item.doubleValue() == value;")
+                }
+                lines.add("}")
+
+                //static comparison function
+                lines.add("public static Matcher<Number> numberMatches(Number item) {")
+                lines.indented {
+                    lines.add("return new NumberMatcher(item.doubleValue());")
+                }
+                lines.add("}")
+            }
+            lines.add("}")
+        }
+        return lines.toString()
     }
 
 }

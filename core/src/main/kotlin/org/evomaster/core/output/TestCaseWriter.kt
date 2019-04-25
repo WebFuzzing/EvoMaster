@@ -371,6 +371,7 @@ class TestCaseWriter {
             if(configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
             }
+
             //TODO check on body
         }
     }
@@ -381,18 +382,37 @@ class TestCaseWriter {
         }
         else{
             when(resContentsItem::class) {
-                Double::class -> return "equalTo(${(resContentsItem as Double).toInt()})"
-                String::class -> return "containsString(\"${resContentsItem}\")"
+                //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
+                Double::class -> return "NumberMatcher.numberMatches(${resContentsItem as Double})"
+                String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"")}\")"
+                //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
+                // The above solution should be refined.
                 else -> return "NotCoveredYet"
             }
         }
+        /* BMR: the code above is due to a somewhat unfortunate problem:
+        - Gson does parses all numbers as Double
+        - Hamcrest has a hard time comparing double to int
+        This is (admittedly) a horrible hack, but it should address the issue until a more elegant solution can be found.
+        Note: it also results in an odd behaviour in the generated test: IntelliJ will complain, but the test is executable.
+        * */
     }
 
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
         lines.indented{
             lines.add(".assertThat()")
+
                 if(res.getBodyType()==null) lines.add(".contentType(\"\")")
                 else lines.add(".contentType(\"${res.getBodyType()}\")")
+
+                /*if(res.getBodyType()!= null && res.getStatusCode()!=500){
+                    lines.add(".contentType(\"${res.getBodyType()}\")")
+                }
+
+                if(res.getStatusCode() == 500){
+                    val justACheck = res.getBodyType()
+                }*/
+
                 val bodyString = res.getBody()
 
                 if(res.getBodyType()!= null){
@@ -408,19 +428,29 @@ class TestCaseWriter {
                             }
                             '{' -> {
                                 // JSON contains an object
-                                val resContents = Gson().fromJson(res.getBody(), Object::class.java)
-                                (resContents as LinkedTreeMap<*, *>).keys.forEach {
-                                    val printableTh = handleFieldValues(resContents[it])
-                                    if(printableTh != "null" && printableTh != "NotCoveredYet"){
-                                        lines.add(".body(\"$it\", $printableTh)")
+                                val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
+                                resContents.keys.forEach {
+                                    val actualValue = resContents[it]
+                                    if (actualValue != null) {
+                                        val printableTh = handleFieldValues(actualValue)
+                                        if (printableTh != "null" && printableTh != "NotCoveredYet") {
+                                            lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                                        }
                                     }
                                 }
                             }
+                            //'"' -> {
+                                // This branch will be called if the JSON is a String
+                                // Currently, it only supports very basic string matching
+                             //   val resContents = Gson().fromJson(res.getBody(), String::class.java)
+                             //   lines.add(".body(containsString(\"${resContents}\"))")
+                            //}
                             else -> {
                                 // This branch will be called if the JSON is null (or has a basic type)
-                                // Currently, it only supports very basic string matching
-                                val resContents = Gson().fromJson(res.getBody(), String::class.java)
-                                lines.add(".body(containsString(\"${resContents}\"))")
+                                // Currently, it converts the contents to String.
+                                // TODO: if the contents are not a valid form of that type, expectations should be developed to handle the case
+                                //val resContents = Gson().fromJson("\"" + res.getBody() + "\"", String::class.java)
+                                //lines.add(".body(containsString(\"${resContents}\"))")
                             }
                         }
                     }
@@ -527,15 +557,50 @@ class TestCaseWriter {
         As it is still work in progress, expect quite significant changes to this.
         */
 
-       lines.add("expectationHandler()")
+        lines.add("expectationHandler()")
         lines.indented {
             lines.add(".expect()")
-            lines.add(".that(activeExpectations, true)")
-            lines.add(".that(activeExpectations, false)")
+            //lines.add(".that(activeExpectations, true)")
+            //lines.add(".that(activeExpectations, false)")
+            if(configuration.enableCompleteObjects == false){
+                addExpectationsWithoutObjects(result, lines)
+            }
             lines.append(when {
                 format.isJava() -> ";"
                 else -> ""
             })
+        }
+    }
+
+    private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines){
+        if(result.getBodyType() != null){
+            // if there is a body, add expectations based on the body type. Right now only application/json is supported
+            when(result.getBodyType().toString()){
+                "application/json" -> {
+                    when (result.getBody()?.first()) {
+                        '[' -> {
+                            // This would be run if the JSON contains an array of objects
+                            val resContents = Gson().fromJson(result.getBody(), ArrayList::class.java)
+                        }
+                        '{' -> {
+                            // This would be run if the JSON contains a single object
+                            val resContents = Gson().fromJson(result.getBody(), Object::class.java)
+
+                            (resContents as LinkedTreeMap<*, *>).keys.forEach {
+                                val printableTh = handleFieldValues(resContents[it]!!)
+                                if(printableTh != "null" && printableTh != "NotCoveredYet"){
+                                    //lines.add(".body(\"${it}\", ${printableTh})")
+                                    //lines.add(".that(activeExpectations, (\"${it}\".${printableTh}))")
+                                    lines.add(".that(activeExpectations, (\"${it}\" == \"${resContents[it]}\"))")
+                                }
+                            }
+                        }
+                        else -> {
+                            // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
+                        }
+                    }
+                }
+            }
         }
     }
 
