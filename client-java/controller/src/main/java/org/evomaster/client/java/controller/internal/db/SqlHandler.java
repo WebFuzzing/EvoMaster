@@ -190,6 +190,11 @@ public class SqlHandler {
                 String cn = column.getColumnName();
                 String tn = context.getTableName(column);
 
+                if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){
+                    // TODO handle it properly when ll have support for sub-selects
+                    return;
+                }
+
                 data.putIfAbsent(tn, new HashSet<>());
                 Set<String> set = data.get(tn);
                 set.add(cn);
