@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.ReadDbDataDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,5 +30,5 @@ public class ExtraHeuristicDto {
     public List<Double> toMaximize = new ArrayList<>();
 
 
-    public ReadDbDataDto readDbData;
+    public ExecutionDto databaseExecutionDto;
 }

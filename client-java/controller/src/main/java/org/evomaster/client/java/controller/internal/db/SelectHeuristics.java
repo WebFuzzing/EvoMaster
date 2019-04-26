@@ -1,73 +1,21 @@
 package org.evomaster.client.java.controller.internal.db;
 
-import net.sf.jsqlparser.expression.Alias;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
 import net.sf.jsqlparser.expression.Function;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import net.sf.jsqlparser.parser.TokenMgrError;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.*;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 
 import java.util.*;
 
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
+
 public class SelectHeuristics {
 
-    public static final String UNNAMED_TABLE = "___unnamed_table___";
 
-
-    /**
-     *
-     * @return
-     */
-    public static Map<String, Set<String>> getReadDataFields(String select){
-
-        Map<String, Set<String>> map = new HashMap<>();
-
-        /*
-            TODO: for now, we just use * for all read Tables.
-            But, we should look at actual read columns.
-         */
-
-        Select stmt = asStatement(select);
-        SelectBody selectBody = stmt.getSelectBody();
-
-        if (selectBody instanceof PlainSelect) {
-
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-
-            FromItem fromItem = plainSelect.getFromItem();
-            if(fromItem == null){
-                //is this even possible?
-                return map;
-            }
-
-            handleFromItem(map, fromItem);
-
-            List<Join> joins = plainSelect.getJoins();
-            if(joins != null) {
-                for (Join join : joins) {
-                    FromItem rightItem = join.getRightItem();
-                    handleFromItem(map, rightItem);
-                }
-            }
-        }
-
-        return map;
-    }
-
-    private static void handleFromItem(Map<String, Set<String>> map, FromItem fromItem) {
-        if(fromItem instanceof Table){
-            Table table = (Table) fromItem;
-            Set<String> columns = map.computeIfAbsent(table.getName(), k -> new HashSet<>());
-            //TODO: should check actual fields
-            columns.add("*");
-
-        } // TODO handle other cases, eg sub-selects
-    }
 
     /**
      * The constraints in the WHERE clause might reference
@@ -80,7 +28,7 @@ public class SelectHeuristics {
      */
     public static String addFieldsToSelect(String select) {
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
 
         SelectBody selectBody = stmt.getSelectBody();
         if (selectBody instanceof PlainSelect) {
@@ -131,7 +79,7 @@ public class SelectHeuristics {
      */
     public static String removeOperations(String select){
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
         SelectBody selectBody = stmt.getSelectBody();
 
         if (selectBody instanceof PlainSelect) {
@@ -148,7 +96,7 @@ public class SelectHeuristics {
 
     public static String removeConstraints(String select) {
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
 
         SelectBody selectBody = stmt.getSelectBody();
         handleSelectBody(selectBody);
@@ -156,14 +104,12 @@ public class SelectHeuristics {
         return stmt.toString();
     }
 
-    private static Select asStatement(String select) {
-        Select stmt;
-        try {
-            stmt = (Select) CCJSqlParserUtil.parse(select);
-        } catch (Exception | TokenMgrError e) {
-            throw new IllegalArgumentException("Invalid Select SQL: " + select + "\n" + e.getMessage(), e);
+    private static Select asSelectStatement(String select) {
+        Statement stmt = ParserUtils.asStatement(select);
+        if(! (stmt instanceof Select)){
+            throw new IllegalArgumentException("SQL statement is not a SELECT: " + select);
         }
-        return stmt;
+        return (Select) stmt;
     }
 
     private static void handleSelectBody(SelectBody selectBody) {
@@ -184,7 +130,7 @@ public class SelectHeuristics {
 
     public static double computeDistance(String select, QueryResult data) {
 
-        Select stmt = asStatement(select);
+        Select stmt = asSelectStatement(select);
 
         if (data.isEmpty()) {
             //if no data, we have no info whatsoever
@@ -197,11 +143,9 @@ public class SelectHeuristics {
             return 0;
         }
 
-        /*
-            FIXME: aliases should be part of QueryResult
-         */
-        Map<String, String> aliases = getTableAliases(stmt);
-        HeuristicsCalculator calculator = new HeuristicsCalculator(aliases);
+
+        SqlNameContext context = new SqlNameContext(stmt);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context);
 
         double min = Double.MAX_VALUE;
         for (DataRow row : data.seeRows()) {
@@ -217,93 +161,7 @@ public class SelectHeuristics {
         return min;
     }
 
-    /**
-     * Workaround to JDBC limitations: it does not provide any API to
-     * query meta-data on table aliases!!! ad-hoc solutions for each
-     * possible imaginable DB are not scalable.
-     * So, we just try to do some best effort to cover most cases
-     *
-     * @param select the string containing the SQL SELECT command
-     * @return map from alias to table name
-     */
-    public static Map<String, String> getTableAliases(Select select) {
-
-        Map<String, String> aliases = new HashMap<>();
-
-        SelectBody selectBody = select.getSelectBody();
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-
-            FromItem fromItem = plainSelect.getFromItem();
-            fromItem.accept(new FromVisitor(aliases));
-
-            List<Join> joins = plainSelect.getJoins();
-            if (joins != null) {
-                joins.forEach(j -> j.getRightItem().accept(new FromVisitor(aliases)));
-            }
-        }
-
-        return aliases;
-    }
-
-    private static class FromVisitor extends FromItemVisitorAdapter{
-
-        private final Map<String, String> aliases;
-
-        private FromVisitor(Map<String, String> aliases) {
-            this.aliases = aliases;
-        }
-
-        @Override
-        public void visit(Table table) {
-            handleAlias(aliases, table);
-        }
-
-        @Override
-        public void visit(SubSelect subSelect) {
-            handleAlias(aliases, subSelect);
-        }
-
-    }
 
 
 
-    private static void handleAlias(Map<String, String> aliases, SubSelect subSelect) {
-        Alias alias = subSelect.getAlias();
-        if (alias != null) {
-            String aliasName = alias.getName();
-            if (aliasName != null) {
-                /*
-                    FIXME: need to generalize,
-                    ie for when there can be several un-named sub-selects referring
-                    to columns with same names
-                 */
-                String tableName = UNNAMED_TABLE;
-                aliases.put(aliasName.trim().toLowerCase(), tableName.trim().toLowerCase());
-            }
-        }
-    }
-
-
-    private static void handleAlias(Map<String, String> aliases, Table table) {
-        Alias alias = table.getAlias();
-        if (alias != null) {
-            String aliasName = alias.getName();
-            if (aliasName != null) {
-                String tableName = table.getName();
-                aliases.put(aliasName.trim().toLowerCase(), tableName.trim().toLowerCase());
-            }
-        }
-    }
-
-    private static Expression getWhere(Select select) {
-
-        SelectBody selectBody = select.getSelectBody();
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-            return plainSelect.getWhere();
-        }
-
-        return null;
-    }
 }

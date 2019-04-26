@@ -1,9 +1,11 @@
-package org.evomaster.client.java.controller.db;
+package org.evomaster.client.java.controller;
 
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.SutRunDto;
+import org.evomaster.client.java.controller.db.DatabaseFakeSutController;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.instrumentation.InstrumentingAgent;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,8 +14,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
-import static org.evomaster.client.java.controller.api.ControllerConstants.RUN_SUT_PATH;
+import static org.evomaster.client.java.controller.api.ControllerConstants.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class DatabaseTestTemplate {
@@ -71,6 +72,29 @@ public abstract class DatabaseTestTemplate {
                 .then()
                 .statusCode(204);
     }
+
+    protected void startNewActionInSameTest(String url, int index){
+
+        given().accept(ContentType.ANY)
+                .contentType(ContentType.JSON)
+                .body("" + index)
+                .put(url + NEW_ACTION)
+                .then()
+                .statusCode(204);
+    }
+
+    protected void startNewTest(String url){
+
+        given().accept(ContentType.ANY)
+                .contentType(ContentType.JSON)
+                .body(new SutRunDto(true, true))
+                .put(url + RUN_SUT_PATH)
+                .then()
+                .statusCode(204);
+
+        startNewActionInSameTest(url, 0);
+    }
+
 
     protected InstrumentedSutStarter getInstrumentedSutStarter() {
         DatabaseFakeSutController sutController = new DatabaseFakeSutController(connection);

@@ -156,7 +156,7 @@ class SqlInsertBuilder(
         }
 
         for (cn in columnNames) {
-            if (cn != "*" && !table.columns.any { it.name == cn }) {
+            if (cn != "*" && !table.columns.any { it.name.equals(cn, true)}) {
                 throw IllegalArgumentException("No column called $cn in table $tableName")
             }
         }
@@ -171,7 +171,7 @@ class SqlInsertBuilder(
                 store it, as we can have other Foreign Key genes pointing to it
              */
 
-            if (takeAll || columnNames.contains(c.name) || !c.nullable || c.primaryKey) {
+            if (takeAll || columnNames.any{it.equals(c.name,true)} || !c.nullable || c.primaryKey) {
                 //TODO are there also other constraints to consider?
                 selectedColumns.add(c)
             }

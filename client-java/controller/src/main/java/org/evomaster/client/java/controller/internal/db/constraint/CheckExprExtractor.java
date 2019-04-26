@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.internal.db.constraint;
 
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;
@@ -6,6 +6,7 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.SubSelect;
 
 import java.util.ArrayList;
@@ -13,7 +14,61 @@ import java.util.List;
 
 public class CheckExprExtractor implements ExpressionVisitor {
 
-    private final List<SchemaConstraint> constraints = new ArrayList<SchemaConstraint>();
+    private final List<SchemaConstraint> constraints = new ArrayList<>();
+
+    /**
+     * Return the constraints collected during the visit to the AST
+     *
+     * @return
+     */
+    public List<SchemaConstraint> getConstraints() {
+        return this.constraints;
+    }
+
+
+    /**
+     * FIXME
+     * temporary workaround before major refactoring.
+     * Recall that Column.getTable() is not reliable
+     */
+    private String getTableName(Column column){
+        Table table = column.getTable();
+        if(table != null){
+            return table.getName();
+        }
+
+        return "?";
+    }
+
+    @Override
+    public void visit(BitwiseRightShift aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(BitwiseLeftShift aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(NextValExpression aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(CollateExpression aThis) {
+        throw new RuntimeException("Extraction of condition not yet implemented");
+    }
+
+    @Override
+    public void visit(ValueListExpression valueList) {
+
+    }
+
+//    @Override
+//    public void visit(WithinGroupExpression wgexpr) {
+//
+//    }
 
     @Override
     public void visit(NullValue nullValue) {
@@ -93,12 +148,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
 
     @Override
     public void visit(Parenthesis parenthesis) {
-        if (parenthesis.isNot()) {
-            // TODO This translation should be implemented
-            throw new RuntimeException("Extraction of condition not yet implemented");
-        } else {
-            parenthesis.getExpression().accept(this);
-        }
+        parenthesis.getExpression().accept(this);
     }
 
     @Override
@@ -166,7 +216,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             LongValue leftLongValue = (LongValue) left;
             Column rightColumn = (Column) right;
             long value = leftLongValue.getValue();
-            String tableName = rightColumn.getTable().getName();
+            String tableName = getTableName(rightColumn);
             String columnName = rightColumn.getColumnName();
             RangeConstraint rangeConstraint = new RangeConstraint(tableName, columnName, value, value);
             constraints.add(rangeConstraint);
@@ -175,7 +225,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             Column leftColumn = (Column) left;
             LongValue rightLongValue = (LongValue) right;
             long value = rightLongValue.getValue();
-            String tableName = leftColumn.getTable().getName();
+            String tableName = getTableName(leftColumn);
             String columnName = leftColumn.getColumnName();
             RangeConstraint rangeConstraint = new RangeConstraint(tableName, columnName, value, value);
             constraints.add(rangeConstraint);
@@ -196,7 +246,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             LongValue leftLongValue = (LongValue) left;
             Column rightColumn = (Column) right;
             long upperBound = leftLongValue.getValue();
-            String tableName = rightColumn.getTable().getName();
+            String tableName = getTableName(rightColumn);
             String columnName = rightColumn.getColumnName();
             UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound - 1);
             constraints.add(upperBoundConstraint);
@@ -205,7 +255,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             Column leftColumn = (Column) left;
             LongValue rightLongValue = (LongValue) right;
             long lowerBound = rightLongValue.getValue();
-            String tableName = leftColumn.getTable().getName();
+            String tableName = getTableName(leftColumn);
             String columnName = leftColumn.getColumnName();
             LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound + 1);
             constraints.add(lowerBoundConstraint);
@@ -225,7 +275,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             LongValue leftLongValue = (LongValue) left;
             Column rightColumn = (Column) right;
             long upperBound = leftLongValue.getValue();
-            String tableName = rightColumn.getTable().getName();
+            String tableName = getTableName(rightColumn);
             String columnName = rightColumn.getColumnName();
             UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound);
             constraints.add(upperBoundConstraint);
@@ -234,7 +284,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             Column leftColumn = (Column) left;
             LongValue rightLongValue = (LongValue) right;
             long lowerBound = rightLongValue.getValue();
-            String tableName = leftColumn.getTable().getName();
+            String tableName = getTableName(leftColumn);
             String columnName = leftColumn.getColumnName();
             LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound);
             constraints.add(lowerBoundConstraint);
@@ -276,7 +326,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             LongValue leftLongValue = (LongValue) left;
             Column rightColumn = (Column) right;
             long lowerBound = leftLongValue.getValue();
-            String tableName = rightColumn.getTable().getName();
+            String tableName = getTableName(rightColumn);
             String columnName = rightColumn.getColumnName();
             LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound + 1);
             constraints.add(lowerBoundConstraint);
@@ -285,7 +335,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             Column leftColumn = (Column) left;
             LongValue rightLongValue = (LongValue) right;
             long upperBound = rightLongValue.getValue();
-            String tableName = leftColumn.getTable().getName();
+            String tableName = getTableName(leftColumn);
             String columnName = leftColumn.getColumnName();
             UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound - 1);
             constraints.add(upperBoundConstraint);
@@ -305,7 +355,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             LongValue leftLongValue = (LongValue) left;
             Column rightColumn = (Column) right;
             long lowerBound = leftLongValue.getValue();
-            String tableName = rightColumn.getTable().getName();
+            String tableName = getTableName(rightColumn);
             String columnName = rightColumn.getColumnName();
             LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound);
             constraints.add(lowerBoundConstraint);
@@ -314,7 +364,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
             Column leftColumn = (Column) left;
             LongValue rightLongValue = (LongValue) right;
             long upperBound = rightLongValue.getValue();
-            String tableName = leftColumn.getTable().getName();
+            String tableName = getTableName(leftColumn);
             String columnName = leftColumn.getColumnName();
             UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound);
             constraints.add(upperBoundConstraint);
@@ -436,12 +486,7 @@ public class CheckExprExtractor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
-    @Override
-    public void visit(WithinGroupExpression withinGroupExpression) {
 
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
 
     @Override
     public void visit(ExtractExpression extractExpression) {
@@ -520,6 +565,8 @@ public class CheckExprExtractor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
+
+
     @Override
     public void visit(RowConstructor rowConstructor) {
 
@@ -555,12 +602,5 @@ public class CheckExprExtractor implements ExpressionVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
-    /**
-     * Return the constraints collected during the visit to the AST
-     *
-     * @return
-     */
-    public List<SchemaConstraint> getConstraints() {
-        return this.constraints;
-    }
+
 }

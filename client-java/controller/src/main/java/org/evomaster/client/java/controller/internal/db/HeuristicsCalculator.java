@@ -12,23 +12,15 @@ import org.evomaster.client.java.instrumentation.testability.StringTransformer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class HeuristicsCalculator {
 
-    /**
-     * Key -> table alias,
-     * Value -> table name
-     */
-    private final Map<String, String> tableAliases;
 
-    public HeuristicsCalculator(Map<String, String> aliases) {
+    private final SqlNameContext context;
 
-        Map<String, String> map = new HashMap<>();
-        if (aliases != null) {
-            map.putAll(aliases);
-        }
-
-        tableAliases = Collections.unmodifiableMap(map);
+    public HeuristicsCalculator(SqlNameContext context) {
+        this.context = Objects.requireNonNull(context);
     }
 
     public double computeExpression(Expression exp, DataRow data) {
@@ -252,11 +244,10 @@ public class HeuristicsCalculator {
         //TODO all cases
 
         if (exp instanceof Column) {
-            String name = ((Column) exp).getColumnName();
+            Column column = (Column) exp;
 
-            String table = ((Column) exp).getTable().getName();
-            //might be an alias
-            table = tableAliases.getOrDefault(table, table);
+            String name = column.getColumnName();
+            String table = context.getTableName(column);
 
             return data.getValueByName(name, table);
 

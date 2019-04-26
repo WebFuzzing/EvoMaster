@@ -6,14 +6,13 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.controller.api.dto.database.execution.ReadDbDataDto
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.database.DbActionTransformer
-import org.evomaster.core.database.EmptySelects
+import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
-import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
@@ -23,7 +22,6 @@ import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.experiments.objects.ObjRestCallAction
-import org.evomaster.experiments.objects.service.ObjRestSampler
 import org.evomaster.experiments.objects.param.BodyParam
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -172,7 +170,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
     private fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
         if (configuration.heuristicsForSQL) {
 
-            val dbData = mutableListOf<ReadDbDataDto>()
+            val dbData = mutableListOf<ExecutionDto>()
 
             for (i in 0 until dto.extraHeuristics.size) {
 
@@ -183,13 +181,13 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
                     fv.setExtraToMinimize(i, extra.toMinimize)
                 }
 
-                extra.readDbData?.let {
+                extra.databaseExecutionDto?.let {
                     dbData.add(it)
                 }
             }
 
             if (!dbData.isEmpty()) {
-                fv.emptySelects = EmptySelects.fromDtos(dbData)
+               // fv.emptySelects = DatabaseExecution.fromDtos(dbData)
             }
         }
     }

@@ -156,5 +156,13 @@ public class DbCleaner {
         for (String seq : sequences) {
             s.executeUpdate("ALTER SEQUENCE " + seq + " RESTART WITH 1");
         }
+
+        /*
+            Note: we reset all sequences from 1. But the original database might
+            have used a different value.
+            In most cases (99.99%), this should not be a problem.
+            We could allow using different values in this API... but, maybe just easier
+            for the user to reset it manually if really needed?
+         */
     }
 }

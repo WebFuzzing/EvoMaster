@@ -4,9 +4,8 @@ import io.restassured.http.ContentType;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.db.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.controller.api.dto.SutRunDto;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -225,28 +224,6 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
         }
     }
 
-
-    private void startNewActionInSameTest(String url, int index){
-
-        given().accept(ContentType.ANY)
-                .contentType(ContentType.JSON)
-                .body("" + index)
-                .put(url + NEW_ACTION)
-                .then()
-                .statusCode(204);
-    }
-
-    private void startNewTest(String url){
-
-        given().accept(ContentType.ANY)
-                .contentType(ContentType.JSON)
-                .body(new SutRunDto(true, true))
-                .put(url + RUN_SUT_PATH)
-                .then()
-                .statusCode(204);
-
-        startNewActionInSameTest(url, 0);
-    }
 
     private Double getFirstAndStartNew(String url) {
 

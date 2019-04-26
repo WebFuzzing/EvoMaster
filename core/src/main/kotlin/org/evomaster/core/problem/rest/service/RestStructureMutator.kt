@@ -2,7 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.EmptySelects
+import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -26,10 +26,9 @@ class RestStructureMutator : StructureMutator() {
         val ind = individual.individual as? RestIndividual
                 ?: throw IllegalArgumentException("Invalid individual type")
 
-        val es = individual.fitness.emptySelects
-                ?: return
+        val fw = individual.fitness.getViewOfAggregatedFailedWhere()
 
-        if (es.queriedData.isEmpty()) {
+        if (fw.isEmpty()) {
             return
         }
 
@@ -41,7 +40,7 @@ class RestStructureMutator : StructureMutator() {
 
         val max = config.maxSqlInitActionsPerMissingData
 
-        var missing = findMissing(es, ind)
+        var missing = findMissing(fw, ind)
 
         while (!missing.isEmpty()) {
 
@@ -66,7 +65,7 @@ class RestStructureMutator : StructureMutator() {
                 imply generating an action for B as well.
                 So, we need to recompute "missing" each time
              */
-            missing = findMissing(es, ind)
+            missing = findMissing(fw, ind)
         }
 
         if (config.generateSqlDataWithDSE) {
@@ -77,9 +76,9 @@ class RestStructureMutator : StructureMutator() {
 
     }
 
-    private fun findMissing(es: EmptySelects, ind: RestIndividual): Map<String, Set<String>> {
+    private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
 
-        return es.queriedData.filter { e ->
+        return fw.filter { e ->
             //shouldn't have already an action adding such SQL data
             ind.dbInitialization.none { a ->
                 a.table.name.equals(e.key, ignoreCase = true) && e.value.all { c ->

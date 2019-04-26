@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.client.java.controller.internal.db.constraint;
 
 public class RangeConstraint extends SchemaConstraint {
 

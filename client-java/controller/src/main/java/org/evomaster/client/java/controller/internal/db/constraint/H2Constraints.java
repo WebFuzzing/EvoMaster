@@ -6,7 +6,6 @@ import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.internal.db.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;

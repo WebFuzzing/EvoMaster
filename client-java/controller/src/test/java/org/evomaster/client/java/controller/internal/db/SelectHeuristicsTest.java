@@ -12,45 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SelectHeuristicsTest {
 
 
-
-    @Test
-    public void testReadFromJoinedTables(){
-
-        String select = "SELECT Orders.OrderID, Customers.CustomerName, Orders.OrderDate" +
-                " FROM Orders " +
-                " INNER JOIN Customers ON Orders.CustomerID=Customers.CustomerID;";
-
-        Map<String, Set<String>> data = SelectHeuristics.getReadDataFields(select);
-
-        assertEquals(2, data.size());
-
-        Set<String> columns = data.get("Orders");
-        //FIXME: once supporting actual fields instead of *
-        assertEquals(1, columns.size());
-        assertTrue(columns.contains("*"));
-
-        columns = data.get("Customers");
-        //FIXME: once supporting actual fields instead of *
-        assertEquals(1, columns.size());
-        assertTrue(columns.contains("*"));
-    }
-
-
-    @Test
-    public void testReadAllFromSingleTable(){
-
-        String select = "select *  from Foo";
-
-        Map<String, Set<String>> data = SelectHeuristics.getReadDataFields(select);
-
-        assertEquals(1, data.size());
-
-        Set<String> columns = data.get("Foo");
-
-        assertEquals(1, columns.size());
-        assertTrue(columns.contains("*"));
-    }
-
     @Test
     public void testCount(){
 
@@ -184,12 +145,12 @@ public class SelectHeuristicsTest {
 
         String sql = "select x from Foo";
 
-        QueryResult data = new QueryResult(Arrays.asList("x"));
+        QueryResult data = new QueryResult(Arrays.asList("x"), "Foo");
 
         double dist = SelectHeuristics.computeDistance(sql, data);
         assertTrue(dist > 0);
 
-        DataRow row = new DataRow("x", "9");
+        DataRow row = new DataRow("x", "9", "Foo");
         data.addRow(row);
 
         dist = SelectHeuristics.computeDistance(sql, data);
@@ -201,12 +162,12 @@ public class SelectHeuristicsTest {
                                             Object solution,
                                             String sql) {
 
-        QueryResult data = new QueryResult(Arrays.asList(name));
+        QueryResult data = new QueryResult(Arrays.asList(name), "Foo");
 
         double prev = -1;
 
         for (Object val : values) {
-            data.addRow(new DataRow(name, val));
+            data.addRow(new DataRow(name, val, "Foo"));
             double dist = SelectHeuristics.computeDistance(sql, data);
             assertTrue(dist > 0);
             if (prev >= 0) {
@@ -215,7 +176,7 @@ public class SelectHeuristicsTest {
             prev = dist;
         }
 
-        data.addRow(new DataRow(name, solution));
+        data.addRow(new DataRow(name, solution, "Foo"));
         double target = SelectHeuristics.computeDistance(sql, data);
         assertTrue(target < prev);
         assertEquals(0d, target);

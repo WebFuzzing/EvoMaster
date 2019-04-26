@@ -2,18 +2,30 @@ package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
 import org.evomaster.client.java.controller.internal.db.SelectHeuristics;
+import org.evomaster.client.java.controller.internal.db.SqlNameContext;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * A row of data in the table results of a Select query.
+ * Must include information on its columns.
+ */
 public class DataRow {
 
+    /**
+     * Descriptors for the columns
+     */
     private final List<VariableDescriptor> variableDescriptors;
+
+    /**
+     * The actual data values. This list must be aligned with variableDescriptors
+     */
     private final List<Object> values;
 
 
-    public DataRow(String name, Object value) {
-        this(Arrays.asList(new VariableDescriptor(name)), Arrays.asList(value));
+    public DataRow(String columnName, Object value, String tableName) {
+        this(Arrays.asList(new VariableDescriptor(columnName, null, tableName)), Arrays.asList(value));
     }
 
     public DataRow(List<VariableDescriptor> descriptors, List<Object> values) {
@@ -81,7 +93,7 @@ public class DataRow {
                                 with same column names. At this moment, we would not
                                 be able to distinguish them
                              */
-                            || t.equalsIgnoreCase(SelectHeuristics.UNNAMED_TABLE)
+                            || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)
                     )
                     ) {
                 return values.get(i);
