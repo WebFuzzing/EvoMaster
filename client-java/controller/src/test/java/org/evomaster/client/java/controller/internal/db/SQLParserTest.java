@@ -8,13 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class SQLParserTest {
+class SQLParserTest {
 
     @Test
-    public void testMinorThanEquals() throws JSQLParserException {
+    void testMinorThanEquals() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("age_max<=10");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -28,7 +27,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testMinorThan() throws JSQLParserException {
+    void testMinorThan() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("age_max<10");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -42,7 +41,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testGreaterThanValue() throws JSQLParserException {
+    void testGreaterThanValue() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("age_max>10");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -56,7 +55,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testMinorThanColumn() throws JSQLParserException {
+    void testMinorThanColumn() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("10<age_max");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -71,7 +70,7 @@ public class SQLParserTest {
 
 
     @Test
-    public void testMinorThanValue() throws JSQLParserException {
+    void testMinorThanValue() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("age_max<10");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -86,7 +85,7 @@ public class SQLParserTest {
 
 
     @Test
-    public void testGreaterThanEquals() throws JSQLParserException {
+    void testGreaterThanEquals() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("age_max>=10");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -100,7 +99,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testMinorThanEqualsColumn() throws JSQLParserException {
+    void testMinorThanEqualsColumn() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("10<=age_max");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -115,7 +114,7 @@ public class SQLParserTest {
 
 
     @Test
-    public void testEquals() throws JSQLParserException {
+    void testEquals() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("age_max=10");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -130,7 +129,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testTableAndColumnName() throws JSQLParserException {
+    void testTableAndColumnName() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("users.age_max<=100");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -145,7 +144,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testAndExpression() throws JSQLParserException {
+    void testAndExpression() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("18<=age_max AND age_max<=100");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -166,7 +165,7 @@ public class SQLParserTest {
     }
 
     @Test
-    public void testParenthesis() throws JSQLParserException {
+    void testParenthesis() throws JSQLParserException {
         Expression expr = CCJSqlParserUtil.parseCondExpression("(18<=age_max)");
         CheckExprExtractor extractor = new CheckExprExtractor();
         expr.accept(extractor);
@@ -178,4 +177,49 @@ public class SQLParserTest {
         assertEquals("age_max", lowerBound.getColumnName());
         assertEquals(18, lowerBound.getLowerBound());
     }
+
+    @Test
+    void testInCondition() throws JSQLParserException {
+        Expression expr = CCJSqlParserUtil.parseCondExpression("(status in ('A', 'B'))");
+        assertNotNull(expr);
+    }
+
+    @Test
+    void testConditionEquals() throws JSQLParserException {
+        Expression expr = CCJSqlParserUtil.parseCondExpression("(status = 'B') = (p_at IS NOT NULL)");
+        assertNotNull(expr);
+    }
+
+    @Test
+    void testLike() throws JSQLParserException {
+        Expression expr = CCJSqlParserUtil.parseCondExpression("(f_id LIKE 'hi'\n" +
+                "    OR f_id LIKE '%foo%'\n" +
+                "    OR f_id LIKE '%foo%x%'\n" +
+                "    OR f_id LIKE '%bar%'\n" +
+                "    OR f_id LIKE '%bar%y%'\n" +
+                "    OR f_id LIKE '%hello%')");
+        assertNotNull(expr);
+    }
+
+    @Test
+    void testMultipleInCondition() throws JSQLParserException {
+        Expression expr = CCJSqlParserUtil.parseCondExpression("(status IN ('A', 'B', 'C', 'D', 'E'))");
+        assertNotNull(expr);
+    }
+
+
+    /**
+     * Shows that the SIMILAR TO construct is not supported by this SQL Parser
+     */
+    @Test
+    void testSimilarNotSupported() {
+        try {
+            CCJSqlParserUtil.parseCondExpression("(w_id SIMILAR TO '/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?')");
+            fail();
+        } catch (JSQLParserException e) {
+            // do nothing
+        }
+    }
+
+
 }
