@@ -139,6 +139,15 @@ public class H2Constraints {
                 }
                 columnDto.lowerBound = (int) rangeConstraint.getMinValue();
                 columnDto.upperBound = (int) rangeConstraint.getMaxValue();
+            } else if (constraint instanceof EnumConstraint) {
+                EnumConstraint enumConstraint = (EnumConstraint) constraint;
+                String columnName = enumConstraint.getColumnName();
+                ColumnDto columnDto = tableDto.columns.stream().filter(c -> c.name.equalsIgnoreCase(columnName)).findFirst().orElse(null);
+                if (columnDto == null) {
+                    throw new IllegalArgumentException("Column " + columnName + " was not found in table " + tableName);
+                }
+                columnDto.enumValuesAsStrings = enumConstraint.getValuesAsStrings();
+
             } else {
                 throw new RuntimeException("Unknown constraint type " + constraint.getClass().getName());
             }

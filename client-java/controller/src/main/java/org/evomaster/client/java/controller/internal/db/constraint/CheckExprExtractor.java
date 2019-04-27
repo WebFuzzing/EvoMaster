@@ -10,6 +10,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.SubSelect;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class CheckExprExtractor implements ExpressionVisitor {
@@ -31,9 +32,9 @@ public class CheckExprExtractor implements ExpressionVisitor {
      * temporary workaround before major refactoring.
      * Recall that Column.getTable() is not reliable
      */
-    private String getTableName(Column column){
+    private String getTableName(Column column) {
         Table table = column.getTable();
-        if(table != null){
+        if (table != null) {
             return table.getName();
         }
 
@@ -297,14 +298,49 @@ public class CheckExprExtractor implements ExpressionVisitor {
 
     @Override
     public void visit(InExpression inExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        Expression leftExpression = inExpression.getLeftExpression();
+        if (!(leftExpression instanceof Column)) {
+            throw new RuntimeException("Must implement InExpression with left " + leftExpression.getClass().getName());
+        }
+        Column column = (Column) leftExpression;
+        String columnName = column.getColumnName();
+        ItemsList rightItemsList = inExpression.getRightItemsList();
+        if (!(rightItemsList instanceof ItemsList)) {
+            throw new RuntimeException("Must implement InExpression with right " + rightItemsList.getClass().getName());
+        }
+        if (rightItemsList instanceof ExpressionList) {
+            ExpressionList expressionList = (ExpressionList) rightItemsList;
+            List<String> stringValues = new LinkedList<>();
+            for (Expression expressionValue : expressionList.getExpressions()) {
+                if (expressionValue instanceof StringValue) {
+                    StringValue stringValue = (StringValue) expressionValue;
+                    String value = stringValue.getValue();
+                    stringValues.add(value);
+                } else if (expressionValue instanceof LongValue) {
+                    LongValue longValue = (LongValue) expressionValue;
+                    String value = longValue.getStringValue();
+                    stringValues.add(value);
+                } else if (expressionValue instanceof DateValue) {
+                    throw new RuntimeException("Extraction of DateValues not yet implemented");
+                } else if (expressionValue instanceof DoubleValue) {
+                    throw new RuntimeException("Extraction of DoubleValues not yet implemented");
+                } else if (expressionValue instanceof HexValue) {
+                    throw new RuntimeException("Extraction of HexValues not yet implemented");
+                } else if (expressionValue instanceof NullValue) {
+                    throw new RuntimeException("Extraction of NullValues not yet implemented");
+                } else if (expressionValue instanceof TimestampValue) {
+                    throw new RuntimeException("Extraction of TimestampValues not yet implemented");
+                } else if (expressionValue instanceof TimeValue) {
+                    throw new RuntimeException("Extraction of TimeValues not yet implemented");
+                }
+            }
+            EnumConstraint enumConstraint = new EnumConstraint(columnName, stringValues);
+            this.constraints.add(enumConstraint);
+        }
     }
 
     @Override
     public void visit(IsNullExpression isNullExpression) {
-
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
@@ -487,7 +523,6 @@ public class CheckExprExtractor implements ExpressionVisitor {
     }
 
 
-
     @Override
     public void visit(ExtractExpression extractExpression) {
 
@@ -564,7 +599,6 @@ public class CheckExprExtractor implements ExpressionVisitor {
         // TODO This translation should be implemented
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
-
 
 
     @Override

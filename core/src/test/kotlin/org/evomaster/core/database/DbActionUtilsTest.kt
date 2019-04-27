@@ -516,4 +516,10 @@ class DbActionUtilsTest {
         assertTrue(DbActionUtils.verifyActions(actions))
     }
 
+    @Test
+    fun testEnumConstraintField() {
+
+    }
+
+
 }
