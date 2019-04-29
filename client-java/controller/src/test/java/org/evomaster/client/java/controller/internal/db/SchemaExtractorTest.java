@@ -1,11 +1,15 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
@@ -232,4 +236,263 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
     }
 
+    @Test
+    public void testEnumStringConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (fooId INT, status varchar(1));"
+                + "ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(2, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("fooId")));
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<String> actualEnumValues = statusColumn.enumValuesAsStrings.stream().collect(Collectors.toSet());
+        Set<String> expectedEnumValues = Stream.of("A", "B").collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumBooleanConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status BOOLEAN);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (true, false));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Boolean> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Boolean::valueOf).collect(Collectors.toSet());
+        Set<Boolean> expectedEnumValues = Stream.of(Boolean.TRUE, Boolean.FALSE).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumIntegerConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status INT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
+        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumTinyIntConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status TINYINT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
+        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumSmallIntConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status SMALLINT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
+        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumBigIntConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status BIGINT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
+        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumDoubleConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status DOUBLE);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Double> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Double::valueOf).collect(Collectors.toSet());
+        Set<Double> expectedEnumValues = Stream.of(1.0, 2.5).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+
+    @Test
+    public void testEnumRealConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status REAL);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Double> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Double::valueOf).collect(Collectors.toSet());
+        Set<Double> expectedEnumValues = Stream.of(1.0, 2.5).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumDecimalConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status DECIMAL);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<Double> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Double::valueOf).collect(Collectors.toSet());
+        Set<Double> expectedEnumValues = Stream.of(1.0, 2.5).collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
+
+    @Test
+    public void testEnumCharConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status CHAR);"
+                + "ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        Set<String> actualEnumValues = statusColumn.enumValuesAsStrings.stream().collect(Collectors.toSet());
+        Set<String> expectedEnumValues = Stream.of("A", "B").collect(Collectors.toSet());
+
+        assertEquals(expectedEnumValues, actualEnumValues);
+
+    }
 }
