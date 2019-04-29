@@ -7,15 +7,10 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.output.*
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.experiments.objects.ObjIndividual
 import org.evomaster.experiments.objects.ObjRestCallAction
-import org.evomaster.experiments.objects.param.Param
 import org.evomaster.experiments.objects.param.BodyParam
-import org.evomaster.experiments.objects.param.PathParam
 import org.evomaster.experiments.objects.param.HeaderParam
-import com.google.gson.Gson
-
 
 
 class ObjTestCaseWriter {
@@ -178,7 +173,7 @@ class ObjTestCaseWriter {
             return getPrintableValue(g.gene)
 
         } else {
-            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = null))
         }
     }
 
@@ -372,8 +367,8 @@ class ObjTestCaseWriter {
                 ?.let {
                     lines.add(".contentType(\"application/json\")")
 
-                    val body = if (readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString())
-                    else it.gene.getValueAsPrintableString()
+                    val body = if (readable) OutputFormatter.JSON_FORMATTER.getFormatted(it.gene.getValueAsPrintableString(targetFormat = null))
+                    else it.gene.getValueAsPrintableString(targetFormat = null)
 
                     //needed as JSON uses ""
                     val bodyLines = body.split("\n").map { s ->
@@ -412,7 +407,7 @@ class ObjTestCaseWriter {
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString()})")
+                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = null)})")
                 }
     }
 

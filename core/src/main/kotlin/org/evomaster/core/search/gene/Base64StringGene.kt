@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 import java.util.*
 
@@ -14,7 +15,7 @@ class Base64StringGene(
         data.randomize(randomness, forceNewValue)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
 

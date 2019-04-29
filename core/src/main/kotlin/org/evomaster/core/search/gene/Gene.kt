@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -61,11 +62,12 @@ abstract class Gene(var name: String) {
      */
     abstract fun getValueAsPrintableString(
             previousGenes: List<Gene> = listOf(),
-            mode: String? = null
+            mode: String? = null,
+            targetFormat: OutputFormat? = null
     ) : String
 
 
-    open fun getValueAsRawString() = getValueAsPrintableString()
+    open fun getValueAsRawString() = getValueAsPrintableString(targetFormat = null)
 
     abstract fun copyValueFrom(other: Gene)
 

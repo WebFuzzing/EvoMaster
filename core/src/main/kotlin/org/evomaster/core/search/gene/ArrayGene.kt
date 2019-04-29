@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -56,9 +57,9 @@ class ArrayGene<T>(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return "[" +
-                elements.map { g -> g.getValueAsPrintableString(previousGenes, mode) }.joinToString(", ") +
+                elements.map { g -> g.getValueAsPrintableString(previousGenes, mode, null) }.joinToString(", ") +
                 "]";
     }
 

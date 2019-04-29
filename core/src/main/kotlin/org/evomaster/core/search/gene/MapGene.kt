@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -58,14 +59,14 @@ class MapGene<T>(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return "{" +
                 elements.filter { f ->
                     f !is CycleObjectGene &&
                             (f !is OptionalGene || f.isActive)
                 }.map { f ->
                     """
-                    "${f.name}":${f.getValueAsPrintableString()}
+                    "${f.name}":${f.getValueAsPrintableString(targetFormat = null)}
                     """
                 }.joinToString(",") +
                 "}";

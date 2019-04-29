@@ -17,7 +17,6 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
-import java.awt.PageAttributes
 import javax.ws.rs.core.MediaType
 
 
@@ -176,7 +175,7 @@ class TestCaseWriter {
             return getPrintableValue(g.gene)
 
         } else {
-            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = null))
         }
     }
 
@@ -446,9 +445,9 @@ class TestCaseWriter {
             if(bodyParam.isJson()) {
 
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json"))
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = null))
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = "json")
+                    bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = null)
                 }
 
                 //needed as JSON uses ""
@@ -472,7 +471,7 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
             } */ else if(bodyParam.isTextPlain()) {
-                val body = bodyParam.gene.getValueAsPrintableString(mode = "text")
+                val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = null)
                 lines.add(".body($body)")
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
@@ -496,7 +495,7 @@ class TestCaseWriter {
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString()})")
+                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = null)})")
                 }
     }
 

@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -13,8 +14,8 @@ internal class StringGeneTest{
         //println("Printable Slash =>  ${testGene.getValueAsPrintableString()}")
         //println("Raw Slash =>  ${testGene.getValueAsRawString()}")
 
-        assertTrue(testGene.getValueAsPrintableString().contains("\\\\"))
-        assertTrue(!testGene.getValueAsPrintableString().contains(" \\e"))
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = null).contains("\\\\"))
+        assertTrue(!testGene.getValueAsPrintableString(targetFormat = null).contains(" \\e"))
         assertTrue(!testGene.getValueAsRawString().contains("\\\\"))
         assertTrue(testGene.getValueAsRawString().contains(" \\e"))
     }
@@ -24,16 +25,16 @@ internal class StringGeneTest{
         val dollarTest = '$'
         val testGene = StringGene("DollarGene", "Test for the Dollar ${dollarTest}escape")
 
-        //println("Dollar => ${testGene.getValueAsPrintableString()}")
-        //println("Dollar => ${testGene.getValueAsRawString()}")
+        println("Dollar => ${testGene.getValueAsPrintableString()}")
+        println("Dollar => ${testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5)}")
 
         // Check that it contains the character
-        assertTrue(testGene.getValueAsPrintableString().contains('$'))
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains('$'))
         // Check that the character is escaped
-        assertTrue(testGene.getValueAsPrintableString().contains("\\$"))
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains("\\$"))
         //Check that it does not contain unescaped character (of the relevant type)
-        assertTrue(!testGene.getValueAsPrintableString().contains(" \$"))
-        // Check that the raw version does not contain the escaped character
-        assertTrue(!testGene.getValueAsRawString().contains("\\$"))
+        assertTrue(!testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains(" \$"))
+        // Check that the non-kotlin version does not contain the escaped character
+        assertTrue(!testGene.getValueAsPrintableString().contains("\\$"))
     }
 }

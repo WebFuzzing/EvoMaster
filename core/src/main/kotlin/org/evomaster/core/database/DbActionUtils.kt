@@ -283,7 +283,7 @@ object DbActionUtils {
         } else if ((g is SqlPrimaryKeyGene && g.isReferenceToNonPrintable(all))) {
             "FK_REFERENCE_ " + (g.gene as SqlForeignKeyGene).uniqueIdOfPrimaryKey
         } else {
-            g.getValueAsPrintableString(all)
+            g.getValueAsPrintableString(all, targetFormat = null)
         }
     }
 

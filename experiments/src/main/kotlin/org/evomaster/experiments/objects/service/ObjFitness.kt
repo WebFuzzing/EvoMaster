@@ -8,7 +8,6 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.database.DbActionTransformer
-import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.HeaderParam
@@ -361,7 +360,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         }
 
         val bodyEntity = when {
-            body != null -> Entity.json(body.gene.getValueAsPrintableString())
+            body != null -> Entity.json(body.gene.getValueAsPrintableString(targetFormat = null))
             !forms.isBlank() -> Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
             else -> Entity.json("") //FIXME
         }

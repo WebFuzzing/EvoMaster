@@ -56,10 +56,10 @@ object DbActionTransformer {
                     if (k is SqlForeignKeyGene) {
                         isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry)
                     } else {
-                        entry.printableValue = g.getValueAsPrintableString()
+                        entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                     }
                 } else {
-                    entry.printableValue = g.getValueAsPrintableString()
+                    entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                 }
 
                 entry.variableName = g.getVariableName()
@@ -99,7 +99,7 @@ object DbActionTransformer {
         if (isFkReferenceToNonPrintable) {
             entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
         } else {
-            entry.printableValue = g.getValueAsPrintableString(previous)
+            entry.printableValue = g.getValueAsPrintableString(previous, targetFormat = null)
         }
 
         return isFkReferenceToNonPrintable

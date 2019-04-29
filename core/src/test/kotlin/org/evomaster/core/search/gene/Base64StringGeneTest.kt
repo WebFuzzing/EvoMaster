@@ -14,7 +14,7 @@ internal class Base64StringGeneTest{
         //checked with http://base64encode.net/
         val expected = "a290bGluIDEyMw=="
 
-        assertEquals(expected, gene.getValueAsPrintableString())
+        assertEquals(expected, gene.getValueAsPrintableString(targetFormat = null))
     }
 }
 
