@@ -515,27 +515,5 @@ class DbActionUtilsTest {
         assertTrue(DbActionUtils.verifyActions(actions))
     }
 
-    @Test
-    fun testEnumConstraintField() {
-        val idColumn = Column("ID", ColumnDataType.INTEGER, 10,
-                primaryKey = true,
-                autoIncrement = true,
-                unique = true)
-
-        val statusColumn = Column("STATUS", ColumnDataType.VARCHAR, 10,
-                primaryKey = false,
-                autoIncrement = false,
-                unique = false,
-                nullable = false)
-
-
-        val table = Table("Table0", setOf(idColumn, statusColumn), setOf())
-
-        val action = DbAction(table, setOf(idColumn, statusColumn), 0L, listOf())
-
-        assertEquals(2, action.seeGenes().size)
-
-    }
-
 
 }
