@@ -1,5 +1,6 @@
 package org.evomaster.core.remote.service
 
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
@@ -8,10 +9,12 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.remote.NoRemoteConnectionException
+import org.evomaster.core.remote.SutProblemException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
+import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
@@ -74,7 +77,7 @@ class RemoteController() : DatabaseExecutor {
         val dto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
         } catch (e: Exception) {
-            log.warn("Failed to parse SUT info dto", e)
+            handleFailedDtoParsing(e)
             null
         }
 
@@ -101,7 +104,7 @@ class RemoteController() : DatabaseExecutor {
         val dto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
         } catch (e: Exception) {
-            log.warn("Failed to parse controller info dto", e)
+            handleFailedDtoParsing(e)
             null
         }
 
@@ -197,7 +200,7 @@ class RemoteController() : DatabaseExecutor {
         val dto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
         } catch (e: Exception) {
-            log.warn("Failed to parse target coverage dto", e)
+            handleFailedDtoParsing(e)
             null
         }
 
@@ -229,7 +232,7 @@ class RemoteController() : DatabaseExecutor {
             val responseDto = try {
                 response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
             } catch (e: Exception) {
-                log.warn("Failed to parse dto", e)
+                handleFailedDtoParsing(e)
                 return false
             }
 
@@ -256,7 +259,7 @@ class RemoteController() : DatabaseExecutor {
         val responseDto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
         } catch (e: Exception) {
-            log.warn("Failed to parse dto", e)
+            handleFailedDtoParsing(e)
             return null
         }
 
@@ -278,4 +281,19 @@ class RemoteController() : DatabaseExecutor {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
     }
 
+    private fun handleFailedDtoParsing(exception: Exception){
+
+        if(exception is ProcessingException && exception.cause is UnrecognizedPropertyException){
+
+            val version = this.javaClass.`package`?.implementationVersion
+                    ?: "(cannot determine, likely due to EvoMaster being run directly from IDE and not as a packaged uber jar)"
+
+            throw SutProblemException("There is a mismatch between the DTO that EvoMaster Driver is " +
+                    "sending and what the EvoMaster Core process (this process) is expecting to receive. " +
+                    "Are you sure you are using the same matching versions? This EvoMaster Core " +
+                    "process version is: $version")
+        } else {
+            log.warn("Failed to parse dto", exception)
+        }
+    }
 }
