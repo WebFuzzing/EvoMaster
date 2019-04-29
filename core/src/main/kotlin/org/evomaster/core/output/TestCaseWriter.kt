@@ -372,29 +372,24 @@ class TestCaseWriter {
             if(configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
             }
-
-
-
             //TODO check on body
         }
     }
 
-    private fun handleFieldValues(resContentsItem: Any): String{
-        when(resContentsItem::class) {
-            //Double::class -> return "equalTo(${resContentsItem})"
-            //Double::class -> return "is(closeTo(${resContentsItem}, 0.1))"
-            //Double::class -> return "equalsNumerically(${"" + resContentsItem})"
-
-            Double::class -> return "equalTo(${(resContentsItem as Double).toInt()})"
-            String::class -> return "containsString(\"${resContentsItem}\")"
-            else -> return "NotCoveredYet"
+    private fun handleFieldValues(resContentsItem: Any?): String{
+        if (resContentsItem == null) {
+            return "nullValue()"
+        }
+        else{
+            when(resContentsItem::class) {
+                Double::class -> return "equalTo(${(resContentsItem as Double).toInt()})"
+                String::class -> return "containsString(\"${resContentsItem}\")"
+                else -> return "NotCoveredYet"
+            }
         }
     }
 
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
-        // TODO BMR this appears to cause problems for CPGEMTest
-
-
         lines.indented{
             lines.add(".assertThat()")
                 if(res.getBodyType()==null) lines.add(".contentType(\"\")")
@@ -406,24 +401,19 @@ class TestCaseWriter {
                     if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)){
                         when (bodyString?.first()) {
                             '[' -> {
-                                // This would be run if the JSON contains an array of objects
+                                // This would be run if the JSON contains an array of objects.
+                                // Only assertions on array size are supporte at the moment.
                                 val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                                lines.add(".body(\"size()\", equalTo(${resContents.size}))")
+
                             }
                             '{' -> {
-                                // This would be run if the JSON contains a single object
                                 val resContents = Gson().fromJson(res.getBody(), Object::class.java)
-
                                 (resContents as LinkedTreeMap<*, *>).keys.forEach {
-                                    val actualValue = resContents[it]
-
-
-                                    val printableTh = handleFieldValues(resContents[it]!!)
+                                    val printableTh = handleFieldValues(resContents[it])
                                     if(printableTh != "null" && printableTh != "NotCoveredYet"){
-                                        lines.add(".body(\"${it}\", ${printableTh})")
+                                        lines.add(".body(\"$it\", $printableTh)")
                                     }
-
-                                    //lines.add(".body(\"${it}\", containsString(\"${resContents[it]}\"))")
-                                    //resContents[it]
                                 }
                             }
                             else -> {
@@ -523,7 +513,7 @@ class TestCaseWriter {
 
     private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean){
 
-        /*
+        /**
         TODO: This is a WiP to show the basic idea of the expectations:
         An exception is thrown ONLY if the expectations are set to active.
         If inactive, the condition will still be processed (with a goal to later adding to summaries or
@@ -534,7 +524,7 @@ class TestCaseWriter {
         As it is still work in progress, expect quite significant changes to this.
         */
 
-        lines.add("expectationHandler()")
+       lines.add("expectationHandler()")
         lines.indented {
             lines.add(".expect()")
             lines.add(".that(activeExpectations, true)")
@@ -544,10 +534,6 @@ class TestCaseWriter {
                 else -> ""
             })
         }
-
-
-
-
     }
 
     private fun addMetaDataComments(test: TestCase, lines: Lines){

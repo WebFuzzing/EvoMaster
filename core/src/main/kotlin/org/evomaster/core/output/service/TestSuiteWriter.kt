@@ -135,7 +135,12 @@ class TestSuiteWriter {
         addImport("java.util.List", lines)
         // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
         if(config.enableBasicAssertions){
-            addImport("org.hamcrest.Matchers.*", lines, true)
+            if (format.isJava()){
+                addImport("org.hamcrest.Matchers.*", lines, true)
+            }
+            else{
+                addImport("org.hamcrest.Matchers.*", lines, true)
+            }
         }
 
         if(config.expectationsActive) {

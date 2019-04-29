@@ -31,7 +31,13 @@ class StringGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+
         return "\"$value\""
+                .replace("\\", "\\\\")
+                .replace("$", "\\$")
+        /*val ret =  "\"$value\""
+
+        return ret*/
     }
 
     override fun getValueAsRawString(): String {
