@@ -35,13 +35,13 @@ class DbAction(
             Existing data actions are very special, and can only contain PKs
             with immutable data.
          */
-        if(representExistingData){
-            if(computedGenes == null){
+        if (representExistingData) {
+            if (computedGenes == null) {
                 throw IllegalArgumentException("No defined genes")
             }
 
-            for(pk in computedGenes){
-                if(pk !is SqlPrimaryKeyGene || pk.gene !is ImmutableDataHolderGene){
+            for (pk in computedGenes) {
+                if (pk !is SqlPrimaryKeyGene || pk.gene !is ImmutableDataHolderGene) {
                     throw IllegalArgumentException("Invalid gene: ${pk.name}")
                 }
             }
@@ -71,54 +71,113 @@ class DbAction(
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
                  */
-                BOOLEAN -> BooleanGene(it.name)
+                BOOLEAN -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Boolean>(it.name, it.enumValuesAsStrings.map { it.toBoolean() })
+                    } else {
+                        BooleanGene(it.name)
+                    }
+                }
                 /**
                  * TINYINT(3) is assumed to be representing a byte/Byte field
                  */
-                TINYINT -> IntegerGene(it.name,
-                        min = it.lowerBound ?: Byte.MIN_VALUE.toInt(),
-                        max = it.upperBound ?: Byte.MAX_VALUE.toInt())
+                TINYINT -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Int>(it.name, it.enumValuesAsStrings.map { it.toInt() })
+                    } else {
+                        IntegerGene(it.name,
+                                min = it.lowerBound ?: Byte.MIN_VALUE.toInt(),
+                                max = it.upperBound ?: Byte.MAX_VALUE.toInt())
+                    }
+                }
                 /**
                  * SMALLINT(5) is assumed as a short/Short field
                  */
-                SMALLINT -> IntegerGene(it.name,
-                        min = it.lowerBound ?: Short.MIN_VALUE.toInt(),
-                        max = it.upperBound ?: Short.MAX_VALUE.toInt())
+                SMALLINT -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Int>(it.name, it.enumValuesAsStrings.map { it.toInt() })
+                    } else {
+                        IntegerGene(it.name,
+                                min = it.lowerBound ?: Short.MIN_VALUE.toInt(),
+                                max = it.upperBound ?: Short.MAX_VALUE.toInt())
+                    }
+                }
                 /**
                  * CHAR(255) is assumed to be a char/Character field.
                  * A StringGene of length 1 is used to represent the data.
                  * TODO How to discover if it is a char or a char[] of 255 elements?
                  */
-                CHAR -> StringGene(name = it.name, value = "f", minLength = 0, maxLength = 1)
+                CHAR -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<String>(name = it.name, values = it.enumValuesAsStrings)
+                    } else {
+                        StringGene(name = it.name, value = "f", minLength = 0, maxLength = 1)
+                    }
+                }
                 /**
                  * INTEGER(10) is a int/Integer field
                  */
-                INTEGER -> IntegerGene(it.name,
-                        min = it.lowerBound ?: Int.MIN_VALUE,
-                        max = it.upperBound ?: Int.MAX_VALUE)
+                INTEGER -> if (it.enumValuesAsStrings != null) {
+                    EnumGene<Int>(it.name, it.enumValuesAsStrings.map { it.toInt() })
+                } else {
+                    IntegerGene(it.name,
+                            min = it.lowerBound ?: Int.MIN_VALUE,
+                            max = it.upperBound ?: Int.MAX_VALUE)
+                }
                 /**
                  * BIGINT(19) is a long/Long field
                  */
-                BIGINT -> LongGene(it.name)
+                BIGINT -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Long>(it.name, it.enumValuesAsStrings.map { it.toLong() })
+                    } else {
+
+                        LongGene(it.name)
+                    }
+                }
                 /**
                  * DOUBLE(17) is assumed to be a double/Double field
                  * TODO How to discover if the source field is a float/Float field?
                  */
 
-                DOUBLE -> DoubleGene(it.name)
+                DOUBLE -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Double>(name = it.name, values = it.enumValuesAsStrings.map { it.toDouble() })
+                    } else {
+                        DoubleGene(it.name)
+                    }
+                }
                 /**
                  * VARCHAR(N) is assumed to be a String with a maximum length of N.
                  * N could be as large as Integer.MAX_VALUE
                  */
-                VARCHAR -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                VARCHAR -> if (it.enumValuesAsStrings != null) {
+                    EnumGene<String>(name = it.name, values = it.enumValuesAsStrings)
+                } else {
+                    StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                }
+
+
                 /**
                  * TIMESTAMP is assumed to be a Date field
                  */
-                TIMESTAMP -> SqlTimestampGene(it.name)
+                TIMESTAMP -> {
+                    if (it.enumValuesAsStrings != null) {
+                        throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
+                    } else {
+                        SqlTimestampGene(it.name)
+                    }
+                }
                 /**
                  * CLOB(N) stores a UNICODE document of length N
                  */
-                CLOB -> StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                CLOB -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<String>(name = it.name, values = it.enumValuesAsStrings)
+                    } else {
+                        StringGene(name = it.name, minLength = 0, maxLength = it.size)
+                    }
+                }
                 //it.type.equals("VARBINARY", ignoreCase = true) ->
                 //handleVarBinary(it)
 
@@ -126,18 +185,35 @@ class DbAction(
                  * Could be any kind of binary data... so let's just use a string,
                  * which also simplifies when needing generate the test files
                  */
-                BLOB -> StringGene(name = it.name, minLength = 0, maxLength = 8)
+                BLOB -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<String>(name = it.name, values = it.enumValuesAsStrings)
+                    } else {
+                        StringGene(name = it.name, minLength = 0, maxLength = 8)
+                    }
+                }
 
                 /**
                  * REAL is identical to the floating point statement float(24).
                  * TODO How to discover if the source field is a float/Float field?
                  */
-                REAL -> DoubleGene(it.name)
-
+                REAL -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Double>(name = it.name, values = it.enumValuesAsStrings.map { it.toDouble() })
+                    } else {
+                        DoubleGene(it.name)
+                    }
+                }
                 /**
                  * TODO: DECIMAL precision is lower than a float gene
                  */
-                DECIMAL -> FloatGene(it.name)
+                DECIMAL -> {
+                    if (it.enumValuesAsStrings != null) {
+                        EnumGene<Float>(name = it.name, values = it.enumValuesAsStrings.map { it.toFloat() })
+                    } else {
+                        FloatGene(it.name)
+                    }
+                }
 
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }

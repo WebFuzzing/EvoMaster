@@ -312,27 +312,14 @@ public class CheckExprExtractor implements ExpressionVisitor {
             ExpressionList expressionList = (ExpressionList) rightItemsList;
             List<String> stringValues = new LinkedList<>();
             for (Expression expressionValue : expressionList.getExpressions()) {
+                String stringValue;
                 if (expressionValue instanceof StringValue) {
-                    StringValue stringValue = (StringValue) expressionValue;
-                    String value = stringValue.getValue();
-                    stringValues.add(value);
-                } else if (expressionValue instanceof LongValue) {
-                    LongValue longValue = (LongValue) expressionValue;
-                    String value = longValue.getStringValue();
-                    stringValues.add(value);
-                } else if (expressionValue instanceof DateValue) {
-                    throw new RuntimeException("Extraction of DateValues not yet implemented");
-                } else if (expressionValue instanceof DoubleValue) {
-                    throw new RuntimeException("Extraction of DoubleValues not yet implemented");
-                } else if (expressionValue instanceof HexValue) {
-                    throw new RuntimeException("Extraction of HexValues not yet implemented");
-                } else if (expressionValue instanceof NullValue) {
-                    throw new RuntimeException("Extraction of NullValues not yet implemented");
-                } else if (expressionValue instanceof TimestampValue) {
-                    throw new RuntimeException("Extraction of TimestampValues not yet implemented");
-                } else if (expressionValue instanceof TimeValue) {
-                    throw new RuntimeException("Extraction of TimeValues not yet implemented");
+                    StringValue expressionStringValue = (StringValue) expressionValue;
+                    stringValue = expressionStringValue.getNotExcapedValue();
+                } else {
+                    stringValue = expressionValue.toString();
                 }
+                stringValues.add(stringValue);
             }
             EnumConstraint enumConstraint = new EnumConstraint(columnName, stringValues);
             this.constraints.add(enumConstraint);

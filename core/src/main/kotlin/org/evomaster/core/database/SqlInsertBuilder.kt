@@ -8,11 +8,9 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
-import java.lang.IllegalStateException
 
 
 class SqlInsertBuilder(
@@ -78,7 +76,8 @@ class SqlInsertBuilder(
                         autoIncrement = c.autoIncrement,
                         foreignKeyToAutoIncrement =  c.foreignKeyToAutoIncrement,
                         lowerBound = c.lowerBound,
-                        upperBound = c.upperBound
+                        upperBound = c.upperBound,
+                        enumValuesAsStrings = c.enumValuesAsStrings
                 )
 
                 columns.add(column)

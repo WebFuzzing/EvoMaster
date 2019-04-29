@@ -24,7 +24,9 @@ data class Column(
 
         val lowerBound: Int? = null,
 
-        val upperBound: Int? = null
+        val upperBound: Int? = null,
+
+        val enumValuesAsStrings: List<String>? = null
 
         // public boolean identity;
 

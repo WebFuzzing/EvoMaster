@@ -419,7 +419,7 @@ class SqlInsertBuilderTest {
         val actions = builder.extractExistingPKs()
 
         assertAll(
-                {assertEquals(3, actions.size)},
+                { assertEquals(3, actions.size) },
                 { actions.all { it.representExistingData } },
                 { actions.all { it.seeGenes().size == 1 } },
                 { actions.all { it.seeGenes()[0] is SqlPrimaryKeyGene } },
@@ -447,12 +447,301 @@ class SqlInsertBuilderTest {
         val actions = builder.extractExistingPKs()
 
         assertAll(
-                {assertEquals(5, actions.size)},
+                { assertEquals(5, actions.size) },
                 { actions.all { it.representExistingData } },
-                { assertEquals(2, actions.map { it.table.name }.distinct().count())},
+                { assertEquals(2, actions.map { it.table.name }.distinct().count()) },
                 { actions.all { it.seeGenes().size == 1 } },
                 { actions.all { it.seeGenes()[0] is SqlPrimaryKeyGene } },
                 { actions.all { (it.seeGenes()[0] as SqlPrimaryKeyGene).gene is ImmutableDataHolderGene } }
         )
+    }
+
+    @Test
+    fun testStringEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status varchar(1));
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<String>;
+
+        assertEquals(setOf("A", "B"), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testIntegerEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status INT);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Integer>;
+
+        assertEquals(setOf(42, 77), enumGene.values.toSet());
+
+    }
+
+
+    @Test
+    fun testBooleanEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status BOOLEAN);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (true, false));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Integer>;
+
+        assertEquals(setOf(true, false), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testTinyIntEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status TINYINT);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Integer>;
+
+        assertEquals(setOf(42, 77), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testSmallIntEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status SMALLINT);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Integer>;
+
+        assertEquals(setOf(42, 77), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testCharEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status CHAR);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<String>;
+
+        assertEquals(setOf("A", "B"), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testBigIntEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status BIGINT);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Long>;
+
+        assertEquals(setOf(42L, 77L), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testDoubleEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status DOUBLE);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Double>;
+
+        assertEquals(setOf(1.0, 2.5), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testRealEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status REAL);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Double>;
+
+        assertEquals(setOf(1.0, 2.5), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testDecimalEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status DECIMAL);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Float>;
+
+        assertEquals(setOf(1.0f, 2.5f), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testClobEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status CLOB);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<String>;
+
+        assertEquals(setOf("A", "B"), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testBlobEnumGene() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status BLOB);
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (x'0000', x'FFFF'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<Float>;
+
+        assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet());
+
     }
 }
