@@ -106,6 +106,8 @@ public class H2Constraints {
      * @throws JSQLParserException if the parsing of the conditional expression fails
      */
     private static void addH2CheckConstraint(TableDto tableDto, String condExpression) throws JSQLParserException {
+
+
         Expression expr = CCJSqlParserUtil.parseCondExpression(condExpression);
         CheckExprExtractor exprExtractor = new CheckExprExtractor();
         expr.accept(exprExtractor);

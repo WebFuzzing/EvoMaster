@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
+import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.parser.SqlParseException;
+import org.apache.calcite.sql.parser.SqlParser;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 
@@ -45,7 +48,14 @@ public class PostgresConstraints {
                         String checkConstraint = columns.getString("consrc");
                         if (checkConstraint != null && !checkConstraint.equals("")) {
 
-                            System.out.println(checkConstraint);
+                            checkConstraint = checkConstraint.replace("::text", "");
+                            SqlParser p = SqlParser.create(checkConstraint);
+                            try {
+                                SqlNode expr = p.parseExpression();
+
+                            } catch (SqlParseException e) {
+                                e.printStackTrace();
+                            }
                             //Expression expr = CCJSqlParserUtil.parseCondExpression(checkConstraint);
 
                             //addH2CheckConstraint(tableDto, checkConstraint);

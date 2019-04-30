@@ -53,7 +53,7 @@ public class ConstraintUtils {
                 break;
             }
             case POSTGRES:{
-                //PostgresConstraints.addPostgresConstraints(connection, schemaDto);
+                PostgresConstraints.addPostgresConstraints(connection, schemaDto);
                 break;
             }
             case OTHER: {
