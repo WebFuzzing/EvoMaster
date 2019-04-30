@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class ColumnName extends ConstraintExpr {
+public class ColumnName extends CheckExpr {
 
     private final /* nullable*/ String tableName;
 
@@ -43,11 +43,15 @@ public class ColumnName extends ConstraintExpr {
     }
 
     @Override
-    public String toString() {
+    public String toSql() {
         if (tableName != null) {
             return String.format("%s.%s", tableName, columnName);
         }
         return columnName;
     }
 
+    @Override
+    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

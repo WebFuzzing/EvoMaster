@@ -36,8 +36,12 @@ public class BigDecimalLiteral extends LiteralValue {
     }
 
     @Override
-    public String toString() {
+    public String toSql() {
         return this.bigDecimalValue.toString();
     }
 
+    @Override
+    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

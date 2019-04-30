@@ -37,7 +37,12 @@ public class BigIntegerLiteral extends LiteralValue {
     }
 
     @Override
-    public String toString() {
+    public String toSql() {
         return this.bigIntegerValue.toString();
+    }
+
+    @Override
+    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
     }
 }
