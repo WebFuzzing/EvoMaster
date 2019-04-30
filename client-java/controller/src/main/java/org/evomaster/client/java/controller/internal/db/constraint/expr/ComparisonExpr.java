@@ -2,14 +2,14 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class BinaryComparison extends ConstraintExpr {
-    private final ConstraintExpr leftOperand;
+public class ComparisonExpr extends CheckExpr {
+    private final CheckExpr leftOperand;
 
     private final ComparisonOperator comparisonOperator;
 
-    private final ConstraintExpr rightOperand;
+    private final CheckExpr rightOperand;
 
-    public BinaryComparison(ConstraintExpr leftOperand, ComparisonOperator comparisonOperator, ConstraintExpr rightOperand) {
+    public ComparisonExpr(CheckExpr leftOperand, ComparisonOperator comparisonOperator, CheckExpr rightOperand) {
         this.leftOperand = leftOperand;
         this.comparisonOperator = comparisonOperator;
         this.rightOperand = rightOperand;
@@ -19,7 +19,7 @@ public class BinaryComparison extends ConstraintExpr {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BinaryComparison that = (BinaryComparison) o;
+        ComparisonExpr that = (ComparisonExpr) o;
         return Objects.equals(leftOperand, that.leftOperand) &&
                 comparisonOperator == that.comparisonOperator &&
                 Objects.equals(rightOperand, that.rightOperand);
@@ -31,8 +31,12 @@ public class BinaryComparison extends ConstraintExpr {
     }
 
     @Override
-    public String toString() {
+    public String toSql() {
         return leftOperand.toString() + " " + comparisonOperator.toString() + " " + rightOperand.toString();
     }
 
+    @Override
+    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

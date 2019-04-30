@@ -14,9 +14,8 @@ public class StringLiteral extends LiteralValue {
         this.stringValue = stringValue;
     }
 
-    @Override
-    public String toString() {
-        return stringValue;
+    public String toSql() {
+        return String.format("'%s'", stringValue);
     }
 
     @Override
@@ -30,5 +29,10 @@ public class StringLiteral extends LiteralValue {
     @Override
     public int hashCode() {
         return Objects.hash(stringValue);
+    }
+
+    @Override
+    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
     }
 }

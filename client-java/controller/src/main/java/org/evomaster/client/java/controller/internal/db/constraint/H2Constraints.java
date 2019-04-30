@@ -109,7 +109,7 @@ public class H2Constraints {
 
 
         Expression expr = CCJSqlParserUtil.parseCondExpression(condExpression);
-        CheckExprExtractor exprExtractor = new CheckExprExtractor();
+        SchemaConstraintExtractor exprExtractor = new SchemaConstraintExtractor();
         expr.accept(exprExtractor);
         String tableName = tableDto.name;
         List<SchemaConstraint> constraints = exprExtractor.getConstraints();
