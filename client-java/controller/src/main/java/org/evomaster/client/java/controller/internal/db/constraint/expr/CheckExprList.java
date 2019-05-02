@@ -44,4 +44,8 @@ public class CheckExprList extends CheckExpr {
     public int hashCode() {
         return Objects.hash(checkExpressions);
     }
+
+    public List<CheckExpr> getCheckExpressions() {
+        return checkExpressions;
+    }
 }

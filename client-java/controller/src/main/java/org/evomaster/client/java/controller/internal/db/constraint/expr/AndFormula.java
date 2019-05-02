@@ -42,4 +42,12 @@ public class AndFormula extends CheckExpr {
     public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
+
+    public CheckExpr getLeftExpr() {
+        return leftExpr;
+    }
+
+    public CheckExpr getRightExpr() {
+        return rightExpr;
+    }
 }

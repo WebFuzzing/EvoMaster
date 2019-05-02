@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 import java.util.Objects;
 
 public class ComparisonExpr extends CheckExpr {
+
     private final CheckExpr leftOperand;
 
     private final ComparisonOperator comparisonOperator;
@@ -38,5 +39,17 @@ public class ComparisonExpr extends CheckExpr {
     @Override
     public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
+    }
+
+    public CheckExpr getLeftOperand() {
+        return leftOperand;
+    }
+
+    public ComparisonOperator getComparisonOperator() {
+        return comparisonOperator;
+    }
+
+    public CheckExpr getRightOperand() {
+        return rightOperand;
     }
 }

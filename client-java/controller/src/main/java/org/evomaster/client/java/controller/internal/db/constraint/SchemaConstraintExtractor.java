@@ -1,396 +1,104 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
-import net.sf.jsqlparser.expression.*;
-import net.sf.jsqlparser.expression.operators.arithmetic.*;
-import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
-import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
-import net.sf.jsqlparser.expression.operators.relational.*;
-import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.Table;
-import net.sf.jsqlparser.statement.select.SubSelect;
 
-import java.util.ArrayList;
+import net.sf.jsqlparser.expression.StringValue;
+import org.evomaster.client.java.controller.internal.db.constraint.expr.*;
+
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SchemaConstraintExtractor implements ExpressionVisitor {
-
-    private final List<SchemaConstraint> constraints = new ArrayList<>();
-
-    /**
-     * Return the constraints collected during the visit to the AST
-     *
-     * @return
-     */
-    public List<SchemaConstraint> getConstraints() {
-        return this.constraints;
-    }
-
+public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConstraint>, Void> {
 
     /**
      * FIXME
      * temporary workaround before major refactoring.
      * Recall that Column.getTable() is not reliable
      */
-    private String getTableName(Column column) {
-        Table table = column.getTable();
-        if (table != null) {
-            return table.getName();
+    private static String getTableName(ColumnName column) {
+        String tableName = column.getTableName();
+        if (tableName != null) {
+            return tableName;
         }
 
         return "?";
     }
 
+
     @Override
-    public void visit(BitwiseRightShift aThis) {
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(AndFormula andExpression, Void argument) {
+        List<SchemaConstraint> constraints = new LinkedList<>();
+        constraints.addAll(andExpression.getLeftExpr().accept(this, null));
+        constraints.addAll(andExpression.getRightExpr().accept(this, null));
+        return constraints;
     }
 
     @Override
-    public void visit(BitwiseLeftShift aThis) {
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
+    public List<SchemaConstraint> visit(ComparisonExpr e, Void argument) {
+        CheckExpr left = e.getLeftOperand();
+        CheckExpr right = e.getRightOperand();
 
-    @Override
-    public void visit(NextValExpression aThis) {
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(CollateExpression aThis) {
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(ValueListExpression valueList) {
-
-    }
-
-//    @Override
-//    public void visit(WithinGroupExpression wgexpr) {
-//
-//    }
-
-    @Override
-    public void visit(NullValue nullValue) {
-        // TODO This translation should be implemented
-
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Function function) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(SignedExpression signedExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(JdbcParameter jdbcParameter) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(JdbcNamedParameter jdbcNamedParameter) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(DoubleValue doubleValue) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(LongValue longValue) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(HexValue hexValue) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(DateValue dateValue) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(TimeValue timeValue) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(TimestampValue timestampValue) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Parenthesis parenthesis) {
-        parenthesis.getExpression().accept(this);
-    }
-
-    @Override
-    public void visit(StringValue stringValue) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Addition addition) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Division division) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Multiplication multiplication) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Subtraction subtraction) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(AndExpression andExpression) {
-        andExpression.getLeftExpression().accept(this);
-        andExpression.getRightExpression().accept(this);
-    }
-
-    @Override
-    public void visit(OrExpression orExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Between between) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(EqualsTo equalsTo) {
-        Expression left = equalsTo.getLeftExpression();
-        Expression right = equalsTo.getRightExpression();
-
-        if (left instanceof LongValue && right instanceof Column) {
-            // matches value = column
-            LongValue leftLongValue = (LongValue) left;
-            Column rightColumn = (Column) right;
-            long value = leftLongValue.getValue();
-            String tableName = getTableName(rightColumn);
-            String columnName = rightColumn.getColumnName();
-            RangeConstraint rangeConstraint = new RangeConstraint(tableName, columnName, value, value);
-            constraints.add(rangeConstraint);
-        } else if (left instanceof Column && right instanceof LongValue) {
-            // matches column = value
-            Column leftColumn = (Column) left;
-            LongValue rightLongValue = (LongValue) right;
-            long value = rightLongValue.getValue();
-            String tableName = getTableName(leftColumn);
-            String columnName = leftColumn.getColumnName();
-            RangeConstraint rangeConstraint = new RangeConstraint(tableName, columnName, value, value);
-            constraints.add(rangeConstraint);
-        } else {
-            // TODO This translation should be implemented
-            throw new RuntimeException("Extraction of condition not yet implemented");
-        }
-    }
-
-
-    @Override
-    public void visit(GreaterThan greaterThan) {
-        Expression left = greaterThan.getLeftExpression();
-        Expression right = greaterThan.getRightExpression();
-
-        if (left instanceof LongValue && right instanceof Column) {
-            // matches value > column
-            LongValue leftLongValue = (LongValue) left;
-            Column rightColumn = (Column) right;
-            long upperBound = leftLongValue.getValue();
-            String tableName = getTableName(rightColumn);
-            String columnName = rightColumn.getColumnName();
-            UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound - 1);
-            constraints.add(upperBoundConstraint);
-        } else if (left instanceof Column && right instanceof LongValue) {
-            // matches column > value
-            Column leftColumn = (Column) left;
-            LongValue rightLongValue = (LongValue) right;
-            long lowerBound = rightLongValue.getValue();
-            String tableName = getTableName(leftColumn);
-            String columnName = leftColumn.getColumnName();
-            LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound + 1);
-            constraints.add(lowerBoundConstraint);
-        } else {
-            // TODO This translation should be implemented
-            throw new RuntimeException("Extraction of condition not yet implemented");
-        }
-    }
-
-    @Override
-    public void visit(GreaterThanEquals greaterThanEquals) {
-        Expression left = greaterThanEquals.getLeftExpression();
-        Expression right = greaterThanEquals.getRightExpression();
-
-        if (left instanceof LongValue && right instanceof Column) {
-            // matches value >= column
-            LongValue leftLongValue = (LongValue) left;
-            Column rightColumn = (Column) right;
-            long upperBound = leftLongValue.getValue();
-            String tableName = getTableName(rightColumn);
-            String columnName = rightColumn.getColumnName();
-            UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound);
-            constraints.add(upperBoundConstraint);
-        } else if (left instanceof Column && right instanceof LongValue) {
-            // matches column >= value
-            Column leftColumn = (Column) left;
-            LongValue rightLongValue = (LongValue) right;
-            long lowerBound = rightLongValue.getValue();
-            String tableName = getTableName(leftColumn);
-            String columnName = leftColumn.getColumnName();
-            LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound);
-            constraints.add(lowerBoundConstraint);
-        } else {
-            // TODO This translation should be implemented
-            throw new RuntimeException("Extraction of condition not yet implemented");
-        }
-
-    }
-
-    @Override
-    public void visit(InExpression inExpression) {
-        Expression leftExpression = inExpression.getLeftExpression();
-        if (!(leftExpression instanceof Column)) {
-            throw new RuntimeException("Must implement InExpression with left " + leftExpression.getClass().getName());
-        }
-        Column column = (Column) leftExpression;
-        String columnName = column.getColumnName();
-        ItemsList rightItemsList = inExpression.getRightItemsList();
-        if (!(rightItemsList instanceof ItemsList)) {
-            throw new RuntimeException("Must implement InExpression with right " + rightItemsList.getClass().getName());
-        }
-        if (rightItemsList instanceof ExpressionList) {
-            ExpressionList expressionList = (ExpressionList) rightItemsList;
-            List<String> stringValues = new LinkedList<>();
-            for (Expression expressionValue : expressionList.getExpressions()) {
-                String stringValue;
-                if (expressionValue instanceof StringValue) {
-                    StringValue expressionStringValue = (StringValue) expressionValue;
-                    stringValue = expressionStringValue.getNotExcapedValue();
-                } else {
-                    stringValue = expressionValue.toString();
+        if (left instanceof LiteralValue && right instanceof ColumnName) {
+            LiteralValue leftLiteral = (LiteralValue) left;
+            ColumnName rightColumn = (ColumnName) right;
+            if (leftLiteral instanceof BigIntegerLiteral) {
+                long value = ((BigIntegerLiteral) leftLiteral).getBigInteger().longValue();
+                final String tableName = getTableName(rightColumn);
+                final String columnName = rightColumn.getColumnName();
+                switch (e.getComparisonOperator()) {
+                    case EQUALS_TO: {
+                        return Collections.singletonList(new RangeConstraint(tableName, columnName, value, value));
+                    }
+                    case GREATER_THAN: {
+                        return Collections.singletonList(new UpperBoundConstraint(tableName, columnName, value - 1));
+                    }
+                    case GREATER_THAN_OR_EQUAL: {
+                        return Collections.singletonList(new UpperBoundConstraint(tableName, columnName, value));
+                    }
+                    case LESS_THAN: {
+                        return Collections.singletonList(new LowerBoundConstraint(tableName, columnName, value + 1));
+                    }
+                    case LESS_THAN_OR_EQUAL: {
+                        return Collections.singletonList(new LowerBoundConstraint(tableName, columnName, value));
+                    }
+                    default: {
+                        throw new RuntimeException("Unexpected comparison operator " + e.getComparisonOperator());
+                    }
                 }
-                stringValues.add(stringValue);
+            } else {
+                throw new RuntimeException("Unsupported literal " + e.getComparisonOperator());
             }
-            EnumConstraint enumConstraint = new EnumConstraint(columnName, stringValues);
-            this.constraints.add(enumConstraint);
-        }
-    }
+        } else if (left instanceof ColumnName && right instanceof LiteralValue) {
+            ColumnName leftColumn = (ColumnName) left;
+            LiteralValue rightLiteral = (LiteralValue) right;
+            if (rightLiteral instanceof BigIntegerLiteral) {
+                long value = ((BigIntegerLiteral) rightLiteral).getBigInteger().longValue();
+                final String tableName = getTableName(leftColumn);
+                final String columnName = leftColumn.getColumnName();
+                switch (e.getComparisonOperator()) {
+                    case EQUALS_TO: {
+                        return Collections.singletonList(new RangeConstraint(tableName, columnName, value, value));
+                    }
+                    case GREATER_THAN: {
+                        return Collections.singletonList(new LowerBoundConstraint(tableName, columnName, value + 1));
+                    }
+                    case GREATER_THAN_OR_EQUAL: {
+                        return Collections.singletonList(new LowerBoundConstraint(tableName, columnName, value));
+                    }
+                    case LESS_THAN: {
+                        return Collections.singletonList(new UpperBoundConstraint(tableName, columnName, value - 1));
+                    }
+                    case LESS_THAN_OR_EQUAL: {
+                        return Collections.singletonList(new UpperBoundConstraint(tableName, columnName, value));
+                    }
+                    default: {
+                        throw new RuntimeException("Unexpected comparison operator " + e.getComparisonOperator());
+                    }
+                }
+            } else {
+                throw new RuntimeException("Unsupported literal " + e.getComparisonOperator());
+            }
 
-    @Override
-    public void visit(IsNullExpression isNullExpression) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(LikeExpression likeExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(MinorThan minorThan) {
-        Expression left = minorThan.getLeftExpression();
-        Expression right = minorThan.getRightExpression();
-
-        if (left instanceof LongValue && right instanceof Column) {
-            // matches value < column
-            LongValue leftLongValue = (LongValue) left;
-            Column rightColumn = (Column) right;
-            long lowerBound = leftLongValue.getValue();
-            String tableName = getTableName(rightColumn);
-            String columnName = rightColumn.getColumnName();
-            LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound + 1);
-            constraints.add(lowerBoundConstraint);
-        } else if (left instanceof Column && right instanceof LongValue) {
-            // matches column < value
-            Column leftColumn = (Column) left;
-            LongValue rightLongValue = (LongValue) right;
-            long upperBound = rightLongValue.getValue();
-            String tableName = getTableName(leftColumn);
-            String columnName = leftColumn.getColumnName();
-            UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound - 1);
-            constraints.add(upperBoundConstraint);
-        } else {
-            // TODO This translation should be implemented
-            throw new RuntimeException("Extraction of condition not yet implemented");
-        }
-    }
-
-    @Override
-    public void visit(MinorThanEquals minorThanEquals) {
-        Expression left = minorThanEquals.getLeftExpression();
-        Expression right = minorThanEquals.getRightExpression();
-
-        if (left instanceof LongValue && right instanceof Column) {
-            // matches value <= column
-            LongValue leftLongValue = (LongValue) left;
-            Column rightColumn = (Column) right;
-            long lowerBound = leftLongValue.getValue();
-            String tableName = getTableName(rightColumn);
-            String columnName = rightColumn.getColumnName();
-            LowerBoundConstraint lowerBoundConstraint = new LowerBoundConstraint(tableName, columnName, lowerBound);
-            constraints.add(lowerBoundConstraint);
-        } else if (left instanceof Column && right instanceof LongValue) {
-            // matches column <= value
-            Column leftColumn = (Column) left;
-            LongValue rightLongValue = (LongValue) right;
-            long upperBound = rightLongValue.getValue();
-            String tableName = getTableName(leftColumn);
-            String columnName = leftColumn.getColumnName();
-            UpperBoundConstraint upperBoundConstraint = new UpperBoundConstraint(tableName, columnName, upperBound);
-            constraints.add(upperBoundConstraint);
         } else {
             // TODO This translation should be implemented
             throw new RuntimeException("Extraction of condition not yet implemented");
@@ -398,229 +106,71 @@ public class SchemaConstraintExtractor implements ExpressionVisitor {
 
     }
 
-    @Override
-    public void visit(NotEqualsTo notEqualsTo) {
 
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    @Override
+    public List<SchemaConstraint> visit(InExpression inExpression, Void argument) {
+
+        ColumnName column = inExpression.getColumnName();
+        String columnName = column.getColumnName();
+        CheckExprList rightItemsList = inExpression.getLiteralList();
+
+        List<String> stringValues = new LinkedList<>();
+        for (CheckExpr expressionValue : rightItemsList.getCheckExpressions()) {
+            final String stringValue;
+            if (expressionValue instanceof StringLiteral) {
+                stringValue = new StringValue(expressionValue.toSql()).getNotExcapedValue();
+            } else {
+                stringValue = expressionValue.toSql();
+            }
+            stringValues.add(stringValue);
+        }
+        return Collections.singletonList(new EnumConstraint(columnName, stringValues));
+
     }
 
     @Override
-    public void visit(Column column) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(NullLiteral e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(SubSelect subSelect) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(StringLiteral e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(CaseExpression caseExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(CheckExprList e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(WhenClause whenClause) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(IsNotNullExpr e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(ExistsExpression existsExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(BinaryLiteral e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(AllComparisonExpression allComparisonExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(BigDecimalLiteral e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(AnyComparisonExpression anyComparisonExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(BigIntegerLiteral e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(Concat concat) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(BooleanLiteral e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public void visit(Matches matches) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(BitwiseAnd bitwiseAnd) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(BitwiseOr bitwiseOr) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(BitwiseXor bitwiseXor) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(CastExpression castExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(Modulo modulo) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(AnalyticExpression analyticExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-
-    @Override
-    public void visit(ExtractExpression extractExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(IntervalExpression intervalExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(OracleHierarchicalExpression oracleHierarchicalExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(RegExpMatchOperator regExpMatchOperator) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(JsonExpression jsonExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(JsonOperator jsonOperator) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(RegExpMySQLOperator regExpMySQLOperator) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(UserVariable userVariable) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(NumericBind numericBind) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(KeepExpression keepExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(MySQLGroupConcat mySQLGroupConcat) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-
-    @Override
-    public void visit(RowConstructor rowConstructor) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(OracleHint oracleHint) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(TimeKeyExpression timeKeyExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(DateTimeLiteralExpression dateTimeLiteralExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
-    }
-
-    @Override
-    public void visit(NotExpression notExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+    public List<SchemaConstraint> visit(ColumnName e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
     }
 
 

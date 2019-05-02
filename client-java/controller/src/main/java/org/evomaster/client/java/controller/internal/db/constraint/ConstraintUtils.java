@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
-import net.sf.jsqlparser.JSQLParserException;
+import org.apache.calcite.sql.parser.SqlParseException;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
@@ -42,7 +42,7 @@ public class ConstraintUtils {
      * @param schemaDto
      * @throws Exception
      */
-    public static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException, JSQLParserException {
+    public static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException, SqlParseException {
         switch (dt) {
             case H2: {
                 H2Constraints.addH2Constraints(connection, schemaDto);
@@ -53,7 +53,7 @@ public class ConstraintUtils {
                 break;
             }
             case POSTGRES:{
-                PostgresConstraints.addPostgresConstraints(connection, schemaDto);
+                //PostgresConstraints.addPostgresConstraints(connection, schemaDto);
                 break;
             }
             case OTHER: {

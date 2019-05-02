@@ -38,4 +38,12 @@ public class InExpression extends CheckExpr {
     public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
+
+    public ColumnName getColumnName() {
+        return columnName;
+    }
+
+    public CheckExprList getLiteralList() {
+        return literalList;
+    }
 }
