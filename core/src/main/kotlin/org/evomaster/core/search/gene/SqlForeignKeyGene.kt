@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -95,7 +96,7 @@ class SqlForeignKeyGene(
     }
 
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
 
         if (!isBound()) {
             if (!nullable) {
@@ -113,7 +114,7 @@ class SqlForeignKeyGene(
             throw IllegalArgumentException("Trying to print a Foreign Key pointing to a non-printable Primary Key")
         }
 
-        return pk.getValueAsPrintableString(previousGenes, mode)
+        return pk.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
     fun isReferenceToNonPrintable(previousGenes: List<Gene>): Boolean {

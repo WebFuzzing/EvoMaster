@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -15,7 +16,7 @@ class DoubleGene(name: String,
         value = randomness.nextDouble()
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return value.toString()
     }
 

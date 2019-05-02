@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -26,8 +27,8 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         gene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
-        return gene.getValueAsPrintableString(previousGenes, mode)
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+        return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
     override fun getValueAsRawString(): String {

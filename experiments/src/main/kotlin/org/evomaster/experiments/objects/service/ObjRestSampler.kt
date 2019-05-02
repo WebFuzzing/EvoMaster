@@ -23,7 +23,6 @@ import org.evomaster.experiments.objects.ObjIndividual
 import org.evomaster.experiments.objects.ObjRestActionBuilder
 import org.evomaster.experiments.objects.RestPath
 import org.evomaster.experiments.objects.UsedObj
-import org.evomaster.experiments.objects.param.BodyParam
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
@@ -826,7 +825,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
 
     fun debuggingOnly(individual: ObjIndividual){
         println(" -- Sampler has produced -- ")
-        println("${individual.debugginPrint()} => ${individual.debugginPrintProcessed()} = Uses => ${individual.usedObject.mapping.values.map { it.getValueAsPrintableString() }}")
+        println("${individual.debugginPrint()} => ${individual.debugginPrintProcessed()} = Uses => ${individual.usedObject.mapping.values.map { it.getValueAsPrintableString(targetFormat = null) }}")
         println("Valid? Well... ${individual.checkCoherence()}")
     }
 }

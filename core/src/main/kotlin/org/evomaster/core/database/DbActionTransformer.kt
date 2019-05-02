@@ -56,14 +56,17 @@ object DbActionTransformer {
                     if (k is SqlForeignKeyGene) {
                         isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry)
                     } else {
-                        entry.printableValue = g.getValueAsPrintableString()
+                        entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                     }
                 } else {
-                    entry.printableValue = g.getValueAsPrintableString()
+                    entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                 }
 
                 entry.variableName = g.getVariableName()
-
+                /*  TODO: the above code needs to be refactored to get the targetFormat from EMConfig.
+                    The target format has an impact on which characters are escaped and may result in compilation errors.
+                    The current version performs no escaping of characters by default (i.e. when the target format is null).
+                */
                 /*
                     At the current moment, we do allow the "printing" of auto-increment
                     values that are already existing in the database, as those
@@ -99,7 +102,7 @@ object DbActionTransformer {
         if (isFkReferenceToNonPrintable) {
             entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
         } else {
-            entry.printableValue = g.getValueAsPrintableString(previous)
+            entry.printableValue = g.getValueAsPrintableString(previous, targetFormat = null)
         }
 
         return isFkReferenceToNonPrintable

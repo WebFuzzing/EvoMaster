@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -30,8 +31,15 @@ class StringGene(
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
-        return "\"$value\""
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+        when {
+            (targetFormat == null) -> return "\"$value\""
+             targetFormat.isKotlin() -> return "\"$value\""
+                                                            .replace("\\", "\\\\")
+                                                            .replace("$", "\\$")
+            else -> return "\"$value\""
+                    .replace("\\", "\\\\")
+        }
     }
 
     override fun getValueAsRawString(): String {

@@ -134,8 +134,11 @@ class TestSuiteWriter {
         addImport(InsertionDto::class.qualifiedName!!, lines)
         addImport("java.util.List", lines)
         // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
-        if(config.expectationsActive) {
+        if(config.enableBasicAssertions){
             addImport("org.hamcrest.Matchers.*", lines, true)
+        }
+
+        if(config.expectationsActive) {
             addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
         }
         //addImport("static org.hamcrest.core.Is.is", lines, format)
@@ -155,11 +158,16 @@ class TestSuiteWriter {
         if(config.outputFormat.isJava()) {
             lines.add("private static final SutHandler $controller = new $controllerName();")
             lines.add("private static String $baseUrlOfSut;")
-            lines.add("private static boolean activeExpectations = false;")
+            if(config.expectationsActive){
+                lines.add("private static boolean activeExpectations = false;")
+            }
         } else if(config.outputFormat.isKotlin()) {
             lines.add("private val $controller : SutHandler = $controllerName()")
             lines.add("private lateinit var $baseUrlOfSut: String")
-            lines.add("private val $activeExpectations = false")
+            if(config.expectationsActive){
+                lines.add("private val $activeExpectations = false")
+            }
+
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.

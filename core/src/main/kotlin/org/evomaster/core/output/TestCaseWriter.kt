@@ -17,6 +17,7 @@ import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import javax.ws.rs.core.MediaType
 
 
 class TestCaseWriter {
@@ -174,7 +175,7 @@ class TestCaseWriter {
             return getPrintableValue(g.gene)
 
         } else {
-            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString())
+            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = format))
         }
     }
 
@@ -370,78 +371,58 @@ class TestCaseWriter {
             if(configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
             }
-
-
-
             //TODO check on body
         }
     }
 
-    private fun handleFieldValues(resContentsItem: Any): String{
-        when(resContentsItem::class) {
-            //Double::class -> return "equalTo(${resContentsItem})"
-            //Double::class -> return "is(closeTo(${resContentsItem}, 0.1))"
-            //Double::class -> return "equalsNumerically(${"" + resContentsItem})"
-
-            Double::class -> return "equalTo(${(resContentsItem as Double).toInt()})"
-            String::class -> return "containsString(\"${resContentsItem}\")"
-            else -> return "NotCoveredYet"
+    private fun handleFieldValues(resContentsItem: Any?): String{
+        if (resContentsItem == null) {
+            return "nullValue()"
+        }
+        else{
+            when(resContentsItem::class) {
+                Double::class -> return "equalTo(${(resContentsItem as Double).toInt()})"
+                String::class -> return "containsString(\"${resContentsItem}\")"
+                else -> return "NotCoveredYet"
+            }
         }
     }
 
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
-        // TODO BMR this appears to cause problems for CPGEMTest
-
-
         lines.indented{
             lines.add(".assertThat()")
                 if(res.getBodyType()==null) lines.add(".contentType(\"\")")
                 else lines.add(".contentType(\"${res.getBodyType()}\")")
                 val bodyString = res.getBody()
 
-                when (res.getStatusCode()) {
-                    200 -> {
-                        //TODO BMR: check on JSON content - WiP - to be refined
-
+                if(res.getBodyType()!= null){
+                    val type = res.getBodyType()!!
+                    if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)){
                         when (bodyString?.first()) {
                             '[' -> {
-                                // This would be run if the JSON contains an array of objects
+                                // This would be run if the JSON contains an array of objects.
+                                // Only assertions on array size are supporte at the moment.
                                 val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
+                                lines.add(".body(\"size()\", equalTo(${resContents.size}))")
+
                             }
                             '{' -> {
-                                // This would be run if the JSON contains a single object
+                                // JSON contains an object
                                 val resContents = Gson().fromJson(res.getBody(), Object::class.java)
-
                                 (resContents as LinkedTreeMap<*, *>).keys.forEach {
-                                    val actualValue = resContents[it]
-
-
-                                    val printableTh = handleFieldValues(resContents[it]!!)
+                                    val printableTh = handleFieldValues(resContents[it])
                                     if(printableTh != "null" && printableTh != "NotCoveredYet"){
-                                        lines.add(".body(\"${it}\", ${printableTh})")
+                                        lines.add(".body(\"$it\", $printableTh)")
                                     }
-
-                                    //lines.add(".body(\"${it}\", containsString(\"${resContents[it]}\"))")
-                                    //resContents[it]
                                 }
                             }
                             else -> {
-                                // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
+                                // This branch will be called if the JSON is null (or has a basic type)
+                                // Currently, it only supports very basic string matching
+                                val resContents = Gson().fromJson(res.getBody(), String::class.java)
+                                lines.add(".body(containsString(\"${resContents}\"))")
                             }
                         }
-
-                    }
-                    201 -> {
-                        val contents = res.toString()
-                        //res.getBodyType() == null*/
-                    }
-                    500 -> {
-                        val contents = res.toString()
-                        //res.getBodyType().isCompatible(MediaType.TEXT_HTML_TYPE)
-                    }
-                    204 -> {
-                        val contents = res.toString()
-                        //res.getBodyType() == null
                     }
                 }
         }
@@ -468,9 +449,9 @@ class TestCaseWriter {
             if(bodyParam.isJson()) {
 
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json"))
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format))
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = "json")
+                    bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format)
                 }
 
                 //needed as JSON uses ""
@@ -494,7 +475,7 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
             } */ else if(bodyParam.isTextPlain()) {
-                val body = bodyParam.gene.getValueAsPrintableString(mode = "text")
+                val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
                 lines.add(".body($body)")
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
@@ -518,7 +499,7 @@ class TestCaseWriter {
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString()})")
+                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                 }
     }
 
@@ -546,7 +527,7 @@ class TestCaseWriter {
         As it is still work in progress, expect quite significant changes to this.
         */
 
-        lines.add("expectationHandler()")
+       lines.add("expectationHandler()")
         lines.indented {
             lines.add(".expect()")
             lines.add(".that(activeExpectations, true)")
@@ -556,10 +537,6 @@ class TestCaseWriter {
                 else -> ""
             })
         }
-
-
-
-
     }
 
     private fun addMetaDataComments(test: TestCase, lines: Lines){
