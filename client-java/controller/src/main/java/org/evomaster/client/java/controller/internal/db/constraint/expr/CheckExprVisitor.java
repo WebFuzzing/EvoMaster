@@ -24,4 +24,6 @@ public abstract class CheckExprVisitor<K, V> {
 
     public abstract K visit(IsNotNullExpr e, V argument);
 
+    public abstract K visit(BinaryLiteral e, V argument);
+
 }

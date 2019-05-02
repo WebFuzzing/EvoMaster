@@ -28,7 +28,9 @@ public class CheckExprExtractor implements SqlVisitor<CheckExpr> {
             case CHAR: {
                 return new StringLiteral(sqlLiteral.toValue());
             }
-
+            case BINARY: {
+                return new BinaryLiteral(sqlLiteral.toString());
+            }
             default: {
                 throw new IllegalArgumentException("Unsupported literal type " + sqlLiteral.getTypeName());
             }

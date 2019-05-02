@@ -739,9 +739,9 @@ class SqlInsertBuilderTest {
         assertEquals(1, actions[0].seeGenes().size)
         assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
 
-        val enumGene = actions[0].seeGenes()[0] as EnumGene<Float>;
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
 
-        assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet());
+        assertEquals(setOf("X'0000'", "X'FFFF'"), enumGene.values.toSet());
 
     }
 }

@@ -45,4 +45,8 @@ public class BigIntegerLiteral extends LiteralValue {
     public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
+
+    public BigInteger getBigInteger() {
+        return this.bigIntegerValue;
+    }
 }

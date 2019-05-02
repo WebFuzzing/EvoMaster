@@ -54,4 +54,12 @@ public class ColumnName extends CheckExpr {
     public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
+
+    public String getTableName() {
+        return tableName;
+    }
+
+    public String getColumnName() {
+        return columnName;
+    }
 }
