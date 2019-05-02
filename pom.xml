@@ -470,12 +470,13 @@
                 <artifactId>postgresql</artifactId>
                 <version>42.1.4</version>
             </dependency>
+            <!--
             <dependency>
                 <groupId>org.apache.calcite</groupId>
                 <artifactId>calcite-core</artifactId>
                 <version>1.19.0</version>
             </dependency>
-
+            -->
 
             <!-- test dependencies -->
             <dependency>

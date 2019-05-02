@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
-import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 import java.util.Objects;
@@ -22,10 +21,11 @@ public class SqlConditionList extends SqlCondition {
     public String toSql() {
         StringBuilder builder = new StringBuilder();
         builder.append("(");
-        builder.append(StringUtils.join(this.sqlConditionExpressions.stream().map(SqlCondition::toSql).collect(Collectors.toList()), ","));
+        builder.append(join(this.sqlConditionExpressions.stream().map(SqlCondition::toSql).collect(Collectors.toList()), ","));
         builder.append(")");
         return builder.toString();
     }
+
 
     @Override
     public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
