@@ -66,7 +66,7 @@ class MapGene<T>(
                             (f !is OptionalGene || f.isActive)
                 }.map { f ->
                     """
-                    "${f.name}":${f.getValueAsPrintableString(targetFormat = null)}
+                    "${f.name}":${f.getValueAsPrintableString(targetFormat = targetFormat)}
                     """
                 }.joinToString(",") +
                 "}";

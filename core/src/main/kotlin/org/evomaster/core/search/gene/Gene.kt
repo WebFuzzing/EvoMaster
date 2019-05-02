@@ -59,6 +59,9 @@ abstract class Gene(var name: String) {
      * to determine the actual value of this gene
      * @param mode some genes could be printed in different ways, like an
      * object printed as JSON or XML
+     * @param targetFormat different target formats may have different rules
+     * regarding what characters need to be escaped (e.g. the $ char in Kotlin)
+     * If the [targetFormat] is set to null, no characters are escaped.
      */
     abstract fun getValueAsPrintableString(
             previousGenes: List<Gene> = listOf(),
@@ -68,6 +71,9 @@ abstract class Gene(var name: String) {
 
 
     open fun getValueAsRawString() = getValueAsPrintableString(targetFormat = null)
+    /*
+    Note: above, null target format means that no characters are escaped.
+     */
 
     abstract fun copyValueFrom(other: Gene)
 

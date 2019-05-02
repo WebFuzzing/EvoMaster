@@ -114,7 +114,7 @@ class SqlForeignKeyGene(
             throw IllegalArgumentException("Trying to print a Foreign Key pointing to a non-printable Primary Key")
         }
 
-        return pk.getValueAsPrintableString(previousGenes, mode, null)
+        return pk.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
     fun isReferenceToNonPrintable(previousGenes: List<Gene>): Boolean {

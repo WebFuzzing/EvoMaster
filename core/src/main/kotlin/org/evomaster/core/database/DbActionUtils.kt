@@ -284,8 +284,13 @@ object DbActionUtils {
             "FK_REFERENCE_ " + (g.gene as SqlForeignKeyGene).uniqueIdOfPrimaryKey
         } else {
             g.getValueAsPrintableString(all, targetFormat = null)
+            /*  TODO: the above code needs to be refactored to get the targetFormat from EMConfig.
+                    The target format has an impact on which characters are escaped and may result in compilation errors.
+                    The current version performs no escaping of characters by default (i.e. when the target format is null).
+            */
         }
     }
+
 
 
 }

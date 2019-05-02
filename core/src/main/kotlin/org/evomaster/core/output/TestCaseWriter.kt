@@ -175,7 +175,7 @@ class TestCaseWriter {
             return getPrintableValue(g.gene)
 
         } else {
-            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = null))
+            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = format))
         }
     }
 
@@ -407,6 +407,7 @@ class TestCaseWriter {
 
                             }
                             '{' -> {
+                                // JSON contains an object
                                 val resContents = Gson().fromJson(res.getBody(), Object::class.java)
                                 (resContents as LinkedTreeMap<*, *>).keys.forEach {
                                     val printableTh = handleFieldValues(resContents[it])
@@ -416,7 +417,10 @@ class TestCaseWriter {
                                 }
                             }
                             else -> {
-                                // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
+                                // This branch will be called if the JSON is null (or has a basic type)
+                                // Currently, it only supports very basic string matching
+                                val resContents = Gson().fromJson(res.getBody(), String::class.java)
+                                lines.add(".body(containsString(\"${resContents}\"))")
                             }
                         }
                     }
@@ -445,9 +449,9 @@ class TestCaseWriter {
             if(bodyParam.isJson()) {
 
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = null))
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format))
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = null)
+                    bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format)
                 }
 
                 //needed as JSON uses ""
@@ -471,7 +475,7 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
             } */ else if(bodyParam.isTextPlain()) {
-                val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = null)
+                val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
                 lines.add(".body($body)")
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
@@ -495,7 +499,7 @@ class TestCaseWriter {
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = null)})")
+                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                 }
     }
 
@@ -512,7 +516,7 @@ class TestCaseWriter {
 
     private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean){
 
-        /**
+        /*
         TODO: This is a WiP to show the basic idea of the expectations:
         An exception is thrown ONLY if the expectations are set to active.
         If inactive, the condition will still be processed (with a goal to later adding to summaries or

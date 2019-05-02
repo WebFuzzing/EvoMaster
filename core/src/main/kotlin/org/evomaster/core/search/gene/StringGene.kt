@@ -32,11 +32,12 @@ class StringGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        when (targetFormat?.name){
-            OutputFormat.KOTLIN_JUNIT_5.name -> return "\"$value\""
+        when {
+            (targetFormat == null) -> return "\"$value\""
+             targetFormat.isKotlin() -> return "\"$value\""
                                                             .replace("\\", "\\\\")
                                                             .replace("$", "\\$")
-            else -> return return "\"$value\""
+            else -> return "\"$value\""
                     .replace("\\", "\\\\")
         }
     }

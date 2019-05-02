@@ -63,7 +63,10 @@ object DbActionTransformer {
                 }
 
                 entry.variableName = g.getVariableName()
-
+                /*  TODO: the above code needs to be refactored to get the targetFormat from EMConfig.
+                    The target format has an impact on which characters are escaped and may result in compilation errors.
+                    The current version performs no escaping of characters by default (i.e. when the target format is null).
+                */
                 /*
                     At the current moment, we do allow the "printing" of auto-increment
                     values that are already existing in the database, as those
