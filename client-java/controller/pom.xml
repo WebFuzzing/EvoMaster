@@ -105,7 +105,12 @@
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
         </dependency>
-
+        <!--
+        <dependency>
+            <groupId>org.apache.calcite</groupId>
+            <artifactId>calcite-core</artifactId>
+        </dependency>
+        -->
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
@@ -138,10 +143,7 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.calcite</groupId>
-            <artifactId>calcite-core</artifactId>
-        </dependency>
+
 
     </dependencies>
 
@@ -233,6 +235,12 @@
                                     <pattern>net.sf.jsqlparser</pattern>
                                     <shadedPattern>shaded.net.sf.jsqlparser</shadedPattern>
                                 </relocation>
+                                <!--
+                                <relocation>
+                                    <pattern>org.apache.calcite</pattern>
+                                    <shadedPattern>shaded.org.apache.calcite</shadedPattern>
+                                </relocation>
+                                -->
                             </relocations>
                         </configuration>
                     </execution>

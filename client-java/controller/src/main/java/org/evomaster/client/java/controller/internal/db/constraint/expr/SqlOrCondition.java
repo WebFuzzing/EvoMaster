@@ -1,7 +1,5 @@
 package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
-import org.apache.commons.lang3.StringUtils;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -23,7 +21,7 @@ public class SqlOrCondition extends SqlCondition {
 
     @Override
     public String toSql() {
-        return StringUtils.joinWith(" OR ", conditions.stream().map(SqlCondition::toSql).collect(Collectors.toList()));
+        return join(conditions.stream().map(SqlCondition::toSql).collect(Collectors.toList()), " OR ");
     }
 
     @Override
