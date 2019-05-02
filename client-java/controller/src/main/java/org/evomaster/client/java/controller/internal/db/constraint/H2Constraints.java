@@ -1,13 +1,12 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
 
-import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParseException;
-import org.apache.calcite.sql.parser.SqlParser;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.internal.db.constraint.expr.CheckExpr;
+import org.evomaster.client.java.controller.internal.db.constraint.calcite.CalciteSqlSqlConditionParser;
+import org.evomaster.client.java.controller.internal.db.constraint.expr.SqlCondition;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -25,7 +24,7 @@ public class H2Constraints {
      * @param schemaDto      a DTO schema with retrieved information from the JBDC metada
      * @throws Exception
      */
-    public static void addH2Constraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlParseException {
+    public static void addH2Constraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlConditionParserException {
 
         addH2ColumnConstraints(connectionToH2, schemaDto);
 
@@ -45,7 +44,7 @@ public class H2Constraints {
      * @throws SQLException      if the connection to the H2 database fails,
      * @throws SqlParseException if a conditional expression fails to be parsed
      */
-    private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlParseException {
+    private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlConditionParserException {
 
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
@@ -105,12 +104,10 @@ public class H2Constraints {
      * @param condExpression
      * @throws SqlParseException if the parsing of the conditional expression fails
      */
-    private static void addH2CheckConstraint(TableDto tableDto, String condExpression) throws SqlParseException {
+    private static void addH2CheckConstraint(TableDto tableDto, String condExpression) throws SqlConditionParserException {
 
-        SqlParser sqlParser = SqlParser.create(condExpression);
-        SqlNode sqlNode = sqlParser.parseExpression();
-        CheckExprExtractor checkExprExtractor = new CheckExprExtractor();
-        CheckExpr expr = sqlNode.accept(checkExprExtractor);
+        CalciteSqlSqlConditionParser sqlParser = new CalciteSqlSqlConditionParser();
+        SqlCondition expr = sqlParser.parse(condExpression);
 
         SchemaConstraintExtractor exprExtractor = new SchemaConstraintExtractor();
         List<SchemaConstraint> constraints = expr.accept(exprExtractor, null);
@@ -166,7 +163,7 @@ public class H2Constraints {
      * @throws SQLException      if the connection to the database fails
      * @throws SqlParseException if the parsing of a conditional expression fails
      */
-    private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlParseException {
+    private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlConditionParserException {
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;

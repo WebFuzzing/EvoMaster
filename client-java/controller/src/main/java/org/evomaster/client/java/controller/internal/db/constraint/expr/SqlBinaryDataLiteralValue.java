@@ -1,10 +1,10 @@
 package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
-public class BinaryLiteral extends LiteralValue {
+public class SqlBinaryDataLiteralValue extends SqlLiteralValue {
 
     private final String hexString;
 
-    public BinaryLiteral(String hexString) {
+    public SqlBinaryDataLiteralValue(String hexString) {
         this.hexString = hexString;
     }
 
@@ -15,7 +15,7 @@ public class BinaryLiteral extends LiteralValue {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 }

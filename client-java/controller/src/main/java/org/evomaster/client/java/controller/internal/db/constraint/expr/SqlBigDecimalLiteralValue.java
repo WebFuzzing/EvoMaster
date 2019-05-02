@@ -3,19 +3,19 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 import java.math.BigDecimal;
 import java.util.Objects;
 
-public class BigDecimalLiteral extends LiteralValue {
+public class SqlBigDecimalLiteralValue extends SqlLiteralValue {
 
     private final /* non-null*/ BigDecimal bigDecimalValue;
 
-    public BigDecimalLiteral(float floatValue) {
+    public SqlBigDecimalLiteralValue(float floatValue) {
         this.bigDecimalValue = BigDecimal.valueOf(floatValue);
     }
 
-    public BigDecimalLiteral(double doubleValue) {
+    public SqlBigDecimalLiteralValue(double doubleValue) {
         this.bigDecimalValue = BigDecimal.valueOf(doubleValue);
     }
 
-    public BigDecimalLiteral(BigDecimal bigDecimalValue) {
+    public SqlBigDecimalLiteralValue(BigDecimal bigDecimalValue) {
         if (bigDecimalValue == null) {
             throw new IllegalArgumentException("cannot create a big decimal literal with a null value");
         }
@@ -26,7 +26,7 @@ public class BigDecimalLiteral extends LiteralValue {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BigDecimalLiteral that = (BigDecimalLiteral) o;
+        SqlBigDecimalLiteralValue that = (SqlBigDecimalLiteralValue) o;
         return bigDecimalValue.equals(that.bigDecimalValue);
     }
 
@@ -41,7 +41,7 @@ public class BigDecimalLiteral extends LiteralValue {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 }

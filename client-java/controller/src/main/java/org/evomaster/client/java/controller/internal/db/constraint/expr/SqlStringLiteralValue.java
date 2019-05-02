@@ -2,12 +2,12 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class StringLiteral extends LiteralValue {
+public class SqlStringLiteralValue extends SqlLiteralValue {
 
 
     private final /*non-null*/ String stringValue;
 
-    public StringLiteral(String stringValue) {
+    public SqlStringLiteralValue(String stringValue) {
         if (stringValue == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
@@ -22,7 +22,7 @@ public class StringLiteral extends LiteralValue {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        StringLiteral that = (StringLiteral) o;
+        SqlStringLiteralValue that = (SqlStringLiteralValue) o;
         return stringValue.equals(that.stringValue);
     }
 
@@ -32,7 +32,7 @@ public class StringLiteral extends LiteralValue {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 }

@@ -3,20 +3,20 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 import java.math.BigInteger;
 import java.util.Objects;
 
-public class BigIntegerLiteral extends LiteralValue {
+public class SqlBigIntegerLiteralValue extends SqlLiteralValue {
 
     private final /*non-null*/ BigInteger bigIntegerValue;
 
-    public BigIntegerLiteral(int intValue) {
+    public SqlBigIntegerLiteralValue(int intValue) {
         this.bigIntegerValue = BigInteger.valueOf(intValue);
     }
 
-    public BigIntegerLiteral(long longValue) {
+    public SqlBigIntegerLiteralValue(long longValue) {
         this.bigIntegerValue = BigInteger.valueOf(longValue);
     }
 
 
-    public BigIntegerLiteral(BigInteger bigIntegerValue) {
+    public SqlBigIntegerLiteralValue(BigInteger bigIntegerValue) {
         if (bigIntegerValue == null) {
             throw new IllegalArgumentException("cannot create big integer literal with null value");
         }
@@ -27,7 +27,7 @@ public class BigIntegerLiteral extends LiteralValue {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BigIntegerLiteral that = (BigIntegerLiteral) o;
+        SqlBigIntegerLiteralValue that = (SqlBigIntegerLiteralValue) o;
         return bigIntegerValue.equals(that.bigIntegerValue);
     }
 
@@ -42,7 +42,7 @@ public class BigIntegerLiteral extends LiteralValue {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 

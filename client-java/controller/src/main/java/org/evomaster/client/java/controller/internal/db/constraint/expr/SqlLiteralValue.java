@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
-public abstract class LiteralValue extends CheckExpr {
+public abstract class SqlLiteralValue extends SqlCondition {
 
 
 }

@@ -2,24 +2,24 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class IsNotNullExpr extends CheckExpr {
-    private final /*non-null*/ ColumnName columnName;
+public class SqlIsNullCondition extends SqlCondition {
 
-    public IsNotNullExpr(ColumnName columnName) {
+    private final /*non-null*/ SqlColumnName columnName;
+
+    public SqlIsNullCondition(SqlColumnName columnName) {
         if (columnName == null) {
-            throw new IllegalArgumentException("Column name cannot be null");
+            throw new IllegalArgumentException("columnName cannot be null");
         }
         this.columnName = columnName;
     }
 
-
     @Override
     public String toSql() {
-        return columnName.toSql() + " IS NOT NULL";
+        return String.format("%s IS NULL", columnName.toSql());
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 
@@ -27,7 +27,7 @@ public class IsNotNullExpr extends CheckExpr {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        IsNotNullExpr that = (IsNotNullExpr) o;
+        SqlIsNullCondition that = (SqlIsNullCondition) o;
         return columnName.equals(that.columnName);
     }
 
