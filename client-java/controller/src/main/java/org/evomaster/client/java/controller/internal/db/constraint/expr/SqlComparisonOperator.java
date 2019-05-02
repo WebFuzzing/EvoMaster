@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
-public enum ComparisonOperator {
+public enum SqlComparisonOperator {
     EQUALS_TO("="),
     GREATER_THAN(">"),
     GREATER_THAN_OR_EQUAL(">="),
@@ -9,7 +9,7 @@ public enum ComparisonOperator {
 
     private String name;
 
-    ComparisonOperator(String name) {
+    SqlComparisonOperator(String name) {
         this.name = name;
     }
 

@@ -2,13 +2,13 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class AndFormula extends CheckExpr {
+public class SqlAndCondition extends SqlCondition {
 
-    private final /*non-null*/ CheckExpr leftExpr;
+    private final /*non-null*/ SqlCondition leftExpr;
 
-    private final /*non-null*/ CheckExpr rightExpr;
+    private final /*non-null*/ SqlCondition rightExpr;
 
-    public AndFormula(CheckExpr left, CheckExpr right) {
+    public SqlAndCondition(SqlCondition left, SqlCondition right) {
         if (left == null) {
             throw new IllegalArgumentException("Left value of AND formula cannot be null");
         }
@@ -24,7 +24,7 @@ public class AndFormula extends CheckExpr {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        AndFormula that = (AndFormula) o;
+        SqlAndCondition that = (SqlAndCondition) o;
         return leftExpr.equals(that.leftExpr) &&
                 rightExpr.equals(that.rightExpr);
     }
@@ -39,15 +39,15 @@ public class AndFormula extends CheckExpr {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 
-    public CheckExpr getLeftExpr() {
+    public SqlCondition getLeftExpr() {
         return leftExpr;
     }
 
-    public CheckExpr getRightExpr() {
+    public SqlCondition getRightExpr() {
         return rightExpr;
     }
 }

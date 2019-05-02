@@ -2,13 +2,13 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class ColumnName extends CheckExpr {
+public class SqlColumnName extends SqlCondition {
 
     private final /* nullable*/ String tableName;
 
     private final /* non-null*/ String columnName;
 
-    public ColumnName(String columnName) {
+    public SqlColumnName(String columnName) {
         if (columnName == null) {
             throw new IllegalArgumentException("This value cannot be null");
         }
@@ -16,7 +16,7 @@ public class ColumnName extends CheckExpr {
         this.columnName = columnName;
     }
 
-    public ColumnName(String tableName, String columnName) {
+    public SqlColumnName(String tableName, String columnName) {
         if (tableName == null) {
             throw new IllegalArgumentException("Invalid table name null");
         }
@@ -32,7 +32,7 @@ public class ColumnName extends CheckExpr {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ColumnName that = (ColumnName) o;
+        SqlColumnName that = (SqlColumnName) o;
         return Objects.equals(tableName, that.tableName) &&
                 columnName.equals(that.columnName);
     }
@@ -51,7 +51,7 @@ public class ColumnName extends CheckExpr {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 

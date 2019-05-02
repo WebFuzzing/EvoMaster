@@ -8,14 +8,14 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConstraint>, Void> {
+public class SchemaConstraintExtractor extends SqlConditionVisitor<List<SchemaConstraint>, Void> {
 
     /**
      * FIXME
      * temporary workaround before major refactoring.
      * Recall that Column.getTable() is not reliable
      */
-    private static String getTableName(ColumnName column) {
+    private static String getTableName(SqlColumnName column) {
         String tableName = column.getTableName();
         if (tableName != null) {
             return tableName;
@@ -26,7 +26,7 @@ public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConst
 
 
     @Override
-    public List<SchemaConstraint> visit(AndFormula andExpression, Void argument) {
+    public List<SchemaConstraint> visit(SqlAndCondition andExpression, Void argument) {
         List<SchemaConstraint> constraints = new LinkedList<>();
         constraints.addAll(andExpression.getLeftExpr().accept(this, null));
         constraints.addAll(andExpression.getRightExpr().accept(this, null));
@@ -34,18 +34,18 @@ public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConst
     }
 
     @Override
-    public List<SchemaConstraint> visit(ComparisonExpr e, Void argument) {
-        CheckExpr left = e.getLeftOperand();
-        CheckExpr right = e.getRightOperand();
+    public List<SchemaConstraint> visit(SqlComparisonCondition e, Void argument) {
+        SqlCondition left = e.getLeftOperand();
+        SqlCondition right = e.getRightOperand();
 
-        if (left instanceof LiteralValue && right instanceof ColumnName) {
-            LiteralValue leftLiteral = (LiteralValue) left;
-            ColumnName rightColumn = (ColumnName) right;
-            if (leftLiteral instanceof BigIntegerLiteral) {
-                long value = ((BigIntegerLiteral) leftLiteral).getBigInteger().longValue();
+        if (left instanceof SqlLiteralValue && right instanceof SqlColumnName) {
+            SqlLiteralValue leftLiteral = (SqlLiteralValue) left;
+            SqlColumnName rightColumn = (SqlColumnName) right;
+            if (leftLiteral instanceof SqlBigIntegerLiteralValue) {
+                long value = ((SqlBigIntegerLiteralValue) leftLiteral).getBigInteger().longValue();
                 final String tableName = getTableName(rightColumn);
                 final String columnName = rightColumn.getColumnName();
-                switch (e.getComparisonOperator()) {
+                switch (e.getSqlComparisonOperator()) {
                     case EQUALS_TO: {
                         return Collections.singletonList(new RangeConstraint(tableName, columnName, value, value));
                     }
@@ -62,20 +62,20 @@ public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConst
                         return Collections.singletonList(new LowerBoundConstraint(tableName, columnName, value));
                     }
                     default: {
-                        throw new RuntimeException("Unexpected comparison operator " + e.getComparisonOperator());
+                        throw new RuntimeException("Unexpected comparison operator " + e.getSqlComparisonOperator());
                     }
                 }
             } else {
-                throw new RuntimeException("Unsupported literal " + e.getComparisonOperator());
+                throw new RuntimeException("Unsupported literal " + e.getSqlComparisonOperator());
             }
-        } else if (left instanceof ColumnName && right instanceof LiteralValue) {
-            ColumnName leftColumn = (ColumnName) left;
-            LiteralValue rightLiteral = (LiteralValue) right;
-            if (rightLiteral instanceof BigIntegerLiteral) {
-                long value = ((BigIntegerLiteral) rightLiteral).getBigInteger().longValue();
+        } else if (left instanceof SqlColumnName && right instanceof SqlLiteralValue) {
+            SqlColumnName leftColumn = (SqlColumnName) left;
+            SqlLiteralValue rightLiteral = (SqlLiteralValue) right;
+            if (rightLiteral instanceof SqlBigIntegerLiteralValue) {
+                long value = ((SqlBigIntegerLiteralValue) rightLiteral).getBigInteger().longValue();
                 final String tableName = getTableName(leftColumn);
                 final String columnName = leftColumn.getColumnName();
-                switch (e.getComparisonOperator()) {
+                switch (e.getSqlComparisonOperator()) {
                     case EQUALS_TO: {
                         return Collections.singletonList(new RangeConstraint(tableName, columnName, value, value));
                     }
@@ -92,11 +92,11 @@ public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConst
                         return Collections.singletonList(new UpperBoundConstraint(tableName, columnName, value));
                     }
                     default: {
-                        throw new RuntimeException("Unexpected comparison operator " + e.getComparisonOperator());
+                        throw new RuntimeException("Unexpected comparison operator " + e.getSqlComparisonOperator());
                     }
                 }
             } else {
-                throw new RuntimeException("Unsupported literal " + e.getComparisonOperator());
+                throw new RuntimeException("Unsupported literal " + e.getSqlComparisonOperator());
             }
 
         } else {
@@ -108,16 +108,16 @@ public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConst
 
 
     @Override
-    public List<SchemaConstraint> visit(InExpression inExpression, Void argument) {
+    public List<SchemaConstraint> visit(SqlInCondition inExpression, Void argument) {
 
-        ColumnName column = inExpression.getColumnName();
+        SqlColumnName column = inExpression.getSqlColumnName();
         String columnName = column.getColumnName();
-        CheckExprList rightItemsList = inExpression.getLiteralList();
+        SqlConditionList rightItemsList = inExpression.getLiteralList();
 
         List<String> stringValues = new LinkedList<>();
-        for (CheckExpr expressionValue : rightItemsList.getCheckExpressions()) {
+        for (SqlCondition expressionValue : rightItemsList.getSqlConditionExpressions()) {
             final String stringValue;
-            if (expressionValue instanceof StringLiteral) {
+            if (expressionValue instanceof SqlStringLiteralValue) {
                 stringValue = new StringValue(expressionValue.toSql()).getNotExcapedValue();
             } else {
                 stringValue = expressionValue.toSql();
@@ -129,47 +129,67 @@ public class SchemaConstraintExtractor extends CheckExprVisitor<List<SchemaConst
     }
 
     @Override
-    public List<SchemaConstraint> visit(NullLiteral e, Void argument) {
+    public List<SchemaConstraint> visit(SqlNullLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(StringLiteral e, Void argument) {
+    public List<SchemaConstraint> visit(SqlStringLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(CheckExprList e, Void argument) {
+    public List<SchemaConstraint> visit(SqlConditionList e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(IsNotNullExpr e, Void argument) {
+    public List<SchemaConstraint> visit(SqlIsNotNullCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(BinaryLiteral e, Void argument) {
+    public List<SchemaConstraint> visit(SqlBinaryDataLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(BigDecimalLiteral e, Void argument) {
+    public List<SchemaConstraint> visit(SqlSimilarToCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(BigIntegerLiteral e, Void argument) {
+    public List<SchemaConstraint> visit(SqlIsNullCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(BooleanLiteral e, Void argument) {
+    public List<SchemaConstraint> visit(SqlLikeCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(ColumnName e, Void argument) {
+    public List<SchemaConstraint> visit(SqlOrCondition e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
+    }
+
+    @Override
+    public List<SchemaConstraint> visit(SqlBigDecimalLiteralValue e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
+    }
+
+    @Override
+    public List<SchemaConstraint> visit(SqlBigIntegerLiteralValue e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
+    }
+
+    @Override
+    public List<SchemaConstraint> visit(SqlBooleanLiteralValue e, Void argument) {
+        throw new UnsupportedOperationException("This method should not be invoked");
+    }
+
+    @Override
+    public List<SchemaConstraint> visit(SqlColumnName e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 

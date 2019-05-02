@@ -2,11 +2,11 @@ package org.evomaster.client.java.controller.internal.db.constraint.expr;
 
 import java.util.Objects;
 
-public class BooleanLiteral extends LiteralValue {
+public class SqlBooleanLiteralValue extends SqlLiteralValue {
 
     private final /*non-null*/ boolean booleanValue;
 
-    public BooleanLiteral(boolean booleanValue) {
+    public SqlBooleanLiteralValue(boolean booleanValue) {
         this.booleanValue = booleanValue;
     }
 
@@ -14,7 +14,7 @@ public class BooleanLiteral extends LiteralValue {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        BooleanLiteral that = (BooleanLiteral) o;
+        SqlBooleanLiteralValue that = (SqlBooleanLiteralValue) o;
         return Objects.equals(booleanValue, that.booleanValue);
     }
 
@@ -29,7 +29,7 @@ public class BooleanLiteral extends LiteralValue {
     }
 
     @Override
-    public <K, V> K accept(CheckExprVisitor<K, V> visitor, V argument) {
+    public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
 }
