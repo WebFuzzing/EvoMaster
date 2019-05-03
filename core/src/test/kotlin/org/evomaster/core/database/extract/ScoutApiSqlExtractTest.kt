@@ -1,7 +1,7 @@
 package org.evomaster.core.database.extract
 
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
@@ -52,8 +52,9 @@ class ScoutApiSqlExtractTest : ExtractTestBaseH2() {
         assertEquals(true, schema.tables.filter { it.name == "MEDIA_FILE" }.first().columns.filter { it.name == "uri".toUpperCase() }.first().unique)
         assertEquals(true, schema.tables.filter { it.name == "SYSTEM_MESSAGE" }.first().columns.filter { it.name == "key".toUpperCase() }.first().unique)
 
-        assertEquals(100, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().columns.filter { it.name == "age_max".toUpperCase() }.first().upperBound)
-        assertEquals(100, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().columns.filter { it.name == "age_min".toUpperCase() }.first().upperBound)
+        assertEquals(2, schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions.size)
+        assertEquals("(AGE_MAX <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals("(AGE_MIN <= 100)", schema.tables.filter { it.name == "ACTIVITY_PROPERTIES" }.first().tableCheckExpressions[1].sqlCheckExpression)
 
 
     }

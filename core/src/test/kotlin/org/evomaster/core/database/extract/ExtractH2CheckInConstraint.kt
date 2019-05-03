@@ -28,7 +28,8 @@ class ExtractH2CheckInConstraint : ExtractTestBaseH2() {
 
         assertTrue(schema.tables.first { it.name == "X" }.columns.any { it.name == "STATUS" });
 
-        val enumValuesAsStrings = schema.tables.first { it.name == "X" }.columns.first { it.name == "STATUS" }.enumValuesAsStrings
-        assertEquals(listOf("A", "B"), enumValuesAsStrings);
+        assertEquals(1, schema.tables.first { it.name == "X" }.tableCheckExpressions.size)
+        assertEquals("(STATUS IN('A', 'B'))", schema.tables.first { it.name == "X" }.tableCheckExpressions[0].sqlCheckExpression)
+
     }
 }

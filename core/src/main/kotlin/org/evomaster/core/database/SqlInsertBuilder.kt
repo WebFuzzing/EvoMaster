@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
-
-
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
+import org.evomaster.constraint.*
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
@@ -41,7 +41,7 @@ class SqlInsertBuilder(
             Here, we need to transform (and validate) the input DTO
             into immutable domain objects
          */
-        if(counter < 0){
+        if (counter < 0) {
             throw IllegalArgumentException("Invalid negative counter: $counter")
         }
 
@@ -60,6 +60,8 @@ class SqlInsertBuilder(
 
         for (t in schemaDto.tables) {
 
+            val tableConstraints = parseTableConstraints(t)
+
             val columns = mutableSetOf<Column>()
 
             for (c in t.columns) {
@@ -68,18 +70,23 @@ class SqlInsertBuilder(
                     throw IllegalArgumentException("Column in different table: ${c.table}!=${t.name}")
                 }
 
+
+                val lowerBound = findLowerBound(tableConstraints, c.name)
+                val upperBound = findUpperBound(tableConstraints, c.name)
+                val enumValuesAsStrings = findEnumValues(tableConstraints, c.name)
+
                 val column = Column(
                         name = c.name,
                         size = c.size,
                         type = ColumnDataType.valueOf(c.type),
                         primaryKey = c.primaryKey,
+                        autoIncrement = c.autoIncrement,
+                        foreignKeyToAutoIncrement = c.foreignKeyToAutoIncrement,
                         nullable = c.nullable,
                         unique = c.unique,
-                        autoIncrement = c.autoIncrement,
-                        foreignKeyToAutoIncrement =  c.foreignKeyToAutoIncrement,
-                        lowerBound = c.lowerBound,
-                        upperBound = c.upperBound,
-                        enumValuesAsStrings = c.enumValuesAsStrings
+                        lowerBound = lowerBound,
+                        upperBound = upperBound,
+                        enumValuesAsStrings = enumValuesAsStrings
                 )
 
                 columns.add(column)
@@ -122,6 +129,64 @@ class SqlInsertBuilder(
         }
     }
 
+    private fun findLowerBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
+
+
+        val lowerBounds = tableConstraints
+                .asSequence()
+                .filter { c -> c is LowerBoundConstraint }
+                .map { c -> c as LowerBoundConstraint }
+                .filter { c -> c.columnName.equals(columnName, true) }
+                .map { c -> c.lowerBound.toInt() }
+                .toList()
+
+        if (lowerBounds.isNotEmpty()) {
+            return lowerBounds.max()
+        } else {
+            return null
+        }
+    }
+
+    private fun findUpperBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
+        val upperBounds = tableConstraints
+                .asSequence()
+                .filter { c -> c is UpperBoundConstraint }
+                .map { c -> c as UpperBoundConstraint }
+                .filter { c -> c.columnName.equals(columnName, true) }
+                .map { c -> c.upperBound.toInt() }
+                .toList()
+
+        if (upperBounds.isNotEmpty()) {
+            return upperBounds.min()
+        } else {
+            return null
+        }
+    }
+
+    private fun findEnumValues(tableConstraints: List<TableConstraint>, columnName: String): List<String>? {
+        val enumValues = tableConstraints
+                .filter { c -> c is EnumConstraint }
+                .map { c -> c as EnumConstraint }
+                .filter { c -> c.columnName.equals(columnName, true) }
+                .map { c -> c.valuesAsStrings }
+                .firstOrNull()
+
+        return enumValues
+    }
+
+
+    private fun parseTableConstraints(t: TableDto): List<TableConstraint> {
+        val tableConstraints = mutableListOf<TableConstraint>()
+        val tableName = t.name
+
+        for (sqlCheckExpression in t.tableCheckExpressions) {
+            val builder = ConstraintBuilder()
+            val tableConstraint = builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression)
+            tableConstraints.add(tableConstraint)
+        }
+        return tableConstraints
+    }
+
     private fun getTable(tableName: String): Table {
         return tables[tableName]
                 ?: tables[tableName.toUpperCase()]
@@ -157,7 +222,7 @@ class SqlInsertBuilder(
         }
 
         for (cn in columnNames) {
-            if (cn != "*" && !table.columns.any { it.name.equals(cn, true)}) {
+            if (cn != "*" && !table.columns.any { it.name.equals(cn, true) }) {
                 throw IllegalArgumentException("No column called $cn in table $tableName")
             }
         }
@@ -172,7 +237,7 @@ class SqlInsertBuilder(
                 store it, as we can have other Foreign Key genes pointing to it
              */
 
-            if (takeAll || columnNames.any{it.equals(c.name,true)} || !c.nullable || c.primaryKey) {
+            if (takeAll || columnNames.any { it.equals(c.name, true) } || !c.nullable || c.primaryKey) {
                 //TODO are there also other constraints to consider?
                 selectedColumns.add(c)
             }
@@ -199,19 +264,19 @@ class SqlInsertBuilder(
      * For each row, create a DbAction containing only Primary Keys
      * and immutable data
      */
-    fun extractExistingPKs(): List<DbAction>{
+    fun extractExistingPKs(): List<DbAction> {
 
-        if(dbExecutor == null){
+        if (dbExecutor == null) {
             throw IllegalStateException("No Database Executor registered for this object")
         }
 
         val list = mutableListOf<DbAction>()
 
-        for(table in tables.values){
+        for (table in tables.values) {
 
             val pks = table.columns.filter { it.primaryKey }
 
-            if(pks.isEmpty()){
+            if (pks.isEmpty()) {
                 /*
                     In some very special cases, it might happen that a table has no defined
                     primary key. It's rare, but it is technically legal.
@@ -225,7 +290,7 @@ class SqlInsertBuilder(
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result : QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
                     ?: continue
 
             result.rows.forEach { r ->
@@ -234,7 +299,7 @@ class SqlInsertBuilder(
 
                 val genes = mutableListOf<Gene>()
 
-                for(i in 0 until pks.size){
+                for (i in 0 until pks.size) {
                     val pkName = pks[i].name
                     val inQuotes = pks[i].type.shouldBePrintedInQuotes()
                     val data = ImmutableDataHolderGene(pkName, r.columnData[i], inQuotes)
