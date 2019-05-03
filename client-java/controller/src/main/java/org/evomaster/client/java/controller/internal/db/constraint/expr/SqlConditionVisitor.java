@@ -10,7 +10,7 @@ public abstract class SqlConditionVisitor<K, V> {
 
     public abstract K visit(SqlBooleanLiteralValue e, V argument);
 
-    public abstract K visit(SqlColumnName e, V argument);
+    public abstract K visit(SqlColumn e, V argument);
 
     public abstract K visit(SqlComparisonCondition e, V argument);
 

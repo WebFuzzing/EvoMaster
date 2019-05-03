@@ -116,7 +116,20 @@ public class ConstraintUtils {
                 for (String columnName : uniqueConstraint.getUniqueColumnNames()) {
                     addUniqueConstraintToColumn(tableName, tableDto, columnName);
                 }
+            } else if (constraint instanceof SimilarToConstraint) {
+                // TODO handle this constraint
 
+            } else if (constraint instanceof LikeConstraint) {
+                // TODO handle this constraint
+
+            } else if (constraint instanceof AndConstraint) {
+                // TODO handle this constraint
+
+            } else if (constraint instanceof OrConstraint) {
+                // TODO handle this constraint
+
+            } else if (constraint instanceof UnsupportedTableConstraint) {
+                // signal warning
             } else {
                 throw new RuntimeException("Unknown constraint type " + constraint.getClass().getName());
             }

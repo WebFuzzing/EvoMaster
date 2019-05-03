@@ -19,6 +19,10 @@ public class SqlOrCondition extends SqlCondition {
         this.conditions = Arrays.asList(conditions);
     }
 
+    public List<SqlCondition> getOrConditions() {
+        return conditions;
+    }
+
     @Override
     public String toSql() {
         return join(conditions.stream().map(SqlCondition::toSql).collect(Collectors.toList()), " OR ");
@@ -41,4 +45,6 @@ public class SqlOrCondition extends SqlCondition {
     public int hashCode() {
         return Objects.hash(conditions);
     }
+
+
 }

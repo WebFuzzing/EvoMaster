@@ -4,25 +4,25 @@ import java.util.Objects;
 
 public class SqlSimilarToCondition extends SqlCondition {
 
-    private final /*non-null*/ SqlColumnName columnName;
+    private final /*non-null*/ SqlColumn column;
 
     private final /*non-null*/ SqlStringLiteralValue pattern;
 
 
-    public SqlSimilarToCondition(SqlColumnName columnName, SqlStringLiteralValue pattern) {
-        if (columnName == null) {
+    public SqlSimilarToCondition(SqlColumn column, SqlStringLiteralValue pattern) {
+        if (column == null) {
             throw new IllegalArgumentException("column name cannot be null");
         }
         if (pattern == null) {
             throw new IllegalArgumentException("pattern cannot be null");
         }
-        this.columnName = columnName;
+        this.column = column;
         this.pattern = pattern;
     }
 
     @Override
     public String toSql() {
-        return String.format("%s SIMILAR TO %s", columnName.toSql(), pattern.toSql());
+        return String.format("%s SIMILAR TO %s", column.toSql(), pattern.toSql());
     }
 
     @Override
@@ -35,12 +35,20 @@ public class SqlSimilarToCondition extends SqlCondition {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SqlSimilarToCondition that = (SqlSimilarToCondition) o;
-        return columnName.equals(that.columnName) &&
+        return column.equals(that.column) &&
                 pattern.equals(that.pattern);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(columnName, pattern);
+        return Objects.hash(column, pattern);
+    }
+
+    public SqlColumn getColumn() {
+        return column;
+    }
+
+    public SqlStringLiteralValue getPattern() {
+        return pattern;
     }
 }

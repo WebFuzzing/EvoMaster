@@ -4,11 +4,11 @@ import java.util.Objects;
 
 public class SqlLikeCondition extends SqlCondition {
 
-    private final SqlColumnName columnName;
+    private final SqlColumn columnName;
 
     private final SqlStringLiteralValue pattern;
 
-    public SqlLikeCondition(SqlColumnName columnName, SqlStringLiteralValue pattern) {
+    public SqlLikeCondition(SqlColumn columnName, SqlStringLiteralValue pattern) {
         if (columnName == null) {
             throw new IllegalArgumentException("column name cannot be null");
         }
@@ -41,5 +41,13 @@ public class SqlLikeCondition extends SqlCondition {
     @Override
     public int hashCode() {
         return Objects.hash(columnName, pattern);
+    }
+
+    public SqlColumn getColumnName() {
+        return columnName;
+    }
+
+    public SqlStringLiteralValue getPattern() {
+        return pattern;
     }
 }

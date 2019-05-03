@@ -4,12 +4,12 @@ import java.util.Objects;
 
 public class SqlInCondition extends SqlCondition {
 
-    private final /* non-null*/ SqlColumnName sqlColumnName;
+    private final /* non-null*/ SqlColumn sqlColumn;
 
     private final /* non-null*/ SqlConditionList literalList;
 
-    public SqlInCondition(SqlColumnName sqlColumnName, SqlConditionList literalList) {
-        this.sqlColumnName = sqlColumnName;
+    public SqlInCondition(SqlColumn sqlColumn, SqlConditionList literalList) {
+        this.sqlColumn = sqlColumn;
         this.literalList = literalList;
     }
 
@@ -19,18 +19,18 @@ public class SqlInCondition extends SqlCondition {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SqlInCondition that = (SqlInCondition) o;
-        return sqlColumnName.equals(that.sqlColumnName) &&
+        return sqlColumn.equals(that.sqlColumn) &&
                 literalList.equals(that.literalList);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(sqlColumnName, literalList);
+        return Objects.hash(sqlColumn, literalList);
     }
 
     @Override
     public String toSql() {
-        return sqlColumnName.toSql() +
+        return sqlColumn.toSql() +
                 " IN " + literalList.toSql();
     }
 
@@ -39,8 +39,8 @@ public class SqlInCondition extends SqlCondition {
         return visitor.visit(this, argument);
     }
 
-    public SqlColumnName getSqlColumnName() {
-        return sqlColumnName;
+    public SqlColumn getSqlColumn() {
+        return sqlColumn;
     }
 
     public SqlConditionList getLiteralList() {

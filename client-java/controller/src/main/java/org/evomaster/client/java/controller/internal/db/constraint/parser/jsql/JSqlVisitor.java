@@ -180,7 +180,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     @Override
     public void visit(InExpression inExpression) {
         inExpression.getLeftExpression().accept(this);
-        SqlColumnName left = (SqlColumnName) stack.pop();
+        SqlColumn left = (SqlColumn) stack.pop();
         inExpression.getRightItemsList().accept(this);
         SqlConditionList right = (SqlConditionList) stack.pop();
         stack.push(new SqlInCondition(left, right));
@@ -189,7 +189,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     @Override
     public void visit(IsNullExpression isNullExpression) {
         isNullExpression.getLeftExpression().accept(this);
-        SqlColumnName columnName = (SqlColumnName) stack.pop();
+        SqlColumn columnName = (SqlColumn) stack.pop();
         if (isNullExpression.isNot()) {
             stack.push(new SqlIsNotNullCondition(columnName));
         } else {
@@ -200,7 +200,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     @Override
     public void visit(LikeExpression likeExpression) {
         likeExpression.getLeftExpression().accept(this);
-        SqlColumnName left = (SqlColumnName) stack.pop();
+        SqlColumn left = (SqlColumn) stack.pop();
         likeExpression.getRightExpression().accept(this);
         SqlStringLiteralValue pattern = (SqlStringLiteralValue) stack.pop();
         stack.push(new SqlLikeCondition(left, pattern));
@@ -236,9 +236,9 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         String columnName = column.getColumnName();
         if (column.getTable() != null) {
             String tableName = column.getTable().getName();
-            stack.push(new SqlColumnName(tableName, columnName));
+            stack.push(new SqlColumn(tableName, columnName));
         } else {
-            stack.push(new SqlColumnName(columnName));
+            stack.push(new SqlColumn(columnName));
         }
     }
 
@@ -388,8 +388,40 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
     @Override
     public void visit(RegExpMatchOperator regExpMatchOperator) {
 
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        regExpMatchOperator.getLeftExpression().accept(this);
+        SqlColumn columnName = (SqlColumn) this.stack.pop();
+
+        String operator1 = regExpMatchOperator.getStringExpression();
+        if (!operator1.equals("~")) {
+            throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
+        }
+
+        if (regExpMatchOperator.getRightExpression() instanceof SignedExpression) {
+            SignedExpression signedRightExpression = (SignedExpression) regExpMatchOperator.getRightExpression();
+            String operator2 = String.valueOf(signedRightExpression.getSign());
+            if (!operator2.equals("~")) {
+                throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
+            }
+            signedRightExpression.getExpression().accept(this);
+            SqlStringLiteralValue pattern = (SqlStringLiteralValue) this.stack.pop();
+
+            stack.push(new SqlLikeCondition(columnName, pattern));
+
+        } else if (regExpMatchOperator.getRightExpression() instanceof Function) {
+            Function function = (Function) regExpMatchOperator.getRightExpression();
+            String functionName = function.getName();
+            if (function.equals("similar_escape")) {
+                throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
+            }
+            function.getParameters().accept(this);
+            SqlConditionList parameterList = (SqlConditionList) stack.pop();
+            SqlStringLiteralValue pattern = (SqlStringLiteralValue) parameterList.getSqlConditionExpressions().get(0);
+            stack.push(new SqlSimilarToCondition(columnName, pattern));
+
+        } else {
+            throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
+        }
+
     }
 
     @Override
