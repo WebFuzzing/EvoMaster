@@ -92,8 +92,8 @@ public class H2ConstraintExtractor extends ConstraintExtractor {
                 } else if (constraintType.equals("CHECK")) {
                     assert (columnList == null);
 
-                    List<TableConstraint> checkConstraints = translateToConstraints(tableDto, checkExpression);
-                    tableConstraints.addAll(checkConstraints);
+                    TableConstraint checkConstraint = translateToConstraint(tableDto, checkExpression);
+                    tableConstraints.add(checkConstraint);
 
                 } else {
                     throw new RuntimeException("Unknown constraint type : " + constraintType);
@@ -128,8 +128,8 @@ public class H2ConstraintExtractor extends ConstraintExtractor {
             while (columns.next()) {
                 String checkConstraint = columns.getString("CHECK_CONSTRAINT");
                 if (checkConstraint != null && !checkConstraint.equals("")) {
-                    List<TableConstraint> constraints = this.translateToConstraints(tableDto, checkConstraint);
-                    columnConstraints.addAll(constraints);
+                    TableConstraint constraint = this.translateToConstraint(tableDto, checkConstraint);
+                    columnConstraints.add(constraint);
                 }
             }
 

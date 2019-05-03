@@ -92,7 +92,7 @@ class SqlInsertBuilder(
 
             for (f in t.foreignKeys) {
 
-                val targetTable = tableToColumns[f.targetTable]
+                tableToColumns[f.targetTable]
                         ?: throw IllegalArgumentException("Foreign key for non-existent table ${f.targetTable}")
 
                 val sourceColumns = mutableSetOf<Column>()

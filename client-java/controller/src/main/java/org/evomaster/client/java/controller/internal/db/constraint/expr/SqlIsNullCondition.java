@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class SqlIsNullCondition extends SqlCondition {
 
-    private final /*non-null*/ SqlColumnName columnName;
+    private final /*non-null*/ SqlColumn columnName;
 
-    public SqlIsNullCondition(SqlColumnName columnName) {
+    public SqlIsNullCondition(SqlColumn columnName) {
         if (columnName == null) {
             throw new IllegalArgumentException("columnName cannot be null");
         }

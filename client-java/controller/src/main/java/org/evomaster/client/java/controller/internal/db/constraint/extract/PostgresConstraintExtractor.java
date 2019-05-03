@@ -50,8 +50,8 @@ public class PostgresConstraintExtractor extends ConstraintExtractor {
                         if (checkConstraint != null && !checkConstraint.equals("")) {
 
                             checkConstraint = checkConstraint.replace("::text", "");
-                            List<TableConstraint> tableConstraints = this.translateToConstraints(tableDto, checkConstraint);
-                            constraints.addAll(tableConstraints);
+                            TableConstraint tableConstraint = this.translateToConstraint(tableDto, checkConstraint);
+                            constraints.add(tableConstraint);
 
                         }
                         break;

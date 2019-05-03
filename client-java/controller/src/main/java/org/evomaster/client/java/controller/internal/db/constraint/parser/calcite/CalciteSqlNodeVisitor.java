@@ -57,11 +57,11 @@ public class CalciteSqlNodeVisitor /*implements SqlVisitor<SqlCondition>*/ {
 //
 //        switch (operator.getKind()) {
 //            case IS_NOT_NULL: {
-//                SqlColumnName sqlColumnName = (SqlColumnName) operand;
+//                SqlColumn sqlColumnName = (SqlColumn) operand;
 //                return new SqlIsNotNullCondition(sqlColumnName);
 //            }
 //            case IS_NULL: {
-//                SqlColumnName sqlColumnName = (SqlColumnName) operand;
+//                SqlColumn sqlColumnName = (SqlColumn) operand;
 //                return new SqlIsNullCondition(sqlColumnName);
 //            }
 //            default: {
@@ -100,17 +100,17 @@ public class CalciteSqlNodeVisitor /*implements SqlVisitor<SqlCondition>*/ {
 //                return new SqlAndCondition(leftOperand, rightOperand);
 //            }
 //            case IN: {
-//                SqlColumnName sqlColumnName = (SqlColumnName) leftOperand;
+//                SqlColumn sqlColumnName = (SqlColumn) leftOperand;
 //                SqlConditionList literalList = (SqlConditionList) rightOperand;
 //                return new SqlInCondition(sqlColumnName, literalList);
 //            }
 //            case SIMILAR: {
-//                SqlColumnName sqlColumnName = (SqlColumnName) leftOperand;
+//                SqlColumn sqlColumnName = (SqlColumn) leftOperand;
 //                SqlStringLiteralValue pattern = (SqlStringLiteralValue) rightOperand;
 //                return new SqlSimilarToCondition(sqlColumnName, pattern);
 //            }
 //            case LIKE: {
-//                SqlColumnName sqlColumnName = (SqlColumnName) leftOperand;
+//                SqlColumn sqlColumnName = (SqlColumn) leftOperand;
 //                SqlStringLiteralValue pattern = (SqlStringLiteralValue) rightOperand;
 //                return new SqlLikeCondition(sqlColumnName, pattern);
 //            }
@@ -132,11 +132,11 @@ public class CalciteSqlNodeVisitor /*implements SqlVisitor<SqlCondition>*/ {
 //
 //        if (sqlIdentifier.isSimple()) {
 //            String simpleName = sqlIdentifier.getSimple();
-//            return new SqlColumnName(simpleName);
+//            return new SqlColumn(simpleName);
 //        } else {
 //            String tableName = sqlIdentifier.names.get(0);
 //            String columnName = sqlIdentifier.names.get(1);
-//            return new SqlColumnName(tableName, columnName);
+//            return new SqlColumn(tableName, columnName);
 //        }
 //    }
 //

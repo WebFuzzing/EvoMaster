@@ -11,7 +11,6 @@ import org.evomaster.client.java.controller.internal.db.constraint.parser.SqlCon
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.List;
 
 public abstract class ConstraintExtractor {
@@ -24,7 +23,7 @@ public abstract class ConstraintExtractor {
      * @param condExpression
      * @throws SqlConditionParserException if the parsing of the conditional expression fails
      */
-    protected List<TableConstraint> translateToConstraints(TableDto tableDto, String condExpression) {
+    protected TableConstraint translateToConstraint(TableDto tableDto, String condExpression) {
 
         SqlConditionParser sqlParser = SqlConditionParserFactory.buildParser();
         String tableName = tableDto.name;
@@ -32,10 +31,10 @@ public abstract class ConstraintExtractor {
             SqlCondition expr = sqlParser.parse(condExpression);
             TranslationContext translationContext = new TranslationContext(tableName);
             SqlConditionTranslator exprExtractor = new SqlConditionTranslator(translationContext);
-            List<TableConstraint> constraints = expr.accept(exprExtractor, null);
-            return constraints;
+            TableConstraint constraint = expr.accept(exprExtractor, null);
+            return constraint;
         } catch (SqlConditionParserException e) {
-            return Collections.singletonList(new UnsupportedTableConstraint(tableName, condExpression));
+            return new UnsupportedTableConstraint(tableName, condExpression);
         }
 
     }

@@ -23,8 +23,8 @@ class SqlConditionParserTest {
         return new SqlComparisonCondition(left, SqlComparisonOperator.EQUALS_TO, right);
     }
 
-    private static SqlColumnName column(String columnName) {
-        return new SqlColumnName(columnName);
+    private static SqlColumn column(String columnName) {
+        return new SqlColumn(columnName);
     }
 
     private static SqlAndCondition and(SqlCondition left, SqlCondition right) {
@@ -39,8 +39,8 @@ class SqlConditionParserTest {
         return new SqlStringLiteralValue(literalValue);
     }
 
-    private static SqlIsNotNullCondition isNotNull(SqlColumnName sqlColumnName) {
-        return new SqlIsNotNullCondition(sqlColumnName);
+    private static SqlIsNotNullCondition isNotNull(SqlColumn sqlColumn) {
+        return new SqlIsNotNullCondition(sqlColumn);
     }
 
 
@@ -55,15 +55,15 @@ class SqlConditionParserTest {
         return parser.parse(conditionSqlStr);
     }
 
-    private static SqlSimilarToCondition similarTo(SqlColumnName columnName, SqlStringLiteralValue pattern) {
+    private static SqlSimilarToCondition similarTo(SqlColumn columnName, SqlStringLiteralValue pattern) {
         return new SqlSimilarToCondition(columnName, pattern);
     }
 
-    private static SqlIsNullCondition isNull(SqlColumnName columnName) {
+    private static SqlIsNullCondition isNull(SqlColumn columnName) {
         return new SqlIsNullCondition(columnName);
     }
 
-    private static SqlLikeCondition like(SqlColumnName columnName, String patternStr) {
+    private static SqlLikeCondition like(SqlColumn columnName, String patternStr) {
         return new SqlLikeCondition(columnName, new SqlStringLiteralValue(patternStr));
     }
 
@@ -75,7 +75,7 @@ class SqlConditionParserTest {
     @Test
     void testMinorThanOrEquals() throws SqlConditionParserException {
         SqlCondition actual = parse("age_max<=10".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlBigIntegerLiteralValue(10));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlBigIntegerLiteralValue(10));
         assertEquals(expected, actual);
     }
 
@@ -83,56 +83,56 @@ class SqlConditionParserTest {
     @Test
     void testMinorThan() throws SqlConditionParserException {
         SqlCondition actual = parse("age_max<10".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN, new SqlBigIntegerLiteralValue(10));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN, new SqlBigIntegerLiteralValue(10));
         assertEquals(expected, actual);
     }
 
     @Test
     void testGreaterThanValue() throws SqlConditionParserException {
         SqlCondition actual = parse("age_max>10".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("age_max".toUpperCase()), SqlComparisonOperator.GREATER_THAN, new SqlBigIntegerLiteralValue(10));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("age_max".toUpperCase()), SqlComparisonOperator.GREATER_THAN, new SqlBigIntegerLiteralValue(10));
         assertEquals(expected, actual);
     }
 
     @Test
     void testMinorThanColumn() throws SqlConditionParserException {
         SqlCondition actual = parse("10<age_max".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlBigIntegerLiteralValue(10), SqlComparisonOperator.LESS_THAN, new SqlColumnName("age_max".toUpperCase()));
+        SqlCondition expected = new SqlComparisonCondition(new SqlBigIntegerLiteralValue(10), SqlComparisonOperator.LESS_THAN, new SqlColumn("age_max".toUpperCase()));
         assertEquals(expected, actual);
     }
 
     @Test
     void testMinorThanValue() throws SqlConditionParserException {
         SqlCondition actual = parse("age_max<10".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN, new SqlBigIntegerLiteralValue(10));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN, new SqlBigIntegerLiteralValue(10));
         assertEquals(expected, actual);
     }
 
     @Test
     void testGreaterThanEquals() throws SqlConditionParserException {
         SqlCondition actual = parse("age_max>=10".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("age_max".toUpperCase()), SqlComparisonOperator.GREATER_THAN_OR_EQUAL, new SqlBigIntegerLiteralValue(10));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("age_max".toUpperCase()), SqlComparisonOperator.GREATER_THAN_OR_EQUAL, new SqlBigIntegerLiteralValue(10));
         assertEquals(expected, actual);
     }
 
     @Test
     void testMinorThanEqualsColumn() throws SqlConditionParserException {
         SqlCondition actual = parse("10<=age_max".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlBigIntegerLiteralValue(10), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlColumnName("age_max".toUpperCase()));
+        SqlCondition expected = new SqlComparisonCondition(new SqlBigIntegerLiteralValue(10), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlColumn("age_max".toUpperCase()));
         assertEquals(expected, actual);
     }
 
     @Test
     void testEquals() throws SqlConditionParserException {
         SqlCondition actual = parse("age_max=10".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("age_max".toUpperCase()), SqlComparisonOperator.EQUALS_TO, new SqlBigIntegerLiteralValue(10));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("age_max".toUpperCase()), SqlComparisonOperator.EQUALS_TO, new SqlBigIntegerLiteralValue(10));
         assertEquals(expected, actual);
     }
 
     @Test
     void testTableAndColumnName() throws SqlConditionParserException {
         SqlCondition actual = parse("users.age_max<=100".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlColumnName("users".toUpperCase(), "age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlBigIntegerLiteralValue(100));
+        SqlCondition expected = new SqlComparisonCondition(new SqlColumn("users".toUpperCase(), "age_max".toUpperCase()), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlBigIntegerLiteralValue(100));
         assertEquals(expected, actual);
     }
 
@@ -150,7 +150,7 @@ class SqlConditionParserTest {
     @Test
     void testParenthesis() throws SqlConditionParserException {
         SqlCondition actual = parse("18<=age_max".toUpperCase());
-        SqlCondition expected = new SqlComparisonCondition(new SqlBigIntegerLiteralValue(18), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlColumnName("age_max".toUpperCase()));
+        SqlCondition expected = new SqlComparisonCondition(new SqlBigIntegerLiteralValue(18), SqlComparisonOperator.LESS_THAN_OR_EQUAL, new SqlColumn("age_max".toUpperCase()));
         assertEquals(expected, actual);
     }
 
