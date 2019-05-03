@@ -31,7 +31,5 @@ public class ColumnDto {
      */
     public List<String> enumValuesAsStrings = null;
 
-//    public boolean identity;
 
-    //TODO something for other constraints
 }
