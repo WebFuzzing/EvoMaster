@@ -4,7 +4,6 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.internal.db.constraint.calcite.CalciteSqlSqlConditionParser;
 import org.evomaster.client.java.controller.internal.db.constraint.expr.SqlCondition;
 
 import java.sql.Connection;
@@ -40,7 +39,7 @@ public class H2Constraints {
      *
      * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
-     * @throws SQLException      if the connection to the H2 database fails,
+     * @throws SQLException                if the connection to the H2 database fails,
      * @throws SqlConditionParserException if a conditional expression fails to be parsed
      */
     private static void addH2TableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlConditionParserException {
@@ -105,7 +104,7 @@ public class H2Constraints {
      */
     private static void addH2CheckConstraint(TableDto tableDto, String condExpression) throws SqlConditionParserException {
 
-        CalciteSqlSqlConditionParser sqlParser = new CalciteSqlSqlConditionParser();
+        SqlConditionParser sqlParser = SqlConditionParserFactory.buildParser();
         SqlCondition expr = sqlParser.parse(condExpression);
 
         SchemaConstraintExtractor exprExtractor = new SchemaConstraintExtractor();
@@ -159,7 +158,7 @@ public class H2Constraints {
      *
      * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
-     * @throws SQLException      if the connection to the database fails
+     * @throws SQLException                if the connection to the database fails
      * @throws SqlConditionParserException if the parsing of a conditional expression fails
      */
     private static void addH2ColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException, SqlConditionParserException {
