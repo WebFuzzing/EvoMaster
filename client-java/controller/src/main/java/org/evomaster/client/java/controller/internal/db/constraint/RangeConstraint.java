@@ -1,8 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
-public class RangeConstraint extends SchemaConstraint {
-
-    private final String tableName;
+public class RangeConstraint extends TableConstraint {
 
     private final String columnName;
 
@@ -11,16 +9,12 @@ public class RangeConstraint extends SchemaConstraint {
     private final long maxValue;
 
     public RangeConstraint(String tableName, String columnName, long minValue, long maxValue) {
-        this.tableName = tableName;
+        super(tableName);
         this.columnName = columnName;
         this.minValue = minValue;
         this.maxValue = maxValue;
     }
 
-
-    public String getTableName() {
-        return this.tableName;
-    }
 
     public String getColumnName() {
         return this.columnName;

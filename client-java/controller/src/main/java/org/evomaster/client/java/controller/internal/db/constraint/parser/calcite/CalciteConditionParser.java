@@ -1,11 +1,12 @@
-package org.evomaster.client.java.controller.internal.db.constraint.calcite;
+package org.evomaster.client.java.controller.internal.db.constraint.parser.calcite;
 
 //import org.apache.calcite.sql.SqlNode;
 //import org.apache.calcite.sql.parser.SqlParseException;
 //import org.apache.calcite.sql.parser.SqlParser;
-import org.evomaster.client.java.controller.internal.db.constraint.SqlConditionParser;
-import org.evomaster.client.java.controller.internal.db.constraint.SqlConditionParserException;
+
 import org.evomaster.client.java.controller.internal.db.constraint.expr.SqlCondition;
+import org.evomaster.client.java.controller.internal.db.constraint.parser.SqlConditionParser;
+import org.evomaster.client.java.controller.internal.db.constraint.parser.SqlConditionParserException;
 
 public class CalciteConditionParser extends SqlConditionParser {
 

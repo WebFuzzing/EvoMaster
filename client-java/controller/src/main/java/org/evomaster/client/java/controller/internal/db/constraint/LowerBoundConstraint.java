@@ -1,16 +1,13 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
-public class LowerBoundConstraint extends SchemaConstraint {
-
-    private final String tableName;
+public class LowerBoundConstraint extends TableConstraint {
 
     private final String columnName;
 
     private long lowerBound;
 
     public LowerBoundConstraint(String tableName, String columnName, long lowerBound) {
-        super();
-        this.tableName = tableName;
+        super(tableName);
         this.columnName = columnName;
         this.lowerBound = lowerBound;
     }
@@ -23,7 +20,4 @@ public class LowerBoundConstraint extends SchemaConstraint {
         return lowerBound;
     }
 
-    public String getTableName() {
-        return this.tableName;
-    }
 }

@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db.constraint.calcite;
+package org.evomaster.client.java.controller.internal.db.constraint.parser.calcite;
 
 //import org.apache.calcite.sql.*;
 //import org.apache.calcite.sql.util.SqlVisitor;
