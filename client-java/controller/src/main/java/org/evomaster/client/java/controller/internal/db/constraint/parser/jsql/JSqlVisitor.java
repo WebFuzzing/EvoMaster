@@ -343,11 +343,14 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
         throw new RuntimeException("Extraction of condition not yet implemented");
     }
 
+    /**
+     * e.g. 'hi'::text
+     *
+     * @param castExpression
+     */
     @Override
     public void visit(CastExpression castExpression) {
-
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        castExpression.getLeftExpression().accept(this);
     }
 
     @Override
