@@ -7,7 +7,7 @@ import org.evomaster.client.java.controller.internal.db.constraint.SqlConditionP
 import org.evomaster.client.java.controller.internal.db.constraint.SqlConditionParserException;
 import org.evomaster.client.java.controller.internal.db.constraint.expr.SqlCondition;
 
-public class CalciteSqlSqlConditionParser extends SqlConditionParser {
+public class CalciteConditionParser extends SqlConditionParser {
 
     @Override
     public SqlCondition parse(String sqlConditionStr) throws SqlConditionParserException {

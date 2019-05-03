@@ -2,7 +2,6 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
-import org.evomaster.client.java.controller.internal.db.constraint.calcite.CalciteSqlSqlConditionParser;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -49,7 +48,7 @@ public class PostgresConstraints {
                             checkConstraint = checkConstraint.replace("::text", "");
 
                             try {
-                                CalciteSqlSqlConditionParser parser = new CalciteSqlSqlConditionParser();
+                                SqlConditionParser parser = SqlConditionParserFactory.buildParser();
                                 parser.parse(checkConstraint);
                             } catch (SqlConditionParserException e) {
 
