@@ -24,12 +24,14 @@ public class SutInfoDto {
      */
     public enum OutputFormat {
         JAVA_JUNIT_5,
-        JAVA_JUNIT_4
+        JAVA_JUNIT_4,
+        KOTLIN_JUNIT_4,
+        KOTLIN_JUNIT_5
     }
 
     /**
      * When generating test cases for this SUT, specify the default
-     * preffered output format (eg JUnit 4 in Java)
+     * preferred output format (eg JUnit 4 in Java)
      */
     public OutputFormat defaultOutputFormat;
 

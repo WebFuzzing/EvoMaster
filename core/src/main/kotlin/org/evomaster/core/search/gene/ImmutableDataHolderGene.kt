@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -26,7 +27,7 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
 
         if(inQuotes){
             return "\"$value\""

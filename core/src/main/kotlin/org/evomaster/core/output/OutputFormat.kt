@@ -6,11 +6,16 @@ package org.evomaster.core.output
 enum class OutputFormat {
 
     /**
-       Use the format specified in the SUT driver
+     *  Use the format specified in the SUT driver.
+     *
+     *  Note: this should be kept in sync with:
+     *  org.evomaster.client.java.controller.api.dto.SutInfoDto.OutputFormat
+     *  but DEFAULT
      */
     DEFAULT,
     JAVA_JUNIT_5,
     JAVA_JUNIT_4,
+    KOTLIN_JUNIT_4,
     KOTLIN_JUNIT_5
     ;
 

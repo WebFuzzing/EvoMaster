@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
 
@@ -13,7 +14,7 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         throw IllegalStateException("AutoIncrement fields should never be printed")
     }
 
