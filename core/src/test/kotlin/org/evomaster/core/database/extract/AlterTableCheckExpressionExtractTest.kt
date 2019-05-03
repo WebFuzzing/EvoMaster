@@ -28,8 +28,8 @@ class AlterTableCheckExpressionExtractTest : ExtractTestBaseH2() {
         assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "COUNTRY_ID"}.first().unique)
         assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().unique)
 
-        assertEquals(1, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().lowerBound)
-        assertNull(schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().upperBound)
+        assertEquals(1, schema.tables.filter { it.name == "PASSPORTS" }.first().tableCheckExpressions.size)
+        assertEquals("(PASSPORT_NUMBER > 0)", schema.tables.filter { it.name == "PASSPORTS" }.first().tableCheckExpressions[0].sqlCheckExpression)
 
     }
 
