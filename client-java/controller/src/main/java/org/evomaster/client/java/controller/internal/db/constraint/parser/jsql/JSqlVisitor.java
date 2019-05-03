@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db.constraint.jsql;
+package org.evomaster.client.java.controller.internal.db.constraint.parser.jsql;
 
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.expression.operators.arithmetic.*;

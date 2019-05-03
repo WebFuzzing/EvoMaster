@@ -1,40 +1,47 @@
-package org.evomaster.client.java.controller.internal.db.constraint;
+package org.evomaster.client.java.controller.internal.db.constraint.extract;
 
 
 import net.sf.jsqlparser.expression.StringValue;
+import org.evomaster.client.java.controller.internal.db.constraint.*;
 import org.evomaster.client.java.controller.internal.db.constraint.expr.*;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class SchemaConstraintExtractor extends SqlConditionVisitor<List<SchemaConstraint>, Void> {
+public class SqlConditionTranslator extends SqlConditionVisitor<List<TableConstraint>, Void> {
+
+    private final TranslationContext translationContext;
+
+    public SqlConditionTranslator(TranslationContext translationContext) {
+        this.translationContext = translationContext;
+    }
 
     /**
      * FIXME
      * temporary workaround before major refactoring.
      * Recall that Column.getTable() is not reliable
      */
-    private static String getTableName(SqlColumnName column) {
+    private String getTableName(SqlColumnName column) {
         String tableName = column.getTableName();
         if (tableName != null) {
             return tableName;
+        } else {
+            return this.translationContext.getCurrentTableName();
         }
-
-        return "?";
     }
 
 
     @Override
-    public List<SchemaConstraint> visit(SqlAndCondition andExpression, Void argument) {
-        List<SchemaConstraint> constraints = new LinkedList<>();
+    public List<TableConstraint> visit(SqlAndCondition andExpression, Void argument) {
+        List<TableConstraint> constraints = new LinkedList<>();
         constraints.addAll(andExpression.getLeftExpr().accept(this, null));
         constraints.addAll(andExpression.getRightExpr().accept(this, null));
         return constraints;
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlComparisonCondition e, Void argument) {
+    public List<TableConstraint> visit(SqlComparisonCondition e, Void argument) {
         SqlCondition left = e.getLeftOperand();
         SqlCondition right = e.getRightOperand();
 
@@ -108,9 +115,9 @@ public class SchemaConstraintExtractor extends SqlConditionVisitor<List<SchemaCo
 
 
     @Override
-    public List<SchemaConstraint> visit(SqlInCondition inExpression, Void argument) {
-
+    public List<TableConstraint> visit(SqlInCondition inExpression, Void argument) {
         SqlColumnName column = inExpression.getSqlColumnName();
+        String tableName = getTableName(column);
         String columnName = column.getColumnName();
         SqlConditionList rightItemsList = inExpression.getLiteralList();
 
@@ -124,72 +131,72 @@ public class SchemaConstraintExtractor extends SqlConditionVisitor<List<SchemaCo
             }
             stringValues.add(stringValue);
         }
-        return Collections.singletonList(new EnumConstraint(columnName, stringValues));
+        return Collections.singletonList(new EnumConstraint(tableName, columnName, stringValues));
 
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlNullLiteralValue e, Void argument) {
+    public List<TableConstraint> visit(SqlNullLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlStringLiteralValue e, Void argument) {
+    public List<TableConstraint> visit(SqlStringLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlConditionList e, Void argument) {
+    public List<TableConstraint> visit(SqlConditionList e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlIsNotNullCondition e, Void argument) {
+    public List<TableConstraint> visit(SqlIsNotNullCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlBinaryDataLiteralValue e, Void argument) {
+    public List<TableConstraint> visit(SqlBinaryDataLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlSimilarToCondition e, Void argument) {
+    public List<TableConstraint> visit(SqlSimilarToCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlIsNullCondition e, Void argument) {
+    public List<TableConstraint> visit(SqlIsNullCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlLikeCondition e, Void argument) {
+    public List<TableConstraint> visit(SqlLikeCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlOrCondition e, Void argument) {
+    public List<TableConstraint> visit(SqlOrCondition e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlBigDecimalLiteralValue e, Void argument) {
+    public List<TableConstraint> visit(SqlBigDecimalLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlBigIntegerLiteralValue e, Void argument) {
+    public List<TableConstraint> visit(SqlBigIntegerLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlBooleanLiteralValue e, Void argument) {
+    public List<TableConstraint> visit(SqlBooleanLiteralValue e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 
     @Override
-    public List<SchemaConstraint> visit(SqlColumnName e, Void argument) {
+    public List<TableConstraint> visit(SqlColumnName e, Void argument) {
         throw new UnsupportedOperationException("This method should not be invoked");
     }
 

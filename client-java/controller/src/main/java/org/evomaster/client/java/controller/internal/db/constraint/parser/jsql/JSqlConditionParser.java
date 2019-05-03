@@ -1,13 +1,14 @@
-package org.evomaster.client.java.controller.internal.db.constraint.jsql;
+package org.evomaster.client.java.controller.internal.db.constraint.parser.jsql;
 
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
-import org.evomaster.client.java.controller.internal.db.constraint.SqlConditionParser;
-import org.evomaster.client.java.controller.internal.db.constraint.SqlConditionParserException;
 import org.evomaster.client.java.controller.internal.db.constraint.expr.SqlCondition;
+import org.evomaster.client.java.controller.internal.db.constraint.parser.SqlConditionParser;
+import org.evomaster.client.java.controller.internal.db.constraint.parser.SqlConditionParserException;
 
 public class JSqlConditionParser extends SqlConditionParser {
+
     @Override
     public SqlCondition parse(String sqlConditionStr) throws SqlConditionParserException {
         try {

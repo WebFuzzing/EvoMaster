@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db.constraint;
+package org.evomaster.client.java.controller.internal.db.constraint.parser;
 
 import org.evomaster.client.java.controller.internal.db.constraint.expr.SqlCondition;
 

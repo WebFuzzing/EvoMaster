@@ -1,14 +1,17 @@
-package org.evomaster.client.java.controller.internal.db.constraint;
+package org.evomaster.client.java.controller.internal.db.constraint.extract;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.controller.internal.db.constraint.TableConstraint;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.LinkedList;
+import java.util.List;
 
-public class PostgresConstraints {
+public class PostgresConstraintExtractor extends ConstraintExtractor {
 
     public static final String CONSTRAINT_TYPE_CHECK = "c";
 
@@ -23,8 +26,9 @@ public class PostgresConstraints {
     public static final String CONSTRAINT_TYPE_EXCLUSION = "x";
 
 
-    public static void addPostgresConstraints(Connection connectionToPostgres, DbSchemaDto schemaDto) throws SQLException {
+    public List<TableConstraint> extractConstraints(Connection connectionToPostgres, DbSchemaDto schemaDto) throws SQLException {
         String tableSchema = schemaDto.name;
+        List<TableConstraint> constraints = new LinkedList<>();
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
             String query = "SELECT con.*\n" +
@@ -46,14 +50,9 @@ public class PostgresConstraints {
                         if (checkConstraint != null && !checkConstraint.equals("")) {
 
                             checkConstraint = checkConstraint.replace("::text", "");
+                            List<TableConstraint> tableConstraints = this.translateToConstraints(tableDto, checkConstraint);
+                            constraints.addAll(tableConstraints);
 
-                            try {
-                                SqlConditionParser parser = SqlConditionParserFactory.buildParser();
-                                parser.parse(checkConstraint);
-                            } catch (SqlConditionParserException e) {
-
-                            }
-                            //addH2CheckConstraint(tableDto, checkConstraint);
                         }
                         break;
                     }
@@ -70,5 +69,6 @@ public class PostgresConstraints {
 
             statement.close();
         }
+        return constraints;
     }
 }

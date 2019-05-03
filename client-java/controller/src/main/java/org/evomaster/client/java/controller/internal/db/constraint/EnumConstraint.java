@@ -2,13 +2,14 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 
 import java.util.List;
 
-public class EnumConstraint extends SchemaConstraint {
+public class EnumConstraint extends TableConstraint {
 
     private final List<String> valuesAsStrings;
 
     private final String columnName;
 
-    public EnumConstraint(String columnName, List<String> valuesAsStrings) {
+    public EnumConstraint(String tableName, String columnName, List<String> valuesAsStrings) {
+        super(tableName);
         this.columnName = columnName;
         this.valuesAsStrings = valuesAsStrings;
     }
