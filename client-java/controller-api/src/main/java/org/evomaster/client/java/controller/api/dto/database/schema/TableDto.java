@@ -32,4 +32,11 @@ public class TableDto {
      * element.
      */
     public List<String> primaryKeySequence = new ArrayList<>();
+
+
+    /**
+     * All constraints that are not directly supported
+     */
+    public List<TableCheckExpressionDto> tableCheckExpressions = new ArrayList<>();
+
 }

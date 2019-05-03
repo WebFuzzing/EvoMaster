@@ -18,6 +18,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>db-constraints</module>
         <module>core</module>
         <module>client-java</module>
         <module>e2e-tests</module>
@@ -129,6 +130,11 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-db-constraints</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
