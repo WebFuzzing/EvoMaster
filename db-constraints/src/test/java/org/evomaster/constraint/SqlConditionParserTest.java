@@ -1,4 +1,4 @@
-package org.evomaster.client.java.controller.internal.db;
+package org.evomaster.constraint;
 
 import org.evomaster.constraint.ast.*;
 import org.evomaster.constraint.parser.SqlConditionParserException;
@@ -170,7 +170,7 @@ class SqlConditionParserTest {
     }
 
 
-    @Disabled("FORMULA1 = FORMULA2 is not supported by JSQL")
+    @Disabled("check expressions FORMULA1 = FORMULA2 is not supported by JSQL")
     @Test
     void testConditionEquals() throws SqlConditionParserException {
         SqlCondition actual = parse("(STATUS = 'b') = (P_AT IS NOT NULL)");
@@ -205,7 +205,7 @@ class SqlConditionParserTest {
         assertEquals(expected, actual);
     }
 
-    @Disabled("SIMILAR TO is not supported by JSQL parser")
+    @Disabled("SIMILAR TO is not directly supported by JSQL parser")
     @Test
     void testSimilarTo() throws SqlConditionParserException {
         SqlCondition actual = parse("(W_ID SIMILAR TO '/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?')");

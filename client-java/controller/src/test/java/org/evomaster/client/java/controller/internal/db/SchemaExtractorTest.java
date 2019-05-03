@@ -7,10 +7,6 @@ import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.junit.jupiter.api.Test;
 
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
 import static org.evomaster.client.java.controller.api.ControllerConstants.INFO_SUT_PATH;
@@ -187,8 +183,10 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
         ColumnDto columnDto = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("age_max")).findFirst().orElse(null);
 
         assertEquals("INTEGER", columnDto.type);
-        assertNull(columnDto.lowerBound);
-        assertEquals(100, columnDto.upperBound.intValue());
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(AGE_MAX <= 100)", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
 
     }
 
@@ -209,7 +207,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
         assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("fooId")));
         assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("age_max")));
 
-        // TODO check that the table constraint is actually extracted
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(AGE_MAX <= 100)", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
 
     }
@@ -255,10 +254,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<String> actualEnumValues = statusColumn.enumValuesAsStrings.stream().collect(Collectors.toSet());
-        Set<String> expectedEnumValues = Stream.of("A", "B").collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN('A', 'B'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
     }
 
@@ -281,10 +278,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Boolean> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Boolean::valueOf).collect(Collectors.toSet());
-        Set<Boolean> expectedEnumValues = Stream.of(Boolean.TRUE, Boolean.FALSE).collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(TRUE, FALSE))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
     }
 
@@ -307,10 +302,9 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
-        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
-        assertEquals(expectedEnumValues, actualEnumValues);
 
     }
 
@@ -333,10 +327,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
-        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
     }
 
@@ -359,10 +351,9 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
-        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
-        assertEquals(expectedEnumValues, actualEnumValues);
 
     }
 
@@ -385,10 +376,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Integer> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Integer::valueOf).collect(Collectors.toSet());
-        Set<Integer> expectedEnumValues = Stream.of(42, 77).collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
     }
 
@@ -411,10 +400,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Double> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Double::valueOf).collect(Collectors.toSet());
-        Set<Double> expectedEnumValues = Stream.of(1.0, 2.5).collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(1.0, 2.5))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
     }
 
@@ -438,10 +425,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Double> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Double::valueOf).collect(Collectors.toSet());
-        Set<Double> expectedEnumValues = Stream.of(1.0, 2.5).collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(1.0, 2.5))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
     }
 
@@ -464,11 +449,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<Double> actualEnumValues = statusColumn.enumValuesAsStrings.stream().map(Double::valueOf).collect(Collectors.toSet());
-        Set<Double> expectedEnumValues = Stream.of(1.0, 2.5).collect(Collectors.toSet());
-
-        assertEquals(expectedEnumValues, actualEnumValues);
-
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(1.0, 2.5))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
     }
 
     @Test
@@ -489,10 +471,9 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
         ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
 
-        Set<String> actualEnumValues = statusColumn.enumValuesAsStrings.stream().collect(Collectors.toSet());
-        Set<String> expectedEnumValues = Stream.of("A", "B").collect(Collectors.toSet());
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN('A', 'B'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
-        assertEquals(expectedEnumValues, actualEnumValues);
 
     }
 }
