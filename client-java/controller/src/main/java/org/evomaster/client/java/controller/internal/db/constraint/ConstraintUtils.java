@@ -6,7 +6,6 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
 import org.evomaster.client.java.controller.internal.db.constraint.extract.H2ConstraintExtractor;
 import org.evomaster.client.java.controller.internal.db.constraint.extract.PostgresConstraintExtractor;
-import org.evomaster.client.java.controller.internal.db.constraint.parser.SqlConditionParserException;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -45,7 +44,7 @@ public class ConstraintUtils {
      * @param schemaDto
      * @throws Exception
      */
-    public static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException, SqlConditionParserException {
+    public static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException {
         switch (dt) {
             case H2: {
                 List<TableConstraint> h2ConstraintList = new H2ConstraintExtractor().extractConstraints(connection, schemaDto);
