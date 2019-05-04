@@ -129,8 +129,17 @@ class SqlInsertBuilder(
         }
     }
 
-    private fun findLowerBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
+    private fun findRangeConstraint(tableConstraints: List<TableConstraint>, columnName: String): RangeConstraint? {
+        return tableConstraints.filter { c -> c is RangeConstraint }
+                .map { c -> c as RangeConstraint }
+                .firstOrNull { c -> c.columnName.equals(columnName, true) }
+    }
 
+    private fun findLowerBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
+        val rangeConstraint = findRangeConstraint(tableConstraints, columnName)
+        if (rangeConstraint != null) {
+            return rangeConstraint.minValue.toInt()
+        }
 
         val lowerBounds = tableConstraints
                 .asSequence()
@@ -140,14 +149,19 @@ class SqlInsertBuilder(
                 .map { c -> c.lowerBound.toInt() }
                 .toList()
 
-        if (lowerBounds.isNotEmpty()) {
-            return lowerBounds.max()
-        } else {
-            return null
-        }
+        return if (lowerBounds.isNotEmpty())
+            lowerBounds.max()
+        else
+            null
+
     }
 
     private fun findUpperBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
+        val rangeConstraint = findRangeConstraint(tableConstraints, columnName)
+        if (rangeConstraint != null) {
+            return rangeConstraint.maxValue.toInt()
+        }
+
         val upperBounds = tableConstraints
                 .asSequence()
                 .filter { c -> c is UpperBoundConstraint }
@@ -156,11 +170,11 @@ class SqlInsertBuilder(
                 .map { c -> c.upperBound.toInt() }
                 .toList()
 
-        if (upperBounds.isNotEmpty()) {
-            return upperBounds.min()
-        } else {
-            return null
-        }
+        return if (upperBounds.isNotEmpty())
+            upperBounds.min()
+        else
+            null
+
     }
 
     private fun findEnumValues(tableConstraints: List<TableConstraint>, columnName: String): List<String>? {
