@@ -13,7 +13,15 @@
 
 
     <dependencies>
+        <!--
+            It is paramount that this compiled jar has no third-party libraries (apart from javax.*).
+            We want to avoid users of EM having version conflicts if importing same kind of libraries.
+            This means that, each time we use a dependency, we need to make sure that we "shade" it.
+            Not only we need to shade the used libraries, but also recursively all of their third-party
+            libraries imported transitively.
 
+            TODO: should have an integration test that analyze the content of the packaged jar file
+        -->
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-client-java-util</artifactId>
