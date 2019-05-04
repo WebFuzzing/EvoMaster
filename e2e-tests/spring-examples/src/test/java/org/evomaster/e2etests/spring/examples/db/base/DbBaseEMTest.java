@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.examples.db.base;
 
-import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -8,7 +7,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DbBaseEMTest extends DbBaseTestBase {
+public class
+DbBaseEMTest extends DbBaseTestBase {
 
 
     @Test
