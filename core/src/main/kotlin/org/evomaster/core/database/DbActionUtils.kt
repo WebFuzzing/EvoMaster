@@ -189,13 +189,13 @@ object DbActionUtils {
 
         val tableName = action.table.name
 
-        //handle unique dbconstraint
+        //handle unique constraint
         action.seeGenes().forEach { g ->
             val columnName = g.name
 
             /*
                 Is the current gene representing a column in database for which we need
-                to enforce a unique dbconstraint?
+                to enforce a unique constraint?
              */
             val isUnique = action.table.columns.any {
                 it.name == columnName && !it.autoIncrement && it.unique

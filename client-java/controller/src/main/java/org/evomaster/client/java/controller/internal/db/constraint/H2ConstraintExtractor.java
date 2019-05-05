@@ -70,13 +70,13 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
                 } else if (constraintType.equals("REFERENTIAL")) {
                     /**
-                     * This type of dbconstraint is already handled by
+                     * This type of constraint is already handled by
                      * JDBC Metadata
                      **/
                     continue;
                 } else if (constraintType.equals("PRIMARY KEY") || constraintType.equals("PRIMARY_KEY")) {
                     /**
-                     * This type of dbconstraint is already handled by
+                     * This type of constraint is already handled by
                      * JDBC Metadata
                      **/
                     continue;
@@ -87,7 +87,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
                     tableCheckExpressions.add(constraint);
 
                 } else {
-                    throw new RuntimeException("Unknown dbconstraint type : " + constraintType);
+                    throw new RuntimeException("Unknown constraint type : " + constraintType);
                 }
 
             }

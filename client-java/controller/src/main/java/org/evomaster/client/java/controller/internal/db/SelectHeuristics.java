@@ -139,7 +139,7 @@ public class SelectHeuristics {
 
         Expression where = getWhere(stmt);
         if (where == null) {
-            //no dbconstraint, and at least one data point
+            //no constraint, and at least one data point
             return 0;
         }
 

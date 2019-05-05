@@ -56,7 +56,7 @@ public abstract class DbCleanerTestBase {
 
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x int, primary key (x));");
         SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Bar(y int, primary key (y));");
-        SqlScriptRunner.execCommand(getConnection(), "alter table Bar add dbconstraint FK foreign key (y) references Foo;");
+        SqlScriptRunner.execCommand(getConnection(), "alter table Bar add constraint FK foreign key (y) references Foo;");
 
         //can't insert before Foo
         assertThrows(Exception.class, () ->
