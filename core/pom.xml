@@ -126,12 +126,9 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-db-constraints</artifactId>
+            <artifactId>evomaster-dbconstraint</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.evomaster</groupId>
-            <artifactId>evomaster-db-constraints</artifactId>
-        </dependency>
+
 
     </dependencies>
 
