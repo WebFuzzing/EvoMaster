@@ -9,7 +9,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.SubSelect;
 import org.evomaster.constraint.ast.*;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
 
@@ -251,7 +251,7 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
     @Override
     public void visit(ExpressionList expressionList) {
-        List<SqlCondition> sqlConditionList = new LinkedList<>();
+        List<SqlCondition> sqlConditionList = new ArrayList<>();
         for (Expression expr : expressionList.getExpressions()) {
             expr.accept(this);
             SqlCondition sqlCondition = stack.pop();

@@ -8,8 +8,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,7 +29,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
         List<DbTableConstraint> tableCheckExpressions = extractTableConstraints(connectionToH2, schemaDto);
 
-        List<DbTableConstraint> allConstraints = new LinkedList<>();
+        List<DbTableConstraint> allConstraints = new ArrayList<>();
         allConstraints.addAll(columnConstraints);
         allConstraints.addAll(tableCheckExpressions);
         return allConstraints;
@@ -48,7 +48,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      */
     private List<DbTableConstraint> extractTableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
-        List<DbTableConstraint> tableCheckExpressions = new LinkedList<>();
+        List<DbTableConstraint> tableCheckExpressions = new ArrayList<>();
 
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
@@ -109,7 +109,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      */
     private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
         String tableSchema = schemaDto.name;
-        List<DbTableConstraint> columnConstraints = new LinkedList<>();
+        List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
             Statement statement = connectionToH2.createStatement();

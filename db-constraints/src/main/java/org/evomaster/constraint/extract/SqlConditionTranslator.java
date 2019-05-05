@@ -5,7 +5,7 @@ import net.sf.jsqlparser.expression.StringValue;
 import org.evomaster.constraint.*;
 import org.evomaster.constraint.ast.*;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -120,7 +120,7 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
         String columnName = column.getColumnName();
         SqlConditionList rightItemsList = inExpression.getLiteralList();
 
-        List<String> stringValues = new LinkedList<>();
+        List<String> stringValues = new ArrayList<>();
         for (SqlCondition expressionValue : rightItemsList.getSqlConditionExpressions()) {
             final String stringValue;
             if (expressionValue instanceof SqlStringLiteralValue) {
