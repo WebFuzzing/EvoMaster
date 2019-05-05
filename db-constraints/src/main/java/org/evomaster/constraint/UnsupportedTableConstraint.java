@@ -1,11 +1,13 @@
 package org.evomaster.constraint;
 
+import java.util.Objects;
+
 public class UnsupportedTableConstraint extends TableConstraint {
 
-    private final String notParserSqlCondition;
+    private final /*non-null*/ String notParserSqlCondition;
 
     public UnsupportedTableConstraint(String tableName, String notParserSqlCondition) {
         super(tableName);
-        this.notParserSqlCondition = notParserSqlCondition;
+        this.notParserSqlCondition = Objects.requireNonNull(notParserSqlCondition);
     }
 }

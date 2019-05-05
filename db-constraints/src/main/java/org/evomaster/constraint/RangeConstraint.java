@@ -1,8 +1,10 @@
 package org.evomaster.constraint;
 
+import java.util.Objects;
+
 public class RangeConstraint extends TableConstraint {
 
-    private final String columnName;
+    private final /*non-null*/ String columnName;
 
     private final long minValue;
 
@@ -10,7 +12,7 @@ public class RangeConstraint extends TableConstraint {
 
     public RangeConstraint(String tableName, String columnName, long minValue, long maxValue) {
         super(tableName);
-        this.columnName = columnName;
+        this.columnName = Objects.requireNonNull(columnName);
         this.minValue = minValue;
         this.maxValue = maxValue;
     }

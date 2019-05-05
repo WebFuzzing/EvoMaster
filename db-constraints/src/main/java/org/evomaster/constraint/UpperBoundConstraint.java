@@ -1,14 +1,16 @@
 package org.evomaster.constraint;
 
+import java.util.Objects;
+
 public class UpperBoundConstraint extends TableConstraint {
 
-    private final String columnName;
+    private final /*non-null*/ String columnName;
 
     private final long upperBound;
 
     public UpperBoundConstraint(String tableName, String columnName, long upperBound) {
         super(tableName);
-        this.columnName = columnName;
+        this.columnName = Objects.requireNonNull(columnName);
         this.upperBound = upperBound;
     }
 

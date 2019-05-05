@@ -11,10 +11,7 @@ public class SqlConditionList extends SqlCondition {
 
     public SqlConditionList(List<SqlCondition> sqlConditionList) {
         super();
-        if (sqlConditionList == null) {
-            throw new IllegalArgumentException("Cannot create a checkExpr list with a null list");
-        }
-        this.sqlConditionExpressions = sqlConditionList;
+        this.sqlConditionExpressions = Objects.requireNonNull(sqlConditionList);
     }
 
     @Override

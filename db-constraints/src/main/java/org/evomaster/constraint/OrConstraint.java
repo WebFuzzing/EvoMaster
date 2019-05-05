@@ -6,7 +6,7 @@ import java.util.List;
 
 public class OrConstraint extends TableConstraint {
 
-    private final List<TableConstraint> constraintList;
+    private final /*non-null*/ List<TableConstraint> constraintList;
 
     public OrConstraint(String tableName, TableConstraint... constraints) {
         super(tableName);

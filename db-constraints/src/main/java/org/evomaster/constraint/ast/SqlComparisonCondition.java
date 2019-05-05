@@ -4,16 +4,16 @@ import java.util.Objects;
 
 public class SqlComparisonCondition extends SqlCondition {
 
-    private final SqlCondition leftOperand;
+    private final /*non-null*/ SqlCondition leftOperand;
 
-    private final SqlComparisonOperator sqlComparisonOperator;
+    private final /*non-null*/ SqlComparisonOperator sqlComparisonOperator;
 
-    private final SqlCondition rightOperand;
+    private final /*non-null*/ SqlCondition rightOperand;
 
     public SqlComparisonCondition(SqlCondition leftOperand, SqlComparisonOperator sqlComparisonOperator, SqlCondition rightOperand) {
-        this.leftOperand = leftOperand;
-        this.sqlComparisonOperator = sqlComparisonOperator;
-        this.rightOperand = rightOperand;
+        this.leftOperand = Objects.requireNonNull(leftOperand);
+        this.sqlComparisonOperator = Objects.requireNonNull(sqlComparisonOperator);
+        this.rightOperand = Objects.requireNonNull(rightOperand);
     }
 
     @Override

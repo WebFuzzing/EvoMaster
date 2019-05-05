@@ -7,9 +7,10 @@ import java.util.stream.Collectors;
 
 public class SqlOrCondition extends SqlCondition {
 
-    private final List<SqlCondition> conditions;
+    private final /*non-null*/ List<SqlCondition> conditions;
 
     public SqlOrCondition(SqlCondition... conditions) {
+        Objects.requireNonNull(conditions);
         if (conditions.length < 2) {
             throw new IllegalArgumentException("Cannot create Or condition with a single condition");
         }

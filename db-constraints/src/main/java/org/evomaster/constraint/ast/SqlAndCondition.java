@@ -9,14 +9,8 @@ public class SqlAndCondition extends SqlCondition {
     private final /*non-null*/ SqlCondition rightExpr;
 
     public SqlAndCondition(SqlCondition left, SqlCondition right) {
-        if (left == null) {
-            throw new IllegalArgumentException("Left value of AND formula cannot be null");
-        }
-        if (right == null) {
-            throw new IllegalArgumentException("right value of AND formula cannot be null");
-        }
-        this.leftExpr = left;
-        this.rightExpr = right;
+        this.leftExpr = Objects.requireNonNull(left);
+        this.rightExpr = Objects.requireNonNull(right);
     }
 
 

@@ -9,8 +9,8 @@ public class SqlInCondition extends SqlCondition {
     private final /* non-null*/ SqlConditionList literalList;
 
     public SqlInCondition(SqlColumn sqlColumn, SqlConditionList literalList) {
-        this.sqlColumn = sqlColumn;
-        this.literalList = literalList;
+        this.sqlColumn = Objects.requireNonNull(sqlColumn);
+        this.literalList = Objects.requireNonNull(literalList);
     }
 
 

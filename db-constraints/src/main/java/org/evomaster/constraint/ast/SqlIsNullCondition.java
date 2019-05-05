@@ -7,10 +7,7 @@ public class SqlIsNullCondition extends SqlCondition {
     private final /*non-null*/ SqlColumn columnName;
 
     public SqlIsNullCondition(SqlColumn columnName) {
-        if (columnName == null) {
-            throw new IllegalArgumentException("columnName cannot be null");
-        }
-        this.columnName = columnName;
+        this.columnName = Objects.requireNonNull(columnName);
     }
 
     @Override

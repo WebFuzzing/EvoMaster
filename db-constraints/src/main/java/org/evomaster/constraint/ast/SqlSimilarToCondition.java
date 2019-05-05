@@ -10,14 +10,8 @@ public class SqlSimilarToCondition extends SqlCondition {
 
 
     public SqlSimilarToCondition(SqlColumn column, SqlStringLiteralValue pattern) {
-        if (column == null) {
-            throw new IllegalArgumentException("column name cannot be null");
-        }
-        if (pattern == null) {
-            throw new IllegalArgumentException("pattern cannot be null");
-        }
-        this.column = column;
-        this.pattern = pattern;
+        this.column = Objects.requireNonNull(column);
+        this.pattern = Objects.requireNonNull(pattern);
     }
 
     @Override
