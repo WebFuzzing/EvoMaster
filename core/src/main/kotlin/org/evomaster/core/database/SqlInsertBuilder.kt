@@ -130,8 +130,7 @@ class SqlInsertBuilder(
     }
 
     private fun findRangeConstraint(tableConstraints: List<TableConstraint>, columnName: String): RangeConstraint? {
-        return tableConstraints.filter { c -> c is RangeConstraint }
-                .map { c -> c as RangeConstraint }
+        return tableConstraints.filterIsInstance<RangeConstraint>()
                 .firstOrNull { c -> c.columnName.equals(columnName, true) }
     }
 
@@ -143,8 +142,7 @@ class SqlInsertBuilder(
 
         val lowerBounds = tableConstraints
                 .asSequence()
-                .filter { c -> c is LowerBoundConstraint }
-                .map { c -> c as LowerBoundConstraint }
+                .filterIsInstance<LowerBoundConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
                 .map { c -> c.lowerBound.toInt() }
                 .toList()
@@ -164,8 +162,7 @@ class SqlInsertBuilder(
 
         val upperBounds = tableConstraints
                 .asSequence()
-                .filter { c -> c is UpperBoundConstraint }
-                .map { c -> c as UpperBoundConstraint }
+                .filterIsInstance<UpperBoundConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
                 .map { c -> c.upperBound.toInt() }
                 .toList()
