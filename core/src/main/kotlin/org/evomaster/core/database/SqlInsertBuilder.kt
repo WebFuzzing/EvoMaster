@@ -5,7 +5,6 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
-import org.evomaster.constraint.*
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
@@ -13,6 +12,7 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.dbconstraint.*
 
 
 class SqlInsertBuilder(

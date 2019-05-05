@@ -9,7 +9,7 @@ import net.sf.jsqlparser.statement.select.*;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 
-import java.util.*;
+import java.util.List;
 
 import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
 
@@ -139,7 +139,7 @@ public class SelectHeuristics {
 
         Expression where = getWhere(stmt);
         if (where == null) {
-            //no constraint, and at least one data point
+            //no dbconstraint, and at least one data point
             return 0;
         }
 

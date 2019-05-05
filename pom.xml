@@ -18,7 +18,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>db-constraints</module>
+        <module>dbconstraint</module>
         <module>core</module>
         <module>client-java</module>
         <module>e2e-tests</module>
@@ -134,7 +134,7 @@
             </dependency>
             <dependency>
                 <groupId>org.evomaster</groupId>
-                <artifactId>evomaster-db-constraints</artifactId>
+                <artifactId>evomaster-dbconstraint</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

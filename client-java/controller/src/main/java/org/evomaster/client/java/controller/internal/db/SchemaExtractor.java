@@ -92,7 +92,7 @@ public class SchemaExtractor {
 
 
     /**
-     * Adds a unique constraint to the correspondinding ColumnDTO for the selected table.column pair.
+     * Adds a unique dbconstraint to the correspondinding ColumnDTO for the selected table.column pair.
      * Requires the ColumnDTO to be contained in the TableDTO.
      * If the column DTO is not contained, a IllegalArgumentException is thrown.
      **/
@@ -161,7 +161,7 @@ public class SchemaExtractor {
                     addUniqueConstraintToColumn(tableName, tableDto, columnName);
                 }
             } else {
-                throw new RuntimeException("Unknown constraint type " + constraint.getClass().getName());
+                throw new RuntimeException("Unknown dbconstraint type " + constraint.getClass().getName());
             }
 
         }

@@ -1,7 +1,7 @@
 package org.evomaster.core.database.extract
 
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.SqlInsertBuilder
@@ -46,7 +46,7 @@ class ProxyPrintSqlExtractTest : ExtractTestBaseH2() {
         /**
          * The schema includes an alter table command that specifies that
          * table USERS has a unique column USERNAME:
-         * alter table users add constraint UK_r43af9ap4edm43mmtq01oddj6 unique (username);
+         * alter table users add dbconstraint UK_r43af9ap4edm43mmtq01oddj6 unique (username);
          */
         assertEquals(true, schema.tables.find { it.name == "USERS" }!!.columns.find { it.name == "USERNAME" }!!.unique)
 

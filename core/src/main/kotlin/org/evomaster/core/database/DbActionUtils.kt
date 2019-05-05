@@ -1,11 +1,11 @@
 package org.evomaster.core.database
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.Lazy
 
 object DbActionUtils {
 
@@ -189,13 +189,13 @@ object DbActionUtils {
 
         val tableName = action.table.name
 
-        //handle unique constraint
+        //handle unique dbconstraint
         action.seeGenes().forEach { g ->
             val columnName = g.name
 
             /*
                 Is the current gene representing a column in database for which we need
-                to enforce a unique constraint?
+                to enforce a unique dbconstraint?
              */
             val isUnique = action.table.columns.any {
                 it.name == columnName && !it.autoIncrement && it.unique
