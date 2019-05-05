@@ -1,5 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
+import java.util.Objects;
+
 /**
  * A Sql CHECK expression on a table of the schema
  */
@@ -10,10 +12,7 @@ public class DbTableCheckExpression extends DbTableConstraint {
 
     public DbTableCheckExpression(String tableName, String sqlCheckExpression) {
         super(tableName);
-        if (sqlCheckExpression == null) {
-            throw new IllegalArgumentException("check expression cannot be null");
-        }
-        this.sqlCheckExpression = sqlCheckExpression;
+        this.sqlCheckExpression = Objects.requireNonNull(sqlCheckExpression);
     }
 
     public String getSqlCheckExpression() {

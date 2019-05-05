@@ -7,7 +7,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,7 +30,7 @@ public class PostgresTableConstraintExtractor extends TableConstraintExtractor {
 
     public List<DbTableConstraint> extract(Connection connectionToPostgres, DbSchemaDto schemaDto) throws SQLException {
         String tableSchema = schemaDto.name;
-        List<DbTableConstraint> constraints = new LinkedList<>();
+        List<DbTableConstraint> constraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
             String query = "SELECT con.*\n" +

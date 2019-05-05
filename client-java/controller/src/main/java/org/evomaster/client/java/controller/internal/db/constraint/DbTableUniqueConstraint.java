@@ -1,14 +1,17 @@
 package org.evomaster.client.java.controller.internal.db.constraint;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class DbTableUniqueConstraint extends DbTableConstraint {
 
-    private final List<String> uniqueColumnNames;
+    private final /*non-null*/ List<String> uniqueColumnNames;
 
     public DbTableUniqueConstraint(String tableName, List<String> uniqueColumnNames) {
         super(tableName);
-        this.uniqueColumnNames = uniqueColumnNames;
+        Objects.requireNonNull(uniqueColumnNames);
+        this.uniqueColumnNames = new ArrayList<>(uniqueColumnNames);
     }
 
     public List<String> getUniqueColumnNames() {
