@@ -16,10 +16,7 @@ public class SqlBigDecimalLiteralValue extends SqlLiteralValue {
     }
 
     public SqlBigDecimalLiteralValue(BigDecimal bigDecimalValue) {
-        if (bigDecimalValue == null) {
-            throw new IllegalArgumentException("cannot create a big decimal literal with a null value");
-        }
-        this.bigDecimalValue = bigDecimalValue;
+        this.bigDecimalValue = Objects.requireNonNull(bigDecimalValue);
     }
 
     @Override

@@ -8,10 +8,7 @@ public class SqlStringLiteralValue extends SqlLiteralValue {
     private final /*non-null*/ String stringValue;
 
     public SqlStringLiteralValue(String stringValue) {
-        if (stringValue == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        this.stringValue = stringValue;
+        this.stringValue = Objects.requireNonNull(stringValue);
     }
 
     public String toSql() {

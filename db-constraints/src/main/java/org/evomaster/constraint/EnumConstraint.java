@@ -1,17 +1,18 @@
 package org.evomaster.constraint;
 
 import java.util.List;
+import java.util.Objects;
 
 public class EnumConstraint extends TableConstraint {
 
-    private final List<String> valuesAsStrings;
+    private final /*non-null*/ List<String> valuesAsStrings;
 
-    private final String columnName;
+    private final /*non-null*/ String columnName;
 
     public EnumConstraint(String tableName, String columnName, List<String> valuesAsStrings) {
         super(tableName);
-        this.columnName = columnName;
-        this.valuesAsStrings = valuesAsStrings;
+        this.columnName = Objects.requireNonNull(columnName);
+        this.valuesAsStrings = Objects.requireNonNull(valuesAsStrings);
     }
 
     public String getColumnName() {

@@ -1,5 +1,7 @@
 package org.evomaster.constraint;
 
+import java.util.Objects;
+
 public class SimilarToConstraint extends TableConstraint {
 
     private final /* non-null*/ String columnName;
@@ -7,13 +9,7 @@ public class SimilarToConstraint extends TableConstraint {
 
     public SimilarToConstraint(String tableName, String columnName, String pattern) {
         super(tableName);
-        if (columnName == null) {
-            throw new IllegalArgumentException("column name cannot be null");
-        }
-        if (pattern == null) {
-            throw new IllegalArgumentException("pattern cannot be null");
-        }
-        this.columnName = columnName;
-        this.pattern = pattern;
+        this.columnName = Objects.requireNonNull(columnName);
+        this.pattern = Objects.requireNonNull(pattern);
     }
 }

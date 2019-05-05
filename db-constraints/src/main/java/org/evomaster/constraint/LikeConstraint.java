@@ -1,13 +1,16 @@
 package org.evomaster.constraint;
 
-public class LikeConstraint extends TableConstraint {
-    private final String columnName;
+import java.util.Objects;
 
-    private final String pattern;
+public class LikeConstraint extends TableConstraint {
+
+    private final /*non-null*/ String columnName;
+
+    private final /*non-null*/ String pattern;
 
     public LikeConstraint(String tableName, String columnName, String pattern) {
         super(tableName);
-        this.columnName = columnName;
-        this.pattern = pattern;
+        this.columnName = Objects.requireNonNull(columnName);
+        this.pattern = Objects.requireNonNull(pattern);
     }
 }

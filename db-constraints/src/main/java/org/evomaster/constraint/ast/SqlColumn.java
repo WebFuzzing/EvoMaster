@@ -9,22 +9,13 @@ public class SqlColumn extends SqlCondition {
     private final /* non-null*/ String columnName;
 
     public SqlColumn(String columnName) {
-        if (columnName == null) {
-            throw new IllegalArgumentException("This value cannot be null");
-        }
         this.tableName = null;
-        this.columnName = columnName;
+        this.columnName = Objects.requireNonNull(columnName);
     }
 
     public SqlColumn(String tableName, String columnName) {
-        if (tableName == null) {
-            throw new IllegalArgumentException("Invalid table name null");
-        }
-        if (columnName == null) {
-            throw new IllegalArgumentException("This value cannot be null");
-        }
-        this.tableName = tableName;
-        this.columnName = columnName;
+        this.tableName = Objects.requireNonNull(tableName);
+        this.columnName = Objects.requireNonNull(columnName);
     }
 
 

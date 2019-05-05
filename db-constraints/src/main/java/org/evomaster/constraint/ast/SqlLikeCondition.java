@@ -4,19 +4,13 @@ import java.util.Objects;
 
 public class SqlLikeCondition extends SqlCondition {
 
-    private final SqlColumn columnName;
+    private final /*non-null*/ SqlColumn columnName;
 
-    private final SqlStringLiteralValue pattern;
+    private final /*non-null*/ SqlStringLiteralValue pattern;
 
     public SqlLikeCondition(SqlColumn columnName, SqlStringLiteralValue pattern) {
-        if (columnName == null) {
-            throw new IllegalArgumentException("column name cannot be null");
-        }
-        if (pattern == null) {
-            throw new IllegalArgumentException("pattern cannot be null");
-        }
-        this.columnName = columnName;
-        this.pattern = pattern;
+        this.columnName = Objects.requireNonNull(columnName);
+        this.pattern = Objects.requireNonNull(pattern);
     }
 
     @Override

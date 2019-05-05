@@ -17,10 +17,7 @@ public class SqlBigIntegerLiteralValue extends SqlLiteralValue {
 
 
     public SqlBigIntegerLiteralValue(BigInteger bigIntegerValue) {
-        if (bigIntegerValue == null) {
-            throw new IllegalArgumentException("cannot create big integer literal with null value");
-        }
-        this.bigIntegerValue = bigIntegerValue;
+        this.bigIntegerValue = Objects.requireNonNull(bigIntegerValue);
     }
 
     @Override
