@@ -235,7 +235,7 @@ class DbAction(
          */
         /*
             This is a nasty case, as it is a blob of binary data.
-            Could be any format, and likely no dbconstraint in the DB schema,
+            Could be any format, and likely no constraint in the DB schema,
             where the actual constraints are in the SUT code.
             This is also what for example can be used by Hibernate to represent
             a ZoneDataTime before Java 8 support.

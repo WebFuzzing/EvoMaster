@@ -162,7 +162,7 @@ class EMConfig {
      * chosen on the command line
      *
      *
-     * @throws IllegalArgumentException if there are dbconstraint violations
+     * @throws IllegalArgumentException if there are constraint violations
      */
     fun updateProperties(options: OptionSet) {
 
@@ -213,7 +213,7 @@ class EMConfig {
             m.annotations.find { it is Min }?.also {
                 it as Min
                 if(parameterValue.toDouble() < it.min){
-                    throw IllegalArgumentException("Failed to handle Min ${it.min} dbconstraint for" +
+                    throw IllegalArgumentException("Failed to handle Min ${it.min} constraint for" +
                             " parameter '${m.name}' with value $parameterValue")
                 }
             }
@@ -221,7 +221,7 @@ class EMConfig {
             m.annotations.find { it is Max }?.also {
                 it as Max
                 if(parameterValue.toDouble() > it.max){
-                    throw IllegalArgumentException("Failed to handle Max ${it.max} dbconstraint for" +
+                    throw IllegalArgumentException("Failed to handle Max ${it.max} constraint for" +
                             " parameter '${m.name}' with value $parameterValue")
                 }
             }
