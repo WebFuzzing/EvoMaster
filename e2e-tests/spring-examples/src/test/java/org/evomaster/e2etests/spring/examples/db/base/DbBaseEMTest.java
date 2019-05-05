@@ -7,8 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class
-DbBaseEMTest extends DbBaseTestBase {
+public class DbBaseEMTest extends DbBaseTestBase {
 
 
     @Test
