@@ -1,26 +1,22 @@
-package org.evomaster.client.java.controller.internal.db.constraint;
+package org.evomaster.dbconstraint;
 
-public class RangeConstraint extends SchemaConstraint {
+import java.util.Objects;
 
-    private final String tableName;
+public class RangeConstraint extends TableConstraint {
 
-    private final String columnName;
+    private final /*non-null*/ String columnName;
 
     private final long minValue;
 
     private final long maxValue;
 
     public RangeConstraint(String tableName, String columnName, long minValue, long maxValue) {
-        this.tableName = tableName;
-        this.columnName = columnName;
+        super(tableName);
+        this.columnName = Objects.requireNonNull(columnName);
         this.minValue = minValue;
         this.maxValue = maxValue;
     }
 
-
-    public String getTableName() {
-        return this.tableName;
-    }
 
     public String getColumnName() {
         return this.columnName;

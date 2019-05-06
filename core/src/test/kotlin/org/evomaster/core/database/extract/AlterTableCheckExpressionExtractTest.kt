@@ -1,12 +1,12 @@
 package org.evomaster.core.database.extract
 
-import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
 
-class AlterTableConstraintExtractTest : ExtractTestBaseH2() {
+class AlterTableCheckExpressionExtractTest : ExtractTestBaseH2() {
 
     override fun getSchemaLocation()= "/sql_schema/passports.sql"
 
@@ -28,8 +28,8 @@ class AlterTableConstraintExtractTest : ExtractTestBaseH2() {
         assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "COUNTRY_ID"}.first().unique)
         assertEquals(true, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().unique)
 
-        assertEquals(1, schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().lowerBound)
-        assertNull(schema.tables.filter { it.name == "PASSPORTS" }.first().columns.filter { it.name == "PASSPORT_NUMBER"}.first().upperBound)
+        assertEquals(1, schema.tables.filter { it.name == "PASSPORTS" }.first().tableCheckExpressions.size)
+        assertEquals("(PASSPORT_NUMBER > 0)", schema.tables.filter { it.name == "PASSPORTS" }.first().tableCheckExpressions[0].sqlCheckExpression)
 
     }
 

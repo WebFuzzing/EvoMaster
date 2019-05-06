@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
-import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
 import static org.evomaster.client.java.controller.api.ControllerConstants.DATABASE_COMMAND;
+import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SqlScriptRunnerTest extends DatabaseTestTemplate {

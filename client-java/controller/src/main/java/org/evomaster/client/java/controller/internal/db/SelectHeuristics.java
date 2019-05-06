@@ -9,7 +9,7 @@ import net.sf.jsqlparser.statement.select.*;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 
-import java.util.*;
+import java.util.List;
 
 import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
 

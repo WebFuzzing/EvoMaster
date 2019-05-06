@@ -1,10 +1,10 @@
 package org.evomaster.client.java.controller.internal.db;
 
 import io.restassured.http.ContentType;
+import org.evomaster.client.java.controller.DatabaseTestTemplate;
+import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.InstrumentedSutStarter;
-import org.evomaster.client.java.controller.DatabaseTestTemplate;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -183,8 +183,10 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
         ColumnDto columnDto = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("age_max")).findFirst().orElse(null);
 
         assertEquals("INTEGER", columnDto.type);
-        assertNull(columnDto.lowerBound);
-        assertEquals(100, columnDto.upperBound.intValue());
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(AGE_MAX <= 100)", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
 
     }
 
@@ -205,7 +207,8 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
         assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("fooId")));
         assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("age_max")));
 
-        // TODO check that the table constraint is actually extracted
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(AGE_MAX <= 100)", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
 
 
     }
@@ -232,4 +235,245 @@ public class SchemaExtractorTest extends DatabaseTestTemplate {
 
     }
 
+    @Test
+    public void testEnumStringConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (fooId INT, status varchar(1));"
+                + "ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(2, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("fooId")));
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN('A', 'B'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+    @Test
+    public void testEnumBooleanConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status BOOLEAN);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (true, false));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(TRUE, FALSE))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+    @Test
+    public void testEnumIntegerConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status INT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
+
+    @Test
+    public void testEnumTinyIntConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status TINYINT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+    @Test
+    public void testEnumSmallIntConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status SMALLINT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
+
+    @Test
+    public void testEnumBigIntConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status BIGINT);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(42, 77))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+    @Test
+    public void testEnumDoubleConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status DOUBLE);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(1.0, 2.5))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+
+    @Test
+    public void testEnumRealConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status REAL);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(1.0, 2.5))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+    }
+
+    @Test
+    public void testEnumDecimalConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status DECIMAL);\n" +
+                "            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));";
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN(1.0, 2.5))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+    }
+
+    @Test
+    public void testEnumCharConstraint() throws Exception {
+        String sqlCommand = "CREATE TABLE FOO (status CHAR);"
+                + "ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));";
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        DbSchemaDto schema = SchemaExtractor.extract(getConnection());
+
+        assertEquals(1, schema.tables.size());
+
+        TableDto fooTable = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase("Foo")).findAny().get();
+
+        assertEquals(1, fooTable.columns.size());
+
+        assertTrue(fooTable.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase("status")));
+
+        ColumnDto statusColumn = fooTable.columns.stream().filter(c -> c.name.equalsIgnoreCase("status")).findFirst().get();
+
+        assertEquals(1, fooTable.tableCheckExpressions.size());
+        assertEquals("(STATUS IN('A', 'B'))", fooTable.tableCheckExpressions.get(0).sqlCheckExpression);
+
+
+    }
 }

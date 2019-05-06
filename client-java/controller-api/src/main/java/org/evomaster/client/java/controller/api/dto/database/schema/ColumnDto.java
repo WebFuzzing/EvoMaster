@@ -20,11 +20,4 @@ public class ColumnDto {
 
     public boolean foreignKeyToAutoIncrement = false;
 
-    public Integer lowerBound = null;
-
-    public Integer upperBound = null;
-
-//    public boolean identity;
-
-    //TODO something for other constraints
 }

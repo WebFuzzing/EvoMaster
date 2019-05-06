@@ -1,13 +1,12 @@
 package org.evomaster.client.java.controller.internal.db;
 
-import net.sf.jsqlparser.JSQLParserException;
-import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
-import org.evomaster.client.java.controller.internal.db.constraint.ConstraintUtils;
-import org.evomaster.client.java.controller.internal.db.constraint.H2Constraints;
+import org.evomaster.client.java.controller.internal.db.constraint.*;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
 public class SchemaExtractor {
@@ -39,7 +38,7 @@ public class SchemaExtractor {
             dt = DatabaseType.H2;
         } else if (protocol.contains(":derby")) {
             dt = DatabaseType.DERBY;
-        } else if (protocol.contains(":postgresql")){
+        } else if (protocol.contains(":postgresql")) {
             dt = DatabaseType.POSTGRES;
         }
         schemaDto.databaseType = dt;
@@ -60,17 +59,17 @@ public class SchemaExtractor {
             But API does not give you any info on whether result set
             is empty or not, and only way is to call next()
          */
-        if(! tables.next()){
+        if (!tables.next()) {
             tables.close();
             schemaDto.name = schemaDto.name.toLowerCase();
             tables = md.getTables(null, schemaDto.name, null, new String[]{"TABLE"});
-            if(tables.next()){
-                do{
+            if (tables.next()) {
+                do {
                     handleTableEntry(schemaDto, md, tables, tableNames);
                 } while (tables.next());
             }
         } else {
-            do{
+            do {
                 handleTableEntry(schemaDto, md, tables, tableNames);
             } while (tables.next());
         }
@@ -86,9 +85,86 @@ public class SchemaExtractor {
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
          */
-        ConstraintUtils.addConstraints(connection, dt, schemaDto);
+        addConstraints(connection, dt, schemaDto);
 
         return schemaDto;
+    }
+
+
+    /**
+     * Adds a unique constraint to the correspondinding ColumnDTO for the selected table.column pair.
+     * Requires the ColumnDTO to be contained in the TableDTO.
+     * If the column DTO is not contained, a IllegalArgumentException is thrown.
+     **/
+    public static void addUniqueConstraintToColumn(String tableName, TableDto tableDto, String columnName) {
+
+        ColumnDto columnDto = tableDto.columns.stream()
+                .filter(c -> c.name.equals(columnName)).findAny().orElse(null);
+
+        if (columnDto == null) {
+            throw new IllegalArgumentException("Missing column DTO for column:" + tableName + "." + columnName);
+        }
+
+        columnDto.unique = true;
+    }
+
+    /**
+     * Appends constraints that are database specific.
+     *
+     * @param connection
+     * @param dt
+     * @param schemaDto
+     * @throws Exception
+     */
+    private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException {
+        final List<DbTableConstraint> dbTableConstraints;
+        switch (dt) {
+            case H2: {
+                dbTableConstraints = new H2ConstraintExtractor().extract(connection, schemaDto);
+                break;
+            }
+            case DERBY: {
+                // TODO Derby
+                dbTableConstraints = Collections.emptyList();
+                break;
+            }
+            case POSTGRES: {
+                dbTableConstraints = new PostgresTableConstraintExtractor().extract(connection, schemaDto);
+                break;
+            }
+            case OTHER: {
+                // TODO Other
+                dbTableConstraints = Collections.emptyList();
+                break;
+            }
+            default: {
+                throw new IllegalArgumentException("Unknown database type " + dt);
+            }
+        }
+        addConstraints(schemaDto, dbTableConstraints);
+
+    }
+
+    private static void addConstraints(DbSchemaDto schemaDto, List<DbTableConstraint> constraintList) {
+        for (DbTableConstraint constraint : constraintList) {
+            String tableName = constraint.getTableName();
+            TableDto tableDto = schemaDto.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+
+            if (constraint instanceof DbTableCheckExpression) {
+                TableCheckExpressionDto constraintDto = new TableCheckExpressionDto();
+                final DbTableCheckExpression tableCheckExpression = (DbTableCheckExpression) constraint;
+                constraintDto.sqlCheckExpression = tableCheckExpression.getSqlCheckExpression();
+                tableDto.tableCheckExpressions.add(constraintDto);
+            } else if (constraint instanceof DbTableUniqueConstraint) {
+                DbTableUniqueConstraint tableUniqueConstraint = (DbTableUniqueConstraint) constraint;
+                for (String columnName : tableUniqueConstraint.getUniqueColumnNames()) {
+                    addUniqueConstraintToColumn(tableName, tableDto, columnName);
+                }
+            } else {
+                throw new RuntimeException("Unknown constraint type " + constraint.getClass().getName());
+            }
+
+        }
     }
 
     private static void handleTableEntry(DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set<String> tableNames) throws SQLException {

@@ -18,6 +18,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>dbconstraint</module>
         <module>core</module>
         <module>client-java</module>
         <module>e2e-tests</module>
@@ -129,6 +130,11 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-dbconstraint</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -470,7 +476,6 @@
                 <artifactId>postgresql</artifactId>
                 <version>42.1.4</version>
             </dependency>
-
 
             <!-- test dependencies -->
             <dependency>
