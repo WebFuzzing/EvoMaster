@@ -193,6 +193,9 @@ For example, `org.EvoMaster.foo-bar` would be wrong for 2 reasons, which could b
 with `org.evomaster.foobar` or `org.evomaster.foo.bar`. 
 On the other hand, a Maven module called `foo-bar` would be fine, 
 but not `Foo-bar`.
+The motivation here is that modules are mapped to folders on the operating system,
+and we need to avoid issues with OSs like Windows that are case insensitive, and with `.`
+treated as beginning of a file extension. 
 
 All code written for `EvoMaster` must be inside the package `org.evomaster.*`.
 Each module must define a subpackage, with a name somehow related to the module itself.
