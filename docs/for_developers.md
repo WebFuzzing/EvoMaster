@@ -180,7 +180,8 @@ followed by class constructors and then the other methods.
 We follow the typical naming convention used in `Java`: class names start in capital letter
 (e.g., `class Foo`), whereas we use camel-case for variables and 
 methods (e.g., `void fooBar()` and `String helloWorld;`).
-Constants in `Java` (but not `Kotlin`) would be typically in upper-case using snake-case
+Constants in `Java` (but usually not in `Kotlin`, unless they are global public variables in a companion object) 
+would be typically in upper-case using snake-case
 (e.g., `final String HELLO_WORLD`).
 Kebab-case should be avoided for names of classes/methods/variables 
 (e.g., no `String hello-world`, which anyway would not compile).
@@ -195,7 +196,7 @@ but not `Foo-bar`.
 
 All code written for `EvoMaster` must be inside the package `org.evomaster.*`.
 Each module must define a subpackage, with a name somehow related to the module itself.
-Dashes `-` in the module name would be either stripped or replace with dots `.`. 
+Dashes `-` in the module name would be either stripped or replaced with dots `.`. 
 For example, a module called `controller-api` under the module `client-java` could
 define a package called `org.evomaster.client.java.controller.api`.
 Note that it is imperative that no module defines the same subpackage, as to avoid 
