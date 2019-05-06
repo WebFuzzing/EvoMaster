@@ -23,6 +23,8 @@ public class DataRow {
      */
     private final List<Object> values;
 
+    private final static String NULL_VALUE = "NULL";
+
 
     public DataRow(String columnName, Object value, String tableName) {
         this(Arrays.asList(new VariableDescriptor(columnName, null, tableName)), Arrays.asList(value));
@@ -104,13 +106,13 @@ public class DataRow {
     }
 
     public String getAsLine() {
-        return values.stream().map(obj -> obj.toString()).collect(Collectors.joining(","));
+        return values.stream().map(obj -> (obj != null) ?  obj.toString(): NULL_VALUE).collect(Collectors.joining(","));
     }
 
     public DataRowDto toDto(){
 
         DataRowDto dto = new DataRowDto();
-        dto.columnData = values.stream().map(obj -> obj.toString()).collect(Collectors.toList());
+        dto.columnData = values.stream().map(obj -> (obj != null) ?  obj.toString(): NULL_VALUE).collect(Collectors.toList());
 
         return dto;
     }
