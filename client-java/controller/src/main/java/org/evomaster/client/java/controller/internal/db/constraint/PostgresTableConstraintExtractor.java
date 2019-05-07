@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -27,6 +28,15 @@ public class PostgresTableConstraintExtractor extends TableConstraintExtractor {
 
     public static final String CONSTRAINT_TYPE_EXCLUSION = "x";
 
+
+    /**
+     * Logs that a constraint could not be handled by the extractor.
+     *
+     * @param constraintType
+     */
+    private static void cannotHandle(String constraintType) {
+        SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract Postgres constraints with type '" + constraintType);
+    }
 
     public List<DbTableConstraint> extract(Connection connectionToPostgres, DbSchemaDto schemaDto) throws SQLException {
         String tableSchema = schemaDto.name;
@@ -57,12 +67,29 @@ public class PostgresTableConstraintExtractor extends TableConstraintExtractor {
                         }
                         break;
                     }
-                    case CONSTRAINT_TYPE_FOREIGN_KEY:
-                    case CONSTRAINT_TYPE_PRIMARY_KEY:
-                    case CONSTRAINT_TYPE_UNIQUE:
-                    case CONSTRAINT_TYPE_TRIGGER:
+                    case CONSTRAINT_TYPE_UNIQUE: {
+
+                    }
+                    case CONSTRAINT_TYPE_FOREIGN_KEY: {
+                        /**
+                         * This type of constraint is already handled by
+                         * JDBC Metadata
+                         **/
+                        break;
+                    }
+                    case CONSTRAINT_TYPE_PRIMARY_KEY: {
+                        /**
+                         * This type of constraint is already handled by
+                         * JDBC Metadata
+                         **/
+                        break;
+                    }
+                    case CONSTRAINT_TYPE_TRIGGER: {
+                        cannotHandle("TRIGGER CONSTRAINT");
+
+                    }
                     case CONSTRAINT_TYPE_EXCLUSION: {
-                        // ignore
+                        cannotHandle("EXCLUSION CONSTRAINT");
                     }
                 }
 
@@ -72,4 +99,5 @@ public class PostgresTableConstraintExtractor extends TableConstraintExtractor {
         }
         return constraints;
     }
+
 }
