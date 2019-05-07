@@ -2,6 +2,7 @@ package org.evomaster.client.java.controller.internal.db;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.*;
 import org.evomaster.client.java.controller.internal.db.constraint.*;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -117,31 +118,13 @@ public class SchemaExtractor {
      * @throws Exception
      */
     private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException {
-        final List<DbTableConstraint> dbTableConstraints;
-        switch (dt) {
-            case H2: {
-                dbTableConstraints = new H2ConstraintExtractor().extract(connection, schemaDto);
-                break;
-            }
-            case DERBY: {
-                // TODO Derby
-                dbTableConstraints = Collections.emptyList();
-                break;
-            }
-            case POSTGRES: {
-                dbTableConstraints = new PostgresConstraintExtractor().extract(connection, schemaDto);
-                break;
-            }
-            case OTHER: {
-                // TODO Other
-                dbTableConstraints = Collections.emptyList();
-                break;
-            }
-            default: {
-                throw new IllegalArgumentException("Unknown database type " + dt);
-            }
+        TableConstraintExtractor constraintExtractor = TableConstraintExtractorFactory.buildConstraintExtractor(dt);
+        if (constraintExtractor != null) {
+            final List<DbTableConstraint> dbTableConstraints = constraintExtractor.extract(connection, schemaDto);
+            addConstraints(schemaDto, dbTableConstraints);
+        } else {
+            SimpleLogger.uniqueWarn("WARNING: EvoMaster cannot extract constraints from database " + dt);
         }
-        addConstraints(schemaDto, dbTableConstraints);
 
     }
 
