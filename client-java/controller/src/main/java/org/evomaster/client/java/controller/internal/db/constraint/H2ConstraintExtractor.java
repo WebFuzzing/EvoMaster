@@ -101,7 +101,11 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
 
     /**
-     * Appends all Column constraints (i.e. CHECK contraints) to the DTO
+     * For each table in the schema DTO, this method appends
+     * the constraints that are originated in the CREATE TABLE commands
+     * for those particular tables.
+     * <p>
+     * Unique constraints and Foreign keys are handled separately in the JDBC metadata
      *
      * @param connectionToH2 a connection to a H2 database
      * @param schemaDto
