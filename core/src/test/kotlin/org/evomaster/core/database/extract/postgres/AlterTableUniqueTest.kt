@@ -29,7 +29,7 @@ class AlterTableUniqueTest : ExtractTestBasePostgres() {
         assertEquals(true, schema.tables.filter { it.name == "passports" }.first().columns.filter { it.name == "passport_number" }.first().unique)
 
         assertEquals(1, schema.tables.filter { it.name == "passports" }.first().tableCheckExpressions.size)
-        assertEquals("(passport_number > 0)", schema.tables.filter { it.name == "Passports" }.first().tableCheckExpressions[0].sqlCheckExpression)
+        assertEquals("(passport_number > 0)", schema.tables.filter { it.name == "passports" }.first().tableCheckExpressions[0].sqlCheckExpression)
 
     }
 
