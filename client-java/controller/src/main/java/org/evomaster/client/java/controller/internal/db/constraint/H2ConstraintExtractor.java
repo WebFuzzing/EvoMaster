@@ -65,7 +65,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
             String tableName = tableDto.name;
             try (Statement statement = connectionToH2.createStatement()) {
 
-                final String query = String.format("Select * From INFORMATION_SCHEMA.CONSTRAINTS where CONSTRAINTS.TABLE_SCHEMA='%s' and CONSTRAINTS.TABLE_NAME='%s", tableSchema, tableName);
+                final String query = String.format("Select * From INFORMATION_SCHEMA.CONSTRAINTS where CONSTRAINTS.TABLE_SCHEMA='%s' and CONSTRAINTS.TABLE_NAME='%s' ", tableSchema, tableName);
                 try (ResultSet constraints = statement.executeQuery(query)) {
 
                     while (constraints.next()) {
@@ -125,8 +125,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
             try (Statement statement = connectionToH2.createStatement()) {
 
-                final String query = String.format("Select * From INFORMATION_SCHEMA.COLUMNS "
-                        + " where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s'", tableSchema, tableName);
+                final String query = String.format("Select * From INFORMATION_SCHEMA.COLUMNS where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s' ", tableSchema, tableName);
 
                 try (ResultSet columns = statement.executeQuery(query)) {
                     while (columns.next()) {
