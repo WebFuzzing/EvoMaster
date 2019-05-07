@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal.db.constraint;
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,6 +34,15 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         allConstraints.addAll(columnConstraints);
         allConstraints.addAll(tableCheckExpressions);
         return allConstraints;
+    }
+
+    /**
+     * Registers that a constaint could not be processed
+     *
+     * @param constraintType
+     */
+    private static void cannotHandle(String constraintType) {
+        SimpleLogger.uniqueWarn("WARNING, cannot handle constraint type '" + constraintType);
     }
 
     /**
@@ -87,7 +97,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
                     tableCheckExpressions.add(constraint);
 
                 } else {
-                    throw new RuntimeException("Unknown constraint type : " + constraintType);
+                    cannotHandle(constraintType);
                 }
 
             }
@@ -98,7 +108,6 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
 
         return tableCheckExpressions;
     }
-
 
     /**
      * For each table in the schema DTO, this method appends
