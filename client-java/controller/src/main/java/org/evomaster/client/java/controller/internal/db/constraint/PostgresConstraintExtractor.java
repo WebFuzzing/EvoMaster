@@ -28,6 +28,7 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
     private static final String CONTYPE = "contype";
 
     private static final String CONSRC = "consrc";
+    public static final String CONKEY = "conkey";
 
 
     /**
@@ -37,6 +38,33 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
      */
     private static void cannotHandle(String constraintType) {
         SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract Postgres constraints with type '" + constraintType);
+    }
+
+    private static DbTableUniqueConstraint getDbTableUniqueConstraint(Connection connectionToPostgres, String tableSchema, String tableName, Integer[] columnIds) throws SQLException {
+        List<String> uniqueColumnNames = new ArrayList<>();
+        for (int columnId : columnIds) {
+            String qry = String.format("SELECT att.* " +
+                    " FROM pg_catalog.pg_attribute att " +
+                    " INNER JOIN pg_catalog.pg_class rel\n " +
+                    "    ON rel.oid = att.attrelid\n " +
+                    " INNER JOIN pg_catalog.pg_namespace nsp\n " +
+                    "    ON nsp.oid = rel.relnamespace\n " +
+                    " WHERE nsp.nspname = '%s'\n" +
+                    "   AND rel.relname = '%s' \n" +
+                    "   AND att.attnum =  %s;", tableSchema, tableName, columnId);
+
+            try (Statement stmt = connectionToPostgres.createStatement()) {
+                try (ResultSet rs = stmt.executeQuery(qry)) {
+                    boolean hasRows = rs.next();
+                    if (!hasRows) {
+                        throw new IllegalStateException("Unexpected missing pg_catalog.pg_attribute data");
+                    }
+                    String uniqueColumnName = rs.getString("attname");
+                    uniqueColumnNames.add(uniqueColumnName);
+                }
+            }
+        }
+        return new DbTableUniqueConstraint(tableName, uniqueColumnNames);
     }
 
     public List<DbTableConstraint> extract(Connection connectionToPostgres, DbSchemaDto schemaDto) throws SQLException {
@@ -55,46 +83,22 @@ public class PostgresConstraintExtractor extends TableConstraintExtractor {
                         "             AND rel.relname = '%s';", tableSchema, tableName);
 
                 try (ResultSet columns = statement.executeQuery(query)) {
-
                     while (columns.next()) {
+                        String checkConstraint = columns.getString(CONSRC);
+                        Array array = columns.getArray(CONKEY);
                         String constraintType = columns.getString(CONTYPE);
+
+                        DbTableConstraint constraint;
                         switch (constraintType) {
-                            case CONSTRAINT_TYPE_CHECK: {
-                                String checkConstraint = columns.getString(CONSRC);
-                                DbTableCheckExpression tableCheckExpression = new DbTableCheckExpression(tableName, checkConstraint);
-                                constraints.add(tableCheckExpression);
-                            }
-                            break;
-                            case CONSTRAINT_TYPE_UNIQUE: {
-                                Array array = columns.getArray("conkey");
-                                Integer[] columnIds = (Integer[]) array.getArray();
-                                List<String> uniqueColumnNames = new ArrayList<>();
-                                for (int columnId : columnIds) {
-                                    String qry = String.format("SELECT att.* " +
-                                            " FROM pg_catalog.pg_attribute att " +
-                                            " INNER JOIN pg_catalog.pg_class rel\n " +
-                                            "    ON rel.oid = att.attrelid\n " +
-                                            " INNER JOIN pg_catalog.pg_namespace nsp\n " +
-                                            "    ON nsp.oid = rel.relnamespace\n " +
-                                            " WHERE nsp.nspname = '%s'\n" +
-                                            "   AND rel.relname = '%s' \n" +
-                                            "   AND att.attnum =  %s;", tableSchema, tableName, columnId);
-
-                                    try (Statement stmt = connectionToPostgres.createStatement()) {
-                                        try (ResultSet rs = stmt.executeQuery(qry)) {
-                                            if (rs.next()) {
-                                                String uniqueColumnName = rs.getString("attname");
-                                                uniqueColumnNames.add(uniqueColumnName);
-                                            } else {
-
-                                            }
-                                        }
-                                    }
-                                }
-                                DbTableUniqueConstraint uniqueConstraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
-                                constraints.add(uniqueConstraint);
-                            }
-                            break;
+                            case CONSTRAINT_TYPE_CHECK:
+                                constraint = new DbTableCheckExpression(tableName, checkConstraint);
+                                constraints.add(constraint);
+                                break;
+                            case CONSTRAINT_TYPE_UNIQUE:
+                                Integer[] uniqueColumnIds = (Integer[]) array.getArray();
+                                constraint = getDbTableUniqueConstraint(connectionToPostgres, tableSchema, tableName, uniqueColumnIds);
+                                constraints.add(constraint);
+                                break;
                             case CONSTRAINT_TYPE_FOREIGN_KEY:
                             case CONSTRAINT_TYPE_PRIMARY_KEY:
                                 /**
