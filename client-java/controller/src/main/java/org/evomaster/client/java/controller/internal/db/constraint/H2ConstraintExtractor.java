@@ -16,6 +16,15 @@ import java.util.stream.Collectors;
 
 public class H2ConstraintExtractor extends TableConstraintExtractor {
 
+    public static final String CONSTRAINT_TYPE = "CONSTRAINT_TYPE";
+    public static final String CHECK_EXPRESSION = "CHECK_EXPRESSION";
+    public static final String COLUMN_LIST = "COLUMN_LIST";
+    public static final String UNIQUE = "UNIQUE";
+    public static final String REFERENTIAL = "REFERENTIAL";
+    public static final String PRIMARY_KEY = "PRIMARY_KEY";
+    public static final String PRIMARY_KEY_BLANK = "PRIMARY KEY";
+    public static final String CHECK = "CHECK";
+
     /**
      * Expects the schema explained in
      * http://www.h2database.com/html/systemtables.html#information_schema
@@ -65,38 +74,40 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
             String tableName = tableDto.name;
             try (Statement statement = connectionToH2.createStatement()) {
 
-                final String query = String.format("Select * From INFORMATION_SCHEMA.CONSTRAINTS where CONSTRAINTS.TABLE_SCHEMA='%s' and CONSTRAINTS.TABLE_NAME='%s' ", tableSchema, tableName);
+                final String query = String.format("Select * From INFORMATION_SCHEMA.CONSTRAINTS\n" +
+                        " where CONSTRAINTS.TABLE_SCHEMA='%s' \n"
+                        + " and CONSTRAINTS.TABLE_NAME='%s' ", tableSchema, tableName);
                 try (ResultSet constraints = statement.executeQuery(query)) {
 
                     while (constraints.next()) {
-                        String constraintType = constraints.getString("CONSTRAINT_TYPE");
-                        String sqlCheckExpression = constraints.getString("CHECK_EXPRESSION");
-                        String columnList = constraints.getString("COLUMN_LIST");
+                        String constraintType = constraints.getString(CONSTRAINT_TYPE);
+                        String sqlCheckExpression = constraints.getString(CHECK_EXPRESSION);
+                        String columnList = constraints.getString(COLUMN_LIST);
 
-                        if (constraintType.equals("UNIQUE")) {
-                            assert (sqlCheckExpression == null);
-                            List<String> uniqueColumnNames = Arrays.stream(columnList.split(",")).map(String::trim).collect(Collectors.toList());
-                            DbTableUniqueConstraint uniqueConstraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
-                            tableCheckExpressions.add(uniqueConstraint);
+                        switch (constraintType) {
+                            case UNIQUE: {
+                                assert (sqlCheckExpression == null);
+                                List<String> uniqueColumnNames = Arrays.stream(columnList.split(",")).map(String::trim).collect(Collectors.toList());
+                                DbTableUniqueConstraint uniqueConstraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
+                                tableCheckExpressions.add(uniqueConstraint);
+                            }
+                            break;
+                            case PRIMARY_KEY:
+                            case PRIMARY_KEY_BLANK:
+                            case REFERENTIAL:
+                                /**
+                                 * This type of constraint is already handled by
+                                 * JDBC Metadata
+                                 **/
+                                break;
+                            case CHECK: {
+                                DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
+                                tableCheckExpressions.add(constraint);
+                            }
+                            break;
 
-                        } else if (constraintType.equals("REFERENTIAL")) {
-                            /**
-                             * This type of constraint is already handled by
-                             * JDBC Metadata
-                             **/
-                        } else if (constraintType.equals("PRIMARY KEY") || constraintType.equals("PRIMARY_KEY")) {
-                            /**
-                             * This type of constraint is already handled by
-                             * JDBC Metadata
-                             **/
-                        } else if (constraintType.equals("CHECK")) {
-                            assert (columnList == null);
-
-                            DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
-                            tableCheckExpressions.add(constraint);
-
-                        } else {
-                            cannotHandle(constraintType);
+                            default:
+                                cannotHandle(constraintType);
                         }
                     }
                 }
