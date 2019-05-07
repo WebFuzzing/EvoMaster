@@ -1,4 +1,4 @@
-package org.evomaster.core.database.extract
+package org.evomaster.core.database.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class ExtractPostgresCreateTableCheck : ExtractTestBasePostgres() {
+class AlterTableCheckTest : ExtractTestBasePostgres() {
 
-    override fun getSchemaLocation() = "/sql_schema/create_table_check.sql"
+    override fun getSchemaLocation() = "/sql_schema/alter_table_check.sql"
 
 
     @Test

@@ -1,4 +1,4 @@
-package org.evomaster.core.database.extract
+package org.evomaster.core.database.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
