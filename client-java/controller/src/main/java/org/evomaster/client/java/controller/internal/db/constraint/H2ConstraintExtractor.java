@@ -83,15 +83,13 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
                         String constraintType = constraints.getString(CONSTRAINT_TYPE);
                         String sqlCheckExpression = constraints.getString(CHECK_EXPRESSION);
                         String columnList = constraints.getString(COLUMN_LIST);
-
+                        DbTableConstraint constraint;
                         switch (constraintType) {
-                            case UNIQUE: {
-                                assert (sqlCheckExpression == null);
+                            case UNIQUE:
                                 List<String> uniqueColumnNames = Arrays.stream(columnList.split(",")).map(String::trim).collect(Collectors.toList());
-                                DbTableUniqueConstraint uniqueConstraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
-                                tableCheckExpressions.add(uniqueConstraint);
-                            }
-                            break;
+                                constraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
+                                tableCheckExpressions.add(constraint);
+                                break;
                             case PRIMARY_KEY:
                             case PRIMARY_KEY_BLANK:
                             case REFERENTIAL:
@@ -100,11 +98,10 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
                                  * JDBC Metadata
                                  **/
                                 break;
-                            case CHECK: {
-                                DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
+                            case CHECK:
+                                constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
                                 tableCheckExpressions.add(constraint);
-                            }
-                            break;
+                                break;
 
                             default:
                                 cannotHandle(constraintType);
