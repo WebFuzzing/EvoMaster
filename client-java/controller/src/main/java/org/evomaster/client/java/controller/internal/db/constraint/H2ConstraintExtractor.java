@@ -37,12 +37,12 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     }
 
     /**
-     * Registers that a constaint could not be processed
+     * Logs that a constraint could not be handled by the extractor.
      *
      * @param constraintType
      */
     private static void cannotHandle(String constraintType) {
-        SimpleLogger.uniqueWarn("WARNING, cannot handle constraint type '" + constraintType);
+        SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract H2 constraints with type '" + constraintType);
     }
 
     /**
@@ -63,47 +63,44 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         String tableSchema = schemaDto.name;
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
-            Statement statement = connectionToH2.createStatement();
-            ResultSet constraints = statement.executeQuery("Select * From INFORMATION_SCHEMA.CONSTRAINTS "
-                    + " where CONSTRAINTS.TABLE_SCHEMA='" + tableSchema + "' and CONSTRAINTS.TABLE_NAME='" + tableName + "'");
+            try (Statement statement = connectionToH2.createStatement()) {
 
-            while (constraints.next()) {
-                String constraintType = constraints.getString("CONSTRAINT_TYPE");
-                String sqlCheckExpression = constraints.getString("CHECK_EXPRESSION");
-                String columnList = constraints.getString("COLUMN_LIST");
+                final String query = String.format("Select * From INFORMATION_SCHEMA.CONSTRAINTS where CONSTRAINTS.TABLE_SCHEMA='%s' and CONSTRAINTS.TABLE_NAME='%s", tableSchema, tableName);
+                try (ResultSet constraints = statement.executeQuery(query)) {
 
-                if (constraintType.equals("UNIQUE")) {
-                    assert (sqlCheckExpression == null);
-                    List<String> uniqueColumnNames = Arrays.stream(columnList.split(",")).map(String::trim).collect(Collectors.toList());
-                    DbTableUniqueConstraint uniqueConstraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
-                    tableCheckExpressions.add(uniqueConstraint);
+                    while (constraints.next()) {
+                        String constraintType = constraints.getString("CONSTRAINT_TYPE");
+                        String sqlCheckExpression = constraints.getString("CHECK_EXPRESSION");
+                        String columnList = constraints.getString("COLUMN_LIST");
 
-                } else if (constraintType.equals("REFERENTIAL")) {
-                    /**
-                     * This type of constraint is already handled by
-                     * JDBC Metadata
-                     **/
-                    continue;
-                } else if (constraintType.equals("PRIMARY KEY") || constraintType.equals("PRIMARY_KEY")) {
-                    /**
-                     * This type of constraint is already handled by
-                     * JDBC Metadata
-                     **/
-                    continue;
-                } else if (constraintType.equals("CHECK")) {
-                    assert (columnList == null);
+                        if (constraintType.equals("UNIQUE")) {
+                            assert (sqlCheckExpression == null);
+                            List<String> uniqueColumnNames = Arrays.stream(columnList.split(",")).map(String::trim).collect(Collectors.toList());
+                            DbTableUniqueConstraint uniqueConstraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);
+                            tableCheckExpressions.add(uniqueConstraint);
 
-                    DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
-                    tableCheckExpressions.add(constraint);
+                        } else if (constraintType.equals("REFERENTIAL")) {
+                            /**
+                             * This type of constraint is already handled by
+                             * JDBC Metadata
+                             **/
+                        } else if (constraintType.equals("PRIMARY KEY") || constraintType.equals("PRIMARY_KEY")) {
+                            /**
+                             * This type of constraint is already handled by
+                             * JDBC Metadata
+                             **/
+                        } else if (constraintType.equals("CHECK")) {
+                            assert (columnList == null);
 
-                } else {
-                    cannotHandle(constraintType);
+                            DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
+                            tableCheckExpressions.add(constraint);
+
+                        } else {
+                            cannotHandle(constraintType);
+                        }
+                    }
                 }
-
             }
-
-            statement.close();
-
         }
 
         return tableCheckExpressions;
@@ -125,18 +122,22 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
         List<DbTableConstraint> columnConstraints = new ArrayList<>();
         for (TableDto tableDto : schemaDto.tables) {
             String tableName = tableDto.name;
-            Statement statement = connectionToH2.createStatement();
-            ResultSet columns = statement.executeQuery("Select * From INFORMATION_SCHEMA.COLUMNS "
-                    + " where COLUMNS.TABLE_SCHEMA='" + tableSchema + "' and COLUMNS.TABLE_NAME='" + tableName + "'");
-            while (columns.next()) {
-                String sqlCheckExpression = columns.getString("CHECK_CONSTRAINT");
-                if (sqlCheckExpression != null && !sqlCheckExpression.equals("")) {
-                    DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
-                    columnConstraints.add(constraint);
+
+            try (Statement statement = connectionToH2.createStatement()) {
+
+                final String query = String.format("Select * From INFORMATION_SCHEMA.COLUMNS "
+                        + " where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s'", tableSchema, tableName);
+
+                try (ResultSet columns = statement.executeQuery(query)) {
+                    while (columns.next()) {
+                        String sqlCheckExpression = columns.getString("CHECK_CONSTRAINT");
+                        if (sqlCheckExpression != null && !sqlCheckExpression.equals("")) {
+                            DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);
+                            columnConstraints.add(constraint);
+                        }
+                    }
                 }
             }
-
-            statement.close();
         }
         return columnConstraints;
     }
