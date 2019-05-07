@@ -129,7 +129,7 @@ public class SchemaExtractor {
                 break;
             }
             case POSTGRES: {
-                dbTableConstraints = new PostgresTableConstraintExtractor().extract(connection, schemaDto);
+                dbTableConstraints = new PostgresConstraintExtractor().extract(connection, schemaDto);
                 break;
             }
             case OTHER: {
