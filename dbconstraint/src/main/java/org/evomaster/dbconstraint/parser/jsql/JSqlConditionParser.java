@@ -63,6 +63,6 @@ public class JSqlConditionParser extends SqlConditionParser {
          * The JSQL parser does not properly handle the Postgres "ARRAY[...]" construct. Since
          * the ARRAY is used within a enumeration, we can simply drop the "ARRAY[...]"
          */
-        return transformedStr.replaceAll("ARRAY\\s*\\[([^<]*)\\]", "");
+        return transformedStr.replaceAll("ARRAY\\s*\\[([^<]*)\\]", "$1");
     }
 }
