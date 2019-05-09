@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Disabled
+
 import org.junit.jupiter.api.Test
 
 /**
@@ -59,5 +60,6 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         val genes = actions[0].seeGenes()
 
         //TODO check creation of genes for TEXT, UUID, XML and JSONB column types
+
     }
 }

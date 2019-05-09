@@ -173,6 +173,7 @@ class SqlConditionParserTest {
     @Test
     void testConditionEquals() throws SqlConditionParserException {
         SqlCondition actual = parse("((STATUS = 'b') = (P_AT IS NOT NULL))");
+
         SqlCondition expected = eq(
                 eq(column("STATUS"), str("b")),
                 isNotNull(column("P_AT")));
@@ -231,6 +232,7 @@ class SqlConditionParserTest {
         );
         assertEquals(expected, actual);
     }
+
 
 
     @Test
