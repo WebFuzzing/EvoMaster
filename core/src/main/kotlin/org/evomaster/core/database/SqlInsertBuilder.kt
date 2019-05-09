@@ -78,7 +78,7 @@ class SqlInsertBuilder(
                 val column = Column(
                         name = c.name,
                         size = c.size,
-                        type = ColumnDataType.valueOf(c.type),
+                        type = ColumnDataType.valueOf(c.type.toUpperCase()),
                         primaryKey = c.primaryKey,
                         autoIncrement = c.autoIncrement,
                         foreignKeyToAutoIncrement = c.foreignKeyToAutoIncrement,

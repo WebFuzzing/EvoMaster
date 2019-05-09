@@ -2,6 +2,7 @@ package org.evomaster.core.database.extract.postgres
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
+import org.evomaster.core.database.SqlInsertBuilder
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -43,5 +44,15 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
 
         //TODO check the 3 views and all constraints
+    }
+
+    @Test
+    fun testSqlInsert() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+//        val actions = builder.createSqlInsertionAction("x", setOf("p_at", "created_at"))
+//        val genes = actions[0].seeGenes()
+
     }
 }

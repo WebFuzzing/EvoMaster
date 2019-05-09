@@ -1,6 +1,7 @@
 package org.evomaster.dbconstraint;
 
 import org.evomaster.dbconstraint.ast.SqlCondition;
+import org.evomaster.dbconstraint.extract.SqlCannotBeTranslatedException;
 import org.evomaster.dbconstraint.extract.SqlConditionTranslator;
 import org.evomaster.dbconstraint.extract.TranslationContext;
 import org.evomaster.dbconstraint.parser.SqlConditionParser;
@@ -12,15 +13,19 @@ public class ConstraintBuilder {
     public TableConstraint translateToConstraint(String tableName, String condExpression) {
 
         SqlConditionParser sqlParser = SqlConditionParserFactory.buildParser();
+        SqlCondition expr;
         try {
-            SqlCondition expr = sqlParser.parse(condExpression);
-            TranslationContext translationContext = new TranslationContext(tableName);
-            SqlConditionTranslator exprExtractor = new SqlConditionTranslator(translationContext);
-            TableConstraint constraint = expr.accept(exprExtractor, null);
-            return constraint;
-        } catch (SqlConditionParserException e) {
+            expr = sqlParser.parse(condExpression);
+        } catch (SqlConditionParserException ex) {
             return new UnsupportedTableConstraint(tableName, condExpression);
         }
 
+        TranslationContext translationContext = new TranslationContext(tableName);
+        SqlConditionTranslator exprExtractor = new SqlConditionTranslator(translationContext);
+        try {
+            return expr.accept(exprExtractor, null);
+        } catch (SqlCannotBeTranslatedException ex) {
+            return new UnsupportedTableConstraint(tableName, condExpression);
+        }
     }
 }
