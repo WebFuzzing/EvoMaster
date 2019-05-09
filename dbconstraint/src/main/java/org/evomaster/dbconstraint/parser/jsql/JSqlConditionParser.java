@@ -14,6 +14,13 @@ import java.util.regex.Pattern;
 
 public class JSqlConditionParser extends SqlConditionParser {
 
+    /**
+     * JSQL does not support legal check constraints such as (x=35) = (y=32).
+     * In order to support those constraints, it is possible to split the constraint into
+     * two separate formulas (i.e. "x=35" and "y=32") and feed the basic formulas
+     * to the JSQL parser. The pattern below allows one to split the "($1)=($2)" string
+     * into those two formulas by using the Matcher.group(int) method
+     */
     public static final String FORMULA_EQUALS_FORMULA_PATTERN = "\\(\\s*\\(([^<]*)\\)\\s*=\\s*\\(([^<]*)\\)\\s*\\)";
 
     @Override
@@ -45,7 +52,17 @@ public class JSqlConditionParser extends SqlConditionParser {
      * @return
      */
     private String transformDialect(String originalSqlStr) {
-        // replace " = ANY (ARRAY[...])" with " IN (...)"
-        return originalSqlStr.replaceAll("=\\s*ANY\\s*\\(\\s*ARRAY\\s*\\[([^<]*)\\]\\s*\\)", " IN ($1)");
+        /**
+         * The JSQL parser does not properly parse the Postgresql SQL dialect function "ANY"
+         * We can work aroung this limitation by replacing the "= ANY (...)" with a valid " IN (...)"
+         * string
+         */
+        String transformedStr = originalSqlStr.replaceAll("=\\s*ANY\\s*\\(([^<]*)\\)", " IN ($1)");
+
+        /**
+         * The JSQL parser does not properly handle the Postgres "ARRAY[...]" construct. Since
+         * the ARRAY is used within a enumeration, we can simply drop the "ARRAY[...]"
+         */
+        return transformedStr.replaceAll("ARRAY\\s*\\[([^<]*)\\]", "");
     }
 }
