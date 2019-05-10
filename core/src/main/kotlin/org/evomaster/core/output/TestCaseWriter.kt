@@ -297,8 +297,13 @@ class TestCaseWriter {
                 lines.deindent(2)
                 lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
             } else {
-
-                lines.add(".extract().body().path<Object>(\"${res.getResourceIdName()}\").toString();")
+                //TODO BMR: this is a less-than-subtle way to try to fix a problem in ScoutAPI
+                // The test generated in java causes a fail due to .path<Object>
+                val extraTypeInfo = when{
+                    format.isKotlin() -> "<Object>"
+                    else -> ""
+                }
+                lines.add(".extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString();")
                 lines.addEmpty()
                 lines.deindent(2)
 
@@ -384,7 +389,7 @@ class TestCaseWriter {
             when(resContentsItem::class) {
                 //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
                 Double::class -> return "NumberMatcher.numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"")}\")"
+                String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
                 //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
                 else -> return "NotCoveredYet"
@@ -403,7 +408,9 @@ class TestCaseWriter {
             lines.add(".assertThat()")
 
                 if(res.getBodyType()==null) lines.add(".contentType(\"\")")
-                else lines.add(".contentType(\"${res.getBodyType()}\")")
+                else lines.add(".contentType(\"${res.getBodyType()
+                        .toString().split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
+                }\")")
 
                 /*if(res.getBodyType()!= null && res.getStatusCode()!=500){
                     lines.add(".contentType(\"${res.getBodyType()}\")")
@@ -429,11 +436,16 @@ class TestCaseWriter {
                             '{' -> {
                                 // JSON contains an object
                                 val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
-                                resContents.keys.forEach {
+                                resContents.keys.filter{
+                                    !(it as String).contains("timestamp")}
+                                        .forEach {
                                     val actualValue = resContents[it]
                                     if (actualValue != null) {
                                         val printableTh = handleFieldValues(actualValue)
-                                        if (printableTh != "null" && printableTh != "NotCoveredYet") {
+                                        if (printableTh != "null"
+                                                && printableTh != "NotCoveredYet"
+                                                && !printableTh.contains("logged")
+                                        ) {
                                             lines.add(".body(\"\'${it}\'\", ${printableTh})")
                                         }
                                     }

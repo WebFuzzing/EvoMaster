@@ -38,8 +38,11 @@ class TestSuiteWriter {
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
 
-        val numberMatcher = addAdditionalNumberMatcher()
-        saveToDisk(numberMatcher, config, TestSuiteFileName("NumberMatcher"))
+        if (config.enableBasicAssertions){
+            val numberMatcher = addAdditionalNumberMatcher()
+            saveToDisk(numberMatcher, config, TestSuiteFileName("NumberMatcher"))
+        }
+
     }
 
 
@@ -324,40 +327,75 @@ class TestSuiteWriter {
 
             lines.addEmpty(2)
 
-            lines.add("class NumberMatcher extends TypeSafeMatcher<Number> {")
+            val format = config.outputFormat
+
+            when {
+                format.isJava() -> {
+                    lines.add("class NumberMatcher extends TypeSafeMatcher<Number> {")
+                    lines.add("private double value;")
+                    lines.add("public NumberMatcher(double value) {")
+                    lines.indented {
+                        lines.add("this.value = value;")
+                    }
+                    lines.add("}")
+                }
+                format.isKotlin() -> {
+                    lines.add("class NumberMatcher(")
+                    lines.indented {
+                        lines.add("val value: Double")
+                    }
+                    lines.add("): TypeSafeMatcher<Number>(){")
+                }
+            }
+
             lines.indented {
-                lines.add("private double value;")
-                lines.add("public NumberMatcher(double value) {")
-                lines.indented {
-                    lines.add("this.value = value;")
-                }
-                lines.add("}")
                 // override describeTo
-                lines.add("@Override")
-                lines.add("public void describeTo(Description description) {")
-                lines.indented {
-                    lines.add("//The point of the matcher is to allow comparisons between int and double " +
-                            "that have the same value" +
-                            "E.g. that (int) 0 == (double) 0.0")
+                when {
+                    format.isJava() -> {
+                        lines.add("@Override")
+                        lines.add("public void describeTo(Description description) {")
+                    }
+                    format.isKotlin() -> lines.add("override fun describeTo(description: Description) {")
                 }
+                lines.add("//The point of the matcher is to allow comparisons between int and double " +
+                        "that have the same value" +
+                        "E.g. that (int) 0 == (double) 0.0")
                 lines.add("}")
 
                 //override matchesSafely
-                lines.add("@Override")
-                lines.add("protected boolean matchesSafely (Number item) {")
-                lines.indented {
-                    lines.add("return item.doubleValue() == value;")
+                when {
+                    format.isJava() -> {
+                        lines.add("@Override")
+                        lines.add("protected boolean matchesSafely (Number item) {")
+                        lines.indented { lines.add("return item.doubleValue() == value;")}
+                    }
+                    format.isKotlin() -> {
+                        lines.add("override fun matchesSafely(item: Number): Boolean {")
+                        lines.indented {  lines.add("return item.toDouble() == value") }
+                    }
                 }
                 lines.add("}")
 
                 //static comparison function
-                lines.add("public static Matcher<Number> numberMatches(Number item) {")
-                lines.indented {
-                    lines.add("return new NumberMatcher(item.doubleValue());")
+                when {
+                    format.isJava() -> {
+                        lines.add("public static Matcher<Number> numberMatches(Number item) {")
+                        lines.indented { lines.add("return new NumberMatcher(item.doubleValue());") }
+                    }
+                    format.isKotlin() -> {
+                        lines.add("companion object {")
+                        lines.indented {
+                            lines.add("@JvmStatic")
+                            lines.add("fun numberMatches(item: Number): Matcher<Number> { ")
+                            lines.indented { lines.add("return NumberMatcher(item.toDouble())") }
+                        }
+                        lines.add("}")
+                    }
                 }
                 lines.add("}")
             }
             lines.add("}")
+
         }
         return lines.toString()
     }
