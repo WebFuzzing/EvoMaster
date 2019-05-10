@@ -208,6 +208,18 @@ class name conflicts.
 All names should use ASCII letters. Non-ASCII ones like ø or Å must be avoided.
 
   
-
-
-
+### Trello
+If you are among the core developers of `EvoMaster`, you should get an invitation to join
+[Trello](https://trello.com).
+We use it to track activities and assign tasks. Anyone can create new tasks/cards.
+Current usage:
+- `On going`: tasks that are currently under development. Those must be assigned to at least
+   1 person.
+- `Done`: tasks that are fully done. We do not delete them, e.g., just in case if need to look at
+   them again in the future.
+   Even when a task is completed, the moving from `On going` to `Done` should be carried out 
+   __only__ during a developer meeting (so it can be demoed or at least discussed).    
+- `Important, to do soon`: high priority tasks which have not been started yet.
+- `Issues/bugs`: reported bugs which are not trivial to fix. For developers, better to report them
+  here than GitHub issue page.
+- `Backlog-*`: different backlogs, divided by topic.
