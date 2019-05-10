@@ -1,4 +1,4 @@
-package org.evomaster.core.database.extract
+package org.evomaster.core.database.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test
 /**
  * Created by arcuri82 on 01-Apr-19.
  */
-class ExtractH2CheckInConstraint : ExtractTestBaseH2() {
+class CreateTableCheckEnumTest : ExtractTestBaseH2() {
 
-    override fun getSchemaLocation() = "/sql_schema/check_in.sql"
+    override fun getSchemaLocation() = "/sql_schema/create_table_check_enum.sql"
 
 
     @Test

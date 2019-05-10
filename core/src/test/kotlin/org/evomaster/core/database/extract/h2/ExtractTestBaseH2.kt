@@ -1,4 +1,4 @@
-package org.evomaster.core.database.extract
+package org.evomaster.core.database.extract.h2
 
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.junit.jupiter.api.AfterAll

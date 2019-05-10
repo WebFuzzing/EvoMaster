@@ -1,4 +1,4 @@
-package org.evomaster.core.database.extract
+package org.evomaster.core.database.extract.h2
 
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.function.Executable
 
-class AlterTableCheckExpressionExtractTest : ExtractTestBaseH2() {
+class AlterTableUniqueTest : ExtractTestBaseH2() {
 
     override fun getSchemaLocation()= "/sql_schema/passports.sql"
 

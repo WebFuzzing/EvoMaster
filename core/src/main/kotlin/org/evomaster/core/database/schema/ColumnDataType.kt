@@ -74,7 +74,31 @@ enum class ColumnDataType(dataTypeName: String) {
     /**
      * A Binary Large Object, typically images, audio or multimedia.
      */
-    BLOB("BLOB");
+    BLOB("BLOB"),
+    /**
+     * Postgres. The data type uuid stores Universally Unique Identifiers (UUID)
+     * as defined by RFC 4122, ISO/IEC 9834-8:2005, and related standards.
+     */
+    UUID("UUID"),
+    /**
+     * Postgres. In addition, PostgreSQL provides the text type, which stores strings
+     * of any length. Although the type text is not in the SQL standard,
+     * several other SQL database management systems have it as well.
+     */
+    TEXT("TEXT"),
+    /**
+     * Postgres. The xml data type can be used to store XML data. Its advantage over
+     * storing XML data in a text field is that it checks the input values for well-formedness,
+     * and there are support functions to perform type-safe operations on it
+     */
+    XML("XML"),
+
+    /**
+     * date (no time of day) minvalue = 4713 BC, maxvalue= 5874897 AD
+     */
+    DATE("DATE"),
+
+    JSONB("JSONB");
 
 
     fun shouldBePrintedInQuotes() : Boolean {

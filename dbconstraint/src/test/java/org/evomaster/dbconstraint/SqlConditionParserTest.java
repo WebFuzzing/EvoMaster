@@ -170,10 +170,10 @@ class SqlConditionParserTest {
     }
 
 
-    @Disabled("check expressions FORMULA1 = FORMULA2 is not supported by JSQL")
     @Test
     void testConditionEquals() throws SqlConditionParserException {
-        SqlCondition actual = parse("(STATUS = 'b') = (P_AT IS NOT NULL)");
+        SqlCondition actual = parse("((STATUS = 'b') = (P_AT IS NOT NULL))");
+
         SqlCondition expected = eq(
                 eq(column("STATUS"), str("b")),
                 isNotNull(column("P_AT")));
@@ -212,6 +212,27 @@ class SqlConditionParserTest {
         SqlSimilarToCondition expected = similarTo(column("W_ID"), str("/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?"));
         assertEquals(expected, actual);
     }
+
+    @Test
+    void testPostgresSimilarEscape() throws SqlConditionParserException {
+        SqlCondition actual = parse("(w_id ~ similar_escape('/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?'::text, NULL::text))");
+        SqlSimilarToCondition expected = similarTo(column("w_id"), str("/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?"));
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testPostgresLike() throws SqlConditionParserException {
+        SqlCondition actual = parse("((f_id ~~ 'hi'::text) OR (f_id ~~ '%foo%'::text) OR (f_id ~~ '%foo%x%'::text) OR (f_id ~~ '%bar%'::text) OR (f_id ~~ '%bar%y%'::text) OR (f_id ~~ '%hello%'::text))");
+        SqlOrCondition expected = or(or(or(or(or(like(column("f_id"), "hi"),
+                like(column("f_id"), "%foo%")),
+                like(column("f_id"), "%foo%x%")),
+                like(column("f_id"), "%bar%")),
+                like(column("f_id"), "%bar%y%")),
+                like(column("f_id"), "%hello%")
+        );
+        assertEquals(expected, actual);
+    }
+
 
 
     @Test
