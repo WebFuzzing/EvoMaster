@@ -301,7 +301,7 @@ class SqlInsertBuilder(
             val dto = DatabaseCommandDto()
             dto.command = sql
 
-            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetResults(dto)
+            val result: QueryResultDto = dbExecutor.executeDatabaseCommandAndGetQueryResults(dto)
                     ?: continue
 
             result.rows.forEach { r ->

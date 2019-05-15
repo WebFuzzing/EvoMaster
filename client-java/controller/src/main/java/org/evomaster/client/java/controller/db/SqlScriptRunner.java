@@ -145,7 +145,15 @@ public class SqlScriptRunner {
     }
 
 
-    public static void execInsert(Connection conn, List<InsertionDto> insertions) throws SQLException {
+    /**
+     * Execute the different SQL insertions.
+     * Those can refer to each other via foreign keys, even in the case
+     * of auto-generated ids
+     *
+     * @return a map from InsertionDto id to id of auto-generated primary
+     * keys in the database (if any was generated)
+     */
+    public static Map<Long, Long> execInsert(Connection conn, List<InsertionDto> insertions) throws SQLException {
 
         if (insertions == null || insertions.isEmpty()) {
             throw new IllegalArgumentException("No data to insert");
@@ -189,6 +197,8 @@ public class SqlScriptRunner {
                 map.put(insDto.id, id);
             }
         }
+
+        return map;
     }
 
     private static String prepareSqlInsertionCommand(String insertSql, Map<Long, Long> map, int i, InsertionDto insDto) {

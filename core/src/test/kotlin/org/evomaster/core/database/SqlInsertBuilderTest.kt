@@ -382,7 +382,11 @@ class SqlInsertBuilderTest {
 
     private class DirectDatabaseExecutor : DatabaseExecutor {
 
-        override fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto? {
+        override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
+            return null
+        }
+
+        override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
             return SqlScriptRunner.execCommand(connection, dto.command).toDto()
         }
 
