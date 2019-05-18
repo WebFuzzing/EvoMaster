@@ -111,6 +111,7 @@
         <jackson.version>2.9.7</jackson.version>
         <asm.version>7.0</asm.version>
         <testcontainers.version>1.10.1</testcontainers.version>
+        <antlr.version>4.7.2</antlr.version>
     </properties>
 
 
@@ -259,6 +260,11 @@
                 <groupId>net.sf.jopt-simple</groupId>
                 <artifactId>jopt-simple</artifactId>
                 <version>6.0-alpha-3</version>
+            </dependency>
+            <dependency> <!-- Used for parsers -->
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-runtime</artifactId>
+                <version>${antlr.version}</version>
             </dependency>
 
 
@@ -704,6 +710,26 @@
                             <phase>prepare-package</phase>
                             <goals>
                                 <goal>report</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <!--
+                    Used for parsers. Eg, to analyze regex
+                  -->
+                <plugin>
+                    <groupId>org.antlr</groupId>
+                    <artifactId>antlr4-maven-plugin</artifactId>
+                    <version>${antlr.version}</version>
+                    <configuration>
+                        <listener>false</listener>
+                        <visitor>true</visitor>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>antlr4</goal>
                             </goals>
                         </execution>
                     </executions>
