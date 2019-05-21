@@ -145,6 +145,13 @@ public class SqlScriptRunner {
     }
 
 
+    //From DTO Insertion Id to generated Id in database
+    public static Map<Long, Long> map = new HashMap<>();
+
+    public static Map<Long, Long> execInsert(Connection conn, List<InsertionDto> insertions) throws SQLException {
+        return execInsert(conn, insertions, true);
+    }
+
     /**
      * Execute the different SQL insertions.
      * Those can refer to each other via foreign keys, even in the case
@@ -153,16 +160,15 @@ public class SqlScriptRunner {
      * @return a map from InsertionDto id to id of auto-generated primary
      * keys in the database (if any was generated)
      */
-    public static Map<Long, Long> execInsert(Connection conn, List<InsertionDto> insertions) throws SQLException {
+    public static Map<Long, Long> execInsert(Connection conn, List<InsertionDto> insertions, Boolean isFirst) throws SQLException {
 
         if (insertions == null || insertions.isEmpty()) {
             throw new IllegalArgumentException("No data to insert");
         }
 
-        String insertSql = "INSERT INTO ";
+        if (isFirst) map.clear();
 
-        //From DTO Insertion Id to generated Id in database
-        Map<Long, Long> map = new HashMap<>();
+        String insertSql = "INSERT INTO ";
 
         for (int i = 0; i < insertions.size(); i++) {
 

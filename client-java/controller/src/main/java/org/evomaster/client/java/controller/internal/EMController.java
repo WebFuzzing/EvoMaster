@@ -280,7 +280,7 @@ public class EMController {
             if (dto.command != null) {
                 queryResult = SqlScriptRunner.execCommand(connection, dto.command);
             } else {
-                idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);
+                idMapping = SqlScriptRunner.execInsert(connection, dto.insertions, dto.isFirst);
             }
         } catch (Exception e) {
             String msg = "Failed to execute database command: " + e.getMessage();
