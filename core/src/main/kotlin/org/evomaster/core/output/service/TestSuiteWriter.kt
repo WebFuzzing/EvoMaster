@@ -26,7 +26,7 @@ class TestSuiteWriter {
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val activeExpectations = "activeExpectations"
+        private const val expectationsMasterSwitch = "expectationsMasterSwitch"
     }
 
     fun writeTests(
@@ -158,6 +158,10 @@ class TestSuiteWriter {
 
         if(config.expectationsActive) {
             addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
+            addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
+            addImport("io.restassured.response.ValidatableResponse", lines)
+            addImport("io.restassured.path.json.JsonPath", lines)
+
         }
         //addImport("static org.hamcrest.core.Is.is", lines, format)
 
@@ -188,7 +192,7 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
-                lines.add("private static boolean activeExpectations = false;")
+                lines.add("private static boolean expectationsMasterSwitch = false;")
             }
 
         } else if(config.outputFormat.isKotlin()) {
@@ -200,7 +204,7 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
-                lines.add("private val $activeExpectations = false")
+                lines.add("private val $expectationsMasterSwitch = false")
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
@@ -345,4 +349,109 @@ class TestSuiteWriter {
             lines.append(";")
         }
     }
+
+    private fun addAdditionalNumberMatcher(): String{
+        val lines = Lines()
+        if(config.enableBasicAssertions){
+
+            addImport("org.hamcrest.TypeSafeMatcher", lines)
+            addImport("org.hamcrest.Description", lines)
+            addImport("org.hamcrest.Matcher", lines)
+
+            lines.addEmpty(2)
+
+            val format = config.outputFormat
+
+            when {
+                format.isJava() -> {
+                    lines.add("class NumberMatcher extends TypeSafeMatcher<Number> {")
+                    lines.add("private double value;")
+                    lines.add("public NumberMatcher(double value) {")
+                    lines.indented {
+                        lines.add("this.value = value;")
+                    }
+                    lines.add("}")
+                }
+                format.isKotlin() -> {
+                    lines.add("class NumberMatcher(")
+                    lines.indented {
+                        lines.add("val value: Double")
+                    }
+                    lines.add("): TypeSafeMatcher<Number>(){")
+                }
+            }
+
+            lines.indented {
+                // override describeTo
+                when {
+                    format.isJava() -> {
+                        lines.add("@Override")
+                        lines.add("public void describeTo(Description description) {")
+                    }
+                    format.isKotlin() -> lines.add("override fun describeTo(description: Description) {")
+                }
+                lines.add("//The point of the matcher is to allow comparisons between int and double " +
+                        "that have the same value" +
+                        "E.g. that (int) 0 == (double) 0.0")
+                lines.add("}")
+
+                //override matchesSafely
+                when {
+                    format.isJava() -> {
+                        lines.add("@Override")
+                        lines.add("protected boolean matchesSafely (Number item) {")
+                        lines.indented { lines.add("return item.doubleValue() == value;")}
+                    }
+                    format.isKotlin() -> {
+                        lines.add("override fun matchesSafely(item: Number): Boolean {")
+                        lines.indented {  lines.add("return item.toDouble() == value") }
+                    }
+                }
+                lines.add("}")
+
+                //static comparison function
+                when {
+                    format.isJava() -> {
+                        lines.add("public static Matcher<Number> numberMatches(Number item) {")
+                        lines.indented { lines.add("return new NumberMatcher(item.doubleValue());") }
+                    }
+                    format.isKotlin() -> {
+                        lines.add("companion object {")
+                        lines.indented {
+                            lines.add("@JvmStatic")
+                            lines.add("fun numberMatches(item: Number): Matcher<Number> { ")
+                            lines.indented { lines.add("return NumberMatcher(item.toDouble())") }
+                        }
+                        lines.add("}")
+                    }
+                }
+                lines.add("}")
+
+                //numbers match function
+                when{
+                    format.isJava() -> {
+                        lines.add("public static boolean numbersMatch(Number item1, Number item2){")
+                        lines.indented {
+                            lines.add("NumberMatcher n1 = new NumberMatcher(item1.doubleValue());")
+                            lines.add("return n1.matchesSafely(item2);")
+                        }
+                    }
+                    format.isKotlin() -> {
+                        lines.add("companion object {")
+                        lines.indented {
+                            lines.add("@JvmStatic")
+                            lines.add("fun numbersMatche(item1: Number, item2: Number): Matcher<Number> { ")
+                            lines.add("val n1: NumberMatcher = NumberMatcher(item1.toDouble())")
+                            lines.add("return n1.matchesSafely(item2)")
+                        }
+                    }
+                }
+                lines.add("}")
+            }
+            lines.add("}")
+
+        }
+        return lines.toString()
+    }
+
 }
