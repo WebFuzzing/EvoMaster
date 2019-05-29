@@ -84,6 +84,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * Postgres. In addition, PostgreSQL provides the text type, which stores strings
      * of any length. Although the type text is not in the SQL standard,
      * several other SQL database management systems have it as well.
+     * Both TEXT and VARCHAR have the upper limit at 1 GB
      */
     TEXT("TEXT"),
     /**
@@ -98,11 +99,24 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     DATE("DATE"),
 
-    JSONB("JSONB");
+    JSONB("JSONB"),
+
+    /*
+    *Synonym of SMALLINT
+    */
+    INT2("INT2"),
+    /*
+    *Synonym of INTEGER
+    */
+    INT4("INT4"),
+    /*
+    *Synonym of BIGINT
+    */
+    INT8("INT8");
 
 
-    fun shouldBePrintedInQuotes() : Boolean {
+    fun shouldBePrintedInQuotes(): Boolean {
 
-        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP)
+        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TEXT)
     }
 }
