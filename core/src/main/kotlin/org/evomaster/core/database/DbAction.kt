@@ -220,6 +220,8 @@ class DbAction(
                     }
                 }
 
+                UUID -> UUIDGene(it.name)
+
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }
 
