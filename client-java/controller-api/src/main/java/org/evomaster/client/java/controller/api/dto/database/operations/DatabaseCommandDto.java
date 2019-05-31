@@ -20,12 +20,4 @@ public class DatabaseCommandDto {
      * come in this list AFTER Y.
      */
     public List<InsertionDto> insertions = new ArrayList<>();
-
-    /**
-     * a test can include a sequence of insertion and test actions, and the action may exist among insertions
-     *  e.g., insert a rowA in Table1, test action1, insert a rowB in Table2 (rwoB may refer to rowA i.e., FK).
-     * In order to keep pk or fk ids map among those insertion, isFirst is used to present whether the insertions are first in a test.
-     * if the insertion is first, the map should be cleared, otherwise keep tracking those pk or fk info.
-     */
-    public boolean isFirst = true;
 }
