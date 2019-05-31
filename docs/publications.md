@@ -47,6 +47,10 @@
   
 # Seminars/Presentations
 
+* 2019: *The Many Independent Objective (MIO) Algorithm for Test Suite Generation*.
+  Lecture given at ISTI-CNR, Italy.   
+  [[PDF](slides/2019_mio_pisa.pdf)]  
+
 * 2019: *Testing RESTful Web Services with EvoMaster*.
   Lecture given at the 3rd International Genoa Software Engineering PhD School on
   Automated Functional and Security Testing of Web and Mobile Application,
