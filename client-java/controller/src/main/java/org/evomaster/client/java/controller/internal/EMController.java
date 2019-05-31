@@ -273,13 +273,14 @@ public class EMController {
         }
 
 
-        QueryResult result = null;
+        QueryResult queryResult = null;
+        Map<Long,Long> idMapping = null;
 
         try {
             if (dto.command != null) {
-                result = SqlScriptRunner.execCommand(connection, dto.command);
+                queryResult = SqlScriptRunner.execCommand(connection, dto.command);
             } else {
-                SqlScriptRunner.execInsert(connection, dto.insertions);
+                idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);
             }
         } catch (Exception e) {
             String msg = "Failed to execute database command: " + e.getMessage();
@@ -287,10 +288,12 @@ public class EMController {
             return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
         }
 
-        if (result == null) {
-            return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+        if (queryResult != null) {
+            return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();
+        } else if(idMapping != null) {
+            return Response.status(200).entity(WrappedResponseDto.withData(idMapping)).build();
         } else {
-            return Response.status(200).entity(WrappedResponseDto.withData(result.toDto())).build();
+            return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
         }
     }
 }

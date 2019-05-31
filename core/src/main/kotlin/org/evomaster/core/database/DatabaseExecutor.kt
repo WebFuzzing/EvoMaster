@@ -16,5 +16,7 @@ interface DatabaseExecutor {
      * Execute a the given SQL command (in DTO format).
      * Return the result of such command, if any
      */
-    fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto?
+    fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto?
+
+    fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long,Long>?
 }

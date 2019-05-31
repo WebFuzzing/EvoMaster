@@ -249,7 +249,15 @@ class RemoteController() : DatabaseExecutor {
         return true
     }
 
-    override fun executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto): QueryResultDto? {
+    override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {
+        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
+    }
+
+    override fun executeDatabaseInsertionsAndGetIdMapping(dto: DatabaseCommandDto): Map<Long, Long>? {
+        return executeDatabaseCommandAndGetResults(dto, object : GenericType<WrappedResponseDto<Map<Long, Long>>>() {})
+    }
+
+    private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
 
         val response = getWebTarget()
                 .path(ControllerConstants.DATABASE_COMMAND)
@@ -257,7 +265,7 @@ class RemoteController() : DatabaseExecutor {
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
         val responseDto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<QueryResultDto>>() {})
+            response.readEntity(type)
         } catch (e: Exception) {
             handleFailedDtoParsing(e)
             return null
