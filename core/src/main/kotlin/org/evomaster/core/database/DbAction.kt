@@ -93,7 +93,7 @@ class DbAction(
                 /**
                  * SMALLINT(5) is assumed as a short/Short field
                  */
-                SMALLINT -> {
+                INT2, SMALLINT -> {
                     if (it.enumValuesAsStrings != null) {
                         EnumGene<Int>(it.name, it.enumValuesAsStrings.map { it.toInt() })
                     } else {
@@ -115,9 +115,9 @@ class DbAction(
                     }
                 }
                 /**
-                 * INTEGER(10) is a int/Integer field
+                 * INT4/INTEGER(10) is a int/Integer field
                  */
-                INTEGER -> if (it.enumValuesAsStrings != null) {
+                INT4, INTEGER -> if (it.enumValuesAsStrings != null) {
                     EnumGene<Int>(it.name, it.enumValuesAsStrings.map { it.toInt() })
                 } else {
                     IntegerGene(it.name,
@@ -127,7 +127,7 @@ class DbAction(
                 /**
                  * BIGINT(19) is a long/Long field
                  */
-                BIGINT -> {
+                INT8, BIGINT -> {
                     if (it.enumValuesAsStrings != null) {
                         EnumGene<Long>(it.name, it.enumValuesAsStrings.map { it.toLong() })
                     } else {
@@ -151,7 +151,7 @@ class DbAction(
                  * VARCHAR(N) is assumed to be a String with a maximum length of N.
                  * N could be as large as Integer.MAX_VALUE
                  */
-                VARCHAR -> if (it.enumValuesAsStrings != null) {
+                TEXT, VARCHAR -> if (it.enumValuesAsStrings != null) {
                     EnumGene<String>(name = it.name, values = it.enumValuesAsStrings)
                 } else {
                     StringGene(name = it.name, minLength = 0, maxLength = it.size)
@@ -168,6 +168,11 @@ class DbAction(
                         SqlTimestampGene(it.name)
                     }
                 }
+
+                /**
+                 * DATE is a date without time of day
+                 */
+                DATE -> DateGene(it.name)
                 /**
                  * CLOB(N) stores a UNICODE document of length N
                  */
@@ -214,6 +219,8 @@ class DbAction(
                         FloatGene(it.name)
                     }
                 }
+
+                UUID -> UUIDGene(it.name)
 
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }

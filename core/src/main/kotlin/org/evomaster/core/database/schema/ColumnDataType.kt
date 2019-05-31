@@ -22,12 +22,14 @@ enum class ColumnDataType(dataTypeName: String) {
      * The unsigned range is 0 to 4294967295.
      */
     INTEGER("INTEGER"),
+    INT4("INT4"),
     /**
      * A large integer.
      * The signed range is -9223372036854775808 to 9223372036854775807.
      * The unsigned range is 0 to 18446744073709551615.
      */
     BIGINT("BIGINT"),
+    INT8("INT8"),
     /**
      * A string value.
      * The length of the column is variable
@@ -52,6 +54,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * A 16-bit (2 bytes) exact integer value
      */
     SMALLINT("SMALLINT"),
+    INT2("INT2"),
     /**
      * A CLOB (character large object) value can be up to 2,147,483,647 characters long.
      * A CLOB is used to store unicode character-based data, such as large documents in any character set.
@@ -84,6 +87,7 @@ enum class ColumnDataType(dataTypeName: String) {
      * Postgres. In addition, PostgreSQL provides the text type, which stores strings
      * of any length. Although the type text is not in the SQL standard,
      * several other SQL database management systems have it as well.
+     * Both TEXT and VARCHAR have the upper limit at 1 GB
      */
     TEXT("TEXT"),
     /**
@@ -92,7 +96,6 @@ enum class ColumnDataType(dataTypeName: String) {
      * and there are support functions to perform type-safe operations on it
      */
     XML("XML"),
-
     /**
      * date (no time of day) minvalue = 4713 BC, maxvalue= 5874897 AD
      */
@@ -101,8 +104,8 @@ enum class ColumnDataType(dataTypeName: String) {
     JSONB("JSONB");
 
 
-    fun shouldBePrintedInQuotes() : Boolean {
+    fun shouldBePrintedInQuotes(): Boolean {
 
-        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP)
+        return equals(VARCHAR) || equals(CHAR) || equals(TIMESTAMP) || equals(TEXT)
     }
 }

@@ -5,6 +5,7 @@ import org.evomaster.core.KGenericContainer
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
+import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -31,6 +32,14 @@ abstract class ExtractTestBasePostgres {
             val port = postgres.getMappedPort(5432)!!
 
             val url = "jdbc:postgresql://$host:$port/postgres"
+
+            /*
+             * A call to getConnection()  when the postgres container is still not ready,
+             * signals a PSQLException with message "FATAL: the database system is starting up".
+             * The following issue describes how to avoid this by using a LogMessageWaitStrategy
+             * https://github.com/testcontainers/testcontainers-java/issues/317
+             */
+            postgres.waitingFor(LogMessageWaitStrategy().withRegEx(".*database system is ready to accept connections.*\\s").withTimes(2))
 
             connection = DriverManager.getConnection(url, "postgres", "")
         }
