@@ -16,7 +16,8 @@ class DisjunctionRxGene(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-       terms.forEach{it.randomize(randomness, forceNewValue, allGenes)}
+       terms.filter { it.isMutable() }
+               .forEach{it.randomize(randomness, forceNewValue, allGenes)}
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

@@ -1,56 +1,129 @@
 package org.evomaster.core.parser.visitor
 
-import org.antlr.v4.runtime.tree.ErrorNode
-import org.antlr.v4.runtime.tree.ParseTree
-import org.antlr.v4.runtime.tree.RuleNode
-import org.antlr.v4.runtime.tree.TerminalNode
+import org.evomaster.core.parser.RegexEcma262BaseVisitor
 import org.evomaster.core.parser.RegexEcma262Parser
-import org.evomaster.core.parser.RegexEcma262Visitor
+import org.evomaster.core.search.gene.regex.*
 
 
-class Ecma262Visitor : RegexEcma262Visitor<VisitResult>{
+class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
+
 
     override fun visitPattern(ctx: RegexEcma262Parser.PatternContext): VisitResult {
 
-        ctx.disjunction().accept(this)
+        val res = ctx.disjunction().accept(this)
 
-        //TODO
-        return VisitResult()
+        val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+
+        val gene = RegexGene("regex", disjList)
+
+        return VisitResult(gene)
     }
 
     override fun visitDisjunction(ctx: RegexEcma262Parser.DisjunctionContext): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 
-    override fun visitTerm(ctx: RegexEcma262Parser.TermContext): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+        val altRes = ctx.alternative().accept(this)
 
-    override fun visit(p0: ParseTree): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm })
+
+        val res = VisitResult(disj)
+
+        if(ctx.disjunction() != null){
+            val disjRes = ctx.disjunction().accept(this)
+            res.genes.addAll(disjRes.genes)
+        }
+
+        return res
     }
 
     override fun visitAlternative(ctx: RegexEcma262Parser.AlternativeContext): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        val res = VisitResult()
+
+        ctx.term().forEach {
+            val resTerm = it.accept(this)
+            val gene = resTerm.genes.firstOrNull()
+            if(gene != null) {
+                res.genes.add(gene)
+            }
+        }
+
+        return res
     }
 
-    override fun visitAssertion(ctx: RegexEcma262Parser.AssertionContext): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun visitTerm(ctx: RegexEcma262Parser.TermContext): VisitResult {
+
+        val res = VisitResult()
+
+        if(ctx.assertion() != null){
+            //TODO
+            throw IllegalStateException("regex assertion not supported yet")
+        }
+
+        val resAtom = ctx.atom().accept(this)
+        val atom = resAtom.genes.firstOrNull() as RxAtom?
+                ?: return res
+
+        if(ctx.quantifier() != null){
+
+            val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
+            val q = QuantifierRxGene("q", atom, limits.first, limits.second)
+
+            res.genes.add(q)
+
+        } else {
+            res.genes.add(atom)
+        }
+
+        return res
+    }
+
+    override fun visitQuantifier(ctx: RegexEcma262Parser.QuantifierContext): VisitResult {
+
+        //TODO check how to handle "?" here
+
+        return ctx.quantifierPrefix().accept(this)
+    }
+
+    override fun visitQuantifierPrefix(ctx: RegexEcma262Parser.QuantifierPrefixContext): VisitResult {
+
+        //TODO properly all cases
+
+        val res = VisitResult()
+        res.data = Pair(1,1)
+
+        return res
     }
 
     override fun visitAtom(ctx: RegexEcma262Parser.AtomContext): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+
+        if(! ctx.PatternCharacter().isEmpty()){
+            val block = ctx.PatternCharacter().map { it.text }
+                    .joinToString("")
+
+            val gene = PatternCharacterBlock(block, block)
+
+            return VisitResult(gene)
+        }
+
+        //TODO check this one if really needed in the parser
+        if(ctx.DecimalDigits() != null){
+            val block = ctx.DecimalDigits().text
+            return VisitResult(PatternCharacterBlock(block, block))
+        }
+
+        if(ctx.AtomEscape() != null){
+            val char = ctx.AtomEscape().text[1].toString()
+            return VisitResult(CharacterClassEscapeRxGene(char))
+        }
+
+        //TODO "."
+
+        throw IllegalStateException("No valid atom resolver for: ${ctx.text}")
     }
 
-    override fun visitChildren(p0: RuleNode): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 
-    override fun visitErrorNode(p0: ErrorNode): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+//    override fun visitAssertion(ctx: RegexEcma262Parser.AssertionContext): VisitResult {
+//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+//    }
 
-    override fun visitTerminal(p0: TerminalNode): VisitResult {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 }

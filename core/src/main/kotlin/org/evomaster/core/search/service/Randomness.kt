@@ -90,6 +90,13 @@ class Randomness {
         return kotlin.text.String(chars)
     }
 
+    fun nextLetter() : Char{
+
+        val characters =
+                "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+        return characters[random.nextInt(characters.length)]
+    }
+
     fun nextWordChar() : Char{
 
         val characters =

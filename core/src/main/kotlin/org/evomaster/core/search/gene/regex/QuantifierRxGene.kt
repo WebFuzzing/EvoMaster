@@ -71,7 +71,9 @@ class QuantifierRxGene(
 
         for(i in 0 until length){
             val base = template.copy() as RxAtom
-            base.randomize(randomness, forceNewValue, allGenes)
+            if(base.isMutable()) {
+                base.randomize(randomness, forceNewValue, allGenes)
+            }
             atoms.add(base)
         }
     }

@@ -36,6 +36,7 @@ class CharacterClassEscapeRxGene(
 
         value = when(type){
             "d" -> randomness.nextInt(0,9).toString()
+            "w" -> randomness.nextLetter().toString()
             //TODO all cases
             else -> throw IllegalStateException("Type $type not supported yet")
         }
