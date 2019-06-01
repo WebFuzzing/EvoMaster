@@ -112,4 +112,52 @@ class Ecma262HandlerTest{
     }
 
 
+    @Test
+    fun testQuantifierSingle(){
+        checkRegex("a{2}")
+    }
+
+
+    @Test
+    fun testQuantifierRange(){
+        checkRegex("a{3,5}")
+    }
+
+    @Test
+    fun testQuantifierOnlyMin(){
+
+        val regex = "a{2,}"
+        val gene = checkRegex(regex)
+
+        val s = gene.getValueAsRawString()
+        //even if unbound, not going to create billion-long strings
+        assertTrue(s.length < 10)
+    }
+
+    @Test
+    fun testQuantifierStar(){
+        checkRegex("a*")
+    }
+
+    @Test
+    fun testQuantifierPlus(){
+        checkRegex("a+")
+    }
+
+    @Test
+    fun testQuantifierOptional(){
+        checkRegex("a?")
+    }
+
+    @Test
+    fun testQuantifierCombined(){
+        checkRegex("a*b+c{1}d{2,}e{2,100}")
+    }
+
+    @Test
+    fun testYearWithQuantifier(){
+
+        val regex = "\\d{4}-\\d{1,2}-\\d{1,2}"
+        checkRegex(regex)
+    }
 }

@@ -59,14 +59,34 @@ quantifierPrefix
  : '*'
  | '+'
  | '?'
- | '{' DecimalDigits '}'
- | '{' DecimalDigits ',' '}'
- | '{' DecimalDigits ',' DecimalDigits '}'
+ | bracketQuantifier
+// | '{' DecimalDigits '}'
+// | '{' DecimalDigits ',' '}'
+// | '{' DecimalDigits ',' DecimalDigits '}'
+ ;
+
+bracketQuantifier
+ : bracketQuantifierSingle
+ | bracketQuantifierOnlyMin
+ | bracketQuantifierRange
+ ;
+
+bracketQuantifierSingle
+ : '{' DecimalDigits '}'
+ ;
+
+
+bracketQuantifierOnlyMin
+ : '{' DecimalDigits ',' '}'
+ ;
+
+bracketQuantifierRange
+ : '{' DecimalDigits ',' DecimalDigits '}'
  ;
 
 atom
  : PatternCharacter+
- | '.'
+// | '.'
  | AtomEscape
  | DecimalDigits // FIXME check this one
 // | CharacterClass

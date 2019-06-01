@@ -60,7 +60,7 @@ class QuantifierRxGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        val length = randomness.nextInt(min, max+1)
+        val length = randomness.nextInt(min, limitedMax)
 
         if(length == 0){
             //nothing to do
@@ -80,7 +80,7 @@ class QuantifierRxGene(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
 
-        return atoms.map { getValueAsPrintableString(previousGenes, mode, targetFormat) }
+        return atoms.map { it.getValueAsPrintableString(previousGenes, mode, targetFormat) }
                 .joinToString("")
     }
 

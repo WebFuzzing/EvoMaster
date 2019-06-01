@@ -89,7 +89,42 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         //TODO properly all cases
 
         val res = VisitResult()
-        res.data = Pair(1,1)
+
+        var min = 1
+        var max = 1
+
+        if(ctx.bracketQuantifier() == null){
+
+            val symbol = ctx.text
+
+            when(symbol){
+                "*" -> {min=0; max= Int.MAX_VALUE}
+                "+" -> {min=1; max= Int.MAX_VALUE}
+                "?" -> {min=0; max=1}
+                else -> throw IllegalArgumentException("Invalid quantifier symbol: $symbol")
+            }
+        } else {
+
+            val q = ctx.bracketQuantifier()
+            when {
+                q.bracketQuantifierOnlyMin() != null -> {
+                    min = q.bracketQuantifierOnlyMin().DecimalDigits().text.toInt()
+                    max = Int.MAX_VALUE
+                }
+                q.bracketQuantifierSingle() != null -> {
+                    min = q.bracketQuantifierSingle().DecimalDigits().text.toInt()
+                    max = min
+                }
+                q.bracketQuantifierRange() != null -> {
+                    val range = q.bracketQuantifierRange()
+                    min = range.DecimalDigits()[0].text.toInt()
+                    max = range.DecimalDigits()[1].text.toInt()
+                }
+                else -> throw IllegalArgumentException("Invalid quantifier: ${ctx.text}")
+            }
+        }
+
+        res.data = Pair(min,max)
 
         return res
     }
