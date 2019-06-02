@@ -151,7 +151,13 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             return VisitResult(CharacterClassEscapeRxGene(char))
         }
 
-        //TODO "."
+        if(ctx.disjunction() != null){
+            return ctx.disjunction().accept(this)
+        }
+
+        if(ctx.text == "."){
+            return VisitResult(AnyCharacterRxGene())
+        }
 
         throw IllegalStateException("No valid atom resolver for: ${ctx.text}")
     }

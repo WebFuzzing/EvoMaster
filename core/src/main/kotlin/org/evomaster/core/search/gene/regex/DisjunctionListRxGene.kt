@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 
 class DisjunctionListRxGene(
         val disjunctions: List<DisjunctionRxGene>
-) : Gene("disjunction_list") {
+) : RxAtom("disjunction_list") {
 
     var activeDisjunction: Int = 0
 
@@ -25,7 +25,7 @@ class DisjunctionListRxGene(
          */
 
         if (disjunctions.size > 1) {
-            activeDisjunction = randomness.nextInt(0, disjunctions.size)
+            activeDisjunction = randomness.nextInt(0, disjunctions.size-1)
         }
 
         disjunctions[activeDisjunction].randomize(randomness, forceNewValue, allGenes)

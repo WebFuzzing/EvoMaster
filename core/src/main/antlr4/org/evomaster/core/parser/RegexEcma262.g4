@@ -86,11 +86,11 @@ bracketQuantifierRange
 
 atom
  : PatternCharacter+
-// | '.'
+ | '.'
  | AtomEscape
  | DecimalDigits // FIXME check this one
 // | CharacterClass
-// | '(' disjunction ')'
+ | '(' disjunction ')'
 // | '(' '?' ':' disjunction ')'
  ;
 

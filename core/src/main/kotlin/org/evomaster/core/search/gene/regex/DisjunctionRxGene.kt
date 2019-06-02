@@ -9,7 +9,7 @@ import java.lang.IllegalArgumentException
 class DisjunctionRxGene(
         name: String,
         val terms : List<RxTerm>
-) : Gene(name) {
+) : RxAtom(name) {
 
     override fun copy(): Gene {
         return DisjunctionRxGene(name, terms.map { it.copy() as RxTerm})

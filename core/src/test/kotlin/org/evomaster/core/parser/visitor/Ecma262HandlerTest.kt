@@ -1,5 +1,6 @@
 package org.evomaster.core.parser.visitor
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.CharacterClassEscapeRxGene
 import org.evomaster.core.search.gene.regex.PatternCharacterBlock
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -12,22 +13,31 @@ class Ecma262HandlerTest{
     private fun checkRegex(regex: String) : RegexGene{
 
         val randomness = Randomness()
-        randomness.updateSeed(42)
 
         val gene = Ecma262Handler.createGene(regex)
-        gene.randomize(randomness, false, listOf())
 
-        val instance = gene.getValueAsRawString()
+        for(seed in 1..100L) {
+            randomness.updateSeed(seed)
 
-        /*
+            gene.randomize(randomness, false, listOf())
+
+            val instance = gene.getValueAsRawString()
+
+            /*
             Ecma262 and Java regex are not exactly the same.
             But for the base types we test in this class, they
             should be equivalent.
-         */
-        assertTrue(instance.matches(Regex(regex)),
-                "String not matching regex:\n$regex\n$instance")
+            */
+            assertTrue(instance.matches(Regex(regex)),
+                    "String not matching regex:\n$regex\n$instance")
+        }
 
         return gene
+    }
+
+    @Test
+    fun testEmpty(){
+        checkRegex("")
     }
 
     @Test
@@ -160,4 +170,62 @@ class Ecma262HandlerTest{
         val regex = "\\d{4}-\\d{1,2}-\\d{1,2}"
         checkRegex(regex)
     }
+
+
+    @Test
+    fun testAnyChar(){
+        checkRegex(".")
+    }
+
+    @Test
+    fun testAnyCharMulti(){
+        checkRegex("...")
+    }
+
+    @Test
+    fun testAnyCharMixed(){
+        checkRegex(".a.b.c.")
+    }
+
+    @Test
+    fun testParentheses(){
+        checkRegex("()")
+    }
+
+    @Test
+    fun testParenthesesWithText(){
+        checkRegex("(hello)")
+    }
+
+    @Test
+    fun testParenthesesSequence(){
+        checkRegex("(a)(b)(c)")
+    }
+
+    @Test
+    fun testParenthesesNested(){
+        checkRegex("(a(bc)(d))")
+    }
+
+    @Test
+    fun testParenthesesWithQuantifiers(){
+        checkRegex("(a1)*(bc)+(d2)?")
+    }
+
+    @Test
+    fun testDisjunction(){
+        checkRegex("a|b")
+    }
+
+    @Test
+    fun testDisjunctionSequence(){
+        checkRegex("a|b|c|def|gh")
+    }
+
+    @Test
+    fun testDisjunctionNested(){
+        checkRegex("(a(b|c))d")
+    }
+
+
 }
