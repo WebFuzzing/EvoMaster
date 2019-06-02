@@ -54,10 +54,10 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val res = VisitResult()
 
-        if(ctx.assertion() != null){
-            //TODO
-            throw IllegalStateException("regex assertion not supported yet")
-        }
+//        if(ctx.assertion() != null){
+//            //TODO
+//            throw IllegalStateException("regex assertion not supported yet")
+//        }
 
         val resAtom = ctx.atom().accept(this)
         val atom = resAtom.genes.firstOrNull() as RxAtom?
@@ -108,17 +108,17 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             val q = ctx.bracketQuantifier()
             when {
                 q.bracketQuantifierOnlyMin() != null -> {
-                    min = q.bracketQuantifierOnlyMin().DecimalDigits().text.toInt()
+                    min = q.bracketQuantifierOnlyMin().decimalDigits().text.toInt()
                     max = Int.MAX_VALUE
                 }
                 q.bracketQuantifierSingle() != null -> {
-                    min = q.bracketQuantifierSingle().DecimalDigits().text.toInt()
+                    min = q.bracketQuantifierSingle().decimalDigits().text.toInt()
                     max = min
                 }
                 q.bracketQuantifierRange() != null -> {
                     val range = q.bracketQuantifierRange()
-                    min = range.DecimalDigits()[0].text.toInt()
-                    max = range.DecimalDigits()[1].text.toInt()
+                    min = range.decimalDigits()[0].text.toInt()
+                    max = range.decimalDigits()[1].text.toInt()
                 }
                 else -> throw IllegalArgumentException("Invalid quantifier: ${ctx.text}")
             }
@@ -131,19 +131,13 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
     override fun visitAtom(ctx: RegexEcma262Parser.AtomContext): VisitResult {
 
-        if(! ctx.PatternCharacter().isEmpty()){
-            val block = ctx.PatternCharacter().map { it.text }
+        if(! ctx.patternCharacter().isEmpty()){
+            val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
             val gene = PatternCharacterBlock(block, block)
 
             return VisitResult(gene)
-        }
-
-        //TODO check this one if really needed in the parser
-        if(ctx.DecimalDigits() != null){
-            val block = ctx.DecimalDigits().text
-            return VisitResult(PatternCharacterBlock(block, block))
         }
 
         if(ctx.AtomEscape() != null){

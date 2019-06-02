@@ -25,7 +25,7 @@ pattern : disjunction;
 
 disjunction
  : alternative
- | alternative '|' disjunction
+ | alternative OR disjunction
  ;
 
 
@@ -34,35 +34,31 @@ alternative
  ;
 
 term
- : assertion
- | atom
+// : assertion
+ : atom
  | atom quantifier
  ;
 
-assertion
- : '^'
- | '$'
-//FIXME: this gives issues... commented out for the moment
-// | '\\' 'b'
-// | '\\' 'B'
-// | '(' '?' '=' disjunction ')'
-// | '(' '?' '!' disjunction ')'
- ;
+//assertion
+// : '^'
+// | '$'
+//// | '\\' 'b'
+//// | '\\' 'B'
+//// | '(' '?' '=' disjunction ')'
+//// | '(' '?' '!' disjunction ')'
+// ;
 
 quantifier
  : quantifierPrefix
- | quantifierPrefix '?'
+ | quantifierPrefix QUESTION
  ;
 
 
 quantifierPrefix
- : '*'
- | '+'
- | '?'
+ : STAR
+ | PLUS
+ | QUESTION
  | bracketQuantifier
-// | '{' DecimalDigits '}'
-// | '{' DecimalDigits ',' '}'
-// | '{' DecimalDigits ',' DecimalDigits '}'
  ;
 
 bracketQuantifier
@@ -72,25 +68,25 @@ bracketQuantifier
  ;
 
 bracketQuantifierSingle
- : '{' DecimalDigits '}'
+ : BRACE_open decimalDigits BRACE_close
  ;
 
 
 bracketQuantifierOnlyMin
- : '{' DecimalDigits ',' '}'
+ : BRACE_open decimalDigits COMMA BRACE_close
  ;
 
 bracketQuantifierRange
- : '{' DecimalDigits ',' DecimalDigits '}'
+ : BRACE_open decimalDigits COMMA decimalDigits BRACE_close
  ;
 
 atom
- : PatternCharacter+
- | '.'
+ : patternCharacter+
+ | DOT
  | AtomEscape
- | DecimalDigits // FIXME check this one
-// | CharacterClass
- | '(' disjunction ')'
+// | decimalDigits // FIXME check this one
+ | characterClass
+ | PAREN_open disjunction PAREN_close
 // | '(' '?' ':' disjunction ')'
  ;
 
@@ -126,45 +122,55 @@ atom
 // : DecimalIntegerLiteral
 // ;
 
+patternCharacter
+ // SourceCharacter but not one of ^ $ \ . * + ? ( ) [ ] { } |
+ //: ~[^$\\.*+?()[\]{}|]
+ : BaseChar
+ | MINUS
+ | DecimalDigit
+ ;
 
 
+characterClass
+ //TODO
+ //[ [lookahead ∉ {^}] ClassRanges ]
+ //[ ^ ClassRanges ]
+ : BRACKET_open ClassRanges BRACKET_close
+// | '[' '^' ClassRanges ']'
+ ;
 
-//CharacterClass
-// //TODO really unsure how to handle this one
-// //[ [lookahead ∉ {^}] ClassRanges ]
-// //[ ^ ClassRanges ]
-// : ClassRanges
-// ;
+classRanges
+ :
+ | nonemptyClassRanges
+ ;
 
-//ClassRanges
-// :  //[empty]
-// | NonemptyClassRanges
-// ;
-//
-//
-//NonemptyClassRanges
-// : ClassAtom
-// | ClassAtom NonemptyClassRangesNoDash
-// | ClassAtom '-' ClassAtom ClassRanges
-// ;
-//
-//NonemptyClassRangesNoDash
-// : ClassAtom
-// | ClassAtomNoDash NonemptyClassRangesNoDash
-// | ClassAtomNoDash '-' ClassAtom ClassRanges
-// ;
-//
-//ClassAtom:
-// | '-'
-// | ClassAtomNoDash
-// ;
-//
-//
-//ClassAtomNoDash
-// //SourceCharacter but not one of \ or ] or -
-// : ~[-\]\\]
+
+nonemptyClassRanges
+ : classAtom
+ | classAtom nonemptyClassRangesNoDash
+ | classAtom MINUS classAtom classRanges
+ ;
+
+nonemptyClassRangesNoDash
+ : classAtom
+ | classAtomNoDash nonemptyClassRangesNoDash
+ | classAtomNoDash MINUS classAtom classRanges
+ ;
+
+classAtom
+ : MINUS
+ | classAtomNoDash
+ ;
+
+
+classAtomNoDash
+ //SourceCharacter but not one of \ or ] or -
+ //: ~[-\]\\]
 // | '\\' ClassEscape
-// ;
+ : BaseChar
+ | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
+ | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
+
 
 //ClassEscape
 // : CharacterClassEscape
@@ -173,14 +179,19 @@ atom
 // //| CharacterEscape
 // ;
 
+decimalDigits
+ : DecimalDigit+
+ ;
 
-fragment DecimalDigit
+
+
+//------ LEXER ------------------------------
+
+
+DecimalDigit
  : [0-9]
  ;
 
-DecimalDigits
- : DecimalDigit+
- ;
 
 AtomEscape
  : '\\' CharacterClassEscape
@@ -194,13 +205,29 @@ fragment CharacterClassEscape
  ;
 
 
-PatternCharacter
- // SourceCharacter but not one of ^ $ \ . * + ? ( ) [ ] { } |
- : ~[^$\\.*+?()[\]{}|]
+
+CARET                      : '^';
+DOLLAR                     : '$';
+SLASH                      : '\\';
+DOT                        : '.';
+STAR                       : '*';
+PLUS                       : '+';
+QUESTION                   : '?';
+PAREN_open                 : '(';
+PAREN_close                : ')';
+BRACKET_open               : '[';
+BRACKET_close              : ']';
+BRACE_open                 : '{';
+BRACE_close                : '}';
+OR                         : '|';
+MINUS                      : '-';
+COMMA                      : ',';
+
+
+BaseChar
+ // practically all chars but the ones used for control and digits
+ : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
-
-
-
 
 //HexEscapeSequence
 // : 'x' HexDigit HexDigit
