@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 
 public class ExpectationHandler implements AggregateExpectation, IndividualExpectation {
 
+    private boolean masterSwitch = false;
     /**
      *
      * @return a DSL object to handle expectation operations.
@@ -33,27 +34,34 @@ public class ExpectationHandler implements AggregateExpectation, IndividualExpec
     private ExpectationHandler(){}
 
     @Override
-    public IndividualExpectation expect(){
+    public ExpectationHandler expect(){
+        return this;
+    }
+
+    @Override
+    public ExpectationHandler expect(boolean masterSwitch){
+        this.masterSwitch = masterSwitch;
         return this;
     }
 
     @Override
     public IndividualExpectation that(boolean active, boolean condition){
-        if(!active) return this;
-        if (!condition) throw new IllegalArgumentException("Failed Expectation Exception");
+        if(!active || !masterSwitch) return this;
+        if (!condition) { throw new AssertionError("Failed Expectation Exception"); }
         return this;
     }
 
 
     @Override
     public IndividualExpectation that(boolean active, Method method, Object[] args){
-        if (!active) return this;
+        if (!active || !masterSwitch) return this;
         else {
             try{
                 method.invoke(null, args);
             }
             catch (Exception e1){
                 //TODO: handle this somehow?
+                e1.printStackTrace();
             }
         }
         return this;
