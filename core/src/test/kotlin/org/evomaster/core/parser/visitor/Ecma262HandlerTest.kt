@@ -227,5 +227,44 @@ class Ecma262HandlerTest{
         checkRegex("(a(b|c))d")
     }
 
+    @Test
+    fun testClassRangeSingleChar(){
+        checkRegex("[a]")
+    }
+
+    @Test
+    fun testClassRangeMultiChars(){
+        checkRegex("[abc]")
+    }
+
+    @Test
+    fun testClassRangeMultiCharsWithSpecialSymbols(){
+        checkRegex("[abc123(){}/?+*]")
+    }
+
+    @Test
+    fun testClassRangeChars(){
+        checkRegex("[a-z]")
+    }
+
+    @Test
+    fun testClassRangeDigits(){
+        checkRegex("[0-9]")
+    }
+
+    @Test
+    fun testClassRangeMulti(){
+        checkRegex("[a-zA-Z0-9]")
+    }
+
+    @Test
+    fun testClassRangeQuantifier(){
+        checkRegex("[0-9]{2}")
+    }
+
+    @Test
+    fun testClassRangeIndExample(){
+        checkRegex("/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?")
+    }
 
 }

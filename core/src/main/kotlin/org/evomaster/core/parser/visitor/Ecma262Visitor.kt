@@ -149,16 +149,108 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             return ctx.disjunction().accept(this)
         }
 
-        if(ctx.text == "."){
+        if(ctx.DOT() != null){
             return VisitResult(AnyCharacterRxGene())
+        }
+
+        if(ctx.characterClass() != null){
+            return ctx.characterClass().accept(this)
         }
 
         throw IllegalStateException("No valid atom resolver for: ${ctx.text}")
     }
 
 
-//    override fun visitAssertion(ctx: RegexEcma262Parser.AssertionContext): VisitResult {
-//        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-//    }
+    override fun visitCharacterClass(ctx: RegexEcma262Parser.CharacterClassContext): VisitResult {
+
+        val negated = ctx.CARET() != null
+
+        val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+
+        val gene = CharacterRangeRxGene(negated, ranges)
+
+        return VisitResult(gene)
+    }
+
+    override fun visitClassRanges(ctx: RegexEcma262Parser.ClassRangesContext): VisitResult {
+
+        val res = VisitResult()
+        val list = mutableListOf<Pair<Char,Char>>()
+
+        if(ctx.nonemptyClassRanges() != null){
+            val ranges = ctx.nonemptyClassRanges().accept(this).data as List<Pair<Char,Char>>
+            list.addAll(ranges)
+        }
+
+        res.data = list
+
+        return res
+    }
+
+    override fun visitNonemptyClassRanges(ctx: RegexEcma262Parser.NonemptyClassRangesContext): VisitResult {
+
+        val list = mutableListOf<Pair<Char,Char>>()
+
+        val startText = ctx.classAtom()[0].text
+        assert(startText.length == 1) // single chars
+        val start : Char = startText[0]
+
+        val end = if(ctx.classAtom().size == 2){
+            ctx.classAtom()[1].text[0]
+        } else {
+            //single char, not an actual range
+            start
+        }
+
+        list.add(Pair(start, end))
+
+        if(ctx.nonemptyClassRangesNoDash() != null){
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            list.addAll(ranges)
+        }
+
+        if(ctx.classRanges() != null){
+            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            list.addAll(ranges)
+        }
+
+        val res = VisitResult()
+        res.data = list
+
+        return res
+    }
+
+
+    override fun visitNonemptyClassRangesNoDash(ctx: RegexEcma262Parser.NonemptyClassRangesNoDashContext): VisitResult {
+
+        val list = mutableListOf<Pair<Char,Char>>()
+
+        if(ctx.MINUS() != null){
+
+            val start = ctx.classAtomNoDash().text[0]
+            val end = ctx.classAtom().text[0]
+            list.add(Pair(start, end))
+
+        } else {
+
+            val char = (ctx.classAtom() ?: ctx.classAtomNoDash()).text[0]
+            list.add(Pair(char, char))
+        }
+
+        if(ctx.nonemptyClassRangesNoDash() != null){
+            val ranges = ctx.nonemptyClassRangesNoDash().accept(this).data as List<Pair<Char,Char>>
+            list.addAll(ranges)
+        }
+
+        if(ctx.classRanges() != null){
+            val ranges = ctx.classRanges().accept(this).data as List<Pair<Char,Char>>
+            list.addAll(ranges)
+        }
+
+        val res = VisitResult()
+        res.data = list
+
+        return res
+    }
 
 }

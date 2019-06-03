@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 
 class AnyCharacterRxGene : RxAtom("."){
 
-    var value: String = " "
+    var value: Char = 'a'
 
     override fun copy(): Gene {
         val copy = AnyCharacterRxGene()
@@ -17,14 +17,14 @@ class AnyCharacterRxGene : RxAtom("."){
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         //TODO properly... this is just a tmp hack
-        value = randomness.nextWordString(1,1)
+        value = randomness.nextWordChar()
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         /*
             TODO should \ be handled specially?
          */
-        return value
+        return value.toString()
     }
 
     override fun copyValueFrom(other: Gene) {

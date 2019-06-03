@@ -84,7 +84,6 @@ atom
  : patternCharacter+
  | DOT
  | AtomEscape
-// | decimalDigits // FIXME check this one
  | characterClass
  | PAREN_open disjunction PAREN_close
 // | '(' '?' ':' disjunction ')'
@@ -132,11 +131,10 @@ patternCharacter
 
 
 characterClass
- //TODO
+ //TODO check if lookahead needed, or implicit in rule order resoution
  //[ [lookahead ∉ {^}] ClassRanges ]
- //[ ^ ClassRanges ]
- : BRACKET_open ClassRanges BRACKET_close
-// | '[' '^' ClassRanges ']'
+ : BRACKET_open CARET classRanges BRACKET_close
+ | BRACKET_open classRanges BRACKET_close
  ;
 
 classRanges
@@ -168,6 +166,7 @@ classAtomNoDash
  //: ~[-\]\\]
 // | '\\' ClassEscape
  : BaseChar
+ | DecimalDigit
  | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
 
