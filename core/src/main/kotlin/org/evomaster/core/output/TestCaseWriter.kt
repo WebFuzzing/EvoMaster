@@ -354,6 +354,8 @@ class TestCaseWriter {
             handleExpectationSpecificLines(call, lines, res, name)
             handleExpectations(res, lines, true, name)
         }
+        //TODO: BMR expectations from partial oracles here?
+
 
 
     }
@@ -522,8 +524,7 @@ class TestCaseWriter {
         - Gson does parses all numbers as Double
         - Hamcrest has a hard time comparing double to int
         This is (admittedly) a horrible hack, but it should address the issue until a more elegant solution can be found.
-        Note: it also results in an odd behaviour in the generated test: IntelliJ will complain, but the test is executable.
-        * */
+        */
     }
 
     private fun handleFieldValuesAssert(resContentsItem: Any?): String{
@@ -611,7 +612,7 @@ class TestCaseWriter {
                                     val actualValue = resContents[it]
                                     if (actualValue != null) {
                                         val printableTh = handleFieldValuesAssert(actualValue)
-                                        if (printableTh != "null" && printableTh != "NotCoveredYet") {
+                                        if (printableTh != "nullValue()" && printableTh != "NotCoveredYet") {
                                             lines.add(".body(\"\'${it}\'\", ${printableTh})")
                                         }
                                     }
@@ -695,7 +696,17 @@ class TestCaseWriter {
                 val bodyLines = body.split("\n").map { s ->
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
-                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+                    "\"" + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+                    /*
+                     The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
+                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
+                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
+
+                     As far as I understand, the addition of an \ in the \unicode should not really happen.
+                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
+                     they are not.
+                     */
+
                 }
 
                 if (bodyLines.size == 1) {
@@ -808,6 +819,10 @@ class TestCaseWriter {
                         '[' -> {
                             // This would be run if the JSON contains an array of objects
                             val resContents = Gson().fromJson(result.getBody(), ArrayList::class.java)
+                            val printableTh = "NumberMatcher.numbersMatch(" +
+                                    "json_$name.getJsonObject(\"size\"), " +
+                                    "${resContents.size})"
+                            lines.add(".that(expectationsMasterSwitch, ($printableTh))")
                         }
                         '{' -> {
                             // This would be run if the JSON contains a single object

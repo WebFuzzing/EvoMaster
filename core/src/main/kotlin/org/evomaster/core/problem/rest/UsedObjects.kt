@@ -108,5 +108,8 @@ class UsedObjects {
         //return mapping.filter{ it.key.first == action.id}.map{ it.value }
         return mapping.map{it.value}
     }
+    fun getObjectsForAction(action: RestCallAction): List<Gene>{
+        return mapping.filter{it.key.first == action.id}.map { it.value }
+    }
 
 }
