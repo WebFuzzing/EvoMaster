@@ -10,7 +10,7 @@ import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 
 object DbActionTransformer {
 
-    fun transform(insertions: List<DbAction>) : DatabaseCommandDto {
+    fun transform(insertions: List<DbAction>, sqlIdMap : Map<Long, Long> = mapOf()) : DatabaseCommandDto {
 
         val list = mutableListOf<InsertionDto>()
         val previous = mutableListOf<Gene>()
@@ -50,11 +50,11 @@ object DbActionTransformer {
                 var isFkReferenceToNonPrintable = false
 
                 if (g is SqlForeignKeyGene) {
-                    isFkReferenceToNonPrintable = handleSqlForeignKey(g, previous, entry)
+                    isFkReferenceToNonPrintable = handleSqlForeignKey(g, previous, entry, sqlIdMap)
                 } else if (g is SqlPrimaryKeyGene) {
                     val k = g.gene
                     if (k is SqlForeignKeyGene) {
-                        isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry)
+                        isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry, sqlIdMap)
                     } else {
                         entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                     }
@@ -94,15 +94,25 @@ object DbActionTransformer {
     private fun handleSqlForeignKey(
             g: SqlForeignKeyGene,
             previous: List<Gene>,
-            entry: InsertionEntryDto
+            entry: InsertionEntryDto,
+            sqlIdMap: Map<Long, Long>
     ) : Boolean {
 
-        val isFkReferenceToNonPrintable = g.isReferenceToNonPrintable(previous)
+        var justCreated = false
+        val isFkReferenceToNonPrintable = try{
+            g.isReferenceToNonPrintable(previous)
+        }catch(e : Exception){
+            if (sqlIdMap.containsKey(g.uniqueIdOfPrimaryKey)){
+                justCreated = true
+                false
+            }
+            else throw IllegalArgumentException(e)
+        }
 
         if (isFkReferenceToNonPrintable) {
             entry.foreignKeyToPreviouslyGeneratedRow = g.uniqueIdOfPrimaryKey
         } else {
-            entry.printableValue = g.getValueAsPrintableString(previous, targetFormat = null)
+            entry.printableValue = if(justCreated) sqlIdMap.getValue(g.uniqueIdOfPrimaryKey).toString() else g.getValueAsPrintableString(previous, targetFormat = null)
         }
 
         return isFkReferenceToNonPrintable
