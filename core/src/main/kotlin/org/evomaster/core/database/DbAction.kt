@@ -222,6 +222,8 @@ class DbAction(
 
                 UUID -> UUIDGene(it.name)
 
+                JSONB -> ObjectGene(it.name, fields = listOf())
+
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }
 
