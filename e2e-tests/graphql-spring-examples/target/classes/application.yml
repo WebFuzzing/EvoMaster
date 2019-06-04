@@ -1,0 +1,3 @@
+spring:
+  jmx:
+    enabled: false
