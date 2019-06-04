@@ -10,6 +10,9 @@ import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 
 object DbActionTransformer {
 
+    /**
+     * @param sqlIdMap is a map from Insertion Id to generated Id in database
+     */
     fun transform(insertions: List<DbAction>, sqlIdMap : Map<Long, Long> = mapOf()) : DatabaseCommandDto {
 
         val list = mutableListOf<InsertionDto>()
@@ -91,6 +94,11 @@ object DbActionTransformer {
         return dto
     }
 
+    /**
+     * @param sqlIdMap is a map from Insertion Id to generated Id in database.
+     *
+     * Note that a reference of FK must exist in either [previous] or [sqlIdMap]
+     */
     private fun handleSqlForeignKey(
             g: SqlForeignKeyGene,
             previous: List<Gene>,
