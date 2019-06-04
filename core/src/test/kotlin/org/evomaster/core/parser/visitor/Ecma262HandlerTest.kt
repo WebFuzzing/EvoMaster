@@ -7,6 +7,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.util.regex.Pattern
 
 class Ecma262HandlerTest{
 
@@ -24,11 +25,16 @@ class Ecma262HandlerTest{
             val instance = gene.getValueAsRawString()
 
             /*
-            Ecma262 and Java regex are not exactly the same.
-            But for the base types we test in this class, they
-            should be equivalent.
+                Ecma262 and Java regex are not exactly the same.
+                But for the base types we test in this class, they
+                should be equivalent.
             */
-            assertTrue(instance.matches(Regex(regex)),
+//            assertTrue(instance.matches(Regex(regex)),
+//                    "String not matching regex:\n$regex\n$instance")
+
+            val pattern = Pattern.compile(regex)
+            val matcher = pattern.matcher(instance)
+            assertTrue(matcher.find(),
                     "String not matching regex:\n$regex\n$instance")
         }
 
@@ -136,12 +142,12 @@ class Ecma262HandlerTest{
     @Test
     fun testQuantifierOnlyMin(){
 
-        val regex = "a{2,}"
+        val regex = "^a{2,}$"
         val gene = checkRegex(regex)
 
         val s = gene.getValueAsRawString()
         //even if unbound, not going to create billion-long strings
-        assertTrue(s.length < 10)
+        assertTrue(s.length < 5)
     }
 
     @Test
@@ -266,5 +272,26 @@ class Ecma262HandlerTest{
     fun testClassRangeIndExample(){
         checkRegex("/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?")
     }
+
+    @Test
+    fun testAssertionStart(){
+        checkRegex("^a")
+    }
+
+    @Test
+    fun testAssertionEnd(){
+        checkRegex("a$")
+    }
+
+    @Test
+    fun testAssertionStartAndEnd(){
+        checkRegex("^a$")
+    }
+
+    @Test
+    fun testAssertionSequence(){
+        checkRegex("^a|b$|^c$|ef(gh)|^i(l)|(m)n$")
+    }
+
 
 }

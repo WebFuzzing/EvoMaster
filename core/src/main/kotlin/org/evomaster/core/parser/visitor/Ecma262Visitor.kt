@@ -22,8 +22,12 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     override fun visitDisjunction(ctx: RegexEcma262Parser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
+        val assertionMatches = altRes.data as Pair<Boolean, Boolean>
 
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm })
+        val matchStart = assertionMatches.first
+        val matchEnd = assertionMatches.second
+
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm }, matchStart, matchEnd)
 
         val res = VisitResult(disj)
 
@@ -39,13 +43,35 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val res = VisitResult()
 
-        ctx.term().forEach {
-            val resTerm = it.accept(this)
+        var caret = false
+        var dollar = false
+
+        for(i in 0 until ctx.term().size){
+
+            val resTerm = ctx.term()[i].accept(this)
             val gene = resTerm.genes.firstOrNull()
+
             if(gene != null) {
                 res.genes.add(gene)
+            } else {
+
+                val assertion = resTerm.data as String
+                if(i==0 && assertion == "^"){
+                    caret = true
+                } else if(i==ctx.term().size-1 && assertion== "$"){
+                    dollar = true
+                } else {
+                    /*
+                        TODO in a regex, ^ and $ could be in any position, as representing
+                        beginning and end of a line, and a regex could be multiline with
+                        line terminator symbols
+                     */
+                    throw IllegalStateException("Cannot support $assertion at position $i")
+                }
             }
         }
+
+        res.data = Pair(caret, dollar)
 
         return res
     }
@@ -54,10 +80,10 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         val res = VisitResult()
 
-//        if(ctx.assertion() != null){
-//            //TODO
-//            throw IllegalStateException("regex assertion not supported yet")
-//        }
+        if(ctx.assertion() != null){
+            res.data = ctx.assertion().text
+            return res
+        }
 
         val resAtom = ctx.atom().accept(this)
         val atom = resAtom.genes.firstOrNull() as RxAtom?
@@ -85,8 +111,6 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     }
 
     override fun visitQuantifierPrefix(ctx: RegexEcma262Parser.QuantifierPrefixContext): VisitResult {
-
-        //TODO properly all cases
 
         val res = VisitResult()
 
@@ -146,7 +170,11 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         }
 
         if(ctx.disjunction() != null){
-            return ctx.disjunction().accept(this)
+
+            val disj = ctx.disjunction().accept(this).genes.firstOrNull() as DisjunctionRxGene
+            //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
+            val match = DisjunctionRxGene(disj.name, disj.terms, true, true)
+            return VisitResult(match)
         }
 
         if(ctx.DOT() != null){

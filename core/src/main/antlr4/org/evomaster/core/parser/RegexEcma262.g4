@@ -9,16 +9,15 @@
     Literal: https://www.ecma-international.org/ecma-262/5.1/#sec-7.8.5
     Pattern: https://www.ecma-international.org/ecma-262/5.1/#sec-15.10
     Tutorial: http://meri-stuff.blogspot.com/2011/09/antlr-tutorial-expression-language.html
+
   */
 
 grammar RegexEcma262;
 
-//@parser::members {
-//}
-//
-//@lexer::members {
-//}
 
+
+//------ PARSER ------------------------------
+// Parser rules have first letter in lower-case
 
 pattern : disjunction;
 
@@ -34,19 +33,19 @@ alternative
  ;
 
 term
-// : assertion
- : atom
+ : assertion
+ | atom
  | atom quantifier
  ;
 
-//assertion
-// : '^'
-// | '$'
+assertion
+ : CARET
+ | DOLLAR
 //// | '\\' 'b'
 //// | '\\' 'B'
 //// | '(' '?' '=' disjunction ')'
 //// | '(' '?' '!' disjunction ')'
-// ;
+ ;
 
 quantifier
  : quantifierPrefix
@@ -185,7 +184,7 @@ decimalDigits
 
 
 //------ LEXER ------------------------------
-
+// Lexer rules have first letter in upper-case
 
 DecimalDigit
  : [0-9]
