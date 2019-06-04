@@ -11,7 +11,7 @@ class IntegerGene(
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
         val max: Int = Int.MAX_VALUE
-) : Gene(name) {
+) : NumberGene(name) {
 
 
     override fun copy(): Gene {

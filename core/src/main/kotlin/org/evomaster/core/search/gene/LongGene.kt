@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.Randomness
 class LongGene (
         name: String,
         var value: Long = 0
-) : Gene(name) {
+) : NumberGene(name) {
 
 
     override fun copy(): Gene {
