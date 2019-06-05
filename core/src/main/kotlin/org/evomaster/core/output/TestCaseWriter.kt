@@ -336,7 +336,7 @@ class TestCaseWriter {
                 }
             }
         }
-        lines.append("given()" + getAcceptHeader())
+        lines.append("given()" + getAcceptHeader(call, res))
     }
 
     private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines) {
@@ -558,7 +558,7 @@ class TestCaseWriter {
                 }
     }
 
-    private fun getAcceptHeader(): String {
+    private fun getAcceptHeader(call: RestCallAction, res: RestCallResult): String {
         /*
          *  Note: using the type in result body is wrong:
          *  if you request a JSON but make an error, you might
@@ -566,7 +566,16 @@ class TestCaseWriter {
          *
          *  TODO: get the type from the REST call
          */
-        return ".accept(\"*/*\")"
+
+        if (call.produces.isEmpty() || res.getBodyType()==null) return ".accept(\"*/*\")"
+        //if (call.produces.contains(res.getBodyType().toString())) return ".accept(${res.getBodyType().toString()})"
+        val accepted = call.produces.filter{res.getBodyType().toString().contains(it, true)}
+
+        if (accepted.size == 1)
+            return ".accept(\"${accepted.first()}\")"
+        else
+            return ".accept(\"*/*\")  // NOTE: there seems to have been something or a problem"
+        //return ".accept(\"*/*\")"
     }
 
     private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean){
