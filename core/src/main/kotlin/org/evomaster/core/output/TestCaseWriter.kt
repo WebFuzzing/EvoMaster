@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.SqlForeignKeyGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import javax.ws.rs.core.MediaType
@@ -136,6 +137,11 @@ class TestCaseWriter {
                              */
                                 val line = handleFK(g.gene, dbAction)
                                 lines.add(line)
+                            }
+                            g is ObjectGene -> {
+                                val variableName = g.getVariableName()
+                                val printableValue = getPrintableValue(g)
+                                lines.add(".d(\"$variableName\", \"'$printableValue'\")")
                             }
                             else -> {
                                 val variableName = g.getVariableName()
