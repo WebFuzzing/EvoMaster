@@ -389,7 +389,10 @@ class TestCaseWriter {
             when(resContentsItem::class) {
                 //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
+                String::class -> return "containsString(\"${(resContentsItem as String)
+                        .replace("\"", "\\\"")
+                        .replace("\n", "\\n")
+                        .replace("\r", "\\r")}\")"
                 //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
                 else -> return "NotCoveredYet"
@@ -408,7 +411,8 @@ class TestCaseWriter {
 
         if(res.getBodyType()==null) lines.add(".contentType(\"\")")
         else lines.add(".contentType(\"${res.getBodyType()
-                .toString().split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
+                .toString()
+                .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
         }\")")
 
         /*if(res.getBodyType()!= null && res.getStatusCode()!=500){
@@ -434,7 +438,12 @@ class TestCaseWriter {
                             resContents.forEachIndexed { index, value ->
                                 val test_i = index
                                 val printableTh = handleFieldValues(value)
-                                lines.add(".body(\"get($test_i)\", $printableTh)")
+                                if (printableTh != "null"
+                                        && printableTh != "NotCoveredYet"
+                                        && !printableTh.contains("logged")
+                                ) {
+                                    lines.add(".body(\"get($test_i)\", $printableTh)")
+                                }
                             }
                         }
                     }
@@ -604,9 +613,9 @@ class TestCaseWriter {
 
                             (resContents as LinkedTreeMap<*, *>).keys.forEach {
                                 val printableTh = handleFieldValues(resContents[it]!!)
-                                if(printableTh != "null" && printableTh != "NotCoveredYet"){
-                                    //lines.add(".body(\"${it}\", ${printableTh})")
-                                    //lines.add(".that(activeExpectations, (\"${it}\".${printableTh}))")
+                                if(printableTh != "null"
+                                        && printableTh != "NotCoveredYet"
+                                ){
                                     lines.add(".that(activeExpectations, (\"${it}\" == \"${resContents[it]}\"))")
                                 }
                             }
