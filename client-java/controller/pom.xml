@@ -128,6 +128,7 @@
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -144,7 +145,6 @@
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers</artifactId>
         </dependency>
-
 
     </dependencies>
 

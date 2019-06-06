@@ -319,7 +319,14 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             it.replace("\"", "")
         }
 
-        val builder = client.target(fullUri).request()
+        /*
+            TODO: This only considers the first in the list of produced responses
+            This is fine for endpoints that only produce one type of response.
+            Could be a problem in future
+        */
+        val produces = a.produces.first()
+
+        val builder = client.target(fullUri).request(produces)
 
         a.auth.headers.forEach {
             builder.header(it.name, it.value)
@@ -342,6 +349,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         /*
             TODO: need to handle "accept" of returned resource
          */
+
 
 
         val body = a.parameters.find { p -> p is BodyParam }
