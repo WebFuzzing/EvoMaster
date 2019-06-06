@@ -220,7 +220,15 @@ class DbAction(
                     }
                 }
 
+                /**
+                 * Postgres UUID column type
+                 */
                 UUID -> UUIDGene(it.name)
+
+                /**
+                 * Postgres JSONB type
+                 */
+                JSONB -> ObjectGene(it.name, fields = listOf())
 
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }

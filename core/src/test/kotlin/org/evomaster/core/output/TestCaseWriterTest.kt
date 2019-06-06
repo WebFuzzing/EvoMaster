@@ -610,7 +610,6 @@ class TestCaseWriterTest {
     }
 
 
-
     @Test
     fun testIndirectForeignKeyColumn() {
         val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
@@ -675,5 +674,263 @@ class TestCaseWriterTest {
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
+    @Test
+    fun testInsertDateColumnType() {
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val dateColumn = Column("birthDate", DATE, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(idColumn, dateColumn), HashSet<ForeignKey>())
+
+
+        val autoGene = SqlAutoIncrementGene(table.name)
+        val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
+        val dateGene = DateGene(dateColumn.name)
+        val insert = DbAction(table, setOf(idColumn, dateColumn), 0L, listOf(pkGene0, dateGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"birthDate\", \"\\\"2016-03-12\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+    @Test
+    fun testUUIDColumnType() {
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val uuidColumn = Column("uuidCode", UUID, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(idColumn, uuidColumn), HashSet<ForeignKey>())
+
+
+        val autoGene = SqlAutoIncrementGene(table.name)
+        val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
+        val uuidGene = UUIDGene(uuidColumn.name)
+        val insert = DbAction(table, setOf(idColumn, uuidColumn), 0L, listOf(pkGene0, uuidGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"uuidCode\", \"\\\"00000000-0000-0000-0000-000000000000\\\"\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+    @Test
+    fun testJSONBEmpty() {
+
+
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
+
+
+        val autoGene = SqlAutoIncrementGene(table.name)
+        val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
+        val objectGene = ObjectGene(jsonbColumn.name, listOf())
+        val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"jsonbColumn\", \"'{}'\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+    @Test
+    fun testJSONBColumnType() {
+
+
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
+
+
+        val autoGene = SqlAutoIncrementGene(table.name)
+        val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(IntegerGene("integerField")))
+        val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"jsonbColumn\", \"'{\\\"integerField\\\":0}'\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+    @Test
+    fun testJSONBoolean() {
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
+
+
+        val autoGene = SqlAutoIncrementGene(table.name)
+        val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(BooleanGene("booleanField")))
+        val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"jsonbColumn\", \"'{\\\"booleanField\\\":true}'\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
+
+
+    @Test
+    fun testJSONString() {
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
+
+
+        val autoGene = SqlAutoIncrementGene(table.name)
+        val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
+        val objectGene = ObjectGene(jsonbColumn.name, listOf(StringGene("stringField")))
+        val insert = DbAction(table, setOf(idColumn, jsonbColumn), 0L, listOf(pkGene0, objectGene))
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"jsonbColumn\", \"'{\\\"stringField\\\":\\\"foo\\\"}'\")")
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
 
 }
