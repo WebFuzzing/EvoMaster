@@ -38,7 +38,7 @@ class RestCallAction(
          * path coming from a previous POST
          */
         var locationId: String? = null,
-        var produces: MutableList<String> = mutableListOf()
+        var produces: List<String> = listOf()
 ) : RestAction {
 
     override fun shouldCountForFitnessEvaluations(): Boolean = true

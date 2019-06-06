@@ -399,10 +399,10 @@ class TestCaseWriter {
             }
         }
         /* BMR: the code above is due to a somewhat unfortunate problem:
-        - Gson does parses all numbers as Double
+        - Gson parses all numbers as Double
         - Hamcrest has a hard time comparing double to int
-        This is (admittedly) a horrible hack, but it should address the issue until a more elegant solution can be found.
-        Note: it also results in an odd behaviour in the generated test: IntelliJ will complain, but the test is executable.
+        The solution is to use an additional content matcher that can be found in NumberMatcher. This can also
+        be used as a template for adding more matchers, should such a step be needed.
         * */
     }
 
@@ -414,14 +414,6 @@ class TestCaseWriter {
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
         }\")")
-
-        /*if(res.getBodyType()!= null && res.getStatusCode()!=500){
-            lines.add(".contentType(\"${res.getBodyType()}\")")
-        }
-
-        if(res.getStatusCode() == 500){
-            val justACheck = res.getBodyType()
-        }*/
 
         val bodyString = res.getBody()
 
@@ -476,7 +468,7 @@ class TestCaseWriter {
                         // Currently, it converts the contents to String.
                         // TODO: if the contents are not a valid form of that type, expectations should be developed to handle the case
                         //val resContents = Gson().fromJson("\"" + res.getBody() + "\"", String::class.java)
-                        //lines.add(".body(containsString(\"${resContents}\"))")
+                        lines.add(".body(containsString(\"${bodyString}\"))")
                     }
                 }
             }
@@ -631,6 +623,8 @@ class TestCaseWriter {
                         }
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
+                            //lines.add(".body(isEmptyOrNullString())")
+                            lines.add(".body(containsString(\"${result.getBody()}\"))")
                         }
                     }
                 }

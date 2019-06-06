@@ -54,7 +54,7 @@ class RestActionBuilder {
 
                             repairParams(params, restPath)
 
-                            val produces = o.value.produces ?: mutableListOf()
+                            val produces = o.value.produces ?: listOf()
 
                             val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params, produces = produces)
 
