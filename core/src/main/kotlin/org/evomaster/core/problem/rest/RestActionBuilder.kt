@@ -6,12 +6,11 @@ import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.parser.visitor.Ecma262Handler
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.Exception
@@ -417,7 +416,7 @@ class RestActionBuilder {
                         StringGene(name)
                     } else {
                         try {
-                            Ecma262Handler.createGene(pattern)
+                            RegexHandler.createGeneForEcma262(pattern)
                         } catch (e: Exception){
                             /*
                                 TODO: if the Regex is syntactically invalid, we should warn

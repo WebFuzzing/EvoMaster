@@ -8,13 +8,24 @@ import org.evomaster.core.search.service.Randomness
 class DisjunctionRxGene(
         name: String,
         val terms: List<RxTerm>,
+        /**  does this disjunction match the beginning of the string, or could it be at any position? */
         val matchStart: Boolean,
+        /** does this disjunction match the end of the string, or could it be at any position? */
         val matchEnd: Boolean
 ) : RxAtom(name) {
 
+    /**
+     * whether we should append a prefix.
+     * this can only happen if [matchStart] is false
+     */
     var extraPrefix = false
 
+    /**
+     * whether we should append a postfix.
+     * this can only happen if [matchEnd] is false
+     */
     var extraPostfix = false
+
 
     override fun copy(): Gene {
         val copy = DisjunctionRxGene(name, terms.map { it.copy() as RxTerm }, matchStart, matchEnd)
