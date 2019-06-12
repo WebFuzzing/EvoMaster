@@ -2,7 +2,9 @@ package org.evomaster.core.parser.visitor
 
 import org.evomaster.core.search.gene.Gene
 
-
+/**
+ *  A call on the parser visitor would return either Gene(s) or some data
+ */
 class VisitResult(
         val genes: MutableList<Gene> = mutableListOf(),
         var data: Any? = null

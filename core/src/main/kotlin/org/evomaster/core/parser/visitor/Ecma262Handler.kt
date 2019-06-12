@@ -1,37 +1,44 @@
 package org.evomaster.core.parser.visitor
 
 import org.antlr.v4.runtime.*
-import org.evomaster.core.parser.RegexEcma262Lexer
-import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.parser.RegexEcma262Parser
 import org.antlr.v4.runtime.misc.ParseCancellationException
-import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.parser.RegexEcma262Lexer
+import org.evomaster.core.parser.RegexEcma262Parser
+import org.evomaster.core.search.gene.regex.RegexGene
 
 
+/**
+ * Regex functions based on the JavaScript ECMA262 grammar,
+ * defined in the RegexEcma262.g4 file.
+ * The parer/lexer for the grammar is generated with Antlr4 Maven Plugin,
+ * as part of the build.
+ */
 object Ecma262Handler {
 
-    fun createGene(regex: String) : RegexGene{
+    /**
+     * Given a regex string, generate RegexGene for it.
+     *
+     * This would throw an exception if regex is invalid, or if it
+     * has features we do not support yet
+     */
+    fun createGene(regex: String): RegexGene {
 
-       // try {
-            val stream = CharStreams.fromString(regex)
-            val lexer = RegexEcma262Lexer(stream)
-            lexer.removeErrorListeners()
-            lexer.addErrorListener(ThrowingErrorListener())
+        val stream = CharStreams.fromString(regex)
+        val lexer = RegexEcma262Lexer(stream)
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(ThrowingErrorListener())
 
-            val tokenStream = CommonTokenStream(lexer)
-            val parser = RegexEcma262Parser(tokenStream)
-            parser.removeErrorListeners()
-            parser.addErrorListener(ThrowingErrorListener())
+        val tokenStream = CommonTokenStream(lexer)
+        val parser = RegexEcma262Parser(tokenStream)
+        parser.removeErrorListeners()
+        parser.addErrorListener(ThrowingErrorListener())
 
-            val pattern = parser.pattern()
+        val pattern = parser.pattern()
 
-            val res = Ecma262Visitor().visit(pattern)
+        val res = Ecma262Visitor().visit(pattern)
 
-            return res.genes.first() as RegexGene
+        return res.genes.first() as RegexGene
 
-//        } catch (e: ParseCancellationException){
-//            throw SutProblemException("Invalid/not-supported regular expression: $regex")
-//        }
     }
 
 

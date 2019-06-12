@@ -5,7 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import java.lang.IllegalArgumentException
 
-
+/**
+ * A gene representing a regular expression (regex).
+ */
 class RegexGene(
         name: String,
         val disjunctions: DisjunctionListRxGene

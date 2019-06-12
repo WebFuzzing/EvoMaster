@@ -4,7 +4,9 @@ import org.evomaster.core.parser.RegexEcma262BaseVisitor
 import org.evomaster.core.parser.RegexEcma262Parser
 import org.evomaster.core.search.gene.regex.*
 
-
+/**
+ * Parser Visitor based on the RegexEcma262.g4 grammar file
+ */
 class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
 

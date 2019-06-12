@@ -10,6 +10,9 @@
     Pattern: https://www.ecma-international.org/ecma-262/5.1/#sec-15.10
     Tutorial: http://meri-stuff.blogspot.com/2011/09/antlr-tutorial-expression-language.html
 
+
+    TODO: following grammar covers most of the regex syntax, but not all
+
   */
 
 grammar RegexEcma262;
@@ -41,6 +44,7 @@ term
 assertion
  : CARET
  | DOLLAR
+ //TODO
 //// | '\\' 'b'
 //// | '\\' 'B'
 //// | '(' '?' '=' disjunction ')'
@@ -85,11 +89,13 @@ atom
  | AtomEscape
  | characterClass
  | PAREN_open disjunction PAREN_close
+ //TODO
 // | '(' '?' ':' disjunction ')'
  ;
 
 
 
+//TODO
 //CharacterEscape
 // : ControlEscape
 // | 'c' ControlLetter
@@ -98,11 +104,13 @@ atom
  //| IdentityEscape
 // ;
 
+//TODO
 //ControlEscape
 // //one of f n r t v
 // : [fnrtv]
 // ;
 
+//TODO
 //ControlLetter
 // : [a-zA-Z]
 // ;
@@ -114,7 +122,7 @@ atom
 //<ZWJ>
 //<ZWNJ>
 
-
+//TODO
 //DecimalEscape
 // //[lookahead ∉ DecimalDigit]
 // : DecimalIntegerLiteral
@@ -162,6 +170,7 @@ classAtom
 
 classAtomNoDash
  //SourceCharacter but not one of \ or ] or -
+ //TODO
  //: ~[-\]\\]
 // | '\\' ClassEscape
  : BaseChar
@@ -170,6 +179,7 @@ classAtomNoDash
  | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
 
 
+//TODO
 //ClassEscape
 // : CharacterClassEscape
 //// | DecimalEscape
@@ -193,6 +203,7 @@ DecimalDigit
 
 AtomEscape
  : '\\' CharacterClassEscape
+ //TODO
 // | '\\' DecimalEscape
 // | '\\' CharacterEscape
  ;
@@ -227,10 +238,13 @@ BaseChar
  : ~[0-9,^$\\.*+?()[\]{}|-]
  ;
 
+//TODO
 //HexEscapeSequence
 // : 'x' HexDigit HexDigit
 // ;
 //
+
+//TODO
 //DecimalIntegerLiteral
 // : '0'
 // | [1-9] DecimalDigit*
