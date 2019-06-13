@@ -26,13 +26,9 @@ object RegexHandler {
 
         val stream = CharStreams.fromString(regex)
         val lexer = RegexEcma262Lexer(stream)
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(ThrowingErrorListener())
-
-        val tokenStream = CommonTokenStream(lexer)
+        val tokenStream = prepareLexer(lexer)
         val parser = RegexEcma262Parser(tokenStream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(ThrowingErrorListener())
+        prepareParser(parser)
 
         val pattern = parser.pattern()
 
@@ -52,13 +48,9 @@ object RegexHandler {
 
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresLikeLexer(stream)
-        lexer.removeErrorListeners()
-        lexer.addErrorListener(ThrowingErrorListener())
-
-        val tokenStream = CommonTokenStream(lexer)
+        val tokenStream = prepareLexer(lexer)
         val parser = PostgresLikeParser(tokenStream)
-        parser.removeErrorListeners()
-        parser.addErrorListener(ThrowingErrorListener())
+        prepareParser(parser)
 
         val pattern = parser.pattern()
 
@@ -67,6 +59,38 @@ object RegexHandler {
         return res.genes.first() as RegexGene
     }
 
+    /**
+     * Given a Postgres SIMILAR TO string constraint, generate RegexGene for it.
+     * Based on PostgresSimilarTo.g4 file.
+     *
+     * This would throw an exception if regex is invalid, or if it
+     * has features we do not support yet
+     */
+    fun createGeneForPostgresSimilarTo(regex: String): RegexGene{
+
+        val stream = CharStreams.fromString(regex)
+        val lexer = PostgresSimilarToLexer(stream)
+        val tokenStream = prepareLexer(lexer)
+        val parser = PostgresSimilarToParser(tokenStream)
+        prepareParser(parser)
+
+        val pattern = parser.pattern()
+
+        val res = GenePostgresSimilarToVisitor().visit(pattern)
+
+        return res.genes.first() as RegexGene
+    }
+
+    private fun prepareLexer(lexer: Lexer) : CommonTokenStream{
+        lexer.removeErrorListeners()
+        lexer.addErrorListener(ThrowingErrorListener())
+        return CommonTokenStream(lexer)
+    }
+
+    private fun prepareParser(parser: Parser){
+        parser.removeErrorListeners()
+        parser.addErrorListener(ThrowingErrorListener())
+    }
 
     /**
      * see https://stackoverflow.com/questions/18132078/handling-errors-in-antlr4
