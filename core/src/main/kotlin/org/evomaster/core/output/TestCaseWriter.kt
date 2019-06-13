@@ -25,7 +25,6 @@ class TestCaseWriter {
 
     private var counter = 0
     private var usedObjects = UsedObjects()
-    //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
@@ -479,7 +478,6 @@ class TestCaseWriter {
                 }
             }
         }
-        //handleExpectations(res, lines, true)
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
