@@ -1,16 +1,19 @@
-package org.evomaster.core.parser.visitor
+package org.evomaster.core.parser
 
-import org.evomaster.core.parser.RegexEcma262BaseVisitor
-import org.evomaster.core.parser.RegexEcma262Parser
 import org.evomaster.core.search.gene.regex.*
 
 /**
- * Parser Visitor based on the RegexEcma262.g4 grammar file
+ * Created by arcuri82 on 12-Jun-19.
  */
-class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
+class GenePostgresSimilarToVisitor : PostgresSimilarToBaseVisitor<VisitResult>() {
 
+    /*
+        WARNING: lot of code here is similar/adapted from ECMA262 visitor.
+        But, as the parser objects are different, it does not seem simple to reuse
+        the code without avoiding copy&paste&adapt :(
+     */
 
-    override fun visitPattern(ctx: RegexEcma262Parser.PatternContext): VisitResult {
+    override fun visitPattern(ctx: PostgresSimilarToParser.PatternContext): VisitResult {
 
         val res = ctx.disjunction().accept(this)
 
@@ -21,15 +24,11 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return VisitResult(gene)
     }
 
-    override fun visitDisjunction(ctx: RegexEcma262Parser.DisjunctionContext): VisitResult {
+    override fun visitDisjunction(ctx: PostgresSimilarToParser.DisjunctionContext): VisitResult {
 
         val altRes = ctx.alternative().accept(this)
-        val assertionMatches = altRes.data as Pair<Boolean, Boolean>
 
-        val matchStart = assertionMatches.first
-        val matchEnd = assertionMatches.second
-
-        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm }, matchStart, matchEnd)
+        val disj = DisjunctionRxGene("disj", altRes.genes.map { it as RxTerm }, true, true)
 
         val res = VisitResult(disj)
 
@@ -41,12 +40,10 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return res
     }
 
-    override fun visitAlternative(ctx: RegexEcma262Parser.AlternativeContext): VisitResult {
+    override fun visitAlternative(ctx: PostgresSimilarToParser.AlternativeContext): VisitResult {
 
         val res = VisitResult()
 
-        var caret = false
-        var dollar = false
 
         for(i in 0 until ctx.term().size){
 
@@ -55,46 +52,25 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
             if(gene != null) {
                 res.genes.add(gene)
-            } else {
-
-                val assertion = resTerm.data as String
-                if(i==0 && assertion == "^"){
-                    caret = true
-                } else if(i==ctx.term().size-1 && assertion== "$"){
-                    dollar = true
-                } else {
-                    /*
-                        TODO in a regex, ^ and $ could be in any position, as representing
-                        beginning and end of a line, and a regex could be multiline with
-                        line terminator symbols
-                     */
-                    throw IllegalStateException("Cannot support $assertion at position $i")
-                }
             }
         }
-
-        res.data = Pair(caret, dollar)
 
         return res
     }
 
-    override fun visitTerm(ctx: RegexEcma262Parser.TermContext): VisitResult {
+    override fun visitTerm(ctx: PostgresSimilarToParser.TermContext): VisitResult {
 
         val res = VisitResult()
 
-        if(ctx.assertion() != null){
-            res.data = ctx.assertion().text
-            return res
-        }
-
         val resAtom = ctx.atom().accept(this)
-        val atom = resAtom.genes.firstOrNull() as RxAtom?
+
+        val atom = resAtom.genes.firstOrNull()
                 ?: return res
 
         if(ctx.quantifier() != null){
 
             val limits = ctx.quantifier().accept(this).data as Pair<Int,Int>
-            val q = QuantifierRxGene("q", atom, limits.first, limits.second)
+            val q = QuantifierRxGene("q", atom as RxAtom, limits.first, limits.second)
 
             res.genes.add(q)
 
@@ -105,14 +81,8 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return res
     }
 
-    override fun visitQuantifier(ctx: RegexEcma262Parser.QuantifierContext): VisitResult {
 
-        //TODO check how to handle "?" here
-
-        return ctx.quantifierPrefix().accept(this)
-    }
-
-    override fun visitQuantifierPrefix(ctx: RegexEcma262Parser.QuantifierPrefixContext): VisitResult {
+    override fun visitQuantifier(ctx: PostgresSimilarToParser.QuantifierContext): VisitResult {
 
         val res = VisitResult()
 
@@ -155,7 +125,7 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return res
     }
 
-    override fun visitAtom(ctx: RegexEcma262Parser.AtomContext): VisitResult {
+    override fun visitAtom(ctx: PostgresSimilarToParser.AtomContext): VisitResult {
 
         if(! ctx.patternCharacter().isEmpty()){
             val block = ctx.patternCharacter().map { it.text }
@@ -166,21 +136,20 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
             return VisitResult(gene)
         }
 
-        if(ctx.AtomEscape() != null){
-            val char = ctx.AtomEscape().text[1].toString()
-            return VisitResult(CharacterClassEscapeRxGene(char))
-        }
 
         if(ctx.disjunction() != null){
 
             val disj = ctx.disjunction().accept(this).genes.firstOrNull() as DisjunctionRxGene
-            //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
             val match = DisjunctionRxGene(disj.name, disj.terms, true, true)
             return VisitResult(match)
         }
 
-        if(ctx.DOT() != null){
+        if(ctx.UNDERSCORE() != null){
             return VisitResult(AnyCharacterRxGene())
+        }
+
+        if(ctx.PERCENT() != null){
+            return VisitResult(QuantifierRxGene("q", AnyCharacterRxGene(), 0 , Int.MAX_VALUE))
         }
 
         if(ctx.characterClass() != null){
@@ -191,7 +160,7 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     }
 
 
-    override fun visitCharacterClass(ctx: RegexEcma262Parser.CharacterClassContext): VisitResult {
+    override fun visitCharacterClass(ctx: PostgresSimilarToParser.CharacterClassContext): VisitResult {
 
         val negated = ctx.CARET() != null
 
@@ -202,7 +171,7 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return VisitResult(gene)
     }
 
-    override fun visitClassRanges(ctx: RegexEcma262Parser.ClassRangesContext): VisitResult {
+    override fun visitClassRanges(ctx: PostgresSimilarToParser.ClassRangesContext): VisitResult {
 
         val res = VisitResult()
         val list = mutableListOf<Pair<Char,Char>>()
@@ -217,7 +186,7 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
         return res
     }
 
-    override fun visitNonemptyClassRanges(ctx: RegexEcma262Parser.NonemptyClassRangesContext): VisitResult {
+    override fun visitNonemptyClassRanges(ctx: PostgresSimilarToParser.NonemptyClassRangesContext): VisitResult {
 
         val list = mutableListOf<Pair<Char,Char>>()
 
@@ -251,7 +220,7 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
     }
 
 
-    override fun visitNonemptyClassRangesNoDash(ctx: RegexEcma262Parser.NonemptyClassRangesNoDashContext): VisitResult {
+    override fun visitNonemptyClassRangesNoDash(ctx: PostgresSimilarToParser.NonemptyClassRangesNoDashContext): VisitResult {
 
         val list = mutableListOf<Pair<Char,Char>>()
 
@@ -282,5 +251,4 @@ class Ecma262Visitor : RegexEcma262BaseVisitor<VisitResult>(){
 
         return res
     }
-
 }

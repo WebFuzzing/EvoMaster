@@ -1,6 +1,5 @@
-package org.evomaster.core.parser.visitor
+package org.evomaster.core.parser
 
-import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.regex.CharacterClassEscapeRxGene
 import org.evomaster.core.search.gene.regex.PatternCharacterBlock
 import org.evomaster.core.search.gene.regex.RegexGene
@@ -9,13 +8,13 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import java.util.regex.Pattern
 
-class Ecma262HandlerTest{
+class GeneRegexEcma262VisitorTest{
 
     private fun checkRegex(regex: String) : RegexGene{
 
         val randomness = Randomness()
 
-        val gene = Ecma262Handler.createGene(regex)
+        val gene = RegexHandler.createGeneForEcma262(regex)
 
         for(seed in 1..100L) {
             randomness.updateSeed(seed)
@@ -29,13 +28,10 @@ class Ecma262HandlerTest{
                 But for the base types we test in this class, they
                 should be equivalent.
             */
-//            assertTrue(instance.matches(Regex(regex)),
-//                    "String not matching regex:\n$regex\n$instance")
 
             val pattern = Pattern.compile(regex)
             val matcher = pattern.matcher(instance)
-            assertTrue(matcher.find(),
-                    "String not matching regex:\n$regex\n$instance")
+            assertTrue(matcher.find(), "String not matching regex:\n$regex\n$instance")
         }
 
         return gene

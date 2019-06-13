@@ -1,4 +1,4 @@
-package org.evomaster.core.parser.visitor
+package org.evomaster.core.parser
 
 import org.evomaster.core.search.gene.Gene
 
