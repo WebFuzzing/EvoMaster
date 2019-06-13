@@ -33,7 +33,7 @@ public class ColumnTableAnalyzer {
             set.add(table.getName());
         } else {
             //TODO need to handle special cases of multi-tables with JOINs
-            throw new IllegalArgumentException("Cannot handle: " + delete);
+            throw new IllegalArgumentException("Cannot handle delete: " + delete);
         }
 
         return set;
@@ -55,7 +55,7 @@ public class ColumnTableAnalyzer {
             handleTable(map, table);
         } else {
             //TODO all other cases
-            throw new IllegalArgumentException("Cannot handle: " + insert);
+            throw new IllegalArgumentException("Cannot handle insert: " + insert);
         }
 
         return map;
@@ -79,7 +79,7 @@ public class ColumnTableAnalyzer {
             }
         } else {
             //TODO all other cases
-            throw new IllegalArgumentException("Cannot handle: " + update);
+            throw new IllegalArgumentException("Cannot handle update: " + update);
         }
 
         return map;
@@ -130,7 +130,7 @@ public class ColumnTableAnalyzer {
                 }
             }
         } else {
-            throw new IllegalArgumentException("Cannot handle: " + select);
+            throw new IllegalArgumentException("Cannot handle select: " + select);
         }
 
         return map;
@@ -150,7 +150,7 @@ public class ColumnTableAnalyzer {
             handleTable(map, table);
         } else {
             // TODO handle other cases, eg sub-selects
-            throw new IllegalArgumentException("Cannot handle: " + fromItem.toString());
+            throw new IllegalArgumentException("Cannot handle fromItem: " + fromItem.toString());
         }
     }
 
