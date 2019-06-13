@@ -5,10 +5,7 @@ import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.core.Main;
 import org.evomaster.core.database.DbAction;
-import org.evomaster.core.problem.rest.HttpVerb;
-import org.evomaster.core.problem.rest.RestCallAction;
-import org.evomaster.core.problem.rest.RestCallResult;
-import org.evomaster.core.problem.rest.RestIndividual;
+import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.problem.rest.service.RestSampler;
 import org.evomaster.core.search.EvaluatedAction;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -119,7 +116,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         assertEquals(1, insertions.size());
 
         //extract the x/y values from the random call
-        RestCallAction first = (RestCallAction) ind.getActions().iterator().next();
+        RestCallAction first = (RestCallAction) ind.seeActions().iterator().next();
         int x = first.getParameters().stream()
                 .filter(p -> p.getName().equalsIgnoreCase("x"))
                 .map(p -> Integer.parseInt(p.getGene().getValueAsRawString()))
@@ -142,7 +139,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        RestIndividual withSQL = new RestIndividual(ind.getActions(), ind.getSampleType(), insertions, ind.getUsedObjects(), null, null);
+        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, ind.getUsedObjects(), null, null);
 
         ei = ff.calculateCoverage(withSQL);
         assertNotNull(ei);

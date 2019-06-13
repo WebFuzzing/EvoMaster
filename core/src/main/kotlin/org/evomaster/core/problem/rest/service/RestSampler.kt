@@ -810,7 +810,7 @@ class RestSampler : Sampler<RestIndividual>(){
     }
 
     fun addMissingObjects(individual: RestIndividual){
-        val missingActions = individual.usedObjects.notCoveredActions(individual.actions.filter { it is RestCallAction }.toMutableList())
+        val missingActions = individual.usedObjects.notCoveredActions(individual.seeActions().filterIsInstance<RestCallAction>().toMutableList())
         if (missingActions.isEmpty()){
             return // no actions are missing.
         }

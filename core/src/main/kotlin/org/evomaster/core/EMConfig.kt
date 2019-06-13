@@ -550,4 +550,103 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = false
 
+    enum class ResourceSamplingStrategy (val requiredArchive : Boolean = false){
+        NONE,
+        /**
+         * probability for applicable strategy is specified
+         */
+        Customized,
+        /**
+         * probability for applicable strategy is equal
+         */
+        EqualProbability,
+        /**
+         * probability for applicable strategy is derived based on actions
+         */
+        Actions,
+        /**
+         * probability for applicable strategy is adaptive with time
+         */
+        TimeBudgets,
+        /**
+         * probability for applicable strategy is adaptive with performance, i.e., Archive
+         */
+        Archive (true),
+        /**
+         * probability for applicable strategy is adaptive with performance, i.e., Archive
+         */
+        ConArchive (true)
+    }
+
+    @Experimental
+    @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
+            "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
+    var resourceSampleStrategy = ResourceSamplingStrategy.NONE
+
+    @Experimental
+    @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
+            "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
+            "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
+    var probOfEnablingResourceDependencyHeuristics = 0.5
+
+    @Experimental
+    @Cfg("Specify whether to export derived dependencies among resources. " +
+            "if enabled, the dependencies are stored at the same location of generated test cases.")
+    var exportDependencies = false
+
+    @Experimental
+    @Cfg("Whether to involve db when applying resource-based methods, e.g., resource-based sampling.")
+    var doesInvolveDB = false
+
+    @Experimental
+    @Cfg("Specify a minimal number of rows in a table")
+    var minRowOfTable = 10
+
+    @Experimental
+    @Cfg("Specify a probability that enables selection of data from db instead of insertion")
+    @Min(0.0) @Max(1.0)
+    var probOfSelectFromDB = 0.1
+
+    @Experimental
+    @Cfg("Whether to apply token parser to derive relationships between action and table or among tables")
+    var doesApplyTokenParser = false
+
+    @Experimental
+    @Cfg("Specify a probability to apply S1iR when sample control is Customized")
+    @Min(0.0)@Max(1.0)
+    var S1iR : Double = 0.25
+    @Experimental
+    @Cfg("Specify a probability to apply S1dR when sample control is Customized")
+    @Min(0.0)@Max(1.0)
+    var S1dR : Double = 0.25
+    @Experimental
+    @Cfg("Specify a probability to apply S2dR when sample control is Customized")
+    @Min(0.0)@Max(1.0)
+    var S2dR : Double = 0.25
+    @Experimental
+    @Cfg("Specify a probability to apply SMdR when sample control is Customized")
+    @Min(0.0)@Max(1.0)
+    var SMdR : Double = 0.25
+
+
+    @Experimental
+    @Cfg("Specify a probability to enable archive-based mutation")
+    @Min(0.0) @Max(1.0)
+    var probOfArchiveMutation = 0.0
+
+    @Experimental
+    @Cfg("Specify a percentage to prepare candidates of genes to mutate")
+    @Min(0.0) @Max(1.0)
+    var perOfCandidateGenesToMutate = 0.1
+
+    @Experimental
+    @Cfg("Specify whether to enable archive-based mutation")
+    var geneSelectionMethod = GeneSelectionMethod.NONE
+
+    enum class GeneSelectionMethod {
+        NONE,
+        AWAY_BAD,
+        APPROACH_GOOD,
+        FEED_BACK
+    }
 }

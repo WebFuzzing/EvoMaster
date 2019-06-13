@@ -11,6 +11,9 @@
     <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
 
+    <properties>
+        <nlp.version>3.9.2</nlp.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -129,6 +132,18 @@
             <artifactId>evomaster-dbconstraint</artifactId>
         </dependency>
 
+        <!--for token parser-->
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+            <classifier>models</classifier>
+        </dependency>
 
     </dependencies>
 

@@ -76,5 +76,13 @@ abstract class Individual (trackOperator: TrackOperator? = null, traces : Mutabl
      * test after this method is invoked.
      */
     abstract fun repairInitializationActions(randomness: Randomness);
+
+
+    /**
+     * generate id for genes of the individual
+     */
+    open fun seeGenesIdMap() : Map<Gene, String>{
+        return seeActions().flatMap { a -> a.seeGenes().map { it to GeneIdUtil.generateId(a, it)}}.toMap()
+    }
 }
 

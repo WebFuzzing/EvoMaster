@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
+import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.mutator.StructureMutator
@@ -132,15 +133,15 @@ class RestStructureMutator : StructureMutator() {
             to setup the intermediary resources
          */
 
-        (0 until ind.actions.size - 1).forEach {
-            val a = ind.actions[it]
+        (0 until ind.seeActions().size - 1).forEach {
+            val a = ind.seeActions()[it]
             Lazy.assert{a !is RestCallAction || a.verb == HttpVerb.POST}
         }
-        Lazy.assert{ val a = ind.actions.last(); a is RestCallAction && a.verb == HttpVerb.GET }
+        Lazy.assert{ val a = ind.seeActions().last(); a is RestCallAction && a.verb == HttpVerb.GET }
 
-        val indices = ind.actions.indices
+        val indices = ind.seeActions().indices
                 .filter { i ->
-                    val a = ind.actions[i]
+                    val a = ind.seeActions()[i]
                     /*
                         one simple way to distinguish the POST on collection is that
                         they are not chaining a location, as GET is on same endpoint
@@ -159,51 +160,58 @@ class RestStructureMutator : StructureMutator() {
 
         if (indices.size > 1 &&
                 (randomness.nextBoolean() ||
-                        ind.actions.size == config.maxTestSize)) {
+                        ind.seeActions().size == config.maxTestSize)) {
 
             //delete one POST, but NOT the GET
             val chosen = randomness.choose(indices)
-            ind.actions.removeAt(chosen)
+            //ind.seeActions().removeAt(chosen)
+            ind.removeResourceCall(chosen)
 
         } else {
             //insert a new POST on the collection
             val idx = indices.last()
 
-            val postTemplate = ind.actions[idx] as RestCallAction
+            val postTemplate = ind.seeActions()[idx] as RestCallAction
             Lazy.assert{postTemplate.verb == HttpVerb.POST && !postTemplate.saveLocation}
 
-            val post = sampler.createActionFor(postTemplate, ind.actions.last() as RestCallAction)
+            val post = sampler.createActionFor(postTemplate, ind.seeActions().last() as RestCallAction)
 
             /*
                 where it is inserted should not matter, as long as
                 it is before the last GET, but after all the other initializing
                 POSTs
              */
-            ind.actions.add(idx, post)
+            //ind.seeActions().add(idx, post)
+            ind.addResourceCall(idx, RestResourceCalls(actions = mutableListOf(post)))
         }
     }
 
     private fun mutateForRandomType(ind: RestIndividual) {
 
-        if (ind.actions.size == 1) {
+        if (ind.seeActions().size == 1) {
             val sampledAction = sampler.sampleRandomAction(0.05)
-            ind.actions.add(sampledAction)
+            //ind.seeActions().add(sampledAction)
+            ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
+
             if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
         }
 
-        if (randomness.nextBoolean() || ind.actions.size == config.maxTestSize) {
+        if (randomness.nextBoolean() || ind.seeActions().size == config.maxTestSize) {
 
             //delete one at random
-            val chosen = randomness.nextInt(ind.actions.size)
-            ind.actions.removeAt(chosen)
+            val chosen = randomness.nextInt(ind.seeActions().size)
+            //ind.seeActions().removeAt(chosen)
+            ind.removeResourceCall(chosen)
 
         } else {
 
             //add one at random
             val sampledAction = sampler.sampleRandomAction(0.05)
-            val chosen = randomness.nextInt(ind.actions.size)
-            ind.actions.add(chosen, sampledAction)
+            val chosen = randomness.nextInt(ind.seeActions().size)
+            //ind.seeActions().add(chosen, sampledAction)
+            ind.addResourceCall(chosen, RestResourceCalls(actions = mutableListOf(sampledAction)))
+
             if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both
             // adding the action and the associated objects and help encapsulate the individual more?

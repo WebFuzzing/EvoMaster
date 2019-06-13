@@ -2,9 +2,12 @@ package org.evomaster.core.problem.rest
 
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.problem.rest.param.Param
-import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.resource.ActionRToken
+import org.evomaster.core.problem.rest.util.ParamUtil
+import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
@@ -40,6 +43,18 @@ class RestCallAction(
         var locationId: String? = null
 ) : RestAction {
 
+    /**
+     * collect info of description and summary from swagger
+     */
+    private var description : String? = null
+
+    /**
+     * tokens is used to present a set of tokens exist in the scheme, e.g., swagger specification
+     * key is a parsed token
+     * value is [ActionRToken]
+     */
+    val tokens : MutableMap<String, ActionRToken> = mutableMapOf()
+
     override fun shouldCountForFitnessEvaluations(): Boolean = true
 
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
@@ -69,20 +84,22 @@ class RestCallAction(
     /**
      * Make sure that the path params are resolved to the same concrete values of "other".
      * Note: "this" can be just an ancestor of "other"
-     */
+     *
+     * Man: extend bind other types of params, e.g., body param
+     **/
     fun bindToSamePathResolution(other: RestCallAction) {
         if (!this.path.isAncestorOf(other.path)) {
             throw IllegalArgumentException("Cannot bind 2 different unrelated paths to the same path resolution: " +
                     "${this.path} vs ${other.path}")
         }
-
-        for (i in 0 until parameters.size) {
-            val target = parameters[i]
-            if (target is PathParam) {
-                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
-                parameters[i].gene.copyValueFrom(k.gene)
-            }
-        }
+//        for (i in 0 until parameters.size) {
+//            val target = parameters[i]
+//            if (target is PathParam) {
+//                val k = other.parameters.find { p -> p is PathParam && p.name == target.name }!!
+//                parameters[i].gene.copyValueFrom(k.gene)
+//            }
+//        }
+        bindToSamePathResolution(other.path, other.parameters)
     }
 
     /**
@@ -124,4 +141,39 @@ class RestCallAction(
                 }
                 .joinToString("&")
     }
+
+    fun initTokens(description : String?){
+        if(description!= null){
+            this.description = description
+            tokens.clear()
+            ParserUtil.parseAction(this, description, tokens)
+        }
+    }
+
+    /**
+     * it is used to bind [this] action regarding values of [params]
+     */
+    fun bindToSamePathResolution(otherPath : RestPath, params : List<Param>) {
+
+        if(params.isEmpty()){
+            //no param is required to bind
+            return
+        }
+        /*
+           there may exist that a rest action has e.g., path parameter and body parameter.
+           in this case (not all body param), we only bind non- BodyParam, e.g., PathParam
+           the body parameter will be bound by "repair" process to ensure the same attribute of path and body parameter have same value.
+         */
+        if(!ParamUtil.isAllBodyParam(parameters)){
+            parameters.filter { param -> !(param is BodyParam) }.forEach { param->
+                ParamUtil.bindParam(param, this.path, otherPath, params)
+            }
+        }else{
+            parameters.forEach {param->
+                ParamUtil.bindParam(param, this.path, otherPath, params)
+            }
+        }
+    }
+
+    fun getDescription() : String? = description
 }

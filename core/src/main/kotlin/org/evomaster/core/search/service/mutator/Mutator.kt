@@ -58,6 +58,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     open fun postActionAfterMutation(individual: T){}
 
+    open fun update(previous: EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene>){}
+
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
      * @param individual which will be mutated
@@ -92,10 +94,24 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             val reachNew = archive.wouldReachNewTarget(mutated)
 
+            /*
+                enable further actions for extracting
+             */
+            update(trackedCurrent, mutated, mutatedGenes)
+
             if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
+
+                if(config.probOfArchiveMutation > 0.0)
+                    trackedMutated.updateImpactOfGenes(true)
+
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
+            }else{
+                if(config.probOfArchiveMutation > 0.0){
+                    trackedCurrent.getUndoTracking()!!.add(mutated)
+                    trackedCurrent.updateImpactOfGenes(false)
+                }
             }
         }
         return current

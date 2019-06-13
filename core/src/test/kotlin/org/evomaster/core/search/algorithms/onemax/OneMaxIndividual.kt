@@ -24,11 +24,11 @@ class OneMaxIndividual(
     }
 
     override fun next(trackOperator: TrackOperator): TraceableElement? {
-        getTrack()?: return OneMaxIndividual(n, trackOperator)
+        getTracking()?: return OneMaxIndividual(n, trackOperator)
         return OneMaxIndividual(
                 n,
                 trackOperator,
-                getTrack()!!.plus(this).map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
+                getTracking()!!.plus(this).map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
         )
     }
 
@@ -36,11 +36,11 @@ class OneMaxIndividual(
         when(withTrack){
             false-> return copy()
             else ->{
-                getTrack()?:return copy()
+                getTracking()?:return copy()
                 return OneMaxIndividual(
                         n,
                         trackOperator,
-                        getTrack()!!.map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
+                        getTracking()!!.map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
                 )
             }
         }
