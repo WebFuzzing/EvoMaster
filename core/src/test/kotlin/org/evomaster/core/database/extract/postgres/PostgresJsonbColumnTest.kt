@@ -102,4 +102,51 @@ class PostgresJsonbColumnTest : ExtractTestBasePostgres() {
         assertTrue(jsonString.contains("\"integerValue\": 0"))
 
     }
+
+
+    @Test
+    fun testInsertionRealValue() {
+        val schema = SchemaExtractor.extract(connection)
+
+
+        val tableDto = schema.tables[0]
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("people", setOf("id", "jsonData"))
+
+        val action = actions[0]
+        val genes = action.seeGenes()
+
+
+        val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
+        assertTrue(genes[1] is SqlJSONGene)
+
+        val objectGene = ObjectGene("jsondata", fields = listOf(DoubleGene("doubleValue", value = Math.PI)))
+        val newGene = SqlJSONGene("jsondata", objectGene)
+
+        val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(genes[0], newGene))
+
+        val query = "Select * from people where id=%s".format(idValue)
+
+        val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
+        assertTrue(queryResultBeforeInsertion.isEmpty)
+
+        val dbCommandDto = DbActionTransformer.transform(listOf(newInsertAction))
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+
+        val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
+        assertFalse(queryResultAfterInsertion.isEmpty)
+
+        val jsonDataValue = queryResultAfterInsertion.seeRows()[0].getValueByName("jsonData");
+        assertTrue(jsonDataValue is PGobject)
+        jsonDataValue as PGobject
+
+        val jsonString = jsonDataValue.value
+
+        assertTrue(jsonString.contains("\"doubleValue\": %s".format(Math.PI)))
+
+    }
+
+
+
 }
