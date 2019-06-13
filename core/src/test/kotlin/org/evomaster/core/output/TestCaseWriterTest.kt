@@ -726,7 +726,7 @@ class TestCaseWriterTest {
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val uuidGene = UUIDGene(uuidColumn.name)
+        val uuidGene = SqlUUIDGene(uuidColumn.name)
         val insert = DbAction(table, setOf(idColumn, uuidColumn), 0L, listOf(pkGene0, uuidGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
@@ -746,7 +746,7 @@ class TestCaseWriterTest {
             add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
             indent()
             indent()
-            add(".d(\"uuidCode\", \"\\\"00000000-0000-0000-0000-000000000000\\\"\")")
+            add(".d(\"uuidCode\", \"\\\"{00000000-0000-0000-0000-000000000000}\\\"\")")
             deindent()
             add(".dtos();")
             deindent()
