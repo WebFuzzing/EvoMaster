@@ -102,6 +102,7 @@ enum class ColumnDataType(dataTypeName: String) {
      */
     DATE("DATE"),
 
+    JSON("JSON"),
     JSONB("JSONB");
 
 
