@@ -26,6 +26,7 @@ import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.ConnectException
+import java.net.MalformedURLException
 import javax.annotation.PostConstruct
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.core.MediaType
@@ -175,7 +176,9 @@ class RestSampler : Sampler<RestIndividual>(){
                         yet. So let's just wait a bit, and then retry
                     */
                     Thread.sleep(1_000)
-                } else {
+                } else if(e.cause is MalformedURLException){
+                    throw SutProblemException("Provided URL for Swagger schema is invalid: $swaggerURL")
+                }else {
                     throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
                 }
             }
