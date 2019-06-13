@@ -9,6 +9,7 @@ enum class ColumnDataType(dataTypeName: String) {
     /**
      * A Boolean value (true/false)
      */
+    BOOL("BOOL"),
     BOOLEAN("BOOLEAN"),
     TINYINT("TINYINT"),
     /**

@@ -71,7 +71,7 @@ class DbAction(
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
                  */
-                BOOLEAN -> {
+                BOOLEAN, BOOL -> {
                     if (it.enumValuesAsStrings != null) {
                         EnumGene<Boolean>(it.name, it.enumValuesAsStrings.map { it.toBoolean() })
                     } else {
