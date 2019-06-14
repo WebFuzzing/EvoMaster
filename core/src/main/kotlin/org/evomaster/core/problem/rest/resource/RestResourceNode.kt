@@ -293,7 +293,7 @@ class RestResourceNode(
         val randomTemplates = templates.filter { e->
             e.value.size in 1..maxTestSize
         }.map { it.key }
-        if(randomTemplates.isEmpty()) return sampleOneAction(null, randomness, maxTestSize)
+        if(randomTemplates.isEmpty()) return sampleOneAction(null, randomness)
         return genCalls(randomness.choose(randomTemplates), randomness, maxTestSize)
     }
 
@@ -305,12 +305,12 @@ class RestResourceNode(
     }
 
 
-    fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness, maxTestSize: Int) : RestResourceCalls{
+    fun sampleOneAction(verb : HttpVerb? = null, randomness: Randomness) : RestResourceCalls{
         val al = if(verb != null) getActionByHttpVerb(actions, verb) else randomness.choose(actions).copy() as RestAction
-        return sampleOneAction(al!!, randomness, maxTestSize)
+        return sampleOneAction(al!!, randomness)
     }
 
-    fun sampleOneAction(action : RestAction, randomness: Randomness, maxTestSize: Int = 1) : RestResourceCalls{
+    fun sampleOneAction(action : RestAction, randomness: Randomness) : RestResourceCalls{
         val copy = action.copy()
         randomizeActionGenes(copy as RestCallAction, randomness)
 
@@ -336,7 +336,7 @@ class RestResourceNode(
         assert(maxTestSize > 0)
         val chosen = templates.filter { it.value.size <= maxTestSize }
         if(chosen.isEmpty())
-            return sampleOneAction(null,randomness, maxTestSize)
+            return sampleOneAction(null,randomness)
         return genCalls(randomness.choose(chosen).template,randomness, maxTestSize)
     }
 
@@ -399,9 +399,9 @@ class RestResourceNode(
             }else{
                 if(nonPostIndex != ats.size -1){
                     (nonPostIndex + 1 until ats.size).forEach {
-                        val ac = getActionByHttpVerb(actions, ats[it])!!.copy() as RestCallAction
-                        randomizeActionGenes(ac, randomness)
-                        result.add(ac)
+                        val action = getActionByHttpVerb(actions, ats[it])!!.copy() as RestCallAction
+                        randomizeActionGenes(action, randomness)
+                        result.add(action)
                     }
                 }
             }

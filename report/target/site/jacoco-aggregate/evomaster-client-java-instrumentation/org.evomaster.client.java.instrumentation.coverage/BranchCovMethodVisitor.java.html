@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>BranchCovMethodVisitor.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation.coverage</a> &gt; <span class="el_source">BranchCovMethodVisitor.java</span></div><h1>BranchCovMethodVisitor.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation.coverage;
+
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.client.java.instrumentation.Constants;
+import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+public class BranchCovMethodVisitor extends MethodVisitor {
+
+    private final String className;
+    private final String methodName;
+
+    private int latestVisitLine;
+    private int jumpSinceLastLine;
+
+    public BranchCovMethodVisitor(MethodVisitor mv,
+                                  String className,
+                                  String methodName,
+                                  String descriptor) {
+<span class="nc" id="L24">        super(Constants.ASM, mv);</span>
+<span class="nc" id="L25">        this.className = className;</span>
+<span class="nc" id="L26">        this.methodName = methodName;</span>
+<span class="nc" id="L27">        latestVisitLine = 0;</span>
+<span class="nc" id="L28">        jumpSinceLastLine = 0;</span>
+<span class="nc" id="L29">    }</span>
+
+    @Override
+    public void visitLineNumber(int line, Label start) {
+<span class="nc" id="L33">        super.visitLineNumber(line, start);</span>
+<span class="nc" id="L34">        latestVisitLine = line;</span>
+<span class="nc" id="L35">        jumpSinceLastLine = 0;</span>
+<span class="nc" id="L36">    }</span>
+
+
+    @Override
+    public void visitJumpInsn(int opcode, Label label) {
+
+<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (methodName.equals(Constants.CLASS_INIT_METHOD)) {</span>
+<span class="nc" id="L43">            super.visitJumpInsn(opcode, label);</span>
+<span class="nc" id="L44">            return;</span>
+        }
+
+<span class="nc" id="L47">        int branchId = jumpSinceLastLine;</span>
+<span class="nc" id="L48">        jumpSinceLastLine++;</span>
+
+        /*
+            Before we do the jump, we add instrumentation for
+            branch coverage
+         */
+
+<span class="nc" id="L55">        ObjectiveRecorder.registerTarget(</span>
+<span class="nc" id="L56">                ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, true));</span>
+<span class="nc" id="L57">        ObjectiveRecorder.registerTarget(</span>
+<span class="nc" id="L58">                ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, false));</span>
+
+<span class="nc bnc" id="L60" title="All 5 branches missed.">        switch (opcode) {</span>
+            //comparisons with 0
+            case Opcodes.IFEQ:
+            case Opcodes.IFNE:
+            case Opcodes.IFLT:
+            case Opcodes.IFGE:
+            case Opcodes.IFGT:
+            case Opcodes.IFLE:
+<span class="nc" id="L68">                this.visitInsn(Opcodes.DUP);</span>
+<span class="nc" id="L69">                this.visitLdcInsn(opcode);</span>
+<span class="nc" id="L70">                this.visitLdcInsn(className);</span>
+<span class="nc" id="L71">                this.visitLdcInsn(latestVisitLine);</span>
+<span class="nc" id="L72">                this.visitLdcInsn(branchId);</span>
+<span class="nc" id="L73">                mv.visitMethodInsn(</span>
+                        Opcodes.INVOKESTATIC,
+<span class="nc" id="L75">                        ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
+                        ExecutionTracer.EXECUTING_BRANCH_JUMP_METHOD_NAME,
+                        ExecutionTracer.JUMP_DESC_1_VALUE,
+<span class="nc" id="L78">                        ExecutionTracer.class.isInterface()); //false</span>
+<span class="nc" id="L79">                break;</span>
+
+            //comparisons of 2 values
+            case Opcodes.IF_ICMPEQ:
+            case Opcodes.IF_ICMPNE:
+            case Opcodes.IF_ICMPLT:
+            case Opcodes.IF_ICMPGE:
+            case Opcodes.IF_ICMPGT:
+            case Opcodes.IF_ICMPLE:
+<span class="nc" id="L88">                this.visitInsn(Opcodes.DUP2);</span>
+<span class="nc" id="L89">                this.visitLdcInsn(opcode);</span>
+<span class="nc" id="L90">                this.visitLdcInsn(className);</span>
+<span class="nc" id="L91">                this.visitLdcInsn(latestVisitLine);</span>
+<span class="nc" id="L92">                this.visitLdcInsn(branchId);</span>
+<span class="nc" id="L93">                mv.visitMethodInsn(</span>
+                        Opcodes.INVOKESTATIC,
+<span class="nc" id="L95">                        ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
+                        ExecutionTracer.EXECUTING_BRANCH_JUMP_METHOD_NAME,
+                        ExecutionTracer.JUMP_DESC_2_VALUES,
+<span class="nc" id="L98">                        ExecutionTracer.class.isInterface()); //false</span>
+<span class="nc" id="L99">                break;</span>
+
+            //object comparison
+            case Opcodes.IF_ACMPEQ:
+            case Opcodes.IF_ACMPNE:
+<span class="nc" id="L104">                this.visitInsn(Opcodes.DUP2);</span>
+<span class="nc" id="L105">                this.visitLdcInsn(opcode);</span>
+<span class="nc" id="L106">                this.visitLdcInsn(className);</span>
+<span class="nc" id="L107">                this.visitLdcInsn(latestVisitLine);</span>
+<span class="nc" id="L108">                this.visitLdcInsn(branchId);</span>
+<span class="nc" id="L109">                mv.visitMethodInsn(</span>
+                        Opcodes.INVOKESTATIC,
+<span class="nc" id="L111">                        ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
+                        ExecutionTracer.EXECUTING_BRANCH_JUMP_METHOD_NAME,
+                        ExecutionTracer.JUMP_DESC_OBJECTS,
+<span class="nc" id="L114">                        ExecutionTracer.class.isInterface()); //false</span>
+<span class="nc" id="L115">                break;</span>
+
+            //null comparison
+            case Opcodes.IFNULL:
+            case Opcodes.IFNONNULL:
+<span class="nc" id="L120">                this.visitInsn(Opcodes.DUP);</span>
+<span class="nc" id="L121">                this.visitLdcInsn(opcode);</span>
+<span class="nc" id="L122">                this.visitLdcInsn(className);</span>
+<span class="nc" id="L123">                this.visitLdcInsn(latestVisitLine);</span>
+<span class="nc" id="L124">                this.visitLdcInsn(branchId);</span>
+<span class="nc" id="L125">                mv.visitMethodInsn(</span>
+                        Opcodes.INVOKESTATIC,
+<span class="nc" id="L127">                        ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
+                        ExecutionTracer.EXECUTING_BRANCH_JUMP_METHOD_NAME,
+                        ExecutionTracer.JUMP_DESC_NULL,
+<span class="nc" id="L130">                        ExecutionTracer.class.isInterface()); //false</span>
+<span class="nc" id="L131">                break;</span>
+            default:
+                /*
+                    NOTE: not so interesting to handle switch statements (at
+                    least for the moment...), as
+                    quite complex and not so super common anyway...
+                 */
+        }
+
+
+
+<span class="nc" id="L142">        super.visitJumpInsn(opcode, label);</span>
+<span class="nc" id="L143">    }</span>
+
+    @Override
+    public void visitMaxs(int maxStack, int maxLocals) {
+        /*
+            as we pushed up to 6 elements on stack in a position on which
+            the stack might not be empty (and so potentially full of maxStack
+            elements), we need to add them to the maxStack value
+         */
+<span class="nc" id="L152">        int maxElementsAddedOnStackFrame = 6;</span>
+<span class="nc" id="L153">        super.visitMaxs(maxElementsAddedOnStackFrame +  maxStack, maxLocals);</span>
+<span class="nc" id="L154">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

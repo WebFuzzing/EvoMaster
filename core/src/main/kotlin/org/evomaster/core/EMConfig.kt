@@ -608,8 +608,8 @@ class EMConfig {
     var probOfSelectFromDB = 0.1
 
     @Experimental
-    @Cfg("Whether to apply token parser to derive relationships between action and table or among tables")
-    var doesApplyTokenParser = false
+    @Cfg("Whether to apply token parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    var doesApplyNameMatching = false
 
     @Experimental
     @Cfg("Specify a probability to apply S1iR when sample control is Customized")

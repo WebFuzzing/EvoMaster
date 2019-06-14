@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ClassName.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation</a> &gt; <span class="el_source">ClassName.java</span></div><h1>ClassName.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation;
+
+import java.util.Objects;
+
+public class ClassName {
+
+    /**
+     * Name used in the bytecode, where &quot;/&quot; are used
+     * instead of &quot;.&quot;
+     * eg
+     * org.bar.Foo turns into org/bar/Foo
+     */
+    private final String bytecodeName;
+
+    /**
+     * What usually returned with Foo.class.getName(),
+     * eg
+     * org.bar.Foo
+     */
+    private final String fullNameWithDots;
+
+    public static ClassName get(Class&lt;?&gt; klass){
+<span class="nc" id="L23">        return new ClassName(klass);</span>
+    }
+
+    public static ClassName get(String name) {
+<span class="nc" id="L27">        return new ClassName(name);</span>
+    }
+
+    public ClassName(Class&lt;?&gt; klass){
+<span class="nc" id="L31">        this(Objects.requireNonNull(klass).getName());</span>
+<span class="nc" id="L32">    }</span>
+
+    /**
+     *
+     * @param name of the class, or path resource
+     */
+<span class="nc" id="L38">    public ClassName(String name){</span>
+<span class="nc" id="L39">        Objects.requireNonNull(name);</span>
+
+<span class="nc bnc" id="L41" title="All 2 branches missed.">        if(name.endsWith(&quot;.class&quot;)){</span>
+<span class="nc" id="L42">            name = name.substring(0, name.length() - &quot;.class&quot;.length());</span>
+        }
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if(name.endsWith(&quot;.java&quot;)){</span>
+<span class="nc" id="L45">            name = name.substring(0, name.length() - &quot;.java&quot;.length());</span>
+        }
+
+<span class="nc bnc" id="L48" title="All 4 branches missed.">        if(name.contains(&quot;/&quot;) &amp;&amp; name.contains(&quot;.&quot;)){</span>
+<span class="nc" id="L49">            throw new IllegalArgumentException(&quot;Do not know how to handle name: &quot; +name);</span>
+        }
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if(name.contains(&quot;/&quot;)){</span>
+<span class="nc" id="L53">            bytecodeName = name;</span>
+<span class="nc" id="L54">            fullNameWithDots = name.replace(&quot;/&quot;, &quot;.&quot;);</span>
+        } else {
+<span class="nc" id="L56">            bytecodeName = name.replace(&quot;.&quot;, &quot;/&quot;);</span>
+<span class="nc" id="L57">            fullNameWithDots = name;</span>
+        }
+<span class="nc" id="L59">    }</span>
+
+    /**
+        Name of the class as used in the bytecode instructions.
+        This means that foo.bar.Hello would be foo/bar/Hello
+     */
+    public String getBytecodeName() {
+<span class="nc" id="L66">        return bytecodeName;</span>
+    }
+
+    /**
+     * Eg, foo.bar.Hello
+     * @return
+     */
+    public String getFullNameWithDots() {
+<span class="nc" id="L74">        return fullNameWithDots;</span>
+    }
+
+    public String getAsResourcePath(){
+<span class="nc" id="L78">        return bytecodeName + &quot;.class&quot;;</span>
+    }
+
+    @Override
+    public String toString(){
+<span class="nc" id="L83">        return &quot;[&quot; + this.getClass().getSimpleName()+&quot;: &quot;+fullNameWithDots+&quot;]&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

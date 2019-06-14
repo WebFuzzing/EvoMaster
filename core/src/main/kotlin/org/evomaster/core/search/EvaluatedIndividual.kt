@@ -124,13 +124,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
 
     override fun next(trackOperator: TrackOperator, next: TraceableElement): EvaluatedIndividual<T>? {
-
+        if (next !is EvaluatedIndividual<*>) throw  IllegalArgumentException("the type of next is mismatched")
         val copy =  EvaluatedIndividual(
-                (next as EvaluatedIndividual<T>).fitness.copy(),
+                next.fitness.copy(),
                 next.individual.copy(false) as T,
                 next.results.map(ActionResult::copy),
                 trackOperator,
-                getTracking()?.plus(this)?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(this.copy()),
+                getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy()),
                 getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
         )
 
@@ -191,7 +191,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if(inTrack) assert(getTracking()!!.isNotEmpty())
         else assert(getUndoTracking()!!.isNotEmpty())
 
-        val previous = if(inTrack) getTracking()!!.last() as EvaluatedIndividual<T> else this
+        val previous = if(inTrack) getTracking()!!.last() else this
         val next = if(inTrack) this else getUndoTracking()!!.last()
 
         val isAnyOverallImprovement = updateReachedTargets(fitness)
@@ -276,7 +276,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     private fun generateMap(individual: T) : MutableMap<String, MutableList<Gene>>{
         val map = mutableMapOf<String, MutableList<Gene>>()
         if(individual.seeActions().isNotEmpty()){
-            individual.seeActions().forEachIndexed {i, a ->
+            individual.seeActions().forEachIndexed {_, a ->
                 a.seeGenes().forEach {g->
                     val genes = map.getOrPut(GeneIdUtil.generateId(a, g)){ mutableListOf()}
                     genes.add(g)
@@ -306,5 +306,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 reachedTargets[t] = u.distance
         }
         return isAnyOverallImprovement
+    }
+
+    override fun getTracking(): List<EvaluatedIndividual<T>>? {
+        val tacking = super.getTracking()?:return null
+        if(tacking.all { it is EvaluatedIndividual<*> })
+            return tacking as List<EvaluatedIndividual<T>>
+        else
+            throw IllegalArgumentException("tracking has elements with mismatched type")
     }
 }

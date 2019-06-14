@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>NamedResourceApplication.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-e2e-tests-spring-examples</a> &gt; <a href="index.source.html" class="el_package">com.foo.rest.examples.spring.namedresource</a> &gt; <span class="el_source">NamedResourceApplication.java</span></div><h1>NamedResourceApplication.java</h1><pre class="source lang-java linenums">package com.foo.rest.examples.spring.namedresource;
+
+import com.foo.rest.examples.spring.SwaggerConfiguration;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
+import org.springframework.context.annotation.Bean;
+import springfox.documentation.builders.ApiInfoBuilder;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+import static springfox.documentation.builders.PathSelectors.regex;
+
+/**
+ * Created by arcand on 01.03.17.
+ */
+@EnableSwagger2
+@SpringBootApplication(exclude = SecurityAutoConfiguration.class)
+<span class="nc" id="L21">public class NamedResourceApplication  extends SwaggerConfiguration {</span>
+
+    public static void main(String[] args){
+<span class="nc" id="L24">        SpringApplication.run(NamedResourceApplication.class, args);</span>
+<span class="nc" id="L25">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

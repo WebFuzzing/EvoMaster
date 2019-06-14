@@ -16,6 +16,9 @@ import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import java.util.*
 
+/**
+ * handling name (with string type) matching
+ */
 class ParserUtil {
 
     companion object {
@@ -30,17 +33,20 @@ class ParserUtil {
         private val PATTERN_NOUN = TokenSequencePattern.compile(REGEX_NOUN)
         private val PATTERN_VERB = TokenSequencePattern.compile(REGEX_VERB)
 
+        /**
+         * configure stanford parser
+         */
         private val PIPELINE = StanfordCoreNLP(object : Properties() {
             init {
                 setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse")
             }
         })
 
-//        private const val UNDEFILED_TYPE = "UndefinedType"
-        private val GENERAL_TYPES = listOf("object", "body")
-
         private fun formatKey(source : String) : String = source.toLowerCase()
 
+        /**
+         * parser path of resource, and generate a set of [PathRToken] on [tokenMap]
+         */
         fun parsePathTokens(path: RestPath, tokenMap : MutableMap<String, PathRToken>){
             val nlpPath = path.getElements().flatMap { it.keys }.joinToString(" ")
             val tokens = getNlpTokens(nlpPath)
@@ -93,6 +99,9 @@ class ParserUtil {
             }
         }
 
+        /**
+         * parser description and summary of action, and generate a set of [ActionRToken] on [map]
+         */
         fun parseAction(action: RestCallAction, description: String, map : MutableMap<String, ActionRToken>){
             if(description.isNotBlank())
                 parseActionTokensByDes(description, map)
@@ -248,6 +257,9 @@ class ParserUtil {
         }
 
 
+        /**
+         * TODO Man: need to improve
+         */
         fun stringSimilarityScore(str1 : String, str2 : String, algorithm : SimilarityAlgorithm =SimilarityAlgorithm.Trigrams): Double{
             return when(algorithm){
                 SimilarityAlgorithm.Trigrams -> trigrams(bigram(str1.toLowerCase()), bigram(str2.toLowerCase()))
@@ -260,10 +272,10 @@ class ParserUtil {
             var matches = 0
             var i = bigram1.size
             while (--i >= 0) {
-                val bigram = bigram1.get(i)
+                val bigram = bigram1[i]
                 var j = copy.size
                 while (--j >= 0) {
-                    val toMatch = copy.get(j)
+                    val toMatch = copy[j]
                     if (bigram[0] == toMatch[0] && bigram[1] == toMatch[1]) {
                         copy.removeAt(j)
                         matches += 2

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>Instrumentator.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation</a> &gt; <span class="el_source">Instrumentator.java</span></div><h1>Instrumentator.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation;
+
+
+
+import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
+import org.evomaster.client.java.instrumentation.testability.ReplacementList;
+import org.evomaster.client.java.instrumentation.tracker.TrackerClassVisitor;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.tree.ClassNode;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+public class Instrumentator {
+
+    private final List&lt;String&gt; prefixes;
+
+<span class="nc" id="L22">    public Instrumentator(String packagePrefixesToCover) {</span>
+<span class="nc" id="L23">        Objects.requireNonNull(packagePrefixesToCover);</span>
+
+<span class="nc" id="L25">        prefixes = Arrays.asList(</span>
+<span class="nc" id="L26">                packagePrefixesToCover.split(&quot;,&quot;))</span>
+<span class="nc" id="L27">                .stream()</span>
+<span class="nc" id="L28">                .map(s -&gt; s.trim())</span>
+<span class="nc bnc" id="L29" title="All 2 branches missed.">                .filter(s -&gt; ! s.isEmpty())</span>
+<span class="nc" id="L30">                .collect(Collectors.toList());</span>
+
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (prefixes.isEmpty()) {</span>
+<span class="nc" id="L33">            throw new IllegalArgumentException(&quot;You have to specify at least one non-empty prefix, e.g. 'com.yourapplication'&quot;);</span>
+        }
+
+
+<span class="nc" id="L37">    }</span>
+
+    /**
+     * Get the raw bytes of instrumented class with name {@code className}
+     *
+     * @param classLoader
+     * @param className
+     * @param reader
+     * @return
+     */
+    public byte[] transformBytes(ClassLoader classLoader, ClassName className, ClassReader reader) {
+<span class="nc" id="L48">        Objects.requireNonNull(classLoader);</span>
+<span class="nc" id="L49">        Objects.requireNonNull(className);</span>
+<span class="nc" id="L50">        Objects.requireNonNull(reader);</span>
+
+<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (!ClassesToExclude.checkIfCanInstrument(className)) {</span>
+<span class="nc" id="L53">            throw new IllegalArgumentException(&quot;Cannot instrument &quot; + className);</span>
+        }
+
+
+<span class="nc" id="L57">        int asmFlags = ClassWriter.COMPUTE_FRAMES;</span>
+<span class="nc" id="L58">        ClassWriter writer = new ComputeClassWriter(asmFlags);</span>
+<span class="nc" id="L59">        ClassVisitor cv = writer;</span>
+
+        //avoid reading frames, as we re-compute them
+<span class="nc" id="L62">        int readFlags = ClassReader.SKIP_FRAMES;</span>
+
+<span class="nc bnc" id="L64" title="All 2 branches missed.">        if(canInstrumentForCoverage(className)){</span>
+
+<span class="nc" id="L66">            ClassNode cn = new ClassNode();</span>
+<span class="nc" id="L67">            reader.accept(cn, readFlags);</span>
+<span class="nc" id="L68">            ReplacementList.getBooleanMethodTransformers()</span>
+<span class="nc" id="L69">                    .forEach(t -&gt; t.transformClass(cn));</span>
+
+<span class="nc" id="L71">            cv = new CoverageClassVisitor(cv, className);</span>
+
+            /*
+                this should be done after coverage instrumentation, as
+                we don't want these extra methods added as part of
+                targets to cover
+             */
+<span class="nc" id="L78">            cv = new TrackerClassVisitor(cv, className);</span>
+
+<span class="nc" id="L80">            cn.accept(cv);</span>
+
+<span class="nc" id="L82">        } else {</span>
+            /*
+                For &quot;now&quot; we only instrument classes that will directly
+                contribute to coverage, ie the SUT.
+                In the future, likely also to instrument other third-party
+                library classes for testability transformations
+             */
+
+<span class="nc" id="L90">            reader.accept(cv, readFlags);</span>
+        }
+
+<span class="nc" id="L93">        return writer.toByteArray();</span>
+    }
+
+
+    private boolean canInstrumentForCoverage(ClassName className){
+
+<span class="nc" id="L99">        return prefixes.stream()</span>
+<span class="nc" id="L100">                .anyMatch(s -&gt; className.getFullNameWithDots().startsWith(s));</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

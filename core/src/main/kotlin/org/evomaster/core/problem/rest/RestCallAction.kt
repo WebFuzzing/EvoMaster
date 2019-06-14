@@ -69,7 +69,6 @@ class RestCallAction(
     }
 
     override fun seeGenes(): List<out Gene> {
-
         return parameters.flatMap { it.seeGenes() }
     }
 

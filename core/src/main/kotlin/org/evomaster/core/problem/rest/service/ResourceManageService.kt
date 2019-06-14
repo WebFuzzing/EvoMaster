@@ -78,7 +78,7 @@ class ResourceManageService {
                             u.path.copy(),
                             initMode =
                                 if(config.probOfEnablingResourceDependencyHeuristics > 0.0) InitMode.WITH_DEPENDENCY
-                                else if(config.doesApplyTokenParser) InitMode.WITH_TOKEN
+                                else if(config.doesApplyNameMatching) InitMode.WITH_TOKEN
                                 else InitMode.NONE)
                 }
                 resource.actions.add(u)
@@ -106,7 +106,7 @@ class ResourceManageService {
         //GET, PATCH, DELETE
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb != HttpVerb.POST && it.verb != HttpVerb.PUT }.forEach {a->
-                val call = ar.sampleOneAction(a.copy() as RestAction, randomness, config.maxTestSize)
+                val call = ar.sampleOneAction(a.copy() as RestAction, randomness)
                 call.actions.forEach {a->
                     if(a is RestCallAction) a.auth = auth
                 }
@@ -117,7 +117,7 @@ class ResourceManageService {
         //all POST with one post action
         sortedResources.forEach { ar->
             ar.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST}.forEach { a->
-                val call = ar.sampleOneAction(a.copy() as RestAction, randomness, config.maxTestSize)
+                val call = ar.sampleOneAction(a.copy() as RestAction, randomness)
                 call.actions.forEach { (it as RestCallAction).auth = auth }
                 adHocInitialIndividuals.add(RestIndividual(mutableListOf(call), SampleType.SMART_RESOURCE))
             }

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>StandardOutputTracker.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.internal.db</a> &gt; <span class="el_source">StandardOutputTracker.java</span></div><h1>StandardOutputTracker.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.internal.db;
+
+import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.controller.internal.SutController;
+import org.evomaster.client.java.databasespy.P6SpyFormatter;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Objects;
+
+/**
+ * We use p6spy to intercept SQL commands.
+ * That can be done in 3 ways:
+ * (1) to file,
+ * (2) with a logger,
+ * (3) to standard output.
+ *
+ * &lt;p&gt;
+ * (1) is a recipe for disaster: handling generated files, and file locks on Windows.
+ * (2) is a nightmare as well, as who knows what the SUT is configuring.
+ * (3) is likely the cleanest, easiest option. But it means we need to
+ * handle System.out
+ *
+ * &lt;p&gt;
+ * This class can be used for any analyses of the SUT output
+ */
+public class StandardOutputTracker extends ByteArrayOutputStream{
+
+<span class="nc" id="L31">    private static final PrintStream DEFAULT_OUT = System.out;</span>
+
+    private volatile SutController sutController;
+
+
+    public static void setTracker(boolean on, SutController sutController){
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if(on){</span>
+<span class="nc" id="L38">            System.setOut(new PrintStream(new StandardOutputTracker(sutController), true));</span>
+        } else {
+<span class="nc" id="L40">            System.setOut(DEFAULT_OUT);</span>
+        }
+<span class="nc" id="L42">    }</span>
+
+    private StandardOutputTracker(SutController sutController) {
+<span class="nc" id="L45">        super(2048);</span>
+<span class="nc" id="L46">        this.sutController = sutController;</span>
+<span class="nc" id="L47">    }</span>
+
+    @Override
+    public void flush() throws IOException {
+
+        /*
+            Output is written to a buffer.
+            Every time it is flushed, we do the actual printing
+            on standard output, and analyze its content.
+         */
+
+        String data;
+
+<span class="nc" id="L60">        synchronized (this) {</span>
+<span class="nc" id="L61">            super.flush();</span>
+
+<span class="nc" id="L63">            data = toString(); //get content of the buffer</span>
+<span class="nc" id="L64">            reset();</span>
+
+<span class="nc" id="L66">            DEFAULT_OUT.print(data);</span>
+<span class="nc" id="L67">        }</span>
+
+<span class="nc bnc" id="L69" title="All 2 branches missed.">        if (data != null) {</span>
+<span class="nc" id="L70">            Arrays.stream(data.split(&quot;\n&quot;))</span>
+<span class="nc" id="L71">                    .filter(l -&gt; l.startsWith(P6SpyFormatter.PREFIX))</span>
+<span class="nc" id="L72">                    .forEach(l -&gt; {</span>
+<span class="nc" id="L73">                        handleSqlLine(sutController, l);</span>
+<span class="nc" id="L74">                    });</span>
+        }
+<span class="nc" id="L76">    }</span>
+
+    public static void handleSqlLine(SutController sc, String line){
+<span class="nc" id="L79">        Objects.requireNonNull(sc);</span>
+<span class="nc" id="L80">        Objects.requireNonNull(line);</span>
+
+<span class="nc bnc" id="L82" title="All 2 branches missed.">        if(! line.startsWith(P6SpyFormatter.PREFIX)){</span>
+<span class="nc" id="L83">            throw new IllegalArgumentException(&quot;No P6Spy prefix&quot;);</span>
+        }
+
+<span class="nc" id="L86">        String sql = line.substring(P6SpyFormatter.PREFIX.length());</span>
+
+        try {
+<span class="nc" id="L89">            sc.handleSql(sql);</span>
+<span class="nc" id="L90">        } catch (Exception | Error e){</span>
+<span class="nc" id="L91">            SimpleLogger.error(&quot;Failed to handle SQL command: '&quot;+sql+&quot;'\n&quot; + e.getMessage());</span>
+<span class="nc" id="L92">        }</span>
+<span class="nc" id="L93">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

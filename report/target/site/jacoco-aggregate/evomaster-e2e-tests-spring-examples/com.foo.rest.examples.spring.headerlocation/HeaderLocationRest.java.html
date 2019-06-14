@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>HeaderLocationRest.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-e2e-tests-spring-examples</a> &gt; <a href="index.source.html" class="el_package">com.foo.rest.examples.spring.headerlocation</a> &gt; <span class="el_source">HeaderLocationRest.java</span></div><h1>HeaderLocationRest.java</h1><pre class="source lang-java linenums">package com.foo.rest.examples.spring.headerlocation;
+
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import javax.ws.rs.core.MediaType;
+import java.net.URI;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+@RestController
+@RequestMapping(path = &quot;/api/hl&quot;)
+<span class="nc" id="L14">public class HeaderLocationRest {</span>
+
+    //recall, this is just an example for testing
+<span class="nc" id="L17">    public static final Map&lt;String, String&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
+
+    @RequestMapping(
+            method = RequestMethod.POST,
+            consumes = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity create(@RequestBody HeaderLocationDto dto) {
+
+<span class="nc" id="L25">        data.put(dto.id, dto.value);</span>
+
+<span class="nc" id="L27">        return ResponseEntity.created(URI.create(&quot;/api/hl/&quot;+dto.id)).build();</span>
+    }
+
+
+    @RequestMapping(
+            value = &quot;/{id}&quot;,
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity&lt;HeaderLocationDto&gt; get(@PathVariable(&quot;id&quot;) String id) {
+
+<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (!data.containsKey(id)) {</span>
+<span class="nc" id="L39">            return ResponseEntity.notFound().build();</span>
+        } else {
+<span class="nc" id="L41">            HeaderLocationDto dto = new HeaderLocationDto();</span>
+<span class="nc" id="L42">            dto.id = id;</span>
+<span class="nc" id="L43">            dto.value = data.get(id);</span>
+
+<span class="nc" id="L45">            return ResponseEntity.ok().body(dto);</span>
+        }
+    }
+
+    @RequestMapping(
+            value = &quot;/{id}&quot;,
+            method = RequestMethod.DELETE
+    )
+    public ResponseEntity delete(@PathVariable(&quot;id&quot;) String id) {
+
+<span class="nc bnc" id="L55" title="All 2 branches missed.">        if (!data.containsKey(id)) {</span>
+<span class="nc" id="L56">            return ResponseEntity.notFound().build();</span>
+        } else {
+<span class="nc" id="L58">            data.remove(id);</span>
+<span class="nc" id="L59">            return ResponseEntity.noContent().build();</span>
+        }
+    }
+
+    @RequestMapping(
+            value = &quot;/{id}&quot;,
+            method = RequestMethod.PUT,
+            consumes = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity replace(@PathVariable(&quot;id&quot;) String id,
+                                  @RequestBody HeaderLocationDto dto) {
+
+<span class="nc bnc" id="L71" title="All 2 branches missed.">        if (!data.containsKey(id)) {</span>
+            //in this case, the PUT will create it
+<span class="nc" id="L73">            data.put(id, dto.value);</span>
+<span class="nc" id="L74">            return ResponseEntity.status(201).build();</span>
+        } else {
+<span class="nc" id="L76">            data.put(id, dto.value);</span>
+<span class="nc" id="L77">            return ResponseEntity.noContent().build();</span>
+        }
+    }
+
+    @RequestMapping(
+            value = &quot;/{id}&quot;,
+            method = RequestMethod.PATCH,
+            consumes = MediaType.APPLICATION_JSON
+    )
+    public ResponseEntity update(@PathVariable(&quot;id&quot;) String id,
+                                 @RequestBody HeaderLocationDto dto) {
+
+<span class="nc bnc" id="L89" title="All 2 branches missed.">        if (!data.containsKey(id)) {</span>
+<span class="nc" id="L90">            return ResponseEntity.status(404).build();</span>
+        } else {
+<span class="nc" id="L92">            data.put(id, dto.value);</span>
+<span class="nc" id="L93">            return ResponseEntity.noContent().build();</span>
+        }
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

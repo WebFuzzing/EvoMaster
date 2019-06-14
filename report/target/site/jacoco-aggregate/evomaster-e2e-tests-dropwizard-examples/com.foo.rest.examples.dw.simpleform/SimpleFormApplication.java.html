@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>SimpleFormApplication.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-e2e-tests-dropwizard-examples</a> &gt; <a href="index.source.html" class="el_package">com.foo.rest.examples.dw.simpleform</a> &gt; <span class="el_source">SimpleFormApplication.java</span></div><h1>SimpleFormApplication.java</h1><pre class="source lang-java linenums">package com.foo.rest.examples.dw.simpleform;
+
+import io.dropwizard.Application;
+import io.dropwizard.jetty.HttpConnectorFactory;
+import io.dropwizard.server.DefaultServerFactory;
+import io.dropwizard.setup.Environment;
+import io.swagger.jaxrs.config.BeanConfig;
+import org.eclipse.jetty.server.AbstractNetworkConnector;
+import org.eclipse.jetty.server.Server;
+
+public class SimpleFormApplication extends Application&lt;SimpleFormConfiguration&gt; {
+
+    public static void main(String[] args){
+        try {
+<span class="nc" id="L15">            new SimpleFormApplication(8080).run(&quot;server&quot;);</span>
+<span class="nc" id="L16">        } catch (Exception e) {</span>
+<span class="nc" id="L17">            e.printStackTrace();</span>
+<span class="nc" id="L18">        }</span>
+<span class="nc" id="L19">    }</span>
+
+
+    private final int port;
+    private Server jettyServer;
+
+<span class="nc" id="L25">    public SimpleFormApplication(int port) {</span>
+<span class="nc" id="L26">        this.port = port;</span>
+<span class="nc" id="L27">    }</span>
+
+    @Override
+    public void run(SimpleFormConfiguration configuration, Environment environment) throws Exception {
+
+<span class="nc" id="L32">        environment.jersey().setUrlPattern(&quot;/api/*&quot;);</span>
+<span class="nc" id="L33">        environment.jersey().register(new SimpleFormRest());</span>
+
+        /*
+            very ugly code, but does not seem that Dropwizard gives you any alternative :(
+         */
+<span class="nc" id="L38">        HttpConnectorFactory applicationConnector = ((HttpConnectorFactory)</span>
+<span class="nc" id="L39">                ((DefaultServerFactory) configuration.getServerFactory())</span>
+<span class="nc" id="L40">                        .getApplicationConnectors().get(0));</span>
+<span class="nc" id="L41">        applicationConnector.setPort(port);</span>
+
+<span class="nc" id="L43">        ((HttpConnectorFactory) ((DefaultServerFactory) configuration.getServerFactory())</span>
+<span class="nc" id="L44">                .getAdminConnectors().get(0)).setPort(0);</span>
+
+<span class="nc" id="L46">        environment.lifecycle().addServerLifecycleListener(server -&gt; jettyServer = server);</span>
+
+
+<span class="nc" id="L49">        BeanConfig beanConfig = new BeanConfig();</span>
+<span class="nc" id="L50">        beanConfig.setVersion(&quot;0.0.1&quot;);</span>
+<span class="nc" id="L51">        beanConfig.setSchemes(new String[]{&quot;http&quot;});</span>
+        //beanConfig.setHost(&quot;localhost:8080&quot;);
+<span class="nc" id="L53">        beanConfig.setBasePath(&quot;/api&quot;);</span>
+<span class="nc" id="L54">        beanConfig.setResourcePackage(&quot;com.foo.rest.examples.dw.simpleform&quot;);</span>
+<span class="nc" id="L55">        beanConfig.setScan(true);</span>
+<span class="nc" id="L56">        environment.jersey().register(new io.swagger.jaxrs.listing.ApiListingResource());</span>
+<span class="nc" id="L57">        environment.jersey().register(new io.swagger.jaxrs.listing.SwaggerSerializers());</span>
+<span class="nc" id="L58">    }</span>
+
+    public int getJettyPort() {
+<span class="nc" id="L61">        return ((AbstractNetworkConnector) jettyServer.getConnectors()[0]).getLocalPort();</span>
+    }
+
+    public Server getJettyServer() {
+<span class="nc" id="L65">        return jettyServer;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.apache.commons.lang3.mutable.Mutable
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
@@ -45,8 +44,6 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     @Inject
     private lateinit var rc: RemoteController
-
-
 
     private val client: Client = {
         val configuration = ClientConfig()

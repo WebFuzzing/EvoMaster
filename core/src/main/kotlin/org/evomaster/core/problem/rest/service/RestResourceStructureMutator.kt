@@ -235,7 +235,7 @@ class RestResourceStructureMutator : StructureMutator() {
         max += ind.getResourceCalls()[pos].actions.size
         var new = old.getResourceNode().generateAnother(old, randomness, max)
         if(new == null){
-            new = old.getResourceNode().sampleOneAction(null, randomness, max)
+            new = old.getResourceNode().sampleOneAction(null, randomness)
         }
         maintainAuth(auth, new)
         ind.replaceResourceCall(pos, new)

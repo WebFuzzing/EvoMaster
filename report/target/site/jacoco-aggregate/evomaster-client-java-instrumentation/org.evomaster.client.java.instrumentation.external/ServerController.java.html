@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ServerController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation.external</a> &gt; <span class="el_source">ServerController.java</span></div><h1>ServerController.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation.external;
+
+import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.TargetInfo;
+
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * The SutController will start a TCP server, and the Agent in the external
+ * SUT process will do a connection to it.
+ * &lt;br&gt;
+ * Note: the communications are extremely basic. Therefore, to avoid adding
+ * unnecessary complexity to the Agent (which runs together with the SUT),
+ * no REST or RMI is used here, just basic, old-style TCP raw connections
+ * with serialized Java objects.
+ */
+<span class="nc" id="L25">public class ServerController {</span>
+
+    private ServerSocket server;
+    private Socket socket;
+    protected ObjectOutputStream out;
+    protected ObjectInputStream in;
+
+    public int startServer() {
+
+<span class="nc" id="L34">        closeServer();</span>
+
+        try {
+<span class="nc" id="L37">            server = new ServerSocket(0);</span>
+<span class="nc" id="L38">            server.setSoTimeout(10_000);</span>
+<span class="nc" id="L39">        } catch (Exception e) {</span>
+<span class="nc" id="L40">            throw new IllegalStateException(e);</span>
+<span class="nc" id="L41">        }</span>
+
+<span class="nc" id="L43">        return server.getLocalPort();</span>
+    }
+
+
+    public void closeServer() {
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if (server != null) {</span>
+            try {
+<span class="nc" id="L50">                server.close();</span>
+<span class="nc" id="L51">                server = null;</span>
+<span class="nc" id="L52">                socket = null;</span>
+<span class="nc" id="L53">                in = null;</span>
+<span class="nc" id="L54">                out = null;</span>
+<span class="nc" id="L55">            } catch (IOException e) {</span>
+<span class="nc" id="L56">                throw new IllegalStateException(e);</span>
+<span class="nc" id="L57">            }</span>
+        }
+<span class="nc" id="L59">    }</span>
+
+    public boolean waitForIncomingConnection() {
+
+        try {
+<span class="nc" id="L64">            socket = server.accept();</span>
+<span class="nc" id="L65">            socket.setSoTimeout(20_000);</span>
+<span class="nc" id="L66">            out = new ObjectOutputStream(socket.getOutputStream());</span>
+<span class="nc" id="L67">            in = new ObjectInputStream(socket.getInputStream());</span>
+
+<span class="nc" id="L69">        } catch (InterruptedIOException e) {</span>
+            /*
+                didn't get a response in time.
+                This likely means that the SUT was not started
+                with the Java Agent properly initialized
+             */
+<span class="nc" id="L75">            return false;</span>
+<span class="nc" id="L76">        } catch (IOException e) {</span>
+<span class="nc" id="L77">            throw new IllegalStateException(e);</span>
+<span class="nc" id="L78">        }</span>
+
+<span class="nc" id="L80">        return isConnectionOn();</span>
+    }
+
+    public boolean isConnectionOn() {
+        /*
+            as the Java Agent is the one starting this communication, if we
+            have the connection, then it necessarily means that it is working
+         */
+<span class="nc bnc" id="L88" title="All 6 branches missed.">        return socket != null &amp;&amp; socket.isConnected() &amp;&amp; !socket.isClosed();</span>
+    }
+
+    public boolean sendCommand(Command command){
+<span class="nc" id="L92">        return sendObject(command);</span>
+    }
+
+    public boolean sendObject(Object obj){
+<span class="nc bnc" id="L96" title="All 2 branches missed.">        if(! isConnectionOn()){</span>
+<span class="nc" id="L97">            return false;</span>
+        }
+
+        try {
+<span class="nc" id="L101">            out.writeObject(obj);</span>
+<span class="nc" id="L102">        } catch (IOException e) {</span>
+<span class="nc" id="L103">            return false;</span>
+<span class="nc" id="L104">        }</span>
+
+<span class="nc" id="L106">        return true;</span>
+    }
+
+    public Object waitAndGetResponse(){
+<span class="nc bnc" id="L110" title="All 2 branches missed.">        if(! isConnectionOn()){</span>
+<span class="nc" id="L111">            return null;</span>
+        }
+
+        try {
+<span class="nc" id="L115">            Object obj = in.readObject();</span>
+<span class="nc" id="L116">            return obj;</span>
+<span class="nc" id="L117">        } catch (IOException e) {</span>
+<span class="nc" id="L118">            return null;</span>
+<span class="nc" id="L119">        } catch (ClassNotFoundException e) {</span>
+<span class="nc" id="L120">            throw new IllegalStateException(e);</span>
+        }
+    }
+
+    public boolean sendAndExpectACK(Command command){
+<span class="nc" id="L125">        boolean sent = sendCommand(command);</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">        if(!sent){</span>
+<span class="nc" id="L127">            SimpleLogger.error(&quot;Failed to send message&quot;);</span>
+<span class="nc" id="L128">            return false;</span>
+        }
+
+<span class="nc" id="L131">        return waitForAck();</span>
+    }
+
+    public boolean sendWithDataAndExpectACK(Command command, Object data){
+
+<span class="nc" id="L136">        boolean sent = sendCommand(command);</span>
+<span class="nc bnc" id="L137" title="All 2 branches missed.">        if(!sent){</span>
+<span class="nc" id="L138">            SimpleLogger.error(&quot;Failed to send message&quot;);</span>
+<span class="nc" id="L139">            return false;</span>
+        }
+
+<span class="nc" id="L142">        sent = sendObject(data);</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if(!sent){</span>
+<span class="nc" id="L144">            SimpleLogger.error(&quot;Failed to send message&quot;);</span>
+<span class="nc" id="L145">            return false;</span>
+        }
+
+<span class="nc" id="L148">        return waitForAck();</span>
+
+    }
+
+    private boolean waitForAck() {
+<span class="nc" id="L153">        Object response = waitAndGetResponse();</span>
+<span class="nc bnc" id="L154" title="All 2 branches missed.">        if(response == null){</span>
+<span class="nc" id="L155">            SimpleLogger.error(&quot;Failed to read ACK response&quot;);</span>
+<span class="nc" id="L156">            return false;</span>
+        }
+<span class="nc bnc" id="L158" title="All 2 branches missed.">        if(! Command.ACK.equals(response)){</span>
+<span class="nc" id="L159">            throw new IllegalStateException(&quot;Invalid response: &quot;+response);</span>
+        }
+
+<span class="nc" id="L162">        return true;</span>
+    }
+
+    public  boolean resetForNewSearch(){
+<span class="nc" id="L166">       return sendAndExpectACK(Command.NEW_SEARCH);</span>
+    }
+
+    public  boolean resetForNewTest(){
+<span class="nc" id="L170">        return sendAndExpectACK(Command.NEW_TEST);</span>
+    }
+
+    public boolean setActionIndex(int actionIndex){
+<span class="nc" id="L174">        return sendWithDataAndExpectACK(Command.ACTION_INDEX, actionIndex);</span>
+    }
+
+    public List&lt;TargetInfo&gt; getTargetInfos(Collection&lt;Integer&gt; ids){
+<span class="nc" id="L178">        boolean sent = sendCommand(Command.TARGET_INFOS);</span>
+<span class="nc bnc" id="L179" title="All 2 branches missed.">        if(!sent){</span>
+<span class="nc" id="L180">            SimpleLogger.error(&quot;Failed to send message&quot;);</span>
+<span class="nc" id="L181">            return null;</span>
+        }
+
+        try {
+<span class="nc" id="L185">            out.writeObject(ids);</span>
+<span class="nc" id="L186">        } catch (IOException e) {</span>
+<span class="nc" id="L187">            SimpleLogger.error(&quot;Failed to send ids&quot;);</span>
+<span class="nc" id="L188">            return null;</span>
+<span class="nc" id="L189">        }</span>
+
+<span class="nc" id="L191">        Object response = waitAndGetResponse();</span>
+<span class="nc bnc" id="L192" title="All 2 branches missed.">        if(response == null){</span>
+<span class="nc" id="L193">            SimpleLogger.error(&quot;Failed to read response about covered targets&quot;);</span>
+<span class="nc" id="L194">            return null;</span>
+        }
+
+<span class="nc bnc" id="L197" title="All 2 branches missed.">        if(! (response instanceof List&lt;?&gt;)){</span>
+<span class="nc" id="L198">            throw new IllegalStateException(&quot;Invalid response: &quot;+response);</span>
+        }
+
+<span class="nc" id="L201">        return (List&lt;TargetInfo&gt;) response;</span>
+    }
+
+    public List&lt;AdditionalInfo&gt; getAdditionalInfoList(){
+
+<span class="nc" id="L206">        boolean sent = sendCommand(Command.ADDITIONAL_INFO);</span>
+<span class="nc bnc" id="L207" title="All 2 branches missed.">        if(!sent){</span>
+<span class="nc" id="L208">            SimpleLogger.error(&quot;Failed to send message&quot;);</span>
+<span class="nc" id="L209">            return null;</span>
+        }
+
+<span class="nc" id="L212">        Object response = waitAndGetResponse();</span>
+<span class="nc bnc" id="L213" title="All 2 branches missed.">        if(response == null){</span>
+<span class="nc" id="L214">            SimpleLogger.error(&quot;Failed to read response about additional info&quot;);</span>
+<span class="nc" id="L215">            return null;</span>
+        }
+
+<span class="nc bnc" id="L218" title="All 2 branches missed.">        if(! (response instanceof List&lt;?&gt;)){</span>
+<span class="nc" id="L219">            throw new IllegalStateException(&quot;Invalid response: &quot;+response);</span>
+        }
+
+<span class="nc" id="L222">        return (List&lt;AdditionalInfo&gt;) response;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

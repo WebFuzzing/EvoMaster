@@ -142,6 +142,8 @@ class ResourceRelatedToTable(val key: String) {
 
     /**
      * return Pair.first is name of table, key of the second is field, value is the column
+     *
+     * @param onlyConfirmedColumn will be used to only find the field that are confirmed based on feedback from evomaster driver
      */
     fun getBodyParamToSpecifiedTable(table:String, bodyP2Table : BodyParamRelatedToTable, fieldName : String, onlyConfirmedColumn : Boolean = false) : Pair<String, Pair<String, String>>? {
         val fmap = bodyP2Table.fieldsMap[fieldName]?: return null

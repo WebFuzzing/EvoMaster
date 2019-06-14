@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>SqlHandler.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.internal.db</a> &gt; <span class="el_source">SqlHandler.java</span></div><h1>SqlHandler.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.internal.db;
+
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.ExpressionVisitor;
+import net.sf.jsqlparser.expression.ExpressionVisitorAdapter;
+import net.sf.jsqlparser.parser.CCJSqlParserUtil;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.Statement;
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.db.QueryResult;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.utils.SimpleLogger;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
+
+/**
+ * Class used to act upon SQL commands executed by the SUT
+ */
+public class SqlHandler {
+
+    /**
+     * Computing heuristics on SQL is expensive, as we need to run
+     * further queries. So, we buffer them, and execute them only
+     * if needed (ie, lazy initialization)
+     */
+    private final List&lt;String&gt; buffer;
+
+    /**
+     * The heuristics based on the SQL execution
+     */
+    private final List&lt;Double&gt; distances;
+
+    //see ExecutionDto
+    private final Map&lt;String, Set&lt;String&gt;&gt; queriedData;
+    private final Map&lt;String, Set&lt;String&gt;&gt; updatedData;
+    private final Map&lt;String, Set&lt;String&gt;&gt; insertedData;
+    private final Map&lt;String, Set&lt;String&gt;&gt; failedWhere;
+    private final List&lt;String&gt; deletedData;
+
+
+    private volatile Connection connection;
+
+
+<span class="nc" id="L50">    public SqlHandler() {</span>
+<span class="nc" id="L51">        buffer = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="nc" id="L52">        distances = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L53">        queriedData = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L54">        updatedData = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L55">        insertedData = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L56">        failedWhere = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L57">        deletedData = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="nc" id="L58">    }</span>
+
+    public void reset() {
+<span class="nc" id="L61">        buffer.clear();</span>
+<span class="nc" id="L62">        distances.clear();</span>
+<span class="nc" id="L63">        queriedData.clear();</span>
+<span class="nc" id="L64">        updatedData.clear();</span>
+<span class="nc" id="L65">        insertedData.clear();</span>
+<span class="nc" id="L66">        failedWhere.clear();</span>
+<span class="nc" id="L67">        deletedData.clear();</span>
+<span class="nc" id="L68">    }</span>
+
+    public void setConnection(Connection connection) {
+<span class="nc" id="L71">        this.connection = connection;</span>
+<span class="nc" id="L72">    }</span>
+
+    public void handle(String sql) {
+<span class="nc" id="L75">        Objects.requireNonNull(sql);</span>
+
+<span class="nc" id="L77">        buffer.add(sql);</span>
+
+<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (isSelect(sql)) {</span>
+<span class="nc" id="L80">            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        } else if(isDelete(sql)){</span>
+<span class="nc" id="L82">            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));</span>
+<span class="nc bnc" id="L83" title="All 2 branches missed.">        } else if(isInsert(sql)){</span>
+<span class="nc" id="L84">            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));</span>
+<span class="nc bnc" id="L85" title="All 2 branches missed.">        } else if(isUpdate(sql)){</span>
+<span class="nc" id="L86">            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));</span>
+        }
+<span class="nc" id="L88">    }</span>
+
+    public ExecutionDto getExecutionDto() {
+<span class="nc" id="L91">        ExecutionDto executionDto = new ExecutionDto();</span>
+<span class="nc" id="L92">        executionDto.queriedData.putAll(queriedData);</span>
+<span class="nc" id="L93">        executionDto.failedWhere.putAll(failedWhere);</span>
+<span class="nc" id="L94">        executionDto.insertedData.putAll(insertedData);</span>
+<span class="nc" id="L95">        executionDto.updatedData.putAll(updatedData);</span>
+<span class="nc" id="L96">        executionDto.deletedData.addAll(deletedData);</span>
+
+<span class="nc" id="L98">        return executionDto;</span>
+    }
+
+    public List&lt;Double&gt; getDistances() {
+
+<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (connection == null) {</span>
+<span class="nc" id="L104">            return distances;</span>
+        }
+
+
+<span class="nc" id="L108">        buffer.stream()</span>
+<span class="nc" id="L109">                .forEach(sql -&gt; {</span>
+                    /*
+                        Note: even if the Connection we got to analyze
+                        the DB is using P6Spy, that would not be a problem,
+                        as output SQL would not end up on the buffer instance
+                        we are iterating on (copy on write), and we clear
+                        the buffer after this loop.
+                     */
+<span class="nc bnc" id="L117" title="All 2 branches missed.">                    if (isSelect(sql)) { //TODO Delete/Insert/Update</span>
+<span class="nc" id="L118">                        double dist = computeDistance(sql);</span>
+<span class="nc" id="L119">                        distances.add(dist);</span>
+                    }
+<span class="nc" id="L121">                });</span>
+        //side effects on buffer is not important, as it is just a cache
+<span class="nc" id="L123">        buffer.clear();</span>
+
+<span class="nc" id="L125">        return distances;</span>
+    }
+
+
+    public Double computeDistance(String command) {
+
+<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (connection == null) {</span>
+<span class="nc" id="L132">            throw new IllegalStateException(&quot;Trying to calculate SQL distance with no DB connection&quot;);</span>
+        }
+
+        Statement statement;
+
+        try {
+<span class="nc" id="L138">            statement = CCJSqlParserUtil.parse(command);</span>
+<span class="nc" id="L139">        } catch (Exception e) {</span>
+<span class="nc" id="L140">            SimpleLogger.uniqueWarn(&quot;Cannot handle command: &quot; + command + &quot;\n&quot; + e.toString());</span>
+<span class="nc" id="L141">            return Double.MAX_VALUE;</span>
+<span class="nc" id="L142">        }</span>
+
+        /*
+           TODO
+           following does not handle the case of sub-selects involving other
+           tables... but likely that is not something we need to support right now
+
+           TODO:
+           this might be likely unnecessary... we are only interested in the variables used
+           in the WHERE. Furthermore, this would not support DELETE/INSERT/UPDATE.
+           So, we just need to create a new SELECT based on that.
+           But SELECT could be complex with many JOINs... whereas DIP would be simple(r)?
+         */
+<span class="nc" id="L155">        String modified = SelectHeuristics.addFieldsToSelect(command);</span>
+<span class="nc" id="L156">        modified = SelectHeuristics.removeConstraints(modified);</span>
+<span class="nc" id="L157">        modified = SelectHeuristics.removeOperations(modified);</span>
+
+        QueryResult data;
+
+        try {
+<span class="nc" id="L162">            data = SqlScriptRunner.execCommand(connection, modified);</span>
+<span class="nc" id="L163">        } catch (SQLException e) {</span>
+<span class="nc" id="L164">            throw new RuntimeException(e);</span>
+<span class="nc" id="L165">        }</span>
+
+<span class="nc" id="L167">        double dist = SelectHeuristics.computeDistance(command, data);</span>
+
+<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (dist &gt; 0) {</span>
+<span class="nc" id="L170">            mergeNewData(failedWhere, extractColumnsInvolvedInWhere(statement));</span>
+        }
+
+<span class="nc" id="L173">        return dist;</span>
+    }
+
+    private static Map&lt;String, Set&lt;String&gt;&gt; extractColumnsInvolvedInWhere(Statement statement) {
+
+<span class="nc" id="L178">        Map&lt;String, Set&lt;String&gt;&gt; data = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L180">        SqlNameContext context = new SqlNameContext(statement);</span>
+
+<span class="nc" id="L182">        Expression where = ParserUtils.getWhere(statement);</span>
+<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (where == null) {</span>
+<span class="nc" id="L184">            return data;</span>
+        }
+
+<span class="nc" id="L187">        ExpressionVisitor visitor = new ExpressionVisitorAdapter() {</span>
+            @Override
+            public void visit(Column column) {
+<span class="nc" id="L190">                String cn = column.getColumnName();</span>
+<span class="nc" id="L191">                String tn = context.getTableName(column);</span>
+
+<span class="nc bnc" id="L193" title="All 2 branches missed.">                if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){</span>
+                    // TODO handle it properly when ll have support for sub-selects
+<span class="nc" id="L195">                    return;</span>
+                }
+
+<span class="nc" id="L198">                data.putIfAbsent(tn, new HashSet&lt;&gt;());</span>
+<span class="nc" id="L199">                Set&lt;String&gt; set = data.get(tn);</span>
+<span class="nc" id="L200">                set.add(cn);</span>
+<span class="nc" id="L201">            }</span>
+        };
+
+<span class="nc" id="L204">        where.accept(visitor);</span>
+
+<span class="nc" id="L206">        return data;</span>
+    }
+
+    private static void mergeNewData(
+            Map&lt;String, Set&lt;String&gt;&gt; current,
+            Map&lt;String, Set&lt;String&gt;&gt; toAdd
+    ) {
+
+<span class="nc bnc" id="L214" title="All 2 branches missed.">        for (Map.Entry&lt;String, Set&lt;String&gt;&gt; e : toAdd.entrySet()) {</span>
+<span class="nc" id="L215">            String key = e.getKey();</span>
+<span class="nc" id="L216">            Set&lt;String&gt; values = e.getValue();</span>
+
+<span class="nc" id="L218">            Set&lt;String&gt; existing = current.get(key);</span>
+
+<span class="nc bnc" id="L220" title="All 4 branches missed.">            if (existing != null &amp;&amp; existing.contains(&quot;*&quot;)) {</span>
+                //nothing to do
+<span class="nc" id="L222">                continue;</span>
+            }
+
+<span class="nc bnc" id="L225" title="All 2 branches missed.">            if (existing == null) {</span>
+<span class="nc" id="L226">                existing = new HashSet&lt;&gt;(values);</span>
+<span class="nc" id="L227">                current.put(key, existing);</span>
+            } else {
+<span class="nc" id="L229">                existing.addAll(values);</span>
+            }
+
+<span class="nc bnc" id="L232" title="All 4 branches missed.">            if (existing.size() &gt; 1 &amp;&amp; existing.contains(&quot;*&quot;)) {</span>
+                /*
+                    remove unnecessary columns, as anyway we take
+                    everything with *
+                 */
+<span class="nc" id="L237">                existing.clear();</span>
+<span class="nc" id="L238">                existing.add(&quot;*&quot;);</span>
+            }
+<span class="nc" id="L240">        }</span>
+<span class="nc" id="L241">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

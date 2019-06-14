@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>TrackerMethodVisitor.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation.tracker</a> &gt; <span class="el_source">TrackerMethodVisitor.java</span></div><h1>TrackerMethodVisitor.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation.tracker;
+
+import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.client.java.instrumentation.Constants;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+
+public class TrackerMethodVisitor extends MethodVisitor {
+
+    private final String className;
+    private final String methodName;
+    private final String descriptor;
+
+    public TrackerMethodVisitor(MethodVisitor mv,
+                                String className,
+                                String methodName,
+                                String descriptor) {
+<span class="nc" id="L18">        super(Constants.ASM, mv);</span>
+
+<span class="nc" id="L20">        this.className = className;</span>
+<span class="nc" id="L21">        this.methodName = methodName;</span>
+<span class="nc" id="L22">        this.descriptor = descriptor;</span>
+<span class="nc" id="L23">    }</span>
+
+    @Override
+    public void visitMethodInsn(int opcode, String owner, String name,
+                                String desc, boolean itf) {
+
+<span class="nc" id="L29">        addTrackerIfNeeded(owner, name, desc);</span>
+
+<span class="nc" id="L31">        super.visitMethodInsn(opcode, owner, name, desc, itf);</span>
+<span class="nc" id="L32">    }</span>
+
+
+    @Override
+    public void visitMaxs(int maxStack, int maxLocals) {
+
+        /*
+            When we want to check how a certain method is called,
+            we need to copy the values that are on the stack.
+
+            However, if the method takes at most 1 input, we could
+            just return it in our support methods, and so avoiding
+            duplicating the value on the stack.
+         */
+<span class="nc" id="L46">        int maxCopiedValues = 0;</span>
+
+<span class="nc" id="L48">        super.visitMaxs(maxStack + maxCopiedValues, maxLocals);</span>
+<span class="nc" id="L49">    }</span>
+
+    private void addTrackerIfNeeded(String owner, String name, String desc) {
+
+<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (owner.equals(&quot;org/springframework/web/context/request/WebRequest&quot;)) {</span>
+
+<span class="nc bnc" id="L55" title="All 4 branches missed.">            if ((name.equals(&quot;getParameter&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)Ljava/lang/String;&quot;))</span>
+                    ||
+<span class="nc bnc" id="L57" title="All 4 branches missed.">                    (name.equals(&quot;getParameterValues&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)[Ljava/lang/String;&quot;))) {</span>
+
+<span class="nc" id="L59">                mv.visitMethodInsn(</span>
+                        Opcodes.INVOKESTATIC,
+<span class="nc" id="L61">                        ClassName.get(Tracker.class).getBytecodeName(),</span>
+                        Tracker.TRACK_QUERY_PARAMETER_METHOD_NAME,
+                        Tracker.TRACK_QUERY_PARAMETER_DESCRIPTOR,
+<span class="nc" id="L64">                        Tracker.class.isInterface()); //false</span>
+
+<span class="nc bnc" id="L66" title="All 4 branches missed.">            } else if((name.equals(&quot;getHeader&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)Ljava/lang/String;&quot;))</span>
+                    ||
+<span class="nc bnc" id="L68" title="All 4 branches missed.">                    (name.equals(&quot;getHeaderValues&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)[Ljava/lang/String;&quot;))){</span>
+
+<span class="nc" id="L70">                mv.visitMethodInsn(</span>
+                        Opcodes.INVOKESTATIC,
+<span class="nc" id="L72">                        ClassName.get(Tracker.class).getBytecodeName(),</span>
+                        Tracker.TRACK_HEADER_METHOD_NAME,
+                        Tracker.TRACK_HEADER_DESCRIPTOR,
+<span class="nc" id="L75">                        Tracker.class.isInterface()); //false</span>
+            }
+        }
+
+<span class="nc" id="L79">    }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

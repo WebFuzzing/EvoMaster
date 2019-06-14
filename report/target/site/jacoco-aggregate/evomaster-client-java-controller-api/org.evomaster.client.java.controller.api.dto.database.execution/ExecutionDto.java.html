@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ExecutionDto.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller-api</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.api.dto.database.execution</a> &gt; <span class="el_source">ExecutionDto.java</span></div><h1>ExecutionDto.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.api.dto.database.execution;
+
+import java.util.*;
+
+
+/**
+ * Each time a SQL command is executed, we keep track of which tables
+ * and columns are involved.
+ *
+ * All the following Maps are in the form:
+ * from Table Name (key) to Column Name sets (value).
+ * The value &quot;*&quot; means all columns in the table.
+ *
+ * Note: we keep track of what the SUT tried to execute on the database, but
+ * not the result, eg, a DELETE might have deleted nothing if its WHERE
+ * clause was not satisfied.
+ */
+<span class="nc" id="L18">public class ExecutionDto {</span>
+
+    /**
+     * What was tried to be retrieved in a SELECT.
+     * Something like &quot;select x from Foo&quot; would give info on &quot;Foo-&gt;{x}&quot;.
+     *
+     * However, at times, what is returned is not directly the content of a column, but
+     * rather some computations on it.
+     * For example, in &quot;select avg(x) from Foo&quot;, we would still be just interested in
+     * the info that the data in &quot;Foo-&gt;{x}&quot; was used to compute the result.
+     *
+     * Note: this does NOT include what was used in the WHERE clauses.
+     * For example, &quot;select a,b from Foo where c&gt;0&quot; would give info just for &quot;Foo-&gt;{a,b}&quot;
+     */
+<span class="nc" id="L32">    public Map&lt;String, Set&lt;String&gt;&gt; queriedData = new HashMap&lt;&gt;();</span>
+
+
+    /**
+     * What tables/columns were tried to be updated in UPDATE
+     */
+<span class="nc" id="L38">    public Map&lt;String, Set&lt;String&gt;&gt; updatedData = new HashMap&lt;&gt;();</span>
+
+
+    /**
+     * What tables/columns were tried to be newly created with INSERT
+     */
+<span class="nc" id="L44">    public Map&lt;String, Set&lt;String&gt;&gt; insertedData = new HashMap&lt;&gt;();</span>
+
+
+    /**
+     * Names of tables on which DELETE was applied
+     */
+<span class="nc" id="L50">    public Set&lt;String&gt; deletedData = new HashSet&lt;&gt;();</span>
+
+
+    /**
+     * Every time there is a WHERE clause which &quot;failed&quot; (ie, resulted in false),
+     * we keep track of which tables/columns where involved in determining the
+     * result of the WHERE.
+     */
+<span class="nc" id="L58">    public Map&lt;String, Set&lt;String&gt;&gt; failedWhere = new HashMap&lt;&gt;();</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

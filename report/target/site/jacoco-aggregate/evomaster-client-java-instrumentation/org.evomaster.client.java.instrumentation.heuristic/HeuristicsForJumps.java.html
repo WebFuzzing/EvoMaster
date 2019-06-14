@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>HeuristicsForJumps.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation.heuristic</a> &gt; <span class="el_source">HeuristicsForJumps.java</span></div><h1>HeuristicsForJumps.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation.heuristic;
+
+import org.objectweb.asm.Opcodes;
+
+/**
+ * Class used to handle heuristics (eg kind of branch distance calculations)
+ * for bytecode jumps. This will depend on the jump code and the values read
+ * on the stack
+ */
+<span class="nc" id="L10">public class HeuristicsForJumps {</span>
+
+    /**
+     * This are values compared against 0, like {@code value &lt; 0}
+     *
+     * @return
+     */
+    public static Truthness getForSingleValueJump(int value, int opcode) {
+
+<span class="nc bnc" id="L19" title="All 7 branches missed.">        switch (opcode) {</span>
+            case Opcodes.IFEQ: // ie, val == 0
+<span class="nc" id="L21">                return getForValueComparison(value, 0, Opcodes.IF_ICMPEQ);</span>
+
+            case Opcodes.IFNE: // ie val != 0  -&gt;  ! (val == 0)
+<span class="nc" id="L24">                return getForSingleValueJump(value, Opcodes.IFEQ).invert();</span>
+
+            case Opcodes.IFLT: // ie, val &lt; 0
+<span class="nc" id="L27">                return getForValueComparison(value, 0, Opcodes.IF_ICMPLT);</span>
+
+            case Opcodes.IFGE: // ie, val &gt;= 0  -&gt; ! (val &lt; 0)
+<span class="nc" id="L30">                return getForSingleValueJump(value, Opcodes.IFLT).invert();</span>
+
+            case Opcodes.IFLE: // ie, val &lt;= 0  -&gt;  0 &gt;= val  -&gt; ! (0 &lt; val)
+<span class="nc" id="L33">                return getForValueComparison(0, value, Opcodes.IF_ICMPLT).invert();</span>
+
+            case Opcodes.IFGT: // ie, val &gt; 0  -&gt;  0 &lt; val
+<span class="nc" id="L36">                return getForValueComparison(0, value, Opcodes.IF_ICMPLT);</span>
+
+            default:
+<span class="nc" id="L39">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
+        }
+    }
+
+
+    public static Truthness getForValueComparison(int firstValue, int secondValue, int opcode) {
+
+<span class="nc" id="L46">        double a = firstValue;</span>
+<span class="nc" id="L47">        double b = secondValue;</span>
+
+<span class="nc bnc" id="L49" title="All 7 branches missed.">        switch (opcode) {</span>
+            case Opcodes.IF_ICMPEQ: // ie, a == b
+<span class="nc" id="L51">                return new Truthness(</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">                        1d - Truthness.normalizeValue(Math.abs(a - b)),</span>
+                        a != b ? 1d : 0d
+                );
+
+            case Opcodes.IF_ICMPNE: // ie, a != b
+<span class="nc" id="L57">                return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPEQ).invert();</span>
+
+            case Opcodes.IF_ICMPLT: // ie, a &lt; b
+<span class="nc bnc" id="L60" title="All 4 branches missed.">                return new Truthness(</span>
+                        a &lt; b ? 1d : 1d / (1.1d + a - b) ,
+                        a &gt;= b ? 1d : 1d / (1.1d + b - a)
+                );
+
+            case Opcodes.IF_ICMPGE: // ie, a &gt;= b  -&gt;  ! (a &lt; b)
+<span class="nc" id="L66">                return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPLT).invert();</span>
+
+            case Opcodes.IF_ICMPLE: // ie, a &lt;= b  -&gt;  b &gt;= a -&gt; ! (b &lt; a)
+<span class="nc" id="L69">                return getForValueComparison(secondValue, firstValue, Opcodes.IF_ICMPLT).invert();</span>
+
+            case Opcodes.IF_ICMPGT: // ie, a &gt; b  -&gt;  b &lt; a
+<span class="nc" id="L72">                return getForValueComparison(secondValue, firstValue, Opcodes.IF_ICMPLT);</span>
+
+            default:
+<span class="nc" id="L75">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
+        }
+    }
+
+
+    public static Truthness getForObjectComparison(Object first, Object second, int opcode) {
+
+<span class="nc bnc" id="L82" title="All 3 branches missed.">        switch (opcode) {</span>
+            case Opcodes.IF_ACMPEQ: // ie, a == b
+<span class="nc bnc" id="L84" title="All 4 branches missed.">                return new Truthness(</span>
+                        first == second ? 1d : 0d,
+                        first != second ? 1d : 0d
+                );
+
+            case Opcodes.IF_ACMPNE: // ie, a != b
+<span class="nc" id="L90">                return getForObjectComparison(first, second, Opcodes.IF_ACMPEQ).invert();</span>
+
+            default:
+<span class="nc" id="L93">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
+        }
+    }
+
+
+    public static Truthness getForNullComparison(Object obj, int opcode) {
+
+<span class="nc bnc" id="L100" title="All 3 branches missed.">        switch (opcode){</span>
+
+            case Opcodes.IFNULL: // ie, obj == null
+<span class="nc" id="L103">                return getForObjectComparison(obj, null, Opcodes.IF_ACMPEQ);</span>
+
+            case Opcodes.IFNONNULL: // ie, obj != null
+<span class="nc" id="L106">                return getForObjectComparison(obj, null, Opcodes.IF_ACMPNE);</span>
+
+            default:
+<span class="nc" id="L109">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
+        }
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

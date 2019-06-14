@@ -96,6 +96,9 @@ class ResourceDepManageService {
         }
     }
 
+    /**
+     * TODO remove dependencies based on feedback from evomaster driver
+     */
     private fun updateDependencyOnceResourceTableUpdate(addedMap: MutableMap<String, MutableSet<String>>, removedMap: MutableMap<String, MutableSet<String>>) {
 
         val groupTable = addedMap.flatMap { it.value }.toHashSet()
@@ -531,7 +534,7 @@ class ResourceDepManageService {
 
             ((locOfModified + 1) until seqCur.size).forEach { indexOfCalls ->
                 var isAnyChange = false
-                seqCur[indexOfCalls].actions.forEach { curAction ->
+                seqCur[indexOfCalls].actions.forEach {
                     val actionA = actionIndex - distance
                     isAnyChange = isAnyChange || compare(actionIndex, current, actionA, previous) != 0
                     actionIndex += 1
@@ -1124,7 +1127,7 @@ class ResourceDepManageService {
             db.table.foreignKeys.map { it.targetTable }.let { ftables ->
                 frontTables.filter { entry ->
                     entry.value.intersect(ftables).isNotEmpty()
-                }.forEach { t, u ->
+                }.forEach { t, _ ->
                     t.isDeletable = false
                     t.shouldBefore.add(call.getResourceNodeKey())
                 }

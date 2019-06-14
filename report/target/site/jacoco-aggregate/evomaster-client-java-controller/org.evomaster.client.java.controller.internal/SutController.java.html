@@ -1,0 +1,340 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>SutController.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.internal</a> &gt; <span class="el_source">SutController.java</span></div><h1>SutController.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.internal;
+
+import org.eclipse.jetty.server.AbstractNetworkConnector;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ErrorHandler;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.evomaster.client.java.controller.SutHandler;
+import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
+import org.evomaster.client.java.controller.internal.db.SqlHandler;
+import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.controller.api.ControllerConstants;
+import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto;
+import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
+import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.logging.LoggingFeature;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
+
+import java.net.InetSocketAddress;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
+
+/**
+ * Abstract class used to connect to the EvoMaster process, and
+ * that is responsible to start/stop/restart the tested application,
+ * ie the system under test (SUT)
+ */
+<span class="nc" id="L39">public abstract class SutController implements SutHandler {</span>
+
+<span class="nc" id="L41">    private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;</span>
+<span class="nc" id="L42">    private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;</span>
+
+<span class="nc" id="L44">    private final SqlHandler sqlHandler = new SqlHandler();</span>
+
+    private Server controllerServer;
+
+    /**
+     * If using a SQL Database, gather info about its schema
+     */
+    private DbSchemaDto schemaDto;
+
+    /**
+     * For each action in a test, keep track of the extra heuristics, if any
+     */
+<span class="nc" id="L56">    private final List&lt;ExtraHeuristicDto&gt; extras = new CopyOnWriteArrayList&lt;&gt;();</span>
+
+<span class="nc" id="L58">    private int actionIndex = -1;</span>
+
+    /**
+     * Start the controller as a RESTful server.
+     * Use the setters of this class to change the default
+     * port and host.
+     * &lt;br&gt;
+     * This method is blocking until the server is initialized.
+     */
+    public final boolean startTheControllerServer() {
+
+        //Jersey
+<span class="nc" id="L70">        ResourceConfig config = new ResourceConfig();</span>
+<span class="nc" id="L71">        config.register(JacksonFeature.class);</span>
+<span class="nc" id="L72">        config.register(new EMController(this));</span>
+<span class="nc" id="L73">        config.register(LoggingFeature.class);</span>
+
+        //Jetty
+<span class="nc" id="L76">        controllerServer = new Server(InetSocketAddress.createUnresolved(</span>
+<span class="nc" id="L77">                getControllerHost(), getControllerPort()));</span>
+
+<span class="nc" id="L79">        ErrorHandler errorHandler = new ErrorHandler();</span>
+<span class="nc" id="L80">        errorHandler.setShowStacks(true);</span>
+<span class="nc" id="L81">        controllerServer.setErrorHandler(errorHandler);</span>
+
+<span class="nc" id="L83">        ServletHolder servlet = new ServletHolder(new ServletContainer(config));</span>
+
+<span class="nc" id="L85">        ServletContextHandler context = new ServletContextHandler(controllerServer,</span>
+                ControllerConstants.BASE_PATH + &quot;/*&quot;);
+<span class="nc" id="L87">        context.addServlet(servlet, &quot;/*&quot;);</span>
+
+
+        try {
+<span class="nc" id="L91">            controllerServer.start();</span>
+<span class="nc" id="L92">        } catch (Exception e) {</span>
+<span class="nc" id="L93">            SimpleLogger.error(&quot;Failed to start Jetty: &quot; + e.getMessage());</span>
+<span class="nc" id="L94">            controllerServer.destroy();</span>
+<span class="nc" id="L95">        }</span>
+
+        //just make sure we start from a clean state
+<span class="nc" id="L98">        newSearch();</span>
+
+<span class="nc" id="L100">        SimpleLogger.info(&quot;Started controller server on: &quot; + controllerServer.getURI());</span>
+
+<span class="nc" id="L102">        return true;</span>
+    }
+
+    public final boolean stopTheControllerServer() {
+        try {
+<span class="nc" id="L107">            controllerServer.stop();</span>
+<span class="nc" id="L108">            return true;</span>
+<span class="nc" id="L109">        } catch (Exception e) {</span>
+<span class="nc" id="L110">            SimpleLogger.error(e.toString());</span>
+<span class="nc" id="L111">            return false;</span>
+        }
+    }
+
+    /**
+     * @return the actual port in use (eg, if it was an ephemeral 0)
+     */
+    public final int getControllerServerPort() {
+<span class="nc" id="L119">        return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();</span>
+    }
+
+
+    public final int getControllerPort() {
+<span class="nc" id="L124">        return controllerPort;</span>
+    }
+
+    public final void setControllerPort(int controllerPort) {
+<span class="nc" id="L128">        this.controllerPort = controllerPort;</span>
+<span class="nc" id="L129">    }</span>
+
+    public final String getControllerHost() {
+<span class="nc" id="L132">        return controllerHost;</span>
+    }
+
+    public final void setControllerHost(String controllerHost) {
+<span class="nc" id="L136">        this.controllerHost = controllerHost;</span>
+<span class="nc" id="L137">    }</span>
+
+    @Override
+    public void execInsertionsIntoDatabase(List&lt;InsertionDto&gt; insertions){
+
+<span class="nc" id="L142">        Connection connection = getConnection();</span>
+<span class="nc bnc" id="L143" title="All 2 branches missed.">        if(connection == null){</span>
+<span class="nc" id="L144">            throw new IllegalStateException(&quot;No connection to database&quot;);</span>
+        }
+
+        try {
+<span class="nc" id="L148">            SqlScriptRunner.execInsert(connection, insertions);</span>
+<span class="nc" id="L149">        } catch (SQLException e) {</span>
+<span class="nc" id="L150">            throw new RuntimeException(e);</span>
+<span class="nc" id="L151">        }</span>
+<span class="nc" id="L152">    }</span>
+
+
+    /**
+     * Calculate heuristics based on intercepted SQL commands
+     * @param sql
+     */
+    public final void handleSql(String sql){
+<span class="nc" id="L160">        Objects.requireNonNull(sql);</span>
+
+<span class="nc" id="L162">        sqlHandler.handle(sql);</span>
+<span class="nc" id="L163">    }</span>
+
+    /**
+     * This is needed only during test generation (not execution),
+     * and it is automatically called by the EM controller after
+     * the SUT is started.
+     */
+    public final void initSqlHandler(){
+<span class="nc" id="L171">        sqlHandler.setConnection(getConnection());</span>
+<span class="nc" id="L172">    }</span>
+
+    public final void resetExtraHeuristics(){
+<span class="nc" id="L175">        sqlHandler.reset();</span>
+<span class="nc" id="L176">    }</span>
+
+    public final List&lt;ExtraHeuristicDto&gt; getExtraHeuristics(){
+
+<span class="nc bnc" id="L180" title="All 2 branches missed.">        if(extras.size() == actionIndex ) {</span>
+<span class="nc" id="L181">            extras.add(computeExtraHeuristics());</span>
+        }
+
+<span class="nc" id="L184">        return new ArrayList&lt;&gt;(extras);</span>
+    }
+
+    public final ExtraHeuristicDto computeExtraHeuristics(){
+
+<span class="nc" id="L189">        ExtraHeuristicDto dto = new ExtraHeuristicDto();</span>
+<span class="nc" id="L190">        dto.toMinimize.addAll(sqlHandler.getDistances());</span>
+        //TODO toMaximize
+
+<span class="nc" id="L193">        ExecutionDto executionDto = sqlHandler.getExecutionDto();</span>
+<span class="nc" id="L194">        dto.databaseExecutionDto = executionDto;</span>
+
+<span class="nc" id="L196">        return dto;</span>
+    }
+
+
+    /**
+     * Extra information about the SQL Database Schema, if any is present.
+     * Note: this is extracted by querying the database itself.
+     * So it must be up and running.
+     *
+     * @see SutController#getConnection
+     */
+    public final DbSchemaDto getSqlDatabaseSchema(){
+<span class="nc bnc" id="L208" title="All 2 branches missed.">        if(schemaDto != null){</span>
+<span class="nc" id="L209">            return schemaDto;</span>
+        }
+
+<span class="nc bnc" id="L212" title="All 2 branches missed.">        if(getConnection() == null){</span>
+<span class="nc" id="L213">            return null;</span>
+        }
+
+        try {
+<span class="nc" id="L217">            schemaDto = SchemaExtractor.extract(getConnection());</span>
+<span class="nc" id="L218">        } catch (Exception e) {</span>
+<span class="nc" id="L219">            SimpleLogger.error(&quot;Failed to extract the SQL Database Schema: &quot; + e.getMessage());</span>
+<span class="nc" id="L220">            return null;</span>
+<span class="nc" id="L221">        }</span>
+
+<span class="nc" id="L223">        return schemaDto;</span>
+    }
+
+
+    /**
+     * Re-initialize all internal data to enable a completely new search phase
+     * which should be independent from previous ones
+     */
+    public abstract void newSearch();
+
+    /**
+     * Re-initialize some internal data needed before running a new test
+     */
+    public final void newTest(){
+
+<span class="nc" id="L238">        actionIndex = -1;</span>
+<span class="nc" id="L239">        resetExtraHeuristics();</span>
+<span class="nc" id="L240">        extras.clear();</span>
+
+<span class="nc" id="L242">        newTestSpecificHandler();</span>
+<span class="nc" id="L243">    }</span>
+
+    /**
+     * As some heuristics are based on which action (eg HTTP call, or click of button)
+     * in the test sequence is executed, and their order, we need to keep track of which
+     * action does cover what.
+     */
+    public final void newAction(int actionIndex){
+
+<span class="nc bnc" id="L252" title="All 2 branches missed.">        if(actionIndex &gt; extras.size()){</span>
+<span class="nc" id="L253">            extras.add(computeExtraHeuristics());</span>
+        }
+<span class="nc" id="L255">        this.actionIndex = actionIndex;</span>
+
+<span class="nc" id="L257">        resetExtraHeuristics();</span>
+
+<span class="nc" id="L259">        newActionSpecificHandler(actionIndex);</span>
+<span class="nc" id="L260">    }</span>
+
+
+    public abstract void newTestSpecificHandler();
+
+    public abstract void newActionSpecificHandler(int actionIndex);
+
+
+    /**
+     * Check if bytecode instrumentation is on.
+     *
+     * @return
+     */
+    public abstract boolean isInstrumentationActivated();
+
+    /**
+     * Check if the system under test (SUT) is running and fully initialized
+     * @return
+     */
+    public abstract boolean isSutRunning();
+
+
+    /**
+     * a &quot;,&quot; separated list of package prefixes or class names.
+     * For example, &quot;com.foo.,com.bar.Bar&quot;.
+     * Note: be careful of using something as general as &quot;com.&quot;
+     * or &quot;org.&quot;, as most likely ALL your third-party libraries
+     * would be instrumented as well, which could have a severe
+     * impact on performance
+     *
+     * @return
+     */
+    public abstract String getPackagePrefixesToCover();
+
+    /**
+     * Provide a list of valid authentication credentials, or {@code null} if
+     * none is necessary
+     *
+     * @return
+     */
+    public abstract List&lt;AuthenticationDto&gt; getInfoForAuthentication();
+
+    /**
+     * If the system under test (SUT) uses a SQL database, we need to have a
+     * configured connection to access it.
+     *
+     * @return {@code null} if the SUT does not use any SQL database
+     */
+    public abstract Connection getConnection();
+
+    /**
+     * If the system under test (SUT) uses a SQL database, we need to specify
+     * the driver used to connect, eg. {@code org.h2.Driver}.
+     * This is needed for when we intercept SQL commands with P6Spy
+     *
+     * @return {@code null} if the SUT does not use any SQL database
+     */
+    public abstract String getDatabaseDriverName();
+
+    public abstract List&lt;TargetInfo&gt; getTargetInfos(Collection&lt;Integer&gt; ids);
+
+    /**
+     * Get additional info for each action in the test.
+     * The list is ordered based on the action index.
+     */
+    public abstract List&lt;AdditionalInfo&gt; getAdditionalInfoList();
+
+    /**
+     * Depending of which kind of SUT we are dealing with (eg, REST, GraphQL or SPA frontend),
+     * there is different info that must be provided
+     *
+     * @return an instance of object with all the needed data for the specific addressed problem
+     */
+    public abstract ProblemInfo getProblemInfo();
+
+    /**
+     * Specify the format in which the test cases should be generated
+     */
+    public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

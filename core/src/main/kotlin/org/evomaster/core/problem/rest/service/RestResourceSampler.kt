@@ -81,7 +81,7 @@ class RestResourceSampler : Sampler<RestIndividual>() {
         }
 
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf(), doParserDescription = config.doesApplyTokenParser)
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf(), doParserDescription = config.doesApplyNameMatching)
 
         setupAuthentication(infoDto)
 
@@ -212,7 +212,7 @@ class RestResourceSampler : Sampler<RestIndividual>() {
 
     private fun sampleRandomResourceAction(noAuthP: Double, left: Int) : RestResourceCalls{
         val r = randomness.choose(rm.getResourceCluster().filter { it.value.isAnyAction() })
-        val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness, left) else r.randomRestResourceCalls(randomness,left)
+        val rc = if (randomness.nextBoolean()) r.sampleOneAction(null, randomness) else r.randomRestResourceCalls(randomness,left)
         rc.actions.forEach {
             if(it is RestCallAction){
                 it.auth = getRandomAuth(noAuthP)

@@ -7,6 +7,9 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 
+/**
+ * process inference regarding resource, which can be extended for the different inference technique
+ */
 interface DeriveResourceBinding {
 
     fun deriveResourceToTable(resourceCluster: MutableList<RestResourceNode>, allTables : Map<String, Table>)

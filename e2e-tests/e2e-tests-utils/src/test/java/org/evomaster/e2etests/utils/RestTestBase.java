@@ -229,7 +229,7 @@ public abstract class RestTestBase {
                                     String path,
                                     String inResponse) {
 
-        List<Action> actions = ind.getIndividual().seeActions();
+        List<RestAction> actions = ind.getIndividual().seeActions();
 
         for (int i = 0; i < actions.size(); i++) {
 

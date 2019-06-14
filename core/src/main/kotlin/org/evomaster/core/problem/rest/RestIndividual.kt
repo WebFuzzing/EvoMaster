@@ -76,7 +76,7 @@ class RestIndividual (
 
     override fun size() = seeActions().size
 
-    override fun seeActions(): List<out Action> = resourceCalls.flatMap { it.actions }
+    override fun seeActions(): List<RestAction> = resourceCalls.flatMap { it.actions }
 
     override fun seeInitializingActions(): List<Action> {
         return dbInitialization

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>TargetInfoDto.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller-api</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.api.dto</a> &gt; <span class="el_source">TargetInfoDto.java</span></div><h1>TargetInfoDto.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.api.dto;
+
+<span class="nc" id="L3">public class TargetInfoDto {</span>
+
+    /**
+     * The id of the target
+     */
+    public Integer id;
+
+    /**
+     * A unique id for the target that is also descriptive for it.
+     * Note: this string will usually be much longer than the numeric id.
+     *
+     * This field is optional: usually sent only the first time the target
+     * has been encountered, and will be mainly used for debugging reasons
+     */
+    public String descriptiveId;
+
+    /**
+     * The fitness value for this target, in [0,1], where 1 means covered
+     */
+    public Double value;
+
+    /**
+     * An id identify the action that led to this fitness score for this
+     * testing target.
+     * For example, it can be the index in the list representation of
+     * the test case.
+     * Can be negative if target was never reached.
+     * But this means that {@code value} must be 0
+     */
+    public Integer actionIndex;
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

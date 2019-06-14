@@ -83,13 +83,11 @@ class RestResourceCalls(
     }
 
     private fun repairGenePerAction(gene: Gene, action : RestAction){
-        if(gene != null){
-            val genes = action.seeGenes().flatMap { g->g.flatView() }
-            if(genes.contains(gene))
-                genes.filter { ig-> ig != gene && ig.name == gene.name && ig::class.java.simpleName == gene::class.java.simpleName }.forEach {cg->
-                    cg.copyValueFrom(gene)
-                }
-        }
+        val genes = action.seeGenes().flatMap { g->g.flatView() }
+        if(genes.contains(gene))
+            genes.filter { ig-> ig != gene && ig.name == gene.name && ig::class.java.simpleName == gene::class.java.simpleName }.forEach {cg->
+                cg.copyValueFrom(gene)
+            }
     }
 
     fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")

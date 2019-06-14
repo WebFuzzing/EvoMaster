@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>AuthWebSecurityConfig.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-e2e-tests-spring-examples</a> &gt; <a href="index.source.html" class="el_package">com.foo.rest.examples.spring.db.auth</a> &gt; <span class="el_source">AuthWebSecurityConfig.java</span></div><h1>AuthWebSecurityConfig.java</h1><pre class="source lang-java linenums">package com.foo.rest.examples.spring.db.auth;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+
+@Configuration
+@EnableWebSecurity
+<span class="nc" id="L16">public class AuthWebSecurityConfig extends WebSecurityConfigurerAdapter {</span>
+
+    @Autowired
+    private AuthUserService userDetailsService;
+
+    @Override
+    protected void configure(HttpSecurity http) throws Exception {
+<span class="nc" id="L23">        http.csrf().disable()</span>
+<span class="nc" id="L24">                .authorizeRequests()</span>
+<span class="nc" id="L25">                .antMatchers(&quot;/api/db/auth/projects&quot;).authenticated()</span>
+<span class="nc" id="L26">                .antMatchers(&quot;/**&quot;).permitAll()</span>
+<span class="nc" id="L27">                .and()</span>
+<span class="nc" id="L28">                .httpBasic();</span>
+<span class="nc" id="L29">    }</span>
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+<span class="nc" id="L33">        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();</span>
+<span class="nc" id="L34">        authenticationProvider.setUserDetailsService(userDetailsService);</span>
+<span class="nc" id="L35">        authenticationProvider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());</span>
+<span class="nc" id="L36">        return authenticationProvider;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

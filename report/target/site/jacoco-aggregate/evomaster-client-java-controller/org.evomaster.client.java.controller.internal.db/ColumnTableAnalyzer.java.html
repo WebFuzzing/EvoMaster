@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>ColumnTableAnalyzer.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.internal.db</a> &gt; <span class="el_source">ColumnTableAnalyzer.java</span></div><h1>ColumnTableAnalyzer.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.internal.db;
+
+import net.sf.jsqlparser.schema.Table;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.insert.Insert;
+import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.statement.update.Update;
+
+import java.util.*;
+
+/**
+ * Created by arcuri82 on 24-Apr-19.
+ */
+<span class="nc" id="L14">public class ColumnTableAnalyzer {</span>
+
+
+    /*
+        TODO code in this class is incomplete. For the moment, we just extract
+        the name of the tables involved, and not full column info.
+     */
+
+    public static Set&lt;String&gt; getDeletedTables(String delete){
+
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if(! ParserUtils.isDelete(delete)){</span>
+<span class="nc" id="L25">            throw new IllegalArgumentException(&quot;Input string is not a valid SQL DELETE: &quot; + delete);</span>
+        }
+
+<span class="nc" id="L28">        Set&lt;String&gt; set = new HashSet&lt;&gt;();</span>
+<span class="nc" id="L29">        Delete stmt = (Delete) ParserUtils.asStatement(delete);</span>
+
+<span class="nc" id="L31">        Table table = stmt.getTable();</span>
+<span class="nc bnc" id="L32" title="All 2 branches missed.">        if(table != null){</span>
+<span class="nc" id="L33">            set.add(table.getName());</span>
+        } else {
+            //TODO need to handle special cases of multi-tables with JOINs
+<span class="nc" id="L36">            throw new IllegalArgumentException(&quot;Cannot handle: &quot; + delete);</span>
+        }
+
+<span class="nc" id="L39">        return set;</span>
+    }
+
+
+    public static Map&lt;String, Set&lt;String&gt;&gt; getInsertedDataFields(String insert){
+
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        if(! ParserUtils.isInsert(insert)){</span>
+<span class="nc" id="L46">            throw new IllegalArgumentException(&quot;Input string is not a valid SQL INSERT: &quot; + insert);</span>
+        }
+
+<span class="nc" id="L49">        Map&lt;String, Set&lt;String&gt;&gt; map = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L51">        Insert stmt = (Insert) ParserUtils.asStatement(insert);</span>
+
+<span class="nc" id="L53">        Table table = stmt.getTable();</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">        if(table != null){</span>
+<span class="nc" id="L55">            handleTable(map, table);</span>
+        } else {
+            //TODO all other cases
+<span class="nc" id="L58">            throw new IllegalArgumentException(&quot;Cannot handle: &quot; + insert);</span>
+        }
+
+<span class="nc" id="L61">        return map;</span>
+    }
+
+
+    public static Map&lt;String, Set&lt;String&gt;&gt; getUpdatedDataFields(String update){
+
+<span class="nc bnc" id="L67" title="All 2 branches missed.">        if(! ParserUtils.isUpdate(update)){</span>
+<span class="nc" id="L68">            throw new IllegalArgumentException(&quot;Input string is not a valid SQL INSERT: &quot; + update);</span>
+        }
+
+<span class="nc" id="L71">        Map&lt;String, Set&lt;String&gt;&gt; map = new HashMap&lt;&gt;();</span>
+
+<span class="nc" id="L73">        Update stmt = (Update) ParserUtils.asStatement(update);</span>
+
+<span class="nc" id="L75">        List&lt;Table&gt; tables = stmt.getTables();</span>
+<span class="nc bnc" id="L76" title="All 4 branches missed.">        if(tables!=null &amp;&amp; !tables.isEmpty()){</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">            for(Table t: tables){</span>
+<span class="nc" id="L78">                handleTable(map, t);</span>
+<span class="nc" id="L79">            }</span>
+        } else {
+            //TODO all other cases
+<span class="nc" id="L82">            throw new IllegalArgumentException(&quot;Cannot handle: &quot; + update);</span>
+        }
+
+<span class="nc" id="L85">        return map;</span>
+    }
+
+
+    /**
+     * Given a SELECT, check what it returns is based on (columns and tables).
+     * Something like &quot;select x from Foo&quot; would give info on &quot;Foo-&gt;{x}&quot;.
+     * However, at times, what is returned is not directly the content of a column, but
+     * rather some computations on it.
+     * For example, in &quot;select avg(x) from Foo&quot;, we would still be just interested in
+     * the info that the data in &quot;Foo-&gt;{x}&quot; was used to compute the result.
+     */
+    public static Map&lt;String, Set&lt;String&gt;&gt; getSelectReadDataFields(String select){
+
+<span class="nc bnc" id="L99" title="All 2 branches missed.">        if(! ParserUtils.isSelect(select)){</span>
+<span class="nc" id="L100">            throw new IllegalArgumentException(&quot;Input string is not a valid SQL SELECT: &quot; + select);</span>
+        }
+
+<span class="nc" id="L103">        Map&lt;String, Set&lt;String&gt;&gt; map = new HashMap&lt;&gt;();</span>
+
+        /*
+            TODO: for now, we just use * for all read Tables.
+            But, we should look at actual read columns.
+         */
+
+<span class="nc" id="L110">        Select stmt = (Select) ParserUtils.asStatement(select);</span>
+<span class="nc" id="L111">        SelectBody selectBody = stmt.getSelectBody();</span>
+
+<span class="nc bnc" id="L113" title="All 2 branches missed.">        if (selectBody instanceof PlainSelect) {</span>
+
+<span class="nc" id="L115">            PlainSelect plainSelect = (PlainSelect) selectBody;</span>
+
+<span class="nc" id="L117">            FromItem fromItem = plainSelect.getFromItem();</span>
+<span class="nc bnc" id="L118" title="All 2 branches missed.">            if(fromItem == null){</span>
+                //is this even possible? ie, a SELECT without FROM
+<span class="nc" id="L120">                return map;</span>
+            }
+
+<span class="nc" id="L123">            extractUsedColumnsAndTables(map, fromItem);</span>
+
+<span class="nc" id="L125">            List&lt;Join&gt; joins = plainSelect.getJoins();</span>
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if(joins != null) {</span>
+<span class="nc bnc" id="L127" title="All 2 branches missed.">                for (Join join : joins) {</span>
+<span class="nc" id="L128">                    FromItem rightItem = join.getRightItem();</span>
+<span class="nc" id="L129">                    extractUsedColumnsAndTables(map, rightItem);</span>
+<span class="nc" id="L130">                }</span>
+            }
+<span class="nc" id="L132">        } else {</span>
+<span class="nc" id="L133">            throw new IllegalArgumentException(&quot;Cannot handle: &quot; + select);</span>
+        }
+
+<span class="nc" id="L136">        return map;</span>
+    }
+
+    private static void handleTable(Map&lt;String, Set&lt;String&gt;&gt; map, Table table){
+<span class="nc" id="L140">        Set&lt;String&gt; columns = map.computeIfAbsent(table.getName(), k -&gt; new HashSet&lt;&gt;());</span>
+        //TODO: should check actual fields... would likely need to pass SelectBody as input as well
+<span class="nc bnc" id="L142" title="All 2 branches missed.">        if(! columns.contains(&quot;*&quot;)) {</span>
+<span class="nc" id="L143">            columns.add(&quot;*&quot;);</span>
+        }
+<span class="nc" id="L145">    }</span>
+
+    private static void extractUsedColumnsAndTables(Map&lt;String, Set&lt;String&gt;&gt; map, FromItem fromItem) {
+<span class="nc bnc" id="L148" title="All 2 branches missed.">        if(fromItem instanceof Table){</span>
+<span class="nc" id="L149">            Table table = (Table) fromItem;</span>
+<span class="nc" id="L150">            handleTable(map, table);</span>
+<span class="nc" id="L151">        } else {</span>
+            // TODO handle other cases, eg sub-selects
+<span class="nc" id="L153">            throw new IllegalArgumentException(&quot;Cannot handle: &quot; + fromItem.toString());</span>
+        }
+<span class="nc" id="L155">    }</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

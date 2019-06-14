@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>StringTransformer.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation.testability</a> &gt; <span class="el_source">StringTransformer.java</span></div><h1>StringTransformer.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation.testability;
+
+import java.util.Objects;
+
+/**
+ * Class used to replace calls to String methods.
+ * For example, String#equals does return a boolean, which would
+ * just give a flat plateau in the fitness landscape.
+ */
+<span class="nc bnc" id="L10" title="All 2 branches missed.">public class StringTransformer extends BooleanMethodTransformer {</span>
+
+    public StringTransformer() {
+<span class="nc" id="L13">        super(String.class);</span>
+<span class="nc" id="L14">    }</span>
+
+    //TODO could collect constants here for seeding
+
+    @BooleanReplacement
+    public static int equals(String caller, Object anObject) {
+<span class="nc" id="L20">        Objects.requireNonNull(caller);</span>
+
+<span class="nc bnc" id="L22" title="All 4 branches missed.">        if (anObject == null || !(anObject instanceof String)) {</span>
+            //worst possible case
+<span class="nc" id="L24">            return BooleanReplacement.FALSE_MIN;</span>
+        }
+
+<span class="nc bnc" id="L27" title="All 2 branches missed.">        if (caller.equals(anObject)) {</span>
+<span class="nc" id="L28">            return BooleanReplacement.TRUE_MAX;</span>
+        }
+
+<span class="nc" id="L31">        long distance = getLeftAlignmentDistance(caller, anObject.toString());</span>
+        /*
+            must truncate if far too large distance, which cannot handle with ints.
+            however, this should never happen unless very large strings,
+            ie &gt; 2^15 ~ 32k, ie 2^31 (max int) / 2^16 (max char)
+
+            as not equal, returned value MUST be negative
+        */
+<span class="nc" id="L39">        return truncate(-distance);</span>
+    }
+
+    @BooleanReplacement
+    public static int equalsIgnoreCase(String caller, String anotherString) {
+<span class="nc" id="L44">        Objects.requireNonNull(caller);</span>
+
+<span class="nc bnc" id="L46" title="All 2 branches missed.">        if (anotherString == null) {</span>
+<span class="nc" id="L47">            return BooleanReplacement.FALSE_MIN;</span>
+        }
+
+<span class="nc bnc" id="L50" title="All 2 branches missed.">        if (caller.equalsIgnoreCase(anotherString)) {</span>
+<span class="nc" id="L51">            return BooleanReplacement.TRUE_MAX;</span>
+        }
+
+<span class="nc" id="L54">        return equals(caller.toLowerCase(), anotherString.toLowerCase());</span>
+    }
+
+    @BooleanReplacement
+    public static int startsWith(String caller, String prefix, int toffset) {
+<span class="nc" id="L59">        Objects.requireNonNull(caller);</span>
+<span class="nc" id="L60">        Objects.requireNonNull(prefix);</span>
+
+<span class="nc" id="L62">        int pl = prefix.length();</span>
+
+        /*
+            The penalty when there is a mismatch of lengths/offset
+            should be at least pl, as should be always worse than
+            when doing &quot;equals&quot; comparisons.
+            Furthermore, need to add extra penalty in case string is
+            shorter than prefix
+         */
+<span class="nc" id="L71">        int penalty = pl;</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">        if(caller.length() &lt; pl){</span>
+<span class="nc" id="L73">            penalty += (pl - caller.length());</span>
+        }
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if (toffset &lt; 0) {</span>
+<span class="nc" id="L77">            long dist = (-toffset + penalty) * Character.MAX_VALUE;</span>
+<span class="nc" id="L78">            return truncate(-dist);</span>
+        }
+
+<span class="nc bnc" id="L81" title="All 2 branches missed.">        if (toffset &gt; caller.length() - pl) {</span>
+<span class="nc bnc" id="L82" title="All 4 branches missed.">            assert toffset &gt;= 0;</span>
+<span class="nc" id="L83">            long dist = (toffset + penalty) * Character.MAX_VALUE;</span>
+<span class="nc" id="L84">            return truncate(-dist);</span>
+        }
+
+<span class="nc" id="L87">        int len = Math.min(prefix.length(), caller.length());</span>
+<span class="nc" id="L88">        String sub = caller.substring(toffset, Math.min(toffset + len, caller.length()));</span>
+
+<span class="nc" id="L90">        return equals(sub, prefix);</span>
+    }
+
+    @BooleanReplacement
+    public static int startsWith(String caller, String prefix) {
+<span class="nc" id="L95">        return startsWith(caller, prefix, 0);</span>
+    }
+
+    @BooleanReplacement
+    public static int endsWith(String caller, String suffix) {
+<span class="nc" id="L100">        return startsWith(caller, suffix, caller.length() - suffix.length());</span>
+    }
+
+    @BooleanReplacement
+    public static int isEmpty(String caller) {
+<span class="nc" id="L105">        Objects.requireNonNull(caller);</span>
+
+<span class="nc" id="L107">        int len = caller.length();</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if (len == 0) {</span>
+<span class="nc" id="L109">            return BooleanReplacement.TRUE_MAX;</span>
+        } else {
+<span class="nc" id="L111">            return -len;</span>
+        }
+    }
+
+    @BooleanReplacement
+    public static int contentEquals(String caller, CharSequence cs) {
+<span class="nc" id="L117">        return equals(caller, cs.toString());</span>
+    }
+
+    @BooleanReplacement
+    public static int contentEquals(String caller, StringBuffer sb) {
+<span class="nc" id="L122">        return equals(caller, sb.toString());</span>
+    }
+
+    @BooleanReplacement
+    public static int contains(String caller, CharSequence s) {
+<span class="nc" id="L127">        Objects.requireNonNull(caller);</span>
+<span class="nc" id="L128">        Objects.requireNonNull(s);</span>
+
+<span class="nc bnc" id="L130" title="All 2 branches missed.">        if (caller.contains(s)) {</span>
+<span class="nc" id="L131">            return BooleanReplacement.TRUE_MAX;</span>
+        }
+
+<span class="nc" id="L134">        String k = s.toString();</span>
+<span class="nc bnc" id="L135" title="All 2 branches missed.">        if (caller.length() &lt;= k.length()) {</span>
+<span class="nc" id="L136">            return equals(caller, k);</span>
+        }
+
+<span class="nc bnc" id="L139" title="All 4 branches missed.">        assert caller.length() &gt; k.length();</span>
+<span class="nc" id="L140">        int best = BooleanReplacement.FALSE_MIN;</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        for (int i = 0; i &lt; (caller.length() - k.length()) + 1; i++) {</span>
+<span class="nc" id="L142">            String sub = caller.substring(i, i + k.length());</span>
+<span class="nc" id="L143">            int h = equals(sub, k);</span>
+<span class="nc bnc" id="L144" title="All 2 branches missed.">            if (h &gt; best) {</span>
+<span class="nc" id="L145">                best = h;</span>
+            }
+        }
+<span class="nc" id="L148">        return best;</span>
+    }
+
+    /*
+        TODO:
+        public boolean regionMatches(int toffset, String other, int ooffset, int len)
+        public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len)
+        public boolean matches(String regex)
+     */
+
+    private static int truncate(long value) {
+<span class="nc bnc" id="L159" title="All 2 branches missed.">        if (value &gt; BooleanReplacement.TRUE_MAX) {</span>
+<span class="nc" id="L160">            return BooleanReplacement.TRUE_MAX;</span>
+        }
+<span class="nc bnc" id="L162" title="All 2 branches missed.">        if (value &lt; BooleanReplacement.FALSE_MIN) {</span>
+<span class="nc" id="L163">            return BooleanReplacement.FALSE_MIN;</span>
+        }
+<span class="nc" id="L165">        return (int) value;</span>
+    }
+
+    public static long getLeftAlignmentDistance(String a, String b) {
+
+<span class="nc" id="L170">        long diff = Math.abs(a.length() - b.length());</span>
+<span class="nc" id="L171">        long dist = diff * Character.MAX_VALUE;</span>
+
+<span class="nc bnc" id="L173" title="All 2 branches missed.">        for (int i = 0; i &lt; Math.min(a.length(), b.length()); i++) {</span>
+<span class="nc" id="L174">            dist += Math.abs(a.charAt(i) - b.charAt(i));</span>
+        }
+
+<span class="nc bnc" id="L177" title="All 4 branches missed.">        assert dist &gt;= 0;</span>
+<span class="nc" id="L178">        return dist;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

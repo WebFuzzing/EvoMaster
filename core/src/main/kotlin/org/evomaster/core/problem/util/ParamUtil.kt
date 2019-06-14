@@ -91,12 +91,17 @@ class ParamUtil {
             }
         }
 
+        /**
+         * TODO
+         */
         private fun bindHeaderParam(p : HeaderParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
             params.find { it is HeaderParam && p.name == it.name}?.apply {
                 p.gene.copyValueFrom(this.gene)
             }
         }
-
+        /**
+         * TODO
+         */
         private fun bindFormParam(p : FormParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
             params.find { it is FormParam && p.name == it.name}?.apply {
                 p.gene.copyValueFrom(this.gene)

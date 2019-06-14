@@ -16,7 +16,9 @@ import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.gene.ObjectGene
 import kotlin.math.max
 
-
+/**
+ * process inference related to resource
+ */
 class SimpleDeriveResourceBinding : DeriveResourceBinding{
 
     /*************************** resource to table and param to table *****************************/

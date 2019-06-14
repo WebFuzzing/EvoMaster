@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>WrappedResponseDto.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller-api</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.api.dto</a> &gt; <span class="el_source">WrappedResponseDto.java</span></div><h1>WrappedResponseDto.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.api.dto;
+
+import java.util.Objects;
+
+/**
+ * In REST, when we have an error, at most we would see a HTTP
+ * status code.
+ * But it can be very useful to get an actual description of the error.
+ * So, it is a common practice to have &quot;Wrapped Responses&quot;, which can
+ * contain the error message (if any)
+ *
+ * Created by arcuri82 on 05-Nov-18.
+ */
+<span class="nc" id="L14">public class WrappedResponseDto&lt;T&gt; {</span>
+
+    /**
+     * The actual payload we are sending and are &quot;wrapping&quot; here
+     */
+    public T data;
+
+    /**
+     * A message describing the error, if any.
+     * If this is not null, then &quot;data&quot; must be null.
+     */
+    public String error;
+
+    public static &lt;K&gt; WrappedResponseDto&lt;K&gt; withData(K data){
+<span class="nc" id="L28">        WrappedResponseDto&lt;K&gt; dto = new WrappedResponseDto&lt;&gt;();</span>
+<span class="nc" id="L29">        dto.data = data;</span>
+<span class="nc" id="L30">        return dto;</span>
+    }
+
+    public static WrappedResponseDto&lt;?&gt; withNoData(){
+<span class="nc" id="L34">        return new WrappedResponseDto&lt;&gt;();</span>
+    }
+
+    public static WrappedResponseDto&lt;?&gt; withError(String error){
+<span class="nc" id="L38">        Objects.requireNonNull(error);</span>
+<span class="nc bnc" id="L39" title="All 2 branches missed.">        if(error.isEmpty()){</span>
+<span class="nc" id="L40">            throw new IllegalArgumentException(&quot;Empty error message&quot;);</span>
+        }
+
+<span class="nc" id="L43">        WrappedResponseDto&lt;?&gt; dto = new WrappedResponseDto&lt;&gt;();</span>
+<span class="nc" id="L44">        dto.error = error;</span>
+<span class="nc" id="L45">        return dto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

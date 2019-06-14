@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>JavaTypesEntity.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-e2e-tests-spring-examples</a> &gt; <a href="index.source.html" class="el_package">com.foo.rest.examples.spring.db.javatypes</a> &gt; <span class="el_source">JavaTypesEntity.java</span></div><h1>JavaTypesEntity.java</h1><pre class="source lang-java linenums">package com.foo.rest.examples.spring.db.javatypes;
+
+
+import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+import java.math.BigDecimal;
+import java.util.Date;
+
+@Entity
+public class JavaTypesEntity {
+
+    @Id
+    @GeneratedValue
+    private Long id;
+
+    /**
+     * Primitive data types
+     */
+<span class="nc" id="L19">    private final boolean primitiveBoolean = true;</span>
+<span class="nc" id="L20">    private final char primitvieChar = Character.MAX_VALUE;</span>
+<span class="nc" id="L21">    private final short primitiveShort = Short.MAX_VALUE;</span>
+<span class="nc" id="L22">    private final byte primitveByte = Byte.MAX_VALUE;</span>
+<span class="nc" id="L23">    private final int primitveInt = Integer.MAX_VALUE;</span>
+<span class="nc" id="L24">    private final long primitveLong = Long.MAX_VALUE;</span>
+<span class="nc" id="L25">    private final float primitveFloat = Float.MAX_VALUE;</span>
+<span class="nc" id="L26">    private final double primitiveDouble = Double.MAX_VALUE;</span>
+
+    /**
+     * Wrapped data types
+     */
+    @NotNull
+    private final Boolean booleanField;
+
+    @NotNull
+    private final Byte byteField;
+
+    @NotNull
+    private final Character characterField;
+
+    @NotNull
+    private final Short shortField;
+
+    @NotNull
+    private final Integer integerField;
+
+    @NotNull
+    private final Long longField;
+
+    @NotNull
+    private final Float floatField;
+
+    @NotNull
+    private final Double doubleField;
+
+    /**
+     * Date date type
+     */
+    @NotNull
+    private final Date dateField;
+
+    /**
+     * By default Strings are stored as VARCHAR(255).
+     * Any attempt to persist a string value beyond that length
+     * leads to a &quot;Value too long for column&quot; SQL exception
+     */
+    @NotNull
+    private final String shortString;
+
+    @NotNull
+    @Column(length = Integer.MAX_VALUE)
+    private final String longString;
+
+    @NotNull
+    @Lob
+    private final String veryLongString;
+
+<span class="nc" id="L77">    @NotNull</span>
+    private final BigDecimal bigDecimal = new BigDecimal(10);
+
+<span class="nc" id="L80">    public JavaTypesEntity() {</span>
+
+<span class="nc" id="L82">        shortString = &quot;Hello World&quot;;</span>
+<span class="nc" id="L83">        longString = new String(new char[300]).replace('\0', 'X');</span>
+<span class="nc" id="L84">        dateField = new Date();</span>
+<span class="nc" id="L85">        doubleField = Math.PI;</span>
+<span class="nc" id="L86">        floatField = (float) Math.E;</span>
+<span class="nc" id="L87">        longField = Long.MAX_VALUE;</span>
+<span class="nc" id="L88">        integerField = Integer.MAX_VALUE;</span>
+<span class="nc" id="L89">        shortField = Short.MAX_VALUE;</span>
+<span class="nc" id="L90">        characterField = 'X';</span>
+<span class="nc" id="L91">        byteField = Byte.MAX_VALUE;</span>
+<span class="nc" id="L92">        booleanField = true;</span>
+<span class="nc" id="L93">        veryLongString = new String(new char[300]).replace('\0', 'X');</span>
+<span class="nc" id="L94">    }</span>
+
+    public Long getId() {
+<span class="nc" id="L97">        return id;</span>
+    }
+
+    public void setId(Long id) {
+<span class="nc" id="L101">        this.id = id;</span>
+<span class="nc" id="L102">    }</span>
+
+    public Boolean getBooleanField() {
+<span class="nc" id="L105">        return booleanField;</span>
+    }
+
+    public Byte getByteField() {
+<span class="nc" id="L109">        return byteField;</span>
+    }
+
+    public Character getCharacterField() {
+<span class="nc" id="L113">        return characterField;</span>
+    }
+
+    public Short getShortField() {
+<span class="nc" id="L117">        return shortField;</span>
+    }
+
+    public Integer getIntegerField() {
+<span class="nc" id="L121">        return integerField;</span>
+    }
+
+    public Long getLongField() {
+<span class="nc" id="L125">        return longField;</span>
+    }
+
+    public Float getFloatField() {
+<span class="nc" id="L129">        return floatField;</span>
+    }
+
+    public Double getDoubleField() {
+<span class="nc" id="L133">        return doubleField;</span>
+    }
+
+    public Date getDateField() {
+<span class="nc" id="L137">        return dateField;</span>
+    }
+
+    public String getShortString() {
+<span class="nc" id="L141">        return shortString;</span>
+    }
+
+    public String getLongString() {
+<span class="nc" id="L145">        return longString;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -33,8 +33,6 @@ class SmartSamplingController {
 
     }
 
-    //private var selected : ResourceSamplingMethod? = null
-
     fun initialize(){
         initApplicableStrategies()
         initProbability()

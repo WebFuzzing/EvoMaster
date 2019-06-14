@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>JarAgentLocator.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-instrumentation</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.instrumentation.external</a> &gt; <span class="el_source">JarAgentLocator.java</span></div><h1>JarAgentLocator.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.instrumentation.external;
+
+import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.instrumentation.InstrumentingAgent;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.jar.Attributes;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+
+<span class="nc" id="L18">public class JarAgentLocator {</span>
+
+    public static String getAgentJarPath(){
+
+<span class="nc" id="L22">        String jarFilePath = getFromProperty();</span>
+
+<span class="nc bnc" id="L24" title="All 2 branches missed.">        if(jarFilePath == null) {</span>
+<span class="nc" id="L25">            String classPath = System.getProperty(&quot;java.class.path&quot;);</span>
+<span class="nc" id="L26">            jarFilePath = searchInAClassPath(classPath);</span>
+        }
+
+<span class="nc bnc" id="L29" title="All 2 branches missed.">        if(jarFilePath==null){</span>
+<span class="nc" id="L30">            jarFilePath = searchInCurrentClassLoaderIfUrlOne();</span>
+        }
+
+<span class="nc bnc" id="L33" title="All 2 branches missed.">        if(jarFilePath==null){</span>
+<span class="nc" id="L34">            jarFilePath = searchInCurrentClassLoaderIfItProvidesClasspathAPI();</span>
+        }
+
+<span class="nc bnc" id="L37" title="All 2 branches missed.">        if(jarFilePath==null){</span>
+			/*
+			 * this could happen in Eclipse or during test execution in Maven, and so search in compilation 'target' folder
+			 */
+<span class="nc" id="L41">            jarFilePath = searchInFolder(&quot;target&quot;);</span>
+        }
+
+<span class="nc bnc" id="L44" title="All 2 branches missed.">        if(jarFilePath==null){</span>
+<span class="nc" id="L45">            jarFilePath = searchInFolder(&quot;lib&quot;);</span>
+        }
+
+<span class="nc bnc" id="L48" title="All 2 branches missed.">        if(jarFilePath==null){</span>
+            //TODO could check in ~/.m2, but issue in finding right version
+        }
+
+<span class="nc" id="L52">        return jarFilePath;</span>
+    }
+
+    //----------------------------------------------------------------------------------
+
+    private static boolean isAgentJar(String path) throws IllegalArgumentException{
+
+<span class="nc bnc" id="L59" title="All 2 branches missed.">        if(path.endsWith(&quot;classes&quot;)){</span>
+			/*
+				we need to treat this specially:
+				eg, Jenkins/Maven on Linux on a module with only tests ended up
+				with not creating &quot;target/classes&quot; (it does on Mac though) but still putting
+				it on the classpath
+			 */
+<span class="nc" id="L66">            return false;</span>
+        }
+
+<span class="nc" id="L69">        File file = new File(path);</span>
+<span class="nc bnc" id="L70" title="All 2 branches missed.">        if(!file.exists()){</span>
+<span class="nc" id="L71">            throw new IllegalArgumentException(&quot;Non-existing file &quot;+path);</span>
+        }
+
+<span class="nc" id="L74">        String name = file.getName();</span>
+
+<span class="nc bnc" id="L76" title="All 2 branches missed.">        if(name.toLowerCase().contains(&quot;evomaster&quot;) &amp;&amp;</span>
+<span class="nc bnc" id="L77" title="All 2 branches missed.">                name.endsWith(&quot;.jar&quot;)){</span>
+
+<span class="nc" id="L79">            try (JarFile jar = new JarFile(file)){</span>
+<span class="nc" id="L80">                Manifest manifest = jar.getManifest();</span>
+<span class="nc bnc" id="L81" title="All 2 branches missed.">                if(manifest == null){</span>
+<span class="nc" id="L82">                    return false;</span>
+                }
+
+<span class="nc" id="L85">                Attributes attributes = manifest.getMainAttributes();</span>
+
+<span class="nc" id="L87">                String premain = attributes.getValue(&quot;Premain-Class&quot;);</span>
+<span class="nc bnc" id="L88" title="All 4 branches missed.">                if(premain == null || premain.isEmpty()){</span>
+<span class="nc" id="L89">                    return false;</span>
+                }
+
+<span class="nc" id="L92">                String agentClass = attributes.getValue(&quot;Agent-Class&quot;);</span>
+<span class="nc" id="L93">                String agent = InstrumentingAgent.class.getName(); // this is hardcoded in the pom.xml file</span>
+<span class="nc bnc" id="L94" title="All 4 branches missed.">                if(agentClass != null &amp;&amp; agentClass.trim().equalsIgnoreCase(agent)){</span>
+<span class="nc" id="L95">                    return true;</span>
+                }
+<span class="nc" id="L97">            } catch (IOException e) {</span>
+<span class="nc" id="L98">                return false;</span>
+<span class="nc" id="L99">            }</span>
+        }
+
+<span class="nc" id="L102">        return false;</span>
+    }
+
+    private static String getFromProperty(){
+
+<span class="nc" id="L107">        String path = System.getProperty(&quot;evomaster.instrumentation.jar.path&quot;);</span>
+<span class="nc bnc" id="L108" title="All 2 branches missed.">        if(path == null){</span>
+<span class="nc" id="L109">            return null;</span>
+        }
+        //if user specify a JAR path, but then it is invalid, then need to throw warning
+<span class="nc bnc" id="L112" title="All 2 branches missed.">        if(! isAgentJar(path)){</span>
+<span class="nc" id="L113">            throw new IllegalStateException(&quot;Specified instrumenting jar file is invalid&quot;);</span>
+        }
+
+<span class="nc" id="L116">        return path;</span>
+    }
+
+    private static String searchInAClassPath(String classPath){
+<span class="nc" id="L120">        String[] tokens = classPath.split(File.pathSeparator);</span>
+
+<span class="nc bnc" id="L122" title="All 2 branches missed.">        for(String entry : tokens){</span>
+<span class="nc bnc" id="L123" title="All 4 branches missed.">            if(entry==null || entry.isEmpty()){</span>
+<span class="nc" id="L124">                continue;</span>
+            }
+<span class="nc bnc" id="L126" title="All 2 branches missed.">            if(isAgentJar(entry)){</span>
+<span class="nc" id="L127">                return entry;</span>
+            }
+        }
+<span class="nc" id="L130">        return null;</span>
+    }
+
+    private static String searchInCurrentClassLoaderIfItProvidesClasspathAPI(){
+
+        /*
+            this could happen for AntClassLoader.
+            Note: we cannot use instanceof here, as we do not want to add further third-party dependencies
+         */
+
+<span class="nc" id="L140">        ClassLoader loader = JarAgentLocator.class.getClassLoader();</span>
+<span class="nc bnc" id="L141" title="All 2 branches missed.">        while(loader != null){</span>
+
+            try {
+<span class="nc" id="L144">                Method m = loader.getClass().getMethod(&quot;getClasspath&quot;);</span>
+<span class="nc" id="L145">                String classPath = (String) m.invoke(loader);</span>
+<span class="nc" id="L146">                String jar = searchInAClassPath(classPath);</span>
+<span class="nc bnc" id="L147" title="All 2 branches missed.">                if(jar != null){</span>
+<span class="nc" id="L148">                    return jar;</span>
+                }
+<span class="nc" id="L150">            } catch (Exception e) {</span>
+                //OK, this can happen, not really an error
+<span class="nc" id="L152">            }</span>
+
+<span class="nc" id="L154">            loader = loader.getParent();</span>
+        }
+
+<span class="nc" id="L157">        return null;</span>
+    }
+
+    private static String searchInCurrentClassLoaderIfUrlOne() {
+
+<span class="nc" id="L162">        Set&lt;URI&gt; uris = new HashSet&lt;&gt;();</span>
+
+<span class="nc" id="L164">        ClassLoader loader = JarAgentLocator.class.getClassLoader();</span>
+<span class="nc bnc" id="L165" title="All 2 branches missed.">        while(loader != null){</span>
+<span class="nc bnc" id="L166" title="All 2 branches missed.">            if(loader instanceof URLClassLoader){</span>
+<span class="nc" id="L167">                URLClassLoader urlLoader = (URLClassLoader) loader;</span>
+<span class="nc bnc" id="L168" title="All 2 branches missed.">                for(URL url : urlLoader.getURLs()){</span>
+                    try {
+<span class="nc" id="L170">                        URI uri = url.toURI();</span>
+<span class="nc" id="L171">                        uris.add(uri);</span>
+
+<span class="nc" id="L173">                        File file = new File(uri);</span>
+<span class="nc" id="L174">                        String path = file.getAbsolutePath();</span>
+<span class="nc bnc" id="L175" title="All 2 branches missed.">                        if(isAgentJar(path)){</span>
+<span class="nc" id="L176">                            return path;</span>
+                        }
+<span class="nc" id="L178">                    } catch (Exception e) {</span>
+<span class="nc" id="L179">                        SimpleLogger.error(&quot;Error while parsing URL &quot;+url);</span>
+<span class="nc" id="L180">                        continue;</span>
+<span class="nc" id="L181">                    }</span>
+                }
+            }
+
+<span class="nc" id="L185">            loader = loader.getParent();</span>
+        }
+
+<span class="nc" id="L188">        String msg = &quot;Failed to find Agent jar in current classloader. URLs of classloader:&quot;;</span>
+<span class="nc bnc" id="L189" title="All 2 branches missed.">        for(URI uri : uris){</span>
+<span class="nc" id="L190">            msg += &quot;\n&quot;+uri.toString();</span>
+<span class="nc" id="L191">        }</span>
+<span class="nc" id="L192">        SimpleLogger.warn(msg);</span>
+
+<span class="nc" id="L194">        return null;</span>
+    }
+
+    private static String searchInFolder(String folder) {
+
+<span class="nc" id="L199">        File target = new File(folder);</span>
+<span class="nc bnc" id="L200" title="All 2 branches missed.">        if(!target.exists()){</span>
+<span class="nc" id="L201">            SimpleLogger.debug(&quot;No target folder &quot;+target.getAbsolutePath());</span>
+<span class="nc" id="L202">            return null;</span>
+        }
+
+<span class="nc bnc" id="L205" title="All 2 branches missed.">        if(!target.isDirectory()){</span>
+<span class="nc" id="L206">            SimpleLogger.debug(&quot;'target' exists, but it is not a folder&quot;);</span>
+<span class="nc" id="L207">            return null;</span>
+        }
+
+<span class="nc bnc" id="L210" title="All 2 branches missed.">        for(File file : target.listFiles()){</span>
+<span class="nc" id="L211">            String path = file.getAbsolutePath();</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">            if(isAgentJar(path)){</span>
+<span class="nc" id="L213">                return path;</span>
+            }
+        }
+
+<span class="nc" id="L217">        return null;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

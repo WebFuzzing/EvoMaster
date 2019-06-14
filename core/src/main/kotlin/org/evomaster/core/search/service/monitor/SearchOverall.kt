@@ -11,14 +11,14 @@ import org.evomaster.core.search.Individual
 open class SearchOverall<T> where T : Individual{
 
     val stoppingCriterion:String
-    val idMapper : IdMapper
+    private val idMapper : IdMapper
 
     //val actionCluster: MutableList<Action> = mutableListOf()
-    val numOfEvaluations: Int
+    private val numOfEvaluations: Int
     val finalPopulations = mutableMapOf<Int, MutableList<EvaluatedIndividual<T>>>()
 
-    val startTime : Long
-    val evalIndividual : EvaluatedIndividual<T>
+    private val startTime : Long
+    private val evalIndividual : EvaluatedIndividual<T>
 
     constructor(_stoppingCriterion:String, num : Int, _ind : T, _eval : EvaluatedIndividual<*>, _archive : Archive<*>, _idMaper : IdMapper, _startTime : Long){
         this.startTime = _startTime

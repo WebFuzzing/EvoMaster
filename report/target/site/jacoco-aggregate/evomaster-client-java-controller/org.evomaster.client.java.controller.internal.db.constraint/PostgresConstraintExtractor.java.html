@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>PostgresConstraintExtractor.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">evomaster-project-report</a> &gt; <a href="../index.html" class="el_bundle">evomaster-client-java-controller</a> &gt; <a href="index.source.html" class="el_package">org.evomaster.client.java.controller.internal.db.constraint</a> &gt; <span class="el_source">PostgresConstraintExtractor.java</span></div><h1>PostgresConstraintExtractor.java</h1><pre class="source lang-java linenums">package org.evomaster.client.java.controller.internal.db.constraint;
+
+import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
+import org.evomaster.client.java.controller.api.dto.database.schema.TableDto;
+import org.evomaster.client.java.utils.SimpleLogger;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ *
+ */
+<span class="nc" id="L14">public class PostgresConstraintExtractor extends TableConstraintExtractor {</span>
+
+    private static final String CONSTRAINT_TYPE_CHECK = &quot;c&quot;;
+
+    private static final String CONSTRAINT_TYPE_FOREIGN_KEY = &quot;f&quot;;
+
+    private static final String CONSTRAINT_TYPE_PRIMARY_KEY = &quot;p&quot;;
+
+    private static final String CONSTRAINT_TYPE_UNIQUE = &quot;u&quot;;
+
+    private static final String CONSTRAINT_TYPE_TRIGGER = &quot;t&quot;;
+
+    private static final String CONSTRAINT_TYPE_EXCLUSION = &quot;x&quot;;
+
+    private static final String CONTYPE = &quot;contype&quot;;
+
+    private static final String CONSRC = &quot;consrc&quot;;
+    public static final String CONKEY = &quot;conkey&quot;;
+
+
+    /**
+     * Logs that a constraint could not be handled by the extractor.
+     *
+     * @param constraintType
+     */
+    private static void cannotHandle(String constraintType) {
+<span class="nc" id="L40">        SimpleLogger.uniqueWarn(&quot;WARNING, EvoMaster cannot extract Postgres constraints with type '&quot; + constraintType);</span>
+<span class="nc" id="L41">    }</span>
+
+    private static DbTableUniqueConstraint getDbTableUniqueConstraint(Connection connectionToPostgres, String tableSchema, String tableName, Integer[] columnIds) throws SQLException {
+<span class="nc" id="L44">        List&lt;String&gt; uniqueColumnNames = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L45" title="All 2 branches missed.">        for (int columnId : columnIds) {</span>
+<span class="nc" id="L46">            String qry = String.format(&quot;SELECT att.* &quot; +</span>
+                    &quot; FROM pg_catalog.pg_attribute att &quot; +
+                    &quot; INNER JOIN pg_catalog.pg_class rel\n &quot; +
+                    &quot;    ON rel.oid = att.attrelid\n &quot; +
+                    &quot; INNER JOIN pg_catalog.pg_namespace nsp\n &quot; +
+                    &quot;    ON nsp.oid = rel.relnamespace\n &quot; +
+                    &quot; WHERE nsp.nspname = '%s'\n&quot; +
+                    &quot;   AND rel.relname = '%s' \n&quot; +
+<span class="nc" id="L54">                    &quot;   AND att.attnum =  %s;&quot;, tableSchema, tableName, columnId);</span>
+
+<span class="nc" id="L56">            try (Statement stmt = connectionToPostgres.createStatement()) {</span>
+<span class="nc" id="L57">                try (ResultSet rs = stmt.executeQuery(qry)) {</span>
+<span class="nc" id="L58">                    boolean hasRows = rs.next();</span>
+<span class="nc bnc" id="L59" title="All 2 branches missed.">                    if (!hasRows) {</span>
+<span class="nc" id="L60">                        throw new IllegalStateException(&quot;Unexpected missing pg_catalog.pg_attribute data&quot;);</span>
+                    }
+<span class="nc" id="L62">                    String uniqueColumnName = rs.getString(&quot;attname&quot;);</span>
+<span class="nc" id="L63">                    uniqueColumnNames.add(uniqueColumnName);</span>
+                }
+            }
+        }
+<span class="nc" id="L67">        return new DbTableUniqueConstraint(tableName, uniqueColumnNames);</span>
+    }
+
+    public List&lt;DbTableConstraint&gt; extract(Connection connectionToPostgres, DbSchemaDto schemaDto) throws SQLException {
+<span class="nc" id="L71">        String tableSchema = schemaDto.name;</span>
+<span class="nc" id="L72">        List&lt;DbTableConstraint&gt; constraints = new ArrayList&lt;&gt;();</span>
+<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (TableDto tableDto : schemaDto.tables) {</span>
+<span class="nc" id="L74">            try (Statement statement = connectionToPostgres.createStatement()) {</span>
+<span class="nc" id="L75">                String tableName = tableDto.name;</span>
+<span class="nc" id="L76">                String query = String.format(&quot;SELECT con.*\n&quot; +</span>
+                        &quot;       FROM pg_catalog.pg_constraint con\n&quot; +
+                        &quot;            INNER JOIN pg_catalog.pg_class rel\n&quot; +
+                        &quot;                       ON rel.oid = con.conrelid\n&quot; +
+                        &quot;            INNER JOIN pg_catalog.pg_namespace nsp\n&quot; +
+                        &quot;                       ON nsp.oid = connamespace\n&quot; +
+                        &quot;       WHERE nsp.nspname = '%s'\n&quot; +
+                        &quot;             AND rel.relname = '%s';&quot;, tableSchema, tableName);
+
+<span class="nc" id="L85">                try (ResultSet columns = statement.executeQuery(query)) {</span>
+<span class="nc bnc" id="L86" title="All 2 branches missed.">                    while (columns.next()) {</span>
+<span class="nc" id="L87">                        String checkConstraint = columns.getString(CONSRC);</span>
+<span class="nc" id="L88">                        Array array = columns.getArray(CONKEY);</span>
+<span class="nc" id="L89">                        String constraintType = columns.getString(CONTYPE);</span>
+
+                        DbTableConstraint constraint;
+<span class="nc bnc" id="L92" title="All 6 branches missed.">                        switch (constraintType) {</span>
+                            case CONSTRAINT_TYPE_CHECK:
+<span class="nc" id="L94">                                constraint = new DbTableCheckExpression(tableName, checkConstraint);</span>
+<span class="nc" id="L95">                                constraints.add(constraint);</span>
+<span class="nc" id="L96">                                break;</span>
+                            case CONSTRAINT_TYPE_UNIQUE:
+<span class="nc" id="L98">                                Integer[] uniqueColumnIds = (Integer[]) array.getArray();</span>
+<span class="nc" id="L99">                                constraint = getDbTableUniqueConstraint(connectionToPostgres, tableSchema, tableName, uniqueColumnIds);</span>
+<span class="nc" id="L100">                                constraints.add(constraint);</span>
+<span class="nc" id="L101">                                break;</span>
+                            case CONSTRAINT_TYPE_FOREIGN_KEY:
+                            case CONSTRAINT_TYPE_PRIMARY_KEY:
+                                /**
+                                 * These types of constraints are already handled by
+                                 * JDBC Metadata
+                                 **/
+<span class="nc" id="L108">                                break;</span>
+
+                            case CONSTRAINT_TYPE_TRIGGER:
+<span class="nc" id="L111">                                cannotHandle(&quot;TRIGGER CONSTRAINT&quot;);</span>
+<span class="nc" id="L112">                                break;</span>
+
+                            case CONSTRAINT_TYPE_EXCLUSION:
+<span class="nc" id="L115">                                cannotHandle(&quot;EXCLUSION CONSTRAINT&quot;);</span>
+<span class="nc" id="L116">                                break;</span>
+
+                            default:
+<span class="nc" id="L119">                                cannotHandle(&quot;Unknown constraint type &quot; + constraintType);</span>
+                                break;
+
+                        }
+<span class="nc" id="L123">                    }</span>
+                }
+            }
+<span class="nc" id="L126">        }</span>
+<span class="nc" id="L127">        return constraints;</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>
