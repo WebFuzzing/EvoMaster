@@ -15,7 +15,6 @@ class GraphqlIndividual (
         val actions: MutableList<GraphqlAction>,
         val sampleType: GraphqlSampleType,
         val dbInitialization: MutableList<DbAction> = mutableListOf(),
-        val usedObjects: GraphqlUsedObjects = GraphqlUsedObjects(),
         trackOperator: TrackOperator? = null,
         traces : MutableList<out GraphqlIndividual>? = null
 ): Individual(trackOperator, traces) {
@@ -25,7 +24,6 @@ class GraphqlIndividual (
                 actions.map { a -> a.copy() as GraphqlAction } as MutableList<GraphqlAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObjects.copy(),
                 trackOperator
         )
     }
@@ -54,6 +52,7 @@ class GraphqlIndividual (
     }
 
     override fun verifyInitializationActions(): Boolean {
+        //TODO needs to be refactored when DB code moved to its own module
         return DbActionUtils.verifyActions(dbInitialization.filterIsInstance<DbAction>())
     }
 
@@ -78,13 +77,11 @@ class GraphqlIndividual (
                 actions.map { a -> a.copy() as GraphqlAction } as MutableList<GraphqlAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObjects,
                 trackOperator)
         return GraphqlIndividual(
                 actions.map { a -> a.copy() as GraphqlAction } as MutableList<GraphqlAction>,
                 sampleType,
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObjects,
                 trackOperator,
                 getTrack()!!.plus(this).map { (it as GraphqlIndividual).copy() as GraphqlIndividual }.toMutableList()
         )
@@ -98,7 +95,6 @@ class GraphqlIndividual (
                         actions.map { a -> a.copy() as GraphqlAction } as MutableList<GraphqlAction>,
                         sampleType,
                         dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                        usedObjects,
                         trackOperator!!,
                         getTrack()!!.map { (it as GraphqlIndividual).copy() as GraphqlIndividual }.toMutableList()
                 )
