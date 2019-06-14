@@ -16,14 +16,14 @@ public class JavaTypesEntity {
     /**
      * Primitive data types
      */
-<span class="nc" id="L19">    private final boolean primitiveBoolean = true;</span>
-<span class="nc" id="L20">    private final char primitvieChar = Character.MAX_VALUE;</span>
-<span class="nc" id="L21">    private final short primitiveShort = Short.MAX_VALUE;</span>
-<span class="nc" id="L22">    private final byte primitveByte = Byte.MAX_VALUE;</span>
-<span class="nc" id="L23">    private final int primitveInt = Integer.MAX_VALUE;</span>
-<span class="nc" id="L24">    private final long primitveLong = Long.MAX_VALUE;</span>
-<span class="nc" id="L25">    private final float primitveFloat = Float.MAX_VALUE;</span>
-<span class="nc" id="L26">    private final double primitiveDouble = Double.MAX_VALUE;</span>
+<span class="fc" id="L19">    private final boolean primitiveBoolean = true;</span>
+<span class="fc" id="L20">    private final char primitvieChar = Character.MAX_VALUE;</span>
+<span class="fc" id="L21">    private final short primitiveShort = Short.MAX_VALUE;</span>
+<span class="fc" id="L22">    private final byte primitveByte = Byte.MAX_VALUE;</span>
+<span class="fc" id="L23">    private final int primitveInt = Integer.MAX_VALUE;</span>
+<span class="fc" id="L24">    private final long primitveLong = Long.MAX_VALUE;</span>
+<span class="fc" id="L25">    private final float primitveFloat = Float.MAX_VALUE;</span>
+<span class="fc" id="L26">    private final double primitiveDouble = Double.MAX_VALUE;</span>
 
     /**
      * Wrapped data types
@@ -74,27 +74,27 @@ public class JavaTypesEntity {
     @Lob
     private final String veryLongString;
 
-<span class="nc" id="L77">    @NotNull</span>
+<span class="fc" id="L77">    @NotNull</span>
     private final BigDecimal bigDecimal = new BigDecimal(10);
 
-<span class="nc" id="L80">    public JavaTypesEntity() {</span>
+<span class="fc" id="L80">    public JavaTypesEntity() {</span>
 
-<span class="nc" id="L82">        shortString = &quot;Hello World&quot;;</span>
-<span class="nc" id="L83">        longString = new String(new char[300]).replace('\0', 'X');</span>
-<span class="nc" id="L84">        dateField = new Date();</span>
-<span class="nc" id="L85">        doubleField = Math.PI;</span>
-<span class="nc" id="L86">        floatField = (float) Math.E;</span>
-<span class="nc" id="L87">        longField = Long.MAX_VALUE;</span>
-<span class="nc" id="L88">        integerField = Integer.MAX_VALUE;</span>
-<span class="nc" id="L89">        shortField = Short.MAX_VALUE;</span>
-<span class="nc" id="L90">        characterField = 'X';</span>
-<span class="nc" id="L91">        byteField = Byte.MAX_VALUE;</span>
-<span class="nc" id="L92">        booleanField = true;</span>
-<span class="nc" id="L93">        veryLongString = new String(new char[300]).replace('\0', 'X');</span>
-<span class="nc" id="L94">    }</span>
+<span class="fc" id="L82">        shortString = &quot;Hello World&quot;;</span>
+<span class="fc" id="L83">        longString = new String(new char[300]).replace('\0', 'X');</span>
+<span class="fc" id="L84">        dateField = new Date();</span>
+<span class="fc" id="L85">        doubleField = Math.PI;</span>
+<span class="fc" id="L86">        floatField = (float) Math.E;</span>
+<span class="fc" id="L87">        longField = Long.MAX_VALUE;</span>
+<span class="fc" id="L88">        integerField = Integer.MAX_VALUE;</span>
+<span class="fc" id="L89">        shortField = Short.MAX_VALUE;</span>
+<span class="fc" id="L90">        characterField = 'X';</span>
+<span class="fc" id="L91">        byteField = Byte.MAX_VALUE;</span>
+<span class="fc" id="L92">        booleanField = true;</span>
+<span class="fc" id="L93">        veryLongString = new String(new char[300]).replace('\0', 'X');</span>
+<span class="fc" id="L94">    }</span>
 
     public Long getId() {
-<span class="nc" id="L97">        return id;</span>
+<span class="fc" id="L97">        return id;</span>
     }
 
     public void setId(Long id) {

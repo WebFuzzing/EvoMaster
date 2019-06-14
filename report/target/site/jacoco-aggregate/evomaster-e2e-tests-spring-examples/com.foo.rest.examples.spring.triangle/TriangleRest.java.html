@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 
 @RestController
 @RequestMapping(path = &quot;/api/triangle&quot;)
-<span class="nc" id="L16">public class TriangleRest {</span>
+<span class="fc" id="L16">public class TriangleRest {</span>
 
 
     @ApiOperation(&quot;Check the triangle type of the given three edges&quot;)
@@ -31,10 +31,10 @@ import javax.ws.rs.core.MediaType;
             @PathVariable(&quot;c&quot;) Integer c
     ){
 
-<span class="nc" id="L34">        TriangleResponseDto dto = new TriangleResponseDto();</span>
-<span class="nc" id="L35">        dto.classification = new TriangleClassificationImpl().classify(a,b,c);</span>
+<span class="fc" id="L34">        TriangleResponseDto dto = new TriangleResponseDto();</span>
+<span class="fc" id="L35">        dto.classification = new TriangleClassificationImpl().classify(a,b,c);</span>
 
-<span class="nc" id="L37">        return dto;</span>
+<span class="fc" id="L37">        return dto;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

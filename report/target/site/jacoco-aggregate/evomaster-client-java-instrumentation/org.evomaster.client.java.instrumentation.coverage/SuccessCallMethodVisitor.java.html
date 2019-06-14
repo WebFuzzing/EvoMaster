@@ -28,56 +28,56 @@ public class SuccessCallMethodVisitor extends MethodVisitor {
                                 String className,
                                 String methodName,
                                 String descriptor) {
-<span class="nc" id="L31">        super(Constants.ASM, mv);</span>
+<span class="fc" id="L31">        super(Constants.ASM, mv);</span>
 
-<span class="nc" id="L33">        this.className = className;</span>
-<span class="nc" id="L34">        this.methodName = methodName;</span>
-<span class="nc" id="L35">        currentLine = 0;</span>
-<span class="nc" id="L36">    }</span>
+<span class="fc" id="L33">        this.className = className;</span>
+<span class="fc" id="L34">        this.methodName = methodName;</span>
+<span class="fc" id="L35">        currentLine = 0;</span>
+<span class="fc" id="L36">    }</span>
 
     @Override
     public void visitLineNumber(int line, Label start) {
-<span class="nc" id="L40">        super.visitLineNumber(line, start);</span>
+<span class="fc" id="L40">        super.visitLineNumber(line, start);</span>
 
-<span class="nc" id="L42">        currentLine = line;</span>
-<span class="nc" id="L43">        currentIndex = 0; //reset it for current line</span>
-<span class="nc" id="L44">    }</span>
+<span class="fc" id="L42">        currentLine = line;</span>
+<span class="fc" id="L43">        currentIndex = 0; //reset it for current line</span>
+<span class="fc" id="L44">    }</span>
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name,
                                 String desc, boolean itf) {
 
         //don't instrument static initializers
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        if(methodName.equals(Constants.CLASS_INIT_METHOD)){</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if(methodName.equals(Constants.CLASS_INIT_METHOD)){</span>
 <span class="nc" id="L52">            super.visitMethodInsn(opcode, owner, name, desc, itf);</span>
 <span class="nc" id="L53">            return;</span>
         }
 
-<span class="nc" id="L56">        int index = currentIndex++;</span>
+<span class="fc" id="L56">        int index = currentIndex++;</span>
 
-<span class="nc" id="L58">        ObjectiveRecorder.registerTarget(</span>
-<span class="nc" id="L59">                ObjectiveNaming.successCallObjectiveName(className, currentLine, index));</span>
+<span class="fc" id="L58">        ObjectiveRecorder.registerTarget(</span>
+<span class="fc" id="L59">                ObjectiveNaming.successCallObjectiveName(className, currentLine, index));</span>
 
-<span class="nc" id="L61">        addInstrumentation(index, false);</span>
-<span class="nc" id="L62">        super.visitMethodInsn(opcode, owner, name, desc, itf);</span>
-<span class="nc" id="L63">        addInstrumentation(index, true);</span>
-<span class="nc" id="L64">    }</span>
+<span class="fc" id="L61">        addInstrumentation(index, false);</span>
+<span class="fc" id="L62">        super.visitMethodInsn(opcode, owner, name, desc, itf);</span>
+<span class="fc" id="L63">        addInstrumentation(index, true);</span>
+<span class="fc" id="L64">    }</span>
 
 
     private void addInstrumentation(int index, boolean covered){
 
-<span class="nc" id="L69">        this.visitLdcInsn(className);</span>
-<span class="nc" id="L70">        this.visitLdcInsn(currentLine);</span>
-<span class="nc" id="L71">        this.visitLdcInsn(index);</span>
-<span class="nc" id="L72">        this.visitLdcInsn(covered);</span>
+<span class="fc" id="L69">        this.visitLdcInsn(className);</span>
+<span class="fc" id="L70">        this.visitLdcInsn(currentLine);</span>
+<span class="fc" id="L71">        this.visitLdcInsn(index);</span>
+<span class="fc" id="L72">        this.visitLdcInsn(covered);</span>
 
-<span class="nc" id="L74">        mv.visitMethodInsn(</span>
+<span class="fc" id="L74">        mv.visitMethodInsn(</span>
                 Opcodes.INVOKESTATIC,
-<span class="nc" id="L76">                ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
+<span class="fc" id="L76">                ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
                 ExecutionTracer.EXECUTING_METHOD_METHOD_NAME,
                 ExecutionTracer.EXECUTING_METHOD_DESCRIPTOR,
-<span class="nc" id="L79">                ExecutionTracer.class.isInterface());</span>
-<span class="nc" id="L80">    }</span>
+<span class="fc" id="L79">                ExecutionTracer.class.isInterface());</span>
+<span class="fc" id="L80">    }</span>
 
     @Override
     public void visitMaxs(int maxStack, int maxLocals) {
@@ -85,7 +85,7 @@ public class SuccessCallMethodVisitor extends MethodVisitor {
             We pushed 4 values on stack before a method call,
             so we need to increase maxStack by at least 4
          */
-<span class="nc" id="L88">        super.visitMaxs(maxStack + 4, maxLocals);</span>
-<span class="nc" id="L89">    }</span>
+<span class="fc" id="L88">        super.visitMaxs(maxStack + 4, maxLocals);</span>
+<span class="fc" id="L89">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

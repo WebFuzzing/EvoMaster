@@ -1,505 +1,584 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-evomaster-project-report/evomaster-client-java-util,org.evomaster.client.java.utils,SimpleLogger,97,0,12,0,34,0,19,0,13,0
-evomaster-project-report/evomaster-client-java-util,org.evomaster.client.java.utils,SimpleLogger.Level,54,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.problem,RestProblem,24,0,2,0,6,0,4,0,3,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal,EMController,549,0,48,0,126,0,35,0,11,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal,SutController,289,0,10,0,82,0,22,0,17,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,ParserUtils,87,0,8,0,18,0,12,0,8,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SchemaExtractor,657,0,66,0,138,0,48,0,15,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlNameContext.new FromItemVisitorAdapter() {...},16,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SelectHeuristics,195,0,24,0,54,0,20,0,8,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,HeuristicsCalculator,615,0,132,0,140,0,81,0,15,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlHandler,332,0,30,0,88,0,25,0,10,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SelectHeuristics.new ExpressionVisitorAdapter() {...},52,0,6,0,15,0,5,0,2,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,ColumnTableAnalyzer,280,0,30,0,60,0,23,0,8,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,StandardOutputTracker,103,0,6,0,31,0,10,0,7,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlNameContext,216,0,24,0,54,0,22,0,10,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlNameContext.AliasVisitor,16,0,0,0,7,0,3,0,3,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlHandler.new ExpressionVisitorAdapter() {...},41,0,2,0,9,0,3,0,2,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,H2ConstraintExtractor,216,0,16,0,48,0,14,0,5,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,DbTableCheckExpression,12,0,0,0,4,0,2,0,2,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,DbTableUniqueConstraint,16,0,0,0,5,0,2,0,2,0
+evomaster-project-report/evomaster-client-java-util,org.evomaster.client.java.utils,SimpleLogger,38,59,5,7,17,17,10,9,7,6
+evomaster-project-report/evomaster-client-java-util,org.evomaster.client.java.utils,SimpleLogger.Level,0,54,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.problem,RestProblem,4,20,1,1,0,6,1,3,0,3
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal,EMController,288,261,27,21,64,62,25,10,3,8
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal,SutController,68,221,5,5,21,61,6,16,2,15
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,ParserUtils,17,85,3,9,2,20,4,10,1,7
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SchemaExtractor,248,409,36,30,38,100,29,19,7,8
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlNameContext.new FromItemVisitorAdapter() {...},0,16,0,0,0,3,0,2,0,2
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SelectHeuristics,30,165,5,19,4,50,6,14,1,7
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,HeuristicsCalculator,96,519,23,109,22,118,21,60,1,14
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlHandler,104,304,11,29,21,82,10,21,1,10
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SelectHeuristics.new ExpressionVisitorAdapter() {...},0,52,0,6,0,15,0,5,0,2
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,ColumnTableAnalyzer,114,166,12,18,11,49,13,10,1,7
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,StandardOutputTracker,5,98,2,4,1,30,2,8,0,7
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlNameContext,63,168,12,18,15,44,12,13,2,8
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlNameContext.AliasVisitor,5,11,0,0,2,5,1,2,1,2
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db,SqlHandler.new ExpressionVisitorAdapter() {...},1,40,1,1,1,8,1,2,0,2
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,H2ConstraintExtractor,12,204,2,14,3,45,3,11,1,4
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,DbTableCheckExpression,0,12,0,0,0,4,0,2,0,2
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,DbTableUniqueConstraint,0,16,0,0,0,5,0,2,0,2
 evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,PostgresConstraintExtractor,202,0,14,0,43,0,13,0,4,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,DbTableConstraint,11,0,0,0,4,0,2,0,2,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,TableConstraintExtractor,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,TableConstraintExtractorFactory,27,0,4,0,5,0,4,0,1,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.expect,ExpectationHandler,32,0,6,0,10,0,7,0,4,0
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,DbTableConstraint,0,11,0,0,0,4,0,2,0,2
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,TableConstraintExtractor,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.internal.db.constraint,TableConstraintExtractorFactory,18,9,3,1,3,2,3,1,0,1
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.contentMatchers,NumberMatcher,49,0,8,0,11,0,9,0,5,0
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.expect,ExpectationHandler,51,0,10,0,15,0,11,0,6,0
 evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller,ExternalSutController,640,0,88,0,157,0,63,0,19,0
 evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller,AuthUtils,65,0,0,0,12,0,4,0,4,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller,EmbeddedSutController,17,0,0,0,10,0,7,0,7,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller,InstrumentedSutStarter,69,0,8,0,21,0,9,0,5,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db.dsl,SqlDsl,199,0,24,0,42,0,24,0,12,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db.dsl,SequenceDsl,5,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,DbCleaner,324,0,24,0,71,0,24,0,12,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,DataRow,232,0,32,0,41,0,26,0,10,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,SqlScriptRunner,612,0,68,0,135,0,50,0,16,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,VariableDescriptor,180,0,38,0,26,0,27,0,8,0
-evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,QueryResult,257,0,20,0,56,0,22,0,12,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.problem,RestProblemDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,InsertionDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,InsertionEntryDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,DatabaseCommandDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,QueryResultDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,DataRowDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,WrappedResponseDto,36,0,2,0,11,0,5,0,4,0
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller,EmbeddedSutController,2,15,0,0,1,9,1,6,1,6
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller,InstrumentedSutStarter,23,46,5,3,6,15,4,5,0,5
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db.dsl,SqlDsl,44,155,10,14,6,36,10,14,0,12
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db.dsl,SequenceDsl,0,5,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,DbCleaner,54,270,2,22,16,55,7,17,5,7
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,DataRow,40,192,9,23,3,38,10,16,2,8
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,SqlScriptRunner,163,449,20,48,25,110,20,30,2,14
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,VariableDescriptor,95,85,24,14,10,16,20,7,3,5
+evomaster-project-report/evomaster-client-java-controller,org.evomaster.client.java.controller.db,QueryResult,63,194,5,15,13,43,8,14,4,8
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.problem,RestProblemDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,InsertionDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,InsertionEntryDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,DatabaseCommandDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,QueryResultDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.operations,DataRowDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,WrappedResponseDto,20,16,2,0,6,5,2,3,1,3
 evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,HeaderDto,12,0,0,0,6,0,2,0,2,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,ExtraHeuristicDto,13,0,0,0,3,0,1,0,1,0
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,ExtraHeuristicDto,0,13,0,0,0,3,0,1,0,1
 evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,TargetInfoDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,SutRunDto,12,0,0,0,6,0,2,0,2,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,SutInfoDto.OutputFormat,44,0,0,0,5,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,AdditionalInfoDto,13,0,0,0,3,0,1,0,1,0
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,SutRunDto,0,12,0,0,0,6,0,2,0,2
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,SutInfoDto.OutputFormat,0,44,0,0,0,5,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,AdditionalInfoDto,0,13,0,0,0,3,0,1,0,1
 evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,AuthenticationDto,19,0,0,0,6,0,2,0,2,0
 evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,ControllerInfoDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,TestResultsDto,18,0,0,0,4,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,SutInfoDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,DbSchemaDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,ForeignKeyDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,TableDto,23,0,0,0,5,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,TableCheckExpressionDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,DatabaseType,44,0,0,0,5,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,ColumnDto,6,0,0,0,2,0,1,0,1,0
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,TestResultsDto,0,18,0,0,0,4,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto,SutInfoDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,DbSchemaDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,ForeignKeyDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,TableDto,0,23,0,0,0,5,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,TableCheckExpressionDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,DatabaseType,0,44,0,0,0,5,0,1,0,1
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.schema,ColumnDto,0,6,0,0,0,2,0,1,0,1
 evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api,Formats,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api,EMTestUtils,131,0,12,0,40,0,9,0,3,0
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api,EMTestUtils,12,119,1,11,5,35,2,7,1,2
 evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api,ControllerConstants,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.execution,ExecutionDto,28,0,0,0,6,0,1,0,1,0
-evomaster-project-report/evomaster-client-database-spy,org.evomaster.client.java.databasespy,P6SpyFormatter,49,0,14,0,8,0,9,0,2,0
+evomaster-project-report/evomaster-client-java-controller-api,org.evomaster.client.java.controller.api.dto.database.execution,ExecutionDto,0,28,0,0,0,6,0,1,0,1
+evomaster-project-report/evomaster-client-database-spy,org.evomaster.client.java.databasespy,P6SpyFormatter,15,34,8,6,2,6,7,2,0,2
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ClassScanner,312,0,36,0,73,0,31,0,13,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,Constants,15,0,4,0,2,0,4,0,2,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,InstrumentingClassLoader,180,0,14,0,40,0,12,0,5,0
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,Constants,5,10,2,2,1,1,3,1,1,1
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,InstrumentingClassLoader,29,151,5,9,5,35,5,7,0,5
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,InstrumentingAgent.TransformerForTests,18,0,2,0,4,0,2,0,1,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,TargetInfo,57,0,2,0,11,0,5,0,4,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ClassesToExclude,104,0,14,0,32,0,12,0,5,0
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,TargetInfo,42,15,2,0,5,6,4,1,3,1
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ClassesToExclude,21,83,3,11,7,25,4,8,2,3
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,InstrumentingAgent,166,0,6,0,47,0,12,0,9,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,AdditionalInfo,43,0,8,0,11,0,9,0,5,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ComputeClassWriter,306,0,36,0,68,0,23,0,5,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,Instrumentator,129,0,8,0,33,0,11,0,7,0
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,AdditionalInfo,0,43,4,4,0,11,4,5,0,5
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ComputeClassWriter,297,9,36,0,65,3,22,1,4,1
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,Instrumentator,18,111,3,5,2,31,3,8,0,7
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,InstrumentationController,80,0,2,0,26,0,9,0,8,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ObjectiveNaming,167,0,12,0,26,0,12,0,6,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ClassName,126,0,10,0,22,0,13,0,8,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.tracker,TrackerMethodVisitor,96,0,18,0,23,0,13,0,4,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.tracker,TrackerClassVisitor,39,0,4,0,10,0,4,0,2,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.tracker,Tracker,11,0,0,0,5,0,3,0,3,0
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ObjectiveNaming,41,126,6,6,7,19,5,7,1,5
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation,ClassName,48,78,3,7,4,18,4,9,1,7
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.tracker,TrackerMethodVisitor,0,96,5,13,0,23,5,8,0,4
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.tracker,TrackerClassVisitor,4,35,2,2,2,8,2,2,0,2
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.tracker,Tracker,3,8,0,0,1,4,1,2,1,2
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.external,ServerController,305,0,34,0,96,0,33,0,16,0
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.external,AgentController,233,0,14,0,73,0,16,0,7,0
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.external,JarAgentLocator,364,0,64,0,98,0,40,0,8,0
 evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.external,Command,64,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.staticstate,ExecutionTracer,294,0,22,0,69,0,36,0,25,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.staticstate,ObjectiveRecorder,310,0,30,0,73,0,30,0,15,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,BranchCovMethodVisitor,207,0,7,0,61,0,9,0,4,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,LineCovMethodVisitor,55,0,2,0,17,0,4,0,3,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,CoverageClassVisitor,61,0,4,0,13,0,4,0,2,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,SuccessCallMethodVisitor,105,0,2,0,29,0,6,0,5,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.heuristic,Truthness,153,0,30,0,23,0,23,0,8,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.heuristic,HeuristicsForJumps,199,0,30,0,28,0,26,0,5,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.testability,ReplacementList,13,0,0,0,2,0,2,0,2,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.testability,BooleanMethodTransformer,604,0,124,0,135,0,80,0,16,0
-evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.testability,StringTransformer,305,0,46,0,67,0,36,0,13,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath,740,0,70,0,82,0,58,0,23,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects.GeneSpecialCases,7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath.Token,36,0,2,0,4,0,5,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallResult.Companion,16,0,0,0,8,0,8,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallAction,371,0,28,0,47,0,38,0,24,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath.Element,26,0,0,0,2,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestIndividual,981,0,87,0,124,0,72,0,28,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects,428,0,16,0,40,0,21,0,13,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallResult,268,0,30,0,41,0,39,0,24,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestActionBuilder,19,0,0,0,3,0,2,0,2,0
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.staticstate,ExecutionTracer,52,242,6,16,13,56,10,26,5,20
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.staticstate,ObjectiveRecorder,122,188,12,18,26,47,16,14,7,8
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,BranchCovMethodVisitor,69,138,3,4,20,41,3,6,0,4
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,LineCovMethodVisitor,1,54,1,1,1,16,1,3,0,3
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,CoverageClassVisitor,4,57,2,2,2,11,2,2,0,2
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.coverage,SuccessCallMethodVisitor,8,97,1,1,2,27,1,5,0,5
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.heuristic,Truthness,52,101,11,19,5,18,11,12,0,8
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.heuristic,HeuristicsForJumps,51,148,4,26,5,23,5,21,1,4
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.testability,ReplacementList,3,10,0,0,1,1,1,1,1,1
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.testability,BooleanMethodTransformer,154,450,54,70,18,117,49,31,2,14
+evomaster-project-report/evomaster-client-java-instrumentation,org.evomaster.client.java.instrumentation.testability,StringTransformer,18,287,9,37,2,65,9,27,0,13
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath,101,639,13,57,8,74,15,43,2,21
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath.Token,0,36,0,2,0,4,0,5,0,4
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestIndividual,654,327,71,16,74,50,49,23,11,17
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestActionBuilder,3,16,0,0,1,2,1,1,1,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestIndividual.repairInitializationActions.new Function0() {...},4,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,HttpVerb.Companion,13,23,1,7,1,8,1,7,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallAction.copy.p.new Function1() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestActionBuilder.Companion,545,1326,69,114,53,192,56,62,2,15
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects.GeneSpecialCases,7,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallResult.Companion,12,4,0,0,6,2,6,2,6,2
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallAction,117,272,14,14,14,34,13,27,4,22
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath.Element,0,26,0,0,0,2,0,3,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects,322,106,16,0,21,19,17,4,9,4
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallResult,85,183,14,16,10,31,18,21,7,17
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects.copy.new BiConsumer() {...},24,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects.copy.new BiConsumer() {...},20,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,UsedObjects.copy.new BiConsumer() {...},19,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,HttpVerb.Companion,36,0,8,0,9,0,8,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestCallAction.copy.p.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath.usableQueryParamsFunction.new Function1() {...},19,0,6,0,1,0,4,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestActionBuilder.Companion,1811,0,179,0,235,0,116,0,17,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms.wts,WtsEvalIndividual,71,0,2,0,8,0,6,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene,494,0,76,0,67,0,53,0,15,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,Gene,129,0,20,0,13,0,21,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,ArrayGene,294,0,12,0,32,0,17,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DateTimeGene,195,0,10,0,25,0,15,0,10,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,TimeGene,280,0,14,0,38,0,19,0,12,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DateGene,258,0,12,0,31,0,17,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,BooleanGene,111,0,10,0,15,0,13,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlPrimaryKeyGene,185,0,10,0,26,0,20,0,15,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,ImmutableDataHolderGene,86,0,4,0,12,0,12,0,10,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,StringGene,189,0,8,0,24,0,15,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,UUIDGene,193,0,10,0,26,0,15,0,10,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,LongGene,121,0,10,0,20,0,13,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,ObjectGene,384,0,36,0,40,0,29,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlAutoIncrementGene,88,0,6,0,12,0,11,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,OptionalGene,187,0,16,0,24,0,20,0,12,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,EnumGene,202,0,18,0,28,0,20,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DoubleGene,100,0,6,0,14,0,11,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,Gene.flatView.new Function1() {...},5,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlTimestampGene,185,0,14,0,23,0,14,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,IntegerGene,193,0,18,0,35,0,19,0,10,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,GeneUtils,263,0,52,0,42,0,31,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DisruptiveGene,207,0,18,0,21,0,22,0,13,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,Base64StringGene,146,0,6,0,15,0,11,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,MapGene,348,0,22,0,40,0,22,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,CycleObjectGene,42,0,0,0,5,0,5,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},10,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},18,0,4,0,1,0,3,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},11,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest,RestPath.usableQueryParamsFunction.new Function1() {...},0,19,0,6,0,1,0,4,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms.wts,WtsEvalIndividual,59,12,2,0,7,1,4,2,3,2
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,ArrayGene,266,28,11,1,28,4,16,1,10,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DateTimeGene,170,25,10,0,21,4,12,3,7,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DateGene,137,121,10,2,19,12,9,8,4,7
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,ImmutableDataHolderGene,70,16,4,0,11,1,11,1,9,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,StringGene,41,148,3,5,4,20,3,12,1,10
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,NumberGene,0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,OptionalGene,76,111,9,7,9,15,8,12,3,9
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlTimestampGene,106,79,11,3,14,9,10,4,3,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DisruptiveGene,89,118,11,7,7,14,11,11,3,10
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,MapGene,251,97,18,4,27,13,20,2,9,2
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,CycleObjectGene,25,17,0,0,4,1,4,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},0,10,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},0,18,0,4,0,1,0,3,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene.randomize.pks.new Function1() {...},0,11,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlForeignKeyGene,217,277,39,37,25,42,31,22,4,11
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,Gene,30,99,7,13,0,13,8,13,1,10
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,TimeGene,166,114,12,2,24,14,12,7,5,7
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,BooleanGene,65,46,7,3,8,7,8,5,4,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlPrimaryKeyGene,67,118,6,4,8,18,7,13,3,12
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,UUIDGene,145,48,10,0,22,4,12,3,7,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,LongGene,53,68,6,4,5,15,6,7,2,6
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,ObjectGene,209,175,25,11,24,16,19,10,5,6
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,SqlAutoIncrementGene,77,11,6,0,9,3,8,3,5,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,EnumGene,102,100,11,7,12,16,10,10,3,8
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,DoubleGene,72,28,6,0,9,5,8,3,5,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,Gene.flatView.new Function1() {...},0,5,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,IntegerGene,65,128,10,8,10,25,8,11,1,9
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,GeneUtils,85,178,24,28,11,31,21,10,0,5
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,Base64StringGene,107,39,6,0,12,3,9,2,6,2
 evomaster-project-report/evomaster-core,org.evomaster.core.search.gene,FloatGene,100,0,6,0,14,0,11,0,8,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,BodyParam,11,62,0,0,2,7,2,6,2,6
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,PathParam,0,31,0,0,0,4,0,3,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,HeaderParam,10,11,0,0,1,1,1,1,1,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,FormParam,10,11,0,0,1,1,1,1,1,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,QueryParam,0,21,0,0,0,2,0,2,0,2
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,Param,6,30,1,1,0,4,1,4,0,4
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.auth,NoAuth,0,11,0,0,0,1,0,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.auth,AuthenticationHeader,32,0,2,0,3,0,4,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.auth,AuthenticationInfo,49,0,6,0,5,0,6,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.auth,NoAuth,11,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,QueryParam,21,0,0,0,2,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,BodyParam,73,0,0,0,9,0,8,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,Param,36,0,2,0,4,0,5,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,PathParam,31,0,0,0,4,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,HeaderParam,21,0,0,0,2,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.param,FormParam,21,0,0,0,2,0,2,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.auth,AuthenticationInfo,12,37,3,3,1,4,3,3,0,3
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference.model,ParamGeneBindMap,81,0,10,0,2,0,12,0,7,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference.model,MatchedInfo,102,0,6,0,9,0,16,0,13,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.deriveParamsToTable.new BiConsumer() {...},16,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.getBindMap..inlined.let.lambda.new BiConsumer() {...},57,0,2,0,4,0,2,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.deriveParamWithTable.2.new Function1() {...},20,0,2,0,1,0,2,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.deriveResourceToTable.3.new Function1() {...},20,0,2,0,1,0,2,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding..special..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding..special..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding..special..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.getBindMap..inlined.let.lambda.1.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,DeriveResourceBinding.DefaultImpls,13,0,0,0,2,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding,1170,0,130,0,130,0,79,0,14,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.getBindMap.4.new BiConsumer() {...},28,0,0,0,4,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.deriveResourceToTable.2.1.new Function1() {...},20,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,SearchProcessMonitor,524,0,24,0,58,0,31,0,19,0
-evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,StepOfSearchProcess,138,0,4,0,18,0,13,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,StepOfSearchProcess.new BiConsumer() {...},22,0,0,0,3,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding.getBindMap..inlined.let.lambda.new BiConsumer() {...},57,0,2,0,4,0,2,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,DeriveResourceBinding.DefaultImpls,13,0,0,0,2,0,2,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util.inference,SimpleDeriveResourceBinding,1170,0,130,0,130,0,79,0,14,0
 evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,SearchProcessMonitor.initMonitorProcessOutputs.new Consumer() {...},18,0,2,0,3,0,2,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,SearchProcessMonitor.initMonitorProcessOutputs.new Function1() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,SearchProcessMonitor,48,476,7,17,6,52,11,20,5,14
+evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,StepOfSearchProcess,9,129,0,4,1,17,3,10,3,8
+evomaster-project-report/evomaster-core,org.evomaster.exps.monitor,StepOfSearchProcess.new BiConsumer() {...},0,22,0,0,0,3,0,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.selectTemplate..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.sampleOneAction.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.sampleIndResourceCall.new Function1() {...},20,0,6,0,1,0,4,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,ParamInfo,70,0,0,0,9,0,10,0,10,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,SamplerSpecification,26,0,0,0,2,0,4,0,4,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.chooseLongestPath.max.new Function1() {...},8,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.getPostChain.new Function1() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceCalls,259,100,33,3,25,11,35,3,17,3
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.updateTemplateSize.new Function1() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,ActionRToken,112,0,0,0,13,0,10,0,10,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,PathRToken,112,0,0,0,11,0,10,0,10,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode,3695,0,490,0,387,0,320,0,72,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.sampleIndResourceCall.new Function1() {...},20,0,6,0,1,0,4,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RToken,157,0,12,0,10,0,17,0,11,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.Companion,2,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceCalls,359,0,36,0,36,0,38,0,20,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,MutatorSpecification,26,0,0,0,2,0,4,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode.updateTemplateSize.new Function1() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceInstance,71,0,0,0,5,0,7,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,ActionRToken,112,0,0,0,13,0,10,0,10,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,CallsTemplate,48,0,0,0,6,0,9,0,9,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,PathRToken,112,0,0,0,11,0,10,0,10,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceCalls.longestPath.max.new Function1() {...},8,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource,RestResourceNode,3695,0,490,0,387,0,320,0,72,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,MismatchedFormatException,20,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,OutputFormatter.Companion.JSON_FORMATTER.new OutputFormatter() {...},56,0,2,0,10,0,5,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,OutputFormatter.Companion,30,0,2,0,7,0,5,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,OutputFormatter,32,0,0,0,4,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MioAlgorithm,81,0,12,0,17,0,9,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MosaAlgorithm,785,0,100,0,144,0,63,0,13,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,RandomAlgorithm,39,0,4,0,7,0,5,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MosaAlgorithm.Data,32,0,0,0,3,0,6,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,WtsAlgorithm,402,0,46,0,71,0,32,0,8,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,MismatchedFormatException,0,20,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,OutputFormatter.Companion.JSON_FORMATTER.new OutputFormatter() {...},3,53,0,2,0,10,1,4,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,OutputFormatter.Companion,10,20,1,1,2,5,2,3,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.output.formatter,OutputFormatter,0,32,0,0,0,4,0,3,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MioAlgorithm,3,78,1,11,1,16,2,7,1,2
+evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MosaAlgorithm,76,709,31,69,12,132,26,37,1,12
+evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MosaAlgorithm.Data,0,32,0,0,0,3,0,6,0,6
 evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,MosaAlgorithm.sortPopulation..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.tracer,TrackOperator.DefaultImpls,7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.tracer,TraceableElement,50,0,4,0,7,0,9,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.getSutInfo.dto.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.executeDatabaseInsertionsAndGetIdMapping.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.executeDatabaseCommandAndGetQueryResults.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.getTestResults.dto.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,RandomAlgorithm,3,36,1,3,1,6,2,3,1,2
+evomaster-project-report/evomaster-core,org.evomaster.core.search.algorithms,WtsAlgorithm,277,125,35,11,48,23,25,7,4,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.tracer,TrackOperator.DefaultImpls,0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.tracer,TraceableElement,22,28,2,2,3,4,4,5,3,4
+evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.getTestResults.dto.new GenericType() {...},0,3,0,0,0,1,0,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.Companion,2,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController,699,0,60,0,142,0,58,0,28,0
 evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.executeDatabaseCommand.responseDto.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.getControllerInfo.dto.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParserUtil,35,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil.Companion.geneNameMaps.pred.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,RestResourceTemplateHandler,40,0,0,0,2,0,2,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.getSutInfo.dto.new GenericType() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.executeDatabaseInsertionsAndGetIdMapping.new GenericType() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.executeDatabaseCommandAndGetQueryResults.new GenericType() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController,305,394,40,20,59,83,39,19,9,19
+evomaster-project-report/evomaster-core,org.evomaster.core.remote.service,RemoteController.getControllerInfo.dto.new GenericType() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,DisjunctionListRxGene,106,110,10,4,15,14,11,6,5,5
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,PatternCharacterBlock,96,30,6,0,10,5,7,4,4,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,RxTerm,0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,RegexGene,61,67,5,1,8,8,6,5,3,5
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,CharacterClassEscapeRxGene,100,91,7,2,10,12,10,4,5,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,RxAtom,0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,QuantifierRxGene,197,197,18,12,22,32,17,9,6,5
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,AnyCharacterRxGene,63,36,6,0,7,8,7,4,4,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,CharacterRangeRxGene,75,66,7,1,9,12,10,4,6,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.gene.regex,DisjunctionRxGene,138,182,15,11,17,22,16,11,8,6
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,RestResourceTemplateHandler.Companion,1163,0,130,0,94,0,81,0,16,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil.Companion.bindBodyAndOther.new BiConsumer() {...},69,0,10,0,7,0,6,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil.Companion.bindBodyAndOther.new BiConsumer() {...},12,57,3,7,1,6,3,3,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil,3,179,0,0,1,12,1,1,1,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParserUtil.Companion.parsePathTokens..inlined.forEachIndexed.lambda.new BiConsumer() {...},258,0,14,0,28,0,8,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParserUtil,23,0,0,0,4,0,2,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil.Companion.geneNameMaps.pred.new Function1() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,RestResourceTemplateHandler,40,0,0,0,2,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParserUtil.Companion.PIPELINE.new Properties() {...},32,0,0,0,2,0,9,0,9,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParserUtil.Companion,813,0,72,0,111,0,55,0,19,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil,182,0,0,0,13,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil.Companion,2550,0,384,0,299,0,238,0,46,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParserUtil.Companion.parsePathTokens..inlined.forEachIndexed.lambda.new BiConsumer() {...},258,0,14,0,28,0,8,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService.createAdHocIndividuals.new Function1() {...},66,0,18,0,1,0,10,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.chooseLongestPath.max.new Function1() {...},7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,AbstractRestFitness,1005,0,123,0,153,0,76,0,12,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.util,ParamUtil.Companion,2002,548,325,59,223,76,202,36,30,16
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,AbstractRestFitness,326,679,51,72,43,110,41,35,2,10
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceDepManageService.updateResourceToTable.new BiConsumer() {...},302,0,24,0,27,0,13,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator.mutateForSmartGetCollection.new Function0() {...},13,0,4,0,1,0,3,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator.mutateForSmartGetCollection.new Function0() {...},18,0,4,0,1,0,3,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceSampler,1493,0,171,0,205,0,116,0,29,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator.mutateForSmartGetCollection.new Function0() {...},1,12,2,2,0,1,2,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator.mutateForSmartGetCollection.new Function0() {...},1,17,2,2,0,1,2,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.likelyhoodsExtended.new BiConsumer() {...},25,0,0,0,2,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.likelyhoodsExtended.new BiConsumer() {...},105,0,2,0,8,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.createWriteOperationAfterAPost.new Function0() {...},19,0,6,0,1,0,4,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartPut.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartPut.new Function0() {...},1,8,1,1,0,1,1,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceStructureMutator.MutationType,71,0,0,0,6,0,3,0,3,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceSampler.Companion,2,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,SmartSamplingController.relyOnArchive..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceStructureMutator,854,0,108,0,125,0,66,0,10,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestFitness,24,249,8,14,4,38,8,8,0,5
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule,0,67,0,0,0,22,0,2,0,2
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService,1780,0,250,0,204,0,147,0,22,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService.Companion,2,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,SmartSamplingController,1345,0,139,0,178,0,103,0,25,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.sameOrAncestorEndpoints.new Function1() {...},0,17,1,3,0,1,1,2,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.sameOrAncestorEndpoints.new Function1() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator,103,429,21,45,8,71,18,22,0,6
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,SmartSamplingController.relyOnConArchive..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,AbstractRestFitness.client.new Function0() {...},0,20,0,0,0,5,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService.createAdHocIndividuals.new Function1() {...},66,0,18,0,1,0,10,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.chooseLongestPath.max.new Function1() {...},0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceSampler,1493,0,171,0,205,0,116,0,29,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.createWriteOperationAfterAPost.new Function0() {...},1,18,1,5,0,1,1,3,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.proposeObject..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceSamplingMethod,45,0,0,0,1,0,9,0,9,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceSampler.Companion,2,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,SmartSamplingController.relyOnArchive..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceStructureMutator,854,0,108,0,125,0,66,0,10,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService.createAdHocIndividuals..inlined.sortedByDescending.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestFitness,276,0,22,0,42,0,16,0,5,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.proposeObject.new BiConsumer() {...},75,0,8,0,7,0,5,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler,2198,0,194,0,326,0,140,0,40,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler,1081,1134,111,85,134,194,84,57,9,31
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceDepManageService,5069,0,581,0,549,0,340,0,47,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule.configure.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestModule,67,0,0,0,22,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartPost.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService,1780,0,250,0,204,0,147,0,22,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartPost.new Function0() {...},1,8,1,1,0,1,1,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceDepManageService.deriveDependencyBasedOnSchema..inlined.forEach.lambda.new BiConsumer() {...},144,0,18,0,15,0,10,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator.mutateForSmartGetCollection.1.new Function0() {...},14,0,4,0,1,0,3,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator.mutateForSmartGetCollection.1.new Function0() {...},1,13,2,2,0,1,2,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestMutator,192,0,38,0,17,0,24,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService.Companion,2,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceDepManageService.bindCallWithFront..inlined.forEach.lambda.new BiConsumer() {...},17,0,0,0,3,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestResourceFitness,378,0,34,0,54,0,22,0,5,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceManageService.repairRestResourceCalls.new Predicate() {...},14,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,SmartSamplingController,1345,0,139,0,178,0,103,0,25,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartGet.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartGet.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.sameOrAncestorEndpoints.new Function1() {...},17,0,4,0,1,0,3,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartPatch.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.sameOrAncestorEndpoints.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.createSingleCallOnEachEndpoint.new Function1() {...},7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartDelete.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestStructureMutator,532,0,66,0,79,0,40,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,SmartSamplingController.relyOnConArchive..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartGet.new Function0() {...},1,8,1,1,0,1,1,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartGet.new Function0() {...},1,8,1,1,0,1,1,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartPatch.new Function0() {...},1,8,1,1,0,1,1,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.createSingleCallOnEachEndpoint.new Function1() {...},0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,RestSampler.handleSmartDelete.new Function0() {...},1,8,1,1,0,1,1,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceRestModule,103,0,0,0,37,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,AbstractRestFitness.client.new Function0() {...},20,0,0,0,5,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.service,ResourceDepManageService.bindCallWithOtherDBAction.new Predicate() {...},10,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchOverall,104,0,4,0,11,0,5,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Sampler.seeAvailableActions..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.ArchiveUpdateCondition,54,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,InterfaceAdapter,529,0,36,0,64,0,27,0,9,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive,992,0,121,0,138,0,79,0,18,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchStatusUpdater,279,0,16,0,40,0,15,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.numberOfReachedButNotCoveredTargets.new Predicate() {...},13,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchAlgorithm,84,0,0,0,9,0,16,0,16,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,IdMapper,96,0,2,0,12,0,5,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Randomness,423,0,34,0,76,0,41,0,24,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,InterfaceAdapter,523,6,36,0,62,2,26,1,8,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,IdMapper,12,84,2,0,1,11,2,3,1,3
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Statistics.writeSnapshot.new Comparator() {...},10,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Statistics.writeSnapshot.new Consumer() {...},41,0,0,0,5,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Statistics.Snapshot,15,0,0,0,3,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Statistics,783,0,30,0,94,0,28,0,13,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.numberOfCoveredTargets.new Predicate() {...},9,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,AdaptiveParameterControl,69,0,2,0,12,0,7,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchTimeController,274,0,11,0,42,0,24,0,18,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Sampler.seeAvailableActions.new Function1() {...},7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,FitnessFunction,154,0,6,0,21,0,22,0,19,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.sortAndShrinkIfNeeded..inlined.thenComparator.new Comparator() {...},18,0,2,0,2,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.sortAndShrinkIfNeeded..inlined.thenBy.new Comparator() {...},16,0,2,0,2,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.addIfNeeded.new Function0() {...},9,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Sampler,74,0,2,0,15,0,13,0,12,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Sampler.seeAvailableActions.new Function1() {...},0,7,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,FitnessFunction,83,71,4,2,8,13,15,7,12,7
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.sortAndShrinkIfNeeded..inlined.thenComparator.new Comparator() {...},0,18,0,2,0,2,0,2,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.sortAndShrinkIfNeeded..inlined.thenBy.new Comparator() {...},0,16,0,2,0,2,0,2,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Sampler,15,59,0,2,1,14,3,10,3,9
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Statistics.Pair,21,0,0,0,1,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.sortAndShrinkIfNeeded..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service,InterfaceAdapter.Companion,31,0,0,0,7,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,Individual,57,0,4,0,7,0,8,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedAction,21,0,0,0,1,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual.updateReachedTargets.new BiConsumer() {...},67,0,8,0,9,0,5,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,FitnessValue.Companion,8,0,2,0,1,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,ActionResult,71,0,0,0,10,0,8,0,8,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,Solution,21,0,0,0,3,0,3,0,3,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.sortAndShrinkIfNeeded..inlined.compareBy.new Comparator() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchOverall,3,101,0,4,1,10,1,4,1,2
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Sampler.seeAvailableActions..inlined.sortedBy.new Comparator() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive,232,760,27,94,20,118,22,57,4,14
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchStatusUpdater,42,237,8,8,8,32,7,8,1,6
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.numberOfReachedButNotCoveredTargets.new Predicate() {...},13,0,2,0,1,0,2,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchAlgorithm,49,35,0,0,0,9,7,9,7,9
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Randomness,169,291,14,24,23,61,18,27,6,20
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Statistics,735,48,29,1,85,9,24,4,9,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,AdaptiveParameterControl,0,69,0,2,0,12,0,7,0,6
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,SearchTimeController,21,253,2,9,3,39,5,19,3,15
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,Archive.addIfNeeded.new Function0() {...},1,8,1,1,0,1,1,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service,InterfaceAdapter.Companion,0,31,0,0,0,7,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search,Individual,33,24,2,2,2,5,4,4,2,4
+evomaster-project-report/evomaster-core,org.evomaster.core.search,FitnessValue.Companion,0,8,0,2,0,1,0,2,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search,ActionResult,9,62,0,0,2,8,2,6,2,6
+evomaster-project-report/evomaster-core,org.evomaster.core.search,Solution,0,21,0,0,0,3,0,3,0,3
 evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual.initImpacts.new BiConsumer() {...},16,0,0,0,2,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual,783,508,100,32,82,57,65,22,9,12
+evomaster-project-report/evomaster-core,org.evomaster.core.search,Heuristics,0,15,0,0,0,3,0,3,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedAction,0,21,0,0,0,1,0,3,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual.updateReachedTargets.new BiConsumer() {...},67,0,8,0,9,0,5,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual.compareWithLatest.new BiConsumer() {...},43,0,2,0,7,0,2,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual.compareWithLatest.new BiConsumer() {...},43,0,2,0,7,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,FitnessValue,505,0,52,0,66,0,48,0,22,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,EvaluatedIndividual,1291,0,132,0,139,0,87,0,21,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,FitnessValue.aggregateDatabaseData.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search,Heuristics,15,0,0,0,3,0,3,0,3,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search,FitnessValue,57,448,10,42,8,58,10,38,1,21
+evomaster-project-report/evomaster-core,org.evomaster.core.search,FitnessValue.aggregateDatabaseData.new Function1() {...},0,6,0,0,0,1,0,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.search,GeneIdUtil,213,0,18,0,13,0,16,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findLowerBound.lowerBounds.new Function1() {...},7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findLowerBound.lowerBounds.new Function1() {...},10,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils..special..inlined.filterIsInstance.new Function1() {...},3,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils..special..inlined.filterIsInstance.new Function1() {...},0,3,0,0,0,1,0,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findUpperBound.upperBounds.new Function1() {...},10,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findUpperBound.upperBounds.new Function1() {...},7,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbAction,863,0,78,0,79,0,57,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionTransformer,261,0,24,0,47,0,16,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DatabaseExecution,48,0,0,0,6,0,6,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder,1705,0,140,0,206,0,84,0,14,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findLowerBound..inlined.filterIsInstance.new Function1() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.verifyForeignKeys.4.match.new Function1() {...},8,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils,758,0,86,0,114,0,55,0,12,0
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbAction,131,757,14,65,10,70,16,42,3,8
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DatabaseExecution,12,36,0,0,4,2,4,2,4,2
+evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder,790,915,80,60,85,121,55,29,5,9
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.verifyForeignKeys.4.match.new Function1() {...},0,8,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils,171,587,26,60,16,98,18,37,1,11
 evomaster-project-report/evomaster-core,org.evomaster.core.database,SQLKey,104,0,0,0,9,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.handlePKs..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findUpperBound..inlined.filterIsInstance.new Function1() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.randomizeDbActionGenes.new Function1() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DatabaseExecution.Companion,216,0,34,0,32,0,22,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.randomizeDbActionGenes.new Function0() {...},5,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.handlePKs..inlined.sortedBy.new Comparator() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DatabaseExecution.Companion,35,181,13,21,6,26,13,9,1,4
+evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findLowerBound.lowerBounds.new Function1() {...},7,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findLowerBound.lowerBounds.new Function1() {...},10,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionTransformer,14,247,2,22,3,44,2,14,0,4
+evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findLowerBound..inlined.filterIsInstance.new Function1() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.database,SqlInsertBuilder.findUpperBound..inlined.filterIsInstance.new Function1() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.randomizeDbActionGenes.new Function1() {...},0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.randomizeDbActionGenes.new Function0() {...},0,5,0,0,0,1,0,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.database,SQLGenerator,3,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.database,SQLGenerator.Companion,340,0,25,0,24,0,24,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.repairBrokenDbActionsList.new Function0() {...},15,0,4,0,1,0,3,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.database,DbActionUtils.repairBrokenDbActionsList.new Function0() {...},1,14,2,2,0,1,2,1,0,1
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.web.service,WebModule,18,0,0,0,2,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.impact,ImpactOfStructure,28,0,0,0,3,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.impact,ImpactOfGene,32,0,0,0,3,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.impact,Impact,122,0,2,0,19,0,17,0,16,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,Table,43,0,2,0,5,0,6,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,Column,75,0,0,0,12,0,12,0,12,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,ColumnDataType,272,0,8,0,24,0,7,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,ForeignKey,21,0,0,0,3,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,Mutator,311,0,24,0,38,0,31,0,19,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.postActionAfterMutation.new Function0() {...},4,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.postActionAfterMutation.new Function0() {...},9,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.handleIntegerGene.new Function0() {...},15,0,4,0,1,0,3,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.handleIntegerGene.new Function0() {...},15,0,4,0,1,0,3,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,EmptyStructureMutator,11,0,0,0,3,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator,1431,0,190,0,188,0,121,0,24,0
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.BracketQuantifierRangeContext,35,9,2,0,7,3,7,2,6,2
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,VisitResult,0,37,0,0,0,5,0,5,0,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToLexer,16,345,0,8,8,27,8,9,8,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,GenePostgresLikeVisitor,15,159,5,10,1,17,5,6,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262BaseVisitor,80,3,0,0,20,1,20,1,20,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.PatternContext,6,19,1,1,2,4,2,3,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.TermContext,6,25,1,1,2,5,2,4,1,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.ClassRangesContext,6,19,1,1,2,4,2,3,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.PatternContext,6,19,1,1,2,4,2,3,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.AtomContext,22,39,1,1,5,8,5,7,4,7
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.PatternCharacterContext,29,5,2,0,6,2,6,1,5,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexHandler.ThrowingErrorListener,33,3,0,0,1,1,1,1,1,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.DecimalDigitsContext,23,5,2,0,5,2,5,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.BracketQuantifierContext,14,23,2,0,3,5,3,4,2,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.BracketQuantifierSingleContext,24,11,2,0,5,3,5,2,4,2
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.ClassAtomNoDashContext,84,5,2,0,17,2,17,1,16,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.AlternativeContext,12,17,1,1,3,4,3,3,2,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser,433,1546,25,55,122,343,30,51,5,26
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.NonemptyClassRangesContext,17,29,1,1,4,6,4,5,3,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeParser,95,419,9,24,26,85,14,18,5,10
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.CharacterClassContext,16,24,1,1,4,5,4,4,3,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToBaseVisitor,72,3,0,0,18,1,18,1,18,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.TermContext,6,31,1,1,2,6,2,5,1,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.QuantifierContext,11,19,1,1,3,4,3,3,2,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.NonemptyClassRangesNoDashContext,6,42,1,1,2,8,2,7,1,7
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.BracketQuantifierSingleContext,24,11,2,0,5,3,5,2,4,2
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.ClassRangesContext,6,19,1,1,2,4,2,3,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeParser.PatternContext,12,17,1,1,3,4,3,3,2,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,GenePostgresSimilarToVisitor,101,727,12,46,9,104,12,29,0,11
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.BracketQuantifierOnlyMinContext,29,11,2,0,6,3,6,2,5,2
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeLexer,16,189,0,8,8,27,8,9,8,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.NonemptyClassRangesContext,17,29,1,1,4,6,4,5,3,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.QuantifierPrefixContext,21,19,1,1,5,4,5,3,4,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.AlternativeContext,12,17,1,1,3,4,3,3,2,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.AtomContext,22,39,1,1,5,8,5,7,4,7
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.NonemptyClassRangesNoDashContext,6,42,1,1,2,8,2,7,1,7
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeParser.SpecialSymbolContext,24,5,2,0,5,2,5,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.CharacterClassContext,16,24,1,1,4,5,4,4,3,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Lexer,16,361,0,8,8,27,8,9,8,5
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.PatternCharacterContext,29,5,2,0,6,2,6,1,5,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.BracketQuantifierOnlyMinContext,29,11,2,0,6,3,6,2,5,2
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.ClassAtomContext,25,5,2,0,5,2,5,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.ClassAtomContext,25,5,2,0,5,2,5,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.DisjunctionContext,11,25,1,1,3,5,3,4,2,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.DecimalDigitsContext,23,5,2,0,5,2,5,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexHandler,0,162,0,0,0,31,0,6,0,6
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeBaseVisitor,16,3,0,0,4,1,4,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.ClassAtomNoDashContext,94,5,2,0,19,2,19,1,18,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.DisjunctionContext,11,25,1,1,3,5,3,4,2,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.BracketQuantifierRangeContext,35,9,2,0,7,3,7,2,6,2
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeParser.TermContext,12,23,1,1,3,5,3,4,2,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.BracketQuantifierContext,14,23,2,0,3,5,3,4,2,4
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,GeneRegexEcma262Visitor,118,812,14,54,10,120,14,33,0,12
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,RegexEcma262Parser.AssertionContext,24,5,2,0,5,2,5,1,4,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser.QuantifierContext,21,19,1,1,5,4,5,3,4,3
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresLikeParser.BaseSymbolContext,29,5,2,0,6,2,6,1,5,1
+evomaster-project-report/evomaster-core,org.evomaster.core.parser,PostgresSimilarToParser,379,1426,21,49,108,317,26,47,5,24
+evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,Column,0,75,0,0,0,12,0,12,0,12
+evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,Table,0,43,0,2,0,5,0,6,0,5
+evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,ColumnDataType,0,283,3,5,0,25,3,4,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.database.schema,ForeignKey,0,21,0,0,0,3,0,3,0,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,Mutator,76,235,6,18,7,31,15,16,9,10
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.postActionAfterMutation.new Function0() {...},0,4,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.postActionAfterMutation.new Function0() {...},0,9,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator,591,840,92,98,74,114,63,58,9,15
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.selectGenesApproachGood..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.selectGenesFeedback..inlined.sortedByDescending.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,Mutator.mutateAndSave.new Function0() {...},9,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,Mutator.mutateAndSave.new Function0() {...},12,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StructureMutator,28,0,0,0,3,0,6,0,6,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,Mutator.mutateAndSave.new Function0() {...},0,9,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,Mutator.mutateAndSave.new Function0() {...},0,12,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StructureMutator,17,11,0,0,0,3,3,3,3,3
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.handleIntegerGene.new Function0() {...},1,14,2,2,0,1,2,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,StandardMutator.handleIntegerGene.new Function0() {...},15,0,4,0,1,0,3,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.search.service.mutator,EmptyStructureMutator,4,7,0,0,1,2,1,2,1,2
 evomaster-project-report/evomaster-core,org.evomaster.core.remote,NoRemoteConnectionException,18,0,0,0,3,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.remote,SutProblemException,7,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.logging,UniqueTurboFilter,73,0,6,0,10,0,6,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core.logging,LoggingUtil.Companion,29,0,2,0,4,0,3,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.logging,LoggingUtil.Companion,23,6,1,1,2,2,2,1,1,1
 evomaster-project-report/evomaster-core,org.evomaster.core.logging,UniqueTurboFilter.Companion,2,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.logging,UniqueTurboFilter,47,26,5,1,5,5,3,3,0,3
 evomaster-project-report/evomaster-core,org.evomaster.core.logging,LoggingUtil,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.initTestMethod.new Function0() {...},7,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.initClassMethod.new Function0() {...},19,0,0,0,4,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter,700,0,58,0,130,0,46,0,17,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.tearDownMethod.new Function0() {...},7,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.convertToCompilableTestCode.new Function0() {...},46,0,2,0,8,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.beforeAfterMethods.staticInit.new Function0() {...},26,0,0,0,6,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToTable.Companion,12,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.convertToCompilableTestCode.new Function0() {...},0,46,0,2,0,8,0,2,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.beforeAfterMethods.staticInit.new Function0() {...},0,26,0,0,0,6,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.initTestMethod.new Function0() {...},0,7,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.new Function0() {...},167,0,16,0,30,0,9,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.initClassMethod.new Function0() {...},6,24,1,1,1,5,1,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.new Function0() {...},5,0,0,0,2,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.new Function0() {...},5,0,0,0,2,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter,197,641,27,39,33,122,24,27,1,17
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.tearDownMethod.new Function0() {...},0,7,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.new Function0() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.new Function0() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.new Function0() {...},11,0,0,0,3,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.new Function0() {...},21,0,0,0,5,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.new Function0() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.new Function0() {...},23,0,0,0,4,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output.service,TestSuiteWriter.addAdditionalNumberMatcher.3.4.new Function0() {...},7,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestSuiteOrganizer,3,14,0,0,1,2,1,1,1,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleBody.new Function0() {...},0,39,0,0,0,5,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.addRestCallInTryCatch..inlined.let.lambda.new Function0() {...},13,0,0,0,2,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestSuiteFileName,4,115,1,9,2,11,2,9,1,5
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleFK.new Function0() {...},0,4,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper,112,105,1,1,6,13,9,3,8,3
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.convertToCompilableTestCode.new Function0() {...},38,141,5,13,2,22,5,5,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper,114,40,18,0,13,2,15,1,6,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleDbInitialization..inlined.forEachIndexed.lambda.new Function0() {...},15,90,1,9,2,15,1,5,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestSuiteOrganizer.Companion,10,17,0,0,1,3,1,3,1,3
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCase,6,45,2,6,0,5,2,6,0,4
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.addRestCallInTryCatch.new Function0() {...},20,0,2,0,4,0,2,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleExpectations.new Function0() {...},28,0,4,0,7,0,3,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,Lines,41,253,4,4,5,38,5,16,1,16
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleVerb.new Function0() {...},0,43,0,0,0,3,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core.output,OutputFormat,1,41,1,3,0,6,1,7,0,6
+evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter,728,991,88,74,89,142,60,43,6,16
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ActionRelatedToTable.AccessTable,30,0,0,0,1,0,4,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToResources,53,0,6,0,5,0,6,0,3,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,DBCreationChain,16,0,0,0,1,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ParamRelatedToTable,59,0,2,0,5,0,6,0,5,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToTable..special..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,RelatedTo.Companion,87,0,8,0,4,0,6,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,PostCreationChain,16,0,0,0,1,0,2,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,SelfResourcesRelation,25,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,RelatedTo,78,0,0,0,8,0,10,0,10,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToTable.Companion,12,0,0,0,1,0,1,0,1,0
+evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToResources,53,0,6,0,5,0,6,0,3,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,BodyParamRelatedToTable,140,0,12,0,7,0,10,0,4,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,CompositeCreationChain,16,0,0,0,1,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToTable.findBestTableForParam..inlined.sortedBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,RelatedTo.Companion,87,0,8,0,4,0,6,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ParamFieldRelatedToTable,58,0,4,0,4,0,4,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,PostCreationChain,16,0,0,0,1,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToTable.findBestTableForParam.new BiConsumer() {...},80,0,12,0,5,0,7,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,SelfResourcesRelation,25,0,0,0,1,0,1,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,MutualResourcesRelations,38,0,0,0,3,0,4,0,4,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,SimpleParamRelatedToTable,16,0,0,0,1,0,2,0,2,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,CreationChain,43,0,0,0,10,0,7,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,RelatedTo,78,0,0,0,8,0,10,0,10,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ActionRelatedToTable,65,0,2,0,8,0,6,0,5,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ActionRelatedToTable.updateTableWithFields.new BiConsumer() {...},108,0,12,0,8,0,7,0,1,0
 evomaster-project-report/evomaster-core,org.evomaster.core.problem.rest.resource.dependency,ResourceRelatedToTable,773,0,64,0,58,0,52,0,20,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestSuiteOrganizer,17,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleBody.new Function0() {...},39,0,0,0,5,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.addRestCallInTryCatch..inlined.let.lambda.new Function0() {...},13,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.addRestCallInTryCatch.new Function0() {...},20,0,2,0,4,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestSuiteFileName,119,0,10,0,13,0,11,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleResponseContents.new Function0() {...},184,0,20,0,21,0,11,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleFK.new Function0() {...},4,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleExpectations.new Function0() {...},24,0,2,0,7,0,2,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper,217,0,2,0,19,0,12,0,11,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.convertToCompilableTestCode.new Function0() {...},179,0,18,0,24,0,10,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper,154,0,18,0,15,0,16,0,7,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleDbInitialization..inlined.forEachIndexed.lambda.new Function0() {...},76,0,8,0,13,0,5,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,SortingHelper..special..inlined.compareBy.new Comparator() {...},6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestSuiteOrganizer.Companion,27,0,0,0,4,0,4,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,Lines,294,0,8,0,43,0,21,0,17,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter.handleVerb.new Function0() {...},43,0,0,0,3,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,OutputFormat,42,0,4,0,6,0,8,0,6,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,NamingHelper.namingCriteria.new Function1() {...},9,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCase,51,0,8,0,5,0,8,0,4,0
-evomaster-project-report/evomaster-core,org.evomaster.core.output,TestCaseWriter,1255,0,96,0,176,0,69,0,21,0
-evomaster-project-report/evomaster-core,org.evomaster.core,Lazy,32,0,6,0,4,0,5,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core,BaseModule,73,0,0,0,24,0,5,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion,720,0,46,0,129,0,38,0,13,0
-evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-core,org.evomaster.core,AnsiColor,76,0,0,0,6,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig.Companion.MyHelpFormatter,10,0,0,0,2,0,2,0,2,0
-evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig.ResourceSamplingStrategy,103,0,0,0,3,0,3,0,3,0
-evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig,1271,0,73,0,132,0,167,0,130,0
-evomaster-project-report/evomaster-core,org.evomaster.core,AnsiColor.Companion,55,0,0,0,5,0,5,0,5,0
-evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig.Companion,482,0,54,0,52,0,31,0,4,0
+evomaster-project-report/evomaster-core,org.evomaster.core,BaseModule,3,70,0,0,0,24,1,4,1,4
+evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig.Companion.MyHelpFormatter,5,5,0,0,1,1,1,1,1,1
+evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig.ResourceSamplingStrategy,3,100,0,0,0,3,1,2,1,2
+evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig,190,1081,19,54,12,120,19,148,2,128
+evomaster-project-report/evomaster-core,org.evomaster.core,EMConfig.Companion,52,430,7,47,7,45,7,24,1,3
 evomaster-project-report/evomaster-core,org.evomaster.core,Main,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.bodytypes,BodyTypesApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.bodytypes,BodyTypesDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.bodytypes,BodyTypesRest,17,0,0,0,8,0,8,0,8,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,CPGRest,86,0,6,0,18,0,9,0,6,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,Y,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,CPGRest.X,6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,CPGApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseEntity,17,0,0,0,7,0,5,0,5,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseRest,112,0,4,0,23,0,9,0,7,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseDto,12,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring,SwaggerConfiguration,38,0,0,0,12,0,3,0,3,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,TargetEnums,24,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,EnumsApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,EnumsRest,23,0,3,0,7,0,4,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,EnumsDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.webrequest,WebRequestRest,19,0,4,0,6,0,4,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.webrequest,WebRequestApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth.db,AuthProjectEntity,24,0,0,0,10,0,7,0,7,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth.db,AuthUserEntity,17,0,0,0,7,0,5,0,5,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.strings,StringsApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.strings,StringsRest,84,0,20,0,20,0,14,0,4,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.strings,StringsResponseDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.javatypes,JavaTypesEntity,133,0,0,0,37,0,14,0,14,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.javatypes,JavaTypesApp,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.javatypes,JavaTypesRest,27,0,2,0,7,0,4,0,3,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.constant,ConstantApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.constant,ConstantResponseDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.constant,ConstantRest,19,0,2,0,4,0,3,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.namedresource,NamedResourceApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.namedresource,NamedResourceDto,12,0,0,0,6,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.namedresource,NamedResourceRest,96,0,8,0,23,0,11,0,7,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest.Y,11,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest.X,11,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest.Z,6,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest,191,0,12,0,34,0,12,0,6,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,PIApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,ResponseDto,9,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,PostDto,9,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,PositiveIntegerRest,34,0,0,0,7,0,3,0,3,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.directint,DbDirectIntApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.directint,DbDirectIntEntity,24,0,0,0,10,0,7,0,7,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.directint,DbDirectIntRest,40,0,2,0,10,0,4,0,3,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthRest,26,0,2,0,7,0,4,0,3,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthApp,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthUserService,33,0,2,0,5,0,3,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthWebSecurityConfig,44,0,0,0,12,0,3,0,3,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthProjectService,17,0,0,0,4,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesPostDto,12,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesResponseDto,3,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesRest,66,0,0,0,13,0,4,0,4,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainednolocation,CNLRest,57,0,6,0,12,0,7,0,4,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainednolocation,CNLApplication,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainednolocation,CNL_X,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,CreateDto,9,0,0,0,5,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,PostCollectionApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,PostCollectionRest,40,0,4,0,10,0,6,0,4,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,ValuesDto,8,0,0,0,2,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.triangle,TriangleRest,21,0,0,0,4,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.triangle,TriangleApplication,8,0,0,0,3,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.triangle,TriangleResponseDto,3,0,0,0,1,0,1,0,1,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.headerlocation,HeaderLocationDto,12,0,0,0,6,0,2,0,2,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.headerlocation,HeaderLocationRest,106,0,8,0,23,0,11,0,7,0
-evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.headerlocation,HeaderLocationApplication,8,0,0,0,3,0,2,0,2,0
+evomaster-project-report/evomaster-core,org.evomaster.core,Lazy,8,24,3,3,0,4,3,2,0,2
+evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion,384,336,32,14,62,67,27,11,5,8
+evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core,Main.Companion.run.key.new TypeLiteral() {...},0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-core,org.evomaster.core,AnsiColor,76,0,0,0,6,0,3,0,3,0
+evomaster-project-report/evomaster-core,org.evomaster.core,AnsiColor.Companion,55,0,0,0,5,0,5,0,5,0
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.bodytypes,BodyTypesApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.bodytypes,BodyTypesDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.bodytypes,BodyTypesRest,0,17,0,0,0,8,0,8,0,8
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,CPGRest,6,80,1,5,2,16,2,7,1,5
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,Y,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,CPGRest.X,0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedpostget,CPGApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseEntity,4,13,0,0,2,5,1,4,1,4
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseRest,0,112,0,4,0,23,0,9,0,7
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.base,DbBaseDto,0,12,0,0,0,5,0,2,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring,SwaggerConfiguration,0,38,0,0,0,12,0,3,0,3
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,TargetEnums,0,24,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,EnumsApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,EnumsRest,0,23,1,2,0,7,1,3,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.enums,EnumsDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.webrequest,WebRequestRest,0,19,0,4,0,6,0,4,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.webrequest,WebRequestApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth.db,AuthProjectEntity,21,3,0,0,9,1,6,1,6,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth.db,AuthUserEntity,8,9,0,0,4,3,2,3,2,3
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.strings,StringsApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.strings,StringsRest,8,76,4,16,2,18,4,10,0,4
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.strings,StringsResponseDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.regex,RegexApplication,5,5,0,0,2,2,1,2,1,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.javatypes,JavaTypesEntity,37,96,0,0,13,24,12,2,12,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.javatypes,JavaTypesApp,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.javatypes,JavaTypesRest,0,27,0,2,0,7,0,4,0,3
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.constant,ConstantApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.constant,ConstantResponseDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.constant,ConstantRest,0,19,0,2,0,4,0,3,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.namedresource,NamedResourceApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.namedresource,NamedResourceDto,0,12,0,0,0,6,0,2,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.namedresource,NamedResourceRest,0,96,0,8,0,23,0,11,0,7
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest.Y,0,11,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest.X,0,11,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest.Z,0,6,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainedheaderlocation,CHLRest,12,179,3,9,3,31,3,9,0,6
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,PIApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,ResponseDto,6,3,0,0,3,2,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,PostDto,0,9,0,0,0,5,0,2,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.positiveinteger,PositiveIntegerRest,0,34,0,0,0,7,0,3,0,3
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.directint,DbDirectIntApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.directint,DbDirectIntEntity,10,14,0,0,4,6,3,4,3,4
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.directint,DbDirectIntRest,0,40,0,2,0,10,0,4,0,3
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthRest,19,7,2,0,5,2,2,2,1,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthApp,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthUserService,30,3,2,0,4,1,2,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthWebSecurityConfig,0,44,0,0,0,12,0,3,0,3
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.db.auth,AuthProjectService,14,3,0,0,3,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesPostDto,0,12,0,0,0,5,0,2,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesResponseDto,0,3,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.branches,BranchesRest,0,66,0,0,0,13,0,4,0,4
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainednolocation,CNLRest,0,57,1,5,0,12,1,6,0,4
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainednolocation,CNLApplication,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.chainednolocation,CNL_X,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,CreateDto,6,3,0,0,3,2,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,PostCollectionApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,PostCollectionRest,0,40,0,4,0,10,0,6,0,4
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.postcollection,ValuesDto,0,8,0,0,0,2,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.triangle,TriangleRest,0,21,0,0,0,4,0,2,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.triangle,TriangleApplication,5,3,0,0,2,1,1,1,1,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.triangle,TriangleResponseDto,0,3,0,0,0,1,0,1,0,1
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.headerlocation,HeaderLocationDto,0,12,0,0,0,6,0,2,0,2
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.headerlocation,HeaderLocationRest,0,106,0,8,0,23,0,11,0,7
+evomaster-project-report/evomaster-e2e-tests-spring-examples,com.foo.rest.examples.spring.headerlocation,HeaderLocationApplication,5,3,0,0,2,1,1,1,1,1
 evomaster-project-report/evomaster-e2e-tests-dropwizard-examples,com.foo.rest.examples.dw.positiveinteger,ResponseDto,9,0,0,0,5,0,2,0,2,0
 evomaster-project-report/evomaster-e2e-tests-dropwizard-examples,com.foo.rest.examples.dw.positiveinteger,PositiveIntegerRest,34,0,0,0,7,0,3,0,3,0
 evomaster-project-report/evomaster-e2e-tests-dropwizard-examples,com.foo.rest.examples.dw.positiveinteger,PIApplication,94,0,0,0,23,0,5,0,5,0

@@ -15,21 +15,21 @@ public class TrackerMethodVisitor extends MethodVisitor {
                                 String className,
                                 String methodName,
                                 String descriptor) {
-<span class="nc" id="L18">        super(Constants.ASM, mv);</span>
+<span class="fc" id="L18">        super(Constants.ASM, mv);</span>
 
-<span class="nc" id="L20">        this.className = className;</span>
-<span class="nc" id="L21">        this.methodName = methodName;</span>
-<span class="nc" id="L22">        this.descriptor = descriptor;</span>
-<span class="nc" id="L23">    }</span>
+<span class="fc" id="L20">        this.className = className;</span>
+<span class="fc" id="L21">        this.methodName = methodName;</span>
+<span class="fc" id="L22">        this.descriptor = descriptor;</span>
+<span class="fc" id="L23">    }</span>
 
     @Override
     public void visitMethodInsn(int opcode, String owner, String name,
                                 String desc, boolean itf) {
 
-<span class="nc" id="L29">        addTrackerIfNeeded(owner, name, desc);</span>
+<span class="fc" id="L29">        addTrackerIfNeeded(owner, name, desc);</span>
 
-<span class="nc" id="L31">        super.visitMethodInsn(opcode, owner, name, desc, itf);</span>
-<span class="nc" id="L32">    }</span>
+<span class="fc" id="L31">        super.visitMethodInsn(opcode, owner, name, desc, itf);</span>
+<span class="fc" id="L32">    }</span>
 
 
     @Override
@@ -43,39 +43,39 @@ public class TrackerMethodVisitor extends MethodVisitor {
             just return it in our support methods, and so avoiding
             duplicating the value on the stack.
          */
-<span class="nc" id="L46">        int maxCopiedValues = 0;</span>
+<span class="fc" id="L46">        int maxCopiedValues = 0;</span>
 
-<span class="nc" id="L48">        super.visitMaxs(maxStack + maxCopiedValues, maxLocals);</span>
-<span class="nc" id="L49">    }</span>
+<span class="fc" id="L48">        super.visitMaxs(maxStack + maxCopiedValues, maxLocals);</span>
+<span class="fc" id="L49">    }</span>
 
     private void addTrackerIfNeeded(String owner, String name, String desc) {
 
-<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (owner.equals(&quot;org/springframework/web/context/request/WebRequest&quot;)) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">        if (owner.equals(&quot;org/springframework/web/context/request/WebRequest&quot;)) {</span>
 
-<span class="nc bnc" id="L55" title="All 4 branches missed.">            if ((name.equals(&quot;getParameter&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)Ljava/lang/String;&quot;))</span>
+<span class="pc bpc" id="L55" title="1 of 4 branches missed.">            if ((name.equals(&quot;getParameter&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)Ljava/lang/String;&quot;))</span>
                     ||
-<span class="nc bnc" id="L57" title="All 4 branches missed.">                    (name.equals(&quot;getParameterValues&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)[Ljava/lang/String;&quot;))) {</span>
+<span class="pc bpc" id="L57" title="1 of 4 branches missed.">                    (name.equals(&quot;getParameterValues&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)[Ljava/lang/String;&quot;))) {</span>
 
-<span class="nc" id="L59">                mv.visitMethodInsn(</span>
+<span class="fc" id="L59">                mv.visitMethodInsn(</span>
                         Opcodes.INVOKESTATIC,
-<span class="nc" id="L61">                        ClassName.get(Tracker.class).getBytecodeName(),</span>
+<span class="fc" id="L61">                        ClassName.get(Tracker.class).getBytecodeName(),</span>
                         Tracker.TRACK_QUERY_PARAMETER_METHOD_NAME,
                         Tracker.TRACK_QUERY_PARAMETER_DESCRIPTOR,
-<span class="nc" id="L64">                        Tracker.class.isInterface()); //false</span>
+<span class="fc" id="L64">                        Tracker.class.isInterface()); //false</span>
 
-<span class="nc bnc" id="L66" title="All 4 branches missed.">            } else if((name.equals(&quot;getHeader&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)Ljava/lang/String;&quot;))</span>
+<span class="pc bpc" id="L66" title="1 of 4 branches missed.">            } else if((name.equals(&quot;getHeader&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)Ljava/lang/String;&quot;))</span>
                     ||
-<span class="nc bnc" id="L68" title="All 4 branches missed.">                    (name.equals(&quot;getHeaderValues&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)[Ljava/lang/String;&quot;))){</span>
+<span class="pc bpc" id="L68" title="2 of 4 branches missed.">                    (name.equals(&quot;getHeaderValues&quot;) &amp;&amp; desc.equals(&quot;(Ljava/lang/String;)[Ljava/lang/String;&quot;))){</span>
 
-<span class="nc" id="L70">                mv.visitMethodInsn(</span>
+<span class="fc" id="L70">                mv.visitMethodInsn(</span>
                         Opcodes.INVOKESTATIC,
-<span class="nc" id="L72">                        ClassName.get(Tracker.class).getBytecodeName(),</span>
+<span class="fc" id="L72">                        ClassName.get(Tracker.class).getBytecodeName(),</span>
                         Tracker.TRACK_HEADER_METHOD_NAME,
                         Tracker.TRACK_HEADER_DESCRIPTOR,
-<span class="nc" id="L75">                        Tracker.class.isInterface()); //false</span>
+<span class="fc" id="L75">                        Tracker.class.isInterface()); //false</span>
             }
         }
 
-<span class="nc" id="L79">    }</span>
+<span class="fc" id="L79">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

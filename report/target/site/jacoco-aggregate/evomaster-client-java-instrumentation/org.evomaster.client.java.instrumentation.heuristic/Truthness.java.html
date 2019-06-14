@@ -9,65 +9,65 @@
  * The non-1 value represents how close the other option
  * would had been from being taken
  */
-<span class="nc bnc" id="L12" title="All 2 branches missed.">public class Truthness {</span>
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">public class Truthness {</span>
 
     private final double ofTrue;
     private final double ofFalse;
 
-<span class="nc" id="L17">    public Truthness(double ofTrue, double ofFalse) {</span>
-<span class="nc bnc" id="L18" title="All 4 branches missed.">        if (ofTrue &lt; 0 || ofTrue &gt; 1) {</span>
+<span class="fc" id="L17">    public Truthness(double ofTrue, double ofFalse) {</span>
+<span class="pc bpc" id="L18" title="2 of 4 branches missed.">        if (ofTrue &lt; 0 || ofTrue &gt; 1) {</span>
 <span class="nc" id="L19">            throw new IllegalArgumentException(&quot;Invalid value for ofTrue: &quot; + ofTrue);</span>
         }
-<span class="nc bnc" id="L21" title="All 4 branches missed.">        if (ofFalse &lt; 0 || ofFalse &gt; 1) {</span>
+<span class="pc bpc" id="L21" title="2 of 4 branches missed.">        if (ofFalse &lt; 0 || ofFalse &gt; 1) {</span>
 <span class="nc" id="L22">            throw new IllegalArgumentException(&quot;Invalid value for ofFalse: &quot; + ofFalse);</span>
         }
-<span class="nc bnc" id="L24" title="All 4 branches missed.">        if (ofTrue != 1 &amp;&amp; ofFalse != 1) {</span>
+<span class="pc bpc" id="L24" title="1 of 4 branches missed.">        if (ofTrue != 1 &amp;&amp; ofFalse != 1) {</span>
 <span class="nc" id="L25">            throw new IllegalArgumentException(&quot;At least one value should be equal to 1&quot;);</span>
         }
-<span class="nc bnc" id="L27" title="All 4 branches missed.">        if (ofTrue == 1 &amp;&amp; ofFalse == 1) {</span>
+<span class="pc bpc" id="L27" title="1 of 4 branches missed.">        if (ofTrue == 1 &amp;&amp; ofFalse == 1) {</span>
 <span class="nc" id="L28">            throw new IllegalArgumentException(&quot;Values cannot be both equal to 1&quot;);</span>
         }
-<span class="nc" id="L30">        this.ofTrue = ofTrue;</span>
-<span class="nc" id="L31">        this.ofFalse = ofFalse;</span>
-<span class="nc" id="L32">    }</span>
+<span class="fc" id="L30">        this.ofTrue = ofTrue;</span>
+<span class="fc" id="L31">        this.ofFalse = ofFalse;</span>
+<span class="fc" id="L32">    }</span>
 
     public Truthness invert() {
-<span class="nc" id="L35">        return new Truthness(ofFalse, ofTrue);</span>
+<span class="fc" id="L35">        return new Truthness(ofFalse, ofTrue);</span>
     }
 
     public static double normalizeValue(double v) {
-<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (v &lt; 0) {</span>
+<span class="pc bpc" id="L39" title="1 of 2 branches missed.">        if (v &lt; 0) {</span>
 <span class="nc" id="L40">            throw new IllegalArgumentException(&quot;Negative value: &quot; + v);</span>
         }
 
         //normalization function from old ICST/STVR paper
-<span class="nc" id="L44">        double normalized = v / (v + 1d);</span>
+<span class="fc" id="L44">        double normalized = v / (v + 1d);</span>
 
-<span class="nc bnc" id="L46" title="All 6 branches missed.">        assert normalized &gt;= 0 &amp;&amp; normalized &lt;= 1;</span>
+<span class="pc bpc" id="L46" title="3 of 6 branches missed.">        assert normalized &gt;= 0 &amp;&amp; normalized &lt;= 1;</span>
 
-<span class="nc" id="L48">        return normalized;</span>
+<span class="fc" id="L48">        return normalized;</span>
     }
 
     /**
      * @return a value in [0,1], where 1 means the expression evaluated to true
      */
     public double getOfTrue() {
-<span class="nc" id="L55">        return ofTrue;</span>
+<span class="fc" id="L55">        return ofTrue;</span>
     }
 
     public boolean isTrue(){
-<span class="nc bnc" id="L59" title="All 2 branches missed.">        return ofTrue == 1d;</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        return ofTrue == 1d;</span>
     }
 
     /**
      * @return a value in [0,1], where 1 means the expression evaluated to false
      */
     public double getOfFalse() {
-<span class="nc" id="L66">        return ofFalse;</span>
+<span class="fc" id="L66">        return ofFalse;</span>
     }
 
     public boolean isFalse(){
-<span class="nc bnc" id="L70" title="All 2 branches missed.">        return ofFalse == 1d;</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">        return ofFalse == 1d;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = &quot;/api/db/javatypes&quot;)
-<span class="nc" id="L16">public class JavaTypesRest {</span>
+<span class="fc" id="L16">public class JavaTypesRest {</span>
 
     @Autowired
     private JavaTypesRepository repository;
@@ -23,9 +23,9 @@ import java.util.List;
             method = RequestMethod.POST
     )
     public void post() {
-<span class="nc" id="L26">        JavaTypesEntity entity = new JavaTypesEntity();</span>
-<span class="nc" id="L27">        repository.save(entity);</span>
-<span class="nc" id="L28">    }</span>
+<span class="fc" id="L26">        JavaTypesEntity entity = new JavaTypesEntity();</span>
+<span class="fc" id="L27">        repository.save(entity);</span>
+<span class="fc" id="L28">    }</span>
 
 
     @RequestMapping(
@@ -34,10 +34,10 @@ import java.util.List;
     )
     public ResponseEntity get() {
 
-<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (repository.findAll().iterator().hasNext()) {</span>
-<span class="nc" id="L38">            return ResponseEntity.status(400).build();</span>
+<span class="fc bfc" id="L37" title="All 2 branches covered.">        if (repository.findAll().iterator().hasNext()) {</span>
+<span class="fc" id="L38">            return ResponseEntity.status(400).build();</span>
         } else {
-<span class="nc" id="L40">            return ResponseEntity.status(200).build();</span>
+<span class="fc" id="L40">            return ResponseEntity.status(200).build();</span>
         }
     }
 }

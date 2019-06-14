@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 /**
  * Class used to execute SQL commands from a script file
  */
-<span class="nc bnc" id="L20" title="All 2 branches missed.">public class SqlScriptRunner {</span>
+<span class="pc bpc" id="L20" title="1 of 2 branches missed.">public class SqlScriptRunner {</span>
 
     /*
         Class adapted from ScriptRunner
@@ -32,20 +32,20 @@ import java.util.stream.Collectors;
      * regex to detect delimiter.
      * ignores spaces, allows delimiter in comment, allows an equals-sign
      */
-<span class="nc" id="L35">    public static final Pattern delimP = Pattern.compile(&quot;^\\s*(--)?\\s*delimiter\\s*=?\\s*([^\\s]+)+\\s*.*$&quot;, Pattern.CASE_INSENSITIVE);</span>
+<span class="fc" id="L35">    public static final Pattern delimP = Pattern.compile(&quot;^\\s*(--)?\\s*delimiter\\s*=?\\s*([^\\s]+)+\\s*.*$&quot;, Pattern.CASE_INSENSITIVE);</span>
 
     private static final String SINGLE_APOSTROPHE = &quot;'&quot;;
 
     private static final String DOUBLE_APOSTROPHE = &quot;''&quot;;
 
-<span class="nc" id="L41">    private String delimiter = DEFAULT_DELIMITER;</span>
-<span class="nc" id="L42">    private boolean fullLineDelimiter = false;</span>
+<span class="fc" id="L41">    private String delimiter = DEFAULT_DELIMITER;</span>
+<span class="fc" id="L42">    private boolean fullLineDelimiter = false;</span>
 
     /**
      * Default constructor
      */
-<span class="nc" id="L47">    public SqlScriptRunner() {</span>
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L47">    public SqlScriptRunner() {</span>
+<span class="fc" id="L48">    }</span>
 
     public void setDelimiter(String delimiter, boolean fullLineDelimiter) {
 <span class="nc" id="L51">        this.delimiter = delimiter;</span>
@@ -59,89 +59,89 @@ import java.util.stream.Collectors;
      * @param reader - the source of the script
      */
     public static void runScript(Connection connection, Reader reader) {
-<span class="nc" id="L62">        Objects.requireNonNull(reader);</span>
+<span class="fc" id="L62">        Objects.requireNonNull(reader);</span>
 
-<span class="nc" id="L64">        runCommands(connection, new SqlScriptRunner().readCommands(reader));</span>
-<span class="nc" id="L65">    }</span>
+<span class="fc" id="L64">        runCommands(connection, new SqlScriptRunner().readCommands(reader));</span>
+<span class="fc" id="L65">    }</span>
 
     public static void runScriptFromResourceFile(Connection connection, String resourcePath) {
         try {
-<span class="nc" id="L69">            InputStream in = SqlScriptRunner.class.getResourceAsStream(resourcePath);</span>
-<span class="nc" id="L70">            runScript(connection, new InputStreamReader(in));</span>
-<span class="nc" id="L71">            in.close();</span>
+<span class="fc" id="L69">            InputStream in = SqlScriptRunner.class.getResourceAsStream(resourcePath);</span>
+<span class="fc" id="L70">            runScript(connection, new InputStreamReader(in));</span>
+<span class="fc" id="L71">            in.close();</span>
 <span class="nc" id="L72">        } catch (Exception e) {</span>
 <span class="nc" id="L73">            throw new RuntimeException(e);</span>
-<span class="nc" id="L74">        }</span>
-<span class="nc" id="L75">    }</span>
+<span class="fc" id="L74">        }</span>
+<span class="fc" id="L75">    }</span>
 
     public static void runCommands(Connection connection, List&lt;String&gt; commands) {
         try {
-<span class="nc" id="L79">            boolean originalAutoCommit = connection.getAutoCommit();</span>
+<span class="fc" id="L79">            boolean originalAutoCommit = connection.getAutoCommit();</span>
             try {
-<span class="nc bnc" id="L81" title="All 2 branches missed.">                if (!originalAutoCommit) {</span>
+<span class="pc bpc" id="L81" title="1 of 2 branches missed.">                if (!originalAutoCommit) {</span>
 <span class="nc" id="L82">                    connection.setAutoCommit(true);</span>
                 }
 
-<span class="nc bnc" id="L85" title="All 2 branches missed.">                for (String command : commands) {</span>
-<span class="nc" id="L86">                    execCommand(connection, command);</span>
-<span class="nc" id="L87">                }</span>
+<span class="fc bfc" id="L85" title="All 2 branches covered.">                for (String command : commands) {</span>
+<span class="fc" id="L86">                    execCommand(connection, command);</span>
+<span class="fc" id="L87">                }</span>
             } finally {
-<span class="nc" id="L89">                connection.setAutoCommit(originalAutoCommit);</span>
+<span class="fc" id="L89">                connection.setAutoCommit(originalAutoCommit);</span>
             }
 <span class="nc" id="L91">        } catch (Exception e) {</span>
 <span class="nc" id="L92">            throw new RuntimeException(&quot;Error running script.  Cause: &quot; + e, e);</span>
-<span class="nc" id="L93">        }</span>
-<span class="nc" id="L94">    }</span>
+<span class="fc" id="L93">        }</span>
+<span class="fc" id="L94">    }</span>
 
     public List&lt;String&gt; readCommands(Reader reader) {
 
-<span class="nc" id="L98">        List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L98">        List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
 
-<span class="nc" id="L100">        StringBuffer command = null;</span>
+<span class="fc" id="L100">        StringBuffer command = null;</span>
         try {
-<span class="nc" id="L102">            LineNumberReader lineReader = new LineNumberReader(reader);</span>
+<span class="fc" id="L102">            LineNumberReader lineReader = new LineNumberReader(reader);</span>
             String line;
 
-<span class="nc bnc" id="L105" title="All 2 branches missed.">            while ((line = lineReader.readLine()) != null) {</span>
-<span class="nc bnc" id="L106" title="All 2 branches missed.">                if (command == null) {</span>
-<span class="nc" id="L107">                    command = new StringBuffer();</span>
+<span class="fc bfc" id="L105" title="All 2 branches covered.">            while ((line = lineReader.readLine()) != null) {</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">                if (command == null) {</span>
+<span class="fc" id="L107">                    command = new StringBuffer();</span>
                 }
 
-<span class="nc" id="L110">                String trimmedLine = line.trim();</span>
-<span class="nc" id="L111">                Matcher delimMatch = delimP.matcher(trimmedLine);</span>
+<span class="fc" id="L110">                String trimmedLine = line.trim();</span>
+<span class="fc" id="L111">                Matcher delimMatch = delimP.matcher(trimmedLine);</span>
 
-<span class="nc bnc" id="L113" title="All 2 branches missed.">                if (trimmedLine.isEmpty()</span>
-<span class="nc bnc" id="L114" title="All 2 branches missed.">                        || trimmedLine.startsWith(&quot;//&quot;)</span>
-<span class="nc bnc" id="L115" title="All 2 branches missed.">                        || trimmedLine.startsWith(&quot;--&quot;)) {</span>
+<span class="fc bfc" id="L113" title="All 2 branches covered.">                if (trimmedLine.isEmpty()</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                        || trimmedLine.startsWith(&quot;//&quot;)</span>
+<span class="pc bpc" id="L115" title="1 of 2 branches missed.">                        || trimmedLine.startsWith(&quot;--&quot;)) {</span>
                     // Do nothing
-<span class="nc bnc" id="L117" title="All 2 branches missed.">                } else if (delimMatch.matches()) {</span>
+<span class="pc bpc" id="L117" title="1 of 2 branches missed.">                } else if (delimMatch.matches()) {</span>
 <span class="nc" id="L118">                    setDelimiter(delimMatch.group(2), false);</span>
-<span class="nc bnc" id="L119" title="All 2 branches missed.">                } else if (!fullLineDelimiter</span>
-<span class="nc bnc" id="L120" title="All 4 branches missed.">                        &amp;&amp; trimmedLine.endsWith(delimiter)</span>
+<span class="pc bpc" id="L119" title="1 of 2 branches missed.">                } else if (!fullLineDelimiter</span>
+<span class="pc bpc" id="L120" title="3 of 4 branches missed.">                        &amp;&amp; trimmedLine.endsWith(delimiter)</span>
                         || fullLineDelimiter
 <span class="nc bnc" id="L122" title="All 2 branches missed.">                        &amp;&amp; trimmedLine.equals(delimiter)) {</span>
 
-<span class="nc" id="L124">                    command.append(line.substring(0, line.lastIndexOf(delimiter)));</span>
-<span class="nc" id="L125">                    command.append(&quot; &quot;);</span>
+<span class="fc" id="L124">                    command.append(line.substring(0, line.lastIndexOf(delimiter)));</span>
+<span class="fc" id="L125">                    command.append(&quot; &quot;);</span>
 
-<span class="nc" id="L127">                    list.add(command.toString());</span>
-<span class="nc" id="L128">                    command = null;</span>
+<span class="fc" id="L127">                    list.add(command.toString());</span>
+<span class="fc" id="L128">                    command = null;</span>
 
                 } else {
 <span class="nc" id="L131">                    command.append(line);</span>
 <span class="nc" id="L132">                    command.append(&quot;\n&quot;);</span>
                 }
-<span class="nc" id="L134">            }</span>
+<span class="fc" id="L134">            }</span>
 
-<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (command != null) {</span>
-<span class="nc" id="L137">                list.add(command.toString());</span>
+<span class="pc bpc" id="L136" title="1 of 2 branches missed.">            if (command != null) {</span>
+<span class="fc" id="L137">                list.add(command.toString());</span>
             }
 
 <span class="nc" id="L140">        } catch (IOException e) {</span>
 <span class="nc" id="L141">            throw new RuntimeException(e);</span>
-<span class="nc" id="L142">        }</span>
+<span class="fc" id="L142">        }</span>
 
-<span class="nc" id="L144">        return list;</span>
+<span class="fc" id="L144">        return list;</span>
     }
 
 
@@ -155,65 +155,65 @@ import java.util.stream.Collectors;
      */
     public static Map&lt;Long, Long&gt; execInsert(Connection conn, List&lt;InsertionDto&gt; insertions) throws SQLException {
 
-<span class="nc bnc" id="L158" title="All 4 branches missed.">        if (insertions == null || insertions.isEmpty()) {</span>
+<span class="pc bpc" id="L158" title="2 of 4 branches missed.">        if (insertions == null || insertions.isEmpty()) {</span>
 <span class="nc" id="L159">            throw new IllegalArgumentException(&quot;No data to insert&quot;);</span>
         }
 
-<span class="nc" id="L162">        String insertSql = &quot;INSERT INTO &quot;;</span>
+<span class="fc" id="L162">        String insertSql = &quot;INSERT INTO &quot;;</span>
 
         //From DTO Insertion Id to generated Id in database
-<span class="nc" id="L165">        Map&lt;Long, Long&gt; map = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L165">        Map&lt;Long, Long&gt; map = new HashMap&lt;&gt;();</span>
 
-<span class="nc bnc" id="L167" title="All 2 branches missed.">        for (int i = 0; i &lt; insertions.size(); i++) {</span>
+<span class="fc bfc" id="L167" title="All 2 branches covered.">        for (int i = 0; i &lt; insertions.size(); i++) {</span>
 
-<span class="nc" id="L169">            InsertionDto insDto = insertions.get(i);</span>
+<span class="fc" id="L169">            InsertionDto insDto = insertions.get(i);</span>
 
-<span class="nc" id="L171">            String sql = prepareSqlInsertionCommand(insertSql, map, i, insDto);</span>
+<span class="fc" id="L171">            String sql = prepareSqlInsertionCommand(insertSql, map, i, insDto);</span>
 
             Long id;
 
             try {
-<span class="nc" id="L176">                id = execInsert(conn, sql);</span>
+<span class="fc" id="L176">                id = execInsert(conn, sql);</span>
 <span class="nc" id="L177">            } catch (SQLException e){</span>
 <span class="nc" id="L178">                String msg = &quot;Failed to execute insertion with index &quot; + i + &quot; with SQL: &quot; + sql + &quot;. Error: &quot; + e.getMessage();</span>
 <span class="nc" id="L179">                throw new SQLException(msg, e);</span>
-<span class="nc" id="L180">            }</span>
+<span class="fc" id="L180">            }</span>
 
-<span class="nc bnc" id="L182" title="All 2 branches missed.">            if (id == null) {</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">            if (id == null) {</span>
                 /*
                     check if we need to keep the auto generated value.
                     there can at most one entry that can be a FK to an auto-increment value
                  */
-<span class="nc" id="L187">                InsertionEntryDto entry = insDto.data.stream()</span>
-<span class="nc bnc" id="L188" title="All 4 branches missed.">                        .filter(e -&gt; e.keepAutoGeneratedValue != null &amp;&amp; e.keepAutoGeneratedValue == true)</span>
-<span class="nc" id="L189">                        .findFirst().orElse(null);</span>
+<span class="fc" id="L187">                InsertionEntryDto entry = insDto.data.stream()</span>
+<span class="fc bfc" id="L188" title="All 4 branches covered.">                        .filter(e -&gt; e.keepAutoGeneratedValue != null &amp;&amp; e.keepAutoGeneratedValue == true)</span>
+<span class="fc" id="L189">                        .findFirst().orElse(null);</span>
 
-<span class="nc bnc" id="L191" title="All 2 branches missed.">                if (entry != null) {</span>
-<span class="nc" id="L192">                    long previouslyGeneratedValue = map.get(entry.foreignKeyToPreviouslyGeneratedRow);</span>
-<span class="nc" id="L193">                    map.put(insDto.id, previouslyGeneratedValue);</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">                if (entry != null) {</span>
+<span class="fc" id="L192">                    long previouslyGeneratedValue = map.get(entry.foreignKeyToPreviouslyGeneratedRow);</span>
+<span class="fc" id="L193">                    map.put(insDto.id, previouslyGeneratedValue);</span>
                 }
             }
-<span class="nc bnc" id="L196" title="All 2 branches missed.">            if (id != null) {</span>
-<span class="nc" id="L197">                map.put(insDto.id, id);</span>
+<span class="fc bfc" id="L196" title="All 2 branches covered.">            if (id != null) {</span>
+<span class="fc" id="L197">                map.put(insDto.id, id);</span>
             }
         }
 
-<span class="nc" id="L201">        return map;</span>
+<span class="fc" id="L201">        return map;</span>
     }
 
     private static String prepareSqlInsertionCommand(String insertSql, Map&lt;Long, Long&gt; map, int i, InsertionDto insDto) {
-<span class="nc" id="L205">        StringBuilder sql = new StringBuilder(insertSql);</span>
-<span class="nc" id="L206">        sql.append(insDto.targetTable).append(&quot; (&quot;);</span>
+<span class="fc" id="L205">        StringBuilder sql = new StringBuilder(insertSql);</span>
+<span class="fc" id="L206">        sql.append(insDto.targetTable).append(&quot; (&quot;);</span>
 
-<span class="nc" id="L208">        sql.append(insDto.data.stream()</span>
-<span class="nc" id="L209">                .map(e -&gt; e.variableName)</span>
-<span class="nc" id="L210">                .collect(Collectors.joining(&quot;,&quot;)));</span>
+<span class="fc" id="L208">        sql.append(insDto.data.stream()</span>
+<span class="fc" id="L209">                .map(e -&gt; e.variableName)</span>
+<span class="fc" id="L210">                .collect(Collectors.joining(&quot;,&quot;)));</span>
 
-<span class="nc" id="L212">        sql.append(&quot; )  VALUES (&quot;);</span>
+<span class="fc" id="L212">        sql.append(&quot; )  VALUES (&quot;);</span>
 
-<span class="nc bnc" id="L214" title="All 2 branches missed.">        for (InsertionEntryDto e : insDto.data) {</span>
-<span class="nc bnc" id="L215" title="All 4 branches missed.">            if (e.printableValue == null &amp;&amp; e.foreignKeyToPreviouslyGeneratedRow != null) {</span>
-<span class="nc bnc" id="L216" title="All 2 branches missed.">                if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">        for (InsertionEntryDto e : insDto.data) {</span>
+<span class="pc bpc" id="L215" title="1 of 4 branches missed.">            if (e.printableValue == null &amp;&amp; e.foreignKeyToPreviouslyGeneratedRow != null) {</span>
+<span class="pc bpc" id="L216" title="1 of 2 branches missed.">                if (!map.containsKey(e.foreignKeyToPreviouslyGeneratedRow)) {</span>
 <span class="nc" id="L217">                    throw new IllegalArgumentException(</span>
                             &quot;Insertion operation at position &quot; + i
                                     + &quot; has a foreign key reference to key &quot;
@@ -224,17 +224,17 @@ import java.util.stream.Collectors;
                     );
                 }
             }
-<span class="nc" id="L227">        }</span>
+<span class="fc" id="L227">        }</span>
 
-<span class="nc" id="L229">        sql.append(insDto.data.stream()</span>
-<span class="nc bnc" id="L230" title="All 2 branches missed.">                .map(e -&gt; e.printableValue != null</span>
-<span class="nc" id="L231">                        ? replaceQuotes(e.printableValue)</span>
-<span class="nc" id="L232">                        : map.get(e.foreignKeyToPreviouslyGeneratedRow).toString()</span>
-<span class="nc" id="L233">                ).collect(Collectors.joining(&quot;,&quot;)));</span>
+<span class="fc" id="L229">        sql.append(insDto.data.stream()</span>
+<span class="fc bfc" id="L230" title="All 2 branches covered.">                .map(e -&gt; e.printableValue != null</span>
+<span class="fc" id="L231">                        ? replaceQuotes(e.printableValue)</span>
+<span class="fc" id="L232">                        : map.get(e.foreignKeyToPreviouslyGeneratedRow).toString()</span>
+<span class="fc" id="L233">                ).collect(Collectors.joining(&quot;,&quot;)));</span>
 
-<span class="nc" id="L235">        sql.append(&quot;);&quot;);</span>
+<span class="fc" id="L235">        sql.append(&quot;);&quot;);</span>
 
-<span class="nc" id="L237">        return sql.toString();</span>
+<span class="fc" id="L237">        return sql.toString();</span>
     }
 
     /**
@@ -246,16 +246,16 @@ import java.util.stream.Collectors;
      * (http://h2database.com/html/grammar.html#string)
      */
     private static String replaceQuotes(String value) {
-<span class="nc bnc" id="L249" title="All 2 branches missed.">        if (value.contains(SINGLE_APOSTROPHE)) {</span>
-<span class="nc" id="L250">            String oldValue = value;</span>
-<span class="nc" id="L251">            value = value.replaceAll(SINGLE_APOSTROPHE, DOUBLE_APOSTROPHE);</span>
-<span class="nc bnc" id="L252" title="All 4 branches missed.">            assert (!oldValue.equals(value));</span>
+<span class="fc bfc" id="L249" title="All 2 branches covered.">        if (value.contains(SINGLE_APOSTROPHE)) {</span>
+<span class="fc" id="L250">            String oldValue = value;</span>
+<span class="fc" id="L251">            value = value.replaceAll(SINGLE_APOSTROPHE, DOUBLE_APOSTROPHE);</span>
+<span class="pc bpc" id="L252" title="2 of 4 branches missed.">            assert (!oldValue.equals(value));</span>
         }
-<span class="nc bnc" id="L254" title="All 4 branches missed.">        if (value.startsWith(&quot;\&quot;&quot;) &amp;&amp; value.endsWith(&quot;\&quot;&quot;)) {</span>
-<span class="nc" id="L255">            return &quot;'&quot; + value.substring(1, value.length() - 1) + &quot;'&quot;;</span>
+<span class="pc bpc" id="L254" title="1 of 4 branches missed.">        if (value.startsWith(&quot;\&quot;&quot;) &amp;&amp; value.endsWith(&quot;\&quot;&quot;)) {</span>
+<span class="fc" id="L255">            return &quot;'&quot; + value.substring(1, value.length() - 1) + &quot;'&quot;;</span>
         }
 
-<span class="nc" id="L258">        return value;</span>
+<span class="fc" id="L258">        return value;</span>
     }
 
     /**
@@ -264,52 +264,52 @@ import java.util.stream.Collectors;
      */
     public static Long execInsert(Connection conn, String command) throws SQLException {
 
-<span class="nc" id="L267">        String insert = &quot;INSERT &quot;;</span>
+<span class="fc" id="L267">        String insert = &quot;INSERT &quot;;</span>
 
-<span class="nc" id="L269">        command = command.trim();</span>
-<span class="nc bnc" id="L270" title="All 2 branches missed.">        if (!command.toUpperCase().startsWith(insert)) {</span>
+<span class="fc" id="L269">        command = command.trim();</span>
+<span class="pc bpc" id="L270" title="1 of 2 branches missed.">        if (!command.toUpperCase().startsWith(insert)) {</span>
 <span class="nc" id="L271">            throw new IllegalArgumentException(&quot;SQL command is not an INSERT\n&quot; + command);</span>
         }
 
-<span class="nc" id="L274">        Statement statement = conn.createStatement();</span>
+<span class="fc" id="L274">        Statement statement = conn.createStatement();</span>
 
         try {
-<span class="nc" id="L277">            statement.executeUpdate(command, Statement.RETURN_GENERATED_KEYS);</span>
+<span class="fc" id="L277">            statement.executeUpdate(command, Statement.RETURN_GENERATED_KEYS);</span>
 <span class="nc" id="L278">        } catch (SQLException e) {</span>
 <span class="nc" id="L279">            statement.close();</span>
 <span class="nc" id="L280">            String errText = String.format(&quot;Error executing '%s': %s&quot;, command, e.getMessage());</span>
 <span class="nc" id="L281">            throw new SQLException(errText, e);</span>
-<span class="nc" id="L282">        }</span>
+<span class="fc" id="L282">        }</span>
 
-<span class="nc" id="L284">        ResultSet generatedKeys = statement.getGeneratedKeys();</span>
-<span class="nc" id="L285">        Long id = null;</span>
+<span class="fc" id="L284">        ResultSet generatedKeys = statement.getGeneratedKeys();</span>
+<span class="fc" id="L285">        Long id = null;</span>
 
-<span class="nc bnc" id="L287" title="All 2 branches missed.">        if (generatedKeys.next()) {</span>
-<span class="nc" id="L288">            id = generatedKeys.getLong(1);</span>
+<span class="fc bfc" id="L287" title="All 2 branches covered.">        if (generatedKeys.next()) {</span>
+<span class="fc" id="L288">            id = generatedKeys.getLong(1);</span>
         }
 
-<span class="nc" id="L291">        statement.close();</span>
+<span class="fc" id="L291">        statement.close();</span>
 
-<span class="nc" id="L293">        return id;</span>
+<span class="fc" id="L293">        return id;</span>
     }
 
     public static QueryResult execCommand(Connection conn, String command) throws SQLException {
-<span class="nc" id="L297">        Statement statement = conn.createStatement();</span>
+<span class="fc" id="L297">        Statement statement = conn.createStatement();</span>
 
         try {
-<span class="nc" id="L300">            statement.execute(command);</span>
-<span class="nc" id="L301">        } catch (SQLException e) {</span>
-<span class="nc" id="L302">            statement.close();</span>
-<span class="nc" id="L303">            String errText = String.format(&quot;Error executing '%s': %s&quot;, command, e.getMessage());</span>
-<span class="nc" id="L304">            throw new SQLException(errText, e);</span>
-<span class="nc" id="L305">        }</span>
+<span class="fc" id="L300">            statement.execute(command);</span>
+<span class="fc" id="L301">        } catch (SQLException e) {</span>
+<span class="fc" id="L302">            statement.close();</span>
+<span class="fc" id="L303">            String errText = String.format(&quot;Error executing '%s': %s&quot;, command, e.getMessage());</span>
+<span class="fc" id="L304">            throw new SQLException(errText, e);</span>
+<span class="fc" id="L305">        }</span>
 
-<span class="nc" id="L307">        ResultSet result = statement.getResultSet();</span>
-<span class="nc" id="L308">        QueryResult queryResult = new QueryResult(result);</span>
+<span class="fc" id="L307">        ResultSet result = statement.getResultSet();</span>
+<span class="fc" id="L308">        QueryResult queryResult = new QueryResult(result);</span>
 
-<span class="nc" id="L310">        statement.close();</span>
+<span class="fc" id="L310">        statement.close();</span>
 
-<span class="nc" id="L312">        return queryResult;</span>
+<span class="fc" id="L312">        return queryResult;</span>
     }
 
 }

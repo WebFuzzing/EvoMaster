@@ -61,7 +61,6 @@ class RestActionBuilder {
 
                             val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params, produces = produces)
 
-                            val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params)
                             if(doParserDescription) {
                                 var info = o.value.description
                                 if(!info.isNullOrBlank() && !info.endsWith(".")) info += "."

@@ -13,27 +13,27 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
-<span class="nc" id="L16">public class AuthWebSecurityConfig extends WebSecurityConfigurerAdapter {</span>
+<span class="fc" id="L16">public class AuthWebSecurityConfig extends WebSecurityConfigurerAdapter {</span>
 
     @Autowired
     private AuthUserService userDetailsService;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-<span class="nc" id="L23">        http.csrf().disable()</span>
-<span class="nc" id="L24">                .authorizeRequests()</span>
-<span class="nc" id="L25">                .antMatchers(&quot;/api/db/auth/projects&quot;).authenticated()</span>
-<span class="nc" id="L26">                .antMatchers(&quot;/**&quot;).permitAll()</span>
-<span class="nc" id="L27">                .and()</span>
-<span class="nc" id="L28">                .httpBasic();</span>
-<span class="nc" id="L29">    }</span>
+<span class="fc" id="L23">        http.csrf().disable()</span>
+<span class="fc" id="L24">                .authorizeRequests()</span>
+<span class="fc" id="L25">                .antMatchers(&quot;/api/db/auth/projects&quot;).authenticated()</span>
+<span class="fc" id="L26">                .antMatchers(&quot;/**&quot;).permitAll()</span>
+<span class="fc" id="L27">                .and()</span>
+<span class="fc" id="L28">                .httpBasic();</span>
+<span class="fc" id="L29">    }</span>
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-<span class="nc" id="L33">        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();</span>
-<span class="nc" id="L34">        authenticationProvider.setUserDetailsService(userDetailsService);</span>
-<span class="nc" id="L35">        authenticationProvider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());</span>
-<span class="nc" id="L36">        return authenticationProvider;</span>
+<span class="fc" id="L33">        DaoAuthenticationProvider authenticationProvider = new DaoAuthenticationProvider();</span>
+<span class="fc" id="L34">        authenticationProvider.setUserDetailsService(userDetailsService);</span>
+<span class="fc" id="L35">        authenticationProvider.setPasswordEncoder(NoOpPasswordEncoder.getInstance());</span>
+<span class="fc" id="L36">        return authenticationProvider;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

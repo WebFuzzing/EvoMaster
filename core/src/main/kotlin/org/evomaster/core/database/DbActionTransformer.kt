@@ -53,11 +53,11 @@ object DbActionTransformer {
                 var isFkReferenceToNonPrintable = false
 
                 if (g is SqlForeignKeyGene) {
-                    isFkReferenceToNonPrintable = handleSqlForeignKey(g, previous, entry)
+                    isFkReferenceToNonPrintable = handleSqlForeignKey(g, previous, entry, sqlIdMap)
                 } else if (g is SqlPrimaryKeyGene) {
                     val k = g.gene
                     if (k is SqlForeignKeyGene) {
-                        isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry)
+                        isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry, sqlIdMap)
                     } else {
                         entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                     }

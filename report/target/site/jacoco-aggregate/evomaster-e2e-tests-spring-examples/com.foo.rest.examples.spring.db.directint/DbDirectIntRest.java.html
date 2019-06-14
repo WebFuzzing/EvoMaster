@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = &quot;/api/db/directint&quot;)
-<span class="nc" id="L15">public class DbDirectIntRest {</span>
+<span class="fc" id="L15">public class DbDirectIntRest {</span>
 
     @Autowired
     private DbDirectIntRepository repository;
@@ -22,11 +22,11 @@ import java.util.List;
             method = RequestMethod.POST
     )
     public void post() {
-<span class="nc" id="L25">        DbDirectIntEntity entity = new DbDirectIntEntity();</span>
-<span class="nc" id="L26">        entity.setX(42);</span>
-<span class="nc" id="L27">        entity.setY(77);</span>
-<span class="nc" id="L28">        repository.save(entity);</span>
-<span class="nc" id="L29">    }</span>
+<span class="fc" id="L25">        DbDirectIntEntity entity = new DbDirectIntEntity();</span>
+<span class="fc" id="L26">        entity.setX(42);</span>
+<span class="fc" id="L27">        entity.setY(77);</span>
+<span class="fc" id="L28">        repository.save(entity);</span>
+<span class="fc" id="L29">    }</span>
 
 
     @RequestMapping(
@@ -36,11 +36,11 @@ import java.util.List;
     )
     public ResponseEntity get(@PathVariable(&quot;x&quot;) int x, @PathVariable(&quot;y&quot;) int y) {
 
-<span class="nc" id="L39">        List&lt;DbDirectIntEntity&gt; list = repository.findByXIsAndYIs(x, y);</span>
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (list.isEmpty()) {</span>
-<span class="nc" id="L41">            return ResponseEntity.status(400).build();</span>
+<span class="fc" id="L39">        List&lt;DbDirectIntEntity&gt; list = repository.findByXIsAndYIs(x, y);</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        if (list.isEmpty()) {</span>
+<span class="fc" id="L41">            return ResponseEntity.status(400).build();</span>
         } else {
-<span class="nc" id="L43">            return ResponseEntity.status(200).build();</span>
+<span class="fc" id="L43">            return ResponseEntity.status(200).build();</span>
         }
     }
 }

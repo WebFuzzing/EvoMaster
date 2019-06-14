@@ -21,19 +21,19 @@ public class RestProblem implements ProblemInfo{
      *       are not so interesting to test, and they can be very expensive to run.
      *       Here can specify a list of endpoints (as defined in the schema) to skip.
      */
-<span class="nc" id="L24">    public RestProblem(String swaggerJsonUrl, List&lt;String&gt; endpointsToSkip) {</span>
-<span class="nc" id="L25">        this.swaggerJsonUrl = swaggerJsonUrl;</span>
-<span class="nc bnc" id="L26" title="All 2 branches missed.">        this.endpointsToSkip = endpointsToSkip == null</span>
+<span class="fc" id="L24">    public RestProblem(String swaggerJsonUrl, List&lt;String&gt; endpointsToSkip) {</span>
+<span class="fc" id="L25">        this.swaggerJsonUrl = swaggerJsonUrl;</span>
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">        this.endpointsToSkip = endpointsToSkip == null</span>
                 ? new ArrayList&lt;&gt;()
                 : new ArrayList&lt;&gt;(endpointsToSkip);
-<span class="nc" id="L29">    }</span>
+<span class="fc" id="L29">    }</span>
 
     public String getSwaggerJsonUrl() {
-<span class="nc" id="L32">        return swaggerJsonUrl;</span>
+<span class="fc" id="L32">        return swaggerJsonUrl;</span>
     }
 
     public List&lt;String&gt; getEndpointsToSkip() {
-<span class="nc" id="L36">        return endpointsToSkip;</span>
+<span class="fc" id="L36">        return endpointsToSkip;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

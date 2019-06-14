@@ -10,11 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping(path = &quot;/api&quot;)
-<span class="nc" id="L13">public class CNLRest {</span>
+<span class="fc" id="L13">public class CNLRest {</span>
 
-<span class="nc" id="L15">    public static final Map&lt;Integer, CNL_X&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L15">    public static final Map&lt;Integer, CNL_X&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
 
-<span class="nc" id="L17">    private final AtomicInteger counter = new AtomicInteger(1234);</span>
+<span class="fc" id="L17">    private final AtomicInteger counter = new AtomicInteger(1234);</span>
 
 
     @PostMapping(
@@ -23,15 +23,15 @@ import java.util.concurrent.atomic.AtomicInteger;
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity&lt;CNL_X&gt; createX(@RequestBody CNL_X input) {
 
-<span class="nc bnc" id="L26" title="All 4 branches missed.">        if (input == null || input.id != null) {</span>
-<span class="nc" id="L27">            return ResponseEntity.status(400).build();</span>
+<span class="pc bpc" id="L26" title="1 of 4 branches missed.">        if (input == null || input.id != null) {</span>
+<span class="fc" id="L27">            return ResponseEntity.status(400).build();</span>
         }
 
-<span class="nc" id="L30">        int id = counter.incrementAndGet();</span>
-<span class="nc" id="L31">        input.id = id;</span>
-<span class="nc" id="L32">        data.put(id, input);</span>
+<span class="fc" id="L30">        int id = counter.incrementAndGet();</span>
+<span class="fc" id="L31">        input.id = id;</span>
+<span class="fc" id="L32">        data.put(id, input);</span>
 
-<span class="nc" id="L34">        return ResponseEntity.status(201).body(input);</span>
+<span class="fc" id="L34">        return ResponseEntity.status(201).body(input);</span>
     }
 
 
@@ -40,11 +40,11 @@ import java.util.concurrent.atomic.AtomicInteger;
             produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity&lt;CNL_X&gt; getX(@PathVariable(&quot;id&quot;) int id){
 
-<span class="nc bnc" id="L43" title="All 2 branches missed.">        if(! data.containsKey(id)){</span>
-<span class="nc" id="L44">            return ResponseEntity.status(404).build();</span>
+<span class="fc bfc" id="L43" title="All 2 branches covered.">        if(! data.containsKey(id)){</span>
+<span class="fc" id="L44">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L47">        return ResponseEntity.ok(data.get(id));</span>
+<span class="fc" id="L47">        return ResponseEntity.ok(data.get(id));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

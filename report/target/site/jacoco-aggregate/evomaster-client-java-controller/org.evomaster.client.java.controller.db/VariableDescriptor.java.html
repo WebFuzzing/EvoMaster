@@ -25,25 +25,25 @@ public class VariableDescriptor {
 <span class="nc" id="L25">        this(columnName, columnName, null);</span>
 <span class="nc" id="L26">    }</span>
 
-<span class="nc" id="L28">    public VariableDescriptor(String columnName, String alias, String tableName) {</span>
-<span class="nc" id="L29">        this.columnName = columnName.trim().toLowerCase();</span>
-<span class="nc bnc" id="L30" title="All 4 branches missed.">        this.alias = (alias == null || alias.trim().isEmpty() ?</span>
+<span class="fc" id="L28">    public VariableDescriptor(String columnName, String alias, String tableName) {</span>
+<span class="fc" id="L29">        this.columnName = columnName.trim().toLowerCase();</span>
+<span class="pc bpc" id="L30" title="1 of 4 branches missed.">        this.alias = (alias == null || alias.trim().isEmpty() ?</span>
                 this.columnName :
-<span class="nc" id="L32">                alias.trim().toLowerCase());</span>
-<span class="nc bnc" id="L33" title="All 4 branches missed.">        this.tableName = (tableName == null || tableName.trim().isEmpty() ?</span>
-<span class="nc" id="L34">                null : tableName.trim().toLowerCase());</span>
-<span class="nc" id="L35">    }</span>
+<span class="fc" id="L32">                alias.trim().toLowerCase());</span>
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">        this.tableName = (tableName == null || tableName.trim().isEmpty() ?</span>
+<span class="fc" id="L34">                null : tableName.trim().toLowerCase());</span>
+<span class="fc" id="L35">    }</span>
 
     public String getColumnName() {
-<span class="nc" id="L38">        return columnName;</span>
+<span class="fc" id="L38">        return columnName;</span>
     }
 
     public String getAlias() {
-<span class="nc" id="L42">        return alias;</span>
+<span class="fc" id="L42">        return alias;</span>
     }
 
     public String getTableName() {
-<span class="nc" id="L46">        return tableName;</span>
+<span class="fc" id="L46">        return tableName;</span>
     }
 
 
@@ -59,14 +59,14 @@ public class VariableDescriptor {
 
     @Override
     public boolean equals(Object o) {
-<span class="nc bnc" id="L62" title="All 2 branches missed.">        if (this == o) return true;</span>
-<span class="nc bnc" id="L63" title="All 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">        if (this == o) return true;</span>
+<span class="pc bpc" id="L63" title="2 of 4 branches missed.">        if (o == null || getClass() != o.getClass()) return false;</span>
 
-<span class="nc" id="L65">        VariableDescriptor that = (VariableDescriptor) o;</span>
+<span class="fc" id="L65">        VariableDescriptor that = (VariableDescriptor) o;</span>
 
-<span class="nc bnc" id="L67" title="All 6 branches missed.">        if (columnName != null ? !columnName.equals(that.columnName) : that.columnName != null) return false;</span>
-<span class="nc bnc" id="L68" title="All 6 branches missed.">        if (alias != null ? !alias.equals(that.alias) : that.alias != null) return false;</span>
-<span class="nc bnc" id="L69" title="All 4 branches missed.">        return tableName != null ? tableName.equals(that.tableName) : that.tableName == null;</span>
+<span class="pc bpc" id="L67" title="4 of 6 branches missed.">        if (columnName != null ? !columnName.equals(that.columnName) : that.columnName != null) return false;</span>
+<span class="pc bpc" id="L68" title="4 of 6 branches missed.">        if (alias != null ? !alias.equals(that.alias) : that.alias != null) return false;</span>
+<span class="pc bpc" id="L69" title="3 of 4 branches missed.">        return tableName != null ? tableName.equals(that.tableName) : that.tableName == null;</span>
     }
 
     @Override

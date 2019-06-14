@@ -109,7 +109,7 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.actions, actionResults)
+        handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults)
 
         expandIndividual(individual, dto.additionalInfoList)
 

@@ -14,7 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping(path = &quot;/api/db/auth&quot;)
-<span class="nc" id="L17">public class AuthRest {</span>
+<span class="fc" id="L17">public class AuthRest {</span>
 
     @Autowired
     private AuthProjectService projectService;
@@ -40,7 +40,7 @@ import java.util.List;
     @GetMapping(path = &quot;/users&quot;)
     public Iterable&lt;AuthUserEntity&gt; getUsers(){
 
-<span class="nc" id="L43">        return userRepository.findAll();</span>
+<span class="fc" id="L43">        return userRepository.findAll();</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

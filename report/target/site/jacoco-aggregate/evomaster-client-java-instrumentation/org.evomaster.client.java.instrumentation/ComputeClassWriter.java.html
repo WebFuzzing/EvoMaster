@@ -44,11 +44,11 @@ import java.io.InputStream;
  */
 public class ComputeClassWriter extends ClassWriter {
 
-<span class="nc" id="L47">	private ClassLoader l = getClass().getClassLoader();</span>
+<span class="fc" id="L47">	private ClassLoader l = getClass().getClassLoader();</span>
 	
     public ComputeClassWriter(final int flags) {
-<span class="nc" id="L50">        super(flags);</span>
-<span class="nc" id="L51">    }</span>
+<span class="fc" id="L50">        super(flags);</span>
+<span class="fc" id="L51">    }</span>
     
     @Override
     protected String getCommonSuperClass(final String type1, final String type2) {

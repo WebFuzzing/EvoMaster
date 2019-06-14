@@ -14,36 +14,36 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-<span class="nc bnc" id="L17" title="All 2 branches missed.">public class HeuristicsCalculator {</span>
+<span class="pc bpc" id="L17" title="1 of 2 branches missed.">public class HeuristicsCalculator {</span>
 
 
     private final SqlNameContext context;
 
-<span class="nc" id="L22">    public HeuristicsCalculator(SqlNameContext context) {</span>
-<span class="nc" id="L23">        this.context = Objects.requireNonNull(context);</span>
-<span class="nc" id="L24">    }</span>
+<span class="fc" id="L22">    public HeuristicsCalculator(SqlNameContext context) {</span>
+<span class="fc" id="L23">        this.context = Objects.requireNonNull(context);</span>
+<span class="fc" id="L24">    }</span>
 
     public double computeExpression(Expression exp, DataRow data) {
 
         //TODO all cases
 
-<span class="nc bnc" id="L30" title="All 2 branches missed.">        if (exp instanceof ComparisonOperator) {</span>
-<span class="nc" id="L31">            return computeComparisonOperator((ComparisonOperator) exp, data);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">        if (exp instanceof ComparisonOperator) {</span>
+<span class="fc" id="L31">            return computeComparisonOperator((ComparisonOperator) exp, data);</span>
         }
-<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (exp instanceof AndExpression) {</span>
-<span class="nc" id="L34">            return computeAnd((AndExpression) exp, data);</span>
+<span class="fc bfc" id="L33" title="All 2 branches covered.">        if (exp instanceof AndExpression) {</span>
+<span class="fc" id="L34">            return computeAnd((AndExpression) exp, data);</span>
         }
-<span class="nc bnc" id="L36" title="All 2 branches missed.">        if (exp instanceof OrExpression) {</span>
-<span class="nc" id="L37">            return computeOr((OrExpression) exp, data);</span>
+<span class="fc bfc" id="L36" title="All 2 branches covered.">        if (exp instanceof OrExpression) {</span>
+<span class="fc" id="L37">            return computeOr((OrExpression) exp, data);</span>
         }
-<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (exp instanceof IsNullExpression) {</span>
-<span class="nc" id="L40">            return computeIsNull((IsNullExpression) exp, data);</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (exp instanceof IsNullExpression) {</span>
+<span class="fc" id="L40">            return computeIsNull((IsNullExpression) exp, data);</span>
         }
-<span class="nc bnc" id="L42" title="All 2 branches missed.">        if (exp instanceof InExpression) {</span>
-<span class="nc" id="L43">            return computeInExpression((InExpression) exp, data);</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (exp instanceof InExpression) {</span>
+<span class="fc" id="L43">            return computeInExpression((InExpression) exp, data);</span>
         }
-<span class="nc bnc" id="L45" title="All 2 branches missed.">        if (exp instanceof Parenthesis) {</span>
-<span class="nc" id="L46">            return computeExpression(((Parenthesis) exp).getExpression(), data);</span>
+<span class="pc bpc" id="L45" title="1 of 2 branches missed.">        if (exp instanceof Parenthesis) {</span>
+<span class="fc" id="L46">            return computeExpression(((Parenthesis) exp).getExpression(), data);</span>
         }
 
 <span class="nc" id="L49">        return cannotHandle(exp);</span>
@@ -53,44 +53,44 @@ import java.util.Objects;
 
         //TODO can left be a list???
 
-<span class="nc" id="L56">        ItemsList itemsList = exp.getRightItemsList();</span>
-<span class="nc bnc" id="L57" title="All 2 branches missed.">        if (itemsList instanceof ExpressionList) {</span>
-<span class="nc" id="L58">            ExpressionList list = (ExpressionList) itemsList;</span>
+<span class="fc" id="L56">        ItemsList itemsList = exp.getRightItemsList();</span>
+<span class="pc bpc" id="L57" title="1 of 2 branches missed.">        if (itemsList instanceof ExpressionList) {</span>
+<span class="fc" id="L58">            ExpressionList list = (ExpressionList) itemsList;</span>
 
-<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (exp.isNot()) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (exp.isNot()) {</span>
 
-<span class="nc" id="L62">                double max = 0;</span>
+<span class="fc" id="L62">                double max = 0;</span>
 
-<span class="nc bnc" id="L64" title="All 2 branches missed.">                for (Expression element : list.getExpressions()) {</span>
-<span class="nc" id="L65">                    ComparisonOperator op = new NotEqualsTo();</span>
-<span class="nc" id="L66">                    op.setLeftExpression(exp.getLeftExpression());</span>
-<span class="nc" id="L67">                    op.setRightExpression(element);</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">                for (Expression element : list.getExpressions()) {</span>
+<span class="fc" id="L65">                    ComparisonOperator op = new NotEqualsTo();</span>
+<span class="fc" id="L66">                    op.setLeftExpression(exp.getLeftExpression());</span>
+<span class="fc" id="L67">                    op.setRightExpression(element);</span>
 
-<span class="nc" id="L69">                    double dist = computeComparisonOperator(op, data);</span>
-<span class="nc bnc" id="L70" title="All 2 branches missed.">                    if (dist &gt; max) {</span>
-<span class="nc" id="L71">                        max = dist;</span>
-<span class="nc" id="L72">                        break; // no need to look at others, as no gradient</span>
+<span class="fc" id="L69">                    double dist = computeComparisonOperator(op, data);</span>
+<span class="fc bfc" id="L70" title="All 2 branches covered.">                    if (dist &gt; max) {</span>
+<span class="fc" id="L71">                        max = dist;</span>
+<span class="fc" id="L72">                        break; // no need to look at others, as no gradient</span>
                     }
-<span class="nc" id="L74">                }</span>
+<span class="fc" id="L74">                }</span>
 
-<span class="nc" id="L76">                return max;</span>
+<span class="fc" id="L76">                return max;</span>
 
             } else {
 
-<span class="nc" id="L80">                double min = Double.MAX_VALUE;</span>
+<span class="fc" id="L80">                double min = Double.MAX_VALUE;</span>
 
-<span class="nc bnc" id="L82" title="All 2 branches missed.">                for (Expression element : list.getExpressions()) {</span>
-<span class="nc" id="L83">                    ComparisonOperator op = new EqualsTo();</span>
-<span class="nc" id="L84">                    op.setLeftExpression(exp.getLeftExpression());</span>
-<span class="nc" id="L85">                    op.setRightExpression(element);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                for (Expression element : list.getExpressions()) {</span>
+<span class="fc" id="L83">                    ComparisonOperator op = new EqualsTo();</span>
+<span class="fc" id="L84">                    op.setLeftExpression(exp.getLeftExpression());</span>
+<span class="fc" id="L85">                    op.setRightExpression(element);</span>
 
-<span class="nc" id="L87">                    double dist = computeComparisonOperator(op, data);</span>
-<span class="nc bnc" id="L88" title="All 2 branches missed.">                    if (dist &lt; min) {</span>
-<span class="nc" id="L89">                        min = dist;</span>
+<span class="fc" id="L87">                    double dist = computeComparisonOperator(op, data);</span>
+<span class="fc bfc" id="L88" title="All 2 branches covered.">                    if (dist &lt; min) {</span>
+<span class="fc" id="L89">                        min = dist;</span>
                     }
-<span class="nc" id="L91">                }</span>
+<span class="fc" id="L91">                }</span>
 
-<span class="nc" id="L93">                return min;</span>
+<span class="fc" id="L93">                return min;</span>
             }
 
         } else {
@@ -100,16 +100,16 @@ import java.util.Objects;
 
     private double computeIsNull(IsNullExpression exp, DataRow data) {
 
-<span class="nc" id="L103">        Object x = getValue(exp.getLeftExpression(), data);</span>
+<span class="fc" id="L103">        Object x = getValue(exp.getLeftExpression(), data);</span>
 
-<span class="nc bnc" id="L105" title="All 4 branches missed.">        if (x == null &amp;&amp; !exp.isNot()) {</span>
-<span class="nc" id="L106">            return 0d;</span>
+<span class="fc bfc" id="L105" title="All 4 branches covered.">        if (x == null &amp;&amp; !exp.isNot()) {</span>
+<span class="fc" id="L106">            return 0d;</span>
         }
-<span class="nc bnc" id="L108" title="All 4 branches missed.">        if (x != null &amp;&amp; exp.isNot()) {</span>
-<span class="nc" id="L109">            return 0d;</span>
+<span class="fc bfc" id="L108" title="All 4 branches covered.">        if (x != null &amp;&amp; exp.isNot()) {</span>
+<span class="fc" id="L109">            return 0d;</span>
         }
 
-<span class="nc" id="L112">        return 1;</span>
+<span class="fc" id="L112">        return 1;</span>
     }
 
     private double cannotHandle(Expression exp) {
@@ -121,103 +121,103 @@ import java.util.Objects;
 
     private double computeAnd(AndExpression exp, DataRow data) {
 
-<span class="nc" id="L124">        double a = computeExpression(exp.getLeftExpression(), data);</span>
-<span class="nc" id="L125">        double b = computeExpression(exp.getRightExpression(), data);</span>
+<span class="fc" id="L124">        double a = computeExpression(exp.getLeftExpression(), data);</span>
+<span class="fc" id="L125">        double b = computeExpression(exp.getRightExpression(), data);</span>
 
-<span class="nc" id="L127">        double sum = a + b;</span>
-<span class="nc bnc" id="L128" title="All 2 branches missed.">        if (sum &lt; Math.max(a, b)) {</span>
+<span class="fc" id="L127">        double sum = a + b;</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">        if (sum &lt; Math.max(a, b)) {</span>
             //overflow
 <span class="nc" id="L130">            return Double.MAX_VALUE;</span>
         } else {
-<span class="nc" id="L132">            return sum;</span>
+<span class="fc" id="L132">            return sum;</span>
         }
     }
 
     private double computeOr(OrExpression exp, DataRow data) {
 
-<span class="nc" id="L138">        double a = computeExpression(exp.getLeftExpression(), data);</span>
-<span class="nc" id="L139">        double b = computeExpression(exp.getRightExpression(), data);</span>
+<span class="fc" id="L138">        double a = computeExpression(exp.getLeftExpression(), data);</span>
+<span class="fc" id="L139">        double b = computeExpression(exp.getRightExpression(), data);</span>
 
-<span class="nc" id="L141">        return Math.min(a, b);</span>
+<span class="fc" id="L141">        return Math.min(a, b);</span>
     }
 
     private double computeComparisonOperator(ComparisonOperator exp, DataRow data) {
 
-<span class="nc" id="L146">        Object left = getValue(exp.getLeftExpression(), data);</span>
-<span class="nc" id="L147">        Object right = getValue(exp.getRightExpression(), data);</span>
+<span class="fc" id="L146">        Object left = getValue(exp.getLeftExpression(), data);</span>
+<span class="fc" id="L147">        Object right = getValue(exp.getRightExpression(), data);</span>
 
-<span class="nc bnc" id="L149" title="All 4 branches missed.">        if (left instanceof Number &amp;&amp; right instanceof Number) {</span>
-<span class="nc" id="L150">            double x = ((Number) left).doubleValue();</span>
-<span class="nc" id="L151">            double y = ((Number) right).doubleValue();</span>
+<span class="pc bpc" id="L149" title="1 of 4 branches missed.">        if (left instanceof Number &amp;&amp; right instanceof Number) {</span>
+<span class="fc" id="L150">            double x = ((Number) left).doubleValue();</span>
+<span class="fc" id="L151">            double y = ((Number) right).doubleValue();</span>
 
-<span class="nc" id="L153">            return computerComparison(x, y, exp);</span>
+<span class="fc" id="L153">            return computerComparison(x, y, exp);</span>
         }
 
-<span class="nc bnc" id="L156" title="All 4 branches missed.">        if (left instanceof String &amp;&amp; right instanceof String) {</span>
-<span class="nc" id="L157">            return computeComparison(left.toString(), right.toString(), exp);</span>
+<span class="fc bfc" id="L156" title="All 4 branches covered.">        if (left instanceof String &amp;&amp; right instanceof String) {</span>
+<span class="fc" id="L157">            return computeComparison(left.toString(), right.toString(), exp);</span>
         }
 
-<span class="nc bnc" id="L160" title="All 4 branches missed.">        if (left instanceof Boolean &amp;&amp; right instanceof Boolean) {</span>
-<span class="nc" id="L161">            return computeBooleanComparison((Boolean) left, (Boolean) right, exp);</span>
+<span class="pc bpc" id="L160" title="1 of 4 branches missed.">        if (left instanceof Boolean &amp;&amp; right instanceof Boolean) {</span>
+<span class="fc" id="L161">            return computeBooleanComparison((Boolean) left, (Boolean) right, exp);</span>
         }
 
-<span class="nc bnc" id="L164" title="All 4 branches missed.">        if (left == null || right == null) {</span>
-<span class="nc" id="L165">            return computeNullComparison(left, right, exp);</span>
+<span class="pc bpc" id="L164" title="1 of 4 branches missed.">        if (left == null || right == null) {</span>
+<span class="fc" id="L165">            return computeNullComparison(left, right, exp);</span>
         }
 
 <span class="nc" id="L168">        return cannotHandle(exp);</span>
     }
 
     private double computeBooleanComparison(boolean x, boolean y, ComparisonOperator exp) {
-<span class="nc bnc" id="L172" title="All 2 branches missed.">        if (!checkEqualOrNotOperator(exp)) {</span>
+<span class="pc bpc" id="L172" title="1 of 2 branches missed.">        if (!checkEqualOrNotOperator(exp)) {</span>
 <span class="nc" id="L173">            return cannotHandle(exp);</span>
         }
 
-<span class="nc bnc" id="L176" title="All 4 branches missed.">        if (exp instanceof EqualsTo &amp;&amp; x == y) {</span>
-<span class="nc" id="L177">            return 0d;</span>
+<span class="fc bfc" id="L176" title="All 4 branches covered.">        if (exp instanceof EqualsTo &amp;&amp; x == y) {</span>
+<span class="fc" id="L177">            return 0d;</span>
         }
-<span class="nc bnc" id="L179" title="All 4 branches missed.">        if (exp instanceof NotEqualsTo &amp;&amp; x != y) {</span>
-<span class="nc" id="L180">            return 0d;</span>
+<span class="fc bfc" id="L179" title="All 4 branches covered.">        if (exp instanceof NotEqualsTo &amp;&amp; x != y) {</span>
+<span class="fc" id="L180">            return 0d;</span>
         }
 
-<span class="nc" id="L183">        return 1d;</span>
+<span class="fc" id="L183">        return 1d;</span>
     }
 
     private boolean checkEqualOrNotOperator(ComparisonOperator exp) {
-<span class="nc bnc" id="L187" title="All 4 branches missed.">        return (exp instanceof EqualsTo) || (exp instanceof NotEqualsTo);</span>
+<span class="pc bpc" id="L187" title="1 of 4 branches missed.">        return (exp instanceof EqualsTo) || (exp instanceof NotEqualsTo);</span>
     }
 
     private double computeNullComparison(Object x, Object y, ComparisonOperator exp) {
 
-<span class="nc bnc" id="L192" title="All 6 branches missed.">        assert x == null || y == null;</span>
+<span class="pc bpc" id="L192" title="2 of 6 branches missed.">        assert x == null || y == null;</span>
 
-<span class="nc bnc" id="L194" title="All 2 branches missed.">        if (!checkEqualOrNotOperator(exp)) {</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">        if (!checkEqualOrNotOperator(exp)) {</span>
 <span class="nc" id="L195">            return cannotHandle(exp);</span>
         }
 
-<span class="nc bnc" id="L198" title="All 4 branches missed.">        if (exp instanceof EqualsTo &amp;&amp; x == y) {</span>
-<span class="nc" id="L199">            return 0d;</span>
+<span class="fc bfc" id="L198" title="All 4 branches covered.">        if (exp instanceof EqualsTo &amp;&amp; x == y) {</span>
+<span class="fc" id="L199">            return 0d;</span>
         }
-<span class="nc bnc" id="L201" title="All 4 branches missed.">        if (exp instanceof NotEqualsTo &amp;&amp; x != y) {</span>
-<span class="nc" id="L202">            return 0d;</span>
+<span class="fc bfc" id="L201" title="All 4 branches covered.">        if (exp instanceof NotEqualsTo &amp;&amp; x != y) {</span>
+<span class="fc" id="L202">            return 0d;</span>
         }
-<span class="nc" id="L204">        return Double.MAX_VALUE;</span>
+<span class="fc" id="L204">        return Double.MAX_VALUE;</span>
     }
 
     private double computerComparison(double x, double y, ComparisonOperator exp) {
 
-<span class="nc bnc" id="L209" title="All 2 branches missed.">        if (exp instanceof EqualsTo) {</span>
-<span class="nc" id="L210">            return Math.abs(x - y);</span>
-<span class="nc bnc" id="L211" title="All 2 branches missed.">        } else if (exp instanceof GreaterThanEquals) {</span>
-<span class="nc bnc" id="L212" title="All 2 branches missed.">            return x &gt;= y ? 0d : y - x;</span>
-<span class="nc bnc" id="L213" title="All 2 branches missed.">        } else if (exp instanceof GreaterThan) {</span>
-<span class="nc bnc" id="L214" title="All 2 branches missed.">            return x &gt; y ? 0d : 1d + y - x;</span>
-<span class="nc bnc" id="L215" title="All 2 branches missed.">        } else if (exp instanceof MinorThanEquals) {</span>
-<span class="nc bnc" id="L216" title="All 2 branches missed.">            return x &lt;= y ? 0d : x - y;</span>
-<span class="nc bnc" id="L217" title="All 2 branches missed.">        } else if (exp instanceof MinorThan) {</span>
-<span class="nc bnc" id="L218" title="All 2 branches missed.">            return x &lt; y ? 0d : 1d + (x - y);</span>
-<span class="nc bnc" id="L219" title="All 2 branches missed.">        } else if (exp instanceof NotEqualsTo) {</span>
-<span class="nc bnc" id="L220" title="All 2 branches missed.">            return x != y ? 0d : 1d;</span>
+<span class="fc bfc" id="L209" title="All 2 branches covered.">        if (exp instanceof EqualsTo) {</span>
+<span class="fc" id="L210">            return Math.abs(x - y);</span>
+<span class="fc bfc" id="L211" title="All 2 branches covered.">        } else if (exp instanceof GreaterThanEquals) {</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">            return x &gt;= y ? 0d : y - x;</span>
+<span class="fc bfc" id="L213" title="All 2 branches covered.">        } else if (exp instanceof GreaterThan) {</span>
+<span class="fc bfc" id="L214" title="All 2 branches covered.">            return x &gt; y ? 0d : 1d + y - x;</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        } else if (exp instanceof MinorThanEquals) {</span>
+<span class="fc bfc" id="L216" title="All 2 branches covered.">            return x &lt;= y ? 0d : x - y;</span>
+<span class="fc bfc" id="L217" title="All 2 branches covered.">        } else if (exp instanceof MinorThan) {</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">            return x &lt; y ? 0d : 1d + (x - y);</span>
+<span class="pc bpc" id="L219" title="1 of 2 branches missed.">        } else if (exp instanceof NotEqualsTo) {</span>
+<span class="fc bfc" id="L220" title="All 2 branches covered.">            return x != y ? 0d : 1d;</span>
         } else {
 <span class="nc" id="L222">            return cannotHandle(exp);</span>
         }
@@ -225,13 +225,13 @@ import java.util.Objects;
 
     private double computeComparison(String a, String b, ComparisonOperator exp) {
 
-<span class="nc bnc" id="L228" title="All 2 branches missed.">        if (exp instanceof EqualsTo) {</span>
-<span class="nc" id="L229">            return StringTransformer.getLeftAlignmentDistance(a, b);</span>
-<span class="nc bnc" id="L230" title="All 2 branches missed.">        } else if (exp instanceof NotEqualsTo) {</span>
-<span class="nc bnc" id="L231" title="All 2 branches missed.">            if (a.equals(b)) {</span>
-<span class="nc" id="L232">                return Double.MAX_VALUE;</span>
+<span class="fc bfc" id="L228" title="All 2 branches covered.">        if (exp instanceof EqualsTo) {</span>
+<span class="fc" id="L229">            return StringTransformer.getLeftAlignmentDistance(a, b);</span>
+<span class="pc bpc" id="L230" title="1 of 2 branches missed.">        } else if (exp instanceof NotEqualsTo) {</span>
+<span class="fc bfc" id="L231" title="All 2 branches covered.">            if (a.equals(b)) {</span>
+<span class="fc" id="L232">                return Double.MAX_VALUE;</span>
             } else {
-<span class="nc" id="L234">                return 0d;</span>
+<span class="fc" id="L234">                return 0d;</span>
             }
         } else {
 <span class="nc" id="L237">            return cannotHandle(exp);</span>
@@ -243,30 +243,30 @@ import java.util.Objects;
 
         //TODO all cases
 
-<span class="nc bnc" id="L246" title="All 2 branches missed.">        if (exp instanceof Column) {</span>
-<span class="nc" id="L247">            Column column = (Column) exp;</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">        if (exp instanceof Column) {</span>
+<span class="fc" id="L247">            Column column = (Column) exp;</span>
 
-<span class="nc" id="L249">            String name = column.getColumnName();</span>
-<span class="nc" id="L250">            String table = context.getTableName(column);</span>
+<span class="fc" id="L249">            String name = column.getColumnName();</span>
+<span class="fc" id="L250">            String table = context.getTableName(column);</span>
 
-<span class="nc" id="L252">            return data.getValueByName(name, table);</span>
+<span class="fc" id="L252">            return data.getValueByName(name, table);</span>
 
-<span class="nc bnc" id="L254" title="All 2 branches missed.">        } else if (exp instanceof Parenthesis) {</span>
-<span class="nc" id="L255">            return getValue(((Parenthesis) exp).getExpression(), data);</span>
-<span class="nc bnc" id="L256" title="All 2 branches missed.">        } else if (exp instanceof LongValue) {</span>
-<span class="nc" id="L257">            return ((LongValue) exp).getValue();</span>
-<span class="nc bnc" id="L258" title="All 2 branches missed.">        } else if (exp instanceof StringValue) {</span>
-<span class="nc" id="L259">            return ((StringValue) exp).getNotExcapedValue();</span>
-<span class="nc bnc" id="L260" title="All 2 branches missed.">        } else if (exp instanceof NullValue) {</span>
-<span class="nc" id="L261">            return null;</span>
-<span class="nc bnc" id="L262" title="All 2 branches missed.">        } else if (exp instanceof SignedExpression) {</span>
-<span class="nc" id="L263">            SignedExpression signed = (SignedExpression) exp;</span>
-<span class="nc" id="L264">            Object base = getValue(signed.getExpression(), data);</span>
-<span class="nc bnc" id="L265" title="All 2 branches missed.">            if (signed.getSign() != '-') {</span>
+<span class="fc bfc" id="L254" title="All 2 branches covered.">        } else if (exp instanceof Parenthesis) {</span>
+<span class="fc" id="L255">            return getValue(((Parenthesis) exp).getExpression(), data);</span>
+<span class="fc bfc" id="L256" title="All 2 branches covered.">        } else if (exp instanceof LongValue) {</span>
+<span class="fc" id="L257">            return ((LongValue) exp).getValue();</span>
+<span class="fc bfc" id="L258" title="All 2 branches covered.">        } else if (exp instanceof StringValue) {</span>
+<span class="fc" id="L259">            return ((StringValue) exp).getNotExcapedValue();</span>
+<span class="fc bfc" id="L260" title="All 2 branches covered.">        } else if (exp instanceof NullValue) {</span>
+<span class="fc" id="L261">            return null;</span>
+<span class="pc bpc" id="L262" title="1 of 2 branches missed.">        } else if (exp instanceof SignedExpression) {</span>
+<span class="fc" id="L263">            SignedExpression signed = (SignedExpression) exp;</span>
+<span class="fc" id="L264">            Object base = getValue(signed.getExpression(), data);</span>
+<span class="pc bpc" id="L265" title="1 of 2 branches missed.">            if (signed.getSign() != '-') {</span>
 <span class="nc" id="L266">                return base;</span>
             } else {
-<span class="nc bnc" id="L268" title="All 2 branches missed.">                if (base instanceof Long) {</span>
-<span class="nc" id="L269">                    return -(Long) base;</span>
+<span class="pc bpc" id="L268" title="1 of 2 branches missed.">                if (base instanceof Long) {</span>
+<span class="fc" id="L269">                    return -(Long) base;</span>
 <span class="nc bnc" id="L270" title="All 2 branches missed.">                } else if (base instanceof Double) {</span>
 <span class="nc" id="L271">                    return -(Double) base;</span>
 <span class="nc bnc" id="L272" title="All 2 branches missed.">                } else if (base instanceof Float) {</span>

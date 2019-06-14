@@ -14,11 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping(path = &quot;/api/chl&quot;)
-<span class="nc" id="L17">public class CHLRest {</span>
+<span class="fc" id="L17">public class CHLRest {</span>
 
-<span class="nc" id="L19">    public static final Map&lt;Integer, X&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L19">    public static final Map&lt;Integer, X&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
 
-<span class="nc" id="L21">    private final AtomicInteger counter = new AtomicInteger(0);</span>
+<span class="fc" id="L21">    private final AtomicInteger counter = new AtomicInteger(0);</span>
 
 
     @RequestMapping(
@@ -31,23 +31,23 @@ import java.util.concurrent.atomic.AtomicInteger;
             @PathVariable(&quot;idy&quot;) int idy,
             @PathVariable(&quot;idz&quot;) int idz
     ){
-<span class="nc" id="L34">        X x = data.get(idx);</span>
-<span class="nc bnc" id="L35" title="All 2 branches missed.">        if(x == null){</span>
-<span class="nc" id="L36">            return ResponseEntity.status(404).build();</span>
+<span class="fc" id="L34">        X x = data.get(idx);</span>
+<span class="fc bfc" id="L35" title="All 2 branches covered.">        if(x == null){</span>
+<span class="fc" id="L36">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L39">        Y y = x.map.get(idy);</span>
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        if(y==null){</span>
+<span class="fc" id="L39">        Y y = x.map.get(idy);</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if(y==null){</span>
 <span class="nc" id="L41">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L44">        Z z = y.map.get(idz);</span>
+<span class="fc" id="L44">        Z z = y.map.get(idz);</span>
 
-<span class="nc bnc" id="L46" title="All 2 branches missed.">        if(z == null){</span>
+<span class="pc bpc" id="L46" title="1 of 2 branches missed.">        if(z == null){</span>
 <span class="nc" id="L47">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L50">        return ResponseEntity.status(200).build();</span>
+<span class="fc" id="L50">        return ResponseEntity.status(200).build();</span>
     }
 
     @RequestMapping(
@@ -56,11 +56,11 @@ import java.util.concurrent.atomic.AtomicInteger;
     )
     public ResponseEntity createX(){
 
-<span class="nc" id="L59">        int index = counter.incrementAndGet();</span>
-<span class="nc" id="L60">        X x = new X();</span>
-<span class="nc" id="L61">        data.put(index, x);</span>
+<span class="fc" id="L59">        int index = counter.incrementAndGet();</span>
+<span class="fc" id="L60">        X x = new X();</span>
+<span class="fc" id="L61">        data.put(index, x);</span>
 
-<span class="nc" id="L63">        return ResponseEntity.created(URI.create(&quot;/api/chl/x/&quot;+index)).build();</span>
+<span class="fc" id="L63">        return ResponseEntity.created(URI.create(&quot;/api/chl/x/&quot;+index)).build();</span>
     }
 
     @RequestMapping(
@@ -69,16 +69,16 @@ import java.util.concurrent.atomic.AtomicInteger;
     )
     public ResponseEntity createY( @PathVariable(&quot;idx&quot;) int idx){
 
-<span class="nc" id="L72">        X x = data.get(idx);</span>
-<span class="nc bnc" id="L73" title="All 2 branches missed.">        if(x == null){</span>
-<span class="nc" id="L74">            return ResponseEntity.status(404).build();</span>
+<span class="fc" id="L72">        X x = data.get(idx);</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        if(x == null){</span>
+<span class="fc" id="L74">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L77">        int index = counter.incrementAndGet();</span>
-<span class="nc" id="L78">        Y y = new Y();</span>
-<span class="nc" id="L79">        x.map.put(index, y);</span>
+<span class="fc" id="L77">        int index = counter.incrementAndGet();</span>
+<span class="fc" id="L78">        Y y = new Y();</span>
+<span class="fc" id="L79">        x.map.put(index, y);</span>
 
-<span class="nc" id="L81">        return ResponseEntity.created(URI.create(&quot;/api/chl/x/&quot;+idx+&quot;/y/&quot;+index)).build();</span>
+<span class="fc" id="L81">        return ResponseEntity.created(URI.create(&quot;/api/chl/x/&quot;+idx+&quot;/y/&quot;+index)).build();</span>
     }
 
 
@@ -90,34 +90,34 @@ import java.util.concurrent.atomic.AtomicInteger;
             @PathVariable(&quot;idx&quot;) int idx,
             @PathVariable(&quot;idy&quot;) int idy){
 
-<span class="nc" id="L93">        X x = data.get(idx);</span>
-<span class="nc bnc" id="L94" title="All 2 branches missed.">        if(x == null){</span>
-<span class="nc" id="L95">            return ResponseEntity.status(404).build();</span>
+<span class="fc" id="L93">        X x = data.get(idx);</span>
+<span class="fc bfc" id="L94" title="All 2 branches covered.">        if(x == null){</span>
+<span class="fc" id="L95">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L98">        Y y = x.map.get(idy);</span>
-<span class="nc bnc" id="L99" title="All 2 branches missed.">        if(y == null){</span>
+<span class="fc" id="L98">        Y y = x.map.get(idy);</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">        if(y == null){</span>
 <span class="nc" id="L100">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L103">        int index = counter.incrementAndGet();</span>
-<span class="nc" id="L104">        Z z = new Z();</span>
-<span class="nc" id="L105">        y.map.put(index, z);</span>
+<span class="fc" id="L103">        int index = counter.incrementAndGet();</span>
+<span class="fc" id="L104">        Z z = new Z();</span>
+<span class="fc" id="L105">        y.map.put(index, z);</span>
 
-<span class="nc" id="L107">        return ResponseEntity.created(URI.create(&quot;/api/chl/x/&quot;+idx+&quot;/y/&quot;+idy+&quot;/z/&quot;+index)).build();</span>
+<span class="fc" id="L107">        return ResponseEntity.created(URI.create(&quot;/api/chl/x/&quot;+idx+&quot;/y/&quot;+idy+&quot;/z/&quot;+index)).build();</span>
     }
 
 
 
-<span class="nc" id="L112">    private class X{</span>
-<span class="nc" id="L113">        public final Map&lt;Integer, Y&gt; map = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L112">    private class X{</span>
+<span class="fc" id="L113">        public final Map&lt;Integer, Y&gt; map = new ConcurrentHashMap&lt;&gt;();</span>
     }
 
-<span class="nc" id="L116">    private class Y{</span>
-<span class="nc" id="L117">        public final Map&lt;Integer, Z&gt; map = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L116">    private class Y{</span>
+<span class="fc" id="L117">        public final Map&lt;Integer, Z&gt; map = new ConcurrentHashMap&lt;&gt;();</span>
     }
 
-<span class="nc" id="L120">    private class Z {</span>
+<span class="fc" id="L120">    private class Z {</span>
         public String value;
     }
 }

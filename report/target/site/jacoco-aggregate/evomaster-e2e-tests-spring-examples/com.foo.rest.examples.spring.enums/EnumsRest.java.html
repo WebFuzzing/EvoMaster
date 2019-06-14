@@ -10,7 +10,7 @@ import javax.ws.rs.core.MediaType;
 
 @RestController
 @RequestMapping(path = &quot;/api/enums&quot;)
-<span class="nc" id="L13">public class EnumsRest {</span>
+<span class="fc" id="L13">public class EnumsRest {</span>
 
     @RequestMapping(
             value = &quot;/{target}&quot;,
@@ -19,18 +19,18 @@ import javax.ws.rs.core.MediaType;
     )
     public EnumsDto get(@PathVariable(&quot;target&quot;) TargetEnums target) {
 
-<span class="nc" id="L22">        EnumsDto dto = new EnumsDto();</span>
+<span class="fc" id="L22">        EnumsDto dto = new EnumsDto();</span>
 
-<span class="nc bnc" id="L24" title="All 3 branches missed.">        switch (target){</span>
+<span class="pc bpc" id="L24" title="1 of 3 branches missed.">        switch (target){</span>
             case A:
-<span class="nc" id="L26">                dto.value = 0;</span>
-<span class="nc" id="L27">                break;</span>
+<span class="fc" id="L26">                dto.value = 0;</span>
+<span class="fc" id="L27">                break;</span>
             case B:
-<span class="nc" id="L29">                dto.value = 1;</span>
+<span class="fc" id="L29">                dto.value = 1;</span>
                 break;
         }
 
-<span class="nc" id="L33">        return dto;</span>
+<span class="fc" id="L33">        return dto;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

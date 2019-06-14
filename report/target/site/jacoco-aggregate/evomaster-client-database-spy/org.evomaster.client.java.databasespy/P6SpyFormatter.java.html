@@ -7,7 +7,7 @@ import com.p6spy.engine.spy.appender.MessageFormattingStrategy;
  * need them in a specific format.
  * This is also useful when we need to discern them from other SUT messages.
  */
-<span class="nc" id="L10">public class P6SpyFormatter implements MessageFormattingStrategy {</span>
+<span class="fc" id="L10">public class P6SpyFormatter implements MessageFormattingStrategy {</span>
 
     public static final String PREFIX = &quot;P6SPY_SQL: &quot;;
 
@@ -19,10 +19,10 @@ import com.p6spy.engine.spy.appender.MessageFormattingStrategy;
                                 String prepared,
                                 String sql) {
 
-<span class="nc bnc" id="L22" title="All 4 branches missed.">        boolean hasPrepared = (prepared != null &amp;&amp; !prepared.trim().isEmpty());</span>
-<span class="nc bnc" id="L23" title="All 4 branches missed.">        boolean hasSQL = (sql != null &amp;&amp; !sql.trim().isEmpty());</span>
+<span class="pc bpc" id="L22" title="2 of 4 branches missed.">        boolean hasPrepared = (prepared != null &amp;&amp; !prepared.trim().isEmpty());</span>
+<span class="pc bpc" id="L23" title="2 of 4 branches missed.">        boolean hasSQL = (sql != null &amp;&amp; !sql.trim().isEmpty());</span>
 
-<span class="nc bnc" id="L25" title="All 4 branches missed.">        if (!hasPrepared &amp;&amp; !hasSQL) {</span>
+<span class="pc bpc" id="L25" title="3 of 4 branches missed.">        if (!hasPrepared &amp;&amp; !hasSQL) {</span>
 <span class="nc" id="L26">            return &quot;&quot;;</span>
         }
 
@@ -32,10 +32,10 @@ import com.p6spy.engine.spy.appender.MessageFormattingStrategy;
             and we get different behavior based on whether parameters &quot;?&quot;
             are present or not in the query.
          */
-<span class="nc bnc" id="L35" title="All 2 branches missed.">        if (!hasSQL) {</span>
+<span class="pc bpc" id="L35" title="1 of 2 branches missed.">        if (!hasSQL) {</span>
 <span class="nc" id="L36">            return PREFIX + prepared;</span>
         } else {
-<span class="nc" id="L38">            return PREFIX + sql;</span>
+<span class="fc" id="L38">            return PREFIX + sql;</span>
         }
     }
 }

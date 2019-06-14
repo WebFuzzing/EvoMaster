@@ -33,41 +33,41 @@ public class EMController {
     private final SutController sutController;
     private String baseUrlOfSUT;
 
-<span class="nc" id="L36">    public EMController(SutController sutController) {</span>
-<span class="nc" id="L37">        this.sutController = Objects.requireNonNull(sutController);</span>
-<span class="nc" id="L38">    }</span>
+<span class="fc" id="L36">    public EMController(SutController sutController) {</span>
+<span class="fc" id="L37">        this.sutController = Objects.requireNonNull(sutController);</span>
+<span class="fc" id="L38">    }</span>
 
 
     @Path(ControllerConstants.INFO_SUT_PATH)
     @GET
     public Response getSutInfo() {
 
-<span class="nc" id="L45">        SutInfoDto dto = new SutInfoDto();</span>
-<span class="nc" id="L46">        dto.isSutRunning = sutController.isSutRunning();</span>
-<span class="nc" id="L47">        dto.baseUrlOfSUT = baseUrlOfSUT;</span>
-<span class="nc" id="L48">        dto.infoForAuthentication = sutController.getInfoForAuthentication();</span>
-<span class="nc" id="L49">        dto.sqlSchemaDto = sutController.getSqlDatabaseSchema();</span>
-<span class="nc" id="L50">        dto.defaultOutputFormat = sutController.getPreferredOutputFormat();</span>
+<span class="fc" id="L45">        SutInfoDto dto = new SutInfoDto();</span>
+<span class="fc" id="L46">        dto.isSutRunning = sutController.isSutRunning();</span>
+<span class="fc" id="L47">        dto.baseUrlOfSUT = baseUrlOfSUT;</span>
+<span class="fc" id="L48">        dto.infoForAuthentication = sutController.getInfoForAuthentication();</span>
+<span class="fc" id="L49">        dto.sqlSchemaDto = sutController.getSqlDatabaseSchema();</span>
+<span class="fc" id="L50">        dto.defaultOutputFormat = sutController.getPreferredOutputFormat();</span>
 
-<span class="nc" id="L52">        ProblemInfo info = sutController.getProblemInfo();</span>
-<span class="nc bnc" id="L53" title="All 2 branches missed.">        if (info == null) {</span>
+<span class="fc" id="L52">        ProblemInfo info = sutController.getProblemInfo();</span>
+<span class="pc bpc" id="L53" title="1 of 2 branches missed.">        if (info == null) {</span>
 <span class="nc" id="L54">            String msg = &quot;Undefined problem type in the EM Controller&quot;;</span>
 <span class="nc" id="L55">            SimpleLogger.error(msg);</span>
 <span class="nc" id="L56">            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();</span>
 
-<span class="nc bnc" id="L58" title="All 2 branches missed.">        } else if (info instanceof RestProblem) {</span>
-<span class="nc" id="L59">            RestProblem rp = (RestProblem) info;</span>
-<span class="nc" id="L60">            dto.restProblem = new RestProblemDto();</span>
-<span class="nc" id="L61">            dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();</span>
-<span class="nc" id="L62">            dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();</span>
+<span class="pc bpc" id="L58" title="1 of 2 branches missed.">        } else if (info instanceof RestProblem) {</span>
+<span class="fc" id="L59">            RestProblem rp = (RestProblem) info;</span>
+<span class="fc" id="L60">            dto.restProblem = new RestProblemDto();</span>
+<span class="fc" id="L61">            dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();</span>
+<span class="fc" id="L62">            dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();</span>
 
-<span class="nc" id="L64">        } else {</span>
+<span class="fc" id="L64">        } else {</span>
 <span class="nc" id="L65">            String msg = &quot;Unrecognized problem type: &quot; + info.getClass().getName();</span>
 <span class="nc" id="L66">            SimpleLogger.error(msg);</span>
 <span class="nc" id="L67">            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();</span>
         }
 
-<span class="nc" id="L70">        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();</span>
+<span class="fc" id="L70">        return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();</span>
     }
 
     @Path(ControllerConstants.CONTROLLER_INFO)
@@ -96,17 +96,17 @@ public class EMController {
     public Response runSut(SutRunDto dto) {
 
         try {
-<span class="nc bnc" id="L99" title="All 2 branches missed.">            if (dto.run == null) {</span>
+<span class="pc bpc" id="L99" title="1 of 2 branches missed.">            if (dto.run == null) {</span>
 <span class="nc" id="L100">                String msg = &quot;Invalid JSON: 'run' field is required&quot;;</span>
 <span class="nc" id="L101">                SimpleLogger.warn(msg);</span>
 <span class="nc" id="L102">                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();</span>
             }
 
-<span class="nc bnc" id="L105" title="All 4 branches missed.">            boolean doReset = dto.resetState != null &amp;&amp; dto.resetState;</span>
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">            boolean doReset = dto.resetState != null &amp;&amp; dto.resetState;</span>
 
-<span class="nc" id="L107">            synchronized (this) {</span>
+<span class="fc" id="L107">            synchronized (this) {</span>
 
-<span class="nc bnc" id="L109" title="All 2 branches missed.">                if (!dto.run) {</span>
+<span class="pc bpc" id="L109" title="1 of 2 branches missed.">                if (!dto.run) {</span>
 <span class="nc bnc" id="L110" title="All 2 branches missed.">                    if (doReset) {</span>
 <span class="nc" id="L111">                        String msg = &quot;Invalid JSON: cannot reset state and stop service at same time&quot;;</span>
 <span class="nc" id="L112">                        SimpleLogger.warn(msg);</span>
@@ -123,15 +123,15 @@ public class EMController {
                     /*
                         If SUT is not up and running, let's start it
                      */
-<span class="nc bnc" id="L126" title="All 2 branches missed.">                    if (!sutController.isSutRunning()) {</span>
-<span class="nc" id="L127">                        baseUrlOfSUT = sutController.startSut();</span>
-<span class="nc bnc" id="L128" title="All 2 branches missed.">                        if (baseUrlOfSUT == null) {</span>
+<span class="pc bpc" id="L126" title="1 of 2 branches missed.">                    if (!sutController.isSutRunning()) {</span>
+<span class="fc" id="L127">                        baseUrlOfSUT = sutController.startSut();</span>
+<span class="pc bpc" id="L128" title="1 of 2 branches missed.">                        if (baseUrlOfSUT == null) {</span>
                             //there has been an internal failure in starting the SUT
 <span class="nc" id="L130">                            String msg = &quot;Internal failure: cannot start SUT based on given configuration&quot;;</span>
 <span class="nc" id="L131">                            SimpleLogger.warn(msg);</span>
 <span class="nc" id="L132">                            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();</span>
                         }
-<span class="nc" id="L134">                        sutController.initSqlHandler();</span>
+<span class="fc" id="L134">                        sutController.initSqlHandler();</span>
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
@@ -142,9 +142,9 @@ public class EMController {
                         this is controlled by a boolean, although most likely we ll always
                         want to do it
                      */
-<span class="nc bnc" id="L145" title="All 4 branches missed.">                    if (dto.resetState != null &amp;&amp; dto.resetState) {</span>
-<span class="nc" id="L146">                        sutController.resetStateOfSUT();</span>
-<span class="nc" id="L147">                        sutController.newTest();</span>
+<span class="pc bpc" id="L145" title="1 of 4 branches missed.">                    if (dto.resetState != null &amp;&amp; dto.resetState) {</span>
+<span class="fc" id="L146">                        sutController.resetStateOfSUT();</span>
+<span class="fc" id="L147">                        sutController.newTest();</span>
                     }
 
                     /*
@@ -154,7 +154,7 @@ public class EMController {
                         reset all the other data regarding the whole search
                      */
                 }
-<span class="nc" id="L157">            }</span>
+<span class="fc" id="L157">            }</span>
 <span class="nc" id="L158">        } catch (RuntimeException e) {</span>
             /*
                 FIXME: ideally, would not need to do a try/catch on each single endpoint,
@@ -165,9 +165,9 @@ public class EMController {
 <span class="nc" id="L165">            String msg = e.getMessage();</span>
 <span class="nc" id="L166">            SimpleLogger.error(msg);</span>
 <span class="nc" id="L167">            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();</span>
-<span class="nc" id="L168">        }</span>
+<span class="fc" id="L168">        }</span>
 
-<span class="nc" id="L170">        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();</span>
+<span class="fc" id="L170">        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();</span>
     }
 
 
@@ -179,29 +179,29 @@ public class EMController {
                     String idList) {
 
         try {
-<span class="nc" id="L182">            TestResultsDto dto = new TestResultsDto();</span>
+<span class="fc" id="L182">            TestResultsDto dto = new TestResultsDto();</span>
 
             Set&lt;Integer&gt; ids;
 
             try {
-<span class="nc" id="L187">                ids = Arrays.stream(idList.split(&quot;,&quot;))</span>
-<span class="nc bnc" id="L188" title="All 2 branches missed.">                        .filter(s -&gt; !s.trim().isEmpty())</span>
-<span class="nc" id="L189">                        .map(Integer::parseInt)</span>
-<span class="nc" id="L190">                        .collect(Collectors.toSet());</span>
+<span class="fc" id="L187">                ids = Arrays.stream(idList.split(&quot;,&quot;))</span>
+<span class="pc bpc" id="L188" title="1 of 2 branches missed.">                        .filter(s -&gt; !s.trim().isEmpty())</span>
+<span class="fc" id="L189">                        .map(Integer::parseInt)</span>
+<span class="fc" id="L190">                        .collect(Collectors.toSet());</span>
 <span class="nc" id="L191">            } catch (NumberFormatException e) {</span>
 <span class="nc" id="L192">                String msg = &quot;Invalid parameter 'ids': &quot; + e.getMessage();</span>
 <span class="nc" id="L193">                SimpleLogger.warn(msg);</span>
 <span class="nc" id="L194">                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();</span>
-<span class="nc" id="L195">            }</span>
+<span class="fc" id="L195">            }</span>
 
-<span class="nc" id="L197">            List&lt;TargetInfo&gt; list = sutController.getTargetInfos(ids);</span>
-<span class="nc bnc" id="L198" title="All 2 branches missed.">            if (list == null) {</span>
+<span class="fc" id="L197">            List&lt;TargetInfo&gt; list = sutController.getTargetInfos(ids);</span>
+<span class="pc bpc" id="L198" title="1 of 2 branches missed.">            if (list == null) {</span>
 <span class="nc" id="L199">                String msg = &quot;Failed to collect target information for &quot; + ids.size() + &quot; ids&quot;;</span>
 <span class="nc" id="L200">                SimpleLogger.error(msg);</span>
 <span class="nc" id="L201">                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();</span>
             }
 
-<span class="nc" id="L204">            list.forEach(t -&gt; {</span>
+<span class="fc" id="L204">            list.forEach(t -&gt; {</span>
 <span class="nc" id="L205">                TargetInfoDto info = new TargetInfoDto();</span>
 <span class="nc" id="L206">                info.id = t.mappedId;</span>
 <span class="nc" id="L207">                info.value = t.value;</span>
@@ -211,17 +211,17 @@ public class EMController {
 <span class="nc" id="L211">                dto.targets.add(info);</span>
 <span class="nc" id="L212">            });</span>
 
-<span class="nc" id="L214">            sutController.getAdditionalInfoList().forEach(a -&gt; {</span>
-<span class="nc" id="L215">                AdditionalInfoDto info = new AdditionalInfoDto();</span>
-<span class="nc" id="L216">                info.queryParameters = new HashSet&lt;&gt;(a.getQueryParametersView());</span>
-<span class="nc" id="L217">                info.headers = new HashSet&lt;&gt;(a.getHeadersView());</span>
+<span class="fc" id="L214">            sutController.getAdditionalInfoList().forEach(a -&gt; {</span>
+<span class="fc" id="L215">                AdditionalInfoDto info = new AdditionalInfoDto();</span>
+<span class="fc" id="L216">                info.queryParameters = new HashSet&lt;&gt;(a.getQueryParametersView());</span>
+<span class="fc" id="L217">                info.headers = new HashSet&lt;&gt;(a.getHeadersView());</span>
 
-<span class="nc" id="L219">                dto.additionalInfoList.add(info);</span>
-<span class="nc" id="L220">            });</span>
+<span class="fc" id="L219">                dto.additionalInfoList.add(info);</span>
+<span class="fc" id="L220">            });</span>
 
-<span class="nc" id="L222">            dto.extraHeuristics = sutController.getExtraHeuristics();</span>
+<span class="fc" id="L222">            dto.extraHeuristics = sutController.getExtraHeuristics();</span>
 
-<span class="nc" id="L224">            return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();</span>
+<span class="fc" id="L224">            return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();</span>
 
 <span class="nc" id="L226">        } catch (RuntimeException e) {</span>
             /*
@@ -242,9 +242,9 @@ public class EMController {
     @PUT
     public Response newAction(int index) {
 
-<span class="nc" id="L245">        sutController.newAction(index);</span>
+<span class="fc" id="L245">        sutController.newAction(index);</span>
 
-<span class="nc" id="L247">        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();</span>
+<span class="fc" id="L247">        return Response.status(204).entity(WrappedResponseDto.withNoData()).build();</span>
     }
 
 
@@ -253,32 +253,32 @@ public class EMController {
     @POST
     public Response executeDatabaseCommand(DatabaseCommandDto dto) {
 
-<span class="nc" id="L256">        Connection connection = sutController.getConnection();</span>
-<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (connection == null) {</span>
+<span class="fc" id="L256">        Connection connection = sutController.getConnection();</span>
+<span class="pc bpc" id="L257" title="1 of 2 branches missed.">        if (connection == null) {</span>
 <span class="nc" id="L258">            String msg = &quot;No active database connection&quot;;</span>
 <span class="nc" id="L259">            SimpleLogger.warn(msg);</span>
 <span class="nc" id="L260">            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();</span>
         }
 
-<span class="nc bnc" id="L263" title="All 6 branches missed.">        if (dto.command == null &amp;&amp; (dto.insertions == null || dto.insertions.isEmpty())) {</span>
+<span class="pc bpc" id="L263" title="5 of 6 branches missed.">        if (dto.command == null &amp;&amp; (dto.insertions == null || dto.insertions.isEmpty())) {</span>
 <span class="nc" id="L264">            String msg = &quot;No input command&quot;;</span>
 <span class="nc" id="L265">            SimpleLogger.warn(msg);</span>
 <span class="nc" id="L266">            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();</span>
         }
 
-<span class="nc bnc" id="L269" title="All 6 branches missed.">        if (dto.command != null &amp;&amp; dto.insertions != null &amp;&amp; !dto.insertions.isEmpty()) {</span>
+<span class="pc bpc" id="L269" title="3 of 6 branches missed.">        if (dto.command != null &amp;&amp; dto.insertions != null &amp;&amp; !dto.insertions.isEmpty()) {</span>
 <span class="nc" id="L270">            String msg = &quot;Only 1 command can be specified&quot;;</span>
 <span class="nc" id="L271">            SimpleLogger.warn(msg);</span>
 <span class="nc" id="L272">            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();</span>
         }
 
 
-<span class="nc" id="L276">        QueryResult queryResult = null;</span>
-<span class="nc" id="L277">        Map&lt;Long,Long&gt; idMapping = null;</span>
+<span class="fc" id="L276">        QueryResult queryResult = null;</span>
+<span class="fc" id="L277">        Map&lt;Long,Long&gt; idMapping = null;</span>
 
         try {
-<span class="nc bnc" id="L280" title="All 2 branches missed.">            if (dto.command != null) {</span>
-<span class="nc" id="L281">                queryResult = SqlScriptRunner.execCommand(connection, dto.command);</span>
+<span class="pc bpc" id="L280" title="1 of 2 branches missed.">            if (dto.command != null) {</span>
+<span class="fc" id="L281">                queryResult = SqlScriptRunner.execCommand(connection, dto.command);</span>
             } else {
 <span class="nc" id="L283">                idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);</span>
             }
@@ -286,10 +286,10 @@ public class EMController {
 <span class="nc" id="L286">            String msg = &quot;Failed to execute database command: &quot; + e.getMessage();</span>
 <span class="nc" id="L287">            SimpleLogger.warn(msg);</span>
 <span class="nc" id="L288">            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();</span>
-<span class="nc" id="L289">        }</span>
+<span class="fc" id="L289">        }</span>
 
-<span class="nc bnc" id="L291" title="All 2 branches missed.">        if (queryResult != null) {</span>
-<span class="nc" id="L292">            return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();</span>
+<span class="pc bpc" id="L291" title="1 of 2 branches missed.">        if (queryResult != null) {</span>
+<span class="fc" id="L292">            return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();</span>
 <span class="nc bnc" id="L293" title="All 2 branches missed.">        } else if(idMapping != null) {</span>
 <span class="nc" id="L294">            return Response.status(200).entity(WrappedResponseDto.withData(idMapping)).build();</span>
         } else {

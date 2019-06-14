@@ -9,7 +9,7 @@ import javax.ws.rs.core.MediaType;
 
 @RestController
 @RequestMapping(path = &quot;/api/strings&quot;)
-<span class="nc" id="L12">public class StringsRest {</span>
+<span class="fc" id="L12">public class StringsRest {</span>
 
 
     @RequestMapping(
@@ -20,14 +20,14 @@ import javax.ws.rs.core.MediaType;
     public StringsResponseDto equalsFoo(
             @PathVariable(&quot;s&quot;) String s
     ){
-<span class="nc" id="L23">        StringsResponseDto dto = new StringsResponseDto();</span>
-<span class="nc bnc" id="L24" title="All 2 branches missed.">        if(&quot;foo&quot;.equals(s)){</span>
-<span class="nc" id="L25">            dto.valid = true;</span>
+<span class="fc" id="L23">        StringsResponseDto dto = new StringsResponseDto();</span>
+<span class="fc bfc" id="L24" title="All 2 branches covered.">        if(&quot;foo&quot;.equals(s)){</span>
+<span class="fc" id="L25">            dto.valid = true;</span>
         } else {
-<span class="nc" id="L27">            dto.valid = false;</span>
+<span class="fc" id="L27">            dto.valid = false;</span>
         }
 
-<span class="nc" id="L30">        return dto;</span>
+<span class="fc" id="L30">        return dto;</span>
     }
 
     @RequestMapping(
@@ -38,17 +38,17 @@ import javax.ws.rs.core.MediaType;
     public StringsResponseDto startsEnd(
             @PathVariable(&quot;s&quot;) String s
     ){
-<span class="nc" id="L41">        StringsResponseDto dto = new StringsResponseDto();</span>
-<span class="nc bnc" id="L42" title="All 4 branches missed.">        if(s == null || s.isEmpty()){</span>
+<span class="fc" id="L41">        StringsResponseDto dto = new StringsResponseDto();</span>
+<span class="pc bpc" id="L42" title="2 of 4 branches missed.">        if(s == null || s.isEmpty()){</span>
 <span class="nc" id="L43">            dto.valid = false;</span>
         }
-<span class="nc bnc" id="L45" title="All 6 branches missed.">        else if(s.length() == 4 &amp;&amp; s.startsWith(&quot;X&quot;) &amp;&amp; s.endsWith(&quot;Y&quot;)){</span>
-<span class="nc" id="L46">            dto.valid = true;</span>
+<span class="fc bfc" id="L45" title="All 6 branches covered.">        else if(s.length() == 4 &amp;&amp; s.startsWith(&quot;X&quot;) &amp;&amp; s.endsWith(&quot;Y&quot;)){</span>
+<span class="fc" id="L46">            dto.valid = true;</span>
         } else {
-<span class="nc" id="L48">            dto.valid = false;</span>
+<span class="fc" id="L48">            dto.valid = false;</span>
         }
 
-<span class="nc" id="L51">        return dto;</span>
+<span class="fc" id="L51">        return dto;</span>
     }
 
     @RequestMapping(
@@ -59,17 +59,17 @@ import javax.ws.rs.core.MediaType;
     public StringsResponseDto contains(
             @PathVariable(&quot;s&quot;) String s
     ){
-<span class="nc" id="L62">        StringsResponseDto dto = new StringsResponseDto();</span>
-<span class="nc bnc" id="L63" title="All 4 branches missed.">        if(s == null || s.isEmpty()){</span>
+<span class="fc" id="L62">        StringsResponseDto dto = new StringsResponseDto();</span>
+<span class="pc bpc" id="L63" title="2 of 4 branches missed.">        if(s == null || s.isEmpty()){</span>
 <span class="nc" id="L64">            dto.valid = false;</span>
         }
-<span class="nc bnc" id="L66" title="All 4 branches missed.">        else if(s.length() == 3 &amp;&amp; &quot;123456789&quot;.contains(s)){</span>
-<span class="nc" id="L67">            dto.valid = true;</span>
+<span class="fc bfc" id="L66" title="All 4 branches covered.">        else if(s.length() == 3 &amp;&amp; &quot;123456789&quot;.contains(s)){</span>
+<span class="fc" id="L67">            dto.valid = true;</span>
         } else {
-<span class="nc" id="L69">            dto.valid = false;</span>
+<span class="fc" id="L69">            dto.valid = false;</span>
         }
 
-<span class="nc" id="L72">        return dto;</span>
+<span class="fc" id="L72">        return dto;</span>
     }
 
 

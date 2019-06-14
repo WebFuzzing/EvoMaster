@@ -51,63 +51,63 @@ public class InstrumentingClassLoader extends ClassLoader {
      *                              impact on performance
      * @throws IllegalArgumentException if {@code packagePrefixesToCover} is invalid
      */
-<span class="nc" id="L54">    public InstrumentingClassLoader(String packagePrefixesToCover)throws IllegalArgumentException {</span>
-<span class="nc" id="L55">        instrumentator = new Instrumentator(packagePrefixesToCover);</span>
-<span class="nc" id="L56">        classLoader = InstrumentingClassLoader.class.getClassLoader();</span>
-<span class="nc" id="L57">        classes = new LinkedHashMap&lt;&gt;();</span>
-<span class="nc" id="L58">    }</span>
+<span class="fc" id="L54">    public InstrumentingClassLoader(String packagePrefixesToCover)throws IllegalArgumentException {</span>
+<span class="fc" id="L55">        instrumentator = new Instrumentator(packagePrefixesToCover);</span>
+<span class="fc" id="L56">        classLoader = InstrumentingClassLoader.class.getClassLoader();</span>
+<span class="fc" id="L57">        classes = new LinkedHashMap&lt;&gt;();</span>
+<span class="fc" id="L58">    }</span>
 
     @Override
     public Class&lt;?&gt; loadClass(String name) throws ClassNotFoundException {
 
-<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (!ClassesToExclude.checkIfCanInstrument(ClassName.get(name))) {</span>
-<span class="nc" id="L64">            return loadNonInstrumented(name);</span>
+<span class="fc bfc" id="L63" title="All 2 branches covered.">        if (!ClassesToExclude.checkIfCanInstrument(ClassName.get(name))) {</span>
+<span class="fc" id="L64">            return loadNonInstrumented(name);</span>
         }
 
-<span class="nc" id="L67">        Class&lt;?&gt; result = classes.get(name);</span>
-<span class="nc bnc" id="L68" title="All 2 branches missed.">        if (result != null) {</span>
+<span class="fc" id="L67">        Class&lt;?&gt; result = classes.get(name);</span>
+<span class="pc bpc" id="L68" title="1 of 2 branches missed.">        if (result != null) {</span>
 <span class="nc" id="L69">            return result;</span>
         } else {
-<span class="nc" id="L71">            ClassName className = new ClassName(name);</span>
-<span class="nc" id="L72">            Class&lt;?&gt; instrumentedClass = instrumentClass(className);</span>
+<span class="fc" id="L71">            ClassName className = new ClassName(name);</span>
+<span class="fc" id="L72">            Class&lt;?&gt; instrumentedClass = instrumentClass(className);</span>
 
-<span class="nc bnc" id="L74" title="All 2 branches missed.">            if(instrumentedClass == null){</span>
-<span class="nc" id="L75">                return loadNonInstrumented(name);</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">            if(instrumentedClass == null){</span>
+<span class="fc" id="L75">                return loadNonInstrumented(name);</span>
             }
 
-<span class="nc" id="L78">            return instrumentedClass;</span>
+<span class="fc" id="L78">            return instrumentedClass;</span>
         }
     }
 
     private Class&lt;?&gt; loadNonInstrumented(String name) throws ClassNotFoundException {
-<span class="nc" id="L83">        Class&lt;?&gt; result = findLoadedClass(name);</span>
-<span class="nc bnc" id="L84" title="All 2 branches missed.">        if (result != null) {</span>
+<span class="fc" id="L83">        Class&lt;?&gt; result = findLoadedClass(name);</span>
+<span class="pc bpc" id="L84" title="1 of 2 branches missed.">        if (result != null) {</span>
 <span class="nc" id="L85">            return result;</span>
         }
-<span class="nc" id="L87">        result = classLoader.loadClass(name);</span>
-<span class="nc" id="L88">        return result;</span>
+<span class="fc" id="L87">        result = classLoader.loadClass(name);</span>
+<span class="fc" id="L88">        return result;</span>
     }
 
     private Class&lt;?&gt; instrumentClass(ClassName className) throws ClassNotFoundException {
 
-<span class="nc" id="L93">        try (InputStream is = classLoader.getResourceAsStream(className.getAsResourcePath())) {</span>
+<span class="fc" id="L93">        try (InputStream is = classLoader.getResourceAsStream(className.getAsResourcePath())) {</span>
 
-<span class="nc bnc" id="L95" title="All 2 branches missed.">            if (is == null) {</span>
+<span class="pc bpc" id="L95" title="1 of 2 branches missed.">            if (is == null) {</span>
 <span class="nc" id="L96">                warn(&quot;Failed to find resource file for &quot;+className.getAsResourcePath());</span>
 <span class="nc" id="L97">                return null;</span>
             }
 
-<span class="nc" id="L100">            byte[] byteBuffer = instrumentator.transformBytes(this, className, new ClassReader(is));</span>
-<span class="nc" id="L101">            createPackageDefinition(className.getFullNameWithDots());</span>
+<span class="fc" id="L100">            byte[] byteBuffer = instrumentator.transformBytes(this, className, new ClassReader(is));</span>
+<span class="fc" id="L101">            createPackageDefinition(className.getFullNameWithDots());</span>
 
-<span class="nc" id="L103">            Class&lt;?&gt; result = defineClass(className.getFullNameWithDots(), byteBuffer, 0, byteBuffer.length);</span>
-<span class="nc" id="L104">            classes.put(className.getFullNameWithDots(), result);</span>
+<span class="fc" id="L103">            Class&lt;?&gt; result = defineClass(className.getFullNameWithDots(), byteBuffer, 0, byteBuffer.length);</span>
+<span class="fc" id="L104">            classes.put(className.getFullNameWithDots(), result);</span>
 
-<span class="nc" id="L106">            debug(&quot;Loaded class: &quot; + className.getFullNameWithDots());</span>
-<span class="nc" id="L107">            return result;</span>
-<span class="nc" id="L108">        } catch (Throwable t) {</span>
-<span class="nc" id="L109">            error(&quot;Error while loading class &quot; + className.getFullNameWithDots(), t);</span>
-<span class="nc" id="L110">            return null;</span>
+<span class="fc" id="L106">            debug(&quot;Loaded class: &quot; + className.getFullNameWithDots());</span>
+<span class="fc" id="L107">            return result;</span>
+<span class="fc" id="L108">        } catch (Throwable t) {</span>
+<span class="fc" id="L109">            error(&quot;Error while loading class &quot; + className.getFullNameWithDots(), t);</span>
+<span class="fc" id="L110">            return null;</span>
         }
     }
 
@@ -117,15 +117,15 @@ public class InstrumentingClassLoader extends ClassLoader {
      * @param className
      */
     private void createPackageDefinition(String className) {
-<span class="nc" id="L120">        int i = className.lastIndexOf('.');</span>
-<span class="nc bnc" id="L121" title="All 2 branches missed.">        if (i != -1) {</span>
-<span class="nc" id="L122">            String pkgname = className.substring(0, i);</span>
+<span class="fc" id="L120">        int i = className.lastIndexOf('.');</span>
+<span class="pc bpc" id="L121" title="1 of 2 branches missed.">        if (i != -1) {</span>
+<span class="fc" id="L122">            String pkgname = className.substring(0, i);</span>
             // Check if package already loaded.
-<span class="nc" id="L124">            Package pkg = getPackage(pkgname);</span>
-<span class="nc bnc" id="L125" title="All 2 branches missed.">            if (pkg == null) {</span>
+<span class="fc" id="L124">            Package pkg = getPackage(pkgname);</span>
+<span class="pc bpc" id="L125" title="1 of 2 branches missed.">            if (pkg == null) {</span>
 <span class="nc" id="L126">                definePackage(pkgname, null, null, null, null, null, null, null);</span>
             }
         }
-<span class="nc" id="L129">    }</span>
+<span class="fc" id="L129">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

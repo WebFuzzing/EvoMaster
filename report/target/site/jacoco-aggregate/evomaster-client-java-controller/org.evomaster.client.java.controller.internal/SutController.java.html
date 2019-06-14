@@ -36,12 +36,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * that is responsible to start/stop/restart the tested application,
  * ie the system under test (SUT)
  */
-<span class="nc" id="L39">public abstract class SutController implements SutHandler {</span>
+<span class="fc" id="L39">public abstract class SutController implements SutHandler {</span>
 
-<span class="nc" id="L41">    private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;</span>
-<span class="nc" id="L42">    private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;</span>
+<span class="fc" id="L41">    private int controllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT;</span>
+<span class="fc" id="L42">    private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;</span>
 
-<span class="nc" id="L44">    private final SqlHandler sqlHandler = new SqlHandler();</span>
+<span class="fc" id="L44">    private final SqlHandler sqlHandler = new SqlHandler();</span>
 
     private Server controllerServer;
 
@@ -53,9 +53,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
     /**
      * For each action in a test, keep track of the extra heuristics, if any
      */
-<span class="nc" id="L56">    private final List&lt;ExtraHeuristicDto&gt; extras = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L56">    private final List&lt;ExtraHeuristicDto&gt; extras = new CopyOnWriteArrayList&lt;&gt;();</span>
 
-<span class="nc" id="L58">    private int actionIndex = -1;</span>
+<span class="fc" id="L58">    private int actionIndex = -1;</span>
 
     /**
      * Start the controller as a RESTful server.
@@ -67,45 +67,45 @@ import java.util.concurrent.CopyOnWriteArrayList;
     public final boolean startTheControllerServer() {
 
         //Jersey
-<span class="nc" id="L70">        ResourceConfig config = new ResourceConfig();</span>
-<span class="nc" id="L71">        config.register(JacksonFeature.class);</span>
-<span class="nc" id="L72">        config.register(new EMController(this));</span>
-<span class="nc" id="L73">        config.register(LoggingFeature.class);</span>
+<span class="fc" id="L70">        ResourceConfig config = new ResourceConfig();</span>
+<span class="fc" id="L71">        config.register(JacksonFeature.class);</span>
+<span class="fc" id="L72">        config.register(new EMController(this));</span>
+<span class="fc" id="L73">        config.register(LoggingFeature.class);</span>
 
         //Jetty
-<span class="nc" id="L76">        controllerServer = new Server(InetSocketAddress.createUnresolved(</span>
-<span class="nc" id="L77">                getControllerHost(), getControllerPort()));</span>
+<span class="fc" id="L76">        controllerServer = new Server(InetSocketAddress.createUnresolved(</span>
+<span class="fc" id="L77">                getControllerHost(), getControllerPort()));</span>
 
-<span class="nc" id="L79">        ErrorHandler errorHandler = new ErrorHandler();</span>
-<span class="nc" id="L80">        errorHandler.setShowStacks(true);</span>
-<span class="nc" id="L81">        controllerServer.setErrorHandler(errorHandler);</span>
+<span class="fc" id="L79">        ErrorHandler errorHandler = new ErrorHandler();</span>
+<span class="fc" id="L80">        errorHandler.setShowStacks(true);</span>
+<span class="fc" id="L81">        controllerServer.setErrorHandler(errorHandler);</span>
 
-<span class="nc" id="L83">        ServletHolder servlet = new ServletHolder(new ServletContainer(config));</span>
+<span class="fc" id="L83">        ServletHolder servlet = new ServletHolder(new ServletContainer(config));</span>
 
-<span class="nc" id="L85">        ServletContextHandler context = new ServletContextHandler(controllerServer,</span>
+<span class="fc" id="L85">        ServletContextHandler context = new ServletContextHandler(controllerServer,</span>
                 ControllerConstants.BASE_PATH + &quot;/*&quot;);
-<span class="nc" id="L87">        context.addServlet(servlet, &quot;/*&quot;);</span>
+<span class="fc" id="L87">        context.addServlet(servlet, &quot;/*&quot;);</span>
 
 
         try {
-<span class="nc" id="L91">            controllerServer.start();</span>
+<span class="fc" id="L91">            controllerServer.start();</span>
 <span class="nc" id="L92">        } catch (Exception e) {</span>
 <span class="nc" id="L93">            SimpleLogger.error(&quot;Failed to start Jetty: &quot; + e.getMessage());</span>
 <span class="nc" id="L94">            controllerServer.destroy();</span>
-<span class="nc" id="L95">        }</span>
+<span class="fc" id="L95">        }</span>
 
         //just make sure we start from a clean state
-<span class="nc" id="L98">        newSearch();</span>
+<span class="fc" id="L98">        newSearch();</span>
 
-<span class="nc" id="L100">        SimpleLogger.info(&quot;Started controller server on: &quot; + controllerServer.getURI());</span>
+<span class="fc" id="L100">        SimpleLogger.info(&quot;Started controller server on: &quot; + controllerServer.getURI());</span>
 
-<span class="nc" id="L102">        return true;</span>
+<span class="fc" id="L102">        return true;</span>
     }
 
     public final boolean stopTheControllerServer() {
         try {
-<span class="nc" id="L107">            controllerServer.stop();</span>
-<span class="nc" id="L108">            return true;</span>
+<span class="fc" id="L107">            controllerServer.stop();</span>
+<span class="fc" id="L108">            return true;</span>
 <span class="nc" id="L109">        } catch (Exception e) {</span>
 <span class="nc" id="L110">            SimpleLogger.error(e.toString());</span>
 <span class="nc" id="L111">            return false;</span>
@@ -116,20 +116,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
      * @return the actual port in use (eg, if it was an ephemeral 0)
      */
     public final int getControllerServerPort() {
-<span class="nc" id="L119">        return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();</span>
+<span class="fc" id="L119">        return ((AbstractNetworkConnector) controllerServer.getConnectors()[0]).getLocalPort();</span>
     }
 
 
     public final int getControllerPort() {
-<span class="nc" id="L124">        return controllerPort;</span>
+<span class="fc" id="L124">        return controllerPort;</span>
     }
 
     public final void setControllerPort(int controllerPort) {
-<span class="nc" id="L128">        this.controllerPort = controllerPort;</span>
-<span class="nc" id="L129">    }</span>
+<span class="fc" id="L128">        this.controllerPort = controllerPort;</span>
+<span class="fc" id="L129">    }</span>
 
     public final String getControllerHost() {
-<span class="nc" id="L132">        return controllerHost;</span>
+<span class="fc" id="L132">        return controllerHost;</span>
     }
 
     public final void setControllerHost(String controllerHost) {
@@ -157,10 +157,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
      * @param sql
      */
     public final void handleSql(String sql){
-<span class="nc" id="L160">        Objects.requireNonNull(sql);</span>
+<span class="fc" id="L160">        Objects.requireNonNull(sql);</span>
 
-<span class="nc" id="L162">        sqlHandler.handle(sql);</span>
-<span class="nc" id="L163">    }</span>
+<span class="fc" id="L162">        sqlHandler.handle(sql);</span>
+<span class="fc" id="L163">    }</span>
 
     /**
      * This is needed only during test generation (not execution),
@@ -168,32 +168,32 @@ import java.util.concurrent.CopyOnWriteArrayList;
      * the SUT is started.
      */
     public final void initSqlHandler(){
-<span class="nc" id="L171">        sqlHandler.setConnection(getConnection());</span>
-<span class="nc" id="L172">    }</span>
+<span class="fc" id="L171">        sqlHandler.setConnection(getConnection());</span>
+<span class="fc" id="L172">    }</span>
 
     public final void resetExtraHeuristics(){
-<span class="nc" id="L175">        sqlHandler.reset();</span>
-<span class="nc" id="L176">    }</span>
+<span class="fc" id="L175">        sqlHandler.reset();</span>
+<span class="fc" id="L176">    }</span>
 
     public final List&lt;ExtraHeuristicDto&gt; getExtraHeuristics(){
 
-<span class="nc bnc" id="L180" title="All 2 branches missed.">        if(extras.size() == actionIndex ) {</span>
-<span class="nc" id="L181">            extras.add(computeExtraHeuristics());</span>
+<span class="pc bpc" id="L180" title="1 of 2 branches missed.">        if(extras.size() == actionIndex ) {</span>
+<span class="fc" id="L181">            extras.add(computeExtraHeuristics());</span>
         }
 
-<span class="nc" id="L184">        return new ArrayList&lt;&gt;(extras);</span>
+<span class="fc" id="L184">        return new ArrayList&lt;&gt;(extras);</span>
     }
 
     public final ExtraHeuristicDto computeExtraHeuristics(){
 
-<span class="nc" id="L189">        ExtraHeuristicDto dto = new ExtraHeuristicDto();</span>
-<span class="nc" id="L190">        dto.toMinimize.addAll(sqlHandler.getDistances());</span>
+<span class="fc" id="L189">        ExtraHeuristicDto dto = new ExtraHeuristicDto();</span>
+<span class="fc" id="L190">        dto.toMinimize.addAll(sqlHandler.getDistances());</span>
         //TODO toMaximize
 
-<span class="nc" id="L193">        ExecutionDto executionDto = sqlHandler.getExecutionDto();</span>
-<span class="nc" id="L194">        dto.databaseExecutionDto = executionDto;</span>
+<span class="fc" id="L193">        ExecutionDto executionDto = sqlHandler.getExecutionDto();</span>
+<span class="fc" id="L194">        dto.databaseExecutionDto = executionDto;</span>
 
-<span class="nc" id="L196">        return dto;</span>
+<span class="fc" id="L196">        return dto;</span>
     }
 
 
@@ -205,22 +205,22 @@ import java.util.concurrent.CopyOnWriteArrayList;
      * @see SutController#getConnection
      */
     public final DbSchemaDto getSqlDatabaseSchema(){
-<span class="nc bnc" id="L208" title="All 2 branches missed.">        if(schemaDto != null){</span>
+<span class="pc bpc" id="L208" title="1 of 2 branches missed.">        if(schemaDto != null){</span>
 <span class="nc" id="L209">            return schemaDto;</span>
         }
 
-<span class="nc bnc" id="L212" title="All 2 branches missed.">        if(getConnection() == null){</span>
-<span class="nc" id="L213">            return null;</span>
+<span class="fc bfc" id="L212" title="All 2 branches covered.">        if(getConnection() == null){</span>
+<span class="fc" id="L213">            return null;</span>
         }
 
         try {
-<span class="nc" id="L217">            schemaDto = SchemaExtractor.extract(getConnection());</span>
+<span class="fc" id="L217">            schemaDto = SchemaExtractor.extract(getConnection());</span>
 <span class="nc" id="L218">        } catch (Exception e) {</span>
 <span class="nc" id="L219">            SimpleLogger.error(&quot;Failed to extract the SQL Database Schema: &quot; + e.getMessage());</span>
 <span class="nc" id="L220">            return null;</span>
-<span class="nc" id="L221">        }</span>
+<span class="fc" id="L221">        }</span>
 
-<span class="nc" id="L223">        return schemaDto;</span>
+<span class="fc" id="L223">        return schemaDto;</span>
     }
 
 
@@ -235,12 +235,12 @@ import java.util.concurrent.CopyOnWriteArrayList;
      */
     public final void newTest(){
 
-<span class="nc" id="L238">        actionIndex = -1;</span>
-<span class="nc" id="L239">        resetExtraHeuristics();</span>
-<span class="nc" id="L240">        extras.clear();</span>
+<span class="fc" id="L238">        actionIndex = -1;</span>
+<span class="fc" id="L239">        resetExtraHeuristics();</span>
+<span class="fc" id="L240">        extras.clear();</span>
 
-<span class="nc" id="L242">        newTestSpecificHandler();</span>
-<span class="nc" id="L243">    }</span>
+<span class="fc" id="L242">        newTestSpecificHandler();</span>
+<span class="fc" id="L243">    }</span>
 
     /**
      * As some heuristics are based on which action (eg HTTP call, or click of button)
@@ -249,15 +249,15 @@ import java.util.concurrent.CopyOnWriteArrayList;
      */
     public final void newAction(int actionIndex){
 
-<span class="nc bnc" id="L252" title="All 2 branches missed.">        if(actionIndex &gt; extras.size()){</span>
+<span class="pc bpc" id="L252" title="1 of 2 branches missed.">        if(actionIndex &gt; extras.size()){</span>
 <span class="nc" id="L253">            extras.add(computeExtraHeuristics());</span>
         }
-<span class="nc" id="L255">        this.actionIndex = actionIndex;</span>
+<span class="fc" id="L255">        this.actionIndex = actionIndex;</span>
 
-<span class="nc" id="L257">        resetExtraHeuristics();</span>
+<span class="fc" id="L257">        resetExtraHeuristics();</span>
 
-<span class="nc" id="L259">        newActionSpecificHandler(actionIndex);</span>
-<span class="nc" id="L260">    }</span>
+<span class="fc" id="L259">        newActionSpecificHandler(actionIndex);</span>
+<span class="fc" id="L260">    }</span>
 
 
     public abstract void newTestSpecificHandler();

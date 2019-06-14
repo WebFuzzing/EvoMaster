@@ -3,56 +3,63 @@
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+import net.sf.jsqlparser.statement.update.Update;
 
-<span class="nc" id="L10">public class ParserUtils {</span>
+<span class="nc" id="L13">public class ParserUtils {</span>
 
 
     public static boolean isSelect(String sql) {
-<span class="nc" id="L14">        return startsWithIgnoreCase(sql, &quot;select&quot;);</span>
+<span class="fc" id="L17">        return startsWithIgnoreCase(sql, &quot;select&quot;);</span>
     }
 
     public static boolean isDelete(String sql) {
-<span class="nc" id="L18">        return startsWithIgnoreCase(sql, &quot;delete&quot;);</span>
+<span class="fc" id="L21">        return startsWithIgnoreCase(sql, &quot;delete&quot;);</span>
     }
 
     public static boolean isUpdate(String sql) {
-<span class="nc" id="L22">        return startsWithIgnoreCase(sql, &quot;update&quot;);</span>
+<span class="fc" id="L25">        return startsWithIgnoreCase(sql, &quot;update&quot;);</span>
     }
 
     public static boolean isInsert(String sql) {
-<span class="nc" id="L26">        return startsWithIgnoreCase(sql, &quot;insert&quot;);</span>
+<span class="fc" id="L29">        return startsWithIgnoreCase(sql, &quot;insert&quot;);</span>
     }
 
     private static boolean startsWithIgnoreCase(String input, String prefix){
-<span class="nc bnc" id="L30" title="All 4 branches missed.">        return input!= null &amp;&amp; input.trim().toLowerCase().startsWith(prefix);</span>
+<span class="pc bpc" id="L33" title="1 of 4 branches missed.">        return input!= null &amp;&amp; input.trim().toLowerCase().startsWith(prefix);</span>
     }
 
 
     public static Expression getWhere(Statement statement) {
 
-<span class="nc bnc" id="L36" title="All 2 branches missed.">        if(statement instanceof Select) {</span>
-<span class="nc" id="L37">            Select select = (Select) statement;</span>
-<span class="nc" id="L38">            SelectBody selectBody = select.getSelectBody();</span>
-<span class="nc bnc" id="L39" title="All 2 branches missed.">            if (selectBody instanceof PlainSelect) {</span>
-<span class="nc" id="L40">                PlainSelect plainSelect = (PlainSelect) selectBody;</span>
-<span class="nc" id="L41">                return plainSelect.getWhere();</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if(statement instanceof Select) {</span>
+<span class="fc" id="L40">            Select select = (Select) statement;</span>
+<span class="fc" id="L41">            SelectBody selectBody = select.getSelectBody();</span>
+<span class="pc bpc" id="L42" title="1 of 2 branches missed.">            if (selectBody instanceof PlainSelect) {</span>
+<span class="fc" id="L43">                PlainSelect plainSelect = (PlainSelect) selectBody;</span>
+<span class="fc" id="L44">                return plainSelect.getWhere();</span>
             }
+<span class="pc bfc" id="L46" title="All 2 branches covered.">        } else if(statement instanceof Delete){</span>
+<span class="fc" id="L47">            return ((Delete) statement).getWhere();</span>
+<span class="pc bpc" id="L48" title="1 of 2 branches missed.">        } else if(statement instanceof Update){</span>
+<span class="fc" id="L49">            return ((Update) statement).getWhere();</span>
         }
 
-<span class="nc" id="L45">        throw new IllegalArgumentException(&quot;Cannot handle: &quot; + statement.toString());</span>
+<span class="nc" id="L52">        throw new IllegalArgumentException(&quot;Cannot handle statement: &quot; + statement.toString());</span>
     }
 
     public static Statement asStatement(String statement) {
         Statement stmt;
         try {
-<span class="nc" id="L51">            stmt = CCJSqlParserUtil.parse(statement);</span>
-<span class="nc" id="L52">        } catch (Exception e) {</span>
-<span class="nc" id="L53">            throw new IllegalArgumentException(&quot;Invalid SQL statement: &quot; + statement + &quot;\n&quot; + e.getMessage(), e);</span>
-<span class="nc" id="L54">        }</span>
-<span class="nc" id="L55">        return stmt;</span>
+<span class="fc" id="L58">            stmt = CCJSqlParserUtil.parse(statement);</span>
+<span class="fc" id="L59">        } catch (Exception e) {</span>
+<span class="fc" id="L60">            throw new IllegalArgumentException(&quot;Invalid SQL statement: &quot; + statement + &quot;\n&quot; + e.getMessage(), e);</span>
+<span class="fc" id="L61">        }</span>
+<span class="fc" id="L62">        return stmt;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -16,36 +16,36 @@ import java.util.List;
 
     static  {
 
-<span class="nc" id="L19">        InputStream excludedClassesStream =</span>
-<span class="nc" id="L20">                ClassesToExclude.class.getClassLoader()</span>
-<span class="nc" id="L21">                        .getResourceAsStream(&quot;skipInstrumentationList.txt&quot;);</span>
+<span class="fc" id="L19">        InputStream excludedClassesStream =</span>
+<span class="fc" id="L20">                ClassesToExclude.class.getClassLoader()</span>
+<span class="fc" id="L21">                        .getResourceAsStream(&quot;skipInstrumentationList.txt&quot;);</span>
 
-<span class="nc" id="L23">        excludedClasses = getNotCommentedLines(excludedClassesStream);</span>
+<span class="fc" id="L23">        excludedClasses = getNotCommentedLines(excludedClassesStream);</span>
 
-<span class="nc" id="L25">        InputStream includedClassesStream =</span>
-<span class="nc" id="L26">                ClassesToExclude.class.getClassLoader()</span>
-<span class="nc" id="L27">                        .getResourceAsStream(&quot;keepInstrumentationList.txt&quot;);</span>
+<span class="fc" id="L25">        InputStream includedClassesStream =</span>
+<span class="fc" id="L26">                ClassesToExclude.class.getClassLoader()</span>
+<span class="fc" id="L27">                        .getResourceAsStream(&quot;keepInstrumentationList.txt&quot;);</span>
 
-<span class="nc" id="L29">        includedClasses = getNotCommentedLines(includedClassesStream);</span>
-<span class="nc" id="L30">    }</span>
+<span class="fc" id="L29">        includedClasses = getNotCommentedLines(includedClassesStream);</span>
+<span class="fc" id="L30">    }</span>
 
     private static List&lt;String&gt; getNotCommentedLines(InputStream excludedClassesStream) {
-<span class="nc" id="L33">        List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L33">        List&lt;String&gt; list = new ArrayList&lt;&gt;();</span>
 
-<span class="nc" id="L35">        try(BufferedReader br = new BufferedReader(new InputStreamReader(excludedClassesStream))){</span>
+<span class="fc" id="L35">        try(BufferedReader br = new BufferedReader(new InputStreamReader(excludedClassesStream))){</span>
 
             String line;
-<span class="nc bnc" id="L38" title="All 2 branches missed.">            while ((line = br.readLine()) != null) {</span>
-<span class="nc" id="L39">                String element = line.trim();</span>
-<span class="nc bnc" id="L40" title="All 4 branches missed.">                if(! element.startsWith(&quot;//&quot;) &amp;&amp; !element.isEmpty()) {</span>
-<span class="nc" id="L41">                    list.add(element);</span>
+<span class="fc bfc" id="L38" title="All 2 branches covered.">            while ((line = br.readLine()) != null) {</span>
+<span class="fc" id="L39">                String element = line.trim();</span>
+<span class="fc bfc" id="L40" title="All 4 branches covered.">                if(! element.startsWith(&quot;//&quot;) &amp;&amp; !element.isEmpty()) {</span>
+<span class="fc" id="L41">                    list.add(element);</span>
                 }
-<span class="nc" id="L43">            }</span>
+<span class="fc" id="L43">            }</span>
 <span class="nc" id="L44">        } catch(IOException e) {</span>
 <span class="nc" id="L45">            throw new RuntimeException(e);</span>
-<span class="nc" id="L46">        }</span>
+<span class="fc" id="L46">        }</span>
 
-<span class="nc" id="L48">        return Collections.unmodifiableList(list);</span>
+<span class="fc" id="L48">        return Collections.unmodifiableList(list);</span>
     }
 
     public static List&lt;String&gt; getPackagePrefixesShouldNotBeInstrumented() {
@@ -54,22 +54,22 @@ import java.util.List;
 
     public static boolean checkIfCanInstrument(ClassName cn) {
 
-<span class="nc" id="L57">        String className = cn.getFullNameWithDots();</span>
+<span class="fc" id="L57">        String className = cn.getFullNameWithDots();</span>
 
-<span class="nc bnc" id="L59" title="All 2 branches missed.">        outer: for (String s : excludedClasses) {</span>
-<span class="nc bnc" id="L60" title="All 2 branches missed.">            if (className.startsWith(s)) {</span>
+<span class="fc bfc" id="L59" title="All 2 branches covered.">        outer: for (String s : excludedClasses) {</span>
+<span class="fc bfc" id="L60" title="All 2 branches covered.">            if (className.startsWith(s)) {</span>
 
-<span class="nc bnc" id="L62" title="All 2 branches missed.">                for(String k : includedClasses){</span>
+<span class="pc bpc" id="L62" title="1 of 2 branches missed.">                for(String k : includedClasses){</span>
 <span class="nc bnc" id="L63" title="All 2 branches missed.">                    if(className.startsWith(k)){</span>
 <span class="nc" id="L64">                        continue outer;</span>
                     }
 <span class="nc" id="L66">                }</span>
 
-<span class="nc" id="L68">                return false;</span>
+<span class="fc" id="L68">                return false;</span>
             }
-<span class="nc" id="L70">        }</span>
+<span class="fc" id="L70">        }</span>
 
-<span class="nc" id="L72">        return true;</span>
+<span class="fc" id="L72">        return true;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

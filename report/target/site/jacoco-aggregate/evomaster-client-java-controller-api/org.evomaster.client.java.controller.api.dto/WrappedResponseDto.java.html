@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * Created by arcuri82 on 05-Nov-18.
  */
-<span class="nc" id="L14">public class WrappedResponseDto&lt;T&gt; {</span>
+<span class="fc" id="L14">public class WrappedResponseDto&lt;T&gt; {</span>
 
     /**
      * The actual payload we are sending and are &quot;wrapping&quot; here
@@ -25,13 +25,13 @@ import java.util.Objects;
     public String error;
 
     public static &lt;K&gt; WrappedResponseDto&lt;K&gt; withData(K data){
-<span class="nc" id="L28">        WrappedResponseDto&lt;K&gt; dto = new WrappedResponseDto&lt;&gt;();</span>
-<span class="nc" id="L29">        dto.data = data;</span>
-<span class="nc" id="L30">        return dto;</span>
+<span class="fc" id="L28">        WrappedResponseDto&lt;K&gt; dto = new WrappedResponseDto&lt;&gt;();</span>
+<span class="fc" id="L29">        dto.data = data;</span>
+<span class="fc" id="L30">        return dto;</span>
     }
 
     public static WrappedResponseDto&lt;?&gt; withNoData(){
-<span class="nc" id="L34">        return new WrappedResponseDto&lt;&gt;();</span>
+<span class="fc" id="L34">        return new WrappedResponseDto&lt;&gt;();</span>
     }
 
     public static WrappedResponseDto&lt;?&gt; withError(String error){

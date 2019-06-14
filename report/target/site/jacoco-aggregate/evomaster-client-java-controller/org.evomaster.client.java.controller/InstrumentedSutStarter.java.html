@@ -20,23 +20,23 @@ public class InstrumentedSutStarter {
             note: just passing a valid package at initialization, but that
             ll be modified later if needed.
          */
-<span class="nc" id="L23">        AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), &quot;foobar_packagenameshouldnotexist.&quot;);</span>
-<span class="nc" id="L24">    }</span>
+<span class="fc" id="L23">        AgentLoader.loadAgentClass(InstrumentingAgent.class.getName(), &quot;foobar_packagenameshouldnotexist.&quot;);</span>
+<span class="fc" id="L24">    }</span>
 
     private final SutController sutController;
 
 
-<span class="nc" id="L29">    public InstrumentedSutStarter(SutController sutController) {</span>
+<span class="fc" id="L29">    public InstrumentedSutStarter(SutController sutController) {</span>
 
-<span class="nc" id="L31">        this.sutController = sutController;</span>
+<span class="fc" id="L31">        this.sutController = sutController;</span>
 
-<span class="nc bnc" id="L33" title="All 2 branches missed.">        if (sutController instanceof EmbeddedSutController) {</span>
-<span class="nc" id="L34">            InstrumentingAgent.changePackagesToInstrument(sutController.getPackagePrefixesToCover());</span>
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">        if (sutController instanceof EmbeddedSutController) {</span>
+<span class="fc" id="L34">            InstrumentingAgent.changePackagesToInstrument(sutController.getPackagePrefixesToCover());</span>
 
-<span class="nc" id="L36">            String driver = sutController.getDatabaseDriverName();</span>
-<span class="nc bnc" id="L37" title="All 4 branches missed.">            if(driver!=null &amp;&amp; ! driver.isEmpty()){</span>
-<span class="nc" id="L38">                InstrumentingAgent.initP6Spy(driver);</span>
-<span class="nc" id="L39">                return;</span>
+<span class="fc" id="L36">            String driver = sutController.getDatabaseDriverName();</span>
+<span class="pc bpc" id="L37" title="2 of 4 branches missed.">            if(driver!=null &amp;&amp; ! driver.isEmpty()){</span>
+<span class="fc" id="L38">                InstrumentingAgent.initP6Spy(driver);</span>
+<span class="fc" id="L39">                return;</span>
             }
 
 <span class="nc bnc" id="L42" title="All 2 branches missed.">        } else if(sutController instanceof ExternalSutController){</span>
@@ -54,17 +54,17 @@ public class InstrumentedSutStarter {
 <span class="nc" id="L54">    }</span>
 
     public boolean start() {
-<span class="nc" id="L57">        StandardOutputTracker.setTracker(true, sutController);</span>
-<span class="nc" id="L58">        return sutController.startTheControllerServer();</span>
+<span class="fc" id="L57">        StandardOutputTracker.setTracker(true, sutController);</span>
+<span class="fc" id="L58">        return sutController.startTheControllerServer();</span>
     }
 
     public boolean stop() {
-<span class="nc" id="L62">        StandardOutputTracker.setTracker(false, null);</span>
-<span class="nc" id="L63">        return sutController.stopTheControllerServer();</span>
+<span class="fc" id="L62">        StandardOutputTracker.setTracker(false, null);</span>
+<span class="fc" id="L63">        return sutController.stopTheControllerServer();</span>
     }
 
     public int getControllerServerPort() {
-<span class="nc" id="L67">        return sutController.getControllerServerPort();</span>
+<span class="fc" id="L67">        return sutController.getControllerServerPort();</span>
     }
 
 }

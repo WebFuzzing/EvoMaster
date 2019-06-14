@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
     /**
      * Key -&gt; the unique descriptive id of the coverage objective
      */
-<span class="nc" id="L35">    private static final Map&lt;String, TargetInfo&gt; objectiveCoverage =</span>
+<span class="fc" id="L35">    private static final Map&lt;String, TargetInfo&gt; objectiveCoverage =</span>
             new ConcurrentHashMap&lt;&gt;(65536);
 
     /**
@@ -40,22 +40,22 @@ import java.util.stream.Collectors;
      * When we get the best distance for a testing target, we might
      * also want to know which action in the test led to it.
      */
-<span class="nc" id="L43">    private static int actionIndex = 0;</span>
+<span class="fc" id="L43">    private static int actionIndex = 0;</span>
 
     /**
      * Besides code coverage, there might be other events that we want to
      * keep track during test execution.
      * We keep track of it separately for each action
      */
-<span class="nc" id="L50">    private static final List&lt;AdditionalInfo&gt; additionalInfoList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L50">    private static final List&lt;AdditionalInfo&gt; additionalInfoList = new ArrayList&lt;&gt;();</span>
 
 
     public static void reset() {
-<span class="nc" id="L54">        objectiveCoverage.clear();</span>
-<span class="nc" id="L55">        actionIndex = 0;</span>
-<span class="nc" id="L56">        additionalInfoList.clear();</span>
-<span class="nc" id="L57">        additionalInfoList.add(new AdditionalInfo());</span>
-<span class="nc" id="L58">    }</span>
+<span class="fc" id="L54">        objectiveCoverage.clear();</span>
+<span class="fc" id="L55">        actionIndex = 0;</span>
+<span class="fc" id="L56">        additionalInfoList.clear();</span>
+<span class="fc" id="L57">        additionalInfoList.add(new AdditionalInfo());</span>
+<span class="fc" id="L58">    }</span>
 
     public static void setActionIndex(int index){
 <span class="nc bnc" id="L61" title="All 2 branches missed.">        if(index != actionIndex) {</span>
@@ -65,16 +65,16 @@ import java.util.stream.Collectors;
 <span class="nc" id="L65">    }</span>
 
     public static List&lt;AdditionalInfo&gt; exposeAdditionalInfoList() {
-<span class="nc" id="L68">        return additionalInfoList;</span>
+<span class="fc" id="L68">        return additionalInfoList;</span>
     }
 
     public static void addQueryParameter(String param){
-<span class="nc" id="L72">        additionalInfoList.get(actionIndex).addQueryParameter(param);</span>
-<span class="nc" id="L73">    }</span>
+<span class="fc" id="L72">        additionalInfoList.get(actionIndex).addQueryParameter(param);</span>
+<span class="fc" id="L73">    }</span>
 
     public static void addHeader(String header){
-<span class="nc" id="L76">        additionalInfoList.get(actionIndex).addHeader(header);</span>
-<span class="nc" id="L77">    }</span>
+<span class="fc" id="L76">        additionalInfoList.get(actionIndex).addHeader(header);</span>
+<span class="fc" id="L77">    }</span>
 
     public static Map&lt;String, TargetInfo&gt; getInternalReferenceToObjectiveCoverage() {
 <span class="nc" id="L80">        return objectiveCoverage;</span>
@@ -85,14 +85,14 @@ import java.util.stream.Collectors;
      * during the test execution
      */
     public static int getNumberOfObjectives() {
-<span class="nc" id="L88">        return objectiveCoverage.size();</span>
+<span class="fc" id="L88">        return objectiveCoverage.size();</span>
     }
 
     public static int getNumberOfObjectives(String prefix) {
-<span class="nc" id="L92">        return (int) objectiveCoverage</span>
-<span class="nc" id="L93">                .entrySet().stream()</span>
-<span class="nc bnc" id="L94" title="All 4 branches missed.">                .filter(e -&gt; prefix == null || e.getKey().startsWith(prefix))</span>
-<span class="nc" id="L95">                .count();</span>
+<span class="fc" id="L92">        return (int) objectiveCoverage</span>
+<span class="fc" id="L93">                .entrySet().stream()</span>
+<span class="pc bpc" id="L94" title="1 of 4 branches missed.">                .filter(e -&gt; prefix == null || e.getKey().startsWith(prefix))</span>
+<span class="fc" id="L95">                .count();</span>
     }
 
     /**
@@ -109,25 +109,25 @@ import java.util.stream.Collectors;
      */
     public static int getNumberOfNonCoveredObjectives(String prefix) {
 
-<span class="nc" id="L112">        return getNonCoveredObjectives(prefix).size();</span>
+<span class="fc" id="L112">        return getNonCoveredObjectives(prefix).size();</span>
     }
 
     public static Set&lt;String&gt; getNonCoveredObjectives(String prefix) {
 
-<span class="nc" id="L117">        return objectiveCoverage</span>
-<span class="nc" id="L118">                .entrySet().stream()</span>
-<span class="nc bnc" id="L119" title="All 4 branches missed.">                .filter(e -&gt; prefix == null || e.getKey().startsWith(prefix))</span>
-<span class="nc bnc" id="L120" title="All 2 branches missed.">                .filter(e -&gt; e.getValue().value &lt; 1)</span>
-<span class="nc" id="L121">                .map(e -&gt; e.getKey())</span>
-<span class="nc" id="L122">                .collect(Collectors.toSet());</span>
+<span class="fc" id="L117">        return objectiveCoverage</span>
+<span class="fc" id="L118">                .entrySet().stream()</span>
+<span class="pc bpc" id="L119" title="1 of 4 branches missed.">                .filter(e -&gt; prefix == null || e.getKey().startsWith(prefix))</span>
+<span class="fc bfc" id="L120" title="All 2 branches covered.">                .filter(e -&gt; e.getValue().value &lt; 1)</span>
+<span class="fc" id="L121">                .map(e -&gt; e.getKey())</span>
+<span class="fc" id="L122">                .collect(Collectors.toSet());</span>
     }
 
     public static Double getValue(String id) {
-<span class="nc" id="L126">        return objectiveCoverage.get(id).value;</span>
+<span class="fc" id="L126">        return objectiveCoverage.get(id).value;</span>
     }
 
     private static void updateObjective(String id, double value) {
-<span class="nc bnc" id="L130" title="All 4 branches missed.">        if (value &lt; 0d || value &gt; 1d) {</span>
+<span class="pc bpc" id="L130" title="2 of 4 branches missed.">        if (value &lt; 0d || value &gt; 1d) {</span>
 <span class="nc" id="L131">            throw new IllegalArgumentException(&quot;Invalid value &quot; + value + &quot; out of range [0,1]&quot;);</span>
         }
 
@@ -135,17 +135,17 @@ import java.util.stream.Collectors;
             In the same execution, a target could be reached several times,
             so we should keep track of the best value found so far
          */
-<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (objectiveCoverage.containsKey(id)) {</span>
-<span class="nc" id="L139">            double previous = objectiveCoverage.get(id).value;</span>
-<span class="nc bnc" id="L140" title="All 2 branches missed.">            if(value &gt; previous){</span>
-<span class="nc" id="L141">                objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));</span>
+<span class="fc bfc" id="L138" title="All 2 branches covered.">        if (objectiveCoverage.containsKey(id)) {</span>
+<span class="fc" id="L139">            double previous = objectiveCoverage.get(id).value;</span>
+<span class="fc bfc" id="L140" title="All 2 branches covered.">            if(value &gt; previous){</span>
+<span class="fc" id="L141">                objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));</span>
             }
-<span class="nc" id="L143">        } else {</span>
-<span class="nc" id="L144">            objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));</span>
+<span class="fc" id="L143">        } else {</span>
+<span class="fc" id="L144">            objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));</span>
         }
 
-<span class="nc" id="L147">        ObjectiveRecorder.update(id, value);</span>
-<span class="nc" id="L148">    }</span>
+<span class="fc" id="L147">        ObjectiveRecorder.update(id, value);</span>
+<span class="fc" id="L148">    }</span>
 
 
     public static final String EXECUTED_LINE_METHOD_NAME = &quot;executedLine&quot;;
@@ -155,11 +155,11 @@ import java.util.stream.Collectors;
      * Report on the fact that a given line has been executed.
      */
     public static void executedLine(String className, int line) {
-<span class="nc" id="L158">        String lineId = ObjectiveNaming.lineObjectiveName(className, line);</span>
-<span class="nc" id="L159">        String classId = ObjectiveNaming.classObjectiveName(className);</span>
-<span class="nc" id="L160">        updateObjective(lineId, 1d);</span>
-<span class="nc" id="L161">        updateObjective(classId, 1d);</span>
-<span class="nc" id="L162">    }</span>
+<span class="fc" id="L158">        String lineId = ObjectiveNaming.lineObjectiveName(className, line);</span>
+<span class="fc" id="L159">        String classId = ObjectiveNaming.classObjectiveName(className);</span>
+<span class="fc" id="L160">        updateObjective(lineId, 1d);</span>
+<span class="fc" id="L161">        updateObjective(classId, 1d);</span>
+<span class="fc" id="L162">    }</span>
 
     public static final String EXECUTING_METHOD_METHOD_NAME = &quot;executingMethod&quot;;
     public static final String EXECUTING_METHOD_DESCRIPTOR = &quot;(Ljava/lang/String;IIZ)V&quot;;
@@ -174,13 +174,13 @@ import java.util.stream.Collectors;
      * @param completed whether the method call was successfully completed.
      */
     public static void executingMethod(String className, int line, int index, boolean completed){
-<span class="nc" id="L177">        String id = ObjectiveNaming.successCallObjectiveName(className, line, index);</span>
-<span class="nc bnc" id="L178" title="All 2 branches missed.">        if(completed) {</span>
-<span class="nc" id="L179">            updateObjective(id, 1d);</span>
+<span class="fc" id="L177">        String id = ObjectiveNaming.successCallObjectiveName(className, line, index);</span>
+<span class="fc bfc" id="L178" title="All 2 branches covered.">        if(completed) {</span>
+<span class="fc" id="L179">            updateObjective(id, 1d);</span>
         } else {
-<span class="nc" id="L181">            updateObjective(id, 0.5);</span>
+<span class="fc" id="L181">            updateObjective(id, 0.5);</span>
         }
-<span class="nc" id="L183">    }</span>
+<span class="fc" id="L183">    }</span>
 
 
     //---- branch-jump methods --------------------------
@@ -196,12 +196,12 @@ import java.util.stream.Collectors;
             x &lt;= 0
          */
 
-<span class="nc" id="L199">        String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);</span>
-<span class="nc" id="L200">        String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);</span>
+<span class="fc" id="L199">        String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);</span>
+<span class="fc" id="L200">        String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);</span>
 
-<span class="nc" id="L202">        updateObjective(forElse, t.getOfTrue());</span>
-<span class="nc" id="L203">        updateObjective(forThen, t.getOfFalse());</span>
-<span class="nc" id="L204">    }</span>
+<span class="fc" id="L202">        updateObjective(forElse, t.getOfTrue());</span>
+<span class="fc" id="L203">        updateObjective(forThen, t.getOfFalse());</span>
+<span class="fc" id="L204">    }</span>
 
     public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = &quot;executingBranchJump&quot;;
 
@@ -211,10 +211,10 @@ import java.util.stream.Collectors;
     public static void executingBranchJump(
             int value, int opcode, String className, int line, int branchId) {
 
-<span class="nc" id="L214">        Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);</span>
+<span class="fc" id="L214">        Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);</span>
 
-<span class="nc" id="L216">        updateBranch(className, line, branchId, t);</span>
-<span class="nc" id="L217">    }</span>
+<span class="fc" id="L216">        updateBranch(className, line, branchId, t);</span>
+<span class="fc" id="L217">    }</span>
 
 
     public static final String JUMP_DESC_2_VALUES = &quot;(IIILjava/lang/String;II)V&quot;;
@@ -222,10 +222,10 @@ import java.util.stream.Collectors;
     public static void executingBranchJump(
             int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
 
-<span class="nc" id="L225">        Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);</span>
+<span class="fc" id="L225">        Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);</span>
 
-<span class="nc" id="L227">        updateBranch(className, line, branchId, t);</span>
-<span class="nc" id="L228">    }</span>
+<span class="fc" id="L227">        updateBranch(className, line, branchId, t);</span>
+<span class="fc" id="L228">    }</span>
 
     public static final String JUMP_DESC_OBJECTS =
             &quot;(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;II)V&quot;;

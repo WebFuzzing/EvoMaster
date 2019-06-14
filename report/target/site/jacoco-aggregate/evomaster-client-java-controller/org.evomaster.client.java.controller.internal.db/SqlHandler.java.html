@@ -16,6 +16,7 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collectors;
 
 import static org.evomaster.client.java.controller.internal.db.ParserUtils.*;
 
@@ -47,66 +48,66 @@ public class SqlHandler {
     private volatile Connection connection;
 
 
-<span class="nc" id="L50">    public SqlHandler() {</span>
-<span class="nc" id="L51">        buffer = new CopyOnWriteArrayList&lt;&gt;();</span>
-<span class="nc" id="L52">        distances = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L53">        queriedData = new ConcurrentHashMap&lt;&gt;();</span>
-<span class="nc" id="L54">        updatedData = new ConcurrentHashMap&lt;&gt;();</span>
-<span class="nc" id="L55">        insertedData = new ConcurrentHashMap&lt;&gt;();</span>
-<span class="nc" id="L56">        failedWhere = new ConcurrentHashMap&lt;&gt;();</span>
-<span class="nc" id="L57">        deletedData = new CopyOnWriteArrayList&lt;&gt;();</span>
-<span class="nc" id="L58">    }</span>
+<span class="fc" id="L51">    public SqlHandler() {</span>
+<span class="fc" id="L52">        buffer = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L53">        distances = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L54">        queriedData = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L55">        updatedData = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L56">        insertedData = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L57">        failedWhere = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L58">        deletedData = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L59">    }</span>
 
     public void reset() {
-<span class="nc" id="L61">        buffer.clear();</span>
-<span class="nc" id="L62">        distances.clear();</span>
-<span class="nc" id="L63">        queriedData.clear();</span>
-<span class="nc" id="L64">        updatedData.clear();</span>
-<span class="nc" id="L65">        insertedData.clear();</span>
-<span class="nc" id="L66">        failedWhere.clear();</span>
-<span class="nc" id="L67">        deletedData.clear();</span>
-<span class="nc" id="L68">    }</span>
+<span class="fc" id="L62">        buffer.clear();</span>
+<span class="fc" id="L63">        distances.clear();</span>
+<span class="fc" id="L64">        queriedData.clear();</span>
+<span class="fc" id="L65">        updatedData.clear();</span>
+<span class="fc" id="L66">        insertedData.clear();</span>
+<span class="fc" id="L67">        failedWhere.clear();</span>
+<span class="fc" id="L68">        deletedData.clear();</span>
+<span class="fc" id="L69">    }</span>
 
     public void setConnection(Connection connection) {
-<span class="nc" id="L71">        this.connection = connection;</span>
-<span class="nc" id="L72">    }</span>
+<span class="fc" id="L72">        this.connection = connection;</span>
+<span class="fc" id="L73">    }</span>
 
     public void handle(String sql) {
-<span class="nc" id="L75">        Objects.requireNonNull(sql);</span>
+<span class="fc" id="L76">        Objects.requireNonNull(sql);</span>
 
-<span class="nc" id="L77">        buffer.add(sql);</span>
+<span class="fc" id="L78">        buffer.add(sql);</span>
 
-<span class="nc bnc" id="L79" title="All 2 branches missed.">        if (isSelect(sql)) {</span>
-<span class="nc" id="L80">            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));</span>
-<span class="nc bnc" id="L81" title="All 2 branches missed.">        } else if(isDelete(sql)){</span>
-<span class="nc" id="L82">            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));</span>
-<span class="nc bnc" id="L83" title="All 2 branches missed.">        } else if(isInsert(sql)){</span>
-<span class="nc" id="L84">            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));</span>
-<span class="nc bnc" id="L85" title="All 2 branches missed.">        } else if(isUpdate(sql)){</span>
-<span class="nc" id="L86">            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (isSelect(sql)) {</span>
+<span class="fc" id="L81">            mergeNewData(queriedData, ColumnTableAnalyzer.getSelectReadDataFields(sql));</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">        } else if(isDelete(sql)){</span>
+<span class="fc" id="L83">            deletedData.addAll(ColumnTableAnalyzer.getDeletedTables(sql));</span>
+<span class="fc bfc" id="L84" title="All 2 branches covered.">        } else if(isInsert(sql)){</span>
+<span class="fc" id="L85">            mergeNewData(insertedData, ColumnTableAnalyzer.getInsertedDataFields(sql));</span>
+<span class="pc bpc" id="L86" title="1 of 2 branches missed.">        } else if(isUpdate(sql)){</span>
+<span class="fc" id="L87">            mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));</span>
         }
-<span class="nc" id="L88">    }</span>
+<span class="fc" id="L89">    }</span>
 
     public ExecutionDto getExecutionDto() {
-<span class="nc" id="L91">        ExecutionDto executionDto = new ExecutionDto();</span>
-<span class="nc" id="L92">        executionDto.queriedData.putAll(queriedData);</span>
-<span class="nc" id="L93">        executionDto.failedWhere.putAll(failedWhere);</span>
-<span class="nc" id="L94">        executionDto.insertedData.putAll(insertedData);</span>
-<span class="nc" id="L95">        executionDto.updatedData.putAll(updatedData);</span>
-<span class="nc" id="L96">        executionDto.deletedData.addAll(deletedData);</span>
+<span class="fc" id="L92">        ExecutionDto executionDto = new ExecutionDto();</span>
+<span class="fc" id="L93">        executionDto.queriedData.putAll(queriedData);</span>
+<span class="fc" id="L94">        executionDto.failedWhere.putAll(failedWhere);</span>
+<span class="fc" id="L95">        executionDto.insertedData.putAll(insertedData);</span>
+<span class="fc" id="L96">        executionDto.updatedData.putAll(updatedData);</span>
+<span class="fc" id="L97">        executionDto.deletedData.addAll(deletedData);</span>
 
-<span class="nc" id="L98">        return executionDto;</span>
+<span class="fc" id="L99">        return executionDto;</span>
     }
 
     public List&lt;Double&gt; getDistances() {
 
-<span class="nc bnc" id="L103" title="All 2 branches missed.">        if (connection == null) {</span>
-<span class="nc" id="L104">            return distances;</span>
+<span class="pc bpc" id="L104" title="1 of 2 branches missed.">        if (connection == null) {</span>
+<span class="nc" id="L105">            return distances;</span>
         }
 
 
-<span class="nc" id="L108">        buffer.stream()</span>
-<span class="nc" id="L109">                .forEach(sql -&gt; {</span>
+<span class="fc" id="L109">        buffer.stream()</span>
+<span class="fc" id="L110">                .forEach(sql -&gt; {</span>
                     /*
                         Note: even if the Connection we got to analyze
                         the DB is using P6Spy, that would not be a problem,
@@ -114,96 +115,136 @@ public class SqlHandler {
                         we are iterating on (copy on write), and we clear
                         the buffer after this loop.
                      */
-<span class="nc bnc" id="L117" title="All 2 branches missed.">                    if (isSelect(sql)) { //TODO Delete/Insert/Update</span>
-<span class="nc" id="L118">                        double dist = computeDistance(sql);</span>
-<span class="nc" id="L119">                        distances.add(dist);</span>
+<span class="fc bfc" id="L118" title="All 6 branches covered.">                    if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {</span>
+<span class="fc" id="L119">                        double dist = computeDistance(sql);</span>
+<span class="fc" id="L120">                        distances.add(dist);</span>
                     }
-<span class="nc" id="L121">                });</span>
+<span class="fc" id="L122">                });</span>
         //side effects on buffer is not important, as it is just a cache
-<span class="nc" id="L123">        buffer.clear();</span>
+<span class="fc" id="L124">        buffer.clear();</span>
 
-<span class="nc" id="L125">        return distances;</span>
+<span class="fc" id="L126">        return distances;</span>
     }
 
 
     public Double computeDistance(String command) {
 
-<span class="nc bnc" id="L131" title="All 2 branches missed.">        if (connection == null) {</span>
-<span class="nc" id="L132">            throw new IllegalStateException(&quot;Trying to calculate SQL distance with no DB connection&quot;);</span>
+<span class="pc bpc" id="L132" title="1 of 2 branches missed.">        if (connection == null) {</span>
+<span class="nc" id="L133">            throw new IllegalStateException(&quot;Trying to calculate SQL distance with no DB connection&quot;);</span>
         }
 
         Statement statement;
 
         try {
-<span class="nc" id="L138">            statement = CCJSqlParserUtil.parse(command);</span>
-<span class="nc" id="L139">        } catch (Exception e) {</span>
-<span class="nc" id="L140">            SimpleLogger.uniqueWarn(&quot;Cannot handle command: &quot; + command + &quot;\n&quot; + e.toString());</span>
-<span class="nc" id="L141">            return Double.MAX_VALUE;</span>
-<span class="nc" id="L142">        }</span>
+<span class="fc" id="L139">            statement = CCJSqlParserUtil.parse(command);</span>
+<span class="nc" id="L140">        } catch (Exception e) {</span>
+<span class="nc" id="L141">            SimpleLogger.uniqueWarn(&quot;Cannot handle command: &quot; + command + &quot;\n&quot; + e.toString());</span>
+<span class="nc" id="L142">            return Double.MAX_VALUE;</span>
+<span class="fc" id="L143">        }</span>
+
+
+<span class="fc" id="L146">        Map&lt;String, Set&lt;String&gt;&gt; columns = extractColumnsInvolvedInWhere(statement);</span>
+
+<span class="fc bfc" id="L148" title="All 2 branches covered.">        if(columns.isEmpty()){</span>
+            //no WHERE, so no point in calculating anything
+<span class="fc" id="L150">            return 0.0;</span>
+        }
+
+        String select;
 
         /*
-           TODO
-           following does not handle the case of sub-selects involving other
-           tables... but likely that is not something we need to support right now
-
            TODO:
            this might be likely unnecessary... we are only interested in the variables used
            in the WHERE. Furthermore, this would not support DELETE/INSERT/UPDATE.
            So, we just need to create a new SELECT based on that.
            But SELECT could be complex with many JOINs... whereas DIP would be simple(r)?
+
+           TODO: we need a general solution
          */
-<span class="nc" id="L155">        String modified = SelectHeuristics.addFieldsToSelect(command);</span>
-<span class="nc" id="L156">        modified = SelectHeuristics.removeConstraints(modified);</span>
-<span class="nc" id="L157">        modified = SelectHeuristics.removeOperations(modified);</span>
+<span class="pc bpc" id="L164" title="1 of 2 branches missed.">        if(isSelect(command)) {</span>
+<span class="fc" id="L165">            select = SelectHeuristics.addFieldsToSelect(command);</span>
+<span class="fc" id="L166">            select = SelectHeuristics.removeConstraints(select);</span>
+<span class="fc" id="L167">            select = SelectHeuristics.removeOperations(select);</span>
+        } else {
+<span class="nc bnc" id="L169" title="All 2 branches missed.">            if(columns.size() &gt; 1){</span>
+<span class="nc" id="L170">                SimpleLogger.uniqueWarn(&quot;Cannot analyze: &quot; + command);</span>
+            }
+<span class="nc" id="L172">            Map.Entry&lt;String, Set&lt;String&gt;&gt; mapping = columns.entrySet().iterator().next();</span>
+<span class="nc" id="L173">            select = createSelectForSingleTable(mapping.getKey(), mapping.getValue());</span>
+        }
 
         QueryResult data;
 
         try {
-<span class="nc" id="L162">            data = SqlScriptRunner.execCommand(connection, modified);</span>
-<span class="nc" id="L163">        } catch (SQLException e) {</span>
-<span class="nc" id="L164">            throw new RuntimeException(e);</span>
-<span class="nc" id="L165">        }</span>
+<span class="fc" id="L179">            data = SqlScriptRunner.execCommand(connection, select);</span>
+<span class="nc" id="L180">        } catch (SQLException e) {</span>
+<span class="nc" id="L181">            throw new RuntimeException(e);</span>
+<span class="fc" id="L182">        }</span>
 
-<span class="nc" id="L167">        double dist = SelectHeuristics.computeDistance(command, data);</span>
+<span class="fc" id="L184">        double dist = SelectHeuristics.computeDistance(command, data);</span>
 
-<span class="nc bnc" id="L169" title="All 2 branches missed.">        if (dist &gt; 0) {</span>
-<span class="nc" id="L170">            mergeNewData(failedWhere, extractColumnsInvolvedInWhere(statement));</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        if (dist &gt; 0) {</span>
+<span class="fc" id="L187">            mergeNewData(failedWhere, columns);</span>
         }
 
-<span class="nc" id="L173">        return dist;</span>
+<span class="fc" id="L190">        return dist;</span>
     }
 
+    private String createSelectForSingleTable(String tableName, Set&lt;String&gt; columns){
+
+<span class="nc" id="L195">        StringBuilder buffer = new StringBuilder();</span>
+<span class="nc" id="L196">        buffer.append(&quot;SELECT &quot;);</span>
+
+<span class="nc" id="L198">        String variables = columns.stream().collect(Collectors.joining(&quot;, &quot;));</span>
+
+<span class="nc" id="L200">        buffer.append(variables);</span>
+<span class="nc" id="L201">        buffer.append(&quot; FROM &quot;);</span>
+<span class="nc" id="L202">        buffer.append(tableName);</span>
+
+<span class="nc" id="L204">        return buffer.toString();</span>
+    }
+
+    /**
+     *  Check the fields involved in the WHERE clause (if any).
+     *  Return a map from table name to column names of the involved fields.
+     */
     private static Map&lt;String, Set&lt;String&gt;&gt; extractColumnsInvolvedInWhere(Statement statement) {
 
-<span class="nc" id="L178">        Map&lt;String, Set&lt;String&gt;&gt; data = new HashMap&lt;&gt;();</span>
+        /*
+           TODO
+           following does not handle the case of sub-selects involving other
+           tables... but likely that is not something we need to support right now
+         */
 
-<span class="nc" id="L180">        SqlNameContext context = new SqlNameContext(statement);</span>
+<span class="fc" id="L219">        Map&lt;String, Set&lt;String&gt;&gt; data = new HashMap&lt;&gt;();</span>
 
-<span class="nc" id="L182">        Expression where = ParserUtils.getWhere(statement);</span>
-<span class="nc bnc" id="L183" title="All 2 branches missed.">        if (where == null) {</span>
-<span class="nc" id="L184">            return data;</span>
+<span class="fc" id="L221">        SqlNameContext context = new SqlNameContext(statement);</span>
+
+<span class="fc" id="L223">        Expression where = ParserUtils.getWhere(statement);</span>
+<span class="fc bfc" id="L224" title="All 2 branches covered.">        if (where == null) {</span>
+<span class="fc" id="L225">            return data;</span>
         }
 
-<span class="nc" id="L187">        ExpressionVisitor visitor = new ExpressionVisitorAdapter() {</span>
+<span class="fc" id="L228">        ExpressionVisitor visitor = new ExpressionVisitorAdapter() {</span>
             @Override
             public void visit(Column column) {
-<span class="nc" id="L190">                String cn = column.getColumnName();</span>
-<span class="nc" id="L191">                String tn = context.getTableName(column);</span>
+<span class="fc" id="L231">                String cn = column.getColumnName();</span>
+<span class="fc" id="L232">                String tn = context.getTableName(column);</span>
 
-<span class="nc bnc" id="L193" title="All 2 branches missed.">                if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){</span>
+<span class="pc bpc" id="L234" title="1 of 2 branches missed.">                if(tn.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)){</span>
                     // TODO handle it properly when ll have support for sub-selects
-<span class="nc" id="L195">                    return;</span>
+<span class="nc" id="L236">                    return;</span>
                 }
 
-<span class="nc" id="L198">                data.putIfAbsent(tn, new HashSet&lt;&gt;());</span>
-<span class="nc" id="L199">                Set&lt;String&gt; set = data.get(tn);</span>
-<span class="nc" id="L200">                set.add(cn);</span>
-<span class="nc" id="L201">            }</span>
+<span class="fc" id="L239">                data.putIfAbsent(tn, new HashSet&lt;&gt;());</span>
+<span class="fc" id="L240">                Set&lt;String&gt; set = data.get(tn);</span>
+<span class="fc" id="L241">                set.add(cn);</span>
+<span class="fc" id="L242">            }</span>
         };
 
-<span class="nc" id="L204">        where.accept(visitor);</span>
+<span class="fc" id="L245">        where.accept(visitor);</span>
 
-<span class="nc" id="L206">        return data;</span>
+<span class="fc" id="L247">        return data;</span>
     }
 
     private static void mergeNewData(
@@ -211,34 +252,34 @@ public class SqlHandler {
             Map&lt;String, Set&lt;String&gt;&gt; toAdd
     ) {
 
-<span class="nc bnc" id="L214" title="All 2 branches missed.">        for (Map.Entry&lt;String, Set&lt;String&gt;&gt; e : toAdd.entrySet()) {</span>
-<span class="nc" id="L215">            String key = e.getKey();</span>
-<span class="nc" id="L216">            Set&lt;String&gt; values = e.getValue();</span>
+<span class="fc bfc" id="L255" title="All 2 branches covered.">        for (Map.Entry&lt;String, Set&lt;String&gt;&gt; e : toAdd.entrySet()) {</span>
+<span class="fc" id="L256">            String key = e.getKey();</span>
+<span class="fc" id="L257">            Set&lt;String&gt; values = e.getValue();</span>
 
-<span class="nc" id="L218">            Set&lt;String&gt; existing = current.get(key);</span>
+<span class="fc" id="L259">            Set&lt;String&gt; existing = current.get(key);</span>
 
-<span class="nc bnc" id="L220" title="All 4 branches missed.">            if (existing != null &amp;&amp; existing.contains(&quot;*&quot;)) {</span>
+<span class="pc bpc" id="L261" title="1 of 4 branches missed.">            if (existing != null &amp;&amp; existing.contains(&quot;*&quot;)) {</span>
                 //nothing to do
-<span class="nc" id="L222">                continue;</span>
+<span class="fc" id="L263">                continue;</span>
             }
 
-<span class="nc bnc" id="L225" title="All 2 branches missed.">            if (existing == null) {</span>
-<span class="nc" id="L226">                existing = new HashSet&lt;&gt;(values);</span>
-<span class="nc" id="L227">                current.put(key, existing);</span>
+<span class="pc bpc" id="L266" title="1 of 2 branches missed.">            if (existing == null) {</span>
+<span class="fc" id="L267">                existing = new HashSet&lt;&gt;(values);</span>
+<span class="fc" id="L268">                current.put(key, existing);</span>
             } else {
-<span class="nc" id="L229">                existing.addAll(values);</span>
+<span class="nc" id="L270">                existing.addAll(values);</span>
             }
 
-<span class="nc bnc" id="L232" title="All 4 branches missed.">            if (existing.size() &gt; 1 &amp;&amp; existing.contains(&quot;*&quot;)) {</span>
+<span class="pc bpc" id="L273" title="3 of 4 branches missed.">            if (existing.size() &gt; 1 &amp;&amp; existing.contains(&quot;*&quot;)) {</span>
                 /*
                     remove unnecessary columns, as anyway we take
                     everything with *
                  */
-<span class="nc" id="L237">                existing.clear();</span>
-<span class="nc" id="L238">                existing.add(&quot;*&quot;);</span>
+<span class="nc" id="L278">                existing.clear();</span>
+<span class="nc" id="L279">                existing.add(&quot;*&quot;);</span>
             }
-<span class="nc" id="L240">        }</span>
-<span class="nc" id="L241">    }</span>
+<span class="fc" id="L281">        }</span>
+<span class="fc" id="L282">    }</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

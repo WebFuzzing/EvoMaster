@@ -31,24 +31,24 @@ import java.net.URI;
 
         URI locationURI;
         try{
-<span class="nc" id="L34">            locationURI = URI.create(locationHeader);</span>
+<span class="fc" id="L34">            locationURI = URI.create(locationHeader);</span>
 <span class="nc" id="L35">        } catch (Exception e){</span>
 <span class="nc" id="L36">            return locationHeader;</span>
-<span class="nc" id="L37">        }</span>
-<span class="nc" id="L38">        String locationPath = locationURI.getPath();</span>
-<span class="nc" id="L39">        String[] locationTokens = locationPath.split(&quot;/&quot;);</span>
+<span class="fc" id="L37">        }</span>
+<span class="fc" id="L38">        String locationPath = locationURI.getPath();</span>
+<span class="fc" id="L39">        String[] locationTokens = locationPath.split(&quot;/&quot;);</span>
 
 
         //the template is not a valid URL, due to {}
-<span class="nc" id="L43">        String normalizedTemplate = expectedTemplate.replace(&quot;{&quot;,&quot;&quot;).replace(&quot;}&quot;,&quot;&quot;);</span>
-<span class="nc" id="L44">        URI templateURI = URI.create(normalizedTemplate);</span>
-<span class="nc" id="L45">        String templatePath = templateURI.getPath();</span>
-<span class="nc" id="L46">        String[] templateTokens = templatePath.split(&quot;/&quot;);</span>
+<span class="fc" id="L43">        String normalizedTemplate = expectedTemplate.replace(&quot;{&quot;,&quot;&quot;).replace(&quot;}&quot;,&quot;&quot;);</span>
+<span class="fc" id="L44">        URI templateURI = URI.create(normalizedTemplate);</span>
+<span class="fc" id="L45">        String templatePath = templateURI.getPath();</span>
+<span class="fc" id="L46">        String[] templateTokens = templatePath.split(&quot;/&quot;);</span>
 
 
-<span class="nc" id="L49">        String targetPath = locationPath;</span>
+<span class="fc" id="L49">        String targetPath = locationPath;</span>
 
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        if(templateTokens.length &gt; locationTokens.length){</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">        if(templateTokens.length &gt; locationTokens.length){</span>
             /*
                 This is to handle cases like:
 
@@ -62,8 +62,8 @@ import java.net.URI;
                 and not directly to &quot;x&quot;
              */
 
-<span class="nc bnc" id="L65" title="All 2 branches missed.">            for(int i=locationTokens.length; i &lt; templateTokens.length; i++){</span>
-<span class="nc" id="L66">                targetPath += &quot;/&quot; + templateTokens[i];</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">            for(int i=locationTokens.length; i &lt; templateTokens.length; i++){</span>
+<span class="fc" id="L66">                targetPath += &quot;/&quot; + templateTokens[i];</span>
             }
         }
 
@@ -71,33 +71,33 @@ import java.net.URI;
         URI targetURI;
 
         try {
-<span class="nc bnc" id="L74" title="All 4 branches missed.">            if (locationURI.isAbsolute() || locationURI.getHost() != null) {</span>
+<span class="pc bpc" id="L74" title="1 of 4 branches missed.">            if (locationURI.isAbsolute() || locationURI.getHost() != null) {</span>
 
-<span class="nc" id="L76">                targetURI = new URI(</span>
-<span class="nc" id="L77">                        locationURI.getScheme(),</span>
-<span class="nc" id="L78">                        locationURI.getUserInfo(),</span>
-<span class="nc" id="L79">                        locationURI.getHost(),</span>
-<span class="nc" id="L80">                        locationURI.getPort(),</span>
+<span class="fc" id="L76">                targetURI = new URI(</span>
+<span class="fc" id="L77">                        locationURI.getScheme(),</span>
+<span class="fc" id="L78">                        locationURI.getUserInfo(),</span>
+<span class="fc" id="L79">                        locationURI.getHost(),</span>
+<span class="fc" id="L80">                        locationURI.getPort(),</span>
                         targetPath,
-<span class="nc" id="L82">                        locationURI.getQuery(),</span>
-<span class="nc" id="L83">                        locationURI.getFragment());</span>
+<span class="fc" id="L82">                        locationURI.getQuery(),</span>
+<span class="fc" id="L83">                        locationURI.getFragment());</span>
 
             } else {
-<span class="nc" id="L86">                targetURI = new URI(</span>
-<span class="nc" id="L87">                        templateURI.getScheme(),</span>
-<span class="nc" id="L88">                        templateURI.getUserInfo(),</span>
-<span class="nc" id="L89">                        templateURI.getHost(),</span>
-<span class="nc" id="L90">                        templateURI.getPort(),</span>
+<span class="fc" id="L86">                targetURI = new URI(</span>
+<span class="fc" id="L87">                        templateURI.getScheme(),</span>
+<span class="fc" id="L88">                        templateURI.getUserInfo(),</span>
+<span class="fc" id="L89">                        templateURI.getHost(),</span>
+<span class="fc" id="L90">                        templateURI.getPort(),</span>
                         targetPath,
-<span class="nc" id="L92">                        templateURI.getQuery(),</span>
-<span class="nc" id="L93">                        templateURI.getFragment());</span>
+<span class="fc" id="L92">                        templateURI.getQuery(),</span>
+<span class="fc" id="L93">                        templateURI.getFragment());</span>
             }
 <span class="nc" id="L95">        }catch (Exception e){</span>
             //shouldn't really happen
 <span class="nc" id="L97">            throw new RuntimeException(e);</span>
-<span class="nc" id="L98">        }</span>
+<span class="fc" id="L98">        }</span>
 
-<span class="nc" id="L100">        return targetURI.toString();</span>
+<span class="fc" id="L100">        return targetURI.toString();</span>
     }
 
 
@@ -108,15 +108,15 @@ import java.net.URI;
      */
     public static boolean isValidURIorEmpty(String uri){
 
-<span class="nc bnc" id="L111" title="All 4 branches missed.">        if(uri == null || uri.trim().isEmpty()){</span>
-<span class="nc" id="L112">            return true;</span>
+<span class="fc bfc" id="L111" title="All 4 branches covered.">        if(uri == null || uri.trim().isEmpty()){</span>
+<span class="fc" id="L112">            return true;</span>
         }
 
         try{
-<span class="nc" id="L116">            URI.create(uri);</span>
-<span class="nc" id="L117">            return true;</span>
-<span class="nc" id="L118">        }catch (Exception e){</span>
-<span class="nc" id="L119">            return false;</span>
+<span class="fc" id="L116">            URI.create(uri);</span>
+<span class="fc" id="L117">            return true;</span>
+<span class="fc" id="L118">        }catch (Exception e){</span>
+<span class="fc" id="L119">            return false;</span>
         }
     }
 }

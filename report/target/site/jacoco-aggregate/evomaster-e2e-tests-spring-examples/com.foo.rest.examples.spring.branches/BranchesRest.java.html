@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 
 @RestController
 @RequestMapping(path = &quot;/api/branches&quot;)
-<span class="nc" id="L16">public class BranchesRest {</span>
+<span class="fc" id="L16">public class BranchesRest {</span>
 
 
     @ApiOperation(&quot;Evaluate 'pos'&quot;)
@@ -26,11 +26,11 @@ import javax.ws.rs.core.MediaType;
     public BranchesResponseDto pos(@ApiParam(&quot;x and y inputs&quot;)
                                        @RequestBody BranchesPostDto dto){
 
-<span class="nc" id="L29">        Branches b = new BranchesImp();</span>
-<span class="nc" id="L30">        BranchesResponseDto res = new BranchesResponseDto();</span>
-<span class="nc" id="L31">        res.value = b.pos(dto.x, dto.y);</span>
+<span class="fc" id="L29">        Branches b = new BranchesImp();</span>
+<span class="fc" id="L30">        BranchesResponseDto res = new BranchesResponseDto();</span>
+<span class="fc" id="L31">        res.value = b.pos(dto.x, dto.y);</span>
 
-<span class="nc" id="L33">        return res;</span>
+<span class="fc" id="L33">        return res;</span>
     }
 
 
@@ -44,11 +44,11 @@ import javax.ws.rs.core.MediaType;
     public BranchesResponseDto neg(@ApiParam(&quot;x and y inputs&quot;)
                                        @RequestBody BranchesPostDto dto){
 
-<span class="nc" id="L47">        Branches b = new BranchesImp();</span>
-<span class="nc" id="L48">        BranchesResponseDto res = new BranchesResponseDto();</span>
-<span class="nc" id="L49">        res.value = b.neg(dto.x, dto.y);</span>
+<span class="fc" id="L47">        Branches b = new BranchesImp();</span>
+<span class="fc" id="L48">        BranchesResponseDto res = new BranchesResponseDto();</span>
+<span class="fc" id="L49">        res.value = b.neg(dto.x, dto.y);</span>
 
-<span class="nc" id="L51">        return res;</span>
+<span class="fc" id="L51">        return res;</span>
     }
 
     @ApiOperation(&quot;Evaluate 'eq'&quot;)
@@ -61,11 +61,11 @@ import javax.ws.rs.core.MediaType;
     public BranchesResponseDto eq(@ApiParam(&quot;x and y inputs&quot;)
                                       @RequestBody BranchesPostDto dto){
 
-<span class="nc" id="L64">        Branches b = new BranchesImp();</span>
-<span class="nc" id="L65">        BranchesResponseDto res = new BranchesResponseDto();</span>
-<span class="nc" id="L66">        res.value = b.eq(dto.x, dto.y);</span>
+<span class="fc" id="L64">        Branches b = new BranchesImp();</span>
+<span class="fc" id="L65">        BranchesResponseDto res = new BranchesResponseDto();</span>
+<span class="fc" id="L66">        res.value = b.eq(dto.x, dto.y);</span>
 
-<span class="nc" id="L68">        return res;</span>
+<span class="fc" id="L68">        return res;</span>
     }
 
 

@@ -11,14 +11,14 @@ import java.util.List;
  *
  * Example: rewarding SQL &quot;select&quot; operations that return non-empty sets
  */
-<span class="nc" id="L14">public class ExtraHeuristicDto {</span>
+<span class="fc" id="L14">public class ExtraHeuristicDto {</span>
 
     /**
      * List of heuristics values, where the lower the better.
      * Minimum is 0. It can be considered as a &quot;distance&quot; to
      * minimize.
      */
-<span class="nc" id="L21">    public List&lt;Double&gt; toMinimize = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L21">    public List&lt;Double&gt; toMinimize = new ArrayList&lt;&gt;();</span>
 
     /**
      * List of heuristics values, where the higher the better.
@@ -27,7 +27,7 @@ import java.util.List;
      * and also would make debugging more difficult (ie better to
      * look at the raw, non-transformed values).
      */
-<span class="nc" id="L30">    public List&lt;Double&gt; toMaximize = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L30">    public List&lt;Double&gt; toMaximize = new ArrayList&lt;&gt;();</span>
 
 
     public ExecutionDto databaseExecutionDto;

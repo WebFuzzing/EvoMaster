@@ -19,22 +19,22 @@ public class Instrumentator {
 
     private final List&lt;String&gt; prefixes;
 
-<span class="nc" id="L22">    public Instrumentator(String packagePrefixesToCover) {</span>
-<span class="nc" id="L23">        Objects.requireNonNull(packagePrefixesToCover);</span>
+<span class="fc" id="L22">    public Instrumentator(String packagePrefixesToCover) {</span>
+<span class="fc" id="L23">        Objects.requireNonNull(packagePrefixesToCover);</span>
 
-<span class="nc" id="L25">        prefixes = Arrays.asList(</span>
-<span class="nc" id="L26">                packagePrefixesToCover.split(&quot;,&quot;))</span>
-<span class="nc" id="L27">                .stream()</span>
-<span class="nc" id="L28">                .map(s -&gt; s.trim())</span>
-<span class="nc bnc" id="L29" title="All 2 branches missed.">                .filter(s -&gt; ! s.isEmpty())</span>
-<span class="nc" id="L30">                .collect(Collectors.toList());</span>
+<span class="fc" id="L25">        prefixes = Arrays.asList(</span>
+<span class="fc" id="L26">                packagePrefixesToCover.split(&quot;,&quot;))</span>
+<span class="fc" id="L27">                .stream()</span>
+<span class="fc" id="L28">                .map(s -&gt; s.trim())</span>
+<span class="pc bpc" id="L29" title="1 of 2 branches missed.">                .filter(s -&gt; ! s.isEmpty())</span>
+<span class="fc" id="L30">                .collect(Collectors.toList());</span>
 
-<span class="nc bnc" id="L32" title="All 2 branches missed.">        if (prefixes.isEmpty()) {</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if (prefixes.isEmpty()) {</span>
 <span class="nc" id="L33">            throw new IllegalArgumentException(&quot;You have to specify at least one non-empty prefix, e.g. 'com.yourapplication'&quot;);</span>
         }
 
 
-<span class="nc" id="L37">    }</span>
+<span class="fc" id="L37">    }</span>
 
     /**
      * Get the raw bytes of instrumented class with name {@code className}
@@ -45,41 +45,41 @@ public class Instrumentator {
      * @return
      */
     public byte[] transformBytes(ClassLoader classLoader, ClassName className, ClassReader reader) {
-<span class="nc" id="L48">        Objects.requireNonNull(classLoader);</span>
-<span class="nc" id="L49">        Objects.requireNonNull(className);</span>
-<span class="nc" id="L50">        Objects.requireNonNull(reader);</span>
+<span class="fc" id="L48">        Objects.requireNonNull(classLoader);</span>
+<span class="fc" id="L49">        Objects.requireNonNull(className);</span>
+<span class="fc" id="L50">        Objects.requireNonNull(reader);</span>
 
-<span class="nc bnc" id="L52" title="All 2 branches missed.">        if (!ClassesToExclude.checkIfCanInstrument(className)) {</span>
+<span class="pc bpc" id="L52" title="1 of 2 branches missed.">        if (!ClassesToExclude.checkIfCanInstrument(className)) {</span>
 <span class="nc" id="L53">            throw new IllegalArgumentException(&quot;Cannot instrument &quot; + className);</span>
         }
 
 
-<span class="nc" id="L57">        int asmFlags = ClassWriter.COMPUTE_FRAMES;</span>
-<span class="nc" id="L58">        ClassWriter writer = new ComputeClassWriter(asmFlags);</span>
-<span class="nc" id="L59">        ClassVisitor cv = writer;</span>
+<span class="fc" id="L57">        int asmFlags = ClassWriter.COMPUTE_FRAMES;</span>
+<span class="fc" id="L58">        ClassWriter writer = new ComputeClassWriter(asmFlags);</span>
+<span class="fc" id="L59">        ClassVisitor cv = writer;</span>
 
         //avoid reading frames, as we re-compute them
-<span class="nc" id="L62">        int readFlags = ClassReader.SKIP_FRAMES;</span>
+<span class="fc" id="L62">        int readFlags = ClassReader.SKIP_FRAMES;</span>
 
-<span class="nc bnc" id="L64" title="All 2 branches missed.">        if(canInstrumentForCoverage(className)){</span>
+<span class="fc bfc" id="L64" title="All 2 branches covered.">        if(canInstrumentForCoverage(className)){</span>
 
-<span class="nc" id="L66">            ClassNode cn = new ClassNode();</span>
-<span class="nc" id="L67">            reader.accept(cn, readFlags);</span>
-<span class="nc" id="L68">            ReplacementList.getBooleanMethodTransformers()</span>
-<span class="nc" id="L69">                    .forEach(t -&gt; t.transformClass(cn));</span>
+<span class="fc" id="L66">            ClassNode cn = new ClassNode();</span>
+<span class="fc" id="L67">            reader.accept(cn, readFlags);</span>
+<span class="fc" id="L68">            ReplacementList.getBooleanMethodTransformers()</span>
+<span class="fc" id="L69">                    .forEach(t -&gt; t.transformClass(cn));</span>
 
-<span class="nc" id="L71">            cv = new CoverageClassVisitor(cv, className);</span>
+<span class="fc" id="L71">            cv = new CoverageClassVisitor(cv, className);</span>
 
             /*
                 this should be done after coverage instrumentation, as
                 we don't want these extra methods added as part of
                 targets to cover
              */
-<span class="nc" id="L78">            cv = new TrackerClassVisitor(cv, className);</span>
+<span class="fc" id="L78">            cv = new TrackerClassVisitor(cv, className);</span>
 
-<span class="nc" id="L80">            cn.accept(cv);</span>
+<span class="fc" id="L80">            cn.accept(cv);</span>
 
-<span class="nc" id="L82">        } else {</span>
+<span class="fc" id="L82">        } else {</span>
             /*
                 For &quot;now&quot; we only instrument classes that will directly
                 contribute to coverage, ie the SUT.
@@ -87,17 +87,17 @@ public class Instrumentator {
                 library classes for testability transformations
              */
 
-<span class="nc" id="L90">            reader.accept(cv, readFlags);</span>
+<span class="fc" id="L90">            reader.accept(cv, readFlags);</span>
         }
 
-<span class="nc" id="L93">        return writer.toByteArray();</span>
+<span class="fc" id="L93">        return writer.toByteArray();</span>
     }
 
 
     private boolean canInstrumentForCoverage(ClassName className){
 
-<span class="nc" id="L99">        return prefixes.stream()</span>
-<span class="nc" id="L100">                .anyMatch(s -&gt; className.getFullNameWithDots().startsWith(s));</span>
+<span class="fc" id="L99">        return prefixes.stream()</span>
+<span class="fc" id="L100">                .anyMatch(s -&gt; className.getFullNameWithDots().startsWith(s));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

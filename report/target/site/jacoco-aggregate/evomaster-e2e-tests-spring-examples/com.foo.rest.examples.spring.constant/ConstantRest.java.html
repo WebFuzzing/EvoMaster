@@ -11,7 +11,7 @@ import javax.ws.rs.core.MediaType;
 
 @RestController
 @RequestMapping(path = &quot;/api/constant&quot;)
-<span class="nc" id="L14">public class ConstantRest {</span>
+<span class="fc" id="L14">public class ConstantRest {</span>
 
     @ApiOperation(&quot;Check if the given value is positiv&quot;)
     @RequestMapping(
@@ -24,10 +24,10 @@ import javax.ws.rs.core.MediaType;
             @PathVariable(&quot;value&quot;)
             Integer value){
 
-<span class="nc" id="L27">        ConstantResponseDto dto = new ConstantResponseDto();</span>
-<span class="nc bnc" id="L28" title="All 2 branches missed.">        dto.ok = (value == 123);</span>
+<span class="fc" id="L27">        ConstantResponseDto dto = new ConstantResponseDto();</span>
+<span class="fc bfc" id="L28" title="All 2 branches covered.">        dto.ok = (value == 123);</span>
 
-<span class="nc" id="L30">        return dto;</span>
+<span class="fc" id="L30">        return dto;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

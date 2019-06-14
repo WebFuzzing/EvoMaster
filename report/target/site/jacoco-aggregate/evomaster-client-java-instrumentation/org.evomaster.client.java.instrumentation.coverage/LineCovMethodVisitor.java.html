@@ -19,17 +19,17 @@ public class LineCovMethodVisitor extends MethodVisitor {
                                 String className,
                                 String methodName,
                                 String descriptor) {
-<span class="nc" id="L22">        super(Constants.ASM, mv);</span>
+<span class="fc" id="L22">        super(Constants.ASM, mv);</span>
 
-<span class="nc" id="L24">        this.className = className;</span>
-<span class="nc" id="L25">        this.methodName = methodName;</span>
-<span class="nc" id="L26">    }</span>
+<span class="fc" id="L24">        this.className = className;</span>
+<span class="fc" id="L25">        this.methodName = methodName;</span>
+<span class="fc" id="L26">    }</span>
 
     @Override
     public void visitLineNumber(int line, Label start) {
-<span class="nc" id="L30">        super.visitLineNumber(line, start);</span>
+<span class="fc" id="L30">        super.visitLineNumber(line, start);</span>
 
-<span class="nc bnc" id="L32" title="All 2 branches missed.">        if(methodName.equals(Constants.CLASS_INIT_METHOD)){</span>
+<span class="pc bpc" id="L32" title="1 of 2 branches missed.">        if(methodName.equals(Constants.CLASS_INIT_METHOD)){</span>
 <span class="nc" id="L33">            return;</span>
         }
 
@@ -43,18 +43,18 @@ public class LineCovMethodVisitor extends MethodVisitor {
             will pop these 2 elements as input parameters.
          */
 
-<span class="nc" id="L46">        ObjectiveRecorder.registerTarget(ObjectiveNaming.lineObjectiveName(className, line));</span>
+<span class="fc" id="L46">        ObjectiveRecorder.registerTarget(ObjectiveNaming.lineObjectiveName(className, line));</span>
 
-<span class="nc" id="L48">        this.visitLdcInsn(className);</span>
-<span class="nc" id="L49">        this.visitLdcInsn(line);</span>
+<span class="fc" id="L48">        this.visitLdcInsn(className);</span>
+<span class="fc" id="L49">        this.visitLdcInsn(line);</span>
 
-<span class="nc" id="L51">        mv.visitMethodInsn(</span>
+<span class="fc" id="L51">        mv.visitMethodInsn(</span>
                 Opcodes.INVOKESTATIC,
-<span class="nc" id="L53">                ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
+<span class="fc" id="L53">                ClassName.get(ExecutionTracer.class).getBytecodeName(),</span>
                 ExecutionTracer.EXECUTED_LINE_METHOD_NAME,
                 ExecutionTracer.EXECUTED_LINE_DESCRIPTOR,
-<span class="nc" id="L56">                ExecutionTracer.class.isInterface()); //false</span>
-<span class="nc" id="L57">    }</span>
+<span class="fc" id="L56">                ExecutionTracer.class.isInterface()); //false</span>
+<span class="fc" id="L57">    }</span>
 
 
     @Override
@@ -70,8 +70,8 @@ public class LineCovMethodVisitor extends MethodVisitor {
             instead of
             maxElementsAddedOnStackFrame +  maxStack
          */
-<span class="nc" id="L73">        int maxElementsAddedOnStackFrame = 2;</span>
-<span class="nc" id="L74">        super.visitMaxs(Math.max(maxElementsAddedOnStackFrame, maxStack), maxLocals);</span>
-<span class="nc" id="L75">    }</span>
+<span class="fc" id="L73">        int maxElementsAddedOnStackFrame = 2;</span>
+<span class="fc" id="L74">        super.visitMaxs(Math.max(maxElementsAddedOnStackFrame, maxStack), maxLocals);</span>
+<span class="fc" id="L75">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

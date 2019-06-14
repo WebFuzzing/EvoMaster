@@ -9,7 +9,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * Besides code coverage, there can be additional info that we want
  * to collect at runtime when test cases are executed.
  */
-<span class="nc" id="L12">public class AdditionalInfo implements Serializable {</span>
+<span class="fc" id="L12">public class AdditionalInfo implements Serializable {</span>
 
     /**
      * In REST APIs, it can happen that some query parameters do not
@@ -18,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-<span class="nc" id="L21">    private Set&lt;String&gt; queryParameters = new CopyOnWriteArraySet&lt;&gt;();</span>
+<span class="fc" id="L21">    private Set&lt;String&gt; queryParameters = new CopyOnWriteArraySet&lt;&gt;();</span>
 
 
     /**
@@ -28,27 +28,27 @@ import java.util.concurrent.CopyOnWriteArraySet;
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-<span class="nc" id="L31">    private Set&lt;String&gt; headers = new CopyOnWriteArraySet&lt;&gt;();</span>
+<span class="fc" id="L31">    private Set&lt;String&gt; headers = new CopyOnWriteArraySet&lt;&gt;();</span>
 
 
     public void addQueryParameter(String param){
-<span class="nc bnc" id="L35" title="All 4 branches missed.">        if(param != null &amp;&amp; ! param.isEmpty()){</span>
-<span class="nc" id="L36">            queryParameters.add(param);</span>
+<span class="pc bpc" id="L35" title="2 of 4 branches missed.">        if(param != null &amp;&amp; ! param.isEmpty()){</span>
+<span class="fc" id="L36">            queryParameters.add(param);</span>
         }
-<span class="nc" id="L38">    }</span>
+<span class="fc" id="L38">    }</span>
 
     public Set&lt;String&gt; getQueryParametersView(){
-<span class="nc" id="L41">        return Collections.unmodifiableSet(queryParameters);</span>
+<span class="fc" id="L41">        return Collections.unmodifiableSet(queryParameters);</span>
     }
 
     public void addHeader(String header){
-<span class="nc bnc" id="L45" title="All 4 branches missed.">        if(header != null &amp;&amp; ! header.isEmpty()){</span>
-<span class="nc" id="L46">            headers.add(header);</span>
+<span class="pc bpc" id="L45" title="2 of 4 branches missed.">        if(header != null &amp;&amp; ! header.isEmpty()){</span>
+<span class="fc" id="L46">            headers.add(header);</span>
         }
-<span class="nc" id="L48">    }</span>
+<span class="fc" id="L48">    }</span>
 
     public Set&lt;String&gt; getHeadersView(){
-<span class="nc" id="L51">        return Collections.unmodifiableSet(headers);</span>
+<span class="fc" id="L51">        return Collections.unmodifiableSet(headers);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

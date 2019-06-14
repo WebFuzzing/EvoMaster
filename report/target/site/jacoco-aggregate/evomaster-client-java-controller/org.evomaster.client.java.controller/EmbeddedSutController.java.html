@@ -11,7 +11,7 @@ import java.util.Collection;
 import java.util.List;
 
 
-<span class="nc" id="L14">public abstract class EmbeddedSutController extends SutController {</span>
+<span class="fc" id="L14">public abstract class EmbeddedSutController extends SutController {</span>
 
     @Override
     public final boolean isInstrumentationActivated() {
@@ -20,27 +20,27 @@ import java.util.List;
 
     @Override
     public final void newSearch(){
-<span class="nc" id="L23">        InstrumentationController.resetForNewSearch();</span>
-<span class="nc" id="L24">    }</span>
+<span class="fc" id="L23">        InstrumentationController.resetForNewSearch();</span>
+<span class="fc" id="L24">    }</span>
 
     @Override
     public final void newTestSpecificHandler(){
-<span class="nc" id="L28">        InstrumentationController.resetForNewTest();</span>
-<span class="nc" id="L29">    }</span>
+<span class="fc" id="L28">        InstrumentationController.resetForNewTest();</span>
+<span class="fc" id="L29">    }</span>
 
     @Override
     public final List&lt;TargetInfo&gt; getTargetInfos(Collection&lt;Integer&gt; ids){
-<span class="nc" id="L33">        return InstrumentationController.getTargetInfos(ids);</span>
+<span class="fc" id="L33">        return InstrumentationController.getTargetInfos(ids);</span>
     }
 
     @Override
     public final List&lt;AdditionalInfo&gt; getAdditionalInfoList(){
-<span class="nc" id="L38">        return InstrumentationController.getAdditionalInfoList();</span>
+<span class="fc" id="L38">        return InstrumentationController.getAdditionalInfoList();</span>
     }
 
     @Override
     public final void newActionSpecificHandler(int actionIndex){
-<span class="nc" id="L43">        ExecutionTracer.setActionIndex(actionIndex);</span>
-<span class="nc" id="L44">    }</span>
+<span class="fc" id="L43">        ExecutionTracer.setActionIndex(actionIndex);</span>
+<span class="fc" id="L44">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

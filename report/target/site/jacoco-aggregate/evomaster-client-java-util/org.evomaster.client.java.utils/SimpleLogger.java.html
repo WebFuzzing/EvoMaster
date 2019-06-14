@@ -13,7 +13,7 @@ import java.util.Set;
  */
 <span class="nc" id="L14">public class SimpleLogger {</span>
 
-<span class="nc" id="L16">    enum Level {DEBUG, INFO, WARN, ERROR, OFF}</span>
+<span class="fc" id="L16">    enum Level {DEBUG, INFO, WARN, ERROR, OFF}</span>
 
     /**
      * Property used to control the logging level by system property
@@ -28,9 +28,9 @@ import java.util.Set;
         of logging)
      */
 
-<span class="nc" id="L31">    private static Level threshold = Level.INFO;</span>
+<span class="fc" id="L31">    private static Level threshold = Level.INFO;</span>
 
-<span class="nc" id="L33">    private static final Set&lt;String&gt; uniqueMessages = new HashSet&lt;&gt;(1024);</span>
+<span class="fc" id="L33">    private static final Set&lt;String&gt; uniqueMessages = new HashSet&lt;&gt;(1024);</span>
 
 
     public static Level getThreshold() {
@@ -51,12 +51,12 @@ import java.util.Set;
 
 
     public static void debug(String message){
-<span class="nc" id="L54">        printMessage(Level.DEBUG, message, null);</span>
-<span class="nc" id="L55">    }</span>
+<span class="fc" id="L54">        printMessage(Level.DEBUG, message, null);</span>
+<span class="fc" id="L55">    }</span>
 
     public static void info(String message){
-<span class="nc" id="L58">        printMessage(Level.INFO, message, null);</span>
-<span class="nc" id="L59">    }</span>
+<span class="fc" id="L58">        printMessage(Level.INFO, message, null);</span>
+<span class="fc" id="L59">    }</span>
 
     public static void uniqueWarn(String message){
 <span class="nc bnc" id="L62" title="All 2 branches missed.">        if(uniqueMessages.contains(message)){</span>
@@ -75,28 +75,28 @@ import java.util.Set;
 <span class="nc" id="L75">    }</span>
 
     public static void error(String message){
-<span class="nc" id="L78">        error(message, null);</span>
-<span class="nc" id="L79">    }</span>
+<span class="fc" id="L78">        error(message, null);</span>
+<span class="fc" id="L79">    }</span>
 
     public static void error(String message, Throwable t){
-<span class="nc" id="L82">        printMessage(Level.ERROR, message, t);</span>
-<span class="nc" id="L83">    }</span>
+<span class="fc" id="L82">        printMessage(Level.ERROR, message, t);</span>
+<span class="fc" id="L83">    }</span>
 
 
 
 
     private static void printMessage(Level level, String message, Throwable t){
 
-<span class="nc bnc" id="L90" title="All 2 branches missed.">        if(level.compareTo(threshold) &gt;= 0 ){</span>
-<span class="nc bnc" id="L91" title="All 4 branches missed.">            if(level.equals(Level.WARN) || level.equals(Level.ERROR)){</span>
-<span class="nc" id="L92">                System.out.print(&quot;&quot;+ level + &quot; - &quot;);</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">        if(level.compareTo(threshold) &gt;= 0 ){</span>
+<span class="pc bpc" id="L91" title="1 of 4 branches missed.">            if(level.equals(Level.WARN) || level.equals(Level.ERROR)){</span>
+<span class="fc" id="L92">                System.out.print(&quot;&quot;+ level + &quot; - &quot;);</span>
             }
 
-<span class="nc" id="L95">            System.out.println(message);</span>
-<span class="nc bnc" id="L96" title="All 2 branches missed.">            if(t != null){</span>
-<span class="nc" id="L97">                t.printStackTrace();</span>
+<span class="fc" id="L95">            System.out.println(message);</span>
+<span class="fc bfc" id="L96" title="All 2 branches covered.">            if(t != null){</span>
+<span class="fc" id="L97">                t.printStackTrace();</span>
             }
         }
-<span class="nc" id="L100">    }</span>
+<span class="fc" id="L100">    }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

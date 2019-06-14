@@ -15,7 +15,7 @@ import java.util.*;
  * not the result, eg, a DELETE might have deleted nothing if its WHERE
  * clause was not satisfied.
  */
-<span class="nc" id="L18">public class ExecutionDto {</span>
+<span class="fc" id="L18">public class ExecutionDto {</span>
 
     /**
      * What was tried to be retrieved in a SELECT.
@@ -29,25 +29,25 @@ import java.util.*;
      * Note: this does NOT include what was used in the WHERE clauses.
      * For example, &quot;select a,b from Foo where c&gt;0&quot; would give info just for &quot;Foo-&gt;{a,b}&quot;
      */
-<span class="nc" id="L32">    public Map&lt;String, Set&lt;String&gt;&gt; queriedData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L32">    public Map&lt;String, Set&lt;String&gt;&gt; queriedData = new HashMap&lt;&gt;();</span>
 
 
     /**
      * What tables/columns were tried to be updated in UPDATE
      */
-<span class="nc" id="L38">    public Map&lt;String, Set&lt;String&gt;&gt; updatedData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L38">    public Map&lt;String, Set&lt;String&gt;&gt; updatedData = new HashMap&lt;&gt;();</span>
 
 
     /**
      * What tables/columns were tried to be newly created with INSERT
      */
-<span class="nc" id="L44">    public Map&lt;String, Set&lt;String&gt;&gt; insertedData = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L44">    public Map&lt;String, Set&lt;String&gt;&gt; insertedData = new HashMap&lt;&gt;();</span>
 
 
     /**
      * Names of tables on which DELETE was applied
      */
-<span class="nc" id="L50">    public Set&lt;String&gt; deletedData = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L50">    public Set&lt;String&gt; deletedData = new HashSet&lt;&gt;();</span>
 
 
     /**
@@ -55,7 +55,7 @@ import java.util.*;
      * we keep track of which tables/columns where involved in determining the
      * result of the WHERE.
      */
-<span class="nc" id="L58">    public Map&lt;String, Set&lt;String&gt;&gt; failedWhere = new HashMap&lt;&gt;();</span>
+<span class="fc" id="L58">    public Map&lt;String, Set&lt;String&gt;&gt; failedWhere = new HashMap&lt;&gt;();</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

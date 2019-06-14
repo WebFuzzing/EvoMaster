@@ -12,9 +12,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 @RestController
 @RequestMapping(path = &quot;/api/pc&quot;)
-<span class="nc" id="L15">public class PostCollectionRest {</span>
+<span class="fc" id="L15">public class PostCollectionRest {</span>
 
-<span class="nc" id="L17">    public static final List&lt;Integer&gt; data = new CopyOnWriteArrayList&lt;&gt;();</span>
+<span class="fc" id="L17">    public static final List&lt;Integer&gt; data = new CopyOnWriteArrayList&lt;&gt;();</span>
 
     @RequestMapping(
             method = RequestMethod.POST,
@@ -22,11 +22,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
     )
     public ResponseEntity create(@RequestBody CreateDto dto) {
 
-<span class="nc bnc" id="L25" title="All 2 branches missed.">        if (dto.value != null) {</span>
-<span class="nc" id="L26">            data.add(dto.value);</span>
+<span class="fc bfc" id="L25" title="All 2 branches covered.">        if (dto.value != null) {</span>
+<span class="fc" id="L26">            data.add(dto.value);</span>
         }
 
-<span class="nc" id="L29">        return ResponseEntity.status(201).build();</span>
+<span class="fc" id="L29">        return ResponseEntity.status(201).build();</span>
     }
 
 
@@ -36,14 +36,14 @@ import java.util.concurrent.CopyOnWriteArrayList;
     )
     public ResponseEntity&lt;ValuesDto&gt; get() {
 
-<span class="nc bnc" id="L39" title="All 2 branches missed.">        if (data.size() &lt; 7) {</span>
-<span class="nc" id="L40">            return ResponseEntity.status(400).build();</span>
+<span class="fc bfc" id="L39" title="All 2 branches covered.">        if (data.size() &lt; 7) {</span>
+<span class="fc" id="L40">            return ResponseEntity.status(400).build();</span>
         }
 
-<span class="nc" id="L43">        ValuesDto dto = new ValuesDto();</span>
-<span class="nc" id="L44">        dto.values.addAll(data);</span>
+<span class="fc" id="L43">        ValuesDto dto = new ValuesDto();</span>
+<span class="fc" id="L44">        dto.values.addAll(data);</span>
 
-<span class="nc" id="L46">        return ResponseEntity.ok(dto);</span>
+<span class="fc" id="L46">        return ResponseEntity.ok(dto);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

@@ -11,11 +11,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @RestController
 @RequestMapping(path = &quot;/api/cpg&quot;)
-<span class="nc" id="L14">public class CPGRest {</span>
+<span class="fc" id="L14">public class CPGRest {</span>
 
-<span class="nc" id="L16">    public static final Map&lt;Integer, CPGRest.X&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="fc" id="L16">    public static final Map&lt;Integer, CPGRest.X&gt; data = new ConcurrentHashMap&lt;&gt;();</span>
 
-<span class="nc" id="L18">    private final AtomicInteger counter = new AtomicInteger(0);</span>
+<span class="fc" id="L18">    private final AtomicInteger counter = new AtomicInteger(0);</span>
 
 
     @RequestMapping(
@@ -24,11 +24,11 @@ import java.util.concurrent.atomic.AtomicInteger;
     )
     public ResponseEntity createX(){
 
-<span class="nc" id="L27">        int index = counter.incrementAndGet();</span>
-<span class="nc" id="L28">        X x = new X();</span>
-<span class="nc" id="L29">        data.put(index, x);</span>
+<span class="fc" id="L27">        int index = counter.incrementAndGet();</span>
+<span class="fc" id="L28">        X x = new X();</span>
+<span class="fc" id="L29">        data.put(index, x);</span>
 
-<span class="nc" id="L31">        return ResponseEntity.created(URI.create(&quot;/api/cpg/x/&quot;+index)).build();</span>
+<span class="fc" id="L31">        return ResponseEntity.created(URI.create(&quot;/api/cpg/x/&quot;+index)).build();</span>
     }
 
 
@@ -40,14 +40,14 @@ import java.util.concurrent.atomic.AtomicInteger;
     public ResponseEntity createY(@PathVariable(&quot;id&quot;) int idx,
                                   @RequestBody Y body){
 
-<span class="nc" id="L43">        X x= data.get(idx);</span>
-<span class="nc bnc" id="L44" title="All 2 branches missed.">        if(x == null){</span>
-<span class="nc" id="L45">            return ResponseEntity.status(404).build();</span>
+<span class="fc" id="L43">        X x= data.get(idx);</span>
+<span class="fc bfc" id="L44" title="All 2 branches covered.">        if(x == null){</span>
+<span class="fc" id="L45">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L48">        x.y = body;</span>
+<span class="fc" id="L48">        x.y = body;</span>
 
-<span class="nc" id="L50">        return ResponseEntity.status(201).build();</span>
+<span class="fc" id="L50">        return ResponseEntity.status(201).build();</span>
     }
 
     @RequestMapping(
@@ -57,12 +57,12 @@ import java.util.concurrent.atomic.AtomicInteger;
     )
     public ResponseEntity&lt;Y&gt; getY(@PathVariable(&quot;id&quot;) int idx){
 
-<span class="nc" id="L60">        X x= data.get(idx);</span>
-<span class="nc bnc" id="L61" title="All 4 branches missed.">        if(x == null || x.y == null){</span>
-<span class="nc" id="L62">            return ResponseEntity.status(404).build();</span>
+<span class="fc" id="L60">        X x= data.get(idx);</span>
+<span class="pc bpc" id="L61" title="1 of 4 branches missed.">        if(x == null || x.y == null){</span>
+<span class="fc" id="L62">            return ResponseEntity.status(404).build();</span>
         }
 
-<span class="nc" id="L65">        return ResponseEntity.ok(x.y);</span>
+<span class="fc" id="L65">        return ResponseEntity.ok(x.y);</span>
     }
 
     @ExceptionHandler(Exception.class)
@@ -72,7 +72,7 @@ import java.util.concurrent.atomic.AtomicInteger;
     }
 
 
-<span class="nc" id="L75">    private class X{</span>
+<span class="fc" id="L75">    private class X{</span>
         public Y y;
     }
 }

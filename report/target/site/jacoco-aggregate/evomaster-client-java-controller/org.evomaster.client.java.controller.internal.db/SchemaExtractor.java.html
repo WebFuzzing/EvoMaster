@@ -15,12 +15,12 @@ import java.util.*;
 
     public static DbSchemaDto extract(Connection connection) throws Exception {
 
-<span class="nc" id="L18">        Objects.requireNonNull(connection);</span>
+<span class="fc" id="L18">        Objects.requireNonNull(connection);</span>
 
-<span class="nc" id="L20">        DbSchemaDto schemaDto = new DbSchemaDto();</span>
+<span class="fc" id="L20">        DbSchemaDto schemaDto = new DbSchemaDto();</span>
 
         try {
-<span class="nc" id="L23">            schemaDto.name = connection.getSchema();</span>
+<span class="fc" id="L23">            schemaDto.name = connection.getSchema();</span>
 <span class="nc" id="L24">        } catch (Exception | AbstractMethodError e) {</span>
             /*
                 In remote sessions, getSchema might fail.
@@ -30,27 +30,27 @@ import java.util.*;
                 whereas getSchema was introduced in Java 7
              */
 <span class="nc" id="L32">            schemaDto.name = &quot;public&quot;;</span>
-<span class="nc" id="L33">        }</span>
-<span class="nc" id="L34">        DatabaseMetaData md = connection.getMetaData();</span>
+<span class="fc" id="L33">        }</span>
+<span class="fc" id="L34">        DatabaseMetaData md = connection.getMetaData();</span>
 
-<span class="nc" id="L36">        String protocol = md.getURL(); //TODO better handling</span>
-<span class="nc" id="L37">        DatabaseType dt = DatabaseType.OTHER;</span>
-<span class="nc bnc" id="L38" title="All 2 branches missed.">        if (protocol.contains(&quot;:h2&quot;)) {</span>
-<span class="nc" id="L39">            dt = DatabaseType.H2;</span>
+<span class="fc" id="L36">        String protocol = md.getURL(); //TODO better handling</span>
+<span class="fc" id="L37">        DatabaseType dt = DatabaseType.OTHER;</span>
+<span class="pc bpc" id="L38" title="1 of 2 branches missed.">        if (protocol.contains(&quot;:h2&quot;)) {</span>
+<span class="fc" id="L39">            dt = DatabaseType.H2;</span>
 <span class="nc bnc" id="L40" title="All 2 branches missed.">        } else if (protocol.contains(&quot;:derby&quot;)) {</span>
 <span class="nc" id="L41">            dt = DatabaseType.DERBY;</span>
 <span class="nc bnc" id="L42" title="All 2 branches missed.">        } else if (protocol.contains(&quot;:postgresql&quot;)) {</span>
 <span class="nc" id="L43">            dt = DatabaseType.POSTGRES;</span>
         }
-<span class="nc" id="L45">        schemaDto.databaseType = dt;</span>
+<span class="fc" id="L45">        schemaDto.databaseType = dt;</span>
 
         //see https://www.progress.com/blogs/jdbc-tutorial-extracting-database-metadata-via-jdbc-driver
 
-<span class="nc" id="L49">        schemaDto.name = schemaDto.name.toUpperCase();</span>
+<span class="fc" id="L49">        schemaDto.name = schemaDto.name.toUpperCase();</span>
 
-<span class="nc" id="L51">        ResultSet tables = md.getTables(null, schemaDto.name, null, new String[]{&quot;TABLE&quot;});</span>
+<span class="fc" id="L51">        ResultSet tables = md.getTables(null, schemaDto.name, null, new String[]{&quot;TABLE&quot;});</span>
 
-<span class="nc" id="L53">        Set&lt;String&gt; tableNames = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L53">        Set&lt;String&gt; tableNames = new HashSet&lt;&gt;();</span>
 
         /*
             Interfaces to deal with DBs are simply awful...
@@ -60,7 +60,7 @@ import java.util.*;
             But API does not give you any info on whether result set
             is empty or not, and only way is to call next()
          */
-<span class="nc bnc" id="L63" title="All 2 branches missed.">        if (!tables.next()) {</span>
+<span class="pc bpc" id="L63" title="1 of 2 branches missed.">        if (!tables.next()) {</span>
 <span class="nc" id="L64">            tables.close();</span>
 <span class="nc" id="L65">            schemaDto.name = schemaDto.name.toLowerCase();</span>
 <span class="nc" id="L66">            tables = md.getTables(null, schemaDto.name, null, new String[]{&quot;TABLE&quot;});</span>
@@ -71,24 +71,24 @@ import java.util.*;
             }
         } else {
             do {
-<span class="nc" id="L74">                handleTableEntry(schemaDto, md, tables, tableNames);</span>
-<span class="nc bnc" id="L75" title="All 2 branches missed.">            } while (tables.next());</span>
+<span class="fc" id="L74">                handleTableEntry(schemaDto, md, tables, tableNames);</span>
+<span class="fc bfc" id="L75" title="All 2 branches covered.">            } while (tables.next());</span>
         }
-<span class="nc" id="L77">        tables.close();</span>
+<span class="fc" id="L77">        tables.close();</span>
 
         /*
             Mark those columns that are using auto generated values
          */
-<span class="nc" id="L82">        addForeignKeyToAutoIncrement(schemaDto);</span>
+<span class="fc" id="L82">        addForeignKeyToAutoIncrement(schemaDto);</span>
 
         /*
             JDBC MetaData is quite limited.
             To check constraints, we need to do SQL queries on the system tables.
             Unfortunately, this is database-dependent
          */
-<span class="nc" id="L89">        addConstraints(connection, dt, schemaDto);</span>
+<span class="fc" id="L89">        addConstraints(connection, dt, schemaDto);</span>
 
-<span class="nc" id="L91">        return schemaDto;</span>
+<span class="fc" id="L91">        return schemaDto;</span>
     }
 
 
@@ -99,15 +99,15 @@ import java.util.*;
      **/
     public static void addUniqueConstraintToColumn(String tableName, TableDto tableDto, String columnName) {
 
-<span class="nc" id="L102">        ColumnDto columnDto = tableDto.columns.stream()</span>
-<span class="nc" id="L103">                .filter(c -&gt; c.name.equals(columnName)).findAny().orElse(null);</span>
+<span class="fc" id="L102">        ColumnDto columnDto = tableDto.columns.stream()</span>
+<span class="fc" id="L103">                .filter(c -&gt; c.name.equals(columnName)).findAny().orElse(null);</span>
 
-<span class="nc bnc" id="L105" title="All 2 branches missed.">        if (columnDto == null) {</span>
+<span class="pc bpc" id="L105" title="1 of 2 branches missed.">        if (columnDto == null) {</span>
 <span class="nc" id="L106">            throw new IllegalArgumentException(&quot;Missing column DTO for column:&quot; + tableName + &quot;.&quot; + columnName);</span>
         }
 
-<span class="nc" id="L109">        columnDto.unique = true;</span>
-<span class="nc" id="L110">    }</span>
+<span class="fc" id="L109">        columnDto.unique = true;</span>
+<span class="fc" id="L110">    }</span>
 
     /**
      * Appends constraints that are database specific.
@@ -118,111 +118,111 @@ import java.util.*;
      * @throws Exception
      */
     private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException {
-<span class="nc" id="L121">        TableConstraintExtractor constraintExtractor = TableConstraintExtractorFactory.buildConstraintExtractor(dt);</span>
-<span class="nc bnc" id="L122" title="All 2 branches missed.">        if (constraintExtractor != null) {</span>
-<span class="nc" id="L123">            final List&lt;DbTableConstraint&gt; dbTableConstraints = constraintExtractor.extract(connection, schemaDto);</span>
-<span class="nc" id="L124">            addConstraints(schemaDto, dbTableConstraints);</span>
-<span class="nc" id="L125">        } else {</span>
+<span class="fc" id="L121">        TableConstraintExtractor constraintExtractor = TableConstraintExtractorFactory.buildConstraintExtractor(dt);</span>
+<span class="pc bpc" id="L122" title="1 of 2 branches missed.">        if (constraintExtractor != null) {</span>
+<span class="fc" id="L123">            final List&lt;DbTableConstraint&gt; dbTableConstraints = constraintExtractor.extract(connection, schemaDto);</span>
+<span class="fc" id="L124">            addConstraints(schemaDto, dbTableConstraints);</span>
+<span class="fc" id="L125">        } else {</span>
 <span class="nc" id="L126">            SimpleLogger.uniqueWarn(&quot;WARNING: EvoMaster cannot extract constraints from database &quot; + dt);</span>
         }
 
-<span class="nc" id="L129">    }</span>
+<span class="fc" id="L129">    }</span>
 
     private static void addConstraints(DbSchemaDto schemaDto, List&lt;DbTableConstraint&gt; constraintList) {
-<span class="nc bnc" id="L132" title="All 2 branches missed.">        for (DbTableConstraint constraint : constraintList) {</span>
-<span class="nc" id="L133">            String tableName = constraint.getTableName();</span>
-<span class="nc" id="L134">            TableDto tableDto = schemaDto.tables.stream().filter(t -&gt; t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);</span>
+<span class="fc bfc" id="L132" title="All 2 branches covered.">        for (DbTableConstraint constraint : constraintList) {</span>
+<span class="fc" id="L133">            String tableName = constraint.getTableName();</span>
+<span class="fc" id="L134">            TableDto tableDto = schemaDto.tables.stream().filter(t -&gt; t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);</span>
 
-<span class="nc bnc" id="L136" title="All 2 branches missed.">            if (constraint instanceof DbTableCheckExpression) {</span>
-<span class="nc" id="L137">                TableCheckExpressionDto constraintDto = new TableCheckExpressionDto();</span>
-<span class="nc" id="L138">                final DbTableCheckExpression tableCheckExpression = (DbTableCheckExpression) constraint;</span>
-<span class="nc" id="L139">                constraintDto.sqlCheckExpression = tableCheckExpression.getSqlCheckExpression();</span>
-<span class="nc" id="L140">                tableDto.tableCheckExpressions.add(constraintDto);</span>
-<span class="nc bnc" id="L141" title="All 2 branches missed.">            } else if (constraint instanceof DbTableUniqueConstraint) {</span>
-<span class="nc" id="L142">                DbTableUniqueConstraint tableUniqueConstraint = (DbTableUniqueConstraint) constraint;</span>
-<span class="nc bnc" id="L143" title="All 2 branches missed.">                for (String columnName : tableUniqueConstraint.getUniqueColumnNames()) {</span>
-<span class="nc" id="L144">                    addUniqueConstraintToColumn(tableName, tableDto, columnName);</span>
-<span class="nc" id="L145">                }</span>
-<span class="nc" id="L146">            } else {</span>
+<span class="fc bfc" id="L136" title="All 2 branches covered.">            if (constraint instanceof DbTableCheckExpression) {</span>
+<span class="fc" id="L137">                TableCheckExpressionDto constraintDto = new TableCheckExpressionDto();</span>
+<span class="fc" id="L138">                final DbTableCheckExpression tableCheckExpression = (DbTableCheckExpression) constraint;</span>
+<span class="fc" id="L139">                constraintDto.sqlCheckExpression = tableCheckExpression.getSqlCheckExpression();</span>
+<span class="fc" id="L140">                tableDto.tableCheckExpressions.add(constraintDto);</span>
+<span class="pc bpc" id="L141" title="1 of 2 branches missed.">            } else if (constraint instanceof DbTableUniqueConstraint) {</span>
+<span class="fc" id="L142">                DbTableUniqueConstraint tableUniqueConstraint = (DbTableUniqueConstraint) constraint;</span>
+<span class="fc bfc" id="L143" title="All 2 branches covered.">                for (String columnName : tableUniqueConstraint.getUniqueColumnNames()) {</span>
+<span class="fc" id="L144">                    addUniqueConstraintToColumn(tableName, tableDto, columnName);</span>
+<span class="fc" id="L145">                }</span>
+<span class="fc" id="L146">            } else {</span>
 <span class="nc" id="L147">                throw new RuntimeException(&quot;Unknown constraint type &quot; + constraint.getClass().getName());</span>
             }
 
-<span class="nc" id="L150">        }</span>
-<span class="nc" id="L151">    }</span>
+<span class="fc" id="L150">        }</span>
+<span class="fc" id="L151">    }</span>
 
     private static void handleTableEntry(DbSchemaDto schemaDto, DatabaseMetaData md, ResultSet tables, Set&lt;String&gt; tableNames) throws SQLException {
-<span class="nc" id="L154">        TableDto tableDto = new TableDto();</span>
-<span class="nc" id="L155">        schemaDto.tables.add(tableDto);</span>
-<span class="nc" id="L156">        tableDto.name = tables.getString(&quot;TABLE_NAME&quot;);</span>
+<span class="fc" id="L154">        TableDto tableDto = new TableDto();</span>
+<span class="fc" id="L155">        schemaDto.tables.add(tableDto);</span>
+<span class="fc" id="L156">        tableDto.name = tables.getString(&quot;TABLE_NAME&quot;);</span>
 
-<span class="nc bnc" id="L158" title="All 2 branches missed.">        if (tableNames.contains(tableDto.name)) {</span>
+<span class="pc bpc" id="L158" title="1 of 2 branches missed.">        if (tableNames.contains(tableDto.name)) {</span>
             /**
              * Perhaps we should throw a more specific exception than IllegalArgumentException
              */
 <span class="nc" id="L162">            throw new IllegalArgumentException(&quot;Cannot handle repeated table &quot; + tableDto.name + &quot; in schema&quot;);</span>
         } else {
-<span class="nc" id="L164">            tableNames.add(tableDto.name);</span>
+<span class="fc" id="L164">            tableNames.add(tableDto.name);</span>
         }
 
-<span class="nc" id="L167">        Set&lt;String&gt; pks = new HashSet&lt;&gt;();</span>
-<span class="nc" id="L168">        SortedMap&lt;Integer, String&gt; primaryKeySequence = new TreeMap&lt;&gt;();</span>
-<span class="nc" id="L169">        ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);</span>
+<span class="fc" id="L167">        Set&lt;String&gt; pks = new HashSet&lt;&gt;();</span>
+<span class="fc" id="L168">        SortedMap&lt;Integer, String&gt; primaryKeySequence = new TreeMap&lt;&gt;();</span>
+<span class="fc" id="L169">        ResultSet rsPK = md.getPrimaryKeys(null, null, tableDto.name);</span>
 
 
-<span class="nc bnc" id="L172" title="All 2 branches missed.">        while (rsPK.next()) {</span>
-<span class="nc" id="L173">            String pkColumnName = rsPK.getString(&quot;COLUMN_NAME&quot;);</span>
-<span class="nc" id="L174">            int positionInPrimaryKey = (int) rsPK.getShort(&quot;KEY_SEQ&quot;);</span>
-<span class="nc" id="L175">            pks.add(pkColumnName);</span>
-<span class="nc" id="L176">            int pkIndex = positionInPrimaryKey - 1;</span>
-<span class="nc" id="L177">            primaryKeySequence.put(pkIndex, pkColumnName);</span>
-<span class="nc" id="L178">        }</span>
-<span class="nc" id="L179">        rsPK.close();</span>
+<span class="fc bfc" id="L172" title="All 2 branches covered.">        while (rsPK.next()) {</span>
+<span class="fc" id="L173">            String pkColumnName = rsPK.getString(&quot;COLUMN_NAME&quot;);</span>
+<span class="fc" id="L174">            int positionInPrimaryKey = (int) rsPK.getShort(&quot;KEY_SEQ&quot;);</span>
+<span class="fc" id="L175">            pks.add(pkColumnName);</span>
+<span class="fc" id="L176">            int pkIndex = positionInPrimaryKey - 1;</span>
+<span class="fc" id="L177">            primaryKeySequence.put(pkIndex, pkColumnName);</span>
+<span class="fc" id="L178">        }</span>
+<span class="fc" id="L179">        rsPK.close();</span>
 
-<span class="nc" id="L181">        tableDto.primaryKeySequence.addAll(primaryKeySequence.values());</span>
+<span class="fc" id="L181">        tableDto.primaryKeySequence.addAll(primaryKeySequence.values());</span>
 
-<span class="nc" id="L183">        ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);</span>
+<span class="fc" id="L183">        ResultSet columns = md.getColumns(null, schemaDto.name, tableDto.name, null);</span>
 
-<span class="nc" id="L185">        Set&lt;String&gt; columnNames = new HashSet&lt;&gt;();</span>
-<span class="nc bnc" id="L186" title="All 2 branches missed.">        while (columns.next()) {</span>
+<span class="fc" id="L185">        Set&lt;String&gt; columnNames = new HashSet&lt;&gt;();</span>
+<span class="fc bfc" id="L186" title="All 2 branches covered.">        while (columns.next()) {</span>
 
-<span class="nc" id="L188">            ColumnDto columnDto = new ColumnDto();</span>
-<span class="nc" id="L189">            tableDto.columns.add(columnDto);</span>
+<span class="fc" id="L188">            ColumnDto columnDto = new ColumnDto();</span>
+<span class="fc" id="L189">            tableDto.columns.add(columnDto);</span>
 
-<span class="nc" id="L191">            columnDto.table = tableDto.name;</span>
-<span class="nc" id="L192">            columnDto.name = columns.getString(&quot;COLUMN_NAME&quot;);</span>
+<span class="fc" id="L191">            columnDto.table = tableDto.name;</span>
+<span class="fc" id="L192">            columnDto.name = columns.getString(&quot;COLUMN_NAME&quot;);</span>
 
-<span class="nc bnc" id="L194" title="All 2 branches missed.">            if (columnNames.contains(columnDto.name)) {</span>
+<span class="pc bpc" id="L194" title="1 of 2 branches missed.">            if (columnNames.contains(columnDto.name)) {</span>
                 /**
                  * Perhaps we should throw a more specific exception than IllegalArgumentException
                  */
 <span class="nc" id="L198">                throw new IllegalArgumentException(&quot;Cannot handle repeated column &quot; + columnDto.name + &quot; in table &quot; + tableDto.name);</span>
             } else {
-<span class="nc" id="L200">                columnNames.add(columnDto.name);</span>
+<span class="fc" id="L200">                columnNames.add(columnDto.name);</span>
             }
 
-<span class="nc" id="L203">            columnDto.type = columns.getString(&quot;TYPE_NAME&quot;);</span>
-<span class="nc" id="L204">            columnDto.size = columns.getInt(&quot;COLUMN_SIZE&quot;);</span>
-<span class="nc" id="L205">            columnDto.nullable = columns.getBoolean(&quot;IS_NULLABLE&quot;);</span>
-<span class="nc" id="L206">            columnDto.autoIncrement = columns.getBoolean(&quot;IS_AUTOINCREMENT&quot;);</span>
+<span class="fc" id="L203">            columnDto.type = columns.getString(&quot;TYPE_NAME&quot;);</span>
+<span class="fc" id="L204">            columnDto.size = columns.getInt(&quot;COLUMN_SIZE&quot;);</span>
+<span class="fc" id="L205">            columnDto.nullable = columns.getBoolean(&quot;IS_NULLABLE&quot;);</span>
+<span class="fc" id="L206">            columnDto.autoIncrement = columns.getBoolean(&quot;IS_AUTOINCREMENT&quot;);</span>
             //columns.getString(&quot;DECIMAL_DIGITS&quot;);
 
-<span class="nc" id="L209">            columnDto.primaryKey = pks.contains(columnDto.name);</span>
-<span class="nc" id="L210">        }</span>
-<span class="nc" id="L211">        columns.close();</span>
+<span class="fc" id="L209">            columnDto.primaryKey = pks.contains(columnDto.name);</span>
+<span class="fc" id="L210">        }</span>
+<span class="fc" id="L211">        columns.close();</span>
 
 
-<span class="nc" id="L214">        ResultSet fks = md.getImportedKeys(null, null, tableDto.name);</span>
-<span class="nc bnc" id="L215" title="All 2 branches missed.">        while (fks.next()) {</span>
+<span class="fc" id="L214">        ResultSet fks = md.getImportedKeys(null, null, tableDto.name);</span>
+<span class="fc bfc" id="L215" title="All 2 branches covered.">        while (fks.next()) {</span>
             //TODO need to see how to handle case of multi-columns
 
-<span class="nc" id="L218">            ForeignKeyDto fkDto = new ForeignKeyDto();</span>
-<span class="nc" id="L219">            fkDto.sourceColumns.add(fks.getString(&quot;FKCOLUMN_NAME&quot;));</span>
-<span class="nc" id="L220">            fkDto.targetTable = fks.getString(&quot;PKTABLE_NAME&quot;);</span>
+<span class="fc" id="L218">            ForeignKeyDto fkDto = new ForeignKeyDto();</span>
+<span class="fc" id="L219">            fkDto.sourceColumns.add(fks.getString(&quot;FKCOLUMN_NAME&quot;));</span>
+<span class="fc" id="L220">            fkDto.targetTable = fks.getString(&quot;PKTABLE_NAME&quot;);</span>
 
-<span class="nc" id="L222">            tableDto.foreignKeys.add(fkDto);</span>
-<span class="nc" id="L223">        }</span>
-<span class="nc" id="L224">        fks.close();</span>
-<span class="nc" id="L225">    }</span>
+<span class="fc" id="L222">            tableDto.foreignKeys.add(fkDto);</span>
+<span class="fc" id="L223">        }</span>
+<span class="fc" id="L224">        fks.close();</span>
+<span class="fc" id="L225">    }</span>
 
     /**
      * Sets the foreignKeyToAutoIncrement field in the Column DTO
@@ -235,25 +235,25 @@ import java.util.*;
      * @param schema
      */
     private static void addForeignKeyToAutoIncrement(DbSchemaDto schema) {
-<span class="nc bnc" id="L238" title="All 2 branches missed.">        for (TableDto tableDto : schema.tables) {</span>
-<span class="nc" id="L239">            String tableName = tableDto.name;</span>
-<span class="nc bnc" id="L240" title="All 2 branches missed.">            for (ColumnDto columnDto : tableDto.columns) {</span>
-<span class="nc bnc" id="L241" title="All 2 branches missed.">                if (columnDto.autoIncrement == true) {</span>
-<span class="nc" id="L242">                    continue;</span>
+<span class="fc bfc" id="L238" title="All 2 branches covered.">        for (TableDto tableDto : schema.tables) {</span>
+<span class="fc" id="L239">            String tableName = tableDto.name;</span>
+<span class="fc bfc" id="L240" title="All 2 branches covered.">            for (ColumnDto columnDto : tableDto.columns) {</span>
+<span class="fc bfc" id="L241" title="All 2 branches covered.">                if (columnDto.autoIncrement == true) {</span>
+<span class="fc" id="L242">                    continue;</span>
                 }
-<span class="nc bnc" id="L244" title="All 2 branches missed.">                if (columnDto.primaryKey == false) {</span>
-<span class="nc" id="L245">                    continue;</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">                if (columnDto.primaryKey == false) {</span>
+<span class="fc" id="L245">                    continue;</span>
                 }
-<span class="nc bnc" id="L247" title="All 2 branches missed.">                if (!tableDto.foreignKeys.stream().anyMatch(fk -&gt; fk.sourceColumns.contains(columnDto.name))) {</span>
-<span class="nc" id="L248">                    continue;</span>
+<span class="pc bpc" id="L247" title="1 of 2 branches missed.">                if (!tableDto.foreignKeys.stream().anyMatch(fk -&gt; fk.sourceColumns.contains(columnDto.name))) {</span>
+<span class="fc" id="L248">                    continue;</span>
                 }
 <span class="nc" id="L250">                String columnName = columnDto.name;</span>
 <span class="nc bnc" id="L251" title="All 2 branches missed.">                if (isFKToAutoIncrementColumn(schema, tableName, columnName)) {</span>
 <span class="nc" id="L252">                    columnDto.foreignKeyToAutoIncrement = true;</span>
                 }
 <span class="nc" id="L254">            }</span>
-<span class="nc" id="L255">        }</span>
-<span class="nc" id="L256">    }</span>
+<span class="fc" id="L255">        }</span>
+<span class="fc" id="L256">    }</span>
 
     /**
      * Returns a table DTO for a particular table name

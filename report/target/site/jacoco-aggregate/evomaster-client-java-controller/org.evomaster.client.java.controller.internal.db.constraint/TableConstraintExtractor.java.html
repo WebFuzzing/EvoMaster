@@ -16,7 +16,7 @@ import java.util.List;
  * Whenever a new TableConstraintExtractor is implemented, it has to be
  * register in the &lt;code&gt;TableConstraintExtractorFactory&lt;/code&gt;.
  */
-<span class="nc" id="L19">public abstract class TableConstraintExtractor {</span>
+<span class="fc" id="L19">public abstract class TableConstraintExtractor {</span>
 
     public abstract List&lt;DbTableConstraint&gt; extract(Connection connectionToDatabase, DbSchemaDto schemaDto) throws SQLException;
 

@@ -24,12 +24,12 @@ public class TargetInfo implements Serializable{
      */
     public final Integer actionIndex;
 
-<span class="nc" id="L27">    public TargetInfo(Integer mappedId, String descriptiveId, Double value, Integer actionIndex) {</span>
-<span class="nc" id="L28">        this.mappedId = mappedId;</span>
-<span class="nc" id="L29">        this.descriptiveId = descriptiveId;</span>
-<span class="nc" id="L30">        this.value = value;</span>
-<span class="nc" id="L31">        this.actionIndex = actionIndex;</span>
-<span class="nc" id="L32">    }</span>
+<span class="fc" id="L27">    public TargetInfo(Integer mappedId, String descriptiveId, Double value, Integer actionIndex) {</span>
+<span class="fc" id="L28">        this.mappedId = mappedId;</span>
+<span class="fc" id="L29">        this.descriptiveId = descriptiveId;</span>
+<span class="fc" id="L30">        this.value = value;</span>
+<span class="fc" id="L31">        this.actionIndex = actionIndex;</span>
+<span class="fc" id="L32">    }</span>
 
     public static TargetInfo notReached(int theID){
 <span class="nc" id="L35">        return new TargetInfo(theID, null, 0d, -1);</span>

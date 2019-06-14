@@ -5,20 +5,20 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 
 @RestController
-<span class="nc" id="L8">public class WebRequestRest {</span>
+<span class="fc" id="L8">public class WebRequestRest {</span>
 
 
     @GetMapping(&quot;/api/webrequest&quot;)
     public String get(WebRequest wr){
 
-<span class="nc" id="L14">        String a = wr.getParameter(&quot;a&quot;);</span>
-<span class="nc" id="L15">        String b = wr.getParameter(&quot;b&quot;);</span>
+<span class="fc" id="L14">        String a = wr.getParameter(&quot;a&quot;);</span>
+<span class="fc" id="L15">        String b = wr.getParameter(&quot;b&quot;);</span>
 
-<span class="nc bnc" id="L17" title="All 4 branches missed.">        if(a == null || b == null){</span>
-<span class="nc" id="L18">            return &quot;FALSE&quot;;</span>
+<span class="fc bfc" id="L17" title="All 4 branches covered.">        if(a == null || b == null){</span>
+<span class="fc" id="L18">            return &quot;FALSE&quot;;</span>
         }
 
-<span class="nc" id="L21">        return &quot;TRUE&quot;;</span>
+<span class="fc" id="L21">        return &quot;TRUE&quot;;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

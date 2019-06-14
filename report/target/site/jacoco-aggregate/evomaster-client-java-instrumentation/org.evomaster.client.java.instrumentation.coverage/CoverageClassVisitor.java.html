@@ -16,9 +16,9 @@ public class CoverageClassVisitor extends ClassVisitor {
     private final String bytecodeClassName;
 
     public CoverageClassVisitor(ClassVisitor cv, ClassName className) {
-<span class="nc" id="L19">        super(Constants.ASM, cv);</span>
-<span class="nc" id="L20">        bytecodeClassName = className.getBytecodeName();</span>
-<span class="nc" id="L21">    }</span>
+<span class="fc" id="L19">        super(Constants.ASM, cv);</span>
+<span class="fc" id="L20">        bytecodeClassName = className.getBytecodeName();</span>
+<span class="fc" id="L21">    }</span>
 
     @Override
     public MethodVisitor visitMethod(int methodAccess,
@@ -27,7 +27,7 @@ public class CoverageClassVisitor extends ClassVisitor {
                                      String signature,
                                      String[] exceptions) {
 
-<span class="nc" id="L30">        MethodVisitor mv = super.visitMethod(</span>
+<span class="fc" id="L30">        MethodVisitor mv = super.visitMethod(</span>
                 methodAccess, name, descriptor, signature, exceptions);
 
         /*
@@ -37,7 +37,7 @@ public class CoverageClassVisitor extends ClassVisitor {
             https://docs.oracle.com/javase/tutorial/java/generics/bridgeMethods.html
             http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
          */
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        if (Constants.isMethodSyntheticOrBridge(methodAccess)) {</span>
+<span class="pc bpc" id="L40" title="1 of 2 branches missed.">        if (Constants.isMethodSyntheticOrBridge(methodAccess)) {</span>
 <span class="nc" id="L41">            return mv;</span>
         }
 
@@ -48,17 +48,17 @@ public class CoverageClassVisitor extends ClassVisitor {
             In such cases, using them in coverage score would be very misleading,
             as only the first test executed would cover them
          */
-<span class="nc bnc" id="L51" title="All 2 branches missed.">        if (name.equals(Constants.CLASS_INIT_METHOD)) {</span>
+<span class="pc bpc" id="L51" title="1 of 2 branches missed.">        if (name.equals(Constants.CLASS_INIT_METHOD)) {</span>
 <span class="nc" id="L52">            return mv;</span>
         }
 
-<span class="nc" id="L55">        ObjectiveRecorder.registerTarget(ObjectiveNaming.classObjectiveName(bytecodeClassName));</span>
+<span class="fc" id="L55">        ObjectiveRecorder.registerTarget(ObjectiveNaming.classObjectiveName(bytecodeClassName));</span>
 
-<span class="nc" id="L57">        mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);</span>
-<span class="nc" id="L58">        mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);</span>
-<span class="nc" id="L59">        mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);</span>
+<span class="fc" id="L57">        mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);</span>
+<span class="fc" id="L58">        mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);</span>
+<span class="fc" id="L59">        mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);</span>
 
-<span class="nc" id="L61">        return mv;</span>
+<span class="fc" id="L61">        return mv;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

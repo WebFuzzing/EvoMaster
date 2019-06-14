@@ -10,40 +10,40 @@ import org.springframework.web.bind.annotation.RestController;
  * Created by arcuri82 on 07-Nov-18.
  */
 @RestController
-<span class="nc" id="L13">public class BodyTypesRest {</span>
+<span class="fc" id="L13">public class BodyTypesRest {</span>
 
     @PostMapping(value = &quot;/api/bodytypes/x&quot;, consumes = &quot;application/json&quot;)
     public int jsonX( @RequestBody BodyTypesDto dto){
-<span class="nc" id="L17">        return 0;</span>
+<span class="fc" id="L17">        return 0;</span>
     }
 
     @PostMapping(value = &quot;/api/bodytypes/x&quot;, consumes = &quot;application/merge-patch+json&quot;)
     public int mergeX( @RequestBody BodyTypesDto dto){
-<span class="nc" id="L22">        return 1;</span>
+<span class="fc" id="L22">        return 1;</span>
     }
 
     @PostMapping(
             value = &quot;/api/bodytypes/y&quot;,
             consumes = {&quot;application/merge-patch+json&quot;, &quot;application/json&quot;})
     public int y( @RequestBody BodyTypesDto dto){
-<span class="nc" id="L29">        return 2;</span>
+<span class="fc" id="L29">        return 2;</span>
     }
 
     @PostMapping(value = &quot;/api/bodytypes/z&quot;,
             consumes = {&quot;application/json;charset=iso-8859-1&quot;,&quot;application/json;charset=utf-8&quot;})
     public int charsetZ( @RequestBody BodyTypesDto dto){
-<span class="nc" id="L35">        return 3;</span>
+<span class="fc" id="L35">        return 3;</span>
     }
 
 
     @PostMapping(value = &quot;/api/bodytypes/k&quot;, consumes = &quot;text/plain&quot;)
     public int plainK( @RequestBody String text){
-<span class="nc" id="L41">        return 4;</span>
+<span class="fc" id="L41">        return 4;</span>
     }
 
     @PostMapping(value = &quot;/api/bodytypes/k&quot;, consumes = &quot;application/json&quot;)
     public int jsonK( @RequestBody String text){
-<span class="nc" id="L46">        return 5;</span>
+<span class="fc" id="L46">        return 5;</span>
     }
 
     //XML giving a few issues, and not so important
@@ -56,7 +56,7 @@ import org.springframework.web.bind.annotation.RestController;
 
     @PostMapping(value = &quot;/api/bodytypes/q&quot;, consumes = &quot;application/json&quot;)
     public int jsonQ( @RequestBody BodyTypesDto dto){
-<span class="nc" id="L59">        return 7;</span>
+<span class="fc" id="L59">        return 7;</span>
     }
 
 //    @PostMapping(value = &quot;/api/bodytypes/q&quot;, consumes = &quot;application/x-www-form-urlencoded&quot;)

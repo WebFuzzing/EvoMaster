@@ -9,13 +9,13 @@ import java.lang.reflect.Method;
 import java.util.ListIterator;
 import java.util.Objects;
 
-<span class="nc bnc" id="L12" title="All 2 branches missed.">public abstract class BooleanMethodTransformer {</span>
+<span class="pc bpc" id="L12" title="1 of 2 branches missed.">public abstract class BooleanMethodTransformer {</span>
 
     protected final Class&lt;?&gt; target;
 
-<span class="nc" id="L16">    protected BooleanMethodTransformer(Class&lt;?&gt; target) {</span>
-<span class="nc" id="L17">        this.target = Objects.requireNonNull(target);</span>
-<span class="nc" id="L18">    }</span>
+<span class="fc" id="L16">    protected BooleanMethodTransformer(Class&lt;?&gt; target) {</span>
+<span class="fc" id="L17">        this.target = Objects.requireNonNull(target);</span>
+<span class="fc" id="L18">    }</span>
 
     public Class&lt;?&gt; getTarget() {
 <span class="nc" id="L21">        return target;</span>
@@ -23,55 +23,55 @@ import java.util.Objects;
 
     public void transformClass(ClassNode cn) {
 
-<span class="nc bnc" id="L26" title="All 2 branches missed.">        for (Object mn : cn.methods) {</span>
-<span class="nc" id="L27">            transformMethod((MethodNode) mn);</span>
-<span class="nc" id="L28">        }</span>
-<span class="nc" id="L29">    }</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        for (Object mn : cn.methods) {</span>
+<span class="fc" id="L27">            transformMethod((MethodNode) mn);</span>
+<span class="fc" id="L28">        }</span>
+<span class="fc" id="L29">    }</span>
 
     public boolean transformMethod(MethodNode mn) {
 
-<span class="nc" id="L33">        boolean changed = replaceBooleanCalls(mn);</span>
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (!changed) {</span>
-<span class="nc" id="L35">            return false;</span>
+<span class="fc" id="L33">        boolean changed = replaceBooleanCalls(mn);</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (!changed) {</span>
+<span class="fc" id="L35">            return false;</span>
         }
 
-<span class="nc" id="L38">        AbstractInsnNode node = mn.instructions.getFirst();</span>
+<span class="fc" id="L38">        AbstractInsnNode node = mn.instructions.getFirst();</span>
 
-<span class="nc bnc" id="L40" title="All 2 branches missed.">        while (node != null) {</span>
+<span class="fc bfc" id="L40" title="All 2 branches covered.">        while (node != null) {</span>
 
-<span class="nc bnc" id="L42" title="All 2 branches missed.">            if (!isReplaceMethod(node)) {</span>
-<span class="nc" id="L43">                node = node.getNext();</span>
-<span class="nc" id="L44">                continue;</span>
+<span class="fc bfc" id="L42" title="All 2 branches covered.">            if (!isReplaceMethod(node)) {</span>
+<span class="fc" id="L43">                node = node.getNext();</span>
+<span class="fc" id="L44">                continue;</span>
             }
 
-<span class="nc" id="L47">            AbstractInsnNode next = node.getNext();</span>
-<span class="nc bnc" id="L48" title="All 4 branches missed.">            assert next != null;</span>
+<span class="fc" id="L47">            AbstractInsnNode next = node.getNext();</span>
+<span class="pc bpc" id="L48" title="2 of 4 branches missed.">            assert next != null;</span>
 
-<span class="nc bnc" id="L50" title="All 6 branches missed.">            switch (next.getOpcode()) {</span>
+<span class="pc bpc" id="L50" title="1 of 6 branches missed.">            switch (next.getOpcode()) {</span>
                 case Opcodes.IFNE:
-<span class="nc" id="L52">                    handleIFNE(next);</span>
-<span class="nc" id="L53">                    break;</span>
+<span class="fc" id="L52">                    handleIFNE(next);</span>
+<span class="fc" id="L53">                    break;</span>
                 case Opcodes.IFEQ:
-<span class="nc" id="L55">                    handleIFEQ(next);</span>
-<span class="nc" id="L56">                    break;</span>
+<span class="fc" id="L55">                    handleIFEQ(next);</span>
+<span class="fc" id="L56">                    break;</span>
                 case Opcodes.IRETURN:
-<span class="nc" id="L58">                    handleIRETURN(mn, next);</span>
-<span class="nc" id="L59">                    break;</span>
+<span class="fc" id="L58">                    handleIRETURN(mn, next);</span>
+<span class="fc" id="L59">                    break;</span>
                 case Opcodes.ICONST_0:
                 case Opcodes.ICONST_1:
-<span class="nc" id="L62">                    handleICONST(mn, next);</span>
-<span class="nc" id="L63">                    break;</span>
+<span class="fc" id="L62">                    handleICONST(mn, next);</span>
+<span class="fc" id="L63">                    break;</span>
                 case Opcodes.ISTORE:
-<span class="nc" id="L65">                    handleISTORE(mn, next);</span>
-<span class="nc" id="L66">                    break;</span>
+<span class="fc" id="L65">                    handleISTORE(mn, next);</span>
+<span class="fc" id="L66">                    break;</span>
                 default:
 <span class="nc" id="L68">                    throw new IllegalStateException(&quot;Not handled code in testability transformation: &quot; + next.getOpcode());</span>
             }
 
-<span class="nc" id="L71">            node = next.getNext();</span>
-<span class="nc" id="L72">        }</span>
+<span class="fc" id="L71">            node = next.getNext();</span>
+<span class="fc" id="L72">        }</span>
 
-<span class="nc" id="L74">        return true;</span>
+<span class="fc" id="L74">        return true;</span>
     }
 
     //TODO write explanation
@@ -84,80 +84,80 @@ import java.util.Objects;
      */
 
     private void handleISTORE(MethodNode mn, AbstractInsnNode node) {
-<span class="nc bnc" id="L87" title="All 4 branches missed.">        assert node.getOpcode() == Opcodes.ISTORE;</span>
-<span class="nc bnc" id="L88" title="All 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
+<span class="pc bpc" id="L87" title="2 of 4 branches missed.">        assert node.getOpcode() == Opcodes.ISTORE;</span>
+<span class="pc bpc" id="L88" title="2 of 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
 
-<span class="nc" id="L90">        MethodInsnNode n = new MethodInsnNode(</span>
+<span class="fc" id="L90">        MethodInsnNode n = new MethodInsnNode(</span>
                 Opcodes.INVOKESTATIC,
-<span class="nc" id="L92">                Type.getInternalName(BooleanMethodTransformer.class),</span>
+<span class="fc" id="L92">                Type.getInternalName(BooleanMethodTransformer.class),</span>
                 &quot;convertIntToBoolean&quot;,
-<span class="nc" id="L94">                Type.getMethodDescriptor(Type.BOOLEAN_TYPE,</span>
+<span class="fc" id="L94">                Type.getMethodDescriptor(Type.BOOLEAN_TYPE,</span>
                         new Type[]{Type.INT_TYPE}), false);
 
-<span class="nc" id="L97">        mn.instructions.insertBefore(node, n);</span>
-<span class="nc" id="L98">    }</span>
+<span class="fc" id="L97">        mn.instructions.insertBefore(node, n);</span>
+<span class="fc" id="L98">    }</span>
 
     private void handleIRETURN(MethodNode mn, AbstractInsnNode node) {
-<span class="nc bnc" id="L101" title="All 4 branches missed.">        assert node.getOpcode() == Opcodes.IRETURN;</span>
-<span class="nc bnc" id="L102" title="All 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
+<span class="pc bpc" id="L101" title="2 of 4 branches missed.">        assert node.getOpcode() == Opcodes.IRETURN;</span>
+<span class="pc bpc" id="L102" title="2 of 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
 
 
-<span class="nc" id="L105">        MethodInsnNode n = new MethodInsnNode(</span>
+<span class="fc" id="L105">        MethodInsnNode n = new MethodInsnNode(</span>
                 Opcodes.INVOKESTATIC,
-<span class="nc" id="L107">                Type.getInternalName(BooleanMethodTransformer.class),</span>
+<span class="fc" id="L107">                Type.getInternalName(BooleanMethodTransformer.class),</span>
                 &quot;convertIntToBoolean&quot;,
-<span class="nc" id="L109">                Type.getMethodDescriptor(Type.BOOLEAN_TYPE,</span>
+<span class="fc" id="L109">                Type.getMethodDescriptor(Type.BOOLEAN_TYPE,</span>
                         new Type[]{Type.INT_TYPE}), false);
 
-<span class="nc" id="L112">        mn.instructions.insertBefore(node, n);</span>
-<span class="nc" id="L113">    }</span>
+<span class="fc" id="L112">        mn.instructions.insertBefore(node, n);</span>
+<span class="fc" id="L113">    }</span>
 
     private void handleIFEQ(AbstractInsnNode node) {
-<span class="nc bnc" id="L116" title="All 4 branches missed.">        assert node.getOpcode() == Opcodes.IFEQ;</span>
-<span class="nc bnc" id="L117" title="All 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
+<span class="pc bpc" id="L116" title="2 of 4 branches missed.">        assert node.getOpcode() == Opcodes.IFEQ;</span>
+<span class="pc bpc" id="L117" title="2 of 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
 
-<span class="nc" id="L119">        JumpInsnNode branch = (JumpInsnNode) node;</span>
-<span class="nc" id="L120">        branch.setOpcode(Opcodes.IFLE);</span>
-<span class="nc" id="L121">    }</span>
+<span class="fc" id="L119">        JumpInsnNode branch = (JumpInsnNode) node;</span>
+<span class="fc" id="L120">        branch.setOpcode(Opcodes.IFLE);</span>
+<span class="fc" id="L121">    }</span>
 
     private void handleIFNE(AbstractInsnNode node) {
-<span class="nc bnc" id="L124" title="All 4 branches missed.">        assert node.getOpcode() == Opcodes.IFNE;</span>
-<span class="nc bnc" id="L125" title="All 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
+<span class="pc bpc" id="L124" title="2 of 4 branches missed.">        assert node.getOpcode() == Opcodes.IFNE;</span>
+<span class="pc bpc" id="L125" title="2 of 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
 
-<span class="nc" id="L127">        JumpInsnNode branch = (JumpInsnNode) node;</span>
-<span class="nc" id="L128">        branch.setOpcode(Opcodes.IFGT);</span>
-<span class="nc" id="L129">    }</span>
+<span class="fc" id="L127">        JumpInsnNode branch = (JumpInsnNode) node;</span>
+<span class="fc" id="L128">        branch.setOpcode(Opcodes.IFGT);</span>
+<span class="fc" id="L129">    }</span>
 
     private void handleICONST(MethodNode mn, AbstractInsnNode node) {
-<span class="nc bnc" id="L132" title="All 6 branches missed.">        assert node.getOpcode() == Opcodes.ICONST_0 || node.getOpcode() == Opcodes.ICONST_1;</span>
-<span class="nc bnc" id="L133" title="All 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
+<span class="pc bpc" id="L132" title="3 of 6 branches missed.">        assert node.getOpcode() == Opcodes.ICONST_0 || node.getOpcode() == Opcodes.ICONST_1;</span>
+<span class="pc bpc" id="L133" title="2 of 4 branches missed.">        assert isReplaceMethod(node.getPrevious());</span>
 
-<span class="nc" id="L135">        AbstractInsnNode next = node.getNext();</span>
-<span class="nc bnc" id="L136" title="All 4 branches missed.">        assert next != null;</span>
+<span class="fc" id="L135">        AbstractInsnNode next = node.getNext();</span>
+<span class="pc bpc" id="L136" title="2 of 4 branches missed.">        assert next != null;</span>
 
-<span class="nc bnc" id="L138" title="All 2 branches missed.">        if (next.getOpcode() == Opcodes.IF_ICMPEQ) {</span>
+<span class="pc bpc" id="L138" title="1 of 2 branches missed.">        if (next.getOpcode() == Opcodes.IF_ICMPEQ) {</span>
 <span class="nc" id="L139">            handleIF_ICMPEQ(mn, next);</span>
-<span class="nc bnc" id="L140" title="All 2 branches missed.">        } else if (next.getOpcode() == Opcodes.IF_ICMPNE) {</span>
-<span class="nc" id="L141">            handleIF_ICMPNE(mn, next);</span>
+<span class="pc bpc" id="L140" title="1 of 2 branches missed.">        } else if (next.getOpcode() == Opcodes.IF_ICMPNE) {</span>
+<span class="fc" id="L141">            handleIF_ICMPNE(mn, next);</span>
         } else {
 <span class="nc" id="L143">            throw new IllegalStateException(&quot;Cannot handle ICONST case&quot;);</span>
         }
-<span class="nc" id="L145">    }</span>
+<span class="fc" id="L145">    }</span>
 
     private void handleIF_ICMPNE(MethodNode mn, AbstractInsnNode node) {
-<span class="nc bnc" id="L148" title="All 4 branches missed.">        assert node.getOpcode() == Opcodes.IF_ICMPNE;</span>
-<span class="nc bnc" id="L149" title="All 4 branches missed.">        assert isReplaceMethod(node.getPrevious().getPrevious());</span>
+<span class="pc bpc" id="L148" title="2 of 4 branches missed.">        assert node.getOpcode() == Opcodes.IF_ICMPNE;</span>
+<span class="pc bpc" id="L149" title="2 of 4 branches missed.">        assert isReplaceMethod(node.getPrevious().getPrevious());</span>
 
-<span class="nc" id="L151">        JumpInsnNode branch = (JumpInsnNode) node;</span>
+<span class="fc" id="L151">        JumpInsnNode branch = (JumpInsnNode) node;</span>
 
-<span class="nc bnc" id="L153" title="All 2 branches missed.">        if (node.getPrevious().getOpcode() == Opcodes.ICONST_0) {</span>
+<span class="pc bpc" id="L153" title="1 of 2 branches missed.">        if (node.getPrevious().getOpcode() == Opcodes.ICONST_0) {</span>
 <span class="nc" id="L154">            branch.setOpcode(Opcodes.IFGT);</span>
 <span class="nc" id="L155">            mn.instructions.remove(node.getPrevious());</span>
-<span class="nc bnc" id="L156" title="All 2 branches missed.">        } else if (node.getPrevious().getOpcode() == Opcodes.ICONST_1) {</span>
-<span class="nc" id="L157">            branch.setOpcode(Opcodes.IFLE);</span>
-<span class="nc" id="L158">            mn.instructions.remove(node.getPrevious());</span>
+<span class="pc bpc" id="L156" title="1 of 2 branches missed.">        } else if (node.getPrevious().getOpcode() == Opcodes.ICONST_1) {</span>
+<span class="fc" id="L157">            branch.setOpcode(Opcodes.IFLE);</span>
+<span class="fc" id="L158">            mn.instructions.remove(node.getPrevious());</span>
         }
-<span class="nc" id="L160">    }</span>
+<span class="fc" id="L160">    }</span>
 
     private void handleIF_ICMPEQ(MethodNode mn, AbstractInsnNode node) {
 <span class="nc bnc" id="L163" title="All 4 branches missed.">        assert node.getOpcode() == Opcodes.IF_ICMPEQ;</span>
@@ -176,29 +176,29 @@ import java.util.Objects;
 
     private boolean replaceBooleanCalls(MethodNode mn) {
 
-<span class="nc" id="L179">        boolean changed = false;</span>
-<span class="nc" id="L180">        ListIterator&lt;AbstractInsnNode&gt; iterator = mn.instructions.iterator();</span>
+<span class="fc" id="L179">        boolean changed = false;</span>
+<span class="fc" id="L180">        ListIterator&lt;AbstractInsnNode&gt; iterator = mn.instructions.iterator();</span>
 
-<span class="nc bnc" id="L182" title="All 2 branches missed.">        while (iterator.hasNext()) {</span>
-<span class="nc" id="L183">            AbstractInsnNode node = iterator.next();</span>
-<span class="nc bnc" id="L184" title="All 2 branches missed.">            if (!(node instanceof MethodInsnNode)) {</span>
-<span class="nc" id="L185">                continue;</span>
+<span class="fc bfc" id="L182" title="All 2 branches covered.">        while (iterator.hasNext()) {</span>
+<span class="fc" id="L183">            AbstractInsnNode node = iterator.next();</span>
+<span class="fc bfc" id="L184" title="All 2 branches covered.">            if (!(node instanceof MethodInsnNode)) {</span>
+<span class="fc" id="L185">                continue;</span>
             }
 
-<span class="nc" id="L188">            String replacementClass = Type.getInternalName(target);</span>
+<span class="fc" id="L188">            String replacementClass = Type.getInternalName(target);</span>
 
-<span class="nc" id="L190">            MethodInsnNode call = (MethodInsnNode) node;</span>
-<span class="nc bnc" id="L191" title="All 2 branches missed.">            if (!call.owner.equals(replacementClass)) {</span>
-<span class="nc" id="L192">                continue;</span>
+<span class="fc" id="L190">            MethodInsnNode call = (MethodInsnNode) node;</span>
+<span class="fc bfc" id="L191" title="All 2 branches covered.">            if (!call.owner.equals(replacementClass)) {</span>
+<span class="fc" id="L192">                continue;</span>
             }
 
-<span class="nc bnc" id="L195" title="All 2 branches missed.">            for (Method m : getClass().getMethods()) {</span>
-<span class="nc" id="L196">                BooleanReplacement br = m.getAnnotation(BooleanReplacement.class);</span>
-<span class="nc bnc" id="L197" title="All 2 branches missed.">                if (br == null) {</span>
+<span class="pc bpc" id="L195" title="1 of 2 branches missed.">            for (Method m : getClass().getMethods()) {</span>
+<span class="fc" id="L196">                BooleanReplacement br = m.getAnnotation(BooleanReplacement.class);</span>
+<span class="pc bpc" id="L197" title="1 of 2 branches missed.">                if (br == null) {</span>
 <span class="nc" id="L198">                    continue;</span>
                 }
-<span class="nc bnc" id="L200" title="All 2 branches missed.">                if (!call.name.equals(m.getName())) {</span>
-<span class="nc" id="L201">                    continue;</span>
+<span class="fc bfc" id="L200" title="All 2 branches covered.">                if (!call.name.equals(m.getName())) {</span>
+<span class="fc" id="L201">                    continue;</span>
                 }
 
                 /*
@@ -206,59 +206,59 @@ import java.util.Objects;
                     as return types in our replacements are going to
                     be different (eg from boolean to int)
                  */
-<span class="nc" id="L209">                String paramDesc = getParameterDescriptor(m, false);</span>
-<span class="nc" id="L210">                String paramReduced = getParameterDescriptor(m, true);</span>
+<span class="fc" id="L209">                String paramDesc = getParameterDescriptor(m, false);</span>
+<span class="fc" id="L210">                String paramReduced = getParameterDescriptor(m, true);</span>
 
-<span class="nc bnc" id="L212" title="All 4 branches missed.">                if ((br.replacingStatic() &amp;&amp; call.desc.startsWith(paramDesc)) ||</span>
-<span class="nc bnc" id="L213" title="All 4 branches missed.">                        (!br.replacingStatic() &amp;&amp; call.desc.startsWith(paramReduced))) {</span>
+<span class="pc bpc" id="L212" title="3 of 4 branches missed.">                if ((br.replacingStatic() &amp;&amp; call.desc.startsWith(paramDesc)) ||</span>
+<span class="pc bpc" id="L213" title="1 of 4 branches missed.">                        (!br.replacingStatic() &amp;&amp; call.desc.startsWith(paramReduced))) {</span>
 
-<span class="nc" id="L215">                    MethodInsnNode replacingCall = new MethodInsnNode(</span>
+<span class="fc" id="L215">                    MethodInsnNode replacingCall = new MethodInsnNode(</span>
                             Opcodes.INVOKESTATIC,
-<span class="nc" id="L217">                            Type.getInternalName(getClass()),</span>
-<span class="nc" id="L218">                            m.getName(),</span>
-<span class="nc" id="L219">                            Type.getMethodDescriptor(m),</span>
+<span class="fc" id="L217">                            Type.getInternalName(getClass()),</span>
+<span class="fc" id="L218">                            m.getName(),</span>
+<span class="fc" id="L219">                            Type.getMethodDescriptor(m),</span>
                             false);
-<span class="nc" id="L221">                    mn.instructions.insertBefore(node, replacingCall);</span>
-<span class="nc" id="L222">                    mn.instructions.remove(node);</span>
+<span class="fc" id="L221">                    mn.instructions.insertBefore(node, replacingCall);</span>
+<span class="fc" id="L222">                    mn.instructions.remove(node);</span>
 
-<span class="nc" id="L224">                    changed = true;</span>
-<span class="nc" id="L225">                    break;</span>
+<span class="fc" id="L224">                    changed = true;</span>
+<span class="fc" id="L225">                    break;</span>
                 }
             }
-<span class="nc" id="L228">        }</span>
+<span class="fc" id="L228">        }</span>
 
-<span class="nc" id="L230">        return changed;</span>
+<span class="fc" id="L230">        return changed;</span>
     }
 
     private static String getParameterDescriptor(Method m, boolean reduced) {
-<span class="nc" id="L234">        Class&lt;?&gt;[] parameters = m.getParameterTypes();</span>
-<span class="nc" id="L235">        StringBuilder buf = new StringBuilder();</span>
-<span class="nc" id="L236">        buf.append('(');</span>
+<span class="fc" id="L234">        Class&lt;?&gt;[] parameters = m.getParameterTypes();</span>
+<span class="fc" id="L235">        StringBuilder buf = new StringBuilder();</span>
+<span class="fc" id="L236">        buf.append('(');</span>
 
-<span class="nc" id="L238">        int start = 0;</span>
-<span class="nc bnc" id="L239" title="All 2 branches missed.">        if (reduced) {</span>
+<span class="fc" id="L238">        int start = 0;</span>
+<span class="fc bfc" id="L239" title="All 2 branches covered.">        if (reduced) {</span>
             //skipping first parameter
-<span class="nc" id="L241">            start = 1;</span>
+<span class="fc" id="L241">            start = 1;</span>
         }
 
-<span class="nc bnc" id="L244" title="All 2 branches missed.">        for (int i = start; i &lt; parameters.length; ++i) {</span>
-<span class="nc" id="L245">            buf.append(Type.getDescriptor(parameters[i]));</span>
+<span class="fc bfc" id="L244" title="All 2 branches covered.">        for (int i = start; i &lt; parameters.length; ++i) {</span>
+<span class="fc" id="L245">            buf.append(Type.getDescriptor(parameters[i]));</span>
         }
-<span class="nc" id="L247">        buf.append(')');</span>
+<span class="fc" id="L247">        buf.append(')');</span>
 
-<span class="nc" id="L249">        return buf.toString();</span>
+<span class="fc" id="L249">        return buf.toString();</span>
     }
 
 
     private boolean isReplaceMethod(AbstractInsnNode node) {
-<span class="nc bnc" id="L254" title="All 2 branches missed.">        if (node == null) {</span>
+<span class="pc bpc" id="L254" title="1 of 2 branches missed.">        if (node == null) {</span>
 <span class="nc" id="L255">            return false;</span>
         }
-<span class="nc bnc" id="L257" title="All 2 branches missed.">        if (node.getOpcode() == Opcodes.INVOKESTATIC) {</span>
-<span class="nc" id="L258">            MethodInsnNode methodInsnNode = (MethodInsnNode) node;</span>
-<span class="nc" id="L259">            return methodInsnNode.owner.equals(Type.getInternalName(getClass()));</span>
+<span class="fc bfc" id="L257" title="All 2 branches covered.">        if (node.getOpcode() == Opcodes.INVOKESTATIC) {</span>
+<span class="fc" id="L258">            MethodInsnNode methodInsnNode = (MethodInsnNode) node;</span>
+<span class="fc" id="L259">            return methodInsnNode.owner.equals(Type.getInternalName(getClass()));</span>
         }
-<span class="nc" id="L261">        return false;</span>
+<span class="fc" id="L261">        return false;</span>
     }
 
 
@@ -269,7 +269,7 @@ import java.util.Objects;
      * @return
      */
     public static boolean convertIntToBoolean(int x) {
-<span class="nc bnc" id="L272" title="All 2 branches missed.">        return x &gt; 0;</span>
+<span class="fc bfc" id="L272" title="All 2 branches covered.">        return x &gt; 0;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

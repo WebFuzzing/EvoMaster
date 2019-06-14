@@ -13,9 +13,9 @@ public class TableConstraintExtractorFactory {
     }
 
     public static TableConstraintExtractor buildConstraintExtractor(DatabaseType dt) {
-<span class="nc bnc" id="L16" title="All 4 branches missed.">        switch (dt) {</span>
+<span class="pc bpc" id="L16" title="3 of 4 branches missed.">        switch (dt) {</span>
             case H2:
-<span class="nc" id="L18">                return new H2ConstraintExtractor();</span>
+<span class="fc" id="L18">                return new H2ConstraintExtractor();</span>
             case POSTGRES:
 <span class="nc" id="L20">                return new PostgresConstraintExtractor();</span>
             case DERBY:

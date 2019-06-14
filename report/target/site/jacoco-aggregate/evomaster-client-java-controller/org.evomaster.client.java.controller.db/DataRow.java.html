@@ -27,78 +27,78 @@ public class DataRow {
 
 
     public DataRow(String columnName, Object value, String tableName) {
-<span class="nc" id="L30">        this(Arrays.asList(new VariableDescriptor(columnName, null, tableName)), Arrays.asList(value));</span>
-<span class="nc" id="L31">    }</span>
+<span class="fc" id="L30">        this(Arrays.asList(new VariableDescriptor(columnName, null, tableName)), Arrays.asList(value));</span>
+<span class="fc" id="L31">    }</span>
 
-<span class="nc" id="L33">    public DataRow(List&lt;VariableDescriptor&gt; descriptors, List&lt;Object&gt; values) {</span>
-<span class="nc" id="L34">        Objects.requireNonNull(descriptors);</span>
-<span class="nc" id="L35">        Objects.requireNonNull(values);</span>
+<span class="fc" id="L33">    public DataRow(List&lt;VariableDescriptor&gt; descriptors, List&lt;Object&gt; values) {</span>
+<span class="fc" id="L34">        Objects.requireNonNull(descriptors);</span>
+<span class="fc" id="L35">        Objects.requireNonNull(values);</span>
 
-<span class="nc bnc" id="L37" title="All 2 branches missed.">        if (descriptors.size() != values.size()) {</span>
+<span class="pc bpc" id="L37" title="1 of 2 branches missed.">        if (descriptors.size() != values.size()) {</span>
 <span class="nc" id="L38">            throw new IllegalArgumentException(&quot;Size mismatch&quot;);</span>
         }
-<span class="nc" id="L40">        List&lt;VariableDescriptor&gt; list = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L41">        list.addAll(descriptors);</span>
-<span class="nc" id="L42">        this.variableDescriptors = Collections.unmodifiableList(list);</span>
+<span class="fc" id="L40">        List&lt;VariableDescriptor&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L41">        list.addAll(descriptors);</span>
+<span class="fc" id="L42">        this.variableDescriptors = Collections.unmodifiableList(list);</span>
 
-<span class="nc" id="L44">        List&lt;Object&gt; valList = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L45">        valList.addAll(values);</span>
-<span class="nc" id="L46">        this.values = Collections.unmodifiableList(valList);</span>
-<span class="nc" id="L47">    }</span>
+<span class="fc" id="L44">        List&lt;Object&gt; valList = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L45">        valList.addAll(values);</span>
+<span class="fc" id="L46">        this.values = Collections.unmodifiableList(valList);</span>
+<span class="fc" id="L47">    }</span>
 
 
     public List&lt;VariableDescriptor&gt; getVariableDescriptors() {
-<span class="nc" id="L51">        return variableDescriptors;</span>
+<span class="fc" id="L51">        return variableDescriptors;</span>
     }
 
     public Object getValue(int index) {
-<span class="nc" id="L55">        return values.get(index);</span>
+<span class="fc" id="L55">        return values.get(index);</span>
     }
 
     public Object getValueByName(String name) {
-<span class="nc" id="L59">        return getValueByName(name, null);</span>
+<span class="fc" id="L59">        return getValueByName(name, null);</span>
     }
 
     public Object getValueByName(String name, String table) {
-<span class="nc" id="L63">        Objects.requireNonNull(name);</span>
-<span class="nc" id="L64">        String n = name.trim();</span>
-<span class="nc bnc" id="L65" title="All 2 branches missed.">        String t = (table == null ? null : table.trim());</span>
+<span class="fc" id="L63">        Objects.requireNonNull(name);</span>
+<span class="fc" id="L64">        String n = name.trim();</span>
+<span class="fc bfc" id="L65" title="All 2 branches covered.">        String t = (table == null ? null : table.trim());</span>
 
         //true/false are reserved keywords
-<span class="nc bnc" id="L68" title="All 2 branches missed.">        if(n.equalsIgnoreCase(&quot;true&quot;)){</span>
-<span class="nc" id="L69">            return true;</span>
+<span class="fc bfc" id="L68" title="All 2 branches covered.">        if(n.equalsIgnoreCase(&quot;true&quot;)){</span>
+<span class="fc" id="L69">            return true;</span>
         }
-<span class="nc bnc" id="L71" title="All 2 branches missed.">        if(n.equalsIgnoreCase(&quot;false&quot;)){</span>
-<span class="nc" id="L72">            return false;</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        if(n.equalsIgnoreCase(&quot;false&quot;)){</span>
+<span class="fc" id="L72">            return false;</span>
         }
 
 
         //first check aliases, but only if no specify table
-<span class="nc bnc" id="L77" title="All 4 branches missed.">        if (t == null || t.isEmpty()) {</span>
-<span class="nc bnc" id="L78" title="All 2 branches missed.">            for (int i = 0; i &lt; variableDescriptors.size(); i++) {</span>
-<span class="nc" id="L79">                VariableDescriptor desc = variableDescriptors.get(i);</span>
-<span class="nc bnc" id="L80" title="All 2 branches missed.">                if (n.equalsIgnoreCase(desc.getAlias())) {</span>
-<span class="nc" id="L81">                    return values.get(i);</span>
+<span class="pc bpc" id="L77" title="1 of 4 branches missed.">        if (t == null || t.isEmpty()) {</span>
+<span class="pc bpc" id="L78" title="1 of 2 branches missed.">            for (int i = 0; i &lt; variableDescriptors.size(); i++) {</span>
+<span class="fc" id="L79">                VariableDescriptor desc = variableDescriptors.get(i);</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">                if (n.equalsIgnoreCase(desc.getAlias())) {</span>
+<span class="fc" id="L81">                    return values.get(i);</span>
                 }
             }
         }
 
         //if none, then check column names
-<span class="nc bnc" id="L87" title="All 2 branches missed.">        for (int i = 0; i &lt; variableDescriptors.size(); i++) {</span>
-<span class="nc" id="L88">            VariableDescriptor desc = variableDescriptors.get(i);</span>
-<span class="nc bnc" id="L89" title="All 4 branches missed.">            if (n.equalsIgnoreCase(desc.getColumnName()) &amp;&amp;</span>
-<span class="nc bnc" id="L90" title="All 2 branches missed.">                    (t == null || t.isEmpty()</span>
-<span class="nc bnc" id="L91" title="All 2 branches missed.">                            || t.equalsIgnoreCase(desc.getTableName())</span>
+<span class="pc bpc" id="L87" title="1 of 2 branches missed.">        for (int i = 0; i &lt; variableDescriptors.size(); i++) {</span>
+<span class="fc" id="L88">            VariableDescriptor desc = variableDescriptors.get(i);</span>
+<span class="pc bpc" id="L89" title="1 of 4 branches missed.">            if (n.equalsIgnoreCase(desc.getColumnName()) &amp;&amp;</span>
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">                    (t == null || t.isEmpty()</span>
+<span class="fc bfc" id="L91" title="All 2 branches covered.">                            || t.equalsIgnoreCase(desc.getTableName())</span>
                             /*
                                 TODO: this does not cover all possible cases, as in theory
                                 there can be many unnamed tables (eg results of sub-selects)
                                 with same column names. At this moment, we would not
                                 be able to distinguish them
                              */
-<span class="nc bnc" id="L98" title="All 2 branches missed.">                            || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)</span>
+<span class="pc bpc" id="L98" title="1 of 2 branches missed.">                            || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)</span>
                     )
                     ) {
-<span class="nc" id="L101">                return values.get(i);</span>
+<span class="fc" id="L101">                return values.get(i);</span>
             }
         }
 
@@ -111,10 +111,10 @@ public class DataRow {
 
     public DataRowDto toDto(){
 
-<span class="nc" id="L114">        DataRowDto dto = new DataRowDto();</span>
-<span class="nc bnc" id="L115" title="All 2 branches missed.">        dto.columnData = values.stream().map(obj -&gt; (obj != null) ?  obj.toString(): NULL_VALUE).collect(Collectors.toList());</span>
+<span class="fc" id="L114">        DataRowDto dto = new DataRowDto();</span>
+<span class="fc bfc" id="L115" title="All 2 branches covered.">        dto.columnData = values.stream().map(obj -&gt; (obj != null) ?  obj.toString(): NULL_VALUE).collect(Collectors.toList());</span>
 
-<span class="nc" id="L117">        return dto;</span>
+<span class="fc" id="L117">        return dto;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>

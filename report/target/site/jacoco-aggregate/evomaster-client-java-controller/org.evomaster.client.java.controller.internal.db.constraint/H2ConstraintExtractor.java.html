@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-<span class="nc" id="L17">public class H2ConstraintExtractor extends TableConstraintExtractor {</span>
+<span class="fc" id="L17">public class H2ConstraintExtractor extends TableConstraintExtractor {</span>
 
     public static final String CONSTRAINT_TYPE = &quot;CONSTRAINT_TYPE&quot;;
     public static final String CHECK_EXPRESSION = &quot;CHECK_EXPRESSION&quot;;
@@ -35,14 +35,14 @@ import java.util.stream.Collectors;
      */
     public List&lt;DbTableConstraint&gt; extract(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
-<span class="nc" id="L38">        List&lt;DbTableConstraint&gt; columnConstraints = extractColumnConstraints(connectionToH2, schemaDto);</span>
+<span class="fc" id="L38">        List&lt;DbTableConstraint&gt; columnConstraints = extractColumnConstraints(connectionToH2, schemaDto);</span>
 
-<span class="nc" id="L40">        List&lt;DbTableConstraint&gt; tableCheckExpressions = extractTableConstraints(connectionToH2, schemaDto);</span>
+<span class="fc" id="L40">        List&lt;DbTableConstraint&gt; tableCheckExpressions = extractTableConstraints(connectionToH2, schemaDto);</span>
 
-<span class="nc" id="L42">        List&lt;DbTableConstraint&gt; allConstraints = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L43">        allConstraints.addAll(columnConstraints);</span>
-<span class="nc" id="L44">        allConstraints.addAll(tableCheckExpressions);</span>
-<span class="nc" id="L45">        return allConstraints;</span>
+<span class="fc" id="L42">        List&lt;DbTableConstraint&gt; allConstraints = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L43">        allConstraints.addAll(columnConstraints);</span>
+<span class="fc" id="L44">        allConstraints.addAll(tableCheckExpressions);</span>
+<span class="fc" id="L45">        return allConstraints;</span>
     }
 
     /**
@@ -67,29 +67,29 @@ import java.util.stream.Collectors;
      */
     private List&lt;DbTableConstraint&gt; extractTableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
-<span class="nc" id="L70">        List&lt;DbTableConstraint&gt; tableCheckExpressions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L70">        List&lt;DbTableConstraint&gt; tableCheckExpressions = new ArrayList&lt;&gt;();</span>
 
-<span class="nc" id="L72">        String tableSchema = schemaDto.name;</span>
-<span class="nc bnc" id="L73" title="All 2 branches missed.">        for (TableDto tableDto : schemaDto.tables) {</span>
-<span class="nc" id="L74">            String tableName = tableDto.name;</span>
-<span class="nc" id="L75">            try (Statement statement = connectionToH2.createStatement()) {</span>
+<span class="fc" id="L72">        String tableSchema = schemaDto.name;</span>
+<span class="fc bfc" id="L73" title="All 2 branches covered.">        for (TableDto tableDto : schemaDto.tables) {</span>
+<span class="fc" id="L74">            String tableName = tableDto.name;</span>
+<span class="fc" id="L75">            try (Statement statement = connectionToH2.createStatement()) {</span>
 
-<span class="nc" id="L77">                final String query = String.format(&quot;Select * From INFORMATION_SCHEMA.CONSTRAINTS\n&quot; +</span>
+<span class="fc" id="L77">                final String query = String.format(&quot;Select * From INFORMATION_SCHEMA.CONSTRAINTS\n&quot; +</span>
                         &quot; where CONSTRAINTS.TABLE_SCHEMA='%s' \n&quot;
                         + &quot; and CONSTRAINTS.TABLE_NAME='%s' &quot;, tableSchema, tableName);
-<span class="nc" id="L80">                try (ResultSet constraints = statement.executeQuery(query)) {</span>
+<span class="fc" id="L80">                try (ResultSet constraints = statement.executeQuery(query)) {</span>
 
-<span class="nc bnc" id="L82" title="All 2 branches missed.">                    while (constraints.next()) {</span>
-<span class="nc" id="L83">                        String constraintType = constraints.getString(CONSTRAINT_TYPE);</span>
-<span class="nc" id="L84">                        String sqlCheckExpression = constraints.getString(CHECK_EXPRESSION);</span>
-<span class="nc" id="L85">                        String columnList = constraints.getString(COLUMN_LIST);</span>
+<span class="fc bfc" id="L82" title="All 2 branches covered.">                    while (constraints.next()) {</span>
+<span class="fc" id="L83">                        String constraintType = constraints.getString(CONSTRAINT_TYPE);</span>
+<span class="fc" id="L84">                        String sqlCheckExpression = constraints.getString(CHECK_EXPRESSION);</span>
+<span class="fc" id="L85">                        String columnList = constraints.getString(COLUMN_LIST);</span>
                         DbTableConstraint constraint;
-<span class="nc bnc" id="L87" title="All 4 branches missed.">                        switch (constraintType) {</span>
+<span class="pc bpc" id="L87" title="1 of 4 branches missed.">                        switch (constraintType) {</span>
                             case UNIQUE:
-<span class="nc" id="L89">                                List&lt;String&gt; uniqueColumnNames = Arrays.stream(columnList.split(&quot;,&quot;)).map(String::trim).collect(Collectors.toList());</span>
-<span class="nc" id="L90">                                constraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);</span>
-<span class="nc" id="L91">                                tableCheckExpressions.add(constraint);</span>
-<span class="nc" id="L92">                                break;</span>
+<span class="fc" id="L89">                                List&lt;String&gt; uniqueColumnNames = Arrays.stream(columnList.split(&quot;,&quot;)).map(String::trim).collect(Collectors.toList());</span>
+<span class="fc" id="L90">                                constraint = new DbTableUniqueConstraint(tableName, uniqueColumnNames);</span>
+<span class="fc" id="L91">                                tableCheckExpressions.add(constraint);</span>
+<span class="fc" id="L92">                                break;</span>
                             case PRIMARY_KEY:
                             case PRIMARY_KEY_BLANK:
                             case REFERENTIAL:
@@ -97,21 +97,21 @@ import java.util.stream.Collectors;
                                  * This type of constraint is already handled by
                                  * JDBC Metadata
                                  **/
-<span class="nc" id="L100">                                break;</span>
+<span class="fc" id="L100">                                break;</span>
                             case CHECK:
-<span class="nc" id="L102">                                constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);</span>
-<span class="nc" id="L103">                                tableCheckExpressions.add(constraint);</span>
-<span class="nc" id="L104">                                break;</span>
+<span class="fc" id="L102">                                constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);</span>
+<span class="fc" id="L103">                                tableCheckExpressions.add(constraint);</span>
+<span class="fc" id="L104">                                break;</span>
 
                             default:
 <span class="nc" id="L107">                                cannotHandle(constraintType);</span>
                         }
-<span class="nc" id="L109">                    }</span>
+<span class="fc" id="L109">                    }</span>
                 }
             }
-<span class="nc" id="L112">        }</span>
+<span class="fc" id="L112">        }</span>
 
-<span class="nc" id="L114">        return tableCheckExpressions;</span>
+<span class="fc" id="L114">        return tableCheckExpressions;</span>
     }
 
     /**
@@ -126,27 +126,27 @@ import java.util.stream.Collectors;
      * @throws SQLException if the connection to the database fails
      */
     private List&lt;DbTableConstraint&gt; extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
-<span class="nc" id="L129">        String tableSchema = schemaDto.name;</span>
-<span class="nc" id="L130">        List&lt;DbTableConstraint&gt; columnConstraints = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L131" title="All 2 branches missed.">        for (TableDto tableDto : schemaDto.tables) {</span>
-<span class="nc" id="L132">            String tableName = tableDto.name;</span>
+<span class="fc" id="L129">        String tableSchema = schemaDto.name;</span>
+<span class="fc" id="L130">        List&lt;DbTableConstraint&gt; columnConstraints = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L131" title="All 2 branches covered.">        for (TableDto tableDto : schemaDto.tables) {</span>
+<span class="fc" id="L132">            String tableName = tableDto.name;</span>
 
-<span class="nc" id="L134">            try (Statement statement = connectionToH2.createStatement()) {</span>
+<span class="fc" id="L134">            try (Statement statement = connectionToH2.createStatement()) {</span>
 
-<span class="nc" id="L136">                final String query = String.format(&quot;Select * From INFORMATION_SCHEMA.COLUMNS where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s' &quot;, tableSchema, tableName);</span>
+<span class="fc" id="L136">                final String query = String.format(&quot;Select * From INFORMATION_SCHEMA.COLUMNS where COLUMNS.TABLE_SCHEMA='%s' and COLUMNS.TABLE_NAME='%s' &quot;, tableSchema, tableName);</span>
 
-<span class="nc" id="L138">                try (ResultSet columns = statement.executeQuery(query)) {</span>
-<span class="nc bnc" id="L139" title="All 2 branches missed.">                    while (columns.next()) {</span>
-<span class="nc" id="L140">                        String sqlCheckExpression = columns.getString(&quot;CHECK_CONSTRAINT&quot;);</span>
-<span class="nc bnc" id="L141" title="All 4 branches missed.">                        if (sqlCheckExpression != null &amp;&amp; !sqlCheckExpression.equals(&quot;&quot;)) {</span>
-<span class="nc" id="L142">                            DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);</span>
-<span class="nc" id="L143">                            columnConstraints.add(constraint);</span>
+<span class="fc" id="L138">                try (ResultSet columns = statement.executeQuery(query)) {</span>
+<span class="fc bfc" id="L139" title="All 2 branches covered.">                    while (columns.next()) {</span>
+<span class="fc" id="L140">                        String sqlCheckExpression = columns.getString(&quot;CHECK_CONSTRAINT&quot;);</span>
+<span class="pc bpc" id="L141" title="1 of 4 branches missed.">                        if (sqlCheckExpression != null &amp;&amp; !sqlCheckExpression.equals(&quot;&quot;)) {</span>
+<span class="fc" id="L142">                            DbTableCheckExpression constraint = new DbTableCheckExpression(tableName, sqlCheckExpression);</span>
+<span class="fc" id="L143">                            columnConstraints.add(constraint);</span>
                         }
-<span class="nc" id="L145">                    }</span>
+<span class="fc" id="L145">                    }</span>
                 }
             }
-<span class="nc" id="L148">        }</span>
-<span class="nc" id="L149">        return columnConstraints;</span>
+<span class="fc" id="L148">        }</span>
+<span class="fc" id="L149">        return columnConstraints;</span>
     }
 
 }

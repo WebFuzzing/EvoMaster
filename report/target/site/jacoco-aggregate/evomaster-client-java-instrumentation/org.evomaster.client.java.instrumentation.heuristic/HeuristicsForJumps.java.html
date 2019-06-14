@@ -16,24 +16,24 @@ import org.objectweb.asm.Opcodes;
      */
     public static Truthness getForSingleValueJump(int value, int opcode) {
 
-<span class="nc bnc" id="L19" title="All 7 branches missed.">        switch (opcode) {</span>
+<span class="pc bpc" id="L19" title="1 of 7 branches missed.">        switch (opcode) {</span>
             case Opcodes.IFEQ: // ie, val == 0
-<span class="nc" id="L21">                return getForValueComparison(value, 0, Opcodes.IF_ICMPEQ);</span>
+<span class="fc" id="L21">                return getForValueComparison(value, 0, Opcodes.IF_ICMPEQ);</span>
 
             case Opcodes.IFNE: // ie val != 0  -&gt;  ! (val == 0)
-<span class="nc" id="L24">                return getForSingleValueJump(value, Opcodes.IFEQ).invert();</span>
+<span class="fc" id="L24">                return getForSingleValueJump(value, Opcodes.IFEQ).invert();</span>
 
             case Opcodes.IFLT: // ie, val &lt; 0
-<span class="nc" id="L27">                return getForValueComparison(value, 0, Opcodes.IF_ICMPLT);</span>
+<span class="fc" id="L27">                return getForValueComparison(value, 0, Opcodes.IF_ICMPLT);</span>
 
             case Opcodes.IFGE: // ie, val &gt;= 0  -&gt; ! (val &lt; 0)
-<span class="nc" id="L30">                return getForSingleValueJump(value, Opcodes.IFLT).invert();</span>
+<span class="fc" id="L30">                return getForSingleValueJump(value, Opcodes.IFLT).invert();</span>
 
             case Opcodes.IFLE: // ie, val &lt;= 0  -&gt;  0 &gt;= val  -&gt; ! (0 &lt; val)
-<span class="nc" id="L33">                return getForValueComparison(0, value, Opcodes.IF_ICMPLT).invert();</span>
+<span class="fc" id="L33">                return getForValueComparison(0, value, Opcodes.IF_ICMPLT).invert();</span>
 
             case Opcodes.IFGT: // ie, val &gt; 0  -&gt;  0 &lt; val
-<span class="nc" id="L36">                return getForValueComparison(0, value, Opcodes.IF_ICMPLT);</span>
+<span class="fc" id="L36">                return getForValueComparison(0, value, Opcodes.IF_ICMPLT);</span>
 
             default:
 <span class="nc" id="L39">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
@@ -43,33 +43,33 @@ import org.objectweb.asm.Opcodes;
 
     public static Truthness getForValueComparison(int firstValue, int secondValue, int opcode) {
 
-<span class="nc" id="L46">        double a = firstValue;</span>
-<span class="nc" id="L47">        double b = secondValue;</span>
+<span class="fc" id="L46">        double a = firstValue;</span>
+<span class="fc" id="L47">        double b = secondValue;</span>
 
-<span class="nc bnc" id="L49" title="All 7 branches missed.">        switch (opcode) {</span>
+<span class="pc bpc" id="L49" title="1 of 7 branches missed.">        switch (opcode) {</span>
             case Opcodes.IF_ICMPEQ: // ie, a == b
-<span class="nc" id="L51">                return new Truthness(</span>
-<span class="nc bnc" id="L52" title="All 2 branches missed.">                        1d - Truthness.normalizeValue(Math.abs(a - b)),</span>
+<span class="fc" id="L51">                return new Truthness(</span>
+<span class="fc bfc" id="L52" title="All 2 branches covered.">                        1d - Truthness.normalizeValue(Math.abs(a - b)),</span>
                         a != b ? 1d : 0d
                 );
 
             case Opcodes.IF_ICMPNE: // ie, a != b
-<span class="nc" id="L57">                return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPEQ).invert();</span>
+<span class="fc" id="L57">                return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPEQ).invert();</span>
 
             case Opcodes.IF_ICMPLT: // ie, a &lt; b
-<span class="nc bnc" id="L60" title="All 4 branches missed.">                return new Truthness(</span>
+<span class="fc bfc" id="L60" title="All 4 branches covered.">                return new Truthness(</span>
                         a &lt; b ? 1d : 1d / (1.1d + a - b) ,
                         a &gt;= b ? 1d : 1d / (1.1d + b - a)
                 );
 
             case Opcodes.IF_ICMPGE: // ie, a &gt;= b  -&gt;  ! (a &lt; b)
-<span class="nc" id="L66">                return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPLT).invert();</span>
+<span class="fc" id="L66">                return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPLT).invert();</span>
 
             case Opcodes.IF_ICMPLE: // ie, a &lt;= b  -&gt;  b &gt;= a -&gt; ! (b &lt; a)
-<span class="nc" id="L69">                return getForValueComparison(secondValue, firstValue, Opcodes.IF_ICMPLT).invert();</span>
+<span class="fc" id="L69">                return getForValueComparison(secondValue, firstValue, Opcodes.IF_ICMPLT).invert();</span>
 
             case Opcodes.IF_ICMPGT: // ie, a &gt; b  -&gt;  b &lt; a
-<span class="nc" id="L72">                return getForValueComparison(secondValue, firstValue, Opcodes.IF_ICMPLT);</span>
+<span class="fc" id="L72">                return getForValueComparison(secondValue, firstValue, Opcodes.IF_ICMPLT);</span>
 
             default:
 <span class="nc" id="L75">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
@@ -79,15 +79,15 @@ import org.objectweb.asm.Opcodes;
 
     public static Truthness getForObjectComparison(Object first, Object second, int opcode) {
 
-<span class="nc bnc" id="L82" title="All 3 branches missed.">        switch (opcode) {</span>
+<span class="pc bpc" id="L82" title="1 of 3 branches missed.">        switch (opcode) {</span>
             case Opcodes.IF_ACMPEQ: // ie, a == b
-<span class="nc bnc" id="L84" title="All 4 branches missed.">                return new Truthness(</span>
+<span class="fc bfc" id="L84" title="All 4 branches covered.">                return new Truthness(</span>
                         first == second ? 1d : 0d,
                         first != second ? 1d : 0d
                 );
 
             case Opcodes.IF_ACMPNE: // ie, a != b
-<span class="nc" id="L90">                return getForObjectComparison(first, second, Opcodes.IF_ACMPEQ).invert();</span>
+<span class="fc" id="L90">                return getForObjectComparison(first, second, Opcodes.IF_ACMPEQ).invert();</span>
 
             default:
 <span class="nc" id="L93">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>
@@ -97,13 +97,13 @@ import org.objectweb.asm.Opcodes;
 
     public static Truthness getForNullComparison(Object obj, int opcode) {
 
-<span class="nc bnc" id="L100" title="All 3 branches missed.">        switch (opcode){</span>
+<span class="pc bpc" id="L100" title="1 of 3 branches missed.">        switch (opcode){</span>
 
             case Opcodes.IFNULL: // ie, obj == null
-<span class="nc" id="L103">                return getForObjectComparison(obj, null, Opcodes.IF_ACMPEQ);</span>
+<span class="fc" id="L103">                return getForObjectComparison(obj, null, Opcodes.IF_ACMPEQ);</span>
 
             case Opcodes.IFNONNULL: // ie, obj != null
-<span class="nc" id="L106">                return getForObjectComparison(obj, null, Opcodes.IF_ACMPNE);</span>
+<span class="fc" id="L106">                return getForObjectComparison(obj, null, Opcodes.IF_ACMPNE);</span>
 
             default:
 <span class="nc" id="L109">                throw new IllegalArgumentException(&quot;Cannot handle opcode &quot; + opcode);</span>

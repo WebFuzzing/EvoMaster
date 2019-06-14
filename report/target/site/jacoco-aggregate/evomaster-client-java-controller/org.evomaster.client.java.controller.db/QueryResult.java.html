@@ -16,84 +16,84 @@ import java.util.stream.Collectors;
  */
 public class QueryResult {
 
-<span class="nc" id="L19">    private final List&lt;VariableDescriptor&gt; variableDescriptors = new ArrayList&lt;&gt;();</span>
-<span class="nc" id="L20">    private final List&lt;DataRow&gt; rows = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L19">    private final List&lt;VariableDescriptor&gt; variableDescriptors = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L20">    private final List&lt;DataRow&gt; rows = new ArrayList&lt;&gt;();</span>
 
     /**
      * Constructor only needed for testing
      */
-<span class="nc" id="L25">    public QueryResult(List&lt;String&gt; columnNames, String tableName) {</span>
-<span class="nc" id="L26">        Objects.requireNonNull(columnNames);</span>
-<span class="nc bnc" id="L27" title="All 2 branches missed.">        for (String c : columnNames) {</span>
-<span class="nc" id="L28">            variableDescriptors.add(new VariableDescriptor(c, null, tableName));</span>
-<span class="nc" id="L29">        }</span>
-<span class="nc" id="L30">    }</span>
+<span class="fc" id="L25">    public QueryResult(List&lt;String&gt; columnNames, String tableName) {</span>
+<span class="fc" id="L26">        Objects.requireNonNull(columnNames);</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">        for (String c : columnNames) {</span>
+<span class="fc" id="L28">            variableDescriptors.add(new VariableDescriptor(c, null, tableName));</span>
+<span class="fc" id="L29">        }</span>
+<span class="fc" id="L30">    }</span>
 
-<span class="nc" id="L32">    public QueryResult(ResultSet resultSet) {</span>
+<span class="fc" id="L32">    public QueryResult(ResultSet resultSet) {</span>
 
-<span class="nc bnc" id="L34" title="All 2 branches missed.">        if (resultSet == null) {</span>
-<span class="nc" id="L35">            return;</span>
+<span class="fc bfc" id="L34" title="All 2 branches covered.">        if (resultSet == null) {</span>
+<span class="fc" id="L35">            return;</span>
         }
 
         try {
-<span class="nc" id="L39">            ResultSetMetaData md = resultSet.getMetaData();</span>
+<span class="fc" id="L39">            ResultSetMetaData md = resultSet.getMetaData();</span>
 
-<span class="nc bnc" id="L41" title="All 2 branches missed.">            for (int i = 0; i &lt; md.getColumnCount(); i++) {</span>
-<span class="nc" id="L42">                int index = i + 1;</span>
-<span class="nc" id="L43">                VariableDescriptor desc = new VariableDescriptor(</span>
-<span class="nc" id="L44">                        md.getColumnName(index),</span>
-<span class="nc" id="L45">                        md.getColumnLabel(index),</span>
-<span class="nc" id="L46">                        md.getTableName(index)</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">            for (int i = 0; i &lt; md.getColumnCount(); i++) {</span>
+<span class="fc" id="L42">                int index = i + 1;</span>
+<span class="fc" id="L43">                VariableDescriptor desc = new VariableDescriptor(</span>
+<span class="fc" id="L44">                        md.getColumnName(index),</span>
+<span class="fc" id="L45">                        md.getColumnLabel(index),</span>
+<span class="fc" id="L46">                        md.getTableName(index)</span>
                 );
-<span class="nc" id="L48">                variableDescriptors.add(desc);</span>
+<span class="fc" id="L48">                variableDescriptors.add(desc);</span>
             }
 
-<span class="nc bnc" id="L51" title="All 2 branches missed.">            while (resultSet.next()) {</span>
-<span class="nc" id="L52">                List&lt;Object&gt; row = new ArrayList&lt;&gt;();</span>
-<span class="nc bnc" id="L53" title="All 2 branches missed.">                for (int i = 0; i &lt; md.getColumnCount(); i++) {</span>
-<span class="nc" id="L54">                    Object value = resultSet.getObject(i + 1);</span>
-<span class="nc" id="L55">                    row.add(value);</span>
+<span class="fc bfc" id="L51" title="All 2 branches covered.">            while (resultSet.next()) {</span>
+<span class="fc" id="L52">                List&lt;Object&gt; row = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">                for (int i = 0; i &lt; md.getColumnCount(); i++) {</span>
+<span class="fc" id="L54">                    Object value = resultSet.getObject(i + 1);</span>
+<span class="fc" id="L55">                    row.add(value);</span>
                 }
-<span class="nc" id="L57">                rows.add(new DataRow(variableDescriptors, row));</span>
-<span class="nc" id="L58">            }</span>
+<span class="fc" id="L57">                rows.add(new DataRow(variableDescriptors, row));</span>
+<span class="fc" id="L58">            }</span>
 
 <span class="nc" id="L60">        } catch (Exception e) {</span>
 <span class="nc" id="L61">            throw new RuntimeException(e);</span>
-<span class="nc" id="L62">        }</span>
-<span class="nc" id="L63">    }</span>
+<span class="fc" id="L62">        }</span>
+<span class="fc" id="L63">    }</span>
 
     public void addRow(DataRow row) {
-<span class="nc bnc" id="L66" title="All 2 branches missed.">        if (!sameVariableNames(row)) {</span>
+<span class="pc bpc" id="L66" title="1 of 2 branches missed.">        if (!sameVariableNames(row)) {</span>
 <span class="nc" id="L67">            throw new IllegalArgumentException(&quot;Variable name mismatch&quot;);</span>
         }
-<span class="nc" id="L69">        rows.add(row);</span>
-<span class="nc" id="L70">    }</span>
+<span class="fc" id="L69">        rows.add(row);</span>
+<span class="fc" id="L70">    }</span>
 
     public boolean sameVariableNames(DataRow row) {
-<span class="nc bnc" id="L73" title="All 2 branches missed.">        if (variableDescriptors.size() != row.getVariableDescriptors().size()) {</span>
+<span class="pc bpc" id="L73" title="1 of 2 branches missed.">        if (variableDescriptors.size() != row.getVariableDescriptors().size()) {</span>
 <span class="nc" id="L74">            return false;</span>
         }
-<span class="nc bnc" id="L76" title="All 2 branches missed.">        for (int i = 0; i &lt; variableDescriptors.size(); i++) {</span>
-<span class="nc" id="L77">            VariableDescriptor a = variableDescriptors.get(i);</span>
-<span class="nc" id="L78">            VariableDescriptor b = row.getVariableDescriptors().get(i);</span>
-<span class="nc bnc" id="L79" title="All 2 branches missed.">            if (!a.equals(b)) {</span>
+<span class="fc bfc" id="L76" title="All 2 branches covered.">        for (int i = 0; i &lt; variableDescriptors.size(); i++) {</span>
+<span class="fc" id="L77">            VariableDescriptor a = variableDescriptors.get(i);</span>
+<span class="fc" id="L78">            VariableDescriptor b = row.getVariableDescriptors().get(i);</span>
+<span class="pc bpc" id="L79" title="1 of 2 branches missed.">            if (!a.equals(b)) {</span>
 <span class="nc" id="L80">                return false;</span>
             }
         }
 
-<span class="nc" id="L84">        return true;</span>
+<span class="fc" id="L84">        return true;</span>
     }
 
     public List&lt;DataRow&gt; seeRows() {
-<span class="nc" id="L88">        return rows;</span>
+<span class="fc" id="L88">        return rows;</span>
     }
 
     public boolean isEmpty() {
-<span class="nc" id="L92">        return rows.isEmpty();</span>
+<span class="fc" id="L92">        return rows.isEmpty();</span>
     }
 
     public int size(){
-<span class="nc" id="L96">        return rows.size();</span>
+<span class="fc" id="L96">        return rows.size();</span>
     }
 
     @Override
@@ -114,10 +114,10 @@ public class QueryResult {
 
     public QueryResultDto toDto(){
 
-<span class="nc" id="L117">        QueryResultDto dto = new QueryResultDto();</span>
-<span class="nc" id="L118">        dto.rows = rows.stream().map(r -&gt; r.toDto()).collect(Collectors.toList());</span>
+<span class="fc" id="L117">        QueryResultDto dto = new QueryResultDto();</span>
+<span class="pc" id="L118">        dto.rows = rows.stream().map(r -&gt; r.toDto()).collect(Collectors.toList());</span>
 
-<span class="nc" id="L120">        return dto;</span>
+<span class="fc" id="L120">        return dto;</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span></div></body></html>
