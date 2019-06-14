@@ -2,10 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
-import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
@@ -171,9 +168,16 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
                 val extra = dto.extraHeuristics[i]
 
-                if (!isEmpty(extra)) {
-                    //TODO handling of toMaximize
-                    fv.setExtraToMinimize(i, extra.toMinimize)
+                //TODO handling of toMaximize as well
+
+                val toMinimize = extra.heuristics
+                        .filter { it != null
+                                && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                        }.map { it.value }
+                        .toList()
+
+                if (!toMinimize.isEmpty()) {
+                    fv.setExtraToMinimize(i, toMinimize)
                 }
 
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
@@ -256,14 +260,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         }
     }
 
-
-    private fun isEmpty(dto: ExtraHeuristicDto): Boolean {
-
-        val hasMin = dto.toMinimize != null && !dto.toMinimize.isEmpty()
-        val hasMax = dto.toMaximize != null && !dto.toMaximize.isEmpty()
-
-        return !hasMin && !hasMax
-    }
 
     /**
      * Create local targets for each HTTP status code in each

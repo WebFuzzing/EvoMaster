@@ -35,7 +35,7 @@ public class SqlHandler {
     /**
      * The heuristics based on the SQL execution
      */
-    private final List<Double> distances;
+    private final List<PairCommandDistance> distances;
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
@@ -99,7 +99,7 @@ public class SqlHandler {
         return executionDto;
     }
 
-    public List<Double> getDistances() {
+    public List<PairCommandDistance> getDistances() {
 
         if (connection == null) {
             return distances;
@@ -117,7 +117,7 @@ public class SqlHandler {
                      */
                     if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
                         double dist = computeDistance(sql);
-                        distances.add(dist);
+                        distances.add(new PairCommandDistance(sql, dist));
                     }
                 });
         //side effects on buffer is not important, as it is just a cache
