@@ -207,6 +207,33 @@ class name conflicts.
 
 All names should use ASCII letters. Non-ASCII ones like ø or Å must be avoided.
 
+
+
+### MAVEN MODULE HIERARCHY
+
+`EvoMaster` is built with `Maven`, with a hierarchy of submodules. 
+Given a module `X` declaring a submodule `Y` with `<module>` in its `pom.xml` file,
+then `Y` **must** declare `X` as parent with `<parent>`.
+Do no break the hierarchy by pointing to a parent outside `EvoMaster` (e.g., 
+something like `spring-boot-starter-parent`).
+If you need to use such external poms, you can import them as dependency, i.e., specifying
+the `<scope>import</scope>` tag. 
+
+
+### MAVEN DEPENDENCY VERSION 
+
+All dependency `<version>` tags must be declared in the *root* `pom.xml` file, 
+in the `<dependencyManagement>` section.
+Submodules *must* not declare a version for a library, and rather refer to the ones in
+the root using just `<groupId>` and `<artifactId>` (but possibly overriding some configurations,
+like `<scope>`).
+
+Motivation: must have only a single version of a library in `EvoMaster`. Specifying versions
+in submodules can lead to duplicated `<version>` declarations with different version numbers.
+All version numbers should be easily audited, and so should be in a single file (i.e., the
+*root* `pom.xml`).
+
+  
   
 ### Trello
 If you are among the core developers of `EvoMaster`, you should get an invitation to join

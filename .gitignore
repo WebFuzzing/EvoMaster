@@ -38,3 +38,4 @@ experiments/target/
 /e2e-tests/dropwizard-examples/src/em/
 /snapshot.csv
 *.lst
+/report/target/
