@@ -3,9 +3,12 @@ package org.evomaster.client.java.controller.internal.db;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+import net.sf.jsqlparser.statement.update.Update;
 
 public class ParserUtils {
 
@@ -40,9 +43,13 @@ public class ParserUtils {
                 PlainSelect plainSelect = (PlainSelect) selectBody;
                 return plainSelect.getWhere();
             }
+        } else if(statement instanceof Delete){
+            return ((Delete) statement).getWhere();
+        } else if(statement instanceof Update){
+            return ((Update) statement).getWhere();
         }
 
-        throw new IllegalArgumentException("Cannot handle: " + statement.toString());
+        throw new IllegalArgumentException("Cannot handle statement: " + statement.toString());
     }
 
     public static Statement asStatement(String statement) {
