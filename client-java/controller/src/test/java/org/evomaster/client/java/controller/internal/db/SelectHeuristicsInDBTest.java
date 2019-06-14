@@ -98,7 +98,7 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .then()
                     .statusCode(200)
                     .body("data.extraHeuristics.size()", is(1))
-                    .body("data.extraHeuristics[0].toMinimize.size()", is(0));
+                    .body("data.extraHeuristics[0].heuristics.size()", is(0));
 
             startNewTest(url);
 
@@ -110,9 +110,9 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .then()
                     .statusCode(200)
                     .body("data.extraHeuristics.size()", is(1))
-                    .body("data.extraHeuristics[0].toMinimize.size()", is(2))
-                    .body("data.extraHeuristics[0].toMinimize[0]", greaterThan(0f))
-                    .body("data.extraHeuristics[0].toMinimize[1]", is(0f));
+                    .body("data.extraHeuristics[0].heuristics.size()", is(2))
+                    .body("data.extraHeuristics[0].heuristics[0].value", greaterThan(0f))
+                    .body("data.extraHeuristics[0].heuristics[1].value", is(0f));
 
             startNewActionInSameTest(url, 1);
 
@@ -123,11 +123,11 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                     .then()
                     .statusCode(200)
                     .body("data.extraHeuristics.size()", is(2))
-                    .body("data.extraHeuristics[0].toMinimize.size()", is(2))
-                    .body("data.extraHeuristics[0].toMinimize[0]", greaterThan(0f))
-                    .body("data.extraHeuristics[0].toMinimize[1]", is(0f))
-                    .body("data.extraHeuristics[1].toMinimize.size()", is(1))
-                    .body("data.extraHeuristics[1].toMinimize[0]", greaterThan(0f));
+                    .body("data.extraHeuristics[0].heuristics.size()", is(2))
+                    .body("data.extraHeuristics[0].heuristics[0].value", greaterThan(0f))
+                    .body("data.extraHeuristics[0].heuristics[1].value", is(0f))
+                    .body("data.extraHeuristics[1].heuristics.size()", is(1))
+                    .body("data.extraHeuristics[1].heuristics[0].value", greaterThan(0f));
         } finally {
             starter.stop();
         }
@@ -231,7 +231,7 @@ public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
                 .get(url + TEST_RESULTS)
                 .then()
                 .statusCode(200)
-                .extract().body().path("data.extraHeuristics[0].toMinimize[0]").toString());
+                .extract().body().path("data.extraHeuristics[0].heuristics[0].value").toString());
 
         startNewTest(url);
 
