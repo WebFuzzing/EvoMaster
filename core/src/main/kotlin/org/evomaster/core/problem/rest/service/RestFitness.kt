@@ -17,6 +17,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -45,6 +46,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     @Inject
     private lateinit var sampler: RestSampler
+
+    @Inject
+    private lateinit var extraHeuristicsLogger: ExtraHeuristicsLogger
 
 
     private val client: Client = {
@@ -169,6 +173,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 val extra = dto.extraHeuristics[i]
 
                 //TODO handling of toMaximize as well
+                //TODO refactoring when will have other heuristics besides for SQL
+
+                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
 
                 val toMinimize = extra.heuristics
                         .filter { it != null
