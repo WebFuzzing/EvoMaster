@@ -5,7 +5,7 @@ package org.evomaster.core.problem.rest.resource.dependency
  */
 open class RelatedTo(
         private val key: String,
-        val targets : MutableList<out Any>,
+        open val targets : MutableList<out Any>,
         var probability: Double,
         var additionalInfo : String = ""
 ){

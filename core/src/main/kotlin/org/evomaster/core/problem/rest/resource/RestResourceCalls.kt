@@ -94,7 +94,7 @@ class RestResourceCalls(
 
     fun getResourceNode() : RestResourceNode = resourceInstance?.referResourceNode?:throw IllegalArgumentException("the individual does not have resource structure")
 
-    fun getResourceNodeKey() : String = getResourceNode()?.getName()?:throw IllegalArgumentException("the individual does not have resource structure")
+    fun getResourceNodeKey() : String = getResourceNode().getName()
 
 }
 

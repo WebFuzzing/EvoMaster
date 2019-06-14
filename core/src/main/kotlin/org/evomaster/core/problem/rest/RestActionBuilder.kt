@@ -384,7 +384,7 @@ class RestActionBuilder {
             if (type == "string" && parameter?.getEnum()?.isEmpty() == false) {
                 //TODO enum can be for any type, not just strings
                 //Besides the defined values, add one to test robustness
-                return EnumGene(name, parameter!!.getEnum().apply { add("EVOMASTER") })
+                return EnumGene(name, parameter.getEnum().apply { add("EVOMASTER") })
             }
 
             //first check for "optional" format
@@ -491,7 +491,7 @@ class RestActionBuilder {
                             )
                             when (model) {
                                 //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                                is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
+                                is ObjectGene -> modelCluster.put(it.component1(), model)
                                 is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                             }
 

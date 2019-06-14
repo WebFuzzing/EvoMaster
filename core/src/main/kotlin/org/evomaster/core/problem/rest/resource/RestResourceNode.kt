@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory
 /**
  * @property path resource path
  * @property actions actions under the resource, with references of tables
+ * @property initMode configurable option to init resource with additional info, e.g., related tables
  */
 class RestResourceNode(
         val path : RestPath,
@@ -58,6 +59,10 @@ class RestResourceNode(
      */
     private val ancestors : MutableList<RestResourceNode> = mutableListOf()
 
+
+    /**
+     * possible solutions to prepare resources
+     */
     private val creations : MutableList<CreationChain> = mutableListOf()
 
     /**
@@ -67,6 +72,10 @@ class RestResourceNode(
      */
     val paramsInfo : MutableMap<String, ParamInfo> = mutableMapOf()
 
+
+    /**
+     * collect related tables
+     */
     val resourceToTable : ResourceRelatedToTable = ResourceRelatedToTable(path.toString())
 
     /**
@@ -245,7 +254,7 @@ class RestResourceNode(
     }
 
     fun generateAnother(calls : RestResourceCalls, randomness: Randomness, maxTestSize: Int) : RestResourceCalls?{
-        val current = calls.actions.map { (it as RestCallAction).verb }.joinToString(RestResourceTemplateHandler.SeparatorTemplate)
+        val current = RestResourceTemplateHandler.getStringTemplateByActions(calls.actions.filterIsInstance<RestCallAction>())
         val rest = templates.filterNot { it.key == current }
         if(rest.isEmpty()) return null
         val selected = randomness.choose(rest.keys)
@@ -261,10 +270,7 @@ class RestResourceNode(
         return templates.size
     }
 
-    fun getTemplates() : MutableList<String> {
-        return templates.keys.toMutableList()
-    }
-    fun randomizeActionGenes(action: Action, randomness: Randomness) {
+    private fun randomizeActionGenes(action: Action, randomness: Randomness) {
         action.seeGenes().forEach { it.randomize(randomness, false) }
         if(action is RestCallAction)
             repairRandomGenes(action.parameters)
@@ -282,7 +288,6 @@ class RestResourceNode(
             }
         }
     }
-
 
     fun randomRestResourceCalls(randomness: Randomness, maxTestSize: Int): RestResourceCalls{
         val randomTemplates = templates.filter { e->
@@ -310,7 +315,7 @@ class RestResourceNode(
         randomizeActionGenes(copy as RestCallAction, randomness)
 
         val template = templates[copy.verb.toString()]
-                ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path.toString()}")
+                ?: throw IllegalArgumentException("${copy.verb} is not one of templates of ${this.path}")
         val call =  RestResourceCalls(template, RestResourceInstance(this, copy.parameters), mutableListOf(copy))
 
         if(action is RestCallAction && action.verb == HttpVerb.POST){
@@ -798,7 +803,9 @@ enum class InitMode{
     WITH_DEPENDENCY
 }
 
-
+/**
+ * extract info for a parm
+ */
 class ParamInfo(
         val name : String,
         val key : String,

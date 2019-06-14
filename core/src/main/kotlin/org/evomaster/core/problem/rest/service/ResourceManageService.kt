@@ -57,9 +57,17 @@ class ResourceManageService {
      */
     private val dataInDB : MutableMap<String, MutableList<DataRowDto>> = mutableMapOf()
 
+    /**
+     * key is table name
+     * value is the table
+     */
     private val tables : MutableMap<String, Table> = mutableMapOf()
 
-    fun initAbstractResources(actionCluster : MutableMap<String, Action>) {
+
+    /**
+     * init resource nodes based on [actionCluster]
+     */
+    fun initResourceNodes(actionCluster : MutableMap<String, Action>) {
 
         if(hasDBHandler()) getSqlBuilder()?.extractExistingTables(tables)
 
@@ -86,12 +94,11 @@ class ResourceManageService {
 
         if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.initDependency(resourceCluster.values.toList(), getTableInfo())
-
     }
 
 
     /**
-     * this function is used to initialized ad-hoc individuals
+     * this function is used to initialized ad-hoc individuals for resource-based individual
      */
     fun createAdHocIndividuals(auth: AuthenticationInfo, adHocInitialIndividuals : MutableList<RestIndividual>){
         val sortedResources = resourceCluster.values.sortedByDescending { it.getTokenMap().size }.asSequence()
@@ -136,7 +143,7 @@ class ResourceManageService {
 
         //template
         sortedResources.forEach { ar->
-            ar.templates.values.filter { t-> t.template.contains(RestResourceTemplateHandler.SeparatorTemplate) }
+            ar.templates.values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
                         val call = ar.sampleRestResourceCalls(ct.template, randomness, config.maxTestSize)
                         call.actions.forEach { if(it is RestCallAction) it.auth = auth }
@@ -146,6 +153,10 @@ class ResourceManageService {
 
     }
 
+    /**
+     * handle to generate an resource call for addition in [ind]
+     * @return the generated resource call
+     */
     fun handleAddResource(ind : RestIndividual, maxTestSize : Int) : RestResourceCalls {
         val existingRs = ind.getResourceCalls().map { it.getResourceNodeKey() }
         var candidate = randomness.choose(getResourceCluster().filterNot { r-> existingRs.contains(r.key) }.keys)
@@ -153,6 +164,14 @@ class ResourceManageService {
     }
 
 
+    /**
+     * sample an resource call which refers to [resourceKey]
+     * @param resourceKey a key refers to an resource node
+     * @param doesCreateResource whether to prepare an resource for the call
+     * @param calls existing calls
+     * @param forceInsert force to use insertion to prepare the resource, otherwise prior to use POST
+     * @param bindWith the sampled resource call requires to bind values according to [bindWith]
+     */
     fun sampleCall(resourceKey: String, doesCreateResource: Boolean, calls : MutableList<RestResourceCalls>, size : Int, forceInsert: Boolean = false, bindWith : MutableList<RestResourceCalls>? = null){
         val ar = resourceCluster[resourceKey]
                 ?: throw IllegalArgumentException("resource path $resourceKey does not exist!")
@@ -247,7 +266,7 @@ class ResourceManageService {
         return failToGenDB
     }
 
-    private fun shrinkDbActions(relatedTables: Set<String>, dbActions: MutableList<DbAction>){
+    private fun shrinkDbActions(dbActions: MutableList<DbAction>){
         val removedDbAction = mutableListOf<DbAction>()
 
         dbActions.forEachIndexed { index, dbAction ->
@@ -265,11 +284,6 @@ class ResourceManageService {
                 previous.add(dbAction)
             }
         }
-
-
-        if(relatedTables.any { !dbActions.any { d->d.table.name.toLowerCase() == it.toLowerCase() } }){
-            println("------------------------")
-        }
     }
 
 
@@ -286,10 +300,6 @@ class ResourceManageService {
 
         if(dbActions.isNotEmpty()){
 
-//            dbActions.removeIf { select->
-//                select.representExistingData && dbActions.find { !it.representExistingData && select.table.name == it.table.name } != null
-//            }
-
             (0 until (dbActions.size - 1)).forEach { i ->
                 (i+1 until dbActions.size).forEach { j ->
                     dbActions[i].table.foreignKeys.any { f->f.targetTable == dbActions[j].table.name}.let {
@@ -304,7 +314,7 @@ class ResourceManageService {
             DbActionUtils.randomizeDbActionGenes(dbActions, randomness)
             repairDbActions(dbActions)
 
-            shrinkDbActions(relatedTables, dbActions)
+            shrinkDbActions(dbActions)
 
             /*
              TODO bind data according to action or dbaction?
@@ -328,11 +338,6 @@ class ResourceManageService {
      */
     fun repairRestResourceCalls(call: RestResourceCalls) {
         call.repairGenesAfterMutation()
-
-//        if(hasDBHandler() && call.dbActions.isNotEmpty()){
-//            call.dbActions.clear()
-//            handleDbActionForCall(call, true, false)
-//        }
 
         if(hasDBHandler() && call.dbActions.isNotEmpty()){
 

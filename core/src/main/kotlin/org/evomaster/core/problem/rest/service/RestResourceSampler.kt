@@ -341,7 +341,7 @@ class RestResourceSampler : Sampler<RestIndividual>() {
     }
 
     private fun initAbstractResources(){
-        rm.initAbstractResources(actionCluster)
+        rm.initResourceNodes(actionCluster)
 
         rm.getResourceCluster().keys.forEach { k->
             samplingResourceCounter.getOrPut(k){0}

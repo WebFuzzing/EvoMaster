@@ -131,7 +131,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 next.results.map(ActionResult::copy),
                 trackOperator,
                 getTracking()?.plus(this)?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(this.copy()),
-                getUndoTracking()?.map {(it as EvaluatedIndividual<T>).copy()}?.toMutableList()?: mutableListOf()
+                getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
         )
 
         copyWithImpacts(copy)

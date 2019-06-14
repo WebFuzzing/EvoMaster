@@ -93,7 +93,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val individualToMutate = individual.individual
 
         if(doesStructureMutation(individualToMutate)){
-            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator!!) else individualToMutate.copy()) as T
+            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator) else individualToMutate.copy()) as T
             structureMutator.mutateStructure(copy)
             return copy
         }

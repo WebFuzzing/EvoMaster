@@ -384,9 +384,9 @@ class SqlInsertBuilder(
                 val inQuotes = cols[i].type.shouldBePrintedInQuotes()
 
                 val gene = if(cols[i].primaryKey){
-                    SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row!!.columnData[i], inQuotes), id)
+                    SqlPrimaryKeyGene(colName, table.name, ImmutableDataHolderGene(colName, row.columnData[i], inQuotes), id)
                 }else{
-                    ImmutableDataHolderGene(colName, row!!.columnData[i], inQuotes)
+                    ImmutableDataHolderGene(colName, row.columnData[i], inQuotes)
                 }
                 genes.add(gene)
             }

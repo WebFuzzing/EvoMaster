@@ -1,31 +1,41 @@
 package org.evomaster.core.problem.rest.util
 
 import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.resource.CallsTemplate
 import org.evomaster.core.search.service.Randomness
 
 
+/**
+ * utility to handle template of [RestResourceCall]
+ */
 class RestResourceTemplateHandler{
 
     companion object {
 
 
         private val arrayHttpVerbs : Array<HttpVerb> = arrayOf(HttpVerb.POST, HttpVerb.GET, HttpVerb.PUT, HttpVerb.PATCH,HttpVerb.DELETE, HttpVerb.OPTIONS, HttpVerb.HEAD)
-        const val SeparatorTemplate = "-"
+        private const val SeparatorTemplate = "-"
 
 
         fun getIndexOfHttpVerb (verb: HttpVerb) : Int = arrayHttpVerbs.indexOf(verb)
 
         fun getSizeOfHandledVerb () : Int = arrayHttpVerbs.size
 
+        fun isNotSingleAction(template : String) : Boolean = template.contains(SeparatorTemplate) && validateTemplate(template)
+
+        private fun validateTemplate(template: String) : Boolean = template.split(SeparatorTemplate).all { arrayHttpVerbs.any { e->e.toString() == it } }
+
         fun parseTemplate (temp : String): Array<HttpVerb>{
             return temp.split(SeparatorTemplate).map { HttpVerb.valueOf(it) }.toTypedArray()
         }
 
+        fun getStringTemplateByActions(actions : List<RestCallAction>) : String = formatTemplate(actions.map { it.verb }.toTypedArray())
+
         private fun combination(space : Array<HttpVerb>, len : Int = 5, excluding: Array<HttpVerb>? = null) : Array<String>{
-            var cspace = if(excluding!= null) space.filter { !excluding!!.contains(it) }.toList() else space.toList()
+            var cspace = if(excluding!= null) space.filter { !excluding.contains(it) }.toList() else space.toList()
             var nums = List(len){ i -> cspace.size - i}
-            var result = Array<String>(nums.reduce { acc, i ->  acc * i}){""}
+            var result = Array(nums.reduce { acc, i ->  acc * i}){""}
 
             for (ei in 0 until result.size){
                 var t = ei
@@ -52,12 +62,18 @@ class RestResourceTemplateHandler{
             if(_space.first() || _space.last()){
                 val chosen = space.filter { v-> v!=HttpVerb.POST && v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
                 chosen.forEach {
-                    maps.getOrPut(HttpVerb.POST.toString()+ SeparatorTemplate+it.toString()){
-                       CallsTemplate(HttpVerb.POST.toString()+ SeparatorTemplate+it.toString().toString(), false, 2)
+                    val key = formatTemplate(arrayOf(HttpVerb.POST, it))
+                    maps.getOrPut(key){
+                       CallsTemplate(key, false, 2)
                     }
                 }
             }
         }
+
+        private fun formatTemplate(verbs : Array<HttpVerb>) : String = verbs.joinToString(SeparatorTemplate)
+
+        private fun formatTemplate(stringVerbs : Array<String>) : String = stringVerbs.joinToString(SeparatorTemplate)
+
 
         fun initSampleSpace(_space : Array<Boolean>, maps : MutableMap<String , Int>) {
             val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
@@ -68,29 +84,29 @@ class RestResourceTemplateHandler{
 
             if(chosen.isEmpty()){
                 if(space.size > 1)
-                    maps.getOrPut(space.joinToString(SeparatorTemplate)){0}
+                    maps.getOrPut(formatTemplate(space.toTypedArray())){0}
             }else if(chosen.size == 1){
                 if(_space.first()){
-                    maps.getOrPut(HttpVerb.POST.toString()+ SeparatorTemplate+chosen[0]){0}
+                    maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST, chosen[0]))){0}
                 }
                 if(_space[4]){
-                    maps.getOrPut(chosen[0].toString()+ SeparatorTemplate+HttpVerb.DELETE.toString()){0}
+                    maps.getOrPut(formatTemplate(arrayOf(chosen[0], HttpVerb.DELETE))){0}
                 }
                 if(_space.first() && _space[4]){
-                    maps.getOrPut(HttpVerb.POST.toString()+ SeparatorTemplate+chosen[0].toString()+ SeparatorTemplate+HttpVerb.DELETE.toString()){0}
+                    maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST, chosen[0], HttpVerb.DELETE))){0}
                 }
             }else{
                 (2 until chosen.size +1).forEach{len->
                     combination(chosen,len).forEach {tmp->
                         maps.getOrPut(tmp){0}
                         if(_space.first()){
-                            maps.getOrPut(HttpVerb.POST.toString()+ SeparatorTemplate+tmp){0}
+                            maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST.toString(), tmp))){0}
                         }
                         if(_space[4]){
-                            maps.getOrPut(tmp+ SeparatorTemplate+HttpVerb.DELETE.toString()){0}
+                            maps.getOrPut(formatTemplate(arrayOf(tmp, HttpVerb.DELETE.toString()))){0}
                         }
                         if(_space.first() && _space[4]){
-                            maps.getOrPut(HttpVerb.POST.toString()+ SeparatorTemplate+tmp+ SeparatorTemplate+HttpVerb.DELETE.toString()){0}
+                            maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST.toString(), tmp, HttpVerb.DELETE.toString()))){0}
                         }
                     }
                 }
@@ -104,7 +120,7 @@ class RestResourceTemplateHandler{
                 return randomness.choose(if(_space.first() && !_space.last())space.subList(1, space.size) else space).toString()
             }else{
                 if(len == space.size && len - (if(_space.first()) 1 else 0) - (if(_space[4]) 1 else 0) == 1)
-                    return space.map { it.toString()}.joinToString(SeparatorTemplate)
+                    return formatTemplate(space.toTypedArray())
                 var remove : MutableList<String> = mutableListOf()
                 var result = Array(len){i->
                     if(i > 0) remove.add(HttpVerb.POST.toString())

@@ -6,7 +6,10 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.Param
 import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
 
-
+/**
+ * related info between resource and tables
+ * @property key refers to an resource node
+ */
 class ResourceRelatedToTable(val key: String) {
 
     companion object {
@@ -50,7 +53,7 @@ class ResourceRelatedToTable(val key: String) {
      * When updating [actionToTables], we check if existing [ActionRelatedToTable] subsumes [ExecutionDto] or [ExecutionDto] subsume [ActionRelatedToTable] regarding involved tables.
      * if subsumed, we update existing [ActionRelatedToTable]; else create [ActionRelatedToTable]
      */
-    val actionToTables : MutableMap<String, MutableList<ActionRelatedToTable>> = mutableMapOf()
+    private val actionToTables : MutableMap<String, MutableList<ActionRelatedToTable>> = mutableMapOf()
 
 
     fun updateActionRelatedToTable(verb : String, dto: ExecutionDto, existingTables : Set<String>) : Boolean{
@@ -82,8 +85,6 @@ class ResourceRelatedToTable(val key: String) {
     fun getConfirmedDirectTables() : Set<String>{
         return derivedMap.keys.filter { t-> confirmedSet[t] != null && confirmedSet[t]!! }.toHashSet()
     }
-
-
 
     fun findBestTableForParam(tables: Set<String>, simpleP2Table : SimpleParamRelatedToTable, onlyConfirmedColumn : Boolean = false) : Pair<Set<String>, Double>? {
         val map = simpleP2Table.derivedMap.filter { tables.any { t-> t.equals(it.key, ignoreCase = true) } }
@@ -167,9 +168,16 @@ class ResourceRelatedToTable(val key: String) {
     }
 
 }
-
+/**
+ * related info between an rest action and tables, which is further extracted based on feedback from evomaster driver
+ * @property key refers to an rest action
+ */
 class ActionRelatedToTable(
         val key: String,
+        /**
+         * key is table name
+         * value is how it accessed by dbaction
+         */
         val tableWithFields: MutableMap<String, MutableList<AccessTable>> = mutableMapOf()
 ) {
 
@@ -188,7 +196,7 @@ class ActionRelatedToTable(
                     target = AccessTable(method, t, mutableSetOf())
                     this.add(target)
                 }
-                target!!.field.addAll(u)
+                target.field.addAll(u)
             }
         }
     }
@@ -198,9 +206,18 @@ class ActionRelatedToTable(
         else tableWithFields.keys.containsAll(tables)
     }
 
+    /**
+     * @property method a sql method
+     * @property table related table
+     * @property field what fields are assess by the sql command
+     */
     class AccessTable(val method : SQLKey, val table : String, val field : MutableSet<String>)
 }
 
+/**
+ * related info between a param and a table
+ * @property key refers to a param
+ */
 abstract class ParamRelatedToTable (
         val key: String){
 
@@ -215,11 +232,14 @@ abstract class ParamRelatedToTable (
     open fun getRelatedColumn(table: String) : Set<String>?  = derivedMap[table].run { if (this == null) null else setOf(this.targetMatched)  }
 }
 
+/**
+ * related info between a Param (not BodyParam) and a table
+ */
+class SimpleParamRelatedToTable (key: String, val referParam: Param): ParamRelatedToTable(key)
 
-class SimpleParamRelatedToTable (key: String, val referParam: Param): ParamRelatedToTable(key){
-
-}
-
+/**
+ * related info between a BodyParam and a table
+ */
 class BodyParamRelatedToTable(key: String, val referParam: Param): ParamRelatedToTable(key){
     init {
         assert(referParam is BodyParam)
@@ -238,7 +258,9 @@ class BodyParamRelatedToTable(key: String, val referParam: Param): ParamRelatedT
     }
 
 }
-
+/**
+ * related info between a field of BodyParam and a table
+ */
 class ParamFieldRelatedToTable(key: String) : ParamRelatedToTable(key){
 
     override fun getRelatedColumn(table: String) :  Set<String>? {

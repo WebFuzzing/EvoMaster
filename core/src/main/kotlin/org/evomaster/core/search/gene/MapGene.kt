@@ -69,7 +69,7 @@ class MapGene<T>(
                     "${f.name}":${f.getValueAsPrintableString(targetFormat = targetFormat)}
                     """
                 }.joinToString(",") +
-                "}";
+                "}"
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{

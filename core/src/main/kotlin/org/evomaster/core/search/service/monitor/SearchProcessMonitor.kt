@@ -108,7 +108,7 @@ class SearchProcessMonitor: SearchListener {
                 step!!.added = added
                 step!!.improvedArchive = improveArchive
                 saveStep(step!!.indexOfEvaluation, step!!)
-                if(config.showProgress) log.info("number of targets: ${step!!.populations.size.toString()}")
+                if(config.showProgress) log.info("number of targets: ${step!!.populations.size}")
                 tb++
             }
         }

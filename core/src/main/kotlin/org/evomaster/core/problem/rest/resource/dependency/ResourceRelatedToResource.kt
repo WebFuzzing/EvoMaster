@@ -6,10 +6,10 @@ package org.evomaster.core.problem.rest.resource.dependency
  */
 open class ResourceRelatedToResources(
         val path : List<String>,
-        target: MutableList<String>,
+        override val targets: MutableList<String>,
         probability: Double = 1.0,
         info: String = ""
-) : RelatedTo(generateKeyForMultiple(path), target, probability, info){
+) : RelatedTo(generateKeyForMultiple(path), targets, probability, info){
 
     init {
         assert(path.isNotEmpty())
@@ -28,23 +28,9 @@ open class ResourceRelatedToResources(
 class MutualResourcesRelations(mutualResources: List<String>, probability: Double, var referredTables : MutableSet<String> = mutableSetOf())
     : ResourceRelatedToResources(mutualResources, mutualResources.toMutableList(), probability, ""){
 
-    companion object {
-        private const val TABLE_SEPARATOR = ";"
-
-    }
-    /**
-     * key is table name
-     * value is similarity
-     */
-    var confirmedSet : MutableSet<String> = mutableSetOf()
-
-
-
     override fun getName(): String {
         return "MutualRelations:${notateKey()}"
     }
-
-
 }
 
 class SelfResourcesRelation(path : String, probability: Double = 1.0, info: String = "") : ResourceRelatedToResources(mutableListOf(path), mutableListOf(path), probability, info)
