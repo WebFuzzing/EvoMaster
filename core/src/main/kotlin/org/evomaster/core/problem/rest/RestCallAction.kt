@@ -40,7 +40,8 @@ class RestCallAction(
          * by a POST, where the POST itself might use a location for
          * path coming from a previous POST
          */
-        var locationId: String? = null
+        var locationId: String? = null,
+        var produces: List<String> = listOf()
 ) : RestAction {
 
     /**
@@ -61,7 +62,7 @@ class RestCallAction(
 
     override fun copy(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId)
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces)
     }
 
     override fun getName(): String {

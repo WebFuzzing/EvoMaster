@@ -26,5 +26,6 @@ class PostgresDateSqlInsertBuilderTest : ExtractTestBasePostgres() {
         assertEquals(2, genes.size)
         assertTrue(genes[0] is SqlPrimaryKeyGene)
         assertTrue(genes[1] is DateGene)
+
     }
 }

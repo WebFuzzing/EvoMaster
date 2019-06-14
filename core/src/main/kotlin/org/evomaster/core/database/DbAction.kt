@@ -71,7 +71,7 @@ class DbAction(
                 /**
                  * BOOLEAN(1) is assumed to be a boolean/Boolean field
                  */
-                BOOLEAN -> {
+                BOOLEAN, BOOL -> {
                     if (it.enumValuesAsStrings != null) {
                         EnumGene<Boolean>(it.name, it.enumValuesAsStrings.map { it.toBoolean() })
                     } else {
@@ -220,7 +220,15 @@ class DbAction(
                     }
                 }
 
+                /**
+                 * Postgres UUID column type
+                 */
                 UUID -> UUIDGene(it.name)
+
+                /**
+                 * Postgres JSONB type
+                 */
+                JSONB -> ObjectGene(it.name, fields = listOf())
 
                 else -> throw IllegalArgumentException("Cannot handle: $it")
             }

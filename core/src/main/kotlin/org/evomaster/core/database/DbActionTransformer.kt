@@ -10,6 +10,9 @@ import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 
 object DbActionTransformer {
 
+    /**
+     * @param sqlIdMap is a map from Insertion Id to generated Id in database
+     */
     fun transform(insertions: List<DbAction>, sqlIdMap : Map<Long, Long> = mapOf()) : DatabaseCommandDto {
 
         val list = mutableListOf<InsertionDto>()
@@ -50,11 +53,11 @@ object DbActionTransformer {
                 var isFkReferenceToNonPrintable = false
 
                 if (g is SqlForeignKeyGene) {
-                    isFkReferenceToNonPrintable = handleSqlForeignKey(g, previous, entry, sqlIdMap)
+                    isFkReferenceToNonPrintable = handleSqlForeignKey(g, previous, entry)
                 } else if (g is SqlPrimaryKeyGene) {
                     val k = g.gene
                     if (k is SqlForeignKeyGene) {
-                        isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry, sqlIdMap)
+                        isFkReferenceToNonPrintable = handleSqlForeignKey(k, previous, entry)
                     } else {
                         entry.printableValue = g.getValueAsPrintableString(targetFormat = null)
                     }
@@ -91,6 +94,11 @@ object DbActionTransformer {
         return dto
     }
 
+    /**
+     * @param sqlIdMap is a map from Insertion Id to generated Id in database.
+     *
+     * Note that a reference of FK must exist in either [previous] or [sqlIdMap]
+     */
     private fun handleSqlForeignKey(
             g: SqlForeignKeyGene,
             previous: List<Gene>,

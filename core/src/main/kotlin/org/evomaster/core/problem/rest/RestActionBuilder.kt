@@ -6,12 +6,14 @@ import io.swagger.models.parameters.BodyParameter
 import io.swagger.models.parameters.Parameter
 import io.swagger.models.properties.*
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.Exception
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -54,6 +56,10 @@ class RestActionBuilder {
                             val params = extractParams(o, swagger, restPath)
 
                             repairParams(params, restPath)
+
+                            val produces = o.value.produces ?: listOf()
+
+                            val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params, produces = produces)
 
                             val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params)
                             if(doParserDescription) {
@@ -142,7 +148,7 @@ class RestActionBuilder {
                                 "string"
                             }
 
-                            var gene = getGene(name, type, p.getFormat(), swagger, null, p)
+                            var gene = getGene(name, type, p.getFormat(), p.getPattern(), swagger, null, p)
                             if (!p.required && p.`in` != "path") {
                                 /*
                                     Even if a "path" parameter might not be required, still
@@ -178,7 +184,7 @@ class RestActionBuilder {
                                         if (it.type == "object") {
                                             createObjectFromModel(p.schema, "body", swagger, it.type)
                                         } else {
-                                            getGene(name, it.type, it.format, swagger)
+                                            getGene(name, it.type, it.format, it.pattern, swagger)
                                         }
                                     }
 
@@ -307,6 +313,7 @@ class RestActionBuilder {
                     name + "_map",
                     type,
                     format,
+                    null,
                     swagger,
                     property,
                     null,
@@ -331,6 +338,7 @@ class RestActionBuilder {
                         o.key,
                         o.value.type,
                         o.value.format,
+                        null, //are no pattern info available here?
                         swagger,
                         o.value,
                         null,
@@ -357,6 +365,7 @@ class RestActionBuilder {
                 name: String,
                 type: String,
                 format: String?,
+                pattern: String?,
                 swagger: Swagger,
                 property: Property? = null,
                 parameter: AbstractSerializableParameter<*>? = null,
@@ -384,7 +393,7 @@ class RestActionBuilder {
             if (type == "string" && parameter?.getEnum()?.isEmpty() == false) {
                 //TODO enum can be for any type, not just strings
                 //Besides the defined values, add one to test robustness
-                return EnumGene(name, parameter.getEnum().apply { add("EVOMASTER") })
+                return EnumGene(name, parameter!!.getEnum().apply { add("EVOMASTER") })
             }
 
             //first check for "optional" format
@@ -411,7 +420,25 @@ class RestActionBuilder {
                 "integer" -> return IntegerGene(name)
                 "number" -> return DoubleGene(name)
                 "boolean" -> return BooleanGene(name)
-                "string" -> return StringGene(name)
+                "string" -> {
+                    return if(pattern == null){
+                        StringGene(name)
+                    } else {
+                        try {
+                            RegexHandler.createGeneForEcma262(pattern)
+                        } catch (e: Exception){
+                            /*
+                                TODO: if the Regex is syntactically invalid, we should warn
+                                the user. But, as we do not support 100% regex, might be an issue
+                                with EvoMaster. Anyway, in such cases, instead of crashing EM, let's just
+                                take it as a String.
+                                When 100% support, then tell user that it is his/her fault
+                             */
+                            LoggingUtil.uniqueWarn(log, "Cannot handle regex: $pattern")
+                            StringGene(name)
+                        }
+                    }
+                }
                 "ref" -> {
                     if (property == null) {
                         //TODO somehow will need to handle it
@@ -432,6 +459,7 @@ class RestActionBuilder {
                             name + "_item",
                             items.type,
                             items.format,
+                            null, // no pattern available?
                             swagger,
                             items,
                             null,
@@ -491,7 +519,7 @@ class RestActionBuilder {
                             )
                             when (model) {
                                 //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
-                                is ObjectGene -> modelCluster.put(it.component1(), model)
+                                is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
                                 is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
                             }
 

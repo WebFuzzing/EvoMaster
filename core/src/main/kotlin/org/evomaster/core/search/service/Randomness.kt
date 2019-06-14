@@ -83,11 +83,18 @@ class Randomness {
         val n = nextInt(min, max)
 
         val chars = CharArray(n)
-        (0..n-1).forEach {
+        (0 until n).forEach {
             chars[it] = nextWordChar()
         }
 
         return kotlin.text.String(chars)
+    }
+
+    fun nextLetter() : Char{
+
+        val characters =
+                "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+        return characters[random.nextInt(characters.length)]
     }
 
     fun nextWordChar() : Char{
@@ -97,6 +104,18 @@ class Randomness {
         return characters[random.nextInt(characters.length)]
     }
 
+    fun nextChar(start: Char, endInclusive: Char) : Char{
+
+        if(start > endInclusive){
+            throw IllegalArgumentException("Start '$start' is after end '$endInclusive'")
+        }
+
+        if(start == endInclusive){
+            return start
+        }
+
+        return nextInt(start.toInt(), endInclusive.toInt()).toChar()
+    }
 
     /**
      * Choose a value from the [map] based on the associated probabilities.

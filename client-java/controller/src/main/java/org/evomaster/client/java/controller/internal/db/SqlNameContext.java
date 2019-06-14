@@ -5,7 +5,10 @@ import net.sf.jsqlparser.expression.Alias;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.delete.Delete;
+import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.statement.update.Update;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
 
 import java.util.*;
@@ -125,15 +128,26 @@ public class SqlNameContext {
 
     private void computeAliases() {
 
-        FromItem fromItem = getFromItem();
-        fromItem.accept(new AliasVisitor(tableAliases));
+        if (statement instanceof Select) {
+            FromItem fromItem = getFromItem();
+            fromItem.accept(new AliasVisitor(tableAliases));
 
-        SelectBody selectBody = ((Select) statement).getSelectBody();
-        PlainSelect plainSelect = (PlainSelect) selectBody;
+            SelectBody selectBody = ((Select) statement).getSelectBody();
+            PlainSelect plainSelect = (PlainSelect) selectBody;
 
-        List<Join> joins = plainSelect.getJoins();
-        if (joins != null) {
-            joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+            List<Join> joins = plainSelect.getJoins();
+            if (joins != null) {
+                joins.forEach(j -> j.getRightItem().accept(new AliasVisitor(tableAliases)));
+            }
+        } else if(statement instanceof Delete){
+            //no alias required?
+            return;
+        } else if(statement instanceof Update){
+            /*
+                TODO can update have aliases?
+                https://www.h2database.com/html/commands.html#update
+             */
+            return;
         }
     }
 
