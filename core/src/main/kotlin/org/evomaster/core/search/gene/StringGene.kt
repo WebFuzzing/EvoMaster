@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
@@ -32,13 +33,18 @@ class StringGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        when {
-            (targetFormat == null) -> return "\"$value\""
-             targetFormat.isKotlin() -> return "\"$value\""
-                                                            .replace("\\", "\\\\")
-                                                            .replace("$", "\\$")
-            else -> return "\"$value\""
-                    .replace("\\", "\\\\")
+
+        if (mode != null && mode.equals("xml")) {
+            return StringEscapeUtils.escapeXml(this.value)
+        } else {
+            when {
+                (targetFormat == null) -> return "\"$value\""
+                targetFormat.isKotlin() -> return "\"$value\""
+                        .replace("\\", "\\\\")
+                        .replace("$", "\\$")
+                else -> return "\"$value\""
+                        .replace("\\", "\\\\")
+            }
         }
     }
 

@@ -13,7 +13,7 @@ import org.postgresql.util.PGobject
 /**
  * Created by jgaleotti on 29-May-19.
  */
-class PostgresJsonbColumnTest : ExtractTestBasePostgres() {
+class SqlJSONBColumnTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/jsonb_column_db.sql"
 

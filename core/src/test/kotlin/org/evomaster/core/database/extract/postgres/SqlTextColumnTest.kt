@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test
 /**
  * Created by jgaleotti on 29-May-19.
  */
-class PostgresTextColumnTest : ExtractTestBasePostgres() {
+class SqlTextColumnTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/text_column_db.sql"
 

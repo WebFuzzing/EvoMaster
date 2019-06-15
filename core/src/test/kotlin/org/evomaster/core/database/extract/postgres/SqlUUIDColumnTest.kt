@@ -16,7 +16,7 @@ import java.util.*
 /**
  * Created by jgaleotti on 29-May-19.
  */
-class PostgresUUIDColumnTest : ExtractTestBasePostgres() {
+class SqlUUIDColumnTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/uuid_column_db.sql"
 

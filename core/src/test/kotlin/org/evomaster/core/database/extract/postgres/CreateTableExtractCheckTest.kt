@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test
 /**
  * Created by jgaleotti on 07-May-19.
  */
-class CreateTableCheckTest : ExtractTestBasePostgres() {
+class CreateTableExtractCheckTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/create_table_check.sql"
 

@@ -15,7 +15,7 @@ import java.sql.Date
 /**
  * Created by jgaleotti on 29-May-19.
  */
-class PostgresDateColumnTest : ExtractTestBasePostgres() {
+class SqlDateColumnTest : ExtractTestBasePostgres() {
 
     override fun getSchemaLocation() = "/sql_schema/date_column_db.sql"
 

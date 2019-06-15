@@ -7,7 +7,7 @@ internal class ObjectGeneTest {
 
 
     @Test
-    fun testXMLPrintable() {
+    fun testXMLEmpty() {
         val parentElement = ObjectGene("parentElement", listOf())
         val xmlString = parentElement.getValueAsPrintableString(mode = "xml")
         Assertions.assertEquals("<parentElement></parentElement>", xmlString)
@@ -29,4 +29,43 @@ internal class ObjectGeneTest {
         val xmlString = level0.getValueAsPrintableString(mode = "xml")
         Assertions.assertEquals("<level0><level1><level2></level2></level1></level0>", xmlString)
     }
+
+    @Test
+    fun testIntegerGene() {
+        val gene = ObjectGene("anElement", listOf(IntegerGene("integerValue", value = 0)))
+        val actual = gene.getValueAsPrintableString(mode = "xml")
+        Assertions.assertEquals("<anElement>0</anElement>", actual)
+    }
+
+    @Test
+    fun testBooleanGene() {
+        val gene = ObjectGene("anElement", listOf(BooleanGene("booleanValue", value = false)))
+        val actual = gene.getValueAsPrintableString(mode = "xml")
+        Assertions.assertEquals("<anElement>false</anElement>", actual)
+    }
+
+    @Test
+    fun testStringGene() {
+        val gene = ObjectGene("anElement", listOf(StringGene("stringValue", value = "Hello World")))
+        val actual = gene.getValueAsPrintableString(mode = "xml")
+        Assertions.assertEquals("<anElement>Hello World</anElement>", actual)
+    }
+
+    @Test
+    fun testEscapedStringGene() {
+        val gene = ObjectGene("anElement", listOf(StringGene("stringValue", value = "<xml>This should be escaped</xml>")))
+        val actual = gene.getValueAsPrintableString(mode = "xml")
+        Assertions.assertEquals("<anElement>&lt;xml&gt;This should be escaped&lt;/xml&gt;</anElement>", actual)
+    }
+
+    @Test
+    fun testManyFields() {
+        val child0 = ObjectGene("child", listOf())
+        val child1 = ObjectGene("child", listOf())
+        val gene = ObjectGene("parent", listOf(child0, child1))
+        val actual = gene.getValueAsPrintableString(mode = "xml")
+        Assertions.assertEquals("<parent><child></child><child></child></parent>", actual)
+    }
+
+
 }
