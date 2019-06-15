@@ -67,9 +67,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
                 it !is CycleObjectGene &&
                         (it !is OptionalGene || it.isActive)
             }.forEach {
-                buffer.append(openXml(it.name))
                 buffer.append(it.getValueAsPrintableString(previousGenes, mode, targetFormat))
-                buffer.append(closeXml(it.name))
             }
 
             buffer.append(closeXml(name))
