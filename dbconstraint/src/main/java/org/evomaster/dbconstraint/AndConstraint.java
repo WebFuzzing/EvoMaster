@@ -13,4 +13,9 @@ public class AndConstraint extends TableConstraint {
         this.left = Objects.requireNonNull(left);
         this.right = Objects.requireNonNull(right);
     }
+
+    @Override
+    public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

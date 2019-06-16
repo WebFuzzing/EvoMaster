@@ -3,7 +3,6 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
-import java.lang.IllegalArgumentException
 
 /**
  * A gene representing a regular expression (regex).
@@ -40,7 +39,7 @@ class RegexGene(
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf()
-        else listOf(this).plus(disjunctions.flatView(excludePredicate))
+        return if (excludePredicate(this)) listOf() else
+            listOf(this).plus(disjunctions.flatView(excludePredicate))
     }
 }

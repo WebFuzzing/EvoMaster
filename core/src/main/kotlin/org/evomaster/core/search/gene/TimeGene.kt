@@ -74,7 +74,7 @@ class TimeGene(
 
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if(excludePredicate(this)) listOf(this)
+        return if (excludePredicate(this)) listOf()
         else listOf(this).plus(hour.flatView(excludePredicate))
                 .plus(minute.flatView(excludePredicate))
                 .plus(second.flatView(excludePredicate))

@@ -26,7 +26,11 @@ data class Column(
 
         val upperBound: Int? = null,
 
-        val enumValuesAsStrings: List<String>? = null
+        val enumValuesAsStrings: List<String>? = null,
+
+        val similarToPatterns: List<String>? = null,
+
+        val likePatterns: List<String>? = null
 
         // public boolean identity;
 

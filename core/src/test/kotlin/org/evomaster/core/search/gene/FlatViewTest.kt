@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.junit.Assert.assertTrue
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class FlatViewTest {
@@ -34,7 +33,7 @@ class FlatViewTest {
     @Test
     fun testExcludeDateGene() {
         val gene = DateGene("gene")
-        assertEquals(listOf(gene), gene.flatView { true });
+        assertTrue(gene.flatView { true }.isEmpty());
     }
 
 

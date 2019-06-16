@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -94,6 +95,30 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         assertTrue(genes.any { it is SqlJSONGene })
     }
 
-    //TODO check creation of Regex genes for LIKE and SIMILARTO
+
+    @Test
+    fun testSimilarToGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("x", setOf("w_id"))
+        val genes = actions[0].seeGenes()
+
+        assertTrue(genes.any { it is RegexGene })
+        assertTrue(genes.filterIsInstance<RegexGene>().any { g -> g.name.equals("w_id", ignoreCase = true) })
+    }
+
+    @Test
+    fun testLikeGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
+        val genes = actions[0].seeGenes()
+
+        assertTrue(genes.any { it is RegexGene })
+        val regexGene = genes.firstIsInstance<RegexGene>()
+        assertTrue(genes.filterIsInstance<RegexGene>().any { g -> g.name.equals("f_id", ignoreCase = true) })
+    }
 
 }

@@ -13,6 +13,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
+import java.util.*
 
 
 class SqlInsertBuilder(
@@ -74,6 +75,9 @@ class SqlInsertBuilder(
                 val lowerBound = findLowerBound(tableConstraints, c.name)
                 val upperBound = findUpperBound(tableConstraints, c.name)
                 val enumValuesAsStrings = findEnumValues(tableConstraints, c.name)
+                val similarToPatterns = findSimilarToPatterns(tableConstraints, c.name)
+                val likePatterns = findLikePatterns(tableConstraints, c.name)
+
 
                 val column = Column(
                         name = c.name,
@@ -86,7 +90,9 @@ class SqlInsertBuilder(
                         unique = c.unique,
                         lowerBound = lowerBound,
                         upperBound = upperBound,
-                        enumValuesAsStrings = enumValuesAsStrings
+                        enumValuesAsStrings = enumValuesAsStrings,
+                        similarToPatterns = similarToPatterns,
+                        likePatterns = likePatterns
                 )
 
                 columns.add(column)
@@ -153,6 +159,85 @@ class SqlInsertBuilder(
             null
 
     }
+
+    private class LeaveToCollector : TableConstraintVisitor<List<TableConstraint>, Void> {
+
+        override fun visit(constraint: AndConstraint?, argument: Void?): List<TableConstraint> {
+            throw IllegalArgumentException("Must implement handling of And constraint")
+        }
+
+        override fun visit(constraint: EnumConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: LikeConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: LowerBoundConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: OrConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return constraint!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
+        }
+
+        override fun visit(constraint: RangeConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: SimilarToConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: UniqueConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: UpperBoundConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+        override fun visit(constraint: UnsupportedTableConstraint?, argument: Void?): List<TableConstraint> {
+            Objects.requireNonNull(constraint)
+            return listOf(constraint!!)
+        }
+
+
+    }
+
+    private fun findSimilarToPatterns(tableConstraints: List<TableConstraint>, columnName: String): List<String> {
+
+        return tableConstraints
+                .map { c -> c.accept(LeaveToCollector(), null) }
+                .flatten()
+                .asSequence()
+                .filterIsInstance<SimilarToConstraint>()
+                .filter { c -> c.columnName.equals(columnName, true) }
+                .map { c -> c.pattern }
+                .toList()
+    }
+
+    private fun findLikePatterns(tableConstraints: List<TableConstraint>, columnName: String): List<String> {
+
+        return tableConstraints
+                .map { c -> c.accept(LeaveToCollector(), null) }
+                .flatten()
+                .asSequence()
+                .filterIsInstance<LikeConstraint>()
+                .filter { c -> c.columnName.equals(columnName, true) }
+                .map { c -> c.pattern }
+                .toList()
+    }
+
 
     private fun findUpperBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
         val rangeConstraint = findRangeConstraint(tableConstraints, columnName)

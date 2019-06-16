@@ -22,4 +22,8 @@ public class UpperBoundConstraint extends TableConstraint {
         return this.upperBound;
     }
 
+    @Override
+    public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }
