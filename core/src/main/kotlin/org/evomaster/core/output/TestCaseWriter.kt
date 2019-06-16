@@ -169,6 +169,7 @@ class TestCaseWriter {
         when {
             format.isJava() -> execInsertionsLine += ";"
             format.isKotlin() -> {
+                // no need for semicolon
             }
         }
         lines.add(execInsertionsLine)
@@ -564,14 +565,12 @@ class TestCaseWriter {
          */
 
         if (call.produces.isEmpty() || res.getBodyType()==null) return ".accept(\"*/*\")"
-        //if (call.produces.contains(res.getBodyType().toString())) return ".accept(${res.getBodyType().toString()})"
         val accepted = call.produces.filter{res.getBodyType().toString().contains(it, true)}
 
         if (accepted.size == 1)
             return ".accept(\"${accepted.first()}\")"
         else
             return ".accept(\"*/*\")  // NOTE: there seems to have been something or a problem"
-        //return ".accept(\"*/*\")"
     }
 
     private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean){
@@ -590,8 +589,6 @@ class TestCaseWriter {
         lines.add("expectationHandler()")
         lines.indented {
             lines.add(".expect()")
-            //lines.add(".that(activeExpectations, true)")
-            //lines.add(".that(activeExpectations, false)")
             if(configuration.enableCompleteObjects == false){
                 addExpectationsWithoutObjects(result, lines)
             }

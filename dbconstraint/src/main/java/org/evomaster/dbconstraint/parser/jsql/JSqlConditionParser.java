@@ -12,7 +12,7 @@ import org.evomaster.dbconstraint.parser.SqlConditionParserException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class JSqlConditionParser extends SqlConditionParser {
+public class JSqlConditionParser implements SqlConditionParser {
 
     /**
      * JSQL does not support legal check constraints such as (x=35) = (y=32).

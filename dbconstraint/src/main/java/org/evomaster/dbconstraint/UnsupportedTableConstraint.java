@@ -15,4 +15,8 @@ public class UnsupportedTableConstraint extends TableConstraint {
     public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
+
+    public String getNotParserSqlCondition() {
+        return notParserSqlCondition;
+    }
 }

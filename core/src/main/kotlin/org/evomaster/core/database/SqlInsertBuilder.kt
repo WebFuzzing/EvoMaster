@@ -160,55 +160,46 @@ class SqlInsertBuilder(
 
     }
 
-    private class LeaveToCollector : TableConstraintVisitor<List<TableConstraint>, Void> {
+    private class ConstraintCollector : TableConstraintVisitor<List<TableConstraint>, Void> {
 
         override fun visit(constraint: AndConstraint?, argument: Void?): List<TableConstraint> {
             throw IllegalArgumentException("Must implement handling of And constraint")
         }
 
         override fun visit(constraint: EnumConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: LikeConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: LowerBoundConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: OrConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return constraint!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
+            return Objects.requireNonNull(constraint)!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
         }
 
         override fun visit(constraint: RangeConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: SimilarToConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: UniqueConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: UpperBoundConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
         override fun visit(constraint: UnsupportedTableConstraint?, argument: Void?): List<TableConstraint> {
-            Objects.requireNonNull(constraint)
-            return listOf(constraint!!)
+            return listOf(Objects.requireNonNull(constraint)!!)
         }
 
 
@@ -217,7 +208,7 @@ class SqlInsertBuilder(
     private fun findSimilarToPatterns(tableConstraints: List<TableConstraint>, columnName: String): List<String> {
 
         return tableConstraints
-                .map { c -> c.accept(LeaveToCollector(), null) }
+                .map { c -> c.accept(ConstraintCollector(), null) }
                 .flatten()
                 .asSequence()
                 .filterIsInstance<SimilarToConstraint>()
@@ -229,7 +220,7 @@ class SqlInsertBuilder(
     private fun findLikePatterns(tableConstraints: List<TableConstraint>, columnName: String): List<String> {
 
         return tableConstraints
-                .map { c -> c.accept(LeaveToCollector(), null) }
+                .map { c -> c.accept(ConstraintCollector(), null) }
                 .flatten()
                 .asSequence()
                 .filterIsInstance<LikeConstraint>()

@@ -18,4 +18,12 @@ public class AndConstraint extends TableConstraint {
     public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
         return visitor.visit(this, argument);
     }
+
+    public TableConstraint getLeft() {
+        return left;
+    }
+
+    public TableConstraint getRight() {
+        return right;
+    }
 }
