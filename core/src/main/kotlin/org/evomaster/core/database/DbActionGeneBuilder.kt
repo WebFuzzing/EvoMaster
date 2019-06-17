@@ -224,17 +224,23 @@ class DbActionGeneBuilder {
                 val similarToPatterns: List<String> = column.similarToPatterns
                 buildSimilarToRegexGene(columnName, similarToPatterns)
             } else if (column.likePatterns != null && column.likePatterns.isNotEmpty()) {
-                val disjunctionRxGenes = column.likePatterns
-                        .map { createGeneForPostgresLike(it) }
-                        .map { it.disjunctions }
-                        .map { it.disjunctions }
-                        .flatten()
-                val disjunctionListRxGene = DisjunctionListRxGene(disjunctions = disjunctionRxGenes)
-                RegexGene(name = column.name, disjunctions = disjunctionListRxGene)
+                val columnName = column.name
+                val likePatterns = column.likePatterns
+                buildLikeRegexGene(columnName, likePatterns)
             } else {
                 StringGene(name = column.name, minLength = 0, maxLength = column.size)
             }
         }
+    }
+
+    fun buildLikeRegexGene(columnName: String, likePatterns: List<String>): RegexGene {
+        val disjunctionRxGenes = likePatterns
+                .map { createGeneForPostgresLike(it) }
+                .map { it.disjunctions }
+                .map { it.disjunctions }
+                .flatten()
+        val disjunctionListRxGene = DisjunctionListRxGene(disjunctions = disjunctionRxGenes)
+        return RegexGene(columnName, disjunctions = disjunctionListRxGene)
     }
 
     fun buildSimilarToRegexGene(columnName: String, similarToPatterns: List<String>): RegexGene {

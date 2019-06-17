@@ -2,12 +2,14 @@ package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionGeneBuilder
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -79,7 +81,6 @@ class TestCaseWriterTest {
 
         assertEquals(expectedLines.toString(), lines.toString())
     }
-
 
 
     @Test
@@ -734,6 +735,49 @@ class TestCaseWriterTest {
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
+    @Test
+    fun testRegexGene() {
+        val randomness = Randomness()
+        val textColumn = Column("textColumn", TEXT, 10, primaryKey = false, autoIncrement = false)
+
+        val table = Table("Table0", setOf(textColumn), HashSet<ForeignKey>())
+
+
+        val regexGene = DbActionGeneBuilder().buildLikeRegexGene("textColumn", listOf("foo"))
+
+        regexGene.randomize(randomness, false, listOf())
+        val insert = DbAction(table, setOf(textColumn), 0L, listOf(regexGene))
+
+
+        val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
+        val config = EMConfig()
+        config.outputFormat = format
+        val expectedGeneValue = regexGene.getValueAsRawString()
+
+        val test = TestCase(test = ei, name = "test")
+
+        val writer = TestCaseWriter()
+
+        val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+        val expectedLines = Lines().apply {
+            add("@Test")
+            add("public void test() throws Exception {")
+            indent()
+            add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
+            indent()
+            indent()
+            add(".d(\"textColumn\", \"\\\"%s\\\"\")".format(expectedGeneValue))
+            deindent()
+            add(".dtos();")
+            deindent()
+            add("controller.execInsertionsIntoDatabase(insertions);")
+            deindent()
+            add("}")
+        }
+
+        assertEquals(expectedLines.toString(), lines.toString())
+    }
 
 
 }
