@@ -8,6 +8,7 @@ import org.evomaster.core.search.gene.regex.RegexGene
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.sql.SQLException
 
 
 /**
@@ -55,6 +56,24 @@ class SimilarToCheckTest : ExtractTestBasePostgres() {
         val textValue = row.getValueByName("w_id")
 
         assertEquals(expectedValue, textValue)
+    }
+
+
+    @Test
+    fun testInsertInvalidValue() {
+        val query = "INSERT INTO x (w_id )  VALUES ('/foo/aa/bar/left/--');"
+        try {
+            SqlScriptRunner.execCommand(connection, query)
+            fail<Object>()
+        } catch (ex: SQLException) {
+
+        }
+    }
+
+    @Test
+    fun testInsertValidValue() {
+        val query = "INSERT INTO x (w_id )  VALUES ('/foo/aa/bar/left/0000-00-00');"
+        SqlScriptRunner.execCommand(connection, query)
     }
 
 

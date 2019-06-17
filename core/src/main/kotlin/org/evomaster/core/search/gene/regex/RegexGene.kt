@@ -20,19 +20,31 @@ class RegexGene(
         disjunctions.randomize(randomness, forceNewValue, allGenes)
     }
 
+    override fun getValueAsRawString(): String {
+        return disjunctions.getValueAsPrintableString(targetFormat = null)
+    }
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        return disjunctions.getValueAsPrintableString(previousGenes, mode, targetFormat)
+        val rawValue = getValueAsRawString()
+        when {
+            (targetFormat == null) -> return "\"$rawValue\""
+            targetFormat.isKotlin() -> return "\"$rawValue\""
+                    .replace("\\", "\\\\")
+                    .replace("$", "\\$")
+            else -> return "\"$rawValue\""
+                    .replace("\\", "\\\\")
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
-        if(other !is RegexGene){
+        if (other !is RegexGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.disjunctions.copyValueFrom(other.disjunctions)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if(other !is RegexGene){
+        if (other !is RegexGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.disjunctions.containsSameValueAs(other.disjunctions)

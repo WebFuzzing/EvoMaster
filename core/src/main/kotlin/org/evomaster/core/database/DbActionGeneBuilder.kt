@@ -220,9 +220,9 @@ class DbActionGeneBuilder {
             EnumGene(name = column.name, values = column.enumValuesAsStrings)
         } else {
             if (column.similarToPatterns != null && column.similarToPatterns.isNotEmpty()) {
-                val joinedPattern = column.similarToPatterns.map { c -> "(%s)".format(c) }.joinToString("|")
-                val regexGene = createGeneForPostgresSimilarTo(joinedPattern)
-                RegexGene(name = column.name, disjunctions = regexGene.disjunctions)
+                val columnName = column.name
+                val similarToPatterns: List<String> = column.similarToPatterns
+                buildSimilarToRegexGene(columnName, similarToPatterns)
             } else if (column.likePatterns != null && column.likePatterns.isNotEmpty()) {
                 val disjunctionRxGenes = column.likePatterns
                         .map { createGeneForPostgresLike(it) }
@@ -235,6 +235,12 @@ class DbActionGeneBuilder {
                 StringGene(name = column.name, minLength = 0, maxLength = column.size)
             }
         }
+    }
+
+    fun buildSimilarToRegexGene(columnName: String, similarToPatterns: List<String>): RegexGene {
+        val joinedPattern = similarToPatterns.map { c -> "(%s)".format(c) }.joinToString("|")
+        val regexGene = createGeneForPostgresSimilarTo(joinedPattern)
+        return RegexGene(name = columnName, disjunctions = regexGene.disjunctions)
     }
 
     private fun handleTimestampColumn(column: Column): SqlTimestampGene {
