@@ -45,6 +45,9 @@ class BaseModule(val args: Array<String>) : AbstractModule() {
 
         bind(SearchProcessMonitor::class.java)
                 .asEagerSingleton()
+
+        bind(ExtraHeuristicsLogger::class.java)
+                .asEagerSingleton()
     }
 
     @Provides @Singleton

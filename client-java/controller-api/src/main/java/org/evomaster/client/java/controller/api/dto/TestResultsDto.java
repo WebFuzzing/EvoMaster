@@ -13,5 +13,5 @@ public class TestResultsDto {
      */
     public List<AdditionalInfoDto> additionalInfoList = new ArrayList<>();
 
-    public List<ExtraHeuristicDto> extraHeuristics = new ArrayList<>();
+    public List<ExtraHeuristicsDto> extraHeuristics = new ArrayList<>();
 }

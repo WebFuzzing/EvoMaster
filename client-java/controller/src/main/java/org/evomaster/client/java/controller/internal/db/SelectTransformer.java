@@ -6,14 +6,10 @@ import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.select.*;
-import org.evomaster.client.java.controller.db.DataRow;
-import org.evomaster.client.java.controller.db.QueryResult;
 
 import java.util.List;
 
-import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
-
-public class SelectHeuristics {
+public class SelectTransformer {
 
 
 
@@ -126,42 +122,6 @@ public class SelectHeuristics {
         }
 
     }
-
-
-    public static double computeDistance(String select, QueryResult data) {
-
-        Select stmt = asSelectStatement(select);
-
-        if (data.isEmpty()) {
-            //if no data, we have no info whatsoever
-            return Double.MAX_VALUE;
-        }
-
-        Expression where = getWhere(stmt);
-        if (where == null) {
-            //no constraint, and at least one data point
-            return 0;
-        }
-
-
-        SqlNameContext context = new SqlNameContext(stmt);
-        HeuristicsCalculator calculator = new HeuristicsCalculator(context);
-
-        double min = Double.MAX_VALUE;
-        for (DataRow row : data.seeRows()) {
-            double dist = calculator.computeExpression(where, row);
-            if (dist == 0) {
-                return 0;
-            }
-            if (dist < min) {
-                min = dist;
-            }
-        }
-
-        return min;
-    }
-
-
 
 
 }

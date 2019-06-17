@@ -39,3 +39,4 @@ experiments/target/
 /snapshot.csv
 *.lst
 /report/target/
+/extra_heuristics.csv

@@ -5,14 +5,19 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.db.DataRow;
-import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.instrumentation.testability.StringTransformer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
+
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
 
 public class HeuristicsCalculator {
 
@@ -23,30 +28,119 @@ public class HeuristicsCalculator {
         this.context = Objects.requireNonNull(context);
     }
 
+    public static double computeDistance(String statement, QueryResult data) {
+
+        if (data.isEmpty()) {
+            //if no data, we have no info whatsoever
+            return Double.MAX_VALUE;
+        }
+
+        Statement stmt = ParserUtils.asStatement(statement);
+
+        Expression where = getWhere(stmt);
+        if (where == null) {
+            //no constraint, and at least one data point
+            return 0;
+        }
+
+
+        SqlNameContext context = new SqlNameContext(stmt);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context);
+
+        double min = Double.MAX_VALUE;
+        for (DataRow row : data.seeRows()) {
+            double dist = calculator.computeExpression(where, row);
+            if (dist == 0) {
+                return 0;
+            }
+            if (dist < min) {
+                min = dist;
+            }
+        }
+
+        return min;
+    }
+
+
+    /**
+     * Compute a "branch" distance heuristics.
+     *
+     * @param exp the WHERE clause which we want to resolve as true
+     * @param data current data raw in the database, based on the columns/tables involved in the WHERE
+     * @return a branch distance, where 0 means that the data would make the WHERE resolves to true
+     */
     public double computeExpression(Expression exp, DataRow data) {
 
         //TODO all cases
 
-        if (exp instanceof ComparisonOperator) {
-            return computeComparisonOperator((ComparisonOperator) exp, data);
+        //------ net.sf.jsqlparser.expression.operators.*  ---------
+        if (exp instanceof Parenthesis) {
+            return computeExpression(((Parenthesis) exp).getExpression(), data);
         }
+
+
+        //------ net.sf.jsqlparser.expression.operators.conditional.*  ---------
         if (exp instanceof AndExpression) {
             return computeAnd((AndExpression) exp, data);
         }
         if (exp instanceof OrExpression) {
             return computeOr((OrExpression) exp, data);
         }
-        if (exp instanceof IsNullExpression) {
-            return computeIsNull((IsNullExpression) exp, data);
+
+
+        //------ net.sf.jsqlparser.expression.operators.relational.*  ---------
+        if(exp instanceof Between){
+            return computeBetween((Between)exp, data);
+        }
+        if (exp instanceof ComparisonOperator) {
+             //   this deals with 6 subclasses:
+            return computeComparisonOperator((ComparisonOperator) exp, data);
+        }
+        if(exp instanceof ExistsExpression){
+            //TODO
+        }
+        if(exp instanceof ExpressionList){
+            //TODO
         }
         if (exp instanceof InExpression) {
             return computeInExpression((InExpression) exp, data);
         }
-        if (exp instanceof Parenthesis) {
-            return computeExpression(((Parenthesis) exp).getExpression(), data);
+        if (exp instanceof IsNullExpression) {
+            return computeIsNull((IsNullExpression) exp, data);
+        }
+        if(exp instanceof JsonOperator){
+            //TODO
+        }
+        if(exp instanceof LikeExpression){
+            //TODO
+        }
+        if(exp instanceof Matches){
+            //TODO
+        }
+        if(exp instanceof MultiExpressionList){
+            //TODO
+        }
+        if(exp instanceof NamedExpressionList){
+            //TODO
+        }
+        if(exp instanceof RegExpMatchOperator){
+            //TODO
         }
 
         return cannotHandle(exp);
+    }
+
+    private double computeBetween(Between between, DataRow data) {
+
+        Instant start = getAsInstant(getValue(between.getBetweenExpressionStart(), data));
+        Instant end = getAsInstant(getValue(between.getBetweenExpressionEnd(), data));
+
+        Instant x = getAsInstant(getValue(between.getLeftExpression(), data));
+
+        double after = computeComparison(x, start, new GreaterThanEquals());
+        double before = computeComparison(x, end, new MinorThanEquals());
+
+        return after + before;
     }
 
     private double computeInExpression(InExpression exp, DataRow data) {
@@ -141,10 +235,55 @@ public class HeuristicsCalculator {
         return Math.min(a, b);
     }
 
+    private Instant getAsInstant(Object obj){
+
+        if(obj == null){
+            /*
+                TODO this shouldn't really happen if we have full SQL support, like sub-selects
+             */
+            return null;
+        }
+
+        if(obj instanceof Timestamp){
+            Timestamp timestamp = (Timestamp) obj;
+            return timestamp.toInstant();
+        }
+
+        if(obj instanceof String){
+            try {
+                return ZonedDateTime.parse(obj.toString()).toInstant();
+            } catch (DateTimeParseException e){
+                /*
+                    maybe it is in some weird format like 28-Feb-17...
+                    this shouldn't really happen, but looks like Hibernate generate SQL from
+                    JPQL with Date handled like this :(
+                 */
+                return LocalDate.parse(obj.toString(), DateTimeFormatter.ofPattern("dd-MMM-yy"))
+                        .atStartOfDay().toInstant(ZoneOffset.UTC);
+            }
+        }
+
+        SimpleLogger.warn("Cannot handle time value for class: " + obj.getClass());
+
+        return null;
+    }
+
     private double computeComparisonOperator(ComparisonOperator exp, DataRow data) {
 
         Object left = getValue(exp.getLeftExpression(), data);
         Object right = getValue(exp.getRightExpression(), data);
+
+        if(left instanceof Timestamp || right instanceof Timestamp){
+
+            Instant a = getAsInstant(left);
+            Instant b = getAsInstant(right);
+
+            if(a==null || b==null){
+                return cannotHandle(exp);
+            }
+
+            return computeComparison(a, b, exp);
+        }
 
         if (left instanceof Number && right instanceof Number) {
             double x = ((Number) left).doubleValue();
@@ -166,6 +305,11 @@ public class HeuristicsCalculator {
         }
 
         return cannotHandle(exp);
+    }
+
+    private double computeComparison(Instant a, Instant b, ComparisonOperator exp) {
+        double dif = - Duration.between(a,b).toMillis();
+        return computerComparison(dif, exp);
     }
 
     private double computeBooleanComparison(boolean x, boolean y, ComparisonOperator exp) {
@@ -204,23 +348,29 @@ public class HeuristicsCalculator {
         return Double.MAX_VALUE;
     }
 
-    private double computerComparison(double x, double y, ComparisonOperator exp) {
+
+    private double computerComparison(double dif, ComparisonOperator exp) {
 
         if (exp instanceof EqualsTo) {
-            return Math.abs(x - y);
+            return Math.abs(dif);
         } else if (exp instanceof GreaterThanEquals) {
-            return x >= y ? 0d : y - x;
+            return dif >= 0 ? 0d : -dif;
         } else if (exp instanceof GreaterThan) {
-            return x > y ? 0d : 1d + y - x;
+            return dif > 0 ? 0d : 1d - dif;
         } else if (exp instanceof MinorThanEquals) {
-            return x <= y ? 0d : x - y;
+            return dif <=0  ? 0d : dif;
         } else if (exp instanceof MinorThan) {
-            return x < y ? 0d : 1d + (x - y);
+            return dif < 0 ? 0d : 1d + dif;
         } else if (exp instanceof NotEqualsTo) {
-            return x != y ? 0d : 1d;
+            return dif != 0 ? 0d : 1d;
         } else {
             return cannotHandle(exp);
         }
+    }
+
+    private double computerComparison(double x, double y, ComparisonOperator exp) {
+        double dif = x - y;
+        return computerComparison(dif, exp);
     }
 
     private double computeComparison(String a, String b, ComparisonOperator exp) {
