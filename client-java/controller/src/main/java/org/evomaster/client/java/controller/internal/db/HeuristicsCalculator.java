@@ -10,6 +10,12 @@ import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.testability.StringTransformer;
 
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 
 public class HeuristicsCalculator {
@@ -50,7 +56,7 @@ public class HeuristicsCalculator {
 
         //------ net.sf.jsqlparser.expression.operators.relational.*  ---------
         if(exp instanceof Between){
-            //TODO
+            return computeBetween((Between)exp, data);
         }
         if (exp instanceof ComparisonOperator) {
              //   this deals with 6 subclasses:
@@ -88,6 +94,19 @@ public class HeuristicsCalculator {
         }
 
         return cannotHandle(exp);
+    }
+
+    private double computeBetween(Between between, DataRow data) {
+
+        Instant start = getAsInstant(getValue(between.getBetweenExpressionStart(), data));
+        Instant end = getAsInstant(getValue(between.getBetweenExpressionEnd(), data));
+
+        Instant x = getAsInstant(getValue(between.getLeftExpression(), data));
+
+        double after = computeComparison(x, start, new GreaterThanEquals());
+        double before = computeComparison(x, end, new MinorThanEquals());
+
+        return after + before;
     }
 
     private double computeInExpression(InExpression exp, DataRow data) {
@@ -182,10 +201,48 @@ public class HeuristicsCalculator {
         return Math.min(a, b);
     }
 
+    private Instant getAsInstant(Object obj){
+
+        if(obj instanceof Timestamp){
+            Timestamp timestamp = (Timestamp) obj;
+            return timestamp.toInstant();
+        }
+
+        if(obj instanceof String){
+            try {
+                return ZonedDateTime.parse(obj.toString()).toInstant();
+            } catch (DateTimeParseException e){
+                /*
+                    maybe it is in some weird format like 28-Feb-17...
+                    this shouldn't really happen, but looks like Hibernate generate SQL from
+                    JPQL with Date handled like this :(
+                 */
+                return LocalDate.parse(obj.toString(), DateTimeFormatter.ofPattern("dd-MMM-yy"))
+                        .atStartOfDay().toInstant(ZoneOffset.UTC);
+            }
+        }
+
+        SimpleLogger.warn("Cannot handle time value for class: " + obj.getClass());
+
+        return null;
+    }
+
     private double computeComparisonOperator(ComparisonOperator exp, DataRow data) {
 
         Object left = getValue(exp.getLeftExpression(), data);
         Object right = getValue(exp.getRightExpression(), data);
+
+        if(left instanceof Timestamp || right instanceof Timestamp){
+
+            Instant a = getAsInstant(left);
+            Instant b = getAsInstant(right);
+
+            if(a==null || b==null){
+                return cannotHandle(exp);
+            }
+
+            return computeComparison(a, b, exp);
+        }
 
         if (left instanceof Number && right instanceof Number) {
             double x = ((Number) left).doubleValue();
@@ -207,6 +264,11 @@ public class HeuristicsCalculator {
         }
 
         return cannotHandle(exp);
+    }
+
+    private double computeComparison(Instant a, Instant b, ComparisonOperator exp) {
+        double dif = - Duration.between(a,b).toMillis();
+        return computerComparison(dif, exp);
     }
 
     private double computeBooleanComparison(boolean x, boolean y, ComparisonOperator exp) {
@@ -245,23 +307,29 @@ public class HeuristicsCalculator {
         return Double.MAX_VALUE;
     }
 
-    private double computerComparison(double x, double y, ComparisonOperator exp) {
+
+    private double computerComparison(double dif, ComparisonOperator exp) {
 
         if (exp instanceof EqualsTo) {
-            return Math.abs(x - y);
+            return Math.abs(dif);
         } else if (exp instanceof GreaterThanEquals) {
-            return x >= y ? 0d : y - x;
+            return dif >= 0 ? 0d : -dif;
         } else if (exp instanceof GreaterThan) {
-            return x > y ? 0d : 1d + y - x;
+            return dif > 0 ? 0d : 1d - dif;
         } else if (exp instanceof MinorThanEquals) {
-            return x <= y ? 0d : x - y;
+            return dif <=0  ? 0d : dif;
         } else if (exp instanceof MinorThan) {
-            return x < y ? 0d : 1d + (x - y);
+            return dif < 0 ? 0d : 1d + dif;
         } else if (exp instanceof NotEqualsTo) {
-            return x != y ? 0d : 1d;
+            return dif != 0 ? 0d : 1d;
         } else {
             return cannotHandle(exp);
         }
+    }
+
+    private double computerComparison(double x, double y, ComparisonOperator exp) {
+        double dif = x - y;
+        return computerComparison(dif, exp);
     }
 
     private double computeComparison(String a, String b, ComparisonOperator exp) {
