@@ -47,7 +47,7 @@ class UUIDGene(
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf() else
+        return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(mostSigBits.flatView(excludePredicate))
                     .plus(leastSigBits.flatView(excludePredicate))
     }
