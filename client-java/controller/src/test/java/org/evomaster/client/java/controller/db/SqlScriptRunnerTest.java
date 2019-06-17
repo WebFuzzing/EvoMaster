@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,27 @@ import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SqlScriptRunnerTest extends DatabaseTestTemplate {
+
+
+    @Test
+    public void testLargeString() throws Exception{
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x CLOB);");
+
+        char[] buffer = new char[1000];
+        Arrays.fill(buffer, '0');
+        String value =  "bar" + new String(buffer) + "foo";
+
+        String sql = "INSERT INTO Foo (x) VALUES ('" + value + "')";
+        executeViaRest(sql);
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
+        assertEquals(1, res.seeRows().size());
+
+        Object x = res.seeRows().get(0).getValueByName("x");
+        assertTrue(x instanceof String);
+        assertEquals(value, x);
+    }
 
     @Test
     public void testSimpleRemoteExecution() throws Exception {

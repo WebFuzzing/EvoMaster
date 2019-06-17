@@ -3,7 +3,7 @@ package org.evomaster.experiments.objects.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicsDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
@@ -175,10 +175,11 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
 
                 val extra = dto.extraHeuristics[i]
 
-                if (!isEmpty(extra)) {
-                    //TODO handling of toMaximize
-                    fv.setExtraToMinimize(i, extra.toMinimize)
-                }
+                //TODO need update
+//                if (!isEmpty(extra)) {
+//                    //TODO handling of toMaximize
+//                    fv.setExtraToMinimize(i, extra.toMinimize)
+//                }
 
                 extra.databaseExecutionDto?.let {
                     dbData.add(it)
@@ -260,13 +261,6 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
     }
 
 
-    private fun isEmpty(dto: ExtraHeuristicDto): Boolean {
-
-        val hasMin = dto.toMinimize != null && !dto.toMinimize.isEmpty()
-        val hasMax = dto.toMaximize != null && !dto.toMaximize.isEmpty()
-
-        return !hasMin && !hasMax
-    }
 
     /**
      * Create local targets for each HTTP status code in each

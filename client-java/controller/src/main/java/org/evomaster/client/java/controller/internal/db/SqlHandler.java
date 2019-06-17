@@ -35,7 +35,7 @@ public class SqlHandler {
     /**
      * The heuristics based on the SQL execution
      */
-    private final List<Double> distances;
+    private final List<PairCommandDistance> distances;
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
@@ -99,7 +99,7 @@ public class SqlHandler {
         return executionDto;
     }
 
-    public List<Double> getDistances() {
+    public List<PairCommandDistance> getDistances() {
 
         if (connection == null) {
             return distances;
@@ -117,7 +117,7 @@ public class SqlHandler {
                      */
                     if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
                         double dist = computeDistance(sql);
-                        distances.add(dist);
+                        distances.add(new PairCommandDistance(sql, dist));
                     }
                 });
         //side effects on buffer is not important, as it is just a cache
@@ -162,9 +162,9 @@ public class SqlHandler {
            TODO: we need a general solution
          */
         if(isSelect(command)) {
-            select = SelectHeuristics.addFieldsToSelect(command);
-            select = SelectHeuristics.removeConstraints(select);
-            select = SelectHeuristics.removeOperations(select);
+            select = SelectTransformer.addFieldsToSelect(command);
+            select = SelectTransformer.removeConstraints(select);
+            select = SelectTransformer.removeOperations(select);
         } else {
             if(columns.size() > 1){
                 SimpleLogger.uniqueWarn("Cannot analyze: " + command);
@@ -181,7 +181,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-        double dist = SelectHeuristics.computeDistance(command, data);
+        double dist = HeuristicsCalculator.computeDistance(command, data);
 
         if (dist > 0) {
             mergeNewData(failedWhere, columns);

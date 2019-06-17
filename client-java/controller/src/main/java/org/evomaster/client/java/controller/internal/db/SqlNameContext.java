@@ -79,17 +79,29 @@ public class SqlNameContext {
             return tableAliases.getOrDefault(table.getName(), table.getName());
         }
 
-        List<String> candidates = getTableNamesInFrom();
+        if(statement instanceof Select) {
+            List<String> candidates = getTableNamesInFrom();
 
-        assert ! candidates.isEmpty();
+            assert !candidates.isEmpty();
 
-        if(candidates.size() == 1){
-            return candidates.get(0);
-        } else {
-            //TODO case of possible ambiguity... need to check the schema
-            throw new IllegalArgumentException("TODO ambiguity");
+            if (candidates.size() == 1) {
+                return candidates.get(0);
+            } else {
+                //TODO case of possible ambiguity... need to check the schema
+                throw new IllegalArgumentException("TODO ambiguity");
+            }
+        } else if(statement instanceof Delete){
+            Delete delete = (Delete) statement;
+            return delete.getTable().getName();
+        } else if(statement instanceof Update){
+            Update update = (Update) statement;
+            //TODO: can it really have more than 1???
+            return update.getTables().get(0).getName();
+        }else {
+            throw new IllegalArgumentException("Cannot handle table name for: " + statement);
         }
     }
+
 
     private List<String> getTableNamesInFrom() {
 
@@ -111,18 +123,19 @@ public class SqlNameContext {
 
     private FromItem getFromItem() {
 
-        if (!(statement instanceof Select)) {
-            throw new IllegalArgumentException("Currently only handling SELECT");
+        if(statement instanceof Select) {
+            SelectBody selectBody = ((Select) statement).getSelectBody();
+
+            if (selectBody instanceof PlainSelect) {
+                PlainSelect plainSelect = (PlainSelect) selectBody;
+
+                return plainSelect.getFromItem();
+            } else {
+                throw new IllegalArgumentException("Currently only handling Plain SELECTs");
+            }
         }
 
-        SelectBody selectBody = ((Select) statement).getSelectBody();
-        if (selectBody instanceof PlainSelect) {
-            PlainSelect plainSelect = (PlainSelect) selectBody;
-
-            return plainSelect.getFromItem();
-        } else {
-            throw new IllegalArgumentException("Currently only handling Plain SELECTs");
-        }
+        throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
     }
 
 
