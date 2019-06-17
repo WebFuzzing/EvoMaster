@@ -89,13 +89,14 @@ import org.evomaster.dbconstraint.ast.SqlOrCondition;
 import org.evomaster.dbconstraint.ast.SqlSimilarToCondition;
 import org.evomaster.dbconstraint.ast.SqlStringLiteralValue;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 
 public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
-    private final Stack<SqlCondition> stack = new Stack<>();
+    private final Deque<SqlCondition> stack = new ArrayDeque<>();
 
     @Override
     public void visit(BitwiseRightShift bitwiseRightShift) {
@@ -178,7 +179,15 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
     @Override
     public void visit(StringValue stringValue) {
-        stack.push(new SqlStringLiteralValue(stringValue.getNotExcapedValue()));
+        String notEscapedValue = stringValue.getNotExcapedValue();
+
+        String notEscapedValueNoQuotes;
+        if (notEscapedValue.startsWith("'") && notEscapedValue.endsWith("'")) {
+            notEscapedValueNoQuotes = notEscapedValue.substring(1, notEscapedValue.length() - 1);
+        } else {
+            notEscapedValueNoQuotes = notEscapedValue;
+        }
+        stack.push(new SqlStringLiteralValue(notEscapedValueNoQuotes));
     }
 
     @Override
@@ -492,7 +501,6 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
         } else if (regExpMatchOperator.getRightExpression() instanceof Function) {
             Function function = (Function) regExpMatchOperator.getRightExpression();
-            String functionName = function.getName();
             if (function.equals("similar_escape")) {
                 throw new IllegalArgumentException("Unsupported regular expression match " + regExpMatchOperator);
             }
