@@ -203,6 +203,13 @@ public class HeuristicsCalculator {
 
     private Instant getAsInstant(Object obj){
 
+        if(obj == null){
+            /*
+                TODO this shouldn't really happen if we have full SQL support, like sub-selects
+             */
+            return null;
+        }
+
         if(obj instanceof Timestamp){
             Timestamp timestamp = (Timestamp) obj;
             return timestamp.toInstant();
