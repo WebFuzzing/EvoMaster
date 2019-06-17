@@ -9,9 +9,7 @@ import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.testability.StringTransformer;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+
 import java.util.Objects;
 
 public class HeuristicsCalculator {
@@ -23,27 +21,70 @@ public class HeuristicsCalculator {
         this.context = Objects.requireNonNull(context);
     }
 
+
+    /**
+     * Compute a "branch" distance heuristics.
+     *
+     * @param exp the WHERE clause which we want to resolve as true
+     * @param data current data raw in the database, based on the columns/tables involved in the WHERE
+     * @return a branch distance, where 0 means that the data would make the WHERE resolves to true
+     */
     public double computeExpression(Expression exp, DataRow data) {
 
         //TODO all cases
 
-        if (exp instanceof ComparisonOperator) {
-            return computeComparisonOperator((ComparisonOperator) exp, data);
+        //------ net.sf.jsqlparser.expression.operators.*  ---------
+        if (exp instanceof Parenthesis) {
+            return computeExpression(((Parenthesis) exp).getExpression(), data);
         }
+
+
+        //------ net.sf.jsqlparser.expression.operators.conditional.*  ---------
         if (exp instanceof AndExpression) {
             return computeAnd((AndExpression) exp, data);
         }
         if (exp instanceof OrExpression) {
             return computeOr((OrExpression) exp, data);
         }
-        if (exp instanceof IsNullExpression) {
-            return computeIsNull((IsNullExpression) exp, data);
+
+
+        //------ net.sf.jsqlparser.expression.operators.relational.*  ---------
+        if(exp instanceof Between){
+            //TODO
+        }
+        if (exp instanceof ComparisonOperator) {
+             //   this deals with 6 subclasses:
+            return computeComparisonOperator((ComparisonOperator) exp, data);
+        }
+        if(exp instanceof ExistsExpression){
+            //TODO
+        }
+        if(exp instanceof ExpressionList){
+            //TODO
         }
         if (exp instanceof InExpression) {
             return computeInExpression((InExpression) exp, data);
         }
-        if (exp instanceof Parenthesis) {
-            return computeExpression(((Parenthesis) exp).getExpression(), data);
+        if (exp instanceof IsNullExpression) {
+            return computeIsNull((IsNullExpression) exp, data);
+        }
+        if(exp instanceof JsonOperator){
+            //TODO
+        }
+        if(exp instanceof LikeExpression){
+            //TODO
+        }
+        if(exp instanceof Matches){
+            //TODO
+        }
+        if(exp instanceof MultiExpressionList){
+            //TODO
+        }
+        if(exp instanceof NamedExpressionList){
+            //TODO
+        }
+        if(exp instanceof RegExpMatchOperator){
+            //TODO
         }
 
         return cannotHandle(exp);
