@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.service.Randomness
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -33,13 +34,16 @@ class SimilarToCheckTest : ExtractTestBasePostgres() {
 
     @Test
     fun testInsertRegexGene() {
+        val randomness = Randomness()
         val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("x", setOf("w_id"))
 
         val genes = actions[0].seeGenes()
-        val expectedValue = genes.firstIsInstance<RegexGene>().getValueAsPrintableString()
+        val regexGene = genes.firstIsInstance<RegexGene>()
+        regexGene.randomize(randomness, false, listOf())
+        val expectedValue = regexGene.getValueAsRawString()
 
         val query = "Select * from x"
 
