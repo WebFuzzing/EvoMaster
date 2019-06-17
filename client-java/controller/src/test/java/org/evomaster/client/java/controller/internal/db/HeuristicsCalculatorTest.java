@@ -288,4 +288,21 @@ public class HeuristicsCalculatorTest {
                 Timestamp.valueOf("2018-03-01 00:00:00"),
                 sql);
     }
+
+
+    @Test
+    public void testDeleteBase(){
+
+        String sql = "delete from Foo where x=0";
+
+        checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
+    }
+
+    @Test
+    public void testUpdateBase(){
+
+        String sql = "update Foo set x=42 where x=0";
+
+        checkIncreasingTillCovered("x", Arrays.asList(10, -5, 2), 0, sql);
+    }
 }
