@@ -48,6 +48,11 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-dbconstraint</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-spring-examples</artifactId>
             <version>${project.version}</version>
         </dependency>
