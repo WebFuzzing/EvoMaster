@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
-import org.evomaster.client.java.controller.internal.db.SelectHeuristics;
 import org.evomaster.client.java.controller.internal.db.SqlNameContext;
 import org.evomaster.client.java.utils.SimpleLogger;
 

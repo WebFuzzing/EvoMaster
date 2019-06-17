@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class SelectHeuristicsInDBTest extends DatabaseTestTemplate {
+public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
 
 
 

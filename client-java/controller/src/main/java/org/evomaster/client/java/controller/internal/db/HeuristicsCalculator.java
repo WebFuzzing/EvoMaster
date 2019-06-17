@@ -5,18 +5,19 @@ import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
 import net.sf.jsqlparser.expression.operators.relational.*;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.db.DataRow;
-import org.evomaster.client.java.utils.SimpleLogger;
+import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.instrumentation.testability.StringTransformer;
+import org.evomaster.client.java.utils.SimpleLogger;
 
-
-import java.sql.Date;
-import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
+
+import static org.evomaster.client.java.controller.internal.db.ParserUtils.getWhere;
 
 public class HeuristicsCalculator {
 
@@ -25,6 +26,39 @@ public class HeuristicsCalculator {
 
     public HeuristicsCalculator(SqlNameContext context) {
         this.context = Objects.requireNonNull(context);
+    }
+
+    public static double computeDistance(String statement, QueryResult data) {
+
+        if (data.isEmpty()) {
+            //if no data, we have no info whatsoever
+            return Double.MAX_VALUE;
+        }
+
+        Statement stmt = ParserUtils.asStatement(statement);
+
+        Expression where = getWhere(stmt);
+        if (where == null) {
+            //no constraint, and at least one data point
+            return 0;
+        }
+
+
+        SqlNameContext context = new SqlNameContext(stmt);
+        HeuristicsCalculator calculator = new HeuristicsCalculator(context);
+
+        double min = Double.MAX_VALUE;
+        for (DataRow row : data.seeRows()) {
+            double dist = calculator.computeExpression(where, row);
+            if (dist == 0) {
+                return 0;
+            }
+            if (dist < min) {
+                min = dist;
+            }
+        }
+
+        return min;
     }
 
 

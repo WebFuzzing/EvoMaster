@@ -162,9 +162,9 @@ public class SqlHandler {
            TODO: we need a general solution
          */
         if(isSelect(command)) {
-            select = SelectHeuristics.addFieldsToSelect(command);
-            select = SelectHeuristics.removeConstraints(select);
-            select = SelectHeuristics.removeOperations(select);
+            select = SelectTransformer.addFieldsToSelect(command);
+            select = SelectTransformer.removeConstraints(select);
+            select = SelectTransformer.removeOperations(select);
         } else {
             if(columns.size() > 1){
                 SimpleLogger.uniqueWarn("Cannot analyze: " + command);
@@ -181,7 +181,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-        double dist = SelectHeuristics.computeDistance(command, data);
+        double dist = HeuristicsCalculator.computeDistance(command, data);
 
         if (dist > 0) {
             mergeNewData(failedWhere, columns);
