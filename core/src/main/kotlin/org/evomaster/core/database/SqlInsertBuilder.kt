@@ -13,7 +13,6 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
 import org.evomaster.core.search.gene.SqlPrimaryKeyGene
 import org.evomaster.dbconstraint.*
-import java.util.*
 
 
 class SqlInsertBuilder(
@@ -160,56 +159,58 @@ class SqlInsertBuilder(
 
     }
 
+    /**
+     * Returns a list of non-recursive constraints
+     */
     private class ConstraintCollector : TableConstraintVisitor<List<TableConstraint>, Void> {
 
-        override fun visit(constraint: IsNotNullConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: IsNotNullConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: IffConstraint?, argument: Void?): List<TableConstraint> {
-            return Objects.requireNonNull(constraint)!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
+        override fun visit(constraint: IffConstraint, argument: Void?): List<TableConstraint> {
+            return constraint.constraintList.map { c -> c.accept(this, argument) }.flatten()
         }
 
-        override fun visit(constraint: AndConstraint?, argument: Void?): List<TableConstraint> {
-            return Objects.requireNonNull(constraint)!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
+        override fun visit(constraint: AndConstraint, argument: Void?): List<TableConstraint> {
+            return constraint.constraintList.map { c -> c.accept(this, argument) }.flatten()
         }
 
-        override fun visit(constraint: EnumConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: EnumConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: LikeConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: LikeConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: LowerBoundConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: LowerBoundConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: OrConstraint?, argument: Void?): List<TableConstraint> {
-            return Objects.requireNonNull(constraint)!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
+        override fun visit(constraint: OrConstraint, argument: Void?): List<TableConstraint> {
+            return constraint.constraintList.map { c -> c.accept(this, argument) }.flatten()
         }
 
-        override fun visit(constraint: RangeConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: RangeConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: SimilarToConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: SimilarToConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: UniqueConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: UniqueConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: UpperBoundConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: UpperBoundConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
 
-        override fun visit(constraint: UnsupportedTableConstraint?, argument: Void?): List<TableConstraint> {
-            return listOf(Objects.requireNonNull(constraint)!!)
+        override fun visit(constraint: UnsupportedTableConstraint, argument: Void?): List<TableConstraint> {
+            return listOf(constraint)
         }
-
 
     }
 
