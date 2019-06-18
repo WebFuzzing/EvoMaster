@@ -17,7 +17,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        return "\"%s\"".format(objectGene.getValueAsPrintableString(previousGenes, "xml", targetFormat))
+        return "\"%s\"".format(objectGene.getValueAsPrintableString(previousGenes, ObjectGene.XML_MODE, targetFormat))
     }
 
     override fun copyValueFrom(other: Gene) {

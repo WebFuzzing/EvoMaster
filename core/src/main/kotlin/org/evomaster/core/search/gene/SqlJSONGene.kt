@@ -17,7 +17,7 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        return "\"%s\"".format(objectGene.getValueAsPrintableString(previousGenes, mode, targetFormat))
+        return "\"%s\"".format(objectGene.getValueAsPrintableString(previousGenes, ObjectGene.JSON_MODE, targetFormat))
     }
 
     override fun copyValueFrom(other: Gene) {

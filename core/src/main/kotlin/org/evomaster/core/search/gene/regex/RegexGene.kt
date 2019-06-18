@@ -27,6 +27,7 @@ class RegexGene(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         val rawValue = getValueAsRawString()
         when {
+            // TODO Should refactor since this code block is equivalent to StringGene.getValueAsPrintableString()
             (targetFormat == null) -> return "\"$rawValue\""
             targetFormat.isKotlin() -> return "\"$rawValue\""
                     .replace("\\", "\\\\")

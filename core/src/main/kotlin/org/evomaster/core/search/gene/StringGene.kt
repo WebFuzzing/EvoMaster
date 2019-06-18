@@ -33,16 +33,16 @@ class StringGene(
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-
+        val rawValue = getValueAsRawString()
         if (mode != null && mode.equals("xml")) {
-            return StringEscapeUtils.escapeXml(this.value)
+            return StringEscapeUtils.escapeXml(rawValue)
         } else {
             when {
-                (targetFormat == null) -> return "\"$value\""
-                targetFormat.isKotlin() -> return "\"$value\""
+                (targetFormat == null) -> return "\"$rawValue\""
+                targetFormat.isKotlin() -> return "\"$rawValue\""
                         .replace("\\", "\\\\")
                         .replace("$", "\\$")
-                else -> return "\"$value\""
+                else -> return "\"$rawValue\""
                         .replace("\\", "\\\\")
             }
         }
