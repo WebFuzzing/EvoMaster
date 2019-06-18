@@ -102,6 +102,9 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
+            boolean sqlHeuristics = dto.calculateSqlHeuristics != null && dto.calculateSqlHeuristics;
+            sutController.enableSqlHeuristics(sqlHeuristics);
+
             boolean doReset = dto.resetState != null && dto.resetState;
 
             synchronized (this) {

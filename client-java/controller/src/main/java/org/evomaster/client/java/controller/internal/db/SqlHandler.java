@@ -47,6 +47,7 @@ public class SqlHandler {
 
     private volatile Connection connection;
 
+    private volatile boolean calculateHeuristics;
 
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
@@ -56,6 +57,8 @@ public class SqlHandler {
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
+
+        calculateHeuristics = true;
     }
 
     public void reset() {
@@ -75,6 +78,10 @@ public class SqlHandler {
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
+        if(! calculateHeuristics){
+            return;
+        }
+
         buffer.add(sql);
 
         if (isSelect(sql)) {
@@ -89,6 +96,11 @@ public class SqlHandler {
     }
 
     public ExecutionDto getExecutionDto() {
+
+        if(! calculateHeuristics){
+            return null;
+        }
+
         ExecutionDto executionDto = new ExecutionDto();
         executionDto.queriedData.putAll(queriedData);
         executionDto.failedWhere.putAll(failedWhere);
@@ -101,7 +113,7 @@ public class SqlHandler {
 
     public List<PairCommandDistance> getDistances() {
 
-        if (connection == null) {
+        if (connection == null || !calculateHeuristics) {
             return distances;
         }
 
@@ -127,7 +139,7 @@ public class SqlHandler {
     }
 
 
-    public Double computeDistance(String command) {
+    private Double computeDistance(String command) {
 
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
@@ -281,4 +293,11 @@ public class SqlHandler {
         }
     }
 
+    public boolean isCalculateHeuristics() {
+        return calculateHeuristics;
+    }
+
+    public void setCalculateHeuristics(boolean calculateHeuristics) {
+        this.calculateHeuristics = calculateHeuristics;
+    }
 }
