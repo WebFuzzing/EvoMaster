@@ -39,7 +39,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf() else
+        return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(objectGene.flatView(excludePredicate))
     }
 
