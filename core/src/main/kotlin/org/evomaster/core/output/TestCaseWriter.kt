@@ -349,7 +349,7 @@ class TestCaseWriter {
         val verb = call.verb.name.toLowerCase()
         lines.add(".$verb(")
         if (call.locationId != null) {
-            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
+            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${applyEscapes(call.resolvedPath())}\")")
 
         } else {
 
@@ -357,17 +357,17 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"$uri\"")
+                lines.append("\"${applyEscapes(uri)}\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)
                 val elements = call.path.resolveOnlyQuery(call.parameters)
 
-                lines.append("\"$path?\" + ")
+                lines.append("\"${applyEscapes(path)}?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${elements[i]}&\" + ") }
-                    lines.add("\"${elements.last()}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${applyEscapes(elements[i])}&\" + ") }
+                    lines.add("\"${applyEscapes(elements.last())}\"")
                 }
             }
         }
@@ -395,10 +395,11 @@ class TestCaseWriter {
             when(resContentsItem::class) {
                 //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${(resContentsItem as String)
+                String::class -> return "containsString(\"${applyEscapes(resContentsItem as String)}\")"
+                /*String::class -> return "containsString(\"${(resContentsItem as String)
                         .replace("\"", "\\\"")
                         .replace("\n", "\\n")
-                        .replace("\r", "\\r")}\")"
+                        .replace("\r", "\\r")}\")"*/
                 //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
                 else -> return "NotCoveredYet"
@@ -638,12 +639,12 @@ class TestCaseWriter {
         }
     }
 
-    private fun addMetaDataComments(test: TestCase, lines: Lines){
-        lines.add("/**")
-        lines.add("* Targets this test covers   : " + test.test.fitness.coveredTargets())
-        lines.add("* db initializations         : " + test.test.individual.seeInitializingActions().size)
-        lines.add("*  number of actions         : " + test.test.individual.seeActions().size)
-        lines.add("*/")
-    }
+    private fun applyEscapes(string: String):String {
+        val ret = string.replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
 
+        if (format.isKotlin()) return ret.replace("$", "\\$")
+        else return ret
+    }
 }
