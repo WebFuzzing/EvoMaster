@@ -67,7 +67,7 @@ public abstract class DatabaseTestTemplate {
 
     protected void startSut(int port) {
         given().contentType(ContentType.JSON)
-                .body(new SutRunDto(true, false))
+                .body(new SutRunDto(true, false, true))
                 .put("http://localhost:" + port + BASE_PATH + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);
@@ -87,7 +87,7 @@ public abstract class DatabaseTestTemplate {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
-                .body(new SutRunDto(true, true))
+                .body(new SutRunDto(true, true, true))
                 .put(url + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);

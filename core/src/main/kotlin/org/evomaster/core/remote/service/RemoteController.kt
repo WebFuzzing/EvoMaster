@@ -123,11 +123,13 @@ class RemoteController() : DatabaseExecutor {
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
 
+        val sql = config.heuristicsForSQL
+
         val response = try {
             getWebTarget()
                     .path(ControllerConstants.RUN_SUT_PATH)
                     .request()
-                    .put(Entity.json(SutRunDto(run, reset)))
+                    .put(Entity.json(SutRunDto(run, reset, sql)))
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
             return false
