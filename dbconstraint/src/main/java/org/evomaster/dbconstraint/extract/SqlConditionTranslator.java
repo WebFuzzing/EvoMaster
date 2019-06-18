@@ -218,7 +218,8 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
     @Override
     public TableConstraint visit(SqlSimilarToCondition e, Void argument) {
         String tableName = getTableName(e.getColumn());
-        return new SimilarToConstraint(tableName, e.getColumn().getColumnName(), e.getPattern().getStringValue());
+        final String pattern = e.getPattern().getStringValue();
+        return new SimilarToConstraint(tableName, e.getColumn().getColumnName(), pattern);
     }
 
     @Override
@@ -230,7 +231,7 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
     public TableConstraint visit(SqlLikeCondition e, Void argument) {
         String tableName = getTableName(e.getColumnName());
         String columnName = e.getColumnName().getColumnName();
-        String pattern = e.getPattern().toSql();
+        String pattern = e.getPattern().getStringValue();
         return new LikeConstraint(tableName, columnName, pattern);
     }
 

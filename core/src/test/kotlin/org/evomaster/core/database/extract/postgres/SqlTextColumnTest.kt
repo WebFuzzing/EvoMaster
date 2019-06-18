@@ -61,4 +61,38 @@ class SqlTextColumnTest : ExtractTestBasePostgres() {
         assertEquals(addressValue, row.getValueByName("address"))
 
     }
+
+    @Test
+    fun testInsertionWithQuotes() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("people", setOf("id", "name", "address"))
+        val genes = actions[0].seeGenes()
+
+        val idValue = ((genes[0] as SqlPrimaryKeyGene).gene as IntegerGene).value
+
+        val oneQuoteStr = "'"
+        val twoQuotesStr = "'hi'"
+
+        (genes[1] as StringGene).copyValueFrom(StringGene(genes[1].name, oneQuoteStr))
+        (genes[2] as StringGene).copyValueFrom(StringGene(genes[1].name, twoQuotesStr))
+
+        val query = "Select * from people where id=%s".format(idValue)
+
+        val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
+        assertTrue(queryResultBeforeInsertion.isEmpty)
+
+        val dbCommandDto = DbActionTransformer.transform(actions)
+
+        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
+        val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
+        Assertions.assertFalse(queryResultAfterInsertion.isEmpty)
+
+        val row = queryResultAfterInsertion.seeRows()[0]
+        assertEquals(oneQuoteStr, row.getValueByName("name"))
+        assertEquals(twoQuotesStr, row.getValueByName("address"))
+
+    }
+
 }

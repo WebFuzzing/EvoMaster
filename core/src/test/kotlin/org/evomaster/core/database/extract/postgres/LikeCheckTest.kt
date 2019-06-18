@@ -7,7 +7,8 @@ import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.Randomness
 import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 
@@ -41,24 +42,15 @@ class LikeCheckTest : ExtractTestBasePostgres() {
 
         val genes = actions[0].seeGenes()
         val regexGene = genes.firstIsInstance<RegexGene>()
-        regexGene.randomize(randomness, false, listOf())
-        val expectedValue = regexGene.getValueAsRawString()
 
-        val query = "Select * from x"
+        for (i in 1..100) {
+            regexGene.randomize(randomness, false, listOf())
 
-        val queryResultBeforeInsertion = SqlScriptRunner.execCommand(connection, query)
-        assertTrue(queryResultBeforeInsertion.isEmpty)
 
-        val dbCommandDto = DbActionTransformer.transform(actions)
+            val dbCommandDto = DbActionTransformer.transform(actions)
+            SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
 
-        SqlScriptRunner.execInsert(connection, dbCommandDto.insertions)
-        val queryResultAfterInsertion = SqlScriptRunner.execCommand(connection, query)
-        assertFalse(queryResultAfterInsertion.isEmpty)
-
-        val row = queryResultAfterInsertion.seeRows()[0]
-        val textValue = row.getValueByName("f_id")
-
-        assertEquals(expectedValue, textValue)
+        }
     }
 
 }

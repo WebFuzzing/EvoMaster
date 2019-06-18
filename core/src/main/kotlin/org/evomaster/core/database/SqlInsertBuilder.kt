@@ -276,7 +276,7 @@ class SqlInsertBuilder(
         val tableName = t.name
 
         for (sqlCheckExpression in t.tableCheckExpressions) {
-            val builder = ConstraintBuilder()
+            val builder = TableConstraintBuilder()
             val tableConstraint = builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression)
             tableConstraints.add(tableConstraint)
         }

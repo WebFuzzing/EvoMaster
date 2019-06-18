@@ -26,6 +26,33 @@ class DbActionGeneBuilderTest {
             val matcher = pattern.matcher(instance)
             Assertions.assertTrue(matcher.find())
         }
-
     }
+
+    @Test
+
+    fun testLikeBuilder() {
+
+        val randomness = Randomness()
+
+        val likePatterns = listOf("hi", "%foo%", "%foo%x%", "%bar%", "%bar%y%", "%hello%")
+        val javaRegexPatterns = listOf("hi", ".*foo.*", ".*foo.*x.*", ".*bar.*", ".*bar.*y.*", ".*hello.*")
+        val gene = DbActionGeneBuilder().buildLikeRegexGene("f_id", likePatterns)
+
+        for (seed in 1..10000L) {
+            randomness.updateSeed(seed)
+
+            gene.randomize(randomness, false, listOf())
+
+            val instance = gene.getValueAsRawString()
+
+            Assertions.assertTrue(
+                    javaRegexPatterns.stream().anyMatch {
+                        Pattern.compile(it).matcher(instance).find()
+                    },
+                    "invalid instance: " + instance
+            )
+        }
+    }
+
+
 }

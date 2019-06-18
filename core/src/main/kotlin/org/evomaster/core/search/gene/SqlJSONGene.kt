@@ -17,7 +17,16 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
 
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        return "\"%s\"".format(objectGene.getValueAsPrintableString(previousGenes, ObjectGene.JSON_MODE, targetFormat))
+        val rawValue = objectGene.getValueAsPrintableString(previousGenes, ObjectGene.JSON_MODE, targetFormat)
+        when {
+            // TODO: refactor with StringGene.getValueAsPrintableString(()
+            (targetFormat == null) -> return "\"$rawValue\""
+            targetFormat.isKotlin() -> return "\"$rawValue\""
+                    .replace("\\", "\\\\")
+                    .replace("$", "\\$")
+            else -> return "\"$rawValue\""
+                    .replace("\\", "\\\\")
+        }
     }
 
     override fun copyValueFrom(other: Gene) {
