@@ -48,7 +48,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         assertTrue(schema.tables.first { it.name == "y" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text, 'C'::text, 'D'::text, 'E'::text]))") });
 
 
-        //TODO check the 3 views and all constraints
+        //TODO check the 3 views
     }
 
     @Test

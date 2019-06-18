@@ -21,4 +21,8 @@ public interface TableConstraintVisitor<K, V> {
     K visit(UpperBoundConstraint constraint, V argument);
 
     K visit(UnsupportedTableConstraint constraint, V argument);
+
+    K visit(IffConstraint constraint, V argument);
+
+    K visit(IsNotNullConstraint constraint, V argument);
 }

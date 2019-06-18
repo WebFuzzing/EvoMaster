@@ -162,8 +162,16 @@ class SqlInsertBuilder(
 
     private class ConstraintCollector : TableConstraintVisitor<List<TableConstraint>, Void> {
 
+        override fun visit(constraint: IsNotNullConstraint?, argument: Void?): List<TableConstraint> {
+            return listOf(Objects.requireNonNull(constraint)!!)
+        }
+
+        override fun visit(constraint: IffConstraint?, argument: Void?): List<TableConstraint> {
+            return Objects.requireNonNull(constraint)!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
+        }
+
         override fun visit(constraint: AndConstraint?, argument: Void?): List<TableConstraint> {
-            throw IllegalArgumentException("Must implement handling of And constraint")
+            return Objects.requireNonNull(constraint)!!.constraintList.map { c -> c.accept(this, argument) }.flatten()
         }
 
         override fun visit(constraint: EnumConstraint?, argument: Void?): List<TableConstraint> {

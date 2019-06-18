@@ -2,6 +2,7 @@ package org.evomaster.dbconstraint;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ConstraintBuilderTest {
@@ -71,4 +72,14 @@ public class ConstraintBuilderTest {
         TableConstraint constraint = builder.translateToConstraint("fooTable", "fooColumn = 10 ");
         assertTrue(constraint instanceof RangeConstraint);
     }
+
+    @Test
+    public void testEqualsOfTwoFormulas() {
+        ConstraintBuilder builder = new ConstraintBuilder();
+        TableConstraint constraint = builder.translateToConstraint("x", "((STATUS = 'b') = (P_AT IS NOT NULL))");
+        assertFalse(constraint instanceof UnsupportedTableConstraint);
+        assertTrue(constraint instanceof IffConstraint);
+    }
+
+
 }

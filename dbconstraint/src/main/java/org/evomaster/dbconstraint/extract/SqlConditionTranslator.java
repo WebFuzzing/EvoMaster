@@ -4,6 +4,8 @@ package org.evomaster.dbconstraint.extract;
 import net.sf.jsqlparser.expression.StringValue;
 import org.evomaster.dbconstraint.AndConstraint;
 import org.evomaster.dbconstraint.EnumConstraint;
+import org.evomaster.dbconstraint.IffConstraint;
+import org.evomaster.dbconstraint.IsNotNullConstraint;
 import org.evomaster.dbconstraint.LikeConstraint;
 import org.evomaster.dbconstraint.LowerBoundConstraint;
 import org.evomaster.dbconstraint.OrConstraint;
@@ -84,10 +86,16 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
             SqlColumn leftColumn = (SqlColumn) left;
             SqlLiteralValue rightLiteral = (SqlLiteralValue) right;
             return visit(leftColumn, e, rightLiteral);
-        } else {
-            // TODO This translation should be implemented
-            throw new SqlCannotBeTranslatedException(e.toSql() + " cannot be translated yet");
+        } else if (left instanceof SqlCondition && right instanceof SqlCondition) {
+            TableConstraint leftTableConstraint = e.getLeftOperand().accept(this, null);
+            TableConstraint rightTableConstraint = e.getRightOperand().accept(this, null);
+            if (e.getSqlComparisonOperator().equals(EQUALS_TO)) {
+                return new IffConstraint(translationContext.getCurrentTableName(), leftTableConstraint, rightTableConstraint);
+            }
         }
+        // TODO This translation should be implemented
+        throw new SqlCannotBeTranslatedException(e.toSql() + " cannot be translated yet");
+
 
     }
 
@@ -197,7 +205,9 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
 
     @Override
     public TableConstraint visit(SqlIsNotNullCondition e, Void argument) {
-        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NOT_BE_INVOKED);
+        String tableName = getTableName(e.getColumn());
+        String columnName = e.getColumn().getColumnName();
+        return new IsNotNullConstraint(tableName, columnName);
     }
 
     @Override

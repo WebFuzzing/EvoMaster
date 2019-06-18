@@ -4,13 +4,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
-public class AndConstraint extends TableConstraint {
+public class IffConstraint extends TableConstraint {
+
 
     private final /*non-null*/ TableConstraint left;
 
     private final /*non-null*/ TableConstraint right;
 
-    public AndConstraint(String tableName, TableConstraint left, TableConstraint right) {
+    public IffConstraint(String tableName, TableConstraint left, TableConstraint right) {
         super(tableName);
         this.left = Objects.requireNonNull(left);
         this.right = Objects.requireNonNull(right);
