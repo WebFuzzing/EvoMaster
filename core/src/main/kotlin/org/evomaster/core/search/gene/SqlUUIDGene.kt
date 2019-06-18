@@ -32,7 +32,8 @@ class SqlUUIDGene(
     }
 
     override fun getValueAsRawString(): String {
-        return "{%s}".format(getValueAsUUID())
+        // https://www.postgresql.org/docs/9.1/datatype-uuid.html
+        return getValueAsUUID().toString()
     }
 
     fun getValueAsUUID(): UUID = UUID(mostSigBits.value, leastSigBits.value)

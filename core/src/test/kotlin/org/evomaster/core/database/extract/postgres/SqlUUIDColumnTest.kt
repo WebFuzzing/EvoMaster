@@ -33,7 +33,7 @@ class SqlUUIDColumnTest : ExtractTestBasePostgres() {
         assertTrue(genes[1] is SqlUUIDGene)
         val uuidGene = genes[1] as SqlUUIDGene
 
-        val expectedUUIDStringValue = "{%s}".format(UUID(0L, 0L))
+        val expectedUUIDStringValue = UUID(0L, 0L).toString()
 
         assertEquals(expectedUUIDStringValue, uuidGene.getValueAsRawString())
     }

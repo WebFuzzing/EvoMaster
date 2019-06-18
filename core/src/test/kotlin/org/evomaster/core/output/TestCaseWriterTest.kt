@@ -723,7 +723,7 @@ class TestCaseWriterTest {
             add("List<InsertionDto> insertions = sql().insertInto(\"Table0\", 0L)")
             indent()
             indent()
-            add(".d(\"uuidCode\", \"\\\"{00000000-0000-0000-0000-000000000000}\\\"\")")
+            add(".d(\"uuidCode\", \"\\\"00000000-0000-0000-0000-000000000000\\\"\")")
             deindent()
             add(".dtos();")
             deindent()
