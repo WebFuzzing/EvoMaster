@@ -1,5 +1,6 @@
 package org.evomaster.core.database
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.ForeignKey
@@ -222,11 +223,11 @@ class DbActionGeneBuilder {
             if (column.similarToPatterns != null && column.similarToPatterns.isNotEmpty()) {
                 val columnName = column.name
                 val similarToPatterns: List<String> = column.similarToPatterns
-                buildSimilarToRegexGene(columnName, similarToPatterns)
+                buildSimilarToRegexGene(columnName, similarToPatterns, databaseType = column.databaseType)
             } else if (column.likePatterns != null && column.likePatterns.isNotEmpty()) {
                 val columnName = column.name
                 val likePatterns = column.likePatterns
-                buildLikeRegexGene(columnName, likePatterns)
+                buildLikeRegexGene(columnName, likePatterns, databaseType = column.databaseType)
             } else {
                 StringGene(name = column.name, minLength = 0, maxLength = column.size)
             }
@@ -237,9 +238,9 @@ class DbActionGeneBuilder {
      * Builds a RegexGene using a name and a list of LIKE patterns.
      * The resulting gene is a disjunction of the given patterns
      */
-    fun buildLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
+    fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType? = null): RegexGene {
         val disjunctionRxGenes = likePatterns
-                .map { createGeneForPostgresLike(it) }
+                .map { createGeneForPostgresLike(it, databaseType) }
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
@@ -250,9 +251,9 @@ class DbActionGeneBuilder {
      * Builds a RegexGene using a name and a list of SIMILAR_TO patterns.
      * The resulting gene is a disjunction of the given patterns
      */
-    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
+    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>, databaseType: DatabaseType? = null): RegexGene {
         val disjunctionRxGenes = similarToPatterns
-                .map { createGeneForPostgresSimilarTo(it) }
+                .map { createGeneForPostgresSimilarTo(it, databaseType) }
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()

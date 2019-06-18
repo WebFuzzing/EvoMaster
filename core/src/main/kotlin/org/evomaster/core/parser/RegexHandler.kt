@@ -2,6 +2,7 @@ package org.evomaster.core.parser
 
 import org.antlr.v4.runtime.*
 import org.antlr.v4.runtime.misc.ParseCancellationException
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.search.gene.regex.RegexGene
 
 
@@ -44,7 +45,7 @@ object RegexHandler {
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
      */
-    fun createGeneForPostgresLike(regex: String): RegexGene{
+    fun createGeneForPostgresLike(regex: String, databaseType: DatabaseType? = null): RegexGene {
 
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresLikeLexer(stream)
@@ -66,7 +67,7 @@ object RegexHandler {
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
      */
-    fun createGeneForPostgresSimilarTo(regex: String): RegexGene{
+    fun createGeneForPostgresSimilarTo(regex: String, databaseType: DatabaseType? = null): RegexGene {
 
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresSimilarToLexer(stream)

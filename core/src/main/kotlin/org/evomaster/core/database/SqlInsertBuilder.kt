@@ -91,7 +91,8 @@ class SqlInsertBuilder(
                         upperBound = upperBound,
                         enumValuesAsStrings = enumValuesAsStrings,
                         similarToPatterns = similarToPatterns,
-                        likePatterns = likePatterns
+                        likePatterns = likePatterns,
+                        databaseType = databaseType
                 )
 
                 columns.add(column)
