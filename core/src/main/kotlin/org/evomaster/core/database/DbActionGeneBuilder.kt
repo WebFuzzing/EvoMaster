@@ -233,20 +233,30 @@ class DbActionGeneBuilder {
         }
     }
 
-    fun buildLikeRegexGene(columnName: String, likePatterns: List<String>): RegexGene {
+    /**
+     * Builds a RegexGene using a name and a list of LIKE patterns.
+     * The resulting gene is a disjunction of the given patterns
+     */
+    fun buildLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
                 .map { createGeneForPostgresLike(it) }
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
-        val disjunctionListRxGene = DisjunctionListRxGene(disjunctions = disjunctionRxGenes)
-        return RegexGene(columnName, disjunctions = disjunctionListRxGene)
+        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
-    fun buildSimilarToRegexGene(columnName: String, similarToPatterns: List<String>): RegexGene {
-        val joinedPattern = similarToPatterns.map { c -> "(%s)".format(c) }.joinToString("|")
-        val regexGene = createGeneForPostgresSimilarTo(joinedPattern)
-        return RegexGene(name = columnName, disjunctions = regexGene.disjunctions)
+    /**
+     * Builds a RegexGene using a name and a list of SIMILAR_TO patterns.
+     * The resulting gene is a disjunction of the given patterns
+     */
+    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
+        val disjunctionRxGenes = similarToPatterns
+                .map { createGeneForPostgresSimilarTo(it) }
+                .map { it.disjunctions }
+                .map { it.disjunctions }
+                .flatten()
+        return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
     private fun handleTimestampColumn(column: Column): SqlTimestampGene {
