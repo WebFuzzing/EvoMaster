@@ -174,7 +174,7 @@ public abstract class RestTestBase {
 
         controllerPort = embeddedStarter.getControllerServerPort();
 
-        remoteController = new RemoteController("localhost", controllerPort);
+        remoteController = new RemoteController("localhost", controllerPort, true);
         boolean started = remoteController.startSUT();
         assertTrue(started);
 
