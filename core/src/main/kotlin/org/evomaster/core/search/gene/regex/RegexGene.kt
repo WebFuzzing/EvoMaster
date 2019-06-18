@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.regex
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
+import java.lang.IllegalArgumentException
 
 /**
  * A gene representing a regular expression (regex).
@@ -20,38 +21,26 @@ class RegexGene(
         disjunctions.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun getValueAsRawString(): String {
-        return disjunctions.getValueAsPrintableString(targetFormat = null)
-    }
-
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        val rawValue = getValueAsRawString()
-        when {
-            (targetFormat == null) -> return "\"$rawValue\""
-            targetFormat.isKotlin() -> return "\"$rawValue\""
-                    .replace("\\", "\\\\")
-                    .replace("$", "\\$")
-            else -> return "\"$rawValue\""
-                    .replace("\\", "\\\\")
-        }
+        return disjunctions.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
     override fun copyValueFrom(other: Gene) {
-        if (other !is RegexGene) {
+        if(other !is RegexGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.disjunctions.copyValueFrom(other.disjunctions)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is RegexGene) {
+        if(other !is RegexGene){
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.disjunctions.containsSameValueAs(other.disjunctions)
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf() else
-            listOf(this).plus(disjunctions.flatView(excludePredicate))
+        return if (excludePredicate(this)) listOf(this)
+        else listOf(this).plus(disjunctions.flatView(excludePredicate))
     }
 }

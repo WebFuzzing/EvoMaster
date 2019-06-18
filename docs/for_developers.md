@@ -219,6 +219,9 @@ something like `spring-boot-starter-parent`).
 If you need to use such external poms, you can import them as dependency, i.e., specifying
 the `<scope>import</scope>` tag. 
 
+When creating a new module, it is also important to add it as a dependency to `report`,
+so that aggregated, transitive code coverage can be calculated.
+
 
 ### MAVEN DEPENDENCY VERSION 
 
