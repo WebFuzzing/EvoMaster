@@ -14,7 +14,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.*
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class TestCaseWriterTest {
@@ -613,41 +612,33 @@ class TestCaseWriterTest {
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
-    @Disabled("JP: can you please review/update this test?")
     @Test
     fun testIndirectForeignKeyColumn() {
         val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
         val table0 = Table("Table0", setOf(table0_Id), HashSet<ForeignKey>())
 
-        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true)
+        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
         val table1 = Table("Table1", setOf(table1_Id), HashSet<ForeignKey>())
 
         val table2_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
         val table2 = Table("Table2", setOf(table2_Id), HashSet<ForeignKey>())
 
-
         val insertId0 = 1001L
         val autoGene = SqlAutoIncrementGene(table0_Id.name)
-        val pkGene0 = SqlPrimaryKeyGene(table0_Id.name, "Table0", autoGene, 10)
+        val pkGene0 = SqlPrimaryKeyGene(table0_Id.name, "Table0", autoGene, insertId0)
         val insert0 = DbAction(table0, setOf(table0_Id), insertId0, listOf(pkGene0))
 
-        /*
-            FIXME:
-            table1_Id is marked with primaryKey = true, but here no SqlPrimaryKeyGene is created?
-            Furthermore, Table0 is marked with autoIncrement = true, but this table1_Id is not
-            marked with foreignKeyToAutoIncrement = true ?
-         */
+
         val insertId1 = 1002L
         val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, "Table0", false, insertId0)
-        val insert1 = DbAction(table1, setOf(table1_Id), insertId1, listOf(fkGene0))
+        val pkGene1 = SqlPrimaryKeyGene(table1_Id.name, "Table1", fkGene0, insertId1)
+        val insert1 = DbAction(table1, setOf(table1_Id), insertId1, listOf(pkGene1))
 
-        /*
-            FIXME:
-            table2_Id is marked with primaryKey = true, but here no SqlPrimaryKeyGene is created?
-         */
+
         val insertId2 = 1003L
         val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, "Table1", false, insertId1)
-        val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(fkGene1))
+        val pkGene2 = SqlPrimaryKeyGene(table2_Id.name, "Table2", fkGene1, insertId2)
+        val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(pkGene2))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert0, insert1, insert2))
         val config = EMConfig()
@@ -667,7 +658,7 @@ class TestCaseWriterTest {
             indent()
             add(".and().insertInto(\"Table1\", 1002L)")
             indent()
-            add(".r(\"Id\", 1001L)")
+            add(".r(\"Id\", 1001L, true)")
             deindent()
             add(".and().insertInto(\"Table2\", 1003L)")
             indent()
