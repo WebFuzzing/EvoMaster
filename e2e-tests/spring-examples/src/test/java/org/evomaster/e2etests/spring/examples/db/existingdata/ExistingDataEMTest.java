@@ -27,7 +27,7 @@ public class ExistingDataEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "DbExistingDataEM",
                 "org.bar.db.ExistingDataEM",
-                100,
+                50, //this should be trial to cover
                 (args) -> {
 
                     args.add("--heuristicsForSQL");
