@@ -41,11 +41,11 @@ class RestResourceNode(
     private val tokens : MutableMap<String, PathRToken> = mutableMapOf()
 
     /**
-     * since a token may be a combined word, the word can be separator by processing text analysis
-     * key is boolean. the true value maps a flatten list of words for the path, and the false maps a list of original tokens.
-     * value is a list of words
+     * segments of a path
+     * since a token may be a combined word, the word can be separator by processing text analysis,
+     * the [segments] can be a flatten list of words for the path (at index 1) or a list of original tokens (at index 0).
      */
-    private val segments : MutableMap<Boolean, List<String>> = mutableMapOf()
+    private val segments : MutableList<List<String>> = mutableListOf()
 
     init {
         when(initMode){
@@ -696,16 +696,17 @@ class RestResourceNode(
 
 
     fun getAllSegments(flatten: Boolean) : List<String>{
-        return segments.getValue(flatten)
+        assert(segments.size == 2)
+        return if(flatten) segments[1] else segments[0]
     }
 
     private fun initSegments(){
         val levels = mutableSetOf<Int>()
         tokens.values.filter { it.isParameter }.forEach { levels.add(it.level) }
         if (!path.isLastElementAParameter()) levels.add(tokens.size)
-        arrayOf(true, false).forEach { flatten->
-            segments.putIfAbsent(flatten, levels.toList().sorted().map { getSegment(flatten, it) })
-        }
+        segments.add(0, levels.toList().sorted().map { getSegment(false, it) })
+        segments.add(1, levels.toList().sorted().map { getSegment(true, it) })
+        assert(segments.size == 2)
     }
 
     fun getRefTypes() : Set<String>{
