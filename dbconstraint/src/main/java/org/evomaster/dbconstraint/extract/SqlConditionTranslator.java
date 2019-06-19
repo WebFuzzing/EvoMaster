@@ -127,7 +127,7 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
         } else if (rightLiteral instanceof SqlStringLiteralValue) {
             SqlStringLiteralValue stringLiteralValue = (SqlStringLiteralValue) rightLiteral;
             if (e.getSqlComparisonOperator().equals(EQUALS_TO)) {
-                return new EnumConstraint(tableName, columnName, Collections.singletonList(stringLiteralValue.toSql()));
+                return new EnumConstraint(tableName, columnName, Collections.singletonList(stringLiteralValue.getStringValue()));
             } else {
                 throw new UnsupportedOperationException(UNEXPECTED_COMPARISON_OPERATOR_MESSAGE + e.getSqlComparisonOperator());
             }

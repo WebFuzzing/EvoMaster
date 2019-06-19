@@ -2,8 +2,9 @@ package org.evomaster.dbconstraint;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TableConstraintBuilderTest {
@@ -82,8 +83,18 @@ public class TableConstraintBuilderTest {
     public void testEqualsOfTwoFormulas() {
         TableConstraintBuilder builder = new TableConstraintBuilder();
         TableConstraint constraint = builder.translateToConstraint("x", "((STATUS = 'b') = (P_AT IS NOT NULL))");
-        assertFalse(constraint instanceof UnsupportedTableConstraint);
         assertTrue(constraint instanceof IffConstraint);
+        IffConstraint iffConstraint = (IffConstraint) constraint;
+        assertTrue(iffConstraint.getLeft() instanceof EnumConstraint);
+        assertTrue(iffConstraint.getRight() instanceof IsNotNullConstraint);
+
+        EnumConstraint enumConstraint = (EnumConstraint) iffConstraint.getLeft();
+        assertEquals("STATUS", enumConstraint.getColumnName());
+        IsNotNullConstraint isNotNullConstraint = (IsNotNullConstraint) iffConstraint.getRight();
+        assertEquals("P_AT", isNotNullConstraint.getColumnName());
+
+        assertEquals(Arrays.asList("b"), enumConstraint.getValuesAsStrings());
+
     }
 
 
