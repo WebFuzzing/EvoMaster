@@ -112,6 +112,7 @@
         <asm.version>7.0</asm.version>
         <testcontainers.version>1.10.1</testcontainers.version>
         <antlr.version>4.7.2</antlr.version>
+        <nlp.version>3.9.2</nlp.version>
     </properties>
 
 

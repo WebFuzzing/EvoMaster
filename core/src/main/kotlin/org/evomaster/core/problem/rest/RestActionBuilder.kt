@@ -23,6 +23,9 @@ class RestActionBuilder {
         private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
         private val idGenerator = AtomicInteger()
 
+        /**
+         * @param doParserDescription presents whether apply name/text analysis on description and summary of rest action
+         */
         fun addActionsFromSwagger(swagger: Swagger,
                                   actionCluster: MutableMap<String, Action>,
                                   endpointsToSkip: List<String> = listOf(),

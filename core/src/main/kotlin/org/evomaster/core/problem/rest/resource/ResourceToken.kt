@@ -1,5 +1,11 @@
 package org.evomaster.core.problem.rest.resource
 
+/**
+ * this is used for text and name analysis with nl parser
+ * @property originalText is original text before processing the analysis
+ * @property lemma of [originalText]
+ * @property assuredVerb presents whether the token is a verb
+ */
 open class RToken(
     val originalText : String,
     protected val lemma : String,
@@ -26,6 +32,15 @@ open class RToken(
         return RToken(originalText,lemma, assuredVerb)
     }
 }
+
+/**
+ * token on resource path
+ * @property level presents a level of the token on the path, e.g., /A/{a}/B/{b}, and the level of A and a is 0, B and b are 1
+ * @property isParameter presents whether the token refers to a parameter, e.g., a and b are parameters for /A/{a}/B/{b}
+ * @property segment presents a segment in a front of the token, e.g., /A/{a}/B/{b}/C/D/{d}, the segment of {d} is "C-D".
+ *          Regarding how the segment is generated, please conduct the [parsePathTokens] of [ParserUtil]
+ * @property nearestParamLevel presents a level of parameter which is in front of the token and is closest to the token
+ */
 class PathRToken(
         originalText : String,
         lemma : String,

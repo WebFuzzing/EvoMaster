@@ -11,10 +11,6 @@
     <artifactId>evomaster-core</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-        <nlp.version>3.9.2</nlp.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.evomaster</groupId>

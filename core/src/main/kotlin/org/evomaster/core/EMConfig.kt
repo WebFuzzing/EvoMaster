@@ -245,6 +245,24 @@ class EMConfig {
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
 
+        //resource related parameters
+        if((resourceSampleStrategy != ResourceSamplingStrategy.NONE || doesInvolveDatabase || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
+                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)){
+            throw IllegalArgumentException("Parameters (${
+            arrayOf("resourceSampleStrategy", "doesInvolveDatabase", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics","exportDependencies")
+                    .filterIndexed { index, _ ->
+                        (index == 0 && resourceSampleStrategy!=ResourceSamplingStrategy.NONE) ||
+                                (index == 1 && doesInvolveDatabase) ||
+                                (index == 2 && doesApplyNameMatching) ||
+                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
+                                (index == 4 && exportDependencies)}.joinToString(" and ")
+            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+        }
+
+        //archive-based mutation
+        if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
+            throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
+        }
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -587,7 +605,8 @@ class EMConfig {
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
-    var probOfEnablingResourceDependencyHeuristics = 0.5
+    @Min(0.0) @Max(1.0)
+    var probOfEnablingResourceDependencyHeuristics = 0.0
 
     @Experimental
     @Cfg("Specify whether to export derived dependencies among resources. " +
@@ -595,39 +614,42 @@ class EMConfig {
     var exportDependencies = false
 
     @Experimental
-    @Cfg("Whether to involve db when applying resource-based methods, e.g., resource-based sampling.")
-    var doesInvolveDB = false
+    @Cfg("Whether to involve database when applying resource-based methods, e.g., resource-based sampling.")
+    var doesInvolveDatabase = false
 
     @Experimental
-    @Cfg("Specify a minimal number of rows in a table")
+    @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. In other word, if the number is less than the specified, insertion is always applied.")
+    @Min(0.0)
     var minRowOfTable = 10
 
     @Experimental
-    @Cfg("Specify a probability that enables selection of data from db instead of insertion")
+    @Cfg("Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions")
     @Min(0.0) @Max(1.0)
-    var probOfSelectFromDB = 0.1
+    var probOfSelectFromDatabase = 0.1
 
     @Experimental
-    @Cfg("Whether to apply token parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    @Cfg("Whether to apply text/name analysis with natural la parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
     var doesApplyNameMatching = false
 
     @Experimental
     @Cfg("Specify a probability to apply S1iR when sample control is Customized")
     @Min(0.0)@Max(1.0)
     var S1iR : Double = 0.25
+
     @Experimental
     @Cfg("Specify a probability to apply S1dR when sample control is Customized")
     @Min(0.0)@Max(1.0)
     var S1dR : Double = 0.25
+
     @Experimental
     @Cfg("Specify a probability to apply S2dR when sample control is Customized")
     @Min(0.0)@Max(1.0)
     var S2dR : Double = 0.25
+
     @Experimental
     @Cfg("Specify a probability to apply SMdR when sample control is Customized")
     @Min(0.0)@Max(1.0)
     var SMdR : Double = 0.25
-
 
     @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
@@ -640,10 +662,10 @@ class EMConfig {
     var perOfCandidateGenesToMutate = 0.1
 
     @Experimental
-    @Cfg("Specify whether to enable archive-based mutation")
-    var geneSelectionMethod = GeneSelectionMethod.NONE
+    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
+    var geneSelectionMethod = ArchiveGeneSelectionMethod.NONE
 
-    enum class GeneSelectionMethod {
+    enum class ArchiveGeneSelectionMethod {
         NONE,
         AWAY_BAD,
         APPROACH_GOOD,

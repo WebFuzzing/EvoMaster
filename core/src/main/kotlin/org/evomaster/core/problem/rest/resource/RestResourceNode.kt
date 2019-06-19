@@ -34,8 +34,17 @@ class RestResourceNode(
         val log: Logger = LoggerFactory.getLogger(RestResourceNode::class.java)
     }
 
+    /**
+     * key is original text of the token
+     * value is PathRToken which contains more analysis info about the orignal text
+     */
     private val tokens : MutableMap<String, PathRToken> = mutableMapOf()
 
+    /**
+     * since a token may be a combined word, the word can be separator by processing text analysis
+     * key is boolean. the true value maps a flatten list of words for the path, and the false maps a list of original tokens.
+     * value is a list of words
+     */
     private val segments : MutableMap<Boolean, List<String>> = mutableMapOf()
 
     init {
@@ -632,7 +641,7 @@ class RestResourceNode(
     fun getTokenMap() : Map<String, PathRToken> = tokens.toMap()
 
     fun getFlatViewOfTokens(excludeStar : Boolean = true) : List<PathRToken>
-            = tokens.values.filter { !excludeStar || !it.isStar()}.flatMap { p -> if(p.subTokens.isNotEmpty()) p.subTokens else mutableListOf(p) }.toList()
+            =  tokens.values.filter { !excludeStar || !it.isStar()}.flatMap { p -> if(p.subTokens.isNotEmpty()) p.subTokens else mutableListOf(p) }.toList()
 
 
     /******************** manage param *************************/

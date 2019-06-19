@@ -306,10 +306,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         assert(candidatesMap.size == genesToMutate.size)
 
         val genes = when(config.geneSelectionMethod){
-            EMConfig.GeneSelectionMethod.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
-            EMConfig.GeneSelectionMethod.APPROACH_GOOD -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
-            EMConfig.GeneSelectionMethod.FEED_BACK -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
-            EMConfig.GeneSelectionMethod.NONE -> {
+            EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
+            EMConfig.ArchiveGeneSelectionMethod.APPROACH_GOOD -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
+            EMConfig.ArchiveGeneSelectionMethod.FEED_BACK -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
+            EMConfig.ArchiveGeneSelectionMethod.NONE -> {
                 emptyList()
             }
         }

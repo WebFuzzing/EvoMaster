@@ -250,7 +250,7 @@ class ResourceManageService {
                             failToGenDB = failToGenDB || !this
                         }
                         else ->{
-                            if(randomness.nextBoolean(config.probOfSelectFromDB)){
+                            if(randomness.nextBoolean(config.probOfSelectFromDatabase)){
                                 generateSelectSql(tableName, dbActions)
                             }else{
                                 generateInserSql(tableName, dbActions).apply {
@@ -361,7 +361,7 @@ class ResourceManageService {
         return randomness.choose(dataInDB[tableName]!!.filter { it.columnData.toSet().equals(set) })
     }
 
-    private fun hasDBHandler() : Boolean = sampler is RestResourceSampler && (sampler as RestResourceSampler).sqlInsertBuilder!= null && config.doesInvolveDB
+    private fun hasDBHandler() : Boolean = sampler is RestResourceSampler && (sampler as RestResourceSampler).sqlInsertBuilder!= null && config.doesInvolveDatabase
 
     private fun snapshotDB(){
         if(hasDBHandler()){

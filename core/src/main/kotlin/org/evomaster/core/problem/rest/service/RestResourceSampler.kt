@@ -40,7 +40,7 @@ class RestResourceSampler : Sampler<RestIndividual>() {
     private lateinit var rc: RemoteController
 
     @Inject
-    private lateinit var ssc : SmartSamplingController
+    private lateinit var ssc : ResourceSampleMethodController
 
     @Inject
     private lateinit var rm : ResourceManageService
@@ -92,7 +92,7 @@ class RestResourceSampler : Sampler<RestIndividual>() {
 
         assert(config.resourceSampleStrategy != EMConfig.ResourceSamplingStrategy.NONE)
 
-        if(config.doesInvolveDB){
+        if(config.doesInvolveDatabase){
             if(infoDto.sqlSchemaDto != null && sqlInsertBuilder == null)
                 sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
         }

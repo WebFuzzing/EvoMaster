@@ -4,6 +4,9 @@ import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
 
+/**
+ * this is a utility to handle Sql command generation
+ */
 class SQLGenerator{
 
     companion object {
@@ -24,6 +27,9 @@ class SQLGenerator{
             return genSelect(selected, table, condition)
         }
 
+        /**
+         * assemble all filter conditions
+         */
         fun composeAndConditions(conditions : List<String>) : String{
             return conditions.joinToString(SQLKey.AND.key)
         }
@@ -33,6 +39,9 @@ class SQLGenerator{
             return conditions.joinToString(operator)
         }
 
+        /**
+         * @return a list of filter condition regarding columns [cols] and its values [values] for table [table].
+         */
         fun genConditions(cols: Array<String>, values: List<String>, table: Table) : List<String>{
             if(cols.size != values.size)
                 IllegalArgumentException("sizes of values ${values.size} and columns ${cols.size} are not matched")
@@ -68,6 +77,7 @@ class SQLGenerator{
         }
 
         private fun equalCondition(left : String, right :String) :String = "$left = $right"
+
         /**
          * select rows of specified columns with constraints, i.e., SELECT * FROM TABLE WHERE CONDITION
          */
