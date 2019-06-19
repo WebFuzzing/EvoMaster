@@ -118,6 +118,9 @@ public abstract class RestTestBase {
         assertTrue(summary.getContainersFoundCount() > 0);
         assertEquals(0, summary.getContainersFailedCount());
         assertTrue(summary.getContainersSucceededCount() > 0);
+        assertTrue(summary.getTestsFoundCount() > 0);
+        assertEquals(0, summary.getTestsFailedCount());
+        assertTrue(summary.getTestsSucceededCount() > 0);
     }
 
     protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
