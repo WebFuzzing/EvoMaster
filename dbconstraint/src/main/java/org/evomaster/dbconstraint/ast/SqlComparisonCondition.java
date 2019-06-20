@@ -38,6 +38,7 @@ public class SqlComparisonCondition extends SqlCondition {
 
     @Override
     public <K, V> K accept(SqlConditionVisitor<K, V> visitor, V argument) {
+
         return visitor.visit(this, argument);
     }
 

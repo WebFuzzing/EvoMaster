@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Column
@@ -16,8 +17,10 @@ class WriteJsonTest {
     fun testJSONBEmpty() {
 
 
-        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true,
+                databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -61,8 +64,10 @@ class WriteJsonTest {
     fun testJSONBColumnType() {
 
 
-        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true,
+                databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -104,8 +109,10 @@ class WriteJsonTest {
 
     @Test
     fun testJSONBoolean() {
-        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true,
+                databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -147,8 +154,10 @@ class WriteJsonTest {
 
     @Test
     fun testJSONString() {
-        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", ColumnDataType.INTEGER, 10, primaryKey = true, autoIncrement = true,
+                databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", ColumnDataType.JSONB, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 

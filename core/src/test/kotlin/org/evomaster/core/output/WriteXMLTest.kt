@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Column
@@ -16,7 +17,7 @@ class WriteXMLTest {
 
     @Test
     fun testEmptyXML() {
-        val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false)
+        val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(xmlColumn), setOf())
 
@@ -57,7 +58,8 @@ class WriteXMLTest {
 
     @Test
     fun testChildrenXML() {
-        val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false)
+        val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(xmlColumn), setOf())
 
@@ -103,7 +105,8 @@ class WriteXMLTest {
 
     @Test
     fun testString() {
-        val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false)
+        val xmlColumn = Column("xmlColumn", ColumnDataType.XML, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(xmlColumn), setOf())
 

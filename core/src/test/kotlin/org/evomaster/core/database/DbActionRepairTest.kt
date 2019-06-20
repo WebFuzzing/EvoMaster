@@ -1,5 +1,6 @@
 package org.evomaster.core.database
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
@@ -18,13 +19,15 @@ class DbActionRepairTest {
                 autoIncrement = false,
                 unique = false,
                 enumValuesAsStrings = listOf("A", "B"),
-                nullable = false)
+                nullable = false,
+                databaseType = DatabaseType.H2)
 
         val pAtColumn = Column("p_at", ColumnDataType.TIMESTAMP, 10,
                 primaryKey = false,
                 autoIncrement = false,
                 unique = false,
-                nullable = true)
+                nullable = true,
+                databaseType = DatabaseType.H2)
 
         val xTableName = "x"
 

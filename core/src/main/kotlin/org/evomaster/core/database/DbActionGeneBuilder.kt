@@ -238,22 +238,40 @@ class DbActionGeneBuilder {
      * Builds a RegexGene using a name and a list of LIKE patterns.
      * The resulting gene is a disjunction of the given patterns
      */
-    fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType? = null): RegexGene {
+    fun buildLikeRegexGene(geneName: String, likePatterns: List<String>, databaseType: DatabaseType): RegexGene {
+        return when {
+            databaseType == DatabaseType.POSTGRES -> buildPostgresLikeRegexGene(geneName, likePatterns)
+            //TODO: support other database SIMILAR_TO check expressions
+            else -> throw UnsupportedOperationException("Must implement similarTo expressions for database %s".format(databaseType))
+        }
+    }
+
+    private fun buildPostgresLikeRegexGene(geneName: String, likePatterns: List<String>): RegexGene {
         val disjunctionRxGenes = likePatterns
-                .map { createGeneForPostgresLike(it, databaseType) }
+                .map { createGeneForPostgresLike(it) }
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
+
     /**
      * Builds a RegexGene using a name and a list of SIMILAR_TO patterns.
      * The resulting gene is a disjunction of the given patterns
+     * according to the database we are using
      */
-    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>, databaseType: DatabaseType? = null): RegexGene {
+    fun buildSimilarToRegexGene(geneName: String, similarToPatterns: List<String>, databaseType: DatabaseType): RegexGene {
+        return when {
+            databaseType == DatabaseType.POSTGRES -> buildPostgresSimilarToRegexGene(geneName, similarToPatterns)
+            //TODO: support other database SIMILAR_TO check expressions
+            else -> throw UnsupportedOperationException("Must implement similarTo expressions for database %s".format(databaseType))
+        }
+    }
+
+    private fun buildPostgresSimilarToRegexGene(geneName: String, similarToPatterns: List<String>): RegexGene {
         val disjunctionRxGenes = similarToPatterns
-                .map { createGeneForPostgresSimilarTo(it, databaseType) }
+                .map { createGeneForPostgresSimilarTo(it) }
                 .map { it.disjunctions }
                 .map { it.disjunctions }
                 .flatten()

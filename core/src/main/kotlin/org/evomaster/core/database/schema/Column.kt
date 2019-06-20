@@ -34,7 +34,7 @@ data class Column(
 
         val likePatterns: List<String>? = null,
 
-        val databaseType: DatabaseType? = null
+        val databaseType: DatabaseType
 
         // public boolean identity;
 

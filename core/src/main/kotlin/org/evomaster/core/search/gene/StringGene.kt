@@ -38,6 +38,7 @@ class StringGene(
             return StringEscapeUtils.escapeXml(rawValue)
         } else {
             when {
+                // TODO this code should be refactored with other getValueAsPrintableString() methods
                 (targetFormat == null) -> return "\"$rawValue\""
                 targetFormat.isKotlin() -> return "\"$rawValue\""
                         .replace("\\", "\\\\")
