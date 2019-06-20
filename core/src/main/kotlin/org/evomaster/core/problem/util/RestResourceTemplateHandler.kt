@@ -60,7 +60,7 @@ class RestResourceTemplateHandler{
             }
 
             if(_space.first() || _space.last()){
-                val chosen = space.filter { v-> v!=HttpVerb.POST && v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
+                val chosen = space.filter { v-> v!=HttpVerb.HEAD && v!=HttpVerb.OPTIONS }.toTypedArray()
                 chosen.forEach {
                     val key = formatTemplate(arrayOf(HttpVerb.POST, it))
                     maps.getOrPut(key){

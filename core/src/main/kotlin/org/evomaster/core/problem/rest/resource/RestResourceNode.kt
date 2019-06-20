@@ -93,7 +93,11 @@ class RestResourceNode(
      */
     private val verbs : Array<Boolean> = Array(RestResourceTemplateHandler.getSizeOfHandledVerb() + 1){false}
 
-    val templates : MutableMap<String, CallsTemplate> = mutableMapOf()
+    /**
+     * key is template with string format
+     * value is template info
+     */
+    private val templates : MutableMap<String, CallsTemplate> = mutableMapOf()
 
     /**
      * this init occurs after actions and ancestors are set up
@@ -799,8 +803,9 @@ class RestResourceNode(
                 return listOf()
             }
         }
-
     }
+
+    fun getTemplates() : Map<String, CallsTemplate> = templates.toMap()
 }
 
 

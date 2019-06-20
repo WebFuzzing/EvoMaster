@@ -69,9 +69,9 @@ class ResourceSampleMethodController {
             #DepRs ${mutableMap.values.filterNot { it.isIndependent() }.size}
 
             #Actions ${mutableMap.values.map { it.actions.size }.sum()}
-            #IndActions ${mutableMap.values.map { it.templates.filter { t -> t.value.independent }.size }.sum()}
-            #depActions ${mutableMap.values.map { it.templates.filter { t -> !t.value.independent }.size}.sum()}
-            #depComActions ${mutableMap.values.map { it.templates.filter { t -> !t.value.independent }.size * (it.templates.filter { !it.value.independent }.size -1) }.sum()}
+            #IndActions ${mutableMap.values.map { it.getTemplates().filter { t -> t.value.independent }.size }.sum()}
+            #depActions ${mutableMap.values.map { it.getTemplates().filter { t -> !t.value.independent }.size}.sum()}
+            #depComActions ${mutableMap.values.map { it.getTemplates().filter { t -> !t.value.independent }.size * (it.getTemplates().filter { !it.value.independent }.size -1) }.sum()}
             """
         println(message)
     }
@@ -312,6 +312,8 @@ class ResourceSampleMethodController {
             it.improved +=1
         }
     }
+
+    fun getApplicableMethods() = methods.filterValues { it.applicable }.keys
 
     /**
      * MethodApplicationInfo presents detailed information about how to sample for methods defined [ResourceSamplingMethod],

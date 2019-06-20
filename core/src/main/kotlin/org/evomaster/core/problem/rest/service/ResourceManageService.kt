@@ -34,9 +34,6 @@ class ResourceManageService {
     }
 
     @Inject
-    private lateinit var sampler: Sampler<*>
-
-    @Inject
     private lateinit var randomness: Randomness
 
     @Inject
@@ -63,13 +60,15 @@ class ResourceManageService {
      */
     private val tables : MutableMap<String, Table> = mutableMapOf()
 
-
+    private var sqlInsertBuilder : SqlInsertBuilder? = null
     /**
      * init resource nodes based on [actionCluster]
      */
-    fun initResourceNodes(actionCluster : MutableMap<String, Action>) {
+    fun initResourceNodes(actionCluster : MutableMap<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null) {
 
-        if(hasDBHandler()) getSqlBuilder()?.extractExistingTables(tables)
+        this.sqlInsertBuilder = sqlInsertBuilder
+
+        if(hasDBHandler()) sqlInsertBuilder?.extractExistingTables(tables)
 
         actionCluster.values.forEach { u ->
             if (u is RestCallAction) {
@@ -143,7 +142,7 @@ class ResourceManageService {
 
         //template
         sortedResources.forEach { ar->
-            ar.templates.values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
+            ar.getTemplates().values.filter { t-> RestResourceTemplateHandler.isNotSingleAction(t.template) }
                     .forEach {ct->
                         val call = ar.sampleRestResourceCalls(ct.template, randomness, config.maxTestSize)
                         call.actions.forEach { if(it is RestCallAction) it.auth = auth }
@@ -186,23 +185,23 @@ class ResourceManageService {
             return
         }
 
-        assert(!ar.isIndependent())
+        //assert(!ar.isIndependent())
         var candidateForInsertion : String? = null
 
         if(hasDBHandler() && ar.resourceToTable.paramToTable.isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(0.5))){
             //Insert - GET/PUT/PATCH
-            val candidates = ar.templates.filter { it.value.independent }
+            val candidates = ar.getTemplates().filter { it.value.independent }
             candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
         }
 
 
         val candidate = if(candidateForInsertion.isNullOrBlank()) {
             //prior to select the template with POST
-            ar.templates.filter { !it.value.independent }.run {
+            ar.getTemplates().filter { !it.value.independent }.run {
                 if(isNotEmpty())
                     randomness.choose(this.keys)
                 else
-                    randomness.choose(ar.templates.keys)
+                    randomness.choose(ar.getTemplates().keys)
             }
         } else candidateForInsertion
 
@@ -361,11 +360,11 @@ class ResourceManageService {
         return randomness.choose(dataInDB[tableName]!!.filter { it.columnData.toSet().equals(set) })
     }
 
-    private fun hasDBHandler() : Boolean = sampler is RestResourceSampler && (sampler as RestResourceSampler).sqlInsertBuilder!= null && config.doesInvolveDatabase
+    private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null && config.doesInvolveDatabase
 
     private fun snapshotDB(){
         if(hasDBHandler()){
-            (sampler as RestResourceSampler).sqlInsertBuilder!!.extractExistingPKs(dataInDB)
+            sqlInsertBuilder!!.extractExistingPKs(dataInDB)
         }
     }
 
@@ -395,13 +394,13 @@ class ResourceManageService {
             randomness.choose(dataInDB[tableName]!!)
         }
 
-        val selectDbAction = (sampler as RestResourceSampler).sqlInsertBuilder!!.extractExistingByCols(tableName, columns)
+        val selectDbAction = sqlInsertBuilder!!.extractExistingByCols(tableName, columns)
         dbActions.add(selectDbAction)
     }
 
     private fun generateInserSql(tableName : String, dbActions: MutableList<DbAction>) : Boolean{
         val insertDbAction =
-                (sampler as RestResourceSampler).sqlInsertBuilder!!
+                sqlInsertBuilder!!
                         .createSqlInsertionActionWithAllColumn(tableName)
 
         if(insertDbAction.isEmpty()) return false
@@ -437,7 +436,7 @@ class ResourceManageService {
 
     private fun getSqlBuilder() : SqlInsertBuilder?{
         if(!hasDBHandler()) return null
-        return (sampler as RestResourceSampler).sqlInsertBuilder
+        return sqlInsertBuilder
     }
 
 }

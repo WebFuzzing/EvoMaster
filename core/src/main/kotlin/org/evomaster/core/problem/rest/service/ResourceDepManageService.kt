@@ -939,14 +939,13 @@ class ResourceDepManageService {
 
         val first = randomness.choose(dependencies.keys)
         rm.sampleCall(first, true, calls, maxSize)
-        var sampleSize = 1
         var size = calls.sumBy { it.actions.size } + start
         val excluded = mutableListOf<String>()
         val relatedResources = mutableListOf<RestResourceCalls>()
         excluded.add(first)
         relatedResources.add(calls.last())
 
-        while (sampleSize < sizeOfResource && size < maxSize) {
+        while (relatedResources.size < sizeOfResource && size < maxSize) {
             val candidates = dependencies[first]!!.flatMap { it.targets }.filter { !excluded.contains(it) }
             if (candidates.isEmpty())
                 break
@@ -1142,6 +1141,8 @@ class ResourceDepManageService {
     fun onlyIndependentResource(): Boolean {
         return rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.isEmpty()
     }
+
+    fun getRelatedResource(resource : String) : Set<String> = dependencies[resource]?.flatMap { it.targets }?.toSet()?: setOf()
 
 
 }
