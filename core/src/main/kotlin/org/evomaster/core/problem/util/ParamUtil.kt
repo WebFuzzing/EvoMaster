@@ -163,6 +163,21 @@ class ParamUtil {
             }
         }
 
+        fun compareGenesWithValue(geneA: Gene, geneB : Gene) : Boolean{
+            val geneAWithGeneBType = geneB.copy()
+            copyWithTypeAdapter(geneAWithGeneBType, geneA)
+            return when(geneB){
+                is StringGene -> geneB.value == (geneAWithGeneBType as StringGene).value
+                is IntegerGene -> geneB.value == (geneAWithGeneBType as IntegerGene).value
+                is DoubleGene -> geneB.value == (geneAWithGeneBType as DoubleGene).value
+                is FloatGene -> geneB.value == (geneAWithGeneBType as FloatGene).value
+                is LongGene -> geneB.value == (geneAWithGeneBType as LongGene).value
+                else ->{
+                    throw IllegalArgumentException("the type of $geneB is not supported")
+                }
+            }
+        }
+
         /**
          * bind [b] based on [g].
          * [b] can be one of types : DoubleGene, FloatGene, IntegerGene, LongGene, StringGene

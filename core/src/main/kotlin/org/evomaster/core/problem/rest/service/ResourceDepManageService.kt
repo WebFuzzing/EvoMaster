@@ -54,7 +54,7 @@ class ResourceDepManageService {
 
     fun initDependency(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
         initDependencyBasedOnDerivedTables(resourceCluster, tables)
-        deriveDependencyBasedOnSchema(resourceCluster)
+        //deriveDependencyBasedOnSchema(resourceCluster)
     }
 
     /************************  manage relationship between resource and tables ***********************************/

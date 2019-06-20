@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.util.inference
 
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -72,6 +73,20 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                 }
             }
         }
+        //1.3 derive resource to tables based on tokens on POST action
+        resourceNode.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.forEach { post->
+            (post as RestCallAction).tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
+                val matchedMap = allTables.keys.map { Pair(it, ParserUtil.stringSimilarityScore(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
+                matchedMap.last().apply {
+                    if(second >= ParserUtil.SimilarityThreshold){
+                        resourceNode.resourceToTable.derivedMap.getOrPut(first){
+                            mutableListOf()
+                        }.add(MatchedInfo(atoken.getKey(), first, similarity = second, inputIndicator = 1, outputIndicator = 0))
+                    }
+                }
+            }
+        }
+
         //2. derive params to the tables
         deriveParamsToTable(resourceNode.paramsInfo, resourceNode, allTables)
     }
@@ -148,7 +163,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
             paramName might be \w+id or \w+name, in this case, we compare paramName with table name + column name
          */
         getTable(tableName, tables)?.let { t->
-            val matchedMap = t.columns.map { Pair(it.name, if(ParamUtil.isGeneralName(it.name)) max(ParserUtil.stringSimilarityScore(paramName, it.name), ParserUtil.stringSimilarityScore(paramName, "$tableName$it.name")) else ParserUtil.stringSimilarityScore(paramName, it.name)) }.asSequence().sortedBy { e->e.second }
+            val matchedMap = t.columns.map { Pair(it.name, if(ParamUtil.isGeneralName(it.name)) max(ParserUtil.stringSimilarityScore(paramName, it.name), ParserUtil.stringSimilarityScore(paramName, "$tableName${it.name}")) else ParserUtil.stringSimilarityScore(paramName, it.name)) }.asSequence().sortedBy { e->e.second }
             if(matchedMap.last().second >= ParserUtil.SimilarityThreshold){
                 matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                     pToTable.getOrPut(tableName){

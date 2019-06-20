@@ -188,7 +188,7 @@ class ResourceManageService {
         //assert(!ar.isIndependent())
         var candidateForInsertion : String? = null
 
-        if(hasDBHandler() && ar.resourceToTable.paramToTable.isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(0.5))){
+        if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(0.5))){
             //Insert - GET/PUT/PATCH
             val candidates = ar.getTemplates().filter { it.value.independent }
             candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
