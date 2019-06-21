@@ -55,7 +55,8 @@ abstract class SpringRestPostgresController(
                 "--spring.datasource.password",
                 "--spring.jpa.properties.hibernate.show_sql=true",
                 "--spring.jpa.hibernate.ddl-auto=validate",
-                "--spring.flyway.locations=${pathToFlywayFiles()}"
+                "--spring.flyway.locations=${pathToFlywayFiles()}",
+                "--spring.jmx.enabled=false"
         )!!
 
 

@@ -203,7 +203,6 @@ public class SqlHandler {
         QueryResult data;
 
         try {
-            //FIXME disable P6SPY handling, or equivalent
             data = SqlScriptRunner.execCommand(connection, select);
         } catch (SQLException e) {
             throw new RuntimeException(e);
