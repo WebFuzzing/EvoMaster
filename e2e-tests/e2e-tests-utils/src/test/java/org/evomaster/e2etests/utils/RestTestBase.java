@@ -20,6 +20,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.Duration;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
@@ -114,10 +116,19 @@ public abstract class RestTestBase {
         klass = loadClass(className);
         assertNotNull(klass);
 
+        StringWriter writer = new StringWriter();
+        PrintWriter pw = new PrintWriter(writer);
+
         TestExecutionSummary summary = JUnitTestRunner.runTestsInClass(klass);
+        summary.printFailuresTo(pw);
+        String failures = writer.toString();
+
         assertTrue(summary.getContainersFoundCount() > 0);
-        assertEquals(0, summary.getContainersFailedCount());
+        assertEquals(0, summary.getContainersFailedCount(), failures);
         assertTrue(summary.getContainersSucceededCount() > 0);
+        assertTrue(summary.getTestsFoundCount() > 0);
+        assertEquals(0, summary.getTestsFailedCount(), failures);
+        assertTrue(summary.getTestsSucceededCount() > 0);
     }
 
     protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){

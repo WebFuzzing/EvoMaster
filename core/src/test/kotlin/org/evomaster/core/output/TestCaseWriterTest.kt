@@ -302,15 +302,17 @@ class TestCaseWriterTest {
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
+        val pkGeneUniqueId = 12345L
+
         val integerGene = IntegerGene(idColumn.name, 42, 0, 10)
-        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, 10)
+        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", integerGene, pkGeneUniqueId)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", integerGene, 10)
 
 
         val firstInsertionId = 1001L
         val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, firstInsertionId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, uniqueIdOfPrimaryKey = pkGeneUniqueId)
 
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -336,7 +338,7 @@ class TestCaseWriterTest {
             add(".and().insertInto(\"Table1\", 1002L)")
             indent()
             add(".d(\"Id\", \"42\")")
-            add(".r(\"fkId\", 1001L)")
+            add(".d(\"fkId\", \"42\")")
             deindent()
             add(".dtos();")
             deindent()
@@ -562,16 +564,17 @@ class TestCaseWriterTest {
         val fkColumn = Column("fkId", TIMESTAMP, 10, primaryKey = false)
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
+        val pkGeneUniqueId = 12345L
 
         val timeStampGene = SqlTimestampGene(idColumn.name)
-        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", timeStampGene, 10)
+        val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", timeStampGene, pkGeneUniqueId)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", timeStampGene, 10)
 
 
         val firstInsertionId = 1001L
         val insertIntoTable0 = DbAction(table0, setOf(idColumn), firstInsertionId, listOf(primaryKeyTable0Gene))
         val secondInsertionId = 1002L
-        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, firstInsertionId)
+        val foreignKeyGene = SqlForeignKeyGene(fkColumn.name, secondInsertionId, "Table0", false, pkGeneUniqueId)
 
         val insertIntoTable1 = DbAction(table1, setOf(idColumn, fkColumn), secondInsertionId, listOf(primaryKeyTable1Gene, foreignKeyGene))
 
@@ -597,7 +600,7 @@ class TestCaseWriterTest {
             add(".and().insertInto(\"Table1\", 1002L)")
             indent()
             add(".d(\"Id\", \"\\\"2016-03-12 00:00:00\\\"\")")
-            add(".r(\"fkId\", 1001L)")
+            add(".d(\"fkId\", \"\\\"2016-03-12 00:00:00\\\"\")")
             deindent()
             add(".dtos();")
             deindent()
@@ -609,36 +612,33 @@ class TestCaseWriterTest {
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
-
     @Test
     fun testIndirectForeignKeyColumn() {
         val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
         val table0 = Table("Table0", setOf(table0_Id), HashSet<ForeignKey>())
 
-        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true)
+        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
         val table1 = Table("Table1", setOf(table1_Id), HashSet<ForeignKey>())
 
         val table2_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
         val table2 = Table("Table2", setOf(table2_Id), HashSet<ForeignKey>())
 
-
-        val integerGene = IntegerGene(table0_Id.name, 42, 0, 10)
-
-        val primaryKeyTable1Gene = SqlPrimaryKeyGene(table0_Id.name, "Table1", integerGene, 10)
-
-
         val insertId0 = 1001L
         val autoGene = SqlAutoIncrementGene(table0_Id.name)
-        val pkGene0 = SqlPrimaryKeyGene(table0_Id.name, "Table0", autoGene, 10)
+        val pkGene0 = SqlPrimaryKeyGene(table0_Id.name, "Table0", autoGene, insertId0)
         val insert0 = DbAction(table0, setOf(table0_Id), insertId0, listOf(pkGene0))
+
 
         val insertId1 = 1002L
         val fkGene0 = SqlForeignKeyGene(table1_Id.name, insertId1, "Table0", false, insertId0)
-        val insert1 = DbAction(table1, setOf(table1_Id), insertId1, listOf(fkGene0))
+        val pkGene1 = SqlPrimaryKeyGene(table1_Id.name, "Table1", fkGene0, insertId1)
+        val insert1 = DbAction(table1, setOf(table1_Id), insertId1, listOf(pkGene1))
+
 
         val insertId2 = 1003L
         val fkGene1 = SqlForeignKeyGene(table2_Id.name, insertId2, "Table1", false, insertId1)
-        val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(fkGene1))
+        val pkGene2 = SqlPrimaryKeyGene(table2_Id.name, "Table2", fkGene1, insertId2)
+        val insert2 = DbAction(table2, setOf(table2_Id), insertId2, listOf(pkGene2))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert0, insert1, insert2))
         val config = EMConfig()
@@ -662,7 +662,7 @@ class TestCaseWriterTest {
             deindent()
             add(".and().insertInto(\"Table2\", 1003L)")
             indent()
-            add(".r(\"Id\", 1002L, true)")
+            add(".r(\"Id\", 1002L)")
             deindent()
             add(".dtos();")
             deindent()
