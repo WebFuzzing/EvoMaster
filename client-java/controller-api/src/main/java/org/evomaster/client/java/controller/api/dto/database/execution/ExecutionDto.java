@@ -54,6 +54,9 @@ public class ExecutionDto {
      * Every time there is a WHERE clause which "failed" (ie, resulted in false),
      * we keep track of which tables/columns where involved in determining the
      * result of the WHERE.
+     *
+     * If there is no WHERE, but still no data was returned, we consider it
+     * as a failed WHERE
      */
     public Map<String, Set<String>> failedWhere = new HashMap<>();
 

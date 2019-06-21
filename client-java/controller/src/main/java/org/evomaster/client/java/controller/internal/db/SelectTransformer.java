@@ -38,28 +38,32 @@ public class SelectTransformer {
 
             List<SelectItem> fields = plainSelect.getSelectItems();
 
-            where.accept(new ExpressionVisitorAdapter() {
-                @Override
-                public void visit(Column column) {
+            boolean allColumns = fields.stream().anyMatch(f -> f instanceof AllColumns);
 
-                    String target = column.toString();
+            if(! allColumns) {
+                where.accept(new ExpressionVisitorAdapter() {
+                    @Override
+                    public void visit(Column column) {
 
-                    boolean found = false;
-                    for (SelectItem si : fields) {
-                        SelectExpressionItem field = (SelectExpressionItem) si;
-                        String exp = field.getExpression().toString();
-                        if (target.equals(exp)) {
-                            found = true;
-                            break;
+                        String target = column.toString();
+
+                        boolean found = false;
+                        for (SelectItem si : fields) {
+                            SelectExpressionItem field = (SelectExpressionItem) si;
+                            String exp = field.getExpression().toString();
+                            if (target.equals(exp)) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            SelectExpressionItem item = new SelectExpressionItem();
+                            item.setExpression(column);
+                            fields.add(item);
                         }
                     }
-                    if (!found) {
-                        SelectExpressionItem item = new SelectExpressionItem();
-                        item.setExpression(column);
-                        fields.add(item);
-                    }
-                }
-            });
+                });
+            }
         }
 
         return stmt.toString();
@@ -83,6 +87,7 @@ public class SelectTransformer {
 
             plainSelect.getSelectItems()
                     .removeIf(item ->
+                            (item instanceof SelectExpressionItem) &&
                             ((SelectExpressionItem)item).getExpression() instanceof Function);
         }
 

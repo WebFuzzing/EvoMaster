@@ -145,11 +145,26 @@ public class SqlHandler {
 
         Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
 
+        /*
+            even if columns.isEmpty(), we need to check if any data was present
+         */
+
+        double dist;
         if(columns.isEmpty()){
-            //no WHERE, so no point in calculating anything
-            return 0.0;
+            //TODO check if table(s) not empty, and give >0 otherwise
+            dist = 0;
+        } else {
+            dist = getDistanceForWhere(command, columns);
         }
 
+        if (dist > 0) {
+            mergeNewData(failedWhere, columns);
+        }
+
+        return dist;
+    }
+
+    private double getDistanceForWhere(String command, Map<String, Set<String>> columns) {
         String select;
 
         /*
@@ -176,18 +191,13 @@ public class SqlHandler {
         QueryResult data;
 
         try {
+            //FIXME disable P6SPY handling, or equivalent
             data = SqlScriptRunner.execCommand(connection, select);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
 
-        double dist = HeuristicsCalculator.computeDistance(command, data);
-
-        if (dist > 0) {
-            mergeNewData(failedWhere, columns);
-        }
-
-        return dist;
+        return HeuristicsCalculator.computeDistance(command, data);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns){
