@@ -25,6 +25,7 @@ class TestCaseWriter {
 
     private var counter = 0
     private var usedObjects = UsedObjects()
+    //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
@@ -66,10 +67,7 @@ class TestCaseWriter {
                     usedObjects = test.test.individual.usedObjects
                 }
 
-
-                if (!test.test.individual.dbInitialization.isEmpty()) {
-                    handleDbInitialization(format, test.test.individual.dbInitialization, lines)
-                }
+                handleDbInitialization(format, test.test.individual.dbInitialization, lines)
             }
 
 
@@ -104,72 +102,72 @@ class TestCaseWriter {
         return lines
     }
 
-    private fun handleDbInitialization(format: OutputFormat, dbInitialization: MutableList<DbAction>, lines: Lines) {
+    private fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
 
+        if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
+            return
+        }
 
-        dbInitialization.forEachIndexed { index, dbAction ->
+        dbInitialization
+                .filter { !it.representExistingData }
+                .forEachIndexed { index, dbAction ->
 
-            lines.add(when {
-                index == 0 && format.isJava() -> "List<InsertionDto> insertions = sql()"
-                index == 0 && format.isKotlin() -> "val insertions = sql()"
-                else -> ".and()"
-            } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
+                    lines.add(when {
+                        index == 0 && format.isJava() -> "List<InsertionDto> insertions = sql()"
+                        index == 0 && format.isKotlin() -> "val insertions = sql()"
+                        else -> ".and()"
+                    } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
 
-            if (index == 0) {
-                lines.indent()
-            }
+                    if (index == 0) {
+                        lines.indent()
+                    }
 
-            lines.indented {
-                dbAction.seeGenes().forEach { g ->
+                    lines.indented {
+                        dbAction.seeGenes()
+                                .filter { it.isPrintable() }
+                                .forEach { g ->
+                                    when {
+                                        g is SqlForeignKeyGene -> {
+                                            val line = handleFK(g, dbAction, dbInitialization)
+                                            lines.add(line)
+                                        }
+                                        g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
+                                            /*
+                                            TODO: this will need to be refactored when Gene system
+                                            will have "previousGenes"-based methods on all genes
+                                         */
+                                            val line = handleFK(g.gene, dbAction, dbInitialization)
+                                            lines.add(line)
+                                        }
+                                        g is ObjectGene -> {
+                                            val variableName = g.getVariableName()
+                                            val printableValue = getPrintableValue(g)
+                                            lines.add(".d(\"$variableName\", \"'$printableValue'\")")
+                                        }
+                                        else -> {
+                                            val variableName = g.getVariableName()
+                                            val printableValue = getPrintableValue(g)
+                                            lines.add(".d(\"$variableName\", \"$printableValue\")")
+                                        }
+                                    }
+                                }
 
-                    if (g.isPrintable()) {
-
-                        when {
-                            g is SqlForeignKeyGene -> {
-                                val line = handleFK(g, dbAction)
-                                lines.add(line)
-                            }
-                            g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
-                                /*
-                                TODO: this will need to be refactored when Gene system
-                                will have "previousGenes"-based methods on all genes
-                             */
-                                val line = handleFK(g.gene, dbAction)
-                                lines.add(line)
-                            }
-                            g is ObjectGene -> {
-                                val variableName = g.getVariableName()
-                                val printableValue = getPrintableValue(g)
-                                lines.add(".d(\"$variableName\", \"'$printableValue'\")")
-                            }
-                            else -> {
-                                val variableName = g.getVariableName()
-                                val printableValue = getPrintableValue(g)
-                                lines.add(".d(\"$variableName\", \"$printableValue\")")
-                            }
-                        }
                     }
                 }
-            }
 
-            if (index == dbInitialization.size - 1) {
-                lines.add(".dtos()" +
-                        when {
-                            format.isJava() -> ";"
-                            format.isKotlin() -> ""
-                            else -> ""
+        lines.add(".dtos()" +
+                when {
+                    format.isJava() -> ";"
+                    format.isKotlin() -> ""
+                    else -> ""
+                })
 
-                        })
-            }
-
-        }
         lines.deindent()
 
         var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
         when {
             format.isJava() -> execInsertionsLine += ";"
             format.isKotlin() -> {
-                // no need for semicolon
             }
         }
         lines.add(execInsertionsLine)
@@ -185,30 +183,66 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleFK(g: SqlForeignKeyGene, action: DbAction): String {
+    private fun handleFK(fkg: SqlForeignKeyGene, action: DbAction, allActions: List<DbAction>): String {
 
 
         /*
             TODO: why the code here is not relying on SqlForeignKeyGene#getValueAsPrintableString ???
          */
 
-        val variableName = g.getVariableName()
+        val variableName = fkg.getVariableName()
         /**
          * At this point all pk Ids should be valid
          * (despite they being NULL or not)
          **/
-        Lazy.assert{g.hasValidUniqueIdOfPrimaryKey()}
-        return if (g.isNull()) {
-            ".d(\"$variableName\", \"NULL\")"
-        } else {
-            val keepAutoGeneratedValue = action.selectedColumns.filter { it.name == g.name }.first().foreignKeyToAutoIncrement
-            val uniqueId = g.uniqueIdOfPrimaryKey //g.uniqueId
-            if (keepAutoGeneratedValue) {
-                ".r(\"$variableName\", ${uniqueId}L, true)"
-            } else {
-                ".r(\"$variableName\", ${uniqueId}L)"
-            }
+        Lazy.assert { fkg.hasValidUniqueIdOfPrimaryKey() }
+        if (fkg.isNull()) {
+            return ".d(\"$variableName\", \"NULL\")"
         }
+
+
+        val uniqueIdOfPrimaryKey = fkg.uniqueIdOfPrimaryKey
+
+        /*
+            TODO: the code here is not handling multi-column PKs/FKs
+         */
+        val pkExisting = allActions
+                .filter { it.representExistingData }
+                .flatMap { it.seeGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .find { it.uniqueId == uniqueIdOfPrimaryKey}
+
+        /*
+           This FK might point to a PK of data already existing in the database.
+           In such cases, the PK will not be part of the generated SQL commands, and
+           we cannot use a "r()" reference to it.
+           We need to put the actual value data in a "d()"
+        */
+
+        if(pkExisting != null){
+            val pk = getPrintableValue(pkExisting)
+            return ".d(\"$variableName\", \"$pk\")"
+        }
+
+        /*
+            Check if this is a reference to an auto-increment
+         */
+        val keepAutoGeneratedValue = action.selectedColumns
+                .filter { it.name == fkg.name }
+                .first().foreignKeyToAutoIncrement
+
+        if (keepAutoGeneratedValue) {
+            return ".r(\"$variableName\", ${uniqueIdOfPrimaryKey}L)"
+        }
+
+
+        val pkg = allActions
+                .flatMap { it.seeGenes() }
+                .filterIsInstance<SqlPrimaryKeyGene>()
+                .find { it.uniqueId == uniqueIdOfPrimaryKey}!!
+
+        val pk = getPrintableValue(pkg)
+        return ".d(\"$variableName\", \"$pk\")"
     }
 
 
@@ -286,7 +320,7 @@ class TestCaseWriter {
 
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
-        if(configuration.expectationsActive){
+        if (configuration.expectationsActive) {
             handleExpectations(res, lines, true)
         }
 
@@ -305,7 +339,7 @@ class TestCaseWriter {
             } else {
                 //TODO BMR: this is a less-than-subtle way to try to fix a problem in ScoutAPI
                 // The test generated in java causes a fail due to .path<Object>
-                val extraTypeInfo = when{
+                val extraTypeInfo = when {
                     format.isKotlin() -> "<Object>"
                     else -> ""
                 }
@@ -335,7 +369,7 @@ class TestCaseWriter {
             if (!res.getHeuristicsForChainedLocation()) {
                 lines.append("${locationVar(call.path.lastElement())} = ")
             } else {
-                if(format.isJava()) {
+                if (format.isJava()) {
                     lines.append("String id_$counter = ")
                 } else {
                     lines.append("val id_$counter: String = ")
@@ -379,7 +413,7 @@ class TestCaseWriter {
             lines.add(".then()")
             lines.add(".statusCode(${res.getStatusCode()})")
 
-            if(configuration.enableBasicAssertions) {
+            if (configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
             }
 
@@ -387,12 +421,11 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleFieldValues(resContentsItem: Any?): String{
+    private fun handleFieldValues(resContentsItem: Any?): String {
         if (resContentsItem == null) {
             return "nullValue()"
-        }
-        else{
-            when(resContentsItem::class) {
+        } else {
+            when (resContentsItem::class) {
                 //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${applyEscapes(resContentsItem as String)}\")"
@@ -416,7 +449,7 @@ class TestCaseWriter {
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
         lines.add(".assertThat()")
 
-        if(res.getBodyType()==null) lines.add(".contentType(\"\")")
+        if (res.getBodyType() == null) lines.add(".contentType(\"\")")
         else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
@@ -424,16 +457,16 @@ class TestCaseWriter {
 
         val bodyString = res.getBody()
 
-        if(res.getBodyType()!= null){
+        if (res.getBodyType() != null) {
             val type = res.getBodyType()!!
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)){
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
                 when (bodyString?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
                         // Only assertions on array size are supporte at the moment.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        if(resContents.size > 0){
+                        if (resContents.size > 0) {
                             resContents.forEachIndexed { index, value ->
                                 val test_i = index
                                 val printableTh = handleFieldValues(value)
@@ -449,8 +482,9 @@ class TestCaseWriter {
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
-                        resContents.keys.filter{
-                            !(it as String).contains("timestamp")}
+                        resContents.keys.filter {
+                            !(it as String).contains("timestamp")
+                        }
                                 .forEach {
                                     val actualValue = resContents[it]
                                     if (actualValue != null) {
@@ -480,6 +514,7 @@ class TestCaseWriter {
                 }
             }
         }
+        //handleExpectations(res, lines, true)
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
@@ -495,11 +530,11 @@ class TestCaseWriter {
             throw IllegalStateException("Issue: both Body and FormData present")
         }
 
-        if(bodyParam != null && bodyParam is BodyParam) {
+        if (bodyParam != null && bodyParam is BodyParam) {
 
             lines.add(".contentType(\"${bodyParam.contentType()}\")")
 
-            if(bodyParam.isJson()) {
+            if (bodyParam.isJson()) {
 
                 val body = if (readable) {
                     OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format))
@@ -527,7 +562,7 @@ class TestCaseWriter {
             } /* else if(bodyParam.isXml()) {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
-            } */ else if(bodyParam.isTextPlain()) {
+            } */ else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
                 lines.add(".body($body)")
             } else {
@@ -565,16 +600,18 @@ class TestCaseWriter {
          *  TODO: get the type from the REST call
          */
 
-        if (call.produces.isEmpty() || res.getBodyType()==null) return ".accept(\"*/*\")"
-        val accepted = call.produces.filter{res.getBodyType().toString().contains(it, true)}
+        if (call.produces.isEmpty() || res.getBodyType() == null) return ".accept(\"*/*\")"
+        //if (call.produces.contains(res.getBodyType().toString())) return ".accept(${res.getBodyType().toString()})"
+        val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
 
         if (accepted.size == 1)
             return ".accept(\"${accepted.first()}\")"
         else
             return ".accept(\"*/*\")  // NOTE: there seems to have been something or a problem"
+        //return ".accept(\"*/*\")"
     }
 
-    private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean){
+    private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean) {
 
         /*
         TODO: This is a WiP to show the basic idea of the expectations:
@@ -590,7 +627,9 @@ class TestCaseWriter {
         lines.add("expectationHandler()")
         lines.indented {
             lines.add(".expect()")
-            if(configuration.enableCompleteObjects == false){
+            //lines.add(".that(activeExpectations, true)")
+            //lines.add(".that(activeExpectations, false)")
+            if (configuration.enableCompleteObjects == false) {
                 addExpectationsWithoutObjects(result, lines)
             }
             lines.append(when {
@@ -600,10 +639,10 @@ class TestCaseWriter {
         }
     }
 
-    private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines){
-        if(result.getBodyType() != null){
+    private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines) {
+        if (result.getBodyType() != null) {
             // if there is a body, add expectations based on the body type. Right now only application/json is supported
-            when(result.getBodyType().toString()){
+            when (result.getBodyType().toString()) {
                 "application/json" -> {
                     when (result.getBody()?.first()) {
                         '[' -> {
@@ -616,9 +655,9 @@ class TestCaseWriter {
 
                             (resContents as LinkedTreeMap<*, *>).keys.forEach {
                                 val printableTh = handleFieldValues(resContents[it]!!)
-                                if(printableTh != "null"
+                                if (printableTh != "null"
                                         && printableTh != "NotCoveredYet"
-                                ){
+                                ) {
                                     lines.add(".that(activeExpectations, (\"${it}\" == \"${resContents[it]}\"))")
                                 }
                             }
@@ -634,7 +673,7 @@ class TestCaseWriter {
         }
     }
 
-    private fun applyEscapes(string: String):String {
+    private fun applyEscapes(string: String): String {
         val ret = string.replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
