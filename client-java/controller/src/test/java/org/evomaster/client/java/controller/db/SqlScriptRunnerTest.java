@@ -314,7 +314,7 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
         List<InsertionDto> insertions = sql()
                 .insertInto("Table1", 1000L)
                 .and()
-                .insertInto("Table2", 1001L).r("Id", 1000L, true)
+                .insertInto("Table2", 1001L).r("Id", 1000L)
                 .and()
                 .insertInto("Table3", 1002L).r("Id", 1001L).dtos();
 
