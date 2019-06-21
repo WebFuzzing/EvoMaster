@@ -1,5 +1,6 @@
 package org.evomaster.core.output
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.schema.Column
@@ -44,7 +45,7 @@ class TestCaseWriterTest {
 
     @Test
     fun testOneAction() {
-        val aColumn = Column("aColumn", VARCHAR, 10)
+        val aColumn = Column("aColumn", VARCHAR, 10, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
@@ -108,7 +109,7 @@ class TestCaseWriterTest {
 
     @Test
     fun testTwoAction() {
-        val aColumn = Column("aColumn", VARCHAR, 10)
+        val aColumn = Column("aColumn", VARCHAR, 10, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
@@ -158,8 +159,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testTwoColumns() {
-        val column0 = Column("Column0", VARCHAR, 10)
-        val column1 = Column("Column1", VARCHAR, 10)
+        val column0 = Column("Column0", VARCHAR, 10, databaseType = DatabaseType.H2)
+        val column1 = Column("Column1", VARCHAR, 10, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(column0, column1), HashSet<ForeignKey>())
 
@@ -203,8 +204,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testIntegerColumn() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = false)
-        val nameColumn = Column("Name", VARCHAR, 10, primaryKey = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
+        val nameColumn = Column("Name", VARCHAR, 10, primaryKey = false, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(idColumn, nameColumn), HashSet<ForeignKey>())
 
@@ -248,8 +249,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testPrimaryKeyColumn() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true)
-        val nameColumn = Column("Name", VARCHAR, 10, primaryKey = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
+        val nameColumn = Column("Name", VARCHAR, 10, primaryKey = false, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(idColumn, nameColumn), HashSet<ForeignKey>())
 
@@ -295,10 +296,10 @@ class TestCaseWriterTest {
 
     @Test
     fun testForeignKeyColumn() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
 
-        val fkColumn = Column("fkId", INTEGER, 10, primaryKey = false)
+        val fkColumn = Column("fkId", INTEGER, 10, primaryKey = false, databaseType = DatabaseType.H2)
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
@@ -353,7 +354,7 @@ class TestCaseWriterTest {
 
     @Test
     fun testBooleanColumn() {
-        val aColumn = Column("aColumn", BOOLEAN, 10)
+        val aColumn = Column("aColumn", BOOLEAN, 10, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
@@ -398,10 +399,10 @@ class TestCaseWriterTest {
 
     @Test
     fun testNullableForeignKeyColumn() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
 
-        val fkColumn = Column("fkId", INTEGER, 10, primaryKey = false, nullable = true)
+        val fkColumn = Column("fkId", INTEGER, 10, primaryKey = false, nullable = true, databaseType = DatabaseType.H2)
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
 
@@ -456,7 +457,7 @@ class TestCaseWriterTest {
 
     @Test
     fun testTimeStampColumn() {
-        val aColumn = Column("aColumn", TIMESTAMP, 10)
+        val aColumn = Column("aColumn", TIMESTAMP, 10, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
@@ -501,7 +502,7 @@ class TestCaseWriterTest {
 
     @Test
     fun testThreeAction() {
-        val aColumn = Column("aColumn", VARCHAR, 10)
+        val aColumn = Column("aColumn", VARCHAR, 10, databaseType = DatabaseType.H2)
 
         val aTable = Table("myTable", setOf(aColumn), HashSet<ForeignKey>())
 
@@ -558,10 +559,10 @@ class TestCaseWriterTest {
 
     @Test
     fun testTimeStampForeignKeyColumn() {
-        val idColumn = Column("Id", TIMESTAMP, 10, primaryKey = true)
+        val idColumn = Column("Id", TIMESTAMP, 10, primaryKey = true, databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(idColumn), HashSet<ForeignKey>())
 
-        val fkColumn = Column("fkId", TIMESTAMP, 10, primaryKey = false)
+        val fkColumn = Column("fkId", TIMESTAMP, 10, primaryKey = false, databaseType = DatabaseType.H2)
         val table1 = Table("Table1", setOf(idColumn, fkColumn), HashSet<ForeignKey>())
 
         val pkGeneUniqueId = 12345L
@@ -614,13 +615,13 @@ class TestCaseWriterTest {
 
     @Test
     fun testIndirectForeignKeyColumn() {
-        val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
+        val table0_Id = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.H2)
         val table0 = Table("Table0", setOf(table0_Id), HashSet<ForeignKey>())
 
-        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
+        val table1_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true, databaseType = DatabaseType.H2)
         val table1 = Table("Table1", setOf(table1_Id), HashSet<ForeignKey>())
 
-        val table2_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true)
+        val table2_Id = Column("Id", INTEGER, 10, primaryKey = true, foreignKeyToAutoIncrement = true, databaseType = DatabaseType.H2)
         val table2 = Table("Table2", setOf(table2_Id), HashSet<ForeignKey>())
 
         val insertId0 = 1001L
@@ -676,8 +677,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testInsertDateColumnType() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val dateColumn = Column("birthDate", DATE, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.H2)
+        val dateColumn = Column("birthDate", DATE, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.H2)
 
         val table = Table("Table0", setOf(idColumn, dateColumn), HashSet<ForeignKey>())
 
@@ -718,15 +719,17 @@ class TestCaseWriterTest {
 
     @Test
     fun testUUIDColumnType() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val uuidColumn = Column("uuidCode", UUID, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true,
+                databaseType = DatabaseType.H2)
+        val uuidColumn = Column("uuidCode", UUID, 10, primaryKey = false, autoIncrement = false,
+                databaseType = DatabaseType.H2)
 
         val table = Table("Table0", setOf(idColumn, uuidColumn), HashSet<ForeignKey>())
 
 
         val autoGene = SqlAutoIncrementGene(table.name)
         val pkGene0 = SqlPrimaryKeyGene(idColumn.name, "Table0", autoGene, 10)
-        val uuidGene = UUIDGene(uuidColumn.name)
+        val uuidGene = SqlUUIDGene(uuidColumn.name)
         val insert = DbAction(table, setOf(idColumn, uuidColumn), 0L, listOf(pkGene0, uuidGene))
 
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
@@ -762,8 +765,8 @@ class TestCaseWriterTest {
     fun testJSONBEmpty() {
 
 
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -807,8 +810,8 @@ class TestCaseWriterTest {
     fun testJSONBColumnType() {
 
 
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -850,8 +853,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testJSONBoolean() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 
@@ -893,8 +896,8 @@ class TestCaseWriterTest {
 
     @Test
     fun testJSONString() {
-        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true)
-        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false)
+        val idColumn = Column("Id", INTEGER, 10, primaryKey = true, autoIncrement = true, databaseType = DatabaseType.POSTGRES)
+        val jsonbColumn = Column("jsonbColumn", JSONB, 10, primaryKey = false, autoIncrement = false, databaseType = DatabaseType.POSTGRES)
 
         val table = Table("Table0", setOf(idColumn, jsonbColumn), HashSet<ForeignKey>())
 

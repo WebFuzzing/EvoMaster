@@ -44,7 +44,7 @@ object RegexHandler {
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
      */
-    fun createGeneForPostgresLike(regex: String): RegexGene{
+    fun createGeneForPostgresLike(regex: String): RegexGene {
 
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresLikeLexer(stream)
@@ -66,7 +66,7 @@ object RegexHandler {
      * This would throw an exception if regex is invalid, or if it
      * has features we do not support yet
      */
-    fun createGeneForPostgresSimilarTo(regex: String): RegexGene{
+    fun createGeneForPostgresSimilarTo(regex: String): RegexGene {
 
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresSimilarToLexer(stream)

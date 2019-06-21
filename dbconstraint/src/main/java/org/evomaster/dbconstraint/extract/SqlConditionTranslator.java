@@ -2,17 +2,48 @@ package org.evomaster.dbconstraint.extract;
 
 
 import net.sf.jsqlparser.expression.StringValue;
-import org.evomaster.dbconstraint.*;
-import org.evomaster.dbconstraint.ast.*;
+import org.evomaster.dbconstraint.AndConstraint;
+import org.evomaster.dbconstraint.EnumConstraint;
+import org.evomaster.dbconstraint.IffConstraint;
+import org.evomaster.dbconstraint.IsNotNullConstraint;
+import org.evomaster.dbconstraint.LikeConstraint;
+import org.evomaster.dbconstraint.LowerBoundConstraint;
+import org.evomaster.dbconstraint.OrConstraint;
+import org.evomaster.dbconstraint.RangeConstraint;
+import org.evomaster.dbconstraint.SimilarToConstraint;
+import org.evomaster.dbconstraint.TableConstraint;
+import org.evomaster.dbconstraint.UpperBoundConstraint;
+import org.evomaster.dbconstraint.ast.SqlAndCondition;
+import org.evomaster.dbconstraint.ast.SqlBigDecimalLiteralValue;
+import org.evomaster.dbconstraint.ast.SqlBigIntegerLiteralValue;
+import org.evomaster.dbconstraint.ast.SqlBinaryDataLiteralValue;
+import org.evomaster.dbconstraint.ast.SqlBooleanLiteralValue;
+import org.evomaster.dbconstraint.ast.SqlColumn;
+import org.evomaster.dbconstraint.ast.SqlComparisonCondition;
+import org.evomaster.dbconstraint.ast.SqlCondition;
+import org.evomaster.dbconstraint.ast.SqlConditionList;
+import org.evomaster.dbconstraint.ast.SqlConditionVisitor;
+import org.evomaster.dbconstraint.ast.SqlInCondition;
+import org.evomaster.dbconstraint.ast.SqlIsNotNullCondition;
+import org.evomaster.dbconstraint.ast.SqlIsNullCondition;
+import org.evomaster.dbconstraint.ast.SqlLikeCondition;
+import org.evomaster.dbconstraint.ast.SqlLiteralValue;
+import org.evomaster.dbconstraint.ast.SqlNullLiteralValue;
+import org.evomaster.dbconstraint.ast.SqlOrCondition;
+import org.evomaster.dbconstraint.ast.SqlSimilarToCondition;
+import org.evomaster.dbconstraint.ast.SqlStringLiteralValue;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint, Void> {
+import static org.evomaster.dbconstraint.ast.SqlComparisonOperator.EQUALS_TO;
+
+public class SqlConditionTranslator implements SqlConditionVisitor<TableConstraint, Void> {
 
     private static final String THIS_METHOD_SHOULD_NOT_BE_INVOKED = "This method should not be directly called";
+    public static final String UNEXPECTED_COMPARISON_OPERATOR_MESSAGE = "Unexpected comparison operator ";
 
     private final TranslationContext translationContext;
 
@@ -43,7 +74,7 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
     }
 
     @Override
-    public TableConstraint visit(SqlComparisonCondition e, Void argument) throws SqlCannotBeTranslatedException {
+    public TableConstraint visit(SqlComparisonCondition e, Void argument) {
         SqlCondition left = e.getLeftOperand();
         SqlCondition right = e.getRightOperand();
 
@@ -55,10 +86,16 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
             SqlColumn leftColumn = (SqlColumn) left;
             SqlLiteralValue rightLiteral = (SqlLiteralValue) right;
             return visit(leftColumn, e, rightLiteral);
-        } else {
-            // TODO This translation should be implemented
-            throw new SqlCannotBeTranslatedException(e.toSql() + " cannot be translated yet");
+        } else if (left instanceof SqlCondition && right instanceof SqlCondition) {
+            TableConstraint leftTableConstraint = e.getLeftOperand().accept(this, null);
+            TableConstraint rightTableConstraint = e.getRightOperand().accept(this, null);
+            if (e.getSqlComparisonOperator().equals(EQUALS_TO)) {
+                return new IffConstraint(translationContext.getCurrentTableName(), leftTableConstraint, rightTableConstraint);
+            }
         }
+        // TODO This translation should be implemented
+        throw new SqlCannotBeTranslatedException(e.toSql() + " cannot be translated yet");
+
 
     }
 
@@ -84,16 +121,15 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
                     return new UpperBoundConstraint(tableName, columnName, value);
 
                 default:
-                    throw new UnsupportedOperationException("Unexpected comparison operator " + e.getSqlComparisonOperator());
+                    throw new UnsupportedOperationException(UNEXPECTED_COMPARISON_OPERATOR_MESSAGE + e.getSqlComparisonOperator());
 
             }
         } else if (rightLiteral instanceof SqlStringLiteralValue) {
             SqlStringLiteralValue stringLiteralValue = (SqlStringLiteralValue) rightLiteral;
-            switch (e.getSqlComparisonOperator()) {
-                case EQUALS_TO:
-                    return new EnumConstraint(tableName, columnName, Collections.singletonList(stringLiteralValue.toSql()));
-                default:
-                    throw new UnsupportedOperationException("Unexpected comparison operator " + e.getSqlComparisonOperator());
+            if (e.getSqlComparisonOperator().equals(EQUALS_TO)) {
+                return new EnumConstraint(tableName, columnName, Collections.singletonList(stringLiteralValue.getStringValue()));
+            } else {
+                throw new UnsupportedOperationException(UNEXPECTED_COMPARISON_OPERATOR_MESSAGE + e.getSqlComparisonOperator());
             }
         } else {
             throw new UnsupportedOperationException("Unsupported literal " + rightLiteral);
@@ -122,7 +158,7 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
                     return new LowerBoundConstraint(tableName, columnName, value);
 
                 default:
-                    throw new UnsupportedOperationException("Unexpected comparison operator " + e.getSqlComparisonOperator());
+                    throw new UnsupportedOperationException(UNEXPECTED_COMPARISON_OPERATOR_MESSAGE + e.getSqlComparisonOperator());
 
             }
         } else {
@@ -169,7 +205,9 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
 
     @Override
     public TableConstraint visit(SqlIsNotNullCondition e, Void argument) {
-        throw new UnsupportedOperationException(THIS_METHOD_SHOULD_NOT_BE_INVOKED);
+        String tableName = getTableName(e.getColumn());
+        String columnName = e.getColumn().getColumnName();
+        return new IsNotNullConstraint(tableName, columnName);
     }
 
     @Override
@@ -180,7 +218,8 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
     @Override
     public TableConstraint visit(SqlSimilarToCondition e, Void argument) {
         String tableName = getTableName(e.getColumn());
-        return new SimilarToConstraint(tableName, e.getColumn().getColumnName(), e.getPattern().toSql());
+        final String pattern = e.getPattern().getStringValue();
+        return new SimilarToConstraint(tableName, e.getColumn().getColumnName(), pattern);
     }
 
     @Override
@@ -192,7 +231,7 @@ public class SqlConditionTranslator extends SqlConditionVisitor<TableConstraint,
     public TableConstraint visit(SqlLikeCondition e, Void argument) {
         String tableName = getTableName(e.getColumnName());
         String columnName = e.getColumnName().getColumnName();
-        String pattern = e.getPattern().toSql();
+        String pattern = e.getPattern().getStringValue();
         return new LikeConstraint(tableName, columnName, pattern);
     }
 
