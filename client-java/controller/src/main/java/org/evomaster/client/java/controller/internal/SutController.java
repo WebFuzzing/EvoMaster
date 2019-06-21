@@ -164,6 +164,10 @@ public abstract class SutController implements SutHandler {
         sqlHandler.handle(sql);
     }
 
+    public final void enableSqlHeuristics(boolean enabled){
+        sqlHandler.setCalculateHeuristics(enabled);
+    }
+
     /**
      * This is needed only during test generation (not execution),
      * and it is automatically called by the EM controller after
@@ -190,18 +194,20 @@ public abstract class SutController implements SutHandler {
 
         ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
-        sqlHandler.getDistances().stream()
-                .map(p ->
-                        new HeuristicEntryDto(
-                                HeuristicEntryDto.Type.SQL,
-                                HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
-                                p.sqlCommand,
-                                p.distance
-                        ))
-                .forEach(h -> dto.heuristics.add(h));
+        if(sqlHandler.isCalculateHeuristics()) {
+            sqlHandler.getDistances().stream()
+                    .map(p ->
+                            new HeuristicEntryDto(
+                                    HeuristicEntryDto.Type.SQL,
+                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.sqlCommand,
+                                    p.distance
+                            ))
+                    .forEach(h -> dto.heuristics.add(h));
 
-        ExecutionDto executionDto = sqlHandler.getExecutionDto();
-        dto.databaseExecutionDto = executionDto;
+            ExecutionDto executionDto = sqlHandler.getExecutionDto();
+            dto.databaseExecutionDto = executionDto;
+        }
 
         return dto;
     }

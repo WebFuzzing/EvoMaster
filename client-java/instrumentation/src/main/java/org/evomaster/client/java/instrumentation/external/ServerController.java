@@ -88,12 +88,12 @@ public class ServerController {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
-    public boolean sendCommand(Command command){
+    public boolean sendCommand(Command command) {
         return sendObject(command);
     }
 
-    public boolean sendObject(Object obj){
-        if(! isConnectionOn()){
+    public boolean sendObject(Object obj) {
+        if (!isConnectionOn()) {
             return false;
         }
 
@@ -106,8 +106,8 @@ public class ServerController {
         return true;
     }
 
-    public Object waitAndGetResponse(){
-        if(! isConnectionOn()){
+    public Object waitAndGetResponse() {
+        if (!isConnectionOn()) {
             return null;
         }
 
@@ -121,9 +121,9 @@ public class ServerController {
         }
     }
 
-    public boolean sendAndExpectACK(Command command){
+    public boolean sendAndExpectACK(Command command) {
         boolean sent = sendCommand(command);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return false;
         }
@@ -131,16 +131,16 @@ public class ServerController {
         return waitForAck();
     }
 
-    public boolean sendWithDataAndExpectACK(Command command, Object data){
+    public boolean sendWithDataAndExpectACK(Command command, Object data) {
 
         boolean sent = sendCommand(command);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return false;
         }
 
         sent = sendObject(data);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return false;
         }
@@ -151,32 +151,43 @@ public class ServerController {
 
     private boolean waitForAck() {
         Object response = waitAndGetResponse();
-        if(response == null){
+        if (response == null) {
             SimpleLogger.error("Failed to read ACK response");
             return false;
         }
-        if(! Command.ACK.equals(response)){
-            throw new IllegalStateException("Invalid response: "+response);
+        if (!Command.ACK.equals(response)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "an ACK"));
         }
 
         return true;
     }
 
-    public  boolean resetForNewSearch(){
-       return sendAndExpectACK(Command.NEW_SEARCH);
+    private String errorMsgExpectingResponse(Object response, String expectation) {
+
+        String repMsg = response == null ? "NULL"
+                : "an instance of type " + response.getClass()
+                + " with value: " + response.toString();
+
+        return "Invalid response."
+                + " Expecting " + expectation
+                + ", but rather received " + repMsg;
     }
 
-    public  boolean resetForNewTest(){
+    public boolean resetForNewSearch() {
+        return sendAndExpectACK(Command.NEW_SEARCH);
+    }
+
+    public boolean resetForNewTest() {
         return sendAndExpectACK(Command.NEW_TEST);
     }
 
-    public boolean setActionIndex(int actionIndex){
+    public boolean setActionIndex(int actionIndex) {
         return sendWithDataAndExpectACK(Command.ACTION_INDEX, actionIndex);
     }
 
-    public List<TargetInfo> getTargetInfos(Collection<Integer> ids){
+    public List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGET_INFOS);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return null;
         }
@@ -189,34 +200,34 @@ public class ServerController {
         }
 
         Object response = waitAndGetResponse();
-        if(response == null){
+        if (response == null) {
             SimpleLogger.error("Failed to read response about covered targets");
             return null;
         }
 
-        if(! (response instanceof List<?>)){
-            throw new IllegalStateException("Invalid response: "+response);
+        if (!(response instanceof List<?>)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
         }
 
         return (List<TargetInfo>) response;
     }
 
-    public List<AdditionalInfo> getAdditionalInfoList(){
+    public List<AdditionalInfo> getAdditionalInfoList() {
 
         boolean sent = sendCommand(Command.ADDITIONAL_INFO);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return null;
         }
 
         Object response = waitAndGetResponse();
-        if(response == null){
+        if (response == null) {
             SimpleLogger.error("Failed to read response about additional info");
             return null;
         }
 
-        if(! (response instanceof List<?>)){
-            throw new IllegalStateException("Invalid response: "+response);
+        if (!(response instanceof List<?>)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
         }
 
         return (List<AdditionalInfo>) response;
