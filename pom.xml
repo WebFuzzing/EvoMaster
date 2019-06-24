@@ -482,6 +482,11 @@
                 <artifactId>postgresql</artifactId>
                 <version>42.1.4</version>
             </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>5.2.1</version>
+            </dependency>
 
             <!-- test dependencies -->
             <dependency>

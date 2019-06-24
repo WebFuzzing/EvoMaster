@@ -287,6 +287,7 @@ class SqlInsertBuilder(
     private fun getTable(tableName: String): Table {
         return tables[tableName]
                 ?: tables[tableName.toUpperCase()]
+                ?: tables[tableName.toLowerCase()]
                 ?: throw IllegalArgumentException("No table called $tableName")
     }
 
