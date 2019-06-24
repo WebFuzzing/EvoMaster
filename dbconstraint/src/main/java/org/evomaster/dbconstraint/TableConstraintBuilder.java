@@ -8,7 +8,7 @@ import org.evomaster.dbconstraint.parser.SqlConditionParser;
 import org.evomaster.dbconstraint.parser.SqlConditionParserException;
 import org.evomaster.dbconstraint.parser.SqlConditionParserFactory;
 
-public class ConstraintBuilder {
+public class TableConstraintBuilder {
 
     public TableConstraint translateToConstraint(String tableName, String condExpression) {
 

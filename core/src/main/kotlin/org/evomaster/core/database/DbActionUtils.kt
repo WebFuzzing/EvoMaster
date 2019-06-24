@@ -22,7 +22,7 @@ object DbActionUtils {
                 return false
             }
 
-            if(i == 0){
+            if (i == 0) {
                 continue
             }
 
@@ -290,7 +290,6 @@ object DbActionUtils {
             */
         }
     }
-
 
 
 }

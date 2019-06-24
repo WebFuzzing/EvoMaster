@@ -13,4 +13,17 @@ public class LikeConstraint extends TableConstraint {
         this.columnName = Objects.requireNonNull(columnName);
         this.pattern = Objects.requireNonNull(pattern);
     }
+
+    public String getColumnName() {
+        return columnName;
+    }
+
+    public String getPattern() {
+        return pattern;
+    }
+
+    @Override
+    public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

@@ -15,4 +15,9 @@ public class UniqueConstraint extends TableConstraint {
     public List<String> getUniqueColumnNames() {
         return uniqueColumnNames;
     }
+
+    @Override
+    public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

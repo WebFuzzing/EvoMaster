@@ -4,14 +4,19 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 import java.util.*
 
-
-class UUIDGene(
+/**
+ * The data type uuid stores Universally Unique Identifiers (UUID) as defined by RFC 4122, ISO/IEC 9834-8:2005,
+ * and related standards. (Some systems refer to this data type as a globally unique identifier, or GUID, instead.)
+ *
+ * https://www.postgresql.org/docs/9.1/datatype-uuid.html
+ */
+class SqlUUIDGene(
         name: String,
         val mostSigBits: LongGene = LongGene("mostSigBits", 0L),
         val leastSigBits: LongGene = LongGene("leastSigBits", 0L)
 ) : Gene(name) {
 
-    override fun copy(): Gene = UUIDGene(
+    override fun copy(): Gene = SqlUUIDGene(
             name,
             mostSigBits.copy() as LongGene,
             leastSigBits.copy() as LongGene
@@ -27,11 +32,14 @@ class UUIDGene(
     }
 
     override fun getValueAsRawString(): String {
-        return UUID(mostSigBits.value, leastSigBits.value).toString()
+        // https://www.postgresql.org/docs/9.1/datatype-uuid.html
+        return getValueAsUUID().toString()
     }
 
+    fun getValueAsUUID(): UUID = UUID(mostSigBits.value, leastSigBits.value)
+
     override fun copyValueFrom(other: Gene) {
-        if (other !is UUIDGene) {
+        if (other !is SqlUUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.mostSigBits.copyValueFrom(other.mostSigBits)
@@ -39,7 +47,7 @@ class UUIDGene(
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
-        if (other !is UUIDGene) {
+        if (other !is SqlUUIDGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.mostSigBits.containsSameValueAs(other.mostSigBits)
@@ -51,5 +59,6 @@ class UUIDGene(
             listOf(this).plus(mostSigBits.flatView(excludePredicate))
                     .plus(leastSigBits.flatView(excludePredicate))
     }
+
 
 }

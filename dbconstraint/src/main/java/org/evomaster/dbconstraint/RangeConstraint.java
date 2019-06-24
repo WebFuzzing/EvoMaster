@@ -30,4 +30,8 @@ public class RangeConstraint extends TableConstraint {
         return this.maxValue;
     }
 
+    @Override
+    public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

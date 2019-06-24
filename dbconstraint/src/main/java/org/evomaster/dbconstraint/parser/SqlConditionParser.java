@@ -2,7 +2,7 @@ package org.evomaster.dbconstraint.parser;
 
 import org.evomaster.dbconstraint.ast.SqlCondition;
 
-public abstract class SqlConditionParser {
+public interface SqlConditionParser {
 
-    public abstract SqlCondition parse(String sqlConditionStr) throws SqlConditionParserException;
+    SqlCondition parse(String sqlConditionStr) throws SqlConditionParserException;
 }
