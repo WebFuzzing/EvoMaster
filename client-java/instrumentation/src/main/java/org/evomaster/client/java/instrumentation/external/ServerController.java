@@ -24,12 +24,18 @@ import java.util.List;
  */
 public class ServerController {
 
+    /*
+        Note: for some reasons, different threads access this class, leading sometime to
+        nasty StreamCorruptedException.
+        Therefore, all public methods in this class are synchronized.
+     */
+
     private ServerSocket server;
     private Socket socket;
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
 
-    public int startServer() {
+    public synchronized int startServer() {
 
         closeServer();
 
@@ -44,7 +50,7 @@ public class ServerController {
     }
 
 
-    public void closeServer() {
+    public synchronized void closeServer() {
         if (server != null) {
             try {
                 server.close();
@@ -58,7 +64,7 @@ public class ServerController {
         }
     }
 
-    public boolean waitForIncomingConnection() {
+    public synchronized boolean waitForIncomingConnection() {
 
         try {
             socket = server.accept();
@@ -80,7 +86,7 @@ public class ServerController {
         return isConnectionOn();
     }
 
-    public boolean isConnectionOn() {
+    public synchronized boolean isConnectionOn() {
         /*
             as the Java Agent is the one starting this communication, if we
             have the connection, then it necessarily means that it is working
@@ -88,26 +94,29 @@ public class ServerController {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
-    public boolean sendCommand(Command command) {
+    public synchronized boolean sendCommand(Command command) {
         return sendObject(command);
     }
 
-    public boolean sendObject(Object obj) {
+    public synchronized boolean sendObject(Object obj) {
         if (!isConnectionOn()) {
+            SimpleLogger.error("TCP connection is not on");
             return false;
         }
 
         try {
             out.writeObject(obj);
         } catch (IOException e) {
+            SimpleLogger.error("IO exception while sending object", e);
             return false;
         }
 
         return true;
     }
 
-    public Object waitAndGetResponse() {
+    public synchronized Object waitAndGetResponse() {
         if (!isConnectionOn()) {
+            SimpleLogger.error("TCP connection is not on");
             return null;
         }
 
@@ -115,13 +124,14 @@ public class ServerController {
             Object obj = in.readObject();
             return obj;
         } catch (IOException e) {
+            SimpleLogger.error("IO exception while waiting for response", e);
             return null;
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    public boolean sendAndExpectACK(Command command) {
+    public synchronized boolean sendAndExpectACK(Command command) {
         boolean sent = sendCommand(command);
         if (!sent) {
             SimpleLogger.error("Failed to send message");
@@ -131,7 +141,7 @@ public class ServerController {
         return waitForAck();
     }
 
-    public boolean sendWithDataAndExpectACK(Command command, Object data) {
+    public synchronized boolean sendWithDataAndExpectACK(Command command, Object data) {
 
         boolean sent = sendCommand(command);
         if (!sent) {
@@ -185,7 +195,7 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.ACTION_INDEX, actionIndex);
     }
 
-    public List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
+    public synchronized List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGET_INFOS);
         if (!sent) {
             SimpleLogger.error("Failed to send message");
@@ -195,7 +205,7 @@ public class ServerController {
         try {
             out.writeObject(ids);
         } catch (IOException e) {
-            SimpleLogger.error("Failed to send ids");
+            SimpleLogger.error("Failed to send ids", e);
             return null;
         }
 
@@ -212,7 +222,7 @@ public class ServerController {
         return (List<TargetInfo>) response;
     }
 
-    public List<AdditionalInfo> getAdditionalInfoList() {
+    public synchronized List<AdditionalInfo> getAdditionalInfoList() {
 
         boolean sent = sendCommand(Command.ADDITIONAL_INFO);
         if (!sent) {
