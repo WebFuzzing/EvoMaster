@@ -5,6 +5,7 @@ import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -263,7 +264,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         val ok = rc.executeDatabaseCommand(dto)
         if (!ok) {
-            log.warn("Failed in executing database command")
+            //this can happen if we do not handle all constraints
+            LoggingUtil.uniqueWarn(log, "Failed in executing database command")
         }
     }
 

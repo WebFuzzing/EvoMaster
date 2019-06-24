@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.Logger
@@ -232,7 +234,7 @@ class RemoteController() : DatabaseExecutor {
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
         if (!wasSuccess(response)) {
-            log.warn("Failed to execute database command. HTTP status: {}.", response.status)
+            LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
             val responseDto = try {
                 response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
@@ -242,7 +244,8 @@ class RemoteController() : DatabaseExecutor {
             }
 
             if(responseDto?.error != null) {
-                log.warn("Error message: " + responseDto.error)
+                //this can happen if we do not handle all constraints
+                LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
             }
             /*
                 TODO refactor all methods in this class to print error message, if any
