@@ -40,3 +40,4 @@ experiments/target/
 *.lst
 /report/target/
 /extra_heuristics.csv
+/dbconstraint/target/

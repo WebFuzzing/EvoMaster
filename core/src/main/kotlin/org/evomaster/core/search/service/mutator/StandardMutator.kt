@@ -215,6 +215,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 s
             }
         }
+
+        gene.repair()
     }
 
 
