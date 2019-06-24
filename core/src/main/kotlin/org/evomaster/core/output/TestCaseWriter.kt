@@ -427,6 +427,8 @@ class TestCaseWriter {
                         .replace("\r", "\\r")}\")"*/
                 //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
+                LinkedTreeMap::class -> return "NotCoveredYet"
+                ArrayList::class -> return "NotCoveredYet"
                 else -> return "NotCoveredYet"
             }
         }
@@ -436,6 +438,18 @@ class TestCaseWriter {
         The solution is to use an additional content matcher that can be found in NumberMatcher. This can also
         be used as a template for adding more matchers, should such a step be needed.
         * */
+    }
+
+    private fun handleLinkedTreeMapLines(index: Int, map: LinkedTreeMap<*,*>, lines: Lines){
+        map.keys.forEach{
+            val printableTh = handleFieldValues(map[it])
+            if (printableTh != "null"
+                    && printableTh != "NotCoveredYet"
+                    && !printableTh.contains("logged")
+            ) {
+                lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)")
+            }
+        }
     }
 
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
@@ -455,18 +469,24 @@ class TestCaseWriter {
                 when (bodyString?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
-                        // Only assertions on array size are supporte at the moment.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        if (resContents.size > 0) {
+                        resContents.sortBy { it.toString() }
+                        //assertions on contents
+                        if(resContents.size > 0){
                             resContents.forEachIndexed { index, value ->
                                 val test_i = index
-                                val printableTh = handleFieldValues(value)
-                                if (printableTh != "null"
-                                        && printableTh != "NotCoveredYet"
-                                        && !printableTh.contains("logged")
-                                ) {
-                                    lines.add(".body(\"get($test_i)\", $printableTh)")
+                                if (value::class == LinkedTreeMap::class){
+                                    handleLinkedTreeMapLines(index, (value as LinkedTreeMap<*,*>), lines)
+                                }
+                                else {
+                                    val printableTh = handleFieldValues(value)
+                                    if (printableTh != "null"
+                                            && printableTh != "NotCoveredYet"
+                                            && !printableTh.contains("logged")
+                                    ) {
+                                        lines.add(".body(\"get($test_i)\", $printableTh)")
+                                    }
                                 }
                             }
                         }
@@ -474,21 +494,8 @@ class TestCaseWriter {
                     '{' -> {
                         // JSON contains an object
                         val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
-                        resContents.keys.filter {
-                            !(it as String).contains("timestamp")
-                        }
-                                .forEach {
-                                    val actualValue = resContents[it]
-                                    if (actualValue != null) {
-                                        val printableTh = handleFieldValues(actualValue)
-                                        if (printableTh != "null"
-                                                && printableTh != "NotCoveredYet"
-                                                && !printableTh.contains("logged")
-                                        ) {
-                                            lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                                        }
-                                    }
-                                }
+                        addObjectAssertions(resContents, lines)
+
                     }
                     //'"' -> {
                     // This branch will be called if the JSON is a String
@@ -507,6 +514,23 @@ class TestCaseWriter {
             }
         }
         //handleExpectations(res, lines, true)
+    }
+
+    private fun addObjectAssertions(resContents: LinkedTreeMap<*,*>, lines: Lines){
+        resContents.keys
+                .filter{ !(it as String).contains("timestamp")}
+                .forEach {
+                    val actualValue = resContents[it]
+                    if (actualValue != null) {
+                        val printableTh = handleFieldValues(actualValue)
+                        if (printableTh != "null"
+                                && printableTh != "NotCoveredYet"
+                                && !printableTh.contains("logged")
+                        ) {
+                            lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                        }
+                    }
+                }
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
