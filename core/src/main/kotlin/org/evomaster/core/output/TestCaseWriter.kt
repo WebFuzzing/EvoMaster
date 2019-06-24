@@ -697,7 +697,7 @@ class TestCaseWriter {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
 
-        if (format.isKotlin()) return ret.replace("$", "\\$")
+        if (format.isKotlin()) return ret.replace("\$", "\\\$")
         else return ret
     }
 }
