@@ -1,10 +1,13 @@
 package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto;
+import org.evomaster.client.java.utils.SimpleLogger;
 
+import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -29,6 +32,24 @@ public class QueryResult {
         }
     }
 
+
+    private String getColumnName(ResultSetMetaData md, int index) throws Exception{
+        /*
+            Unfortunately, in Postgres, calling getColumnName does NOT return the column
+            name, but rather its alias (if any).
+            Therefore, we need to use reflection to check if we are dealing with a Postgres
+            driver, and call its non-standard methods to retrieve the actual column name :(
+         */
+        if(Arrays.stream(md.getClass().getInterfaces()).anyMatch(i ->
+                i.getSimpleName().equals("PGResultSetMetaData"))){
+
+                Method m = md.getClass().getDeclaredMethod("getBaseColumnName", Integer.TYPE);
+                return (String) m.invoke(md, index);
+        }
+
+        return  md.getColumnName(index);
+    }
+
     public QueryResult(ResultSet resultSet) {
 
         if (resultSet == null) {
@@ -41,7 +62,7 @@ public class QueryResult {
             for (int i = 0; i < md.getColumnCount(); i++) {
                 int index = i + 1;
                 VariableDescriptor desc = new VariableDescriptor(
-                        md.getColumnName(index),
+                        getColumnName(md, index),
                         md.getColumnLabel(index),
                         md.getTableName(index)
                 );
