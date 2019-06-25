@@ -10,7 +10,7 @@ import org.evomaster.dbconstraint.parser.SqlConditionParserFactory;
 
 public class TableConstraintBuilder {
 
-    public TableConstraint translateToConstraint(String tableName, String condExpression) {
+    public TableConstraint translateToConstraint(String tableName, String condExpression, ConstraintDatabaseType databaseType) {
 
         SqlConditionParser sqlParser = SqlConditionParserFactory.buildParser();
         SqlCondition expr;
@@ -20,7 +20,7 @@ public class TableConstraintBuilder {
             return new UnsupportedTableConstraint(tableName, condExpression);
         }
 
-        TranslationContext translationContext = new TranslationContext(tableName);
+        TranslationContext translationContext = new TranslationContext(tableName, databaseType);
         SqlConditionTranslator exprExtractor = new SqlConditionTranslator(translationContext);
         try {
             return expr.accept(exprExtractor, null);

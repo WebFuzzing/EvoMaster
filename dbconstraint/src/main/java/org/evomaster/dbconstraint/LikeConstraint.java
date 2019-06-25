@@ -8,10 +8,13 @@ public class LikeConstraint extends TableConstraint {
 
     private final /*non-null*/ String pattern;
 
-    public LikeConstraint(String tableName, String columnName, String pattern) {
+    private final /*non-null*/ ConstraintDatabaseType databaseType;
+
+    public LikeConstraint(String tableName, String columnName, String pattern, ConstraintDatabaseType databaseType) {
         super(tableName);
         this.columnName = Objects.requireNonNull(columnName);
         this.pattern = Objects.requireNonNull(pattern);
+        this.databaseType = Objects.requireNonNull(databaseType);
     }
 
     public String getColumnName() {
@@ -20,6 +23,10 @@ public class LikeConstraint extends TableConstraint {
 
     public String getPattern() {
         return pattern;
+    }
+
+    public ConstraintDatabaseType getDatabaseType() {
+        return databaseType;
     }
 
     @Override

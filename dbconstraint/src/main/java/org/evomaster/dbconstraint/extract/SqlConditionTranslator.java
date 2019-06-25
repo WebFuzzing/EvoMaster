@@ -232,7 +232,7 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
         String tableName = getTableName(e.getColumnName());
         String columnName = e.getColumnName().getColumnName();
         String pattern = e.getPattern().getStringValue();
-        return new LikeConstraint(tableName, columnName, pattern);
+        return new LikeConstraint(tableName, columnName, pattern, translationContext.getDatabaseType());
     }
 
     @Override

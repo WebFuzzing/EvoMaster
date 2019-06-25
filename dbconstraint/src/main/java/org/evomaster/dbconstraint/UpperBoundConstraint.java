@@ -2,6 +2,9 @@ package org.evomaster.dbconstraint;
 
 import java.util.Objects;
 
+/**
+ * Represents the constraint table.column <= value
+ */
 public class UpperBoundConstraint extends TableConstraint {
 
     private final /*non-null*/ String columnName;
