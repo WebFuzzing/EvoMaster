@@ -9,9 +9,119 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class SchemaExtractor {
 
+
+    public static boolean validate(DbSchemaDto schema) throws IllegalArgumentException {
+
+        /*
+            some checks if the derived schema is consistent
+         */
+
+        Objects.requireNonNull(schema);
+
+        for (TableDto table : schema.tables) {
+
+            for (ColumnDto column : table.columns) {
+                checkForeignKeyToAutoIncrementPresent(schema, table, column);
+                checkForeignKeyToAutoIncrementMissing(schema, table, column);
+            }
+
+        }
+
+        return true;
+    }
+
+    private static void checkForeignKeyToAutoIncrementMissing(DbSchemaDto schema, TableDto table, ColumnDto column) {
+        if (column.foreignKeyToAutoIncrement) {
+            return;
+        }
+
+        Optional<ForeignKeyDto> fk = table.foreignKeys.stream()
+                .filter(it -> it.sourceColumns.contains(column.name))
+                .findFirst();
+
+        if (!fk.isPresent()) {
+            //not a foreign key
+            return;
+        }
+
+        //TODO proper handling of multi-column PKs/FKs
+
+        Optional<TableDto> targetTable = schema.tables.stream()
+                .filter(t -> t.name.equals(fk.get().targetTable))
+                .findFirst();
+
+        if (!targetTable.isPresent()) {
+            throw new IllegalArgumentException("Foreign key in table " + table.name +
+                    " pointing to non-existent table " + fk.get().targetTable);
+        }
+
+        List<ColumnDto> pks = targetTable.get().columns.stream()
+                .filter(c -> c.primaryKey)
+                .collect(Collectors.toList());
+
+        if (pks.isEmpty()) {
+            throw new IllegalArgumentException("No PK in table " + targetTable.get().name + " that has FKs pointing to it");
+        }
+
+        for (ColumnDto pk : pks) {
+            if (pk.autoIncrement || pk.foreignKeyToAutoIncrement) {
+                throw new IllegalArgumentException("Column " + pk.name + " in table " +
+                        pk.table + " is auto-increment, although FK pointing to it does not mark it " +
+                        "as autoincrement in " + column.name + " in " + table.name
+                );
+            }
+        }
+    }
+
+    private static void checkForeignKeyToAutoIncrementPresent(DbSchemaDto schema, TableDto table, ColumnDto column) {
+        if (!column.foreignKeyToAutoIncrement) {
+            return;
+        }
+
+        Optional<ForeignKeyDto> fk = table.foreignKeys.stream()
+                .filter(it -> it.sourceColumns.contains(column.name))
+                .findFirst();
+
+        if (!fk.isPresent()) {
+            throw new IllegalArgumentException("No foreign key constraint for marked column " +
+                    column.name + " in table " + table.name);
+        }
+
+        //TODO proper handling of multi-column PKs/FKs
+
+        Optional<TableDto> targetTable = schema.tables.stream()
+                .filter(t -> t.name.equals(fk.get().targetTable))
+                .findFirst();
+
+        if (!targetTable.isPresent()) {
+            throw new IllegalArgumentException("Foreign key in table " + table.name +
+                    " pointing to non-existent table " + fk.get().targetTable);
+        }
+
+        //there should be only 1 PK, and that must be auto-increment
+
+        List<ColumnDto> pks = targetTable.get().columns.stream()
+                .filter(c -> c.primaryKey)
+                .collect(Collectors.toList());
+
+        if (pks.size() != 1) {
+            throw new IllegalArgumentException("There must be only 1 PK in table " +
+                    targetTable.get().name + " pointed by the FK-to-autoincrement " +
+                    column.name + " in " + table.name + ". However, there were: " + pks.size());
+        }
+
+        ColumnDto pk = pks.get(0);
+        if (!pk.autoIncrement && !pk.foreignKeyToAutoIncrement) {
+            throw new IllegalArgumentException("Column " + pk.name + " in table " +
+                    pk.table + " is not auto-increment, although FK pointing to it does mark it" +
+                    "as autoincrement in " + column.name + " in " + table.name
+            );
+        }
+    }
 
     public static DbSchemaDto extract(Connection connection) throws Exception {
 
@@ -88,12 +198,14 @@ public class SchemaExtractor {
          */
         addConstraints(connection, dt, schemaDto);
 
+        assert validate(schemaDto);
+
         return schemaDto;
     }
 
 
     /**
-     * Adds a unique constraint to the correspondinding ColumnDTO for the selected table.column pair.
+     * Adds a unique constraint to the corresponding ColumnDTO for the selected table.column pair.
      * Requires the ColumnDTO to be contained in the TableDTO.
      * If the column DTO is not contained, a IllegalArgumentException is thrown.
      **/
@@ -111,11 +223,6 @@ public class SchemaExtractor {
 
     /**
      * Appends constraints that are database specific.
-     *
-     * @param connection
-     * @param dt
-     * @param schemaDto
-     * @throws Exception
      */
     private static void addConstraints(Connection connection, DatabaseType dt, DbSchemaDto schemaDto) throws SQLException {
         TableConstraintExtractor constraintExtractor = TableConstraintExtractorFactory.buildConstraintExtractor(dt);
@@ -156,7 +263,7 @@ public class SchemaExtractor {
         tableDto.name = tables.getString("TABLE_NAME");
 
         if (tableNames.contains(tableDto.name)) {
-            /**
+            /*
              * Perhaps we should throw a more specific exception than IllegalArgumentException
              */
             throw new IllegalArgumentException("Cannot handle repeated table " + tableDto.name + " in schema");
@@ -229,26 +336,14 @@ public class SchemaExtractor {
      * when a column is a foreign key to an auto increment value.
      * This information will be needed to properly handle the
      * automatically generated values in primary keys that are
-     * referenced by other columns in tables (that are not directly
-     * linked)
+     * referenced by columns in other tables
      *
      * @param schema
      */
     private static void addForeignKeyToAutoIncrement(DbSchemaDto schema) {
         for (TableDto tableDto : schema.tables) {
-            String tableName = tableDto.name;
             for (ColumnDto columnDto : tableDto.columns) {
-                if (columnDto.autoIncrement == true) {
-                    continue;
-                }
-                if (columnDto.primaryKey == false) {
-                    continue;
-                }
-                if (!tableDto.foreignKeys.stream().anyMatch(fk -> fk.sourceColumns.contains(columnDto.name))) {
-                    continue;
-                }
-                String columnName = columnDto.name;
-                if (isFKToAutoIncrementColumn(schema, tableName, columnName)) {
+                if (isFKToAutoIncrementColumn(schema, tableDto, columnDto.name)) {
                     columnDto.foreignKeyToAutoIncrement = true;
                 }
             }
@@ -257,47 +352,71 @@ public class SchemaExtractor {
 
     /**
      * Returns a table DTO for a particular table name
-     *
-     * @param schema
-     * @param tableName
-     * @return
      */
     private static TableDto getTable(DbSchemaDto schema, String tableName) {
-        TableDto tableDto = schema.tables.stream().filter(t -> t.name.equalsIgnoreCase(tableName)).findFirst().orElse(null);
+        TableDto tableDto = schema.tables.stream()
+                .filter(t -> t.name.equalsIgnoreCase(tableName))
+                .findFirst().orElse(null);
         return tableDto;
+    }
+
+    private static ColumnDto getColumn(TableDto table, String columnName) {
+        ColumnDto columnDto = table.columns.stream()
+                .filter(c -> c.name.equalsIgnoreCase(columnName))
+                .findFirst().orElse(null);
+        return columnDto;
     }
 
 
     /**
-     * Checks if the given tableName.columnName column is a foreign key to an autoincrement column
-     *
-     * @param schema
-     * @param tableName
-     * @param columnName
-     * @return
+     * Checks if the given table/column is a foreign key to an autoincrement column.
+     * This is done to be able to compute foreignKeyToAutoIncrement boolean.
+     * Otherwise, we could just read that boolean.
      */
-    private static boolean isFKToAutoIncrementColumn(DbSchemaDto schema, String tableName, String columnName) {
-        TableDto tableDto = getTable(schema, tableName);
-        // check if column is primary key
-        if (tableDto.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase(columnName) && c.primaryKey)) {
-            // check if the column is autoincrement (non printable)
-            if (tableDto.columns.stream().anyMatch(c -> c.name.equalsIgnoreCase(columnName) && c.autoIncrement)) {
-                return true;
-            } else {
-                // check if the column belongs to a foreign key that is non printable
-                for (ForeignKeyDto fk : tableDto.foreignKeys) {
-                    if (fk.sourceColumns.contains(columnName)) {
-                        int positionInFKSequence = fk.sourceColumns.indexOf(columnName);
-                        String targetTableName = fk.targetTable;
-                        TableDto targetTableDto = getTable(schema, targetTableName);
-                        String targetColumnName = targetTableDto.primaryKeySequence.get(positionInFKSequence);
-                        if (isFKToAutoIncrementColumn(schema, targetTableName, targetColumnName)) {
-                            return true;
-                        }
-                    }
+    private static boolean isFKToAutoIncrementColumn(DbSchemaDto schema, TableDto tableDto, String columnName) {
+
+        Objects.requireNonNull(schema);
+        Objects.requireNonNull(tableDto);
+        Objects.requireNonNull(columnName);
+
+        // is this column among the declared FKs?
+        if (!tableDto.foreignKeys.stream()
+                .anyMatch(fk -> fk.sourceColumns.stream()
+                        .anyMatch(s -> s.equalsIgnoreCase(columnName)))) {
+            return false;
+        }
+
+        ColumnDto columnDto = getColumn(tableDto, columnName);
+
+        if (columnDto.autoIncrement == true) {
+            // Assuming here that a FK cannot be auto-increment
+            return false;
+        }
+
+        // check if the column belongs to a foreign key that is non printable
+        for (ForeignKeyDto fk : tableDto.foreignKeys) {
+            if (fk.sourceColumns.stream()
+                    .anyMatch(s -> s.equalsIgnoreCase(columnName))) {
+
+                /*
+                    TODO: instead of using those positions, should have proper
+                    support for multi-column PKs/FKs
+                 */
+                int positionInFKSequence = fk.sourceColumns.indexOf(columnName);
+                TableDto targetTableDto = getTable(schema, fk.targetTable);
+                String targetColumnName = targetTableDto.primaryKeySequence.get(positionInFKSequence);
+                ColumnDto targetColumnDto = getColumn(targetTableDto, targetColumnName);
+
+                /*
+                    Either that target PK is auto-increment, or itself is a FK to a non-printable PK
+                 */
+                if (targetColumnDto.autoIncrement ||
+                        isFKToAutoIncrementColumn(schema, targetTableDto, targetColumnName)) {
+                    return true;
                 }
             }
         }
+
         return false;
     }
 
