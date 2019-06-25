@@ -3,6 +3,7 @@ package org.evomaster.core.database
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.NumberGene
 import org.evomaster.dbconstraint.*
+import java.util.regex.Pattern
 
 class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     : TableConstraintVisitor<Boolean, DbAction> {
@@ -197,15 +198,42 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     override fun visit(constraint: LikeConstraint, dbAction: DbAction): Boolean {
         val tableName = constraint.tableName
         val columnName = constraint.columnName
-        val patternValue = constraint.pattern
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val databaseType = constraint.databaseType
+        val patternDb = constraint.pattern
+
+        return visitPatternConstraint(tableName, columnName, patternDb, databaseType, dbAction)
     }
+
+    private fun visitPatternConstraint(tableName: String, columnName: String, patternDb: String, databaseType: ConstraintDatabaseType, dbAction: DbAction): Boolean {
+        // if the action is not referred to this action, we conclude
+        // the action does not invalidate the constraint
+        if (dbAction.table.name != tableName) {
+            return true
+        }
+
+
+        val gene = dbAction.seeGenes().firstOrNull { it.name == columnName } ?: return false
+        val instance = gene.getValueAsRawString()
+
+        val javaRegexPattern = when (databaseType) {
+            ConstraintDatabaseType.POSTGRES -> PostgresToJavaRegExTranslator().translate(patternDb)
+            else -> throw UnsupportedOperationException("Must implement java regex translation from %s".format(databaseType))
+        }
+        val pattern = Pattern.compile(javaRegexPattern)
+        val matcher = pattern.matcher(instance)
+
+        return matcher.find()
+    }
+
 
     override fun visit(constraint: SimilarToConstraint, dbAction: DbAction): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val tableName = constraint.tableName
+        val columnName = constraint.columnName
+        val databaseType = constraint.databaseType
+        val patternDb = constraint.pattern
+
+        return visitPatternConstraint(tableName, columnName, patternDb, databaseType, dbAction)
     }
-
-
 
 
 }

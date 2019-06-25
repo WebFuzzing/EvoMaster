@@ -416,4 +416,73 @@ class TableConstraintEvaluatorTest {
         assertTrue(constraintValue)
     }
 
+    @Test
+    fun testLikeConstraint() {
+        val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.POSTGRES)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val constraint = LikeConstraint("table0", "column0", "%hi_", ConstraintDatabaseType.POSTGRES)
+
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as StringGene).copyValueFrom(StringGene("status", value = "hiX"))
+
+        val evaluator = TableConstraintEvaluator()
+        val constraintValue = constraint.accept(evaluator, action)
+        assertTrue(constraintValue)
+    }
+
+    @Test
+    fun testLikeConstraintFalse() {
+        val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.POSTGRES)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val constraint = LikeConstraint("table0", "column0", "%hi_", ConstraintDatabaseType.POSTGRES)
+
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as StringGene).copyValueFrom(StringGene("status", value = "not matches"))
+
+        val evaluator = TableConstraintEvaluator()
+        val constraintValue = constraint.accept(evaluator, action)
+        assertFalse(constraintValue)
+    }
+
+    @Test
+    fun testSimilarToConstraintTrue() {
+        val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.POSTGRES)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val constraint = SimilarToConstraint("table0", "column0", "/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?", ConstraintDatabaseType.POSTGRES)
+
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as StringGene).copyValueFrom(StringGene("column0", value = "/foo/XX/bar/left/0000-00-000"))
+
+        val evaluator = TableConstraintEvaluator()
+        val constraintValue = constraint.accept(evaluator, action)
+        assertTrue(constraintValue)
+    }
+
+    @Test
+    fun testSimilarToConstraintFalse() {
+        val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.POSTGRES)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val constraint = SimilarToConstraint("table0", "column0", "/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?", ConstraintDatabaseType.POSTGRES)
+
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as StringGene).copyValueFrom(StringGene("column0", value = "/foo/XXXX/bar/left/0000-00-000"))
+
+        val evaluator = TableConstraintEvaluator()
+        val constraintValue = constraint.accept(evaluator, action)
+        assertFalse(constraintValue)
+    }
+
+    @Test
+    fun testSimilarToConstraintDiffTable() {
+        val column = Column("column0", ColumnDataType.TEXT, databaseType = DatabaseType.POSTGRES)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val constraint = SimilarToConstraint("table1", "column0", "/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?", ConstraintDatabaseType.POSTGRES)
+
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as StringGene).copyValueFrom(StringGene("column0", value = "/foo/XXXX/bar/left/0000-00-000"))
+
+        val evaluator = TableConstraintEvaluator()
+        val constraintValue = constraint.accept(evaluator, action)
+        assertTrue(constraintValue)
+    }
 }
