@@ -12,7 +12,7 @@ public class LocalDateExceptionHeuristics {
     public static double parse(String input){
 
         if (input == null) {
-            return 0d;
+            return H_REACHED_BUT_NULL;
         }
 
         try{
@@ -22,7 +22,7 @@ public class LocalDateExceptionHeuristics {
         }catch (Exception e){
         }
 
-        final double base = ExceptionHeuristics.FOR_NOT_NULL;
+        final double base = ExceptionHeuristics.H_NOT_NULL;
 
         long distance = 0;
 

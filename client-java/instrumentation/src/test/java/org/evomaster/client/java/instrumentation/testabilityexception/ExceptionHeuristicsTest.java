@@ -2,13 +2,21 @@ package org.evomaster.client.java.instrumentation.testabilityexception;
 
 import org.junit.jupiter.api.Test;
 
-import static org.evomaster.client.java.instrumentation.testabilityexception.ExceptionHeuristics.distanceToDigit;
+import static org.evomaster.client.java.instrumentation.testabilityexception.ExceptionHeuristics.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by arcuri82 on 26-Jun-19.
  */
 public class ExceptionHeuristicsTest {
+
+
+    @Test
+    public void testConstants(){
+        assertTrue(0 < H_REACHED_BUT_NULL);
+        assertTrue(H_REACHED_BUT_NULL < H_NOT_NULL);
+        assertTrue(H_NOT_NULL < 1);
+    }
 
     @Test
     public void testDistanceDigit(){

@@ -12,7 +12,7 @@ public class IntegerExceptionHeuristics {
     public static double parseInt( String input) {
 
         if (input == null) {
-            return 0d;
+            return H_REACHED_BUT_NULL;
         }
 
         try{
@@ -22,7 +22,7 @@ public class IntegerExceptionHeuristics {
         }catch (Exception e){
         }
 
-        final double base = FOR_NOT_NULL;
+        final double base = H_NOT_NULL;
 
         if (input.length() == 0) {
             return base;

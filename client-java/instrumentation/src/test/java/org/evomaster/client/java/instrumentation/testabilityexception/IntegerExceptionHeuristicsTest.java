@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.testabilityexception;
 
 import org.junit.jupiter.api.Test;
 
+import static org.evomaster.client.java.instrumentation.testabilityexception.ExceptionHeuristics.H_REACHED_BUT_NULL;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.evomaster.client.java.instrumentation.testabilityexception.IntegerExceptionHeuristics.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,7 +24,7 @@ public class IntegerExceptionHeuristicsTest {
 
     @Test
     public void testParseNull(){
-        assertEquals(0d, parseInt(null));
+        assertEquals(H_REACHED_BUT_NULL, parseInt(null));
     }
 
     @Test

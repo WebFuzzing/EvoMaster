@@ -5,7 +5,9 @@ package org.evomaster.client.java.instrumentation.testabilityexception;
  */
 public class ExceptionHeuristics {
 
-    public static final double FOR_NOT_NULL = 0.1d;
+    public static final double H_REACHED_BUT_NULL = 0.05d;
+
+    public static final double H_NOT_NULL = 0.1d;
 
     //2^16=65536, max distance for a char
     public static final int MAX_CHAR_DISTANCE = 65_536;
