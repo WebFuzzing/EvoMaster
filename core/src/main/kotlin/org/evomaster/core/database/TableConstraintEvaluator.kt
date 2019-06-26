@@ -5,6 +5,12 @@ import org.evomaster.core.search.gene.NumberGene
 import org.evomaster.dbconstraint.*
 import java.util.regex.Pattern
 
+/**
+ * Evaluates if a given dbAction satisfies or not a given table constraint.
+ * The evaluation could depend on previous dbActions (i.e. uniqueness, etc.).
+ * The evaluator expects that the schema is empty (only the previous actions
+ * are considered for the evaluation).
+ */
 class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
     : TableConstraintVisitor<Boolean, DbAction> {
 
