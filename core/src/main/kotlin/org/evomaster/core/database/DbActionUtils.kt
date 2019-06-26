@@ -183,7 +183,8 @@ object DbActionUtils {
             }
         }
 
-        return Pair(null, -1)
+        // no problem found
+        return null;
 
     }
 
