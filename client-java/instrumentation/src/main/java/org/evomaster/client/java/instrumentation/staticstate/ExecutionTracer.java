@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.testabilityexception.ExceptionHeuristicsRegistry;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -180,6 +181,21 @@ public class ExecutionTracer {
         } else {
             updateObjective(id, 0.5);
         }
+    }
+
+
+
+    public static final String EXECUTING_EXCEPTION_METHOD_METHOD_NAME = "executingExceptionMethod";
+    public static final String EXECUTING_EXCEPTION_METHOD_DESCRIPTOR_1 =
+            "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
+
+    public static void executingExceptionMethod(
+            Object input,
+            String targetId,
+            String owner, String name, String desc){
+
+        double h = ExceptionHeuristicsRegistry.computeHeuristics(input, owner, name, desc);
+        updateObjective(targetId, h);
     }
 
 

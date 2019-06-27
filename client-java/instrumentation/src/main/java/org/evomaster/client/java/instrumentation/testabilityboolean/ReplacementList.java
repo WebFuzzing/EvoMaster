@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.testability;
+package org.evomaster.client.java.instrumentation.testabilityboolean;
 
 import java.util.Arrays;
 import java.util.List;
