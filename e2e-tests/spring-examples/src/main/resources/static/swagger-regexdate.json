@@ -1,0 +1,65 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "1.0",
+    "title": "API"
+  },
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "regex-application",
+      "description": "Regex Application"
+    }
+  ],
+  "paths": {
+    "/api/{date}-{seq}": {
+      "get": {
+        "tags": [
+          "regex-application"
+        ],
+        "summary": "get",
+        "operationId": "getUsingGET",
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "date",
+            "in": "path",
+            "description": "date",
+            "required": true,
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{1,2}-\\d{1,2}$"
+          },
+          {
+            "name": "seq",
+            "in": "path",
+            "description": "seq",
+            "required": true,
+            "type": "string",
+            "pattern": "^\\d+$"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  }
+}
