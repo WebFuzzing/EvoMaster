@@ -1,8 +1,8 @@
 package com.foo.somedifferentpackage.examples.strings;
 
 import org.evomaster.client.java.instrumentation.example.strings.StringsExample;
-import org.evomaster.client.java.instrumentation.testability.BooleanMethodTransformer;
-import org.evomaster.client.java.instrumentation.testability.StringTransformer;
+import org.evomaster.client.java.instrumentation.testabilityboolean.BooleanMethodTransformer;
+import org.evomaster.client.java.instrumentation.testabilityboolean.StringTransformer;
 
 public class StringsExampleImp implements StringsExample {
 
