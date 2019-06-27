@@ -5,8 +5,16 @@ import org.evomaster.core.output.OutputFormat
 
 class SqlTimestampGene(
         name: String,
-        date: DateGene = DateGene("date"),
-        time: TimeGene = TimeGene("time", withMsZ = false)
+        date: DateGene = DateGene("date",
+                year = IntegerGene("year", 2016, 1900, 2100),
+                month = IntegerGene("month", 3, 1, 12),
+                day = IntegerGene("day", 12, 1, 31),
+                onlyValidDates = true),
+        time: TimeGene = TimeGene("time",
+                hour = IntegerGene("hour", 0, 0, 23),
+                minute = IntegerGene("minute", 0, 0, 59),
+                second = IntegerGene("second", 0, 0, 59),
+                withMsZ = false)
 ) : DateTimeGene(name, date, time) {
 
     init {
@@ -45,7 +53,7 @@ class SqlTimestampGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(date.flatView(excludePredicate))
                     .plus(time.flatView(excludePredicate))
