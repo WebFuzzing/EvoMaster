@@ -7,6 +7,8 @@ create table X (
   xmlColumn XML NOT NULL,
   w_id TEXT NOT NULL,
   f_id TEXT NOT NULL,
+  p_at               TIMESTAMP,
+  status             TEXT NOT NULL,
   constraint pk_x primary key (id)
 );
 
@@ -22,3 +24,7 @@ ALTER TABLE x ADD CONSTRAINT check_f_id
 
 ALTER TABLE x ADD CONSTRAINT check_w_id
   CHECK (w_id SIMILAR TO '/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?');
+
+ALTER TABLE x ADD CONSTRAINT check_status
+  CHECK (status in ('A', 'B'));
+

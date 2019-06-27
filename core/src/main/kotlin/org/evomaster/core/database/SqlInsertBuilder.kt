@@ -57,10 +57,13 @@ class SqlInsertBuilder(
 
         val tableToColumns = mutableMapOf<String, MutableSet<Column>>()
         val tableToForeignKeys = mutableMapOf<String, MutableSet<ForeignKey>>()
+        val tableToConstraints = mutableMapOf<String, Set<TableConstraint>>()
 
         for (t in schemaDto.tables) {
 
             val tableConstraints = parseTableConstraints(t)
+
+            tableToConstraints[t.name] = tableConstraints.toSet()
 
             val columns = mutableSetOf<Column>()
 
@@ -130,7 +133,10 @@ class SqlInsertBuilder(
         }
 
         for (t in schemaDto.tables) {
-            val table = Table(t.name, tableToColumns[t.name]!!, tableToForeignKeys[t.name]!!)
+            val table = Table(t.name,
+                    tableToColumns[t.name]!!,
+                    tableToForeignKeys[t.name]!!,
+                    tableToConstraints[t.name]!!)
             tables[t.name] = table
         }
     }
