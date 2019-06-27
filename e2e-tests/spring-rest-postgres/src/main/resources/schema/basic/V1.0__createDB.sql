@@ -28,3 +28,5 @@ ALTER TABLE x ADD CONSTRAINT check_w_id
 ALTER TABLE x ADD CONSTRAINT check_status
   CHECK (status in ('A', 'B'));
 
+ALTER TABLE x ADD CONSTRAINT check_status_at
+  CHECK ((status = 'B') = (p_at IS NOT NULL));
