@@ -18,7 +18,7 @@ class StringGene(
          * For example, in a URL Path variable, we do not want have "/", as otherwise
          * it would create 2 distinct paths
          */
-        val invalidChars : List<Char> = listOf()
+        val invalidChars: List<Char> = listOf()
 ) : Gene(name) {
 
     /*
@@ -36,35 +36,40 @@ class StringGene(
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
+        value = if (name == "type" && randomness.nextBoolean())
+            //FIXME: tmp hack until we have proper seeding support
+            randomness.choose(listOf("lov", "forskrift"))
+        else
         //TODO much more would need to be done here to handle strings...
-        value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
+            randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
+
         repair()
     }
 
     /**
      * Make sure no invalid chars is used
      */
-    fun repair(){
-        if(invalidChars.isEmpty()){
+    fun repair() {
+        if (invalidChars.isEmpty()) {
             //nothing to do
             return
         }
 
-        if(validChar == null){
+        if (validChar == null) {
             //compute a valid char
-            for(c in 'a' .. 'z'){
-                if(! invalidChars.contains(c)){
+            for (c in 'a'..'z') {
+                if (!invalidChars.contains(c)) {
                     validChar = c.toString()
                     break
                 }
             }
         }
-        if(validChar == null){
+        if (validChar == null) {
             //no basic char is valid??? TODO should handle this situation, although likely never happens
             return
         }
 
-        for(invalid in invalidChars){
+        for (invalid in invalidChars) {
             value = value.replace("$invalid", validChar!!)
         }
     }
