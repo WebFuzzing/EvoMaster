@@ -123,19 +123,24 @@ public class SqlNameContext {
 
     private FromItem getFromItem() {
 
+        FromItem fromItem = null;
+
         if(statement instanceof Select) {
             SelectBody selectBody = ((Select) statement).getSelectBody();
 
             if (selectBody instanceof PlainSelect) {
                 PlainSelect plainSelect = (PlainSelect) selectBody;
 
-                return plainSelect.getFromItem();
+                fromItem =  plainSelect.getFromItem();
             } else {
                 throw new IllegalArgumentException("Currently only handling Plain SELECTs");
             }
         }
 
-        throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
+        if(fromItem == null)
+            throw new IllegalArgumentException("Cannot handle FromItem for: " + statement);
+
+        return fromItem;
     }
 
 

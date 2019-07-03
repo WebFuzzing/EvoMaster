@@ -31,11 +31,13 @@ public class P6SpyFormatter implements MessageFormattingStrategy {
             of "prepared" and "sql" inputs is rather confusing,
             and we get different behavior based on whether parameters "?"
             are present or not in the query.
+
+            Furthermore, to simplify the analyses, we want each single SQL command on 1 line
          */
         if (!hasSQL) {
-            return PREFIX + prepared;
+            return PREFIX + prepared.replace('\n', ' ');
         } else {
-            return PREFIX + sql;
+            return PREFIX + sql.replace('\n', ' ');
         }
     }
 }

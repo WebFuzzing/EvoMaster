@@ -10,6 +10,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.regex.*
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -145,6 +146,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutateGene(gene: Gene, all: List<Gene>) {
 
         when (gene) {
+            is RegexGene -> handleRegexGene(gene)
             is SqlForeignKeyGene -> handleSqlForeignKeyGene(gene, all)
             is DisruptiveGene<*> -> mutateGene(gene.gene, all)
             is OptionalGene -> handleOptionalGene(gene, all)
@@ -154,6 +156,76 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             else -> {
                 gene.randomize(randomness, true, all)
             }
+        }
+    }
+
+    private fun handleRegexGene(gene: RegexGene){
+        handleDisjunctionListRxGene(gene.disjunctions)
+    }
+
+    private fun handleDisjunctionListRxGene(gene: DisjunctionListRxGene){
+        if(gene.disjunctions.size > 1 && randomness.nextBoolean(0.1)){
+            //activate the next disjunction
+            gene.activeDisjunction = (gene.activeDisjunction + 1) % gene.disjunctions.size
+        } else {
+            handleDisjunctionRxGene(gene.disjunctions[gene.activeDisjunction])
+        }
+    }
+
+    private fun handleDisjunctionRxGene(gene: DisjunctionRxGene){
+
+        if(gene.matchStart && randomness.nextBoolean(0.05)){
+            gene.extraPrefix = ! gene.extraPrefix
+        } else if(gene.matchEnd && randomness.nextBoolean(0.05)){
+            gene.extraPostfix = ! gene.extraPostfix
+        } else {
+            val terms = gene.terms.filter { it.isMutable() }
+            if(terms.isEmpty()){
+                return
+            }
+            val term = randomness.choose(terms)
+            handleRxTermGene(term)
+        }
+    }
+
+    private fun handleRxTermGene(gene: RxTerm){
+
+        when(gene){
+            is DisjunctionRxGene -> handleDisjunctionRxGene(gene)
+            is DisjunctionListRxGene -> handleDisjunctionListRxGene(gene)
+            is QuantifierRxGene -> handleQuantifierRxGene(gene)
+            is CharacterClassEscapeRxGene -> handleCharacterClassEscapeRxGene(gene)
+            is AnyCharacterRxGene, is CharacterRangeRxGene-> gene.randomize(randomness, true)
+            else -> throw IllegalStateException("Not supported yet mutation of term ${gene.javaClass}")
+        }
+    }
+
+
+    private fun handleQuantifierRxGene(gene : QuantifierRxGene){
+
+        val length = gene.atoms.size
+
+        if( length > gene.min  && randomness.nextBoolean(0.1)){
+            gene.atoms.removeAt(randomness.nextInt(length))
+        } else if(length < gene.limitedMax && randomness.nextBoolean(0.1)){
+            gene.addNewAtom(randomness, false, listOf())
+        } else {
+            val atoms = gene.atoms.filter { it.isMutable() }
+            if(atoms.isEmpty()){
+                return
+            }
+            val atom = randomness.choose(atoms)
+            handleRxTermGene(atom)
+        }
+    }
+
+    private fun handleCharacterClassEscapeRxGene(gene: CharacterClassEscapeRxGene){
+
+
+        gene.value = when(gene.type){
+            "d" -> ((gene.value.toInt() + randomness.choose(listOf(1,-1) + 10)) % 10).toString()
+            //TODO all cases
+            else -> throw IllegalStateException("Type '\\${gene.type}' not supported yet")
         }
     }
 
