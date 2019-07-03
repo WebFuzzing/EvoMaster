@@ -20,6 +20,7 @@ import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.IdMapper
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -135,7 +136,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             2) might not be possible to have a too long URL
          */
         //TODO prioritized list
-        val ids = randomness.choose(archive.notCoveredTargets(), 100)
+        val ids = randomness.choose(
+                archive.notCoveredTargets().filter { !IdMapper.isLocal(it)},
+                100).toSet()
 
         val dto = rc.getTestResults(ids)
         if (dto == null) {
@@ -285,11 +288,36 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
                             .getStatusCode() ?: -1
-                    val desc = "$status:${actions[it].getName()}"
-                    val id = idMapper.handleLocalTarget(desc)
-                    fv.updateTarget(id, 1.0, it)
+                    val name = actions[it].getName()
+
+                    //objective for HTTP specific status code
+                    val statusId = idMapper.handleLocalTarget("$status:$name")
+                    fv.updateTarget(statusId, 1.0, it)
+
+                    /*
+                        Objectives for results on endpoints.
+                        Problem: we might get a4xx/5xx, but then no gradient to keep sampling for
+                        that endpoint. If we get 2xx, and full coverage, then no gradient to try
+                        to keep sampling that endpoint to get a 5xx
+                     */
+                    val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+                    val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+                    //OK -> 5xx being better than 4xx, as code executed
+                    //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+                    if(status in 200..299){
+                        fv.updateTarget(okId, 1.0, it)
+                        fv.updateTarget(faultId, 0.5, it)
+                    } else if(status in 400..499){
+                        fv.updateTarget(okId, 0.1, it)
+                        fv.updateTarget(faultId, 0.1, it)
+                    } else if(status in 500..599){
+                        fv.updateTarget(okId, 0.5, it)
+                        fv.updateTarget(faultId, 1.0, it)
+                    }
                 }
     }
+
 
 
     /**

@@ -71,6 +71,40 @@ public class HeuristicsCalculatorInDBTest extends DatabaseTestTemplate {
         }
     }
 
+    @Test
+    public void testMultiline() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT, y INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (0, 0)");
+
+        int y = 42;
+        String select = "select f.x \n from Foo f \n where f.y=" + y;
+
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+            String url = start(starter);
+            url += BASE_PATH;
+
+            startNewTest(url);
+
+            SqlScriptRunner.execCommand(getConnection(), select);
+
+            double a = getFirstAndStartNew(url);
+            assertTrue(a > 0d);
+
+            SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x, y) VALUES (1, " + y + ")");
+            SqlScriptRunner.execCommand(getConnection(), select);
+
+            double b = getFirstAndStartNew(url);
+            assertTrue(b < a);
+            assertEquals(0d, b, 0.0001);
+
+        } finally {
+            starter.stop();
+        }
+    }
 
     @Test
     public void testVarNotInSelect() throws Exception {

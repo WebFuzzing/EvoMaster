@@ -37,6 +37,25 @@ public class ThrownExcInstrumentedTest {
 
 
     @Test
+    public void testInConstructor() throws Exception{
+
+        ThrownExc te = getInstance();
+
+        //constructor has a default call to Object()
+        assertEquals(1, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+
+        assertThrows(Exception.class, () -> te.inConstructor(true));
+
+        //3 constructors and a throw
+        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.SUCCESS_CALL));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
+
+        String res = te.inConstructor(false);
+        assertEquals("foo", res);
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.SUCCESS_CALL));
+    }
+
+    @Test
     public void testDirectReturn() throws Exception{
 
         ThrownExc te = getInstance();
