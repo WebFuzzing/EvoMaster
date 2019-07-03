@@ -119,13 +119,21 @@ class FitnessValue(
         updateTarget(id, MAX_VALUE)
     }
 
+    /**
+     * Set the heuristic [value] for the given target [id].
+     * If already existing, replace it only if better.
+     */
     fun updateTarget(id: Int, value: Double, actionIndex : Int = -1) {
 
         if (value < 0 || value > MAX_VALUE) {
             throw IllegalArgumentException("Invalid value: $value")
         }
 
-        targets[id] = Heuristics(value, actionIndex)
+        val current = targets[id]
+
+        if(current == null || value > current.distance) {
+            targets[id] = Heuristics(value, actionIndex)
+        }
     }
 
     /**
