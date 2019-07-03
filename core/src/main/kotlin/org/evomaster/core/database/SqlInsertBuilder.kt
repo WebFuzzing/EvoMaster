@@ -57,10 +57,13 @@ class SqlInsertBuilder(
 
         val tableToColumns = mutableMapOf<String, MutableSet<Column>>()
         val tableToForeignKeys = mutableMapOf<String, MutableSet<ForeignKey>>()
+        val tableToConstraints = mutableMapOf<String, Set<TableConstraint>>()
 
         for (t in schemaDto.tables) {
 
             val tableConstraints = parseTableConstraints(t)
+
+            tableToConstraints[t.name] = tableConstraints.toSet()
 
             val columns = mutableSetOf<Column>()
 
@@ -130,7 +133,10 @@ class SqlInsertBuilder(
         }
 
         for (t in schemaDto.tables) {
-            val table = Table(t.name, tableToColumns[t.name]!!, tableToForeignKeys[t.name]!!)
+            val table = Table(t.name,
+                    tableToColumns[t.name]!!,
+                    tableToForeignKeys[t.name]!!,
+                    tableToConstraints[t.name]!!)
             tables[t.name] = table
         }
     }
@@ -271,14 +277,22 @@ class SqlInsertBuilder(
         return enumValues
     }
 
+    private fun getConstraintDatabaseType(currentDatabaseType: DatabaseType): ConstraintDatabaseType {
+        return when (currentDatabaseType) {
+            DatabaseType.H2 -> ConstraintDatabaseType.H2
+            DatabaseType.POSTGRES -> ConstraintDatabaseType.POSTGRES
+            DatabaseType.DERBY -> ConstraintDatabaseType.DERBY
+            DatabaseType.OTHER -> ConstraintDatabaseType.OTHER
+        }
+    }
 
     private fun parseTableConstraints(t: TableDto): List<TableConstraint> {
         val tableConstraints = mutableListOf<TableConstraint>()
         val tableName = t.name
-
         for (sqlCheckExpression in t.tableCheckExpressions) {
             val builder = TableConstraintBuilder()
-            val tableConstraint = builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression)
+            val constraintDatabaseType = getConstraintDatabaseType(this.databaseType)
+            val tableConstraint = builder.translateToConstraint(tableName, sqlCheckExpression.sqlCheckExpression, constraintDatabaseType)
             tableConstraints.add(tableConstraint)
         }
         return tableConstraints

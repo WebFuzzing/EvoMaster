@@ -5,8 +5,8 @@ import org.evomaster.core.search.service.Randomness
 
 
 class DoubleGene(name: String,
-                 var value: Double = 0.0
-) : NumberGene(name) {
+                 value: Double = 0.0
+) : NumberGene<Double>(name, value) {
 
     override fun copy() = DoubleGene(name, value)
 

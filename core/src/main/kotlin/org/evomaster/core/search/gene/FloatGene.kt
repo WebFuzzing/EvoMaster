@@ -5,8 +5,8 @@ import org.evomaster.core.search.service.Randomness
 
 
 class FloatGene(name: String,
-                var value: Float = 0.0f
-) : NumberGene(name) {
+                value: Float = 0.0f
+) : NumberGene<Float>(name, value) {
 
     override fun copy() = FloatGene(name, value)
 

@@ -36,7 +36,8 @@ open class BasicApp : SwaggerConfiguration() {
     open fun get(): ResponseEntity<Any> {
 
         // UUID, JSONB and XML are not supported by javax.persistence
-        val query = em.createNativeQuery("select id, textColumn, dateColumn, f_id, w_id from X where id>0")
+        // The clause (p_at IS NULL or p_at IS NOT NULL) forces the p_at column to be selected as a gene
+        val query = em.createNativeQuery("select id, textColumn, dateColumn, f_id, w_id, p_at, status from X where id>0 and (p_at IS NULL or p_at IS NOT NULL)")
         val res = query.resultList
 
         var status = 400
@@ -47,6 +48,8 @@ open class BasicApp : SwaggerConfiguration() {
             val dateColumn = row[2] as java.util.Date
             val f_id = row[3] as String
             val w_id = row[4] as String
+            val p_atColumn = row[5] as Any?
+            val statusColumn = row[6] as String
 
 
             var f_id_matches = false
@@ -63,7 +66,9 @@ open class BasicApp : SwaggerConfiguration() {
             val matcher = pattern.matcher(w_id)
             val w_id_matches = matcher.find()
 
-            if (w_id_matches && f_id_matches) {
+            val check_expr_is_satisfied = (p_atColumn != null) == (statusColumn == "B")
+
+            if (w_id_matches && f_id_matches && check_expr_is_satisfied) {
                 status = 200
             }
         }

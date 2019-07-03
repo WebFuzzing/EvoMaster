@@ -6,12 +6,12 @@ import org.evomaster.core.search.service.Randomness
 
 class IntegerGene(
         name: String,
-        var value: Int = 0,
+        value: Int = 0,
         /** Inclusive */
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
         val max: Int = Int.MAX_VALUE
-) : NumberGene(name) {
+) : NumberGene<Int>(name, value) {
 
 
     override fun copy(): Gene {
