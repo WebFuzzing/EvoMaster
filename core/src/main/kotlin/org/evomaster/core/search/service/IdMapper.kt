@@ -14,6 +14,10 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class IdMapper {
 
+    companion object {
+        fun isLocal(id: Int) : Boolean = id < 0
+    }
+
     private val mapping : MutableMap<Int, String> = mutableMapOf()
 
     private val reverseMapping : MutableMap<String, Int> = mutableMapOf()
