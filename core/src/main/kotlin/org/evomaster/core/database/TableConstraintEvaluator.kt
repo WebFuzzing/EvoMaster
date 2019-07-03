@@ -8,7 +8,7 @@ import java.util.regex.Pattern
 /**
  * Evaluates if a given dbAction satisfies or not a given table constraint.
  * The evaluation could depend on previous dbActions (i.e. uniqueness, etc.).
- * The evaluator expects that the schema is empty (only the previous actions
+ * The evaluator expects that the database is initially empty (only the previous actions
  * are considered for the evaluation).
  */
 class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
@@ -207,10 +207,6 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         val databaseType = constraint.databaseType
         val patternDb = constraint.pattern
 
-        return visitPatternConstraint(tableName, columnName, patternDb, databaseType, dbAction)
-    }
-
-    private fun visitPatternConstraint(tableName: String, columnName: String, patternDb: String, databaseType: ConstraintDatabaseType, dbAction: DbAction): Boolean {
         // if the action is not referred to this action, we conclude
         // the action does not invalidate the constraint
         if (dbAction.table.name != tableName) {
@@ -222,7 +218,7 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         val instance = gene.getValueAsRawString()
 
         val javaRegexPattern = when (databaseType) {
-            ConstraintDatabaseType.POSTGRES -> PostgresToJavaRegExTranslator().translate(patternDb)
+            ConstraintDatabaseType.POSTGRES -> PostgresToJavaRegExTranslator().translatePostgresLike(patternDb)
             else -> throw UnsupportedOperationException("Must implement java regex translation from %s".format(databaseType))
         }
         val pattern = Pattern.compile(javaRegexPattern)
@@ -238,7 +234,23 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         val databaseType = constraint.databaseType
         val patternDb = constraint.pattern
 
-        return visitPatternConstraint(tableName, columnName, patternDb, databaseType, dbAction)
+        // if the action is not referred to this action, we conclude
+        // the action does not invalidate the constraint
+        if (dbAction.table.name != tableName) {
+            return true
+        }
+
+        val gene = dbAction.seeGenes().firstOrNull { it.name == columnName } ?: return false
+        val instance = gene.getValueAsRawString()
+
+        val javaRegexPattern = when (databaseType) {
+            ConstraintDatabaseType.POSTGRES -> PostgresToJavaRegExTranslator().translatePostgresSimilarTo(patternDb)
+            else -> throw UnsupportedOperationException("Must implement java regex translation from %s".format(databaseType))
+        }
+        val pattern = Pattern.compile(javaRegexPattern)
+        val matcher = pattern.matcher(instance)
+
+        return matcher.find()
     }
 
 
