@@ -84,7 +84,7 @@ class TestCaseWriter {
                             val name = locationVar(id!!)
                             when {
                                 format.isJava() -> lines.add("String $name = \"\";")
-                                format.isKotlin() -> lines.add("var $name = \"\"")
+                                format.isKotlin() -> lines.add("var $name : String? = \"\"")
                             }
                         }
             }

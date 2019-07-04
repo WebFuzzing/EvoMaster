@@ -5,8 +5,12 @@ import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.TestPlan;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.CustomSummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.junit.platform.launcher.listeners.TestExecutionSummary;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
@@ -16,7 +20,8 @@ import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 public class JUnitTestRunner {
 
     public static TestExecutionSummary runTestsInClass(Class<?> klass){
-        SummaryGeneratingListener listener = new SummaryGeneratingListener();
+
+        CustomSummaryGeneratingListener listener = new CustomSummaryGeneratingListener();
 
         LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
                 .selectors(selectClass(klass))

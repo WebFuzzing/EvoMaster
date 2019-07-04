@@ -2,9 +2,12 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
-import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -137,7 +140,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
          */
         //TODO prioritized list
         val ids = randomness.choose(
-                archive.notCoveredTargets().filter { !IdMapper.isLocal(it)},
+                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
                 100).toSet()
 
         val dto = rc.getTestResults(ids)
@@ -182,8 +185,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                 extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
 
                 val toMinimize = extra.heuristics
-                        .filter { it != null
-                                && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                        .filter {
+                            it != null
+                                    && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
                         }.map { it.value }
                         .toList()
 
@@ -235,7 +239,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
             info.headers
                     .filter { name ->
-                        ! action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
+                        !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
                         action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false)))
@@ -243,7 +247,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
             info.queryParameters
                     .filter { name ->
-                        ! action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                        !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach { name ->
                         action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
@@ -305,19 +309,18 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
                     //OK -> 5xx being better than 4xx, as code executed
                     //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
-                    if(status in 200..299){
+                    if (status in 200..299) {
                         fv.updateTarget(okId, 1.0, it)
                         fv.updateTarget(faultId, 0.5, it)
-                    } else if(status in 400..499){
+                    } else if (status in 400..499) {
                         fv.updateTarget(okId, 0.1, it)
                         fv.updateTarget(faultId, 0.1, it)
-                    } else if(status in 500..599){
+                    } else if (status in 500..599) {
                         fv.updateTarget(okId, 0.5, it)
                         fv.updateTarget(faultId, 1.0, it)
                     }
                 }
     }
-
 
 
     /**
@@ -336,21 +339,23 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         val path = a.resolvedPath()
 
-        val fullUri = if (a.locationId != null) {
-            val locationHeader = chainState[locationName(a.locationId!!)]
+        val locationHeader = if (a.locationId != null) {
+            chainState[locationName(a.locationId!!)]
                     ?: throw IllegalStateException("Call expected a missing chained 'location'")
-
-            EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
-
         } else {
-            baseUrl + path
-        }.let {
-            /*
-                TODO this will be need to be done properly, and check if
-                it is or not a valid char
-             */
-            it.replace("\"", "")
+            null
         }
+
+        val fullUri = EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
+                .let {
+                    /*
+                        TODO this will be need to be done properly, and check if
+                        it is or not a valid char.
+                        Furthermore, likely needed to be done in resolveLocation,
+                        or at least check how RestAssured would behave
+                     */
+                    it.replace("\"", "")
+                }
 
         /*
             TODO: This only considers the first in the list of produced responses
@@ -384,7 +389,6 @@ class RestFitness : FitnessFunction<RestIndividual>() {
          */
 
 
-
         val body = a.parameters.find { p -> p is BodyParam }
         val forms = a.getBodyFormData()
 
@@ -395,14 +399,14 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         val bodyEntity = if (body != null && body is BodyParam) {
             val mode = when {
                 body.isJson() -> "json"
-            //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                 body.isTextPlain() -> "text"
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
             Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), body.contentType())
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if(a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH){
+        } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
                 when objects like WebRequest are used. So we default to urlencoded

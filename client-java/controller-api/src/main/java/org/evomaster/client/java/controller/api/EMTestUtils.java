@@ -22,12 +22,16 @@ public class EMTestUtils {
      * @param locationHeader a URI-reference, coming from a "location" header. See RFC 7231.
      *                       Note: it can be a relative reference
      * @param expectedTemplate a full URI of the target resource, but with some path elements
-     *                         that might be unresolved. If {@code locationHeader} is not
+     *                         that might (or might not) be unresolved. If {@code locationHeader} is not
      *                         empty, it will replace the beginning of this template.
      * @return a fully resolved URI for the target resource. If there are problems, just
-     *          return the input locationHeader
+     *          return the input locationHeader. If this latter is empty/null, then return the template
      */
     public static String resolveLocation(String locationHeader, String expectedTemplate){
+
+        if(locationHeader==null || locationHeader.isEmpty()){
+            return expectedTemplate;
+        }
 
         URI locationURI;
         try{

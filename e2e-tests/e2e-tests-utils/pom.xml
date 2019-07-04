@@ -62,7 +62,7 @@
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-surefire-provider</artifactId>
+            <artifactId>junit-platform-launcher</artifactId>
         </dependency>
 
     </dependencies>

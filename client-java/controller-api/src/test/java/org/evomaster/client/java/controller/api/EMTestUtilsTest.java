@@ -37,6 +37,15 @@ public class EMTestUtilsTest {
     }
 
     @Test
+    public void testResolveLocation_null() {
+        String template = "http://localhost:12345/a/x";
+        String location = null;
+
+        String res = EMTestUtils.resolveLocation(location, template);
+        assertEquals(template, res);
+    }
+
+    @Test
     public void testIsValidURI() {
 
         assertTrue(EMTestUtils.isValidURIorEmpty(null));
