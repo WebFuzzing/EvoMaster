@@ -7,6 +7,8 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.output.*
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.experiments.objects.ObjIndividual
 import org.evomaster.experiments.objects.ObjRestCallAction
 import org.evomaster.experiments.objects.param.BodyParam

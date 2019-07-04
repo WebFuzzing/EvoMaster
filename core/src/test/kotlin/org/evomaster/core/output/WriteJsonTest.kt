@@ -9,6 +9,8 @@ import org.evomaster.core.database.schema.ForeignKey
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
