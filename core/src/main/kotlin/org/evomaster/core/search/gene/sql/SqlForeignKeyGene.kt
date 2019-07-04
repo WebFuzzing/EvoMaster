@@ -30,13 +30,18 @@ class SqlForeignKeyGene(
          */
         var uniqueIdOfPrimaryKey: Long = -1
 
-) : Gene(sourceColumn) {
+) : SqlWrapperGene(sourceColumn) {
 
     init {
         if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
     }
+
+    override fun getForeignKey(): SqlForeignKeyGene? {
+        return this
+    }
+
 
     override fun copy() = SqlForeignKeyGene(name, uniqueId, targetTable, nullable, uniqueIdOfPrimaryKey)
 

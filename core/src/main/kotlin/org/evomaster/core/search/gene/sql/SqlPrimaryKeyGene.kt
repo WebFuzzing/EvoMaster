@@ -17,12 +17,20 @@ class SqlPrimaryKeyGene(name: String,
                          * Cannot be negative
                          */
                         val uniqueId: Long
-) : Gene(name) {
+) : SqlWrapperGene(name) {
+
 
     init {
         if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
+    }
+
+    override fun getForeignKey(): SqlForeignKeyGene? {
+        if(gene is SqlWrapperGene){
+            return gene.getForeignKey()
+        }
+        return null
     }
 
     override fun copy() = SqlPrimaryKeyGene(name, tableName, gene.copy(), uniqueId)

@@ -91,7 +91,7 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
 
         val builder = SqlInsertBuilder(schema)
         val actions = builder.createSqlInsertionAction("y", setOf("jsonData"))
-        val genes = actions[0].seeGenes()
+        val genes = actions[0].seeGenes().flatMap { it.flatView() }
 
         assertTrue(genes.any { it is SqlJSONGene })
     }
