@@ -174,9 +174,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun handleDisjunctionRxGene(gene: DisjunctionRxGene){
 
-        if(gene.matchStart && randomness.nextBoolean(0.05)){
+        if(!gene.matchStart && randomness.nextBoolean(0.05)){
             gene.extraPrefix = ! gene.extraPrefix
-        } else if(gene.matchEnd && randomness.nextBoolean(0.05)){
+        } else if(!gene.matchEnd && randomness.nextBoolean(0.05)){
             gene.extraPostfix = ! gene.extraPostfix
         } else {
             val terms = gene.terms.filter { it.isMutable() }
