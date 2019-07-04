@@ -11,6 +11,8 @@ import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.regex.*
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlNullable
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -146,6 +148,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun mutateGene(gene: Gene, all: List<Gene>) {
 
         when (gene) {
+            is SqlNullable -> handleSqlNullable(gene, all)
             is RegexGene -> handleRegexGene(gene)
             is SqlForeignKeyGene -> handleSqlForeignKeyGene(gene, all)
             is DisruptiveGene<*> -> mutateGene(gene.gene, all)
@@ -156,6 +159,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             else -> {
                 gene.randomize(randomness, true, all)
             }
+        }
+    }
+
+    private fun handleSqlNullable(gene: SqlNullable, all: List<Gene>){
+        if(! gene.isPresent){
+            gene.isPresent = true
+        } else if(randomness.nextBoolean(0.1)){
+            gene.isPresent = false
+        } else {
+            mutateGene(gene.gene, all)
         }
     }
 

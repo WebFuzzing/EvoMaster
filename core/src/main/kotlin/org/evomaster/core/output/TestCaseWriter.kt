@@ -14,10 +14,10 @@ import org.evomaster.core.problem.rest.UsedObjects
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import javax.ws.rs.core.MediaType
 
 
@@ -127,16 +127,8 @@ class TestCaseWriter {
                                 .filter { it.isPrintable() }
                                 .forEach { g ->
                                     when {
-                                        g is SqlForeignKeyGene -> {
-                                            val line = handleFK(g, dbAction, dbInitialization)
-                                            lines.add(line)
-                                        }
-                                        g is SqlPrimaryKeyGene && g.gene is SqlForeignKeyGene -> {
-                                            /*
-                                            TODO: this will need to be refactored when Gene system
-                                            will have "previousGenes"-based methods on all genes
-                                         */
-                                            val line = handleFK(g.gene, dbAction, dbInitialization)
+                                        g is SqlWrapperGene && g.getForeignKey() != null -> {
+                                            val line = handleFK(g.getForeignKey()!!, dbAction, dbInitialization)
                                             lines.add(line)
                                         }
                                         g is ObjectGene -> {

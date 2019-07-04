@@ -8,7 +8,7 @@ import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.output.EvaluatedIndividualBuilder.Companion.buildEvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
-import org.evomaster.core.search.gene.SqlXMLGene
+import org.evomaster.core.search.gene.sql.SqlXMLGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

@@ -1,5 +1,9 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.gene.sql.SqlJSONGene
+import org.evomaster.core.search.gene.sql.SqlTimestampGene
+import org.evomaster.core.search.gene.sql.SqlUUIDGene
+import org.evomaster.core.search.gene.sql.SqlXMLGene
 import org.junit.Assert.assertEquals
 import org.junit.jupiter.api.Test
 

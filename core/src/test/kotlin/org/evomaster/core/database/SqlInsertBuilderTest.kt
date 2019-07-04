@@ -5,6 +5,9 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.sql.SqlTimestampGene
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.BeforeEach
@@ -38,7 +41,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testSimpleInt() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -90,7 +93,7 @@ class SqlInsertBuilderTest {
         assertFalse(genes.any { it.name.equals("z", ignoreCase = true) })
 
         assertEquals(3, genes.size)
-        assertEquals(2, genes.filterIsInstance(IntegerGene::class.java).size)
+        assertEquals(1, genes.filterIsInstance(IntegerGene::class.java).size)
         assertEquals(1, genes.filterIsInstance(SqlPrimaryKeyGene::class.java).size)
     }
 
@@ -100,9 +103,9 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, """
                     CREATE TABLE Foo(
-                        x varchar(255),
-                        y VARCHAR(128),
-                        z varchar
+                        x varchar(255)  not null,
+                        y VARCHAR(128)  not null,
+                        z varchar  not null
                     );
                 """)
 
@@ -188,7 +191,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testRealColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x REAL);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x REAL not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -208,7 +211,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testCLOBColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CLOB);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CLOB not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -227,7 +230,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testSmallIntColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x SMALLINT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x SMALLINT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -246,7 +249,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testTinyIntColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TINYINT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TINYINT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -266,7 +269,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testTimeStampColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TIMESTAMP);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TIMESTAMP not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -285,7 +288,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testBooleanColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BOOLEAN);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BOOLEAN not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -304,7 +307,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testCharColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CHAR);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CHAR not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -324,7 +327,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testBigIntColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BIGINT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BIGINT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -343,7 +346,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testDoubleColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x DOUBLE);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x DOUBLE not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -464,7 +467,7 @@ class SqlInsertBuilderTest {
     fun testStringEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status varchar(1));
+            CREATE TABLE FOO (status varchar(1) not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
@@ -488,7 +491,7 @@ class SqlInsertBuilderTest {
     fun testIntegerEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status INT);
+            CREATE TABLE FOO (status INT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -513,7 +516,7 @@ class SqlInsertBuilderTest {
     fun testBooleanEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status BOOLEAN);
+            CREATE TABLE FOO (status BOOLEAN not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (true, false));
             """)
 
@@ -537,7 +540,7 @@ class SqlInsertBuilderTest {
     fun testTinyIntEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status TINYINT);
+            CREATE TABLE FOO (status TINYINT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -561,7 +564,7 @@ class SqlInsertBuilderTest {
     fun testSmallIntEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status SMALLINT);
+            CREATE TABLE FOO (status SMALLINT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -585,7 +588,7 @@ class SqlInsertBuilderTest {
     fun testCharEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status CHAR);
+            CREATE TABLE FOO (status CHAR not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
@@ -609,7 +612,7 @@ class SqlInsertBuilderTest {
     fun testBigIntEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status BIGINT);
+            CREATE TABLE FOO (status BIGINT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -633,7 +636,7 @@ class SqlInsertBuilderTest {
     fun testDoubleEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status DOUBLE);
+            CREATE TABLE FOO (status DOUBLE not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
@@ -657,7 +660,7 @@ class SqlInsertBuilderTest {
     fun testRealEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status REAL);
+            CREATE TABLE FOO (status REAL not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
@@ -681,7 +684,7 @@ class SqlInsertBuilderTest {
     fun testDecimalEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status DECIMAL);
+            CREATE TABLE FOO (status DECIMAL not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
@@ -705,7 +708,7 @@ class SqlInsertBuilderTest {
     fun testClobEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status CLOB);
+            CREATE TABLE FOO (status CLOB not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
@@ -729,7 +732,7 @@ class SqlInsertBuilderTest {
     fun testBlobEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status BLOB);
+            CREATE TABLE FOO (status BLOB not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (x'0000', x'FFFF'));
             """)
 
