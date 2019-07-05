@@ -592,15 +592,18 @@ class TestCaseWriter {
          *  TODO: get the type from the REST call
          */
 
-        if (call.produces.isEmpty() || res.getBodyType() == null) return ".accept(\"*/*\")"
+        if (call.produces.isEmpty() || res.getBodyType() == null){
+            return ".accept(\"*/*\")"
+        }
+
         //if (call.produces.contains(res.getBodyType().toString())) return ".accept(${res.getBodyType().toString()})"
         val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
 
         if (accepted.size == 1)
             return ".accept(\"${accepted.first()}\")"
         else
-            return ".accept(\"*/*\")  // NOTE: there seems to have been something or a problem"
-        //return ".accept(\"*/*\")"
+            //FIXME: there seems to have been something or a problem
+            return ".accept(\"*/*\")"
     }
 
     private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean) {
