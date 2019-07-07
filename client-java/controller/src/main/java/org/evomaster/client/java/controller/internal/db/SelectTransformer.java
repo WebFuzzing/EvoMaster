@@ -118,6 +118,7 @@ public class SelectTransformer {
             PlainSelect plainSelect = (PlainSelect) selectBody;
             plainSelect.setWhere(null);
             plainSelect.setLimit(null);
+            plainSelect.setGroupByElement(null);
         } else if (selectBody instanceof SetOperationList) {
             for(SelectBody select : ((SetOperationList) selectBody).getSelects()){
                 handleSelectBody(select);

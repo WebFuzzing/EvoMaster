@@ -20,6 +20,21 @@ public class SelectTransformerTest {
         assertFalse(withoutOperations.contains("count"));
     }
 
+    @Test
+    public void testGroupBy(){
+
+        String select = "select count(x), y from Foo f group by y";
+
+        String withFields =  SelectTransformer.addFieldsToSelect(select);
+        String withoutConstraints = SelectTransformer.removeConstraints(withFields);
+        String withoutOperations = SelectTransformer.removeOperations(withoutConstraints);
+
+        assertFalse(withoutOperations.contains("where"));
+        assertTrue(withoutOperations.contains("y"));
+        assertFalse(withoutOperations.contains("count"));
+        assertFalse(withoutOperations.contains("group"));
+    }
+
 
     @Test
     public void testAddFields() {
