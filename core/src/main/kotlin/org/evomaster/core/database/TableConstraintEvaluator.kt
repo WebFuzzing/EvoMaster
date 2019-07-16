@@ -2,6 +2,7 @@ package org.evomaster.core.database
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.NumberGene
+import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.dbconstraint.*
 import java.util.regex.Pattern
 
@@ -54,9 +55,25 @@ class TableConstraintEvaluator(val previousActions: List<DbAction> = listOf())
         if (dbAction.table.name != constraint.tableName) {
             return true
         }
-        // if the column value is not mentioned in the action,
-        // we conclude the default value is NULL
-        return dbAction.seeGenes().firstOrNull { it.name == constraint.columnName } != null
+
+        // get the gene with the corresponding column name
+        val gene = dbAction.seeGenes().firstOrNull { it.name == constraint.columnName }
+
+
+        val isPresent = when (gene) {
+            // if no gene is found, consider the value to be null
+            null -> false
+            else -> if (gene is SqlNullable) {
+                // if the gene is a nullable gen, the value
+                // could be null if isPresent==true
+                gene.isPresent
+            } else {
+                // if the gene is not a nullable gene, then
+                // its value is not null
+                true
+            }
+        }
+        return isPresent
     }
 
     /**
