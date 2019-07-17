@@ -95,7 +95,8 @@ class SqlInsertBuilder(
                 run {
                     val enumConstraints = filterEnumConstraints(tableConstraints, c.name)
                     enumValuesAsStrings = if (enumConstraints.isNotEmpty())
-                        enumConstraints.map { c -> c.valuesAsStrings }
+                        enumConstraints
+                                .map { c -> c.valuesAsStrings.toMutableList() }
                                 .reduce { acc, it -> acc.apply { retainAll(it) } }
                     else
                         null
@@ -137,8 +138,20 @@ class SqlInsertBuilder(
                     tableConstraints.removeAll(rangeConstraints)
                 }
 
-                val likePatterns = findLikePatterns(tableConstraints, c.name)
-
+                val likePatterns: List<String>?
+                run {
+                    val likeConstraints = filterLikeConstraints(tableConstraints, c.name)
+                    if (likeConstraints.size > 1) {
+                        throw IllegalArgumentException("cannot handle table with ${likeConstraints.size} LIKE constraints")
+                    }
+                    if (likeConstraints.isNotEmpty()) {
+                        val likeConstraint = likeConstraints.first()
+                        likePatterns = likeConstraint.patterns
+                    } else {
+                        likePatterns = null
+                    }
+                    tableConstraints.removeAll(likeConstraints)
+                }
 
                 val column = Column(
                         name = c.name,
@@ -159,6 +172,7 @@ class SqlInsertBuilder(
 
                 columns.add(column)
             }
+
 
             tableToConstraints[t.name] = tableConstraints.toSet()
             tableToColumns[t.name] = columns
@@ -272,15 +286,11 @@ class SqlInsertBuilder(
                 .toList()
     }
 
-    private fun findLikePatterns(tableConstraints: List<TableConstraint>, columnName: String): List<String> {
-
+    private fun filterLikeConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<LikeConstraint> {
         return tableConstraints
-                .map { c -> c.accept(ConstraintCollector(), null) }
-                .flatten()
                 .asSequence()
                 .filterIsInstance<LikeConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
-                .map { c -> c.pattern }
                 .toList()
     }
 

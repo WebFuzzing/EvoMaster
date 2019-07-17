@@ -8,11 +8,10 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlTimestampGene
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertAll
+import java.lang.IllegalArgumentException
+import java.lang.RuntimeException
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -751,4 +750,249 @@ class SqlInsertBuilderTest {
         assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet());
 
     }
+
+    @Test
+    fun testMultipleLowerBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            ALTER TABLE Foo add constraint lowerBound1 check (x >= -10);
+
+            ALTER TABLE Foo add constraint lowerBound2 check (x >= -100);
+
+            ALTER TABLE Foo add constraint lowerBound3 check (x >= -1000);
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(-10, gene.min)
+
+    }
+
+    @Test
+    fun testMultipleUpperBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            ALTER TABLE Foo add constraint upperBound1 check (x <= 10);
+
+            ALTER TABLE Foo add constraint upperBound2 check (x <= 100);
+
+            ALTER TABLE Foo add constraint upperBound3 check (x <= 1000);
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(10, gene.max)
+
+    }
+
+    @Test
+    fun testMultipleUpperAndLowerBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            
+            ALTER TABLE Foo add constraint lowerBound1 check (x >= -10);
+
+            ALTER TABLE Foo add constraint lowerBound2 check (x >= -100);
+
+            ALTER TABLE Foo add constraint lowerBound3 check (x >= -1000);
+            
+            ALTER TABLE Foo add constraint upperBound1 check (x <= 10);
+
+            ALTER TABLE Foo add constraint upperBound2 check (x <= 100);
+
+            ALTER TABLE Foo add constraint upperBound3 check (x <= 1000);
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(-10, gene.min)
+        assertEquals(10, gene.max)
+
+    }
+
+    @Test
+    fun testMultipleRangeConstraintAndLowerAndUpperBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            ALTER TABLE Foo add constraint rangeConstraint check (x = 10);
+
+            ALTER TABLE Foo add constraint lowerBound check (x >= 0);
+
+            ALTER TABLE Foo add constraint upperBound check (x <= 1000);
+            
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(10, gene.min)
+        assertEquals(10, gene.max)
+
+    }
+
+
+    @Test
+    fun testIntersectEnumConstraints() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status CHAR not null);
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS1 CHECK (status in ('A', 'B'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS2 CHECK (status in ('B', 'C'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS3 CHECK (status in ('D', 'B'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS4 CHECK (status in ('X', 'B'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+
+        assertEquals(setOf("B"), enumGene.values.toSet());
+
+    }
+
+
+    @Test
+    fun testNoIntersectionEnumConstraints() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status CHAR not null);
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS1 CHECK (status in ('A', 'B', 'C'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS2 CHECK (status in ('D', 'E', 'F'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        try {
+            builder.createSqlInsertionAction("FOO", setOf("status"))
+            fail<Object>()
+        } catch (ex: RuntimeException) {
+
+        }
+    }
+
+    @Test
+    fun testSingleLikeConstraint() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (f_id TEXT NOT NULL);
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id CHECK (f_id LIKE 'hi');
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("f_id"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+
+        assertEquals(setOf("hi"), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testManyLikeConstraints() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (f_id TEXT NOT NULL);
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id_1 CHECK (f_id LIKE 'hi');
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id_2 CHECK (f_id LIKE 'low');
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        try {
+            builder.createSqlInsertionAction("FOO", setOf("f_id"))
+            fail<Object>()
+        } catch (ex: IllegalArgumentException ) {
+
+        }
+    }
+
+    @Test
+    fun testManyOrLikeConstantConstraint() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (f_id TEXT NOT NULL);
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id_1 CHECK (f_id LIKE 'hi' OR f_id LIKE 'low');
+
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("f_id"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+
+        assertEquals(setOf("hi","low"), enumGene.values.toSet());
+
+    }
+
+
+
 }

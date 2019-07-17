@@ -2,17 +2,7 @@ package org.evomaster.dbconstraint.extract;
 
 
 import net.sf.jsqlparser.expression.StringValue;
-import org.evomaster.dbconstraint.AndConstraint;
-import org.evomaster.dbconstraint.EnumConstraint;
-import org.evomaster.dbconstraint.IffConstraint;
-import org.evomaster.dbconstraint.IsNotNullConstraint;
-import org.evomaster.dbconstraint.LikeConstraint;
-import org.evomaster.dbconstraint.LowerBoundConstraint;
-import org.evomaster.dbconstraint.OrConstraint;
-import org.evomaster.dbconstraint.RangeConstraint;
-import org.evomaster.dbconstraint.SimilarToConstraint;
-import org.evomaster.dbconstraint.TableConstraint;
-import org.evomaster.dbconstraint.UpperBoundConstraint;
+import org.evomaster.dbconstraint.*;
 import org.evomaster.dbconstraint.ast.SqlAndCondition;
 import org.evomaster.dbconstraint.ast.SqlBigDecimalLiteralValue;
 import org.evomaster.dbconstraint.ast.SqlBigIntegerLiteralValue;
@@ -36,6 +26,7 @@ import org.evomaster.dbconstraint.ast.SqlStringLiteralValue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.evomaster.dbconstraint.ast.SqlComparisonOperator.EQUALS_TO;
@@ -238,6 +229,36 @@ public class SqlConditionTranslator implements SqlConditionVisitor<TableConstrai
     @Override
     public TableConstraint visit(SqlOrCondition e, Void argument) {
         List<TableConstraint> orConstraints = e.getOrConditions().stream().map(c -> c.accept(this, null)).collect(Collectors.toList());
+        if (orConstraints.stream().allMatch(c -> c instanceof LikeConstraint)) {
+            // all like constraints should have the same tablename, column and database type
+            Set<String> columnNames = orConstraints
+                    .stream()
+                    .map(c -> (LikeConstraint) c)
+                    .map(c -> c.getColumnName())
+                    .collect(Collectors.toSet());
+            Set<String> tableNames = orConstraints
+                    .stream()
+                    .map(c -> (LikeConstraint) c)
+                    .map(c -> c.getTableName())
+                    .collect(Collectors.toSet());
+            Set<ConstraintDatabaseType> databaseTypes = orConstraints
+                    .stream().map(c -> (LikeConstraint) c)
+                    .map(c -> c.getDatabaseType())
+                    .collect(Collectors.toSet());
+
+            if (columnNames.size() == 1 && tableNames.size() == 1 && databaseTypes.size() == 1) {
+                String tableName = tableNames.iterator().next();
+                String columnName = columnNames.iterator().next();
+                ConstraintDatabaseType databaseType = databaseTypes.iterator().next();
+                List<String> patterns = orConstraints
+                        .stream()
+                        .map(c -> (LikeConstraint) c)
+                        .map(c -> c.getPatterns())
+                        .flatMap(List::stream)
+                        .collect(Collectors.toList());
+                return new LikeConstraint(tableName,columnName,patterns,databaseType);
+            }
+        }
         return new OrConstraint(translationContext.getCurrentTableName(), orConstraints.toArray(new TableConstraint[]{}));
     }
 
