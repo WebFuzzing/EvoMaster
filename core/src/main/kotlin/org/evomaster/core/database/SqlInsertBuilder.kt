@@ -61,9 +61,7 @@ class SqlInsertBuilder(
 
         for (t in schemaDto.tables) {
 
-            val tableConstraints = parseTableConstraints(t)
-
-            tableToConstraints[t.name] = tableConstraints.toSet()
+            val tableConstraints = parseTableConstraints(t).toMutableList()
 
             val columns = mutableSetOf<Column>()
 
@@ -73,11 +71,72 @@ class SqlInsertBuilder(
                     throw IllegalArgumentException("Column in different table: ${c.table}!=${t.name}")
                 }
 
+                var lowerBound: Int?
+                run {
+                    val lowerBounds = findLowerBounds(tableConstraints, c.name)
+                    lowerBound = if (lowerBounds.isNotEmpty())
+                        lowerBounds.map { c -> c.lowerBound.toInt() }.max()
+                    else
+                        null
+                    tableConstraints.removeAll(lowerBounds)
+                }
 
-                val lowerBound = findLowerBound(tableConstraints, c.name)
-                val upperBound = findUpperBound(tableConstraints, c.name)
-                val enumValuesAsStrings = findEnumValues(tableConstraints, c.name)
-                val similarToPatterns = findSimilarToPatterns(tableConstraints, c.name)
+                var upperBound: Int?
+                run {
+                    val upperBounds = filterUpperBoundConstraints(tableConstraints, c.name)
+                    upperBound = if (upperBounds.isNotEmpty())
+                        upperBounds.map { c -> c.upperBound.toInt() }.min()
+                    else
+                        null
+                    tableConstraints.removeAll(upperBounds)
+                }
+
+                val enumValuesAsStrings: List<String>?
+                run {
+                    val enumConstraints = filterEnumConstraints(tableConstraints, c.name)
+                    enumValuesAsStrings = if (enumConstraints.isNotEmpty())
+                        enumConstraints.map { c -> c.valuesAsStrings }
+                                .reduce { acc, it -> acc.apply { retainAll(it) } }
+                    else
+                        null
+                    tableConstraints.removeAll(enumConstraints)
+                }
+
+                val similarToPatterns: List<String>?
+                run {
+                    val similarToConstraints = filterSimilarToConstraints(tableConstraints, c.name)
+                    similarToPatterns = if (similarToConstraints.isNotEmpty())
+                        similarToConstraints.map { c -> c.pattern }.toList()
+                    else
+                        null
+                    tableConstraints.removeAll(similarToConstraints)
+                }
+
+
+                run {
+                    // rangeConstraints can be combined with lower/upper bound constraints
+                    val rangeConstraints = filterRangeConstraints(tableConstraints, c.name)
+                    if (rangeConstraints.isNotEmpty()) {
+                        run {
+                            val minRangeValue = rangeConstraints.map { c -> c.minValue }.max()!!.toInt()
+                            if (lowerBound != null) {
+                                lowerBound = maxOf(minRangeValue, lowerBound!!)
+                            } else {
+                                lowerBound = minRangeValue
+                            }
+                        }
+                        run {
+                            val maxRangeValue = rangeConstraints.map { c -> c.maxValue }.min()!!.toInt()
+                            if (upperBound != null) {
+                                upperBound = minOf(maxRangeValue, upperBound!!)
+                            } else {
+                                upperBound = maxRangeValue
+                            }
+                        }
+                    }
+                    tableConstraints.removeAll(rangeConstraints)
+                }
+
                 val likePatterns = findLikePatterns(tableConstraints, c.name)
 
 
@@ -101,6 +160,7 @@ class SqlInsertBuilder(
                 columns.add(column)
             }
 
+            tableToConstraints[t.name] = tableConstraints.toSet()
             tableToColumns[t.name] = columns
         }
 
@@ -141,29 +201,12 @@ class SqlInsertBuilder(
         }
     }
 
-    private fun findRangeConstraint(tableConstraints: List<TableConstraint>, columnName: String): RangeConstraint? {
-        return tableConstraints.filterIsInstance<RangeConstraint>()
-                .firstOrNull { c -> c.columnName.equals(columnName, true) }
-    }
-
-    private fun findLowerBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
-        val rangeConstraint = findRangeConstraint(tableConstraints, columnName)
-        if (rangeConstraint != null) {
-            return rangeConstraint.minValue.toInt()
-        }
-
-        val lowerBounds = tableConstraints
+    private fun findLowerBounds(tableConstraints: List<TableConstraint>, columnName: String): List<LowerBoundConstraint> {
+        return tableConstraints
                 .asSequence()
                 .filterIsInstance<LowerBoundConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
-                .map { c -> c.lowerBound.toInt() }
                 .toList()
-
-        return if (lowerBounds.isNotEmpty())
-            lowerBounds.max()
-        else
-            null
-
     }
 
     /**
@@ -221,15 +264,11 @@ class SqlInsertBuilder(
 
     }
 
-    private fun findSimilarToPatterns(tableConstraints: List<TableConstraint>, columnName: String): List<String> {
-
+    private fun filterSimilarToConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<SimilarToConstraint> {
         return tableConstraints
-                .map { c -> c.accept(ConstraintCollector(), null) }
-                .flatten()
                 .asSequence()
                 .filterIsInstance<SimilarToConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
-                .map { c -> c.pattern }
                 .toList()
     }
 
@@ -246,35 +285,31 @@ class SqlInsertBuilder(
     }
 
 
-    private fun findUpperBound(tableConstraints: List<TableConstraint>, columnName: String): Int? {
-        val rangeConstraint = findRangeConstraint(tableConstraints, columnName)
-        if (rangeConstraint != null) {
-            return rangeConstraint.maxValue.toInt()
-        }
-
-        val upperBounds = tableConstraints
+    private fun filterUpperBoundConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<UpperBoundConstraint> {
+        return tableConstraints
                 .asSequence()
                 .filterIsInstance<UpperBoundConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
-                .map { c -> c.upperBound.toInt() }
                 .toList()
-
-        return if (upperBounds.isNotEmpty())
-            upperBounds.min()
-        else
-            null
 
     }
 
-    private fun findEnumValues(tableConstraints: List<TableConstraint>, columnName: String): List<String>? {
-        val enumValues = tableConstraints
+    private fun filterRangeConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<RangeConstraint> {
+        return tableConstraints
+                .asSequence()
+                .filterIsInstance<RangeConstraint>()
+                .filter { c -> c.columnName.equals(columnName, true) }
+                .toList()
+
+    }
+
+
+    private fun filterEnumConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<EnumConstraint> {
+        return tableConstraints
                 .filter { c -> c is EnumConstraint }
                 .map { c -> c as EnumConstraint }
                 .filter { c -> c.columnName.equals(columnName, true) }
-                .map { c -> c.valuesAsStrings }
-                .firstOrNull()
-
-        return enumValues
+                .toList()
     }
 
     private fun getConstraintDatabaseType(currentDatabaseType: DatabaseType): ConstraintDatabaseType {
