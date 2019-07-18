@@ -19,6 +19,10 @@ public class SqlBigDecimalLiteralValue extends SqlLiteralValue {
         this.bigDecimalValue = Objects.requireNonNull(bigDecimalValue);
     }
 
+    public BigDecimal getBigDecimal() {
+        return this.bigDecimalValue;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

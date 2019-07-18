@@ -71,23 +71,7 @@ import net.sf.jsqlparser.expression.operators.relational.RegExpMatchOperator;
 import net.sf.jsqlparser.expression.operators.relational.RegExpMySQLOperator;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.select.SubSelect;
-import org.evomaster.dbconstraint.ast.SqlAndCondition;
-import org.evomaster.dbconstraint.ast.SqlBigDecimalLiteralValue;
-import org.evomaster.dbconstraint.ast.SqlBigIntegerLiteralValue;
-import org.evomaster.dbconstraint.ast.SqlBinaryDataLiteralValue;
-import org.evomaster.dbconstraint.ast.SqlColumn;
-import org.evomaster.dbconstraint.ast.SqlComparisonCondition;
-import org.evomaster.dbconstraint.ast.SqlComparisonOperator;
-import org.evomaster.dbconstraint.ast.SqlCondition;
-import org.evomaster.dbconstraint.ast.SqlConditionList;
-import org.evomaster.dbconstraint.ast.SqlInCondition;
-import org.evomaster.dbconstraint.ast.SqlIsNotNullCondition;
-import org.evomaster.dbconstraint.ast.SqlIsNullCondition;
-import org.evomaster.dbconstraint.ast.SqlLikeCondition;
-import org.evomaster.dbconstraint.ast.SqlNullLiteralValue;
-import org.evomaster.dbconstraint.ast.SqlOrCondition;
-import org.evomaster.dbconstraint.ast.SqlSimilarToCondition;
-import org.evomaster.dbconstraint.ast.SqlStringLiteralValue;
+import org.evomaster.dbconstraint.ast.*;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -123,8 +107,25 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
 
     @Override
     public void visit(SignedExpression signedExpression) {
-        // TODO This translation should be implemented
-        throw new RuntimeException("Extraction of condition not yet implemented");
+        signedExpression.getExpression().accept(this);
+        SqlCondition sqlCondition = stack.pop();
+        if (sqlCondition instanceof SqlLiteralValue) {
+            SqlLiteralValue sqlLiteralValue = (SqlLiteralValue) sqlCondition;
+            SqlLiteralValue negated;
+            if (sqlLiteralValue instanceof SqlBigIntegerLiteralValue) {
+                SqlBigIntegerLiteralValue sqlBigIntegerLiteralValue = (SqlBigIntegerLiteralValue) sqlLiteralValue;
+                negated = new SqlBigIntegerLiteralValue(sqlBigIntegerLiteralValue.getBigInteger().negate());
+            } else if (sqlLiteralValue instanceof SqlBigDecimalLiteralValue) {
+                SqlBigDecimalLiteralValue sqlBigDecimalLiteralValue = (SqlBigDecimalLiteralValue) sqlLiteralValue;
+                negated = new SqlBigDecimalLiteralValue(sqlBigDecimalLiteralValue.getBigDecimal().negate());
+
+            } else {
+                throw new RuntimeException("Extraction of condition not yet implemented for literal value class " + sqlLiteralValue.getClass());
+            }
+            stack.push(negated);
+        } else {
+            throw new RuntimeException("Extraction of condition not yet implemented for " + sqlCondition.getClass());
+        }
     }
 
     @Override

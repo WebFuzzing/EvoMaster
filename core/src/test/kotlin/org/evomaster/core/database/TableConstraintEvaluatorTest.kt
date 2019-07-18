@@ -7,6 +7,7 @@ import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.gene.IntegerGene
 import org.evomaster.core.search.gene.sql.SqlTimestampGene
 import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.dbconstraint.*
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -270,6 +271,33 @@ class TableConstraintEvaluatorTest {
         val evaluator = TableConstraintEvaluator()
         val value = constraint.accept(evaluator, action)
         assertFalse(value)
+    }
+
+
+    @Test
+    fun testIsNotNullConstraintOfNullableColumn() {
+        val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=true)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as SqlNullable).isPresent = false
+
+        val constraint = IsNotNullConstraint("table0", "column0")
+        val evaluator = TableConstraintEvaluator()
+        val value = constraint.accept(evaluator, action)
+        assertFalse(value)
+    }
+
+    @Test
+    fun testIsNotNullConstraintOfNullableColumnNullValue() {
+        val column = Column("column0", ColumnDataType.INTEGER, databaseType = DatabaseType.H2, nullable=true)
+        val table = Table("table0", setOf(column), setOf(), setOf())
+        val action = DbAction(table = table, selectedColumns = setOf(column), id = 0L)
+        (action.seeGenes()[0] as SqlNullable).isPresent = true
+
+        val constraint = IsNotNullConstraint("table0", "column0")
+        val evaluator = TableConstraintEvaluator()
+        val value = constraint.accept(evaluator, action)
+        assertTrue(value)
     }
 
 

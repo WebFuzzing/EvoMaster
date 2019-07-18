@@ -13,27 +13,27 @@ import org.junit.jupiter.api.Test
 class Ind0EMTest : SpringRestPostgresTestBase(){
 
     companion object {
-        @BeforeAll @JvmStatic
-        fun initClass() {
-            SpringRestPostgresTestBase.initKlass(Ind0Controller())
+            @BeforeAll @JvmStatic
+            fun initClass() {
+                SpringRestPostgresTestBase.initKlass(Ind0Controller())
+            }
         }
-    }
 
-    @Test
-    fun testRunEM() {
+        @Test
+        fun testRunEM() {
 
-        runTestHandlingFlakyAndCompilation(
-                "Ind0EM",
-                "org.bar.Ind0EM",
-                100
-        ) { args ->
+            runTestHandlingFlakyAndCompilation(
+                    "Ind0EM",
+                    "org.bar.Ind0EM",
+                    100
+            ) { args ->
 
-            val solution = initAndRun(args)
+                val solution = initAndRun(args)
 
-            assertTrue(solution.individuals.size >= 1)
+                assertTrue(solution.individuals.size >= 1)
 
-            assertHasAtLeastOne(solution, HttpVerb.GET, 400)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200)
-        }
+                assertHasAtLeastOne(solution, HttpVerb.GET, 400)
+                assertHasAtLeastOne(solution, HttpVerb.GET, 200)
+            }
     }
 }
