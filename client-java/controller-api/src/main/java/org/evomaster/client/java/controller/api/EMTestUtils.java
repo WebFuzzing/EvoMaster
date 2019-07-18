@@ -106,9 +106,8 @@ public class EMTestUtils {
 
 
     /**
-     * Check if the given input string is a valid URI
-     * @param uri
-     * @return
+     * @param uri a string representing a URI
+     * @return whether the given input string is either empty or a valid URI
      */
     public static boolean isValidURIorEmpty(String uri){
 
