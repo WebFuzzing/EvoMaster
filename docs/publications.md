@@ -4,12 +4,13 @@
 
 * M. Zhang, B. Marculescu, A. Arcuri. 
      *Resource-based Test Case Generation for RESTful Web Services*.
-     To appear in ACM Genetic and Evolutionary Computation Conference (GECCO).
-
+     ACM Genetic and Evolutionary Computation Conference (GECCO).
+     [[PDF](publications/2019_gecco_resources.pdf)]   
 
 * A. Arcuri, J.P. Galeotti. 
      *SQL Data Generation to Enhance Search-Based System Testing*.
-     To appear in ACM Genetic and Evolutionary Computation Conference (GECCO).
+     ACM Genetic and Evolutionary Computation Conference (GECCO).
+     [[PDF](publications/2019_gecco_sql.pdf)]
 
 * A. Arcuri. *RESTful API Automated Test Case Generation with EvoMaster*.
      ACM Transactions on Software Engineering and Methodology (TOSEM).
