@@ -142,7 +142,7 @@ public class HeuristicsCalculator {
         double after = computeComparison(x, start, new GreaterThanEquals());
         double before = computeComparison(x, end, new MinorThanEquals());
 
-        return after + before;
+        return addDistances(after, before);
     }
 
     private double computeInExpression(InExpression exp, DataRow data) {
@@ -215,11 +215,17 @@ public class HeuristicsCalculator {
     }
 
 
+
+
     private double computeAnd(AndExpression exp, DataRow data) {
 
         double a = computeExpression(exp.getLeftExpression(), data);
         double b = computeExpression(exp.getRightExpression(), data);
 
+        return addDistances(a, b);
+    }
+
+    private double addDistances(double a, double b) {
         double sum = a + b;
         if (sum < Math.max(a, b)) {
             //overflow
@@ -318,6 +324,10 @@ public class HeuristicsCalculator {
     }
 
     private double computeComparison(Instant a, Instant b, ComparisonOperator exp) {
+        if(a==null || b==null){
+            return Double.MAX_VALUE;
+        }
+
         double dif = - Duration.between(a,b).toMillis();
         return computerComparison(dif, exp);
     }
