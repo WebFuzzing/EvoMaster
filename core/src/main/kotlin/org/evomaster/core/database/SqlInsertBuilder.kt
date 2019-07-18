@@ -2,6 +2,7 @@ package org.evomaster.core.database
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto
 import org.evomaster.client.java.controller.api.dto.database.schema.TableDto
@@ -71,87 +72,28 @@ class SqlInsertBuilder(
                     throw IllegalArgumentException("Column in different table: ${c.table}!=${t.name}")
                 }
 
-                var lowerBound: Int?
-                run {
-                    val lowerBounds = findLowerBounds(tableConstraints, c.name)
-                    lowerBound = if (lowerBounds.isNotEmpty())
-                        lowerBounds.map { c -> c.lowerBound.toInt() }.max()
-                    else
-                        null
-                    tableConstraints.removeAll(lowerBounds)
-                }
+                var lowerBoundForColumn: Int? = findLowerBound(tableConstraints, c)
 
-                var upperBound: Int?
-                run {
-                    val upperBounds = filterUpperBoundConstraints(tableConstraints, c.name)
-                    upperBound = if (upperBounds.isNotEmpty())
-                        upperBounds.map { c -> c.upperBound.toInt() }.min()
-                    else
-                        null
-                    tableConstraints.removeAll(upperBounds)
-                }
+                var upperBoundForColumn: Int? = findUpperBound(tableConstraints, c)
 
-                val enumValuesAsStrings: List<String>?
-                run {
-                    val enumConstraints = filterEnumConstraints(tableConstraints, c.name)
-                    enumValuesAsStrings = if (enumConstraints.isNotEmpty())
-                        enumConstraints
-                                .map { c -> c.valuesAsStrings.toMutableList() }
-                                .reduce { acc, it -> acc.apply { retainAll(it) } }
-                    else
-                        null
-                    tableConstraints.removeAll(enumConstraints)
-                }
+                val enumValuesForColumn: List<String>? = findEnumValuesForColumn(tableConstraints, c)
 
-                val similarToPatterns: List<String>?
-                run {
-                    val similarToConstraints = filterSimilarToConstraints(tableConstraints, c.name)
-                    similarToPatterns = if (similarToConstraints.isNotEmpty())
-                        similarToConstraints.map { c -> c.pattern }.toList()
-                    else
-                        null
-                    tableConstraints.removeAll(similarToConstraints)
-                }
+                val similarToPatternsForColumn: List<String>? = findSimilarToPatternsForColumn(tableConstraints, c)
 
 
-                run {
-                    // rangeConstraints can be combined with lower/upper bound constraints
-                    val rangeConstraints = filterRangeConstraints(tableConstraints, c.name)
-                    if (rangeConstraints.isNotEmpty()) {
-                        run {
-                            val minRangeValue = rangeConstraints.map { c -> c.minValue }.max()!!.toInt()
-                            if (lowerBound != null) {
-                                lowerBound = maxOf(minRangeValue, lowerBound!!)
-                            } else {
-                                lowerBound = minRangeValue
-                            }
-                        }
-                        run {
-                            val maxRangeValue = rangeConstraints.map { c -> c.maxValue }.min()!!.toInt()
-                            if (upperBound != null) {
-                                upperBound = minOf(maxRangeValue, upperBound!!)
-                            } else {
-                                upperBound = maxRangeValue
-                            }
-                        }
-                    }
-                    tableConstraints.removeAll(rangeConstraints)
+                // rangeConstraints can be combined with lower/upper bound constraints
+                val pair = findUpperLoweBoundOfRangeConstraints(tableConstraints, c)
+                val minRangeValue = pair.first
+                val maxRangeValue = pair.second
+                if (minRangeValue != null) {
+                    lowerBoundForColumn = maxOf(minRangeValue, lowerBoundForColumn!!)
                 }
 
-                val likePatterns: List<String>?
-                run {
-                    val likeConstraints = filterLikeConstraints(tableConstraints, c.name)
-                    if (likeConstraints.size > 1) {
-                        throw IllegalArgumentException("cannot handle table with ${likeConstraints.size} LIKE constraints")
-                    }
-                    if (likeConstraints.isNotEmpty()) {
-                        val likeConstraint = likeConstraints.first()
-                        likePatterns = likeConstraint.patterns
-                    } else {
-                        likePatterns = null
-                    }
-                    tableConstraints.removeAll(likeConstraints)
+                if (maxRangeValue != null) {
+                    upperBoundForColumn = minOf(maxRangeValue, upperBoundForColumn!!)
                 }
+
+                val likePatternsForColumn = findLikePatternsForColumn(tableConstraints, c)
 
                 val column = Column(
                         name = c.name,
@@ -162,11 +104,11 @@ class SqlInsertBuilder(
                         foreignKeyToAutoIncrement = c.foreignKeyToAutoIncrement,
                         nullable = c.nullable,
                         unique = c.unique,
-                        lowerBound = lowerBound,
-                        upperBound = upperBound,
-                        enumValuesAsStrings = enumValuesAsStrings,
-                        similarToPatterns = similarToPatterns,
-                        likePatterns = likePatterns,
+                        lowerBound = lowerBoundForColumn,
+                        upperBound = upperBoundForColumn,
+                        enumValuesAsStrings = enumValuesForColumn,
+                        similarToPatterns = similarToPatternsForColumn,
+                        likePatterns = likePatternsForColumn,
                         databaseType = databaseType
                 )
 
@@ -215,67 +157,93 @@ class SqlInsertBuilder(
         }
     }
 
+    private fun findUpperLoweBoundOfRangeConstraints(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Pair<Int?, Int?> {
+        val rangeConstraints = filterRangeConstraints(tableConstraints, c.name)
+        val minRangeValue: Int?
+        val maxRangeValue: Int?
+        if (rangeConstraints.isNotEmpty()) {
+            minRangeValue = rangeConstraints.map { c -> c.minValue }.max()!!.toInt()
+            maxRangeValue = rangeConstraints.map { c -> c.maxValue }.min()!!.toInt()
+        } else {
+            minRangeValue = null
+            maxRangeValue = null
+        }
+
+        tableConstraints.removeAll(rangeConstraints)
+        return Pair(minRangeValue, maxRangeValue)
+    }
+
+    private fun findSimilarToPatternsForColumn(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): List<String>? {
+        val similarToConstraints = filterSimilarToConstraints(tableConstraints, c.name)
+        val similarToPatterns = if (similarToConstraints.isNotEmpty())
+            similarToConstraints.map { c -> c.pattern }.toList()
+        else
+            null
+
+        tableConstraints.removeAll(similarToConstraints)
+        return similarToPatterns
+    }
+
+    private fun findEnumValuesForColumn(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): List<String>? {
+        val enumConstraints = filterEnumConstraints(tableConstraints, c.name)
+        val enumValuesAsStrings = if (enumConstraints.isNotEmpty())
+            enumConstraints
+                    .map { c -> c.valuesAsStrings.toMutableList() }
+                    .reduce { acc, it -> acc.apply { retainAll(it) } }
+        else
+            null
+
+        tableConstraints.removeAll(enumConstraints)
+        return enumValuesAsStrings
+    }
+
+    private fun findUpperBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Int? {
+        val upperBounds = filterUpperBoundConstraints(tableConstraints, c.name)
+
+        val upperBound = if (upperBounds.isNotEmpty())
+            upperBounds.map { c -> c.upperBound.toInt() }.min()
+        else
+            null
+
+        tableConstraints.removeAll(upperBounds)
+        return upperBound
+    }
+
+    private fun findLowerBound(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): Int? {
+        val lowerBounds = findLowerBounds(tableConstraints, c.name)
+
+        val lowerBound = if (lowerBounds.isNotEmpty())
+            lowerBounds.map { c -> c.lowerBound.toInt() }.max()
+        else
+            null
+
+        tableConstraints.removeAll(lowerBounds)
+        return lowerBound
+    }
+
+    private fun findLikePatternsForColumn(tableConstraints: MutableList<TableConstraint>, c: ColumnDto): List<String>? {
+        val likePatterns: List<String>?
+        val likeConstraints = filterLikeConstraints(tableConstraints, c.name)
+        if (likeConstraints.size > 1)
+            throw IllegalArgumentException("cannot handle table with ${likeConstraints.size} LIKE constraints")
+
+        if (likeConstraints.isNotEmpty()) {
+            val likeConstraint = likeConstraints.first()
+            likePatterns = likeConstraint.patterns
+        } else
+            likePatterns = null
+
+
+        tableConstraints.removeAll(likeConstraints)
+        return likePatterns
+    }
+
     private fun findLowerBounds(tableConstraints: List<TableConstraint>, columnName: String): List<LowerBoundConstraint> {
         return tableConstraints
                 .asSequence()
                 .filterIsInstance<LowerBoundConstraint>()
                 .filter { c -> c.columnName.equals(columnName, true) }
                 .toList()
-    }
-
-    /**
-     * Returns a list of non-recursive constraints
-     */
-    private class ConstraintCollector : TableConstraintVisitor<List<TableConstraint>, Void> {
-
-        override fun visit(constraint: IsNotNullConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: IffConstraint, argument: Void?): List<TableConstraint> {
-            return constraint.constraintList.map { c -> c.accept(this, argument) }.flatten()
-        }
-
-        override fun visit(constraint: AndConstraint, argument: Void?): List<TableConstraint> {
-            return constraint.constraintList.map { c -> c.accept(this, argument) }.flatten()
-        }
-
-        override fun visit(constraint: EnumConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: LikeConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: LowerBoundConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: OrConstraint, argument: Void?): List<TableConstraint> {
-            return constraint.constraintList.map { c -> c.accept(this, argument) }.flatten()
-        }
-
-        override fun visit(constraint: RangeConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: SimilarToConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: UniqueConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: UpperBoundConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
-        override fun visit(constraint: UnsupportedTableConstraint, argument: Void?): List<TableConstraint> {
-            return listOf(constraint)
-        }
-
     }
 
     private fun filterSimilarToConstraints(tableConstraints: List<TableConstraint>, columnName: String): List<SimilarToConstraint> {

@@ -145,7 +145,7 @@ class DbActionGeneBuilder {
             gene = SqlPrimaryKeyGene(column.name, table.name, gene, id)
         }
 
-        if(column.nullable && fk == null){
+        if (column.nullable && fk == null) {
             //FKs handle nullability in their own custom way
             gene = SqlNullable(column.name, gene)
         }
@@ -155,11 +155,8 @@ class DbActionGeneBuilder {
 
     private fun handleBigIntColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(column.name, column.enumValuesAsStrings.map { it.toLong() })
         } else {
 
             LongGene(column.name)
@@ -168,11 +165,8 @@ class DbActionGeneBuilder {
 
     private fun handleIntegerColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(column.name, column.enumValuesAsStrings.map { it.toInt() })
         } else {
             IntegerGene(column.name,
                     min = column.lowerBound ?: Int.MIN_VALUE,
@@ -183,11 +177,8 @@ class DbActionGeneBuilder {
     private fun handleCharColumn(column: Column): Gene {
         //  TODO How to discover if it is a char or a char[] of 255 elements?
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings)
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, values = column.enumValuesAsStrings)
         } else {
             StringGene(name = column.name, value = "f", minLength = 0, maxLength = 1)
         }
@@ -196,11 +187,8 @@ class DbActionGeneBuilder {
     private fun handleDoubleColumn(column: Column): Gene {
         // TODO How to discover if the source field is a float/Float field?
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toDouble() })
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toDouble() })
         } else {
             DoubleGene(column.name)
         }
@@ -310,11 +298,9 @@ class DbActionGeneBuilder {
 
     private fun handleCLOBColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings)
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, values = column.enumValuesAsStrings)
+
         } else {
             StringGene(name = column.name, minLength = 0, maxLength = column.size)
         }
@@ -322,11 +308,8 @@ class DbActionGeneBuilder {
 
     private fun handleBLOBColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings)
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, values = column.enumValuesAsStrings)
         } else {
             StringGene(name = column.name, minLength = 0, maxLength = 8)
         }
@@ -338,11 +321,9 @@ class DbActionGeneBuilder {
          * TODO How to discover if the source field is a float/Float field?
          */
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toDouble() })
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toDouble() })
+
         } else {
             DoubleGene(column.name)
         }
@@ -353,11 +334,8 @@ class DbActionGeneBuilder {
          * TODO: DECIMAL precision is lower than a float gene
          */
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toFloat() })
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
             FloatGene(column.name)
         }
@@ -365,13 +343,22 @@ class DbActionGeneBuilder {
 
     private fun handleBooleanColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            if (column.enumValuesAsStrings.isEmpty()) {
-                throw IllegalArgumentException("the list of enumerated values cannot be empty")
-            } else {
-                EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
-            }
+            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
+
         } else {
             BooleanGene(column.name)
+        }
+    }
+
+    companion object {
+        /**
+         * Throws an exception if the enum values is non-null and empty
+         */
+        private fun checkNotEmpty(enumValuesAsStrings: List<String>) {
+            if (enumValuesAsStrings!=null && enumValuesAsStrings.isEmpty()) {
+                throw IllegalArgumentException("the list of enumerated values cannot be empty")
+            }
         }
     }
 }

@@ -120,11 +120,11 @@ public class JSqlVisitor implements ExpressionVisitor, ItemsListVisitor {
                 negated = new SqlBigDecimalLiteralValue(sqlBigDecimalLiteralValue.getBigDecimal().negate());
 
             } else {
-                throw new RuntimeException("Extraction of condition not yet implemented");
+                throw new RuntimeException("Extraction of condition not yet implemented for literal value class " + sqlLiteralValue.getClass());
             }
             stack.push(negated);
         } else {
-            throw new RuntimeException("Extraction of condition not yet implemented");
+            throw new RuntimeException("Extraction of condition not yet implemented for " + sqlCondition.getClass());
         }
     }
 
