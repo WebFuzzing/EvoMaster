@@ -92,7 +92,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             val reachNew = archive.wouldReachNewTarget(mutated)
 
-            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
+            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets, config.secondaryObjectiveStrategy)) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated

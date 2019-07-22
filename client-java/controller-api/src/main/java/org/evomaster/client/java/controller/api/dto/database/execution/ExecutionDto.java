@@ -60,4 +60,8 @@ public class ExecutionDto {
      */
     public Map<String, Set<String>> failedWhere = new HashMap<>();
 
+    /**
+     * The total Number of SQL commands (e.g., SELECT and UPDATE) executed
+     */
+    public int numberOfSqlCommands = 0;
 }
