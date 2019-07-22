@@ -24,6 +24,7 @@ import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
@@ -54,6 +55,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
     @Inject
     private lateinit var extraHeuristicsLogger: ExtraHeuristicsLogger
+
+    @Inject
+    private lateinit var searchTimeController: SearchTimeController
 
 
     private val client: Client = {
@@ -199,6 +203,10 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             }
 
             fv.aggregateDatabaseData()
+
+            if(!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
+                searchTimeController.newIndividualsWithSqlFailedWhere()
+            }
         }
     }
 

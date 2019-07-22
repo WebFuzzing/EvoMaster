@@ -164,6 +164,7 @@ class Statistics : SearchListener {
 
         list.apply {
             add(Pair("evaluatedTests", "" + time.evaluatedIndividuals))
+            add(Pair("individualsWithSqlFailedWhere", "" + time.individualsWithSqlFailedWhere))
             add(Pair("evaluatedActions", "" + time.evaluatedActions))
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
