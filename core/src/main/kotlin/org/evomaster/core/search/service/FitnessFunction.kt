@@ -32,6 +32,7 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     @Inject
     protected lateinit var config: EMConfig
+
     /**
      * @return [null] if there were problems in calculating the coverage
      */

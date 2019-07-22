@@ -14,7 +14,7 @@ import java.util.List;
 public class ExtraHeuristicsDto {
 
     /**
-     * List of extre heuristic value we want to optimize
+     * List of extra heuristic values we want to optimize
      */
     public List<HeuristicEntryDto> heuristics = new ArrayList<>();
 
