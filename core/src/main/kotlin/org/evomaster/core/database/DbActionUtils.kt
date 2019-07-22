@@ -3,8 +3,8 @@ package org.evomaster.core.database
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 
 object DbActionUtils {
@@ -22,7 +22,7 @@ object DbActionUtils {
                 return false
             }
 
-            if(i == 0){
+            if (i == 0) {
                 continue
             }
 
@@ -90,7 +90,7 @@ object DbActionUtils {
         var attemptCounter = 0
         var previousActionIndexToRepair = -1
 
-        var geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
+        var geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions, randomness)
         var geneToRepair = geneToRepairAndActionIndex.first
         var actionIndexToRepair = geneToRepairAndActionIndex.second
 
@@ -110,7 +110,7 @@ object DbActionUtils {
                         " but new action to repair at position $actionIndexToRepair")
             }
 
-            geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions)
+            geneToRepairAndActionIndex = findFirstOffendingGeneWithIndex(actions, randomness)
             geneToRepair = geneToRepairAndActionIndex.first
             actionIndexToRepair = geneToRepairAndActionIndex.second
         }
@@ -145,12 +145,58 @@ object DbActionUtils {
         return (offendingGene.first == null)
     }
 
+
+    /**
+     * Returns the gene and action index that does not satisfies any Table Constraint of the corresponding
+     * table that the action is inserting to.
+     * It also returns one of the genes involved in the constraint that is not being
+     * satisfied.
+     * If no such gene is found, the function returns the tuple (-1,null).
+     * If randomness is provided, the returning gene is randomly selected from all the genes in the constraint
+     */
+    private fun checkIfTableConstraintsAreSatisfied(
+            dbAction: DbAction,
+            dbActionIndex: Int,
+            dbActions: List<DbAction>,
+            randomness: Randomness? = null
+    ): Pair<Gene?, Int>? {
+
+
+        val tableConstraints = dbAction.table.tableConstraints.filter {
+            it.tableName == dbAction.table.name
+        }
+
+        for (tableConstraint in tableConstraints) {
+            val evaluator = TableConstraintEvaluator(dbActions.subList(0, dbActionIndex - 1))
+            if (tableConstraint.accept(evaluator, dbAction) == false) {
+                // This constraint is not satisfied, collect all genes related to constraint
+                val geneCollector = TableConstraintGeneCollector()
+                val genes = tableConstraint.accept(geneCollector, dbAction)
+                // it is expected that at least one gene should be involved in not satisfying this
+
+                val chosenGene = if (randomness == null) {
+                    genes.first()
+                } else {
+                    randomness.choose(genes)
+                }
+                return Pair(chosenGene, dbActionIndex)
+            }
+        }
+
+        // no problem found
+        return null;
+
+    }
+
     /**
      * Returns the first offending gene found with the action index to the
      * passed list where the gene was found.
      * If no such gene is found, the function returns the tuple (-1,null).
      */
-    private fun findFirstOffendingGeneWithIndex(actions: List<Action>): Pair<Gene?, Int> {
+    private fun findFirstOffendingGeneWithIndex(
+            actions: List<Action>,
+            randomness: Randomness? = null
+    ): Pair<Gene?, Int> {
 
         /*
             Key -> tableName/columnName
@@ -166,15 +212,21 @@ object DbActionUtils {
 
         val allGenes = actions.flatMap { it.seeGenes() }
 
+        val dbActions = mutableListOf<DbAction>()
         for ((actionIndex, action) in actions.withIndex()) {
 
             if (action !is DbAction) {
                 continue
             }
+            dbActions += action
 
-            handleUnique(action, actionIndex, uniqueColumnValues, allGenes)?.let { return it }
-            handlePKs(action, actionIndex, pksValues, allGenes)?.let { return it }
+            handleUnique(action, actionIndex, uniqueColumnValues, allGenes, randomness)?.let { return it }
+            handlePKs(action, actionIndex, pksValues, allGenes, randomness)?.let { return it }
+            checkIfTableConstraintsAreSatisfied(action, actionIndex, dbActions, randomness)?.let { return it }
         }
+
+        // check if all table constraints are satisfied
+
 
         //if reached here, then there was no problem
         return Pair(null, -1)
@@ -184,7 +236,8 @@ object DbActionUtils {
             action: DbAction,
             actionIndex: Int,
             uniqueColumnValues: MutableMap<Pair<String, String>, MutableSet<String>>,
-            all: List<Gene>
+            all: List<Gene>,
+            randomness: Randomness? = null
     ): Pair<Gene?, Int>? {
 
         val tableName = action.table.name
@@ -225,7 +278,8 @@ object DbActionUtils {
             action: DbAction,
             actionIndex: Int,
             pksValues: MutableMap<String, MutableSet<String>>,
-            all: List<Gene>
+            all: List<Gene>,
+            randomness: Randomness? = null
     ): Pair<Gene?, Int>? {
 
         if (action.table.primaryKeys().isEmpty()) {

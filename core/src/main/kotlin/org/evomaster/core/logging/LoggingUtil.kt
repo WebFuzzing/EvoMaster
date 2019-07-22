@@ -22,8 +22,16 @@ class LoggingUtil {
          *  A WARN log that can be printed only once.
          *  If called twice (or more), such calls are ignored
          */
-        fun uniqueWarn(log: Logger, msg: String, vararg args: Any){
-            log.warn(UniqueTurboFilter.UNIQUE_MARKER, msg, args)
+        fun uniqueWarn(log: Logger, msg: String){
+            log.warn(UniqueTurboFilter.UNIQUE_MARKER, msg)
+        }
+
+        /**
+         *  A WARN log that can be printed only once.
+         *  If called twice (or more), such calls are ignored
+         */
+        fun uniqueWarn(log: Logger, msg: String, arg: Any){
+            log.warn(UniqueTurboFilter.UNIQUE_MARKER, msg, arg)
         }
     }
 }

@@ -9,4 +9,6 @@ public interface ThrownExc {
     String doubleCall(Object x, Object y);
 
     String callOnArray(Object[] array, int index);
+
+    String inConstructor(boolean doThrow);
 }

@@ -64,7 +64,7 @@ class DisjunctionListRxGene(
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf()
+        return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
     }
 }

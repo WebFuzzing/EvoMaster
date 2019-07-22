@@ -1,5 +1,7 @@
 package org.evomaster.core.database.schema
 
+import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
+
 /**
  *
  * Should be immutable
@@ -26,7 +28,13 @@ data class Column(
 
         val upperBound: Int? = null,
 
-        val enumValuesAsStrings: List<String>? = null
+        val enumValuesAsStrings: List<String>? = null,
+
+        val similarToPatterns: List<String>? = null,
+
+        val likePatterns: List<String>? = null,
+
+        val databaseType: DatabaseType
 
         // public boolean identity;
 

@@ -9,6 +9,9 @@ public class SqlIsNotNullCondition extends SqlCondition {
         this.sqlColumn = Objects.requireNonNull(sqlColumn);
     }
 
+    public SqlColumn getColumn() {
+        return sqlColumn;
+    }
 
     @Override
     public String toSql() {

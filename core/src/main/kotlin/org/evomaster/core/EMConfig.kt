@@ -453,6 +453,12 @@ class EMConfig {
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
     var statisticsColumnId = "-"
 
+    @Cfg("Whether we should collect data on the extra heuristics. Only needed for experiments.")
+    var writeExtraHeuristicsFile = false
+
+    @Cfg("Where the extra heuristics file (if any) is going to be written (in CSV format)")
+    var extraHeuristicsFile = "extra_heuristics.csv"
+
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Min(0.0) @Max(1.0)
     var structureMutationProbability = 0.5

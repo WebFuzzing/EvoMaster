@@ -3,9 +3,11 @@ package org.evomaster.core.database.extract.postgres
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.regex.RegexGene
+import org.evomaster.core.search.gene.sql.*
+import org.jetbrains.kotlin.utils.addToStdlib.firstIsInstance
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Disabled
-
 import org.junit.jupiter.api.Test
 
 /**
@@ -47,19 +49,77 @@ class Ind0ExtractTest : ExtractTestBasePostgres() {
         assertTrue(schema.tables.first { it.name == "y" }.tableCheckExpressions.any { it.sqlCheckExpression.equals("(status = ANY (ARRAY['A'::text, 'B'::text, 'C'::text, 'D'::text, 'E'::text]))") });
 
 
-        //TODO check the 3 views and all constraints
+        //TODO check the 3 views
     }
 
-    @Disabled("Requires implementing genes for postgres column data types: TEXT, XML, UUID and JSONB")
     @Test
-    fun testGeneCreation() {
+    fun testDateGeneCreation() {
         val schema = SchemaExtractor.extract(connection)
 
         val builder = SqlInsertBuilder(schema)
-        val actions = builder.createSqlInsertionAction("x", setOf("p_at", "created_at"))
+        val actions = builder.createSqlInsertionAction("x", setOf("expr_date"))
         val genes = actions[0].seeGenes()
 
-        //TODO check creation of genes for TEXT, UUID, XML and JSONB column types
+        assertTrue(genes.any { it is DateGene })
 
     }
+
+    @Test
+    fun testUUIDGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("x", setOf("id"))
+        val genes = actions[0].seeGenes()
+        assertTrue(genes.firstIsInstance<SqlPrimaryKeyGene>().gene is SqlUUIDGene)
+    }
+
+    @Test
+    fun testXMLGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("x", setOf("xmlData"))
+        val genes = actions[0].seeGenes()
+
+        assertTrue(genes.any { it is SqlXMLGene })
+    }
+
+
+    @Test
+    fun testJSONGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("y", setOf("jsonData"))
+        val genes = actions[0].seeGenes().flatMap { it.flatView() }
+
+        assertTrue(genes.any { it is SqlJSONGene })
+    }
+
+
+    @Test
+    fun testSimilarToGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("x", setOf("w_id"))
+        val genes = actions[0].seeGenes()
+
+        assertTrue(genes.any { it is RegexGene })
+        assertTrue(genes.filterIsInstance<RegexGene>().any { g -> g.name.equals("w_id", ignoreCase = true) })
+    }
+
+    @Test
+    fun testLikeGeneCreation() {
+        val schema = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(schema)
+        val actions = builder.createSqlInsertionAction("x", setOf("f_id"))
+        val genes = actions[0].seeGenes()
+
+        assertTrue(genes.any { it is RegexGene })
+        val regexGene = genes.firstIsInstance<RegexGene>()
+        assertTrue(genes.filterIsInstance<RegexGene>().any { g -> g.name.equals("f_id", ignoreCase = true) })
+    }
+
 }

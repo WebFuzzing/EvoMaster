@@ -2,6 +2,9 @@ package org.evomaster.dbconstraint;
 
 import java.util.Objects;
 
+/**
+ * Represents the constraint value <= table.column
+ */
 public class LowerBoundConstraint extends TableConstraint {
 
     private final /*non-null*/ String columnName;
@@ -22,4 +25,8 @@ public class LowerBoundConstraint extends TableConstraint {
         return lowerBound;
     }
 
+    @Override
+    public <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument) {
+        return visitor.visit(this, argument);
+    }
 }

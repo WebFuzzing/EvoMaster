@@ -6,6 +6,7 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.SutHandler;
+import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
@@ -13,7 +14,7 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto;
+import org.evomaster.client.java.controller.api.dto.ExtraHeuristicsDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
@@ -53,7 +54,7 @@ public abstract class SutController implements SutHandler {
     /**
      * For each action in a test, keep track of the extra heuristics, if any
      */
-    private final List<ExtraHeuristicDto> extras = new CopyOnWriteArrayList<>();
+    private final List<ExtraHeuristicsDto> extras = new CopyOnWriteArrayList<>();
 
     private int actionIndex = -1;
 
@@ -137,10 +138,10 @@ public abstract class SutController implements SutHandler {
     }
 
     @Override
-    public void execInsertionsIntoDatabase(List<InsertionDto> insertions){
+    public void execInsertionsIntoDatabase(List<InsertionDto> insertions) {
 
         Connection connection = getConnection();
-        if(connection == null){
+        if (connection == null) {
             throw new IllegalStateException("No connection to database");
         }
 
@@ -154,12 +155,17 @@ public abstract class SutController implements SutHandler {
 
     /**
      * Calculate heuristics based on intercepted SQL commands
+     *
      * @param sql
      */
-    public final void handleSql(String sql){
+    public final void handleSql(String sql) {
         Objects.requireNonNull(sql);
 
         sqlHandler.handle(sql);
+    }
+
+    public final void enableSqlHeuristics(boolean enabled){
+        sqlHandler.setCalculateHeuristics(enabled);
     }
 
     /**
@@ -167,31 +173,41 @@ public abstract class SutController implements SutHandler {
      * and it is automatically called by the EM controller after
      * the SUT is started.
      */
-    public final void initSqlHandler(){
+    public final void initSqlHandler() {
         sqlHandler.setConnection(getConnection());
     }
 
-    public final void resetExtraHeuristics(){
+    public final void resetExtraHeuristics() {
         sqlHandler.reset();
     }
 
-    public final List<ExtraHeuristicDto> getExtraHeuristics(){
+    public final List<ExtraHeuristicsDto> getExtraHeuristics() {
 
-        if(extras.size() == actionIndex ) {
+        if (extras.size() == actionIndex) {
             extras.add(computeExtraHeuristics());
         }
 
         return new ArrayList<>(extras);
     }
 
-    public final ExtraHeuristicDto computeExtraHeuristics(){
+    public final ExtraHeuristicsDto computeExtraHeuristics() {
 
-        ExtraHeuristicDto dto = new ExtraHeuristicDto();
-        dto.toMinimize.addAll(sqlHandler.getDistances());
-        //TODO toMaximize
+        ExtraHeuristicsDto dto = new ExtraHeuristicsDto();
 
-        ExecutionDto executionDto = sqlHandler.getExecutionDto();
-        dto.databaseExecutionDto = executionDto;
+        if(sqlHandler.isCalculateHeuristics()) {
+            sqlHandler.getDistances().stream()
+                    .map(p ->
+                            new HeuristicEntryDto(
+                                    HeuristicEntryDto.Type.SQL,
+                                    HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO,
+                                    p.sqlCommand,
+                                    p.distance
+                            ))
+                    .forEach(h -> dto.heuristics.add(h));
+
+            ExecutionDto executionDto = sqlHandler.getExecutionDto();
+            dto.databaseExecutionDto = executionDto;
+        }
 
         return dto;
     }
@@ -204,12 +220,12 @@ public abstract class SutController implements SutHandler {
      *
      * @see SutController#getConnection
      */
-    public final DbSchemaDto getSqlDatabaseSchema(){
-        if(schemaDto != null){
+    public final DbSchemaDto getSqlDatabaseSchema() {
+        if (schemaDto != null) {
             return schemaDto;
         }
 
-        if(getConnection() == null){
+        if (getConnection() == null) {
             return null;
         }
 
@@ -233,7 +249,7 @@ public abstract class SutController implements SutHandler {
     /**
      * Re-initialize some internal data needed before running a new test
      */
-    public final void newTest(){
+    public final void newTest() {
 
         actionIndex = -1;
         resetExtraHeuristics();
@@ -247,9 +263,9 @@ public abstract class SutController implements SutHandler {
      * in the test sequence is executed, and their order, we need to keep track of which
      * action does cover what.
      */
-    public final void newAction(int actionIndex){
+    public final void newAction(int actionIndex) {
 
-        if(actionIndex > extras.size()){
+        if (actionIndex > extras.size()) {
             extras.add(computeExtraHeuristics());
         }
         this.actionIndex = actionIndex;
@@ -274,6 +290,7 @@ public abstract class SutController implements SutHandler {
 
     /**
      * Check if the system under test (SUT) is running and fully initialized
+     *
      * @return
      */
     public abstract boolean isSutRunning();

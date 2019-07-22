@@ -60,6 +60,7 @@ open class DateTimeGene(
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
+        return if (excludePredicate(this)) listOf(this) else
+            listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
     }
 }

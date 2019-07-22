@@ -12,12 +12,18 @@ public class SutRunDto {
      */
     public Boolean resetState;
 
+    /**
+     *  Whether SQL heuristics should be computed.
+     *  Note: those can be very expensive
+     */
+    public Boolean calculateSqlHeuristics;
 
     public SutRunDto() {
     }
 
-    public SutRunDto(Boolean run, Boolean resetState) {
+    public SutRunDto(Boolean run, Boolean resetState, Boolean calculateSqlHeuristics) {
         this.run = run;
         this.resetState = resetState;
+        this.calculateSqlHeuristics = calculateSqlHeuristics;
     }
 }

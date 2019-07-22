@@ -1,9 +1,10 @@
 package org.evomaster.client.java.controller.db;
 
 import org.evomaster.client.java.controller.api.dto.database.operations.DataRowDto;
-import org.evomaster.client.java.controller.internal.db.SelectHeuristics;
 import org.evomaster.client.java.controller.internal.db.SqlNameContext;
+import org.evomaster.client.java.utils.SimpleLogger;
 
+import java.sql.Clob;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -52,7 +53,17 @@ public class DataRow {
     }
 
     public Object getValue(int index) {
-        return values.get(index);
+        Object value =  values.get(index);
+        if(value instanceof Clob){
+            Clob clob = (Clob) value;
+            try {
+                return clob.getSubString(1, (int) clob.length());
+            } catch (Exception e){
+                SimpleLogger.error("Failed to retrieve CLOB data");
+                return null;
+            }
+        }
+        return value;
     }
 
     public Object getValueByName(String name) {
@@ -78,7 +89,7 @@ public class DataRow {
             for (int i = 0; i < variableDescriptors.size(); i++) {
                 VariableDescriptor desc = variableDescriptors.get(i);
                 if (n.equalsIgnoreCase(desc.getAlias())) {
-                    return values.get(i);
+                    return getValue(i);
                 }
             }
         }
@@ -98,7 +109,7 @@ public class DataRow {
                             || t.equalsIgnoreCase(SqlNameContext.UNNAMED_TABLE)
                     )
                     ) {
-                return values.get(i);
+                return getValue(i);
             }
         }
 

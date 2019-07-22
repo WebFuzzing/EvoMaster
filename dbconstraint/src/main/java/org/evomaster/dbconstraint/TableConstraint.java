@@ -15,5 +15,6 @@ public abstract class TableConstraint {
         return tableName;
     }
 
+    public abstract <K, V> K accept(TableConstraintVisitor<K, V> visitor, V argument);
 
 }

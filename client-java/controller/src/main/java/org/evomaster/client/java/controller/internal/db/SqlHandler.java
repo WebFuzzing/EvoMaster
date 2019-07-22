@@ -35,7 +35,7 @@ public class SqlHandler {
     /**
      * The heuristics based on the SQL execution
      */
-    private final List<Double> distances;
+    private final List<PairCommandDistance> distances;
 
     //see ExecutionDto
     private final Map<String, Set<String>> queriedData;
@@ -47,6 +47,7 @@ public class SqlHandler {
 
     private volatile Connection connection;
 
+    private volatile boolean calculateHeuristics;
 
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
@@ -56,6 +57,8 @@ public class SqlHandler {
         insertedData = new ConcurrentHashMap<>();
         failedWhere = new ConcurrentHashMap<>();
         deletedData = new CopyOnWriteArrayList<>();
+
+        calculateHeuristics = true;
     }
 
     public void reset() {
@@ -75,6 +78,10 @@ public class SqlHandler {
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
+        if(! calculateHeuristics){
+            return;
+        }
+
         buffer.add(sql);
 
         if (isSelect(sql)) {
@@ -89,6 +96,11 @@ public class SqlHandler {
     }
 
     public ExecutionDto getExecutionDto() {
+
+        if(! calculateHeuristics){
+            return null;
+        }
+
         ExecutionDto executionDto = new ExecutionDto();
         executionDto.queriedData.putAll(queriedData);
         executionDto.failedWhere.putAll(failedWhere);
@@ -99,9 +111,9 @@ public class SqlHandler {
         return executionDto;
     }
 
-    public List<Double> getDistances() {
+    public List<PairCommandDistance> getDistances() {
 
-        if (connection == null) {
+        if (connection == null || !calculateHeuristics) {
             return distances;
         }
 
@@ -117,7 +129,7 @@ public class SqlHandler {
                      */
                     if (isSelect(sql) || isDelete(sql) || isUpdate(sql)) {
                         double dist = computeDistance(sql);
-                        distances.add(dist);
+                        distances.add(new PairCommandDistance(sql, dist));
                     }
                 });
         //side effects on buffer is not important, as it is just a cache
@@ -127,7 +139,7 @@ public class SqlHandler {
     }
 
 
-    public Double computeDistance(String command) {
+    private Double computeDistance(String command) {
 
         if (connection == null) {
             throw new IllegalStateException("Trying to calculate SQL distance with no DB connection");
@@ -145,11 +157,26 @@ public class SqlHandler {
 
         Map<String, Set<String>> columns = extractColumnsInvolvedInWhere(statement);
 
+        /*
+            even if columns.isEmpty(), we need to check if any data was present
+         */
+
+        double dist;
         if(columns.isEmpty()){
-            //no WHERE, so no point in calculating anything
-            return 0.0;
+            //TODO check if table(s) not empty, and give >0 otherwise
+            dist = 0;
+        } else {
+            dist = getDistanceForWhere(command, columns);
         }
 
+        if (dist > 0) {
+            mergeNewData(failedWhere, columns);
+        }
+
+        return dist;
+    }
+
+    private double getDistanceForWhere(String command, Map<String, Set<String>> columns) {
         String select;
 
         /*
@@ -162,9 +189,9 @@ public class SqlHandler {
            TODO: we need a general solution
          */
         if(isSelect(command)) {
-            select = SelectHeuristics.addFieldsToSelect(command);
-            select = SelectHeuristics.removeConstraints(select);
-            select = SelectHeuristics.removeOperations(select);
+            select = SelectTransformer.addFieldsToSelect(command);
+            select = SelectTransformer.removeConstraints(select);
+            select = SelectTransformer.removeOperations(select);
         } else {
             if(columns.size() > 1){
                 SimpleLogger.uniqueWarn("Cannot analyze: " + command);
@@ -181,13 +208,7 @@ public class SqlHandler {
             throw new RuntimeException(e);
         }
 
-        double dist = SelectHeuristics.computeDistance(command, data);
-
-        if (dist > 0) {
-            mergeNewData(failedWhere, columns);
-        }
-
-        return dist;
+        return HeuristicsCalculator.computeDistance(command, data);
     }
 
     private String createSelectForSingleTable(String tableName, Set<String> columns){
@@ -281,4 +302,11 @@ public class SqlHandler {
         }
     }
 
+    public boolean isCalculateHeuristics() {
+        return calculateHeuristics;
+    }
+
+    public void setCalculateHeuristics(boolean calculateHeuristics) {
+        this.calculateHeuristics = calculateHeuristics;
+    }
 }

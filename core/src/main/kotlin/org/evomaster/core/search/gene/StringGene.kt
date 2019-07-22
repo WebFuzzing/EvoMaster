@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.Randomness
 
@@ -10,7 +11,14 @@ class StringGene(
         /** Inclusive */
         val minLength: Int = 0,
         /** Inclusive */
-        val maxLength: Int = 16
+        val maxLength: Int = 16,
+        /**
+         * Depending on what a string is representing, there might be some chars
+         * we do not want to use.
+         * For example, in a URL Path variable, we do not want have "/", as otherwise
+         * it would create 2 distinct paths
+         */
+        val invalidChars: List<Char> = listOf()
 ) : Gene(name) {
 
     /*
@@ -19,26 +27,67 @@ class StringGene(
      */
     private val maxForRandomizantion = 16
 
+    private var validChar: String? = null
+
     override fun copy(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength)
-        return copy
+        return StringGene(name, value, minLength, maxLength)
     }
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
+        value = if (name == "type" && randomness.nextBoolean())
+            //FIXME: tmp hack until we have proper seeding support
+            randomness.choose(listOf("lov", "forskrift"))
+        else
         //TODO much more would need to be done here to handle strings...
-        value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
+            randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
+
+        repair()
+    }
+
+    /**
+     * Make sure no invalid chars is used
+     */
+    fun repair() {
+        if (invalidChars.isEmpty()) {
+            //nothing to do
+            return
+        }
+
+        if (validChar == null) {
+            //compute a valid char
+            for (c in 'a'..'z') {
+                if (!invalidChars.contains(c)) {
+                    validChar = c.toString()
+                    break
+                }
+            }
+        }
+        if (validChar == null) {
+            //no basic char is valid??? TODO should handle this situation, although likely never happens
+            return
+        }
+
+        for (invalid in invalidChars) {
+            value = value.replace("$invalid", validChar!!)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        when {
-            (targetFormat == null) -> return "\"$value\""
-             targetFormat.isKotlin() -> return "\"$value\""
-                                                            .replace("\\", "\\\\")
-                                                            .replace("$", "\\$")
-            else -> return "\"$value\""
-                    .replace("\\", "\\\\")
+        val rawValue = getValueAsRawString()
+        if (mode != null && mode.equals("xml")) {
+            return StringEscapeUtils.escapeXml(rawValue)
+        } else {
+            when {
+                // TODO this code should be refactored with other getValueAsPrintableString() methods
+                (targetFormat == null) -> return "\"$rawValue\""
+                targetFormat.isKotlin() -> return "\"$rawValue\""
+                        .replace("\\", "\\\\")
+                        .replace("$", "\\$")
+                else -> return "\"$rawValue\""
+                        .replace("\\", "\\\\")
+            }
         }
     }
 

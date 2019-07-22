@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
+import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.slf4j.Logger
@@ -37,20 +39,25 @@ class RemoteController() : DatabaseExecutor {
     lateinit var host: String
     var port: Int = 0
 
+    private var computeSqlHeuristics = true
+
+
     @Inject
     private lateinit var config: EMConfig
 
     private val client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int) : this() {
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this() {
         this.host = host
         this.port = port
+        this.computeSqlHeuristics = computeSqlHeuristics;
     }
 
     @PostConstruct
     private fun initialize() {
         host = config.sutControllerHost
         port = config.sutControllerPort
+        computeSqlHeuristics = config.heuristicsForSQL
     }
 
     @PreDestroy
@@ -127,7 +134,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.RUN_SUT_PATH)
                     .request()
-                    .put(Entity.json(SutRunDto(run, reset)))
+                    .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics)))
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
             return false
@@ -227,7 +234,7 @@ class RemoteController() : DatabaseExecutor {
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
         if (!wasSuccess(response)) {
-            log.warn("Failed to execute database command. HTTP status: {}.", response.status)
+            LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
             val responseDto = try {
                 response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
@@ -237,7 +244,8 @@ class RemoteController() : DatabaseExecutor {
             }
 
             if(responseDto?.error != null) {
-                log.warn("Error message: " + responseDto.error)
+                //this can happen if we do not handle all constraints
+                LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
             }
             /*
                 TODO refactor all methods in this class to print error message, if any

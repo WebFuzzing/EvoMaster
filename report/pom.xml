@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>0.2.1-SNAPSHOT</version>
+        <version>0.3.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-project-report</artifactId>
@@ -44,6 +44,11 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-dbconstraint</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

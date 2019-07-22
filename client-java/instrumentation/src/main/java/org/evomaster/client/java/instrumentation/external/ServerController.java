@@ -24,12 +24,18 @@ import java.util.List;
  */
 public class ServerController {
 
+    /*
+        Note: for some reasons, different threads access this class, leading sometime to
+        nasty StreamCorruptedException.
+        Therefore, all public methods in this class are synchronized.
+     */
+
     private ServerSocket server;
     private Socket socket;
     protected ObjectOutputStream out;
     protected ObjectInputStream in;
 
-    public int startServer() {
+    public synchronized int startServer() {
 
         closeServer();
 
@@ -44,7 +50,7 @@ public class ServerController {
     }
 
 
-    public void closeServer() {
+    public synchronized void closeServer() {
         if (server != null) {
             try {
                 server.close();
@@ -58,7 +64,7 @@ public class ServerController {
         }
     }
 
-    public boolean waitForIncomingConnection() {
+    public synchronized boolean waitForIncomingConnection() {
 
         try {
             socket = server.accept();
@@ -80,7 +86,7 @@ public class ServerController {
         return isConnectionOn();
     }
 
-    public boolean isConnectionOn() {
+    public synchronized boolean isConnectionOn() {
         /*
             as the Java Agent is the one starting this communication, if we
             have the connection, then it necessarily means that it is working
@@ -88,26 +94,29 @@ public class ServerController {
         return socket != null && socket.isConnected() && !socket.isClosed();
     }
 
-    public boolean sendCommand(Command command){
+    public synchronized boolean sendCommand(Command command) {
         return sendObject(command);
     }
 
-    public boolean sendObject(Object obj){
-        if(! isConnectionOn()){
+    public synchronized boolean sendObject(Object obj) {
+        if (!isConnectionOn()) {
+            SimpleLogger.error("TCP connection is not on");
             return false;
         }
 
         try {
             out.writeObject(obj);
         } catch (IOException e) {
+            SimpleLogger.error("IO exception while sending object", e);
             return false;
         }
 
         return true;
     }
 
-    public Object waitAndGetResponse(){
-        if(! isConnectionOn()){
+    public synchronized Object waitAndGetResponse() {
+        if (!isConnectionOn()) {
+            SimpleLogger.error("TCP connection is not on");
             return null;
         }
 
@@ -115,15 +124,16 @@ public class ServerController {
             Object obj = in.readObject();
             return obj;
         } catch (IOException e) {
+            SimpleLogger.error("IO exception while waiting for response", e);
             return null;
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(e);
         }
     }
 
-    public boolean sendAndExpectACK(Command command){
+    public synchronized boolean sendAndExpectACK(Command command) {
         boolean sent = sendCommand(command);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return false;
         }
@@ -131,16 +141,16 @@ public class ServerController {
         return waitForAck();
     }
 
-    public boolean sendWithDataAndExpectACK(Command command, Object data){
+    public synchronized boolean sendWithDataAndExpectACK(Command command, Object data) {
 
         boolean sent = sendCommand(command);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return false;
         }
 
         sent = sendObject(data);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return false;
         }
@@ -151,32 +161,43 @@ public class ServerController {
 
     private boolean waitForAck() {
         Object response = waitAndGetResponse();
-        if(response == null){
+        if (response == null) {
             SimpleLogger.error("Failed to read ACK response");
             return false;
         }
-        if(! Command.ACK.equals(response)){
-            throw new IllegalStateException("Invalid response: "+response);
+        if (!Command.ACK.equals(response)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "an ACK"));
         }
 
         return true;
     }
 
-    public  boolean resetForNewSearch(){
-       return sendAndExpectACK(Command.NEW_SEARCH);
+    private String errorMsgExpectingResponse(Object response, String expectation) {
+
+        String repMsg = response == null ? "NULL"
+                : "an instance of type " + response.getClass()
+                + " with value: " + response.toString();
+
+        return "Invalid response."
+                + " Expecting " + expectation
+                + ", but rather received " + repMsg;
     }
 
-    public  boolean resetForNewTest(){
+    public boolean resetForNewSearch() {
+        return sendAndExpectACK(Command.NEW_SEARCH);
+    }
+
+    public boolean resetForNewTest() {
         return sendAndExpectACK(Command.NEW_TEST);
     }
 
-    public boolean setActionIndex(int actionIndex){
+    public boolean setActionIndex(int actionIndex) {
         return sendWithDataAndExpectACK(Command.ACTION_INDEX, actionIndex);
     }
 
-    public List<TargetInfo> getTargetInfos(Collection<Integer> ids){
+    public synchronized List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
         boolean sent = sendCommand(Command.TARGET_INFOS);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return null;
         }
@@ -184,39 +205,39 @@ public class ServerController {
         try {
             out.writeObject(ids);
         } catch (IOException e) {
-            SimpleLogger.error("Failed to send ids");
+            SimpleLogger.error("Failed to send ids", e);
             return null;
         }
 
         Object response = waitAndGetResponse();
-        if(response == null){
+        if (response == null) {
             SimpleLogger.error("Failed to read response about covered targets");
             return null;
         }
 
-        if(! (response instanceof List<?>)){
-            throw new IllegalStateException("Invalid response: "+response);
+        if (!(response instanceof List<?>)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
         }
 
         return (List<TargetInfo>) response;
     }
 
-    public List<AdditionalInfo> getAdditionalInfoList(){
+    public synchronized List<AdditionalInfo> getAdditionalInfoList() {
 
         boolean sent = sendCommand(Command.ADDITIONAL_INFO);
-        if(!sent){
+        if (!sent) {
             SimpleLogger.error("Failed to send message");
             return null;
         }
 
         Object response = waitAndGetResponse();
-        if(response == null){
+        if (response == null) {
             SimpleLogger.error("Failed to read response about additional info");
             return null;
         }
 
-        if(! (response instanceof List<?>)){
-            throw new IllegalStateException("Invalid response: "+response);
+        if (!(response instanceof List<?>)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a List"));
         }
 
         return (List<AdditionalInfo>) response;

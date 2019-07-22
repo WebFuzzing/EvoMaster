@@ -138,10 +138,6 @@ But then of course the test generation will take longer.
 The path directory of where the generated test classes 
 should be saved to.
  
-* `--outputFormat <OutputFormat>`            
-Specify in which format the tests should be outputted.
-For example, JAVA_JUNIT_5 or JAVA_JUNIT_4.
-Use `--help` to check what currently supported.
 
 * `--testSuiteFileName <String>`             
 The name of generated file with the test cases, 

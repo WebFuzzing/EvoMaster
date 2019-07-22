@@ -2,17 +2,14 @@ package org.evomaster.e2etests.spring.examples.positiveinteger;
 
 import org.evomaster.client.java.instrumentation.ClassName;
 import org.evomaster.core.EMConfig;
-import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
-import org.evomaster.e2etests.utils.JUnitTestRunner;
 import org.junit.jupiter.api.Test;
-import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PIEMTest extends PITestBase {
 

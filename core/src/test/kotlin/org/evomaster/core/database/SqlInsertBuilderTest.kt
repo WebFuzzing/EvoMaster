@@ -5,11 +5,13 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.sql.SqlTimestampGene
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeAll
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertAll
+import java.lang.IllegalArgumentException
+import java.lang.RuntimeException
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -38,7 +40,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testSimpleInt() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x INT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -90,7 +92,7 @@ class SqlInsertBuilderTest {
         assertFalse(genes.any { it.name.equals("z", ignoreCase = true) })
 
         assertEquals(3, genes.size)
-        assertEquals(2, genes.filterIsInstance(IntegerGene::class.java).size)
+        assertEquals(1, genes.filterIsInstance(IntegerGene::class.java).size)
         assertEquals(1, genes.filterIsInstance(SqlPrimaryKeyGene::class.java).size)
     }
 
@@ -100,9 +102,9 @@ class SqlInsertBuilderTest {
 
         SqlScriptRunner.execCommand(connection, """
                     CREATE TABLE Foo(
-                        x varchar(255),
-                        y VARCHAR(128),
-                        z varchar
+                        x varchar(255)  not null,
+                        y VARCHAR(128)  not null,
+                        z varchar  not null
                     );
                 """)
 
@@ -188,7 +190,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testRealColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x REAL);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x REAL not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -208,7 +210,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testCLOBColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CLOB);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CLOB not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -227,7 +229,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testSmallIntColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x SMALLINT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x SMALLINT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -246,7 +248,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testTinyIntColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TINYINT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TINYINT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -266,7 +268,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testTimeStampColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TIMESTAMP);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x TIMESTAMP not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -285,7 +287,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testBooleanColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BOOLEAN);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BOOLEAN not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -304,7 +306,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testCharColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CHAR);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x CHAR not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -324,7 +326,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testBigIntColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BIGINT);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x BIGINT not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -343,7 +345,7 @@ class SqlInsertBuilderTest {
     @Test
     fun testDoubleColumn() {
 
-        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x DOUBLE);")
+        SqlScriptRunner.execCommand(connection, "CREATE TABLE Foo(x DOUBLE not null);")
 
         val dto = SchemaExtractor.extract(connection)
 
@@ -464,7 +466,7 @@ class SqlInsertBuilderTest {
     fun testStringEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status varchar(1));
+            CREATE TABLE FOO (status varchar(1) not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
@@ -488,7 +490,7 @@ class SqlInsertBuilderTest {
     fun testIntegerEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status INT);
+            CREATE TABLE FOO (status INT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -513,7 +515,7 @@ class SqlInsertBuilderTest {
     fun testBooleanEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status BOOLEAN);
+            CREATE TABLE FOO (status BOOLEAN not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (true, false));
             """)
 
@@ -537,7 +539,7 @@ class SqlInsertBuilderTest {
     fun testTinyIntEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status TINYINT);
+            CREATE TABLE FOO (status TINYINT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -561,7 +563,7 @@ class SqlInsertBuilderTest {
     fun testSmallIntEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status SMALLINT);
+            CREATE TABLE FOO (status SMALLINT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -585,7 +587,7 @@ class SqlInsertBuilderTest {
     fun testCharEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status CHAR);
+            CREATE TABLE FOO (status CHAR not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
@@ -609,7 +611,7 @@ class SqlInsertBuilderTest {
     fun testBigIntEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status BIGINT);
+            CREATE TABLE FOO (status BIGINT not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (42, 77));
             """)
 
@@ -633,7 +635,7 @@ class SqlInsertBuilderTest {
     fun testDoubleEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status DOUBLE);
+            CREATE TABLE FOO (status DOUBLE not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
@@ -657,7 +659,7 @@ class SqlInsertBuilderTest {
     fun testRealEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status REAL);
+            CREATE TABLE FOO (status REAL not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
@@ -681,7 +683,7 @@ class SqlInsertBuilderTest {
     fun testDecimalEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status DECIMAL);
+            CREATE TABLE FOO (status DECIMAL not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (1.0, 2.5));
             """)
 
@@ -705,7 +707,7 @@ class SqlInsertBuilderTest {
     fun testClobEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status CLOB);
+            CREATE TABLE FOO (status CLOB not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in ('A', 'B'));
             """)
 
@@ -729,7 +731,7 @@ class SqlInsertBuilderTest {
     fun testBlobEnumGene() {
 
         SqlScriptRunner.execCommand(connection, """
-            CREATE TABLE FOO (status BLOB);
+            CREATE TABLE FOO (status BLOB not null);
             ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS CHECK (status in (x'0000', x'FFFF'));
             """)
 
@@ -748,4 +750,249 @@ class SqlInsertBuilderTest {
         assertEquals(setOf("X'0000'", "X'ffff'"), enumGene.values.toSet());
 
     }
+
+    @Test
+    fun testMultipleLowerBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            ALTER TABLE Foo add constraint lowerBound1 check (x >= -10);
+
+            ALTER TABLE Foo add constraint lowerBound2 check (x >= -100);
+
+            ALTER TABLE Foo add constraint lowerBound3 check (x >= -1000);
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(-10, gene.min)
+
+    }
+
+    @Test
+    fun testMultipleUpperBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            ALTER TABLE Foo add constraint upperBound1 check (x <= 10);
+
+            ALTER TABLE Foo add constraint upperBound2 check (x <= 100);
+
+            ALTER TABLE Foo add constraint upperBound3 check (x <= 1000);
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(10, gene.max)
+
+    }
+
+    @Test
+    fun testMultipleUpperAndLowerBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            
+            ALTER TABLE Foo add constraint lowerBound1 check (x >= -10);
+
+            ALTER TABLE Foo add constraint lowerBound2 check (x >= -100);
+
+            ALTER TABLE Foo add constraint lowerBound3 check (x >= -1000);
+            
+            ALTER TABLE Foo add constraint upperBound1 check (x <= 10);
+
+            ALTER TABLE Foo add constraint upperBound2 check (x <= 100);
+
+            ALTER TABLE Foo add constraint upperBound3 check (x <= 1000);
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(-10, gene.min)
+        assertEquals(10, gene.max)
+
+    }
+
+    @Test
+    fun testMultipleRangeConstraintAndLowerAndUpperBounds() {
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE Foo(x INT not null);
+            
+            ALTER TABLE Foo add constraint rangeConstraint check (x = 10);
+
+            ALTER TABLE Foo add constraint lowerBound check (x >= 0);
+
+            ALTER TABLE Foo add constraint upperBound check (x <= 1000);
+            
+        """)
+
+        val dto = SchemaExtractor.extract(connection)
+
+        val builder = SqlInsertBuilder(dto)
+
+        val fooActions = builder.createSqlInsertionAction("FOO", setOf())
+
+        assertEquals(1, fooActions.size)
+        assertEquals(1, fooActions[0].seeGenes().size)
+
+        val gene = fooActions[0].seeGenes()[0] as IntegerGene
+        assertEquals(10, gene.min)
+        assertEquals(10, gene.max)
+
+    }
+
+
+    @Test
+    fun testIntersectEnumConstraints() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status CHAR not null);
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS1 CHECK (status in ('A', 'B'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS2 CHECK (status in ('B', 'C'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS3 CHECK (status in ('D', 'B'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS4 CHECK (status in ('X', 'B'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("status"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+
+        assertEquals(setOf("B"), enumGene.values.toSet());
+
+    }
+
+
+    @Test
+    fun testNoIntersectionEnumConstraints() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (status CHAR not null);
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS1 CHECK (status in ('A', 'B', 'C'));
+
+            ALTER TABLE FOO ADD CONSTRAINT CHK_STATUS2 CHECK (status in ('D', 'E', 'F'));
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        try {
+            builder.createSqlInsertionAction("FOO", setOf("status"))
+            fail<Object>()
+        } catch (ex: RuntimeException) {
+
+        }
+    }
+
+    @Test
+    fun testSingleLikeConstraint() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (f_id TEXT NOT NULL);
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id CHECK (f_id LIKE 'hi');
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("f_id"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+
+        assertEquals(setOf("hi"), enumGene.values.toSet());
+
+    }
+
+    @Test
+    fun testManyLikeConstraints() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (f_id TEXT NOT NULL);
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id_1 CHECK (f_id LIKE 'hi');
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id_2 CHECK (f_id LIKE 'low');
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        try {
+            builder.createSqlInsertionAction("FOO", setOf("f_id"))
+            fail<Object>()
+        } catch (ex: IllegalArgumentException ) {
+
+        }
+    }
+
+    @Test
+    fun testManyOrLikeConstantConstraint() {
+
+        SqlScriptRunner.execCommand(connection, """
+            CREATE TABLE FOO (f_id TEXT NOT NULL);
+
+            ALTER TABLE FOO ADD CONSTRAINT check_f_id_1 CHECK (f_id LIKE 'hi' OR f_id LIKE 'low');
+
+            """)
+
+        val schema = SchemaExtractor.extract(connection)
+        val builder = SqlInsertBuilder(schema, DirectDatabaseExecutor())
+
+        val actions = builder.createSqlInsertionAction("FOO", setOf("f_id"))
+
+        assertEquals(1, actions.size)
+
+        assertEquals(1, actions[0].seeGenes().size)
+        assertTrue(actions[0].seeGenes()[0] is EnumGene<*>)
+
+        val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
+
+        assertEquals(setOf("hi","low"), enumGene.values.toSet());
+
+    }
+
+
+
 }

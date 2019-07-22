@@ -5,6 +5,10 @@ import java.util.Objects;
 public class SqlStringLiteralValue extends SqlLiteralValue {
 
 
+    public String getStringValue() {
+        return stringValue;
+    }
+
     private final /*non-null*/ String stringValue;
 
     public SqlStringLiteralValue(String stringValue) {

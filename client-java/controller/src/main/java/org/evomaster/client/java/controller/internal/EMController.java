@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
+import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -102,6 +103,9 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
+            boolean sqlHeuristics = dto.calculateSqlHeuristics != null && dto.calculateSqlHeuristics;
+            sutController.enableSqlHeuristics(sqlHeuristics);
+
             boolean doReset = dto.resetState != null && dto.resetState;
 
             synchronized (this) {
@@ -194,14 +198,14 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            List<TargetInfo> list = sutController.getTargetInfos(ids);
-            if (list == null) {
+            List<TargetInfo> targetInfos = sutController.getTargetInfos(ids);
+            if (targetInfos == null) {
                 String msg = "Failed to collect target information for " + ids.size() + " ids";
                 SimpleLogger.error(msg);
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            list.forEach(t -> {
+            targetInfos.forEach(t -> {
                 TargetInfoDto info = new TargetInfoDto();
                 info.id = t.mappedId;
                 info.value = t.value;
@@ -211,13 +215,20 @@ public class EMController {
                 dto.targets.add(info);
             });
 
-            sutController.getAdditionalInfoList().forEach(a -> {
-                AdditionalInfoDto info = new AdditionalInfoDto();
-                info.queryParameters = new HashSet<>(a.getQueryParametersView());
-                info.headers = new HashSet<>(a.getHeadersView());
+            List<AdditionalInfo> additionalInfos = sutController.getAdditionalInfoList();
+            if(additionalInfos != null) {
+                additionalInfos.forEach(a -> {
+                    AdditionalInfoDto info = new AdditionalInfoDto();
+                    info.queryParameters = new HashSet<>(a.getQueryParametersView());
+                    info.headers = new HashSet<>(a.getHeadersView());
 
-                dto.additionalInfoList.add(info);
-            });
+                    dto.additionalInfoList.add(info);
+                });
+            } else {
+                String msg = "Failed to collect additional info";
+                SimpleLogger.error(msg);
+                return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+            }
 
             dto.extraHeuristics = sutController.getExtraHeuristics();
 
@@ -230,8 +241,8 @@ public class EMController {
                 But even after spending hours googling it, haven't managed to configure it
              */
 
-            String msg = e.getMessage();
-            SimpleLogger.error(msg);
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
     }

@@ -23,7 +23,7 @@ class QuantifierRxGene(
      */
     private val LIMIT = 2
 
-    private val limitedMax: Int
+    val limitedMax: Int
 
     init {
         if (min < 0) {
@@ -70,12 +70,16 @@ class QuantifierRxGene(
         atoms.clear()
 
         for (i in 0 until length) {
-            val base = template.copy() as RxAtom
-            if (base.isMutable()) {
-                base.randomize(randomness, forceNewValue, allGenes)
-            }
-            atoms.add(base)
+           addNewAtom(randomness, forceNewValue, allGenes)
         }
+    }
+
+    fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
+        val base = template.copy() as RxAtom
+        if (base.isMutable()) {
+            base.randomize(randomness, forceNewValue, allGenes)
+        }
+        atoms.add(base)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
@@ -120,7 +124,7 @@ class QuantifierRxGene(
     }
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
-        return if (excludePredicate(this)) listOf()
+        return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(atoms.flatMap { it.flatView(excludePredicate) })
     }
 }

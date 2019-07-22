@@ -39,3 +39,6 @@ experiments/target/
 /snapshot.csv
 *.lst
 /report/target/
+/extra_heuristics.csv
+/dbconstraint/target/
+/e2e-tests/spring-rest-postgres/target/

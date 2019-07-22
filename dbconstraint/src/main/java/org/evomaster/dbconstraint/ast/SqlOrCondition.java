@@ -14,7 +14,7 @@ public class SqlOrCondition extends SqlCondition {
         if (conditions.length < 2) {
             throw new IllegalArgumentException("Cannot create Or condition with a single condition");
         }
-        if (Arrays.stream(conditions).anyMatch(condition -> condition == null)) {
+        if (Arrays.stream(conditions).anyMatch(Objects::isNull)) {
             throw new IllegalArgumentException("Cannot create Or condition with null conditions");
         }
         this.conditions = Arrays.asList(conditions);

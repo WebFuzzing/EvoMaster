@@ -8,6 +8,12 @@ import org.evomaster.core.search.service.Randomness
  */
 open class ObjectGene(name: String, val fields: List<out Gene>, val refType : String? = null) : Gene(name) {
 
+    companion object {
+        val JSON_MODE = "json"
+
+        val XML_MODE = "xml"
+
+    }
     override fun copy(): Gene {
         return ObjectGene(name, fields.map(Gene::copy), refType)
     }
@@ -37,12 +43,13 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
     }
 
 
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?) : String{
 
         val buffer = StringBuffer()
 
         //by default, return in JSON format
-        if(mode == null || mode.equals("json", ignoreCase = true)){
+        if (mode == null || mode.equals(JSON_MODE, ignoreCase = true)) {
             buffer.append("{")
 
             fields.filter {
@@ -54,7 +61,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
 
             buffer.append("}")
 
-        } else if(mode.equals("xml", ignoreCase = true)){
+        } else if (mode.equals(XML_MODE, ignoreCase = true)) {
 
             /*
                 Note: this is a very basic support, which should not really depend
@@ -67,9 +74,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
                 it !is CycleObjectGene &&
                         (it !is OptionalGene || it.isActive)
             }.forEach {
-                buffer.append(openXml(it.name))
                 buffer.append(it.getValueAsPrintableString(previousGenes, mode, targetFormat))
-                buffer.append(closeXml(it.name))
             }
 
             buffer.append(closeXml(name))
@@ -86,6 +91,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
 
 
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
-        return if(excludePredicate(this)) listOf(this) else listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
+        return if (excludePredicate(this)) listOf(this) else
+            listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
     }
 }

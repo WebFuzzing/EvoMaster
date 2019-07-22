@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -18,6 +19,27 @@ import static org.evomaster.client.java.controller.db.dsl.SqlDsl.sql;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SqlScriptRunnerTest extends DatabaseTestTemplate {
+
+
+    @Test
+    public void testLargeString() throws Exception{
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x CLOB);");
+
+        char[] buffer = new char[1000];
+        Arrays.fill(buffer, '0');
+        String value =  "bar" + new String(buffer) + "foo";
+
+        String sql = "INSERT INTO Foo (x) VALUES ('" + value + "')";
+        executeViaRest(sql);
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Foo;");
+        assertEquals(1, res.seeRows().size());
+
+        Object x = res.seeRows().get(0).getValueByName("x");
+        assertTrue(x instanceof String);
+        assertEquals(value, x);
+    }
 
     @Test
     public void testSimpleRemoteExecution() throws Exception {
@@ -292,7 +314,7 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
         List<InsertionDto> insertions = sql()
                 .insertInto("Table1", 1000L)
                 .and()
-                .insertInto("Table2", 1001L).r("Id", 1000L, true)
+                .insertInto("Table2", 1001L).r("Id", 1000L)
                 .and()
                 .insertInto("Table3", 1002L).r("Id", 1001L).dtos();
 
@@ -364,6 +386,83 @@ public class SqlScriptRunnerTest extends DatabaseTestTemplate {
 
         res = SqlScriptRunner.execCommand(getConnection(), "SELECT * FROM Bar;");
         assertEquals(2, res.seeRows().size());
+    }
+
+
+    @Test
+    public void testDoubleAlias() throws Exception{
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+
+        String select = "select f.x as y from Foo f where x>0";
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), select);
+        assertTrue(res.isEmpty());
+
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (42)");
+
+        res = SqlScriptRunner.execCommand(getConnection(), select);
+        assertTrue(!res.isEmpty());
+    }
+
+
+    @Test
+    public void testBase() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "select * from Foo");
+        assertTrue(res.isEmpty());
+
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (4)");
+
+        res = SqlScriptRunner.execCommand(getConnection(), "select * from Foo");
+        assertFalse(res.isEmpty());
+    }
+
+
+    @Test
+    public void testParentheses() throws Exception{
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (5)");
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), "select * from Foo where x = (5)");
+        assertFalse(res.isEmpty());
+    }
+
+
+    @Test
+    public void testConstants() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (4)");
+
+        String select = "select x, 1 as y, null as z, 'bar' as w from Foo";
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), select);
+        assertFalse(res.isEmpty());
+
+        DataRow row = res.seeRows().get(0);
+        assertEquals(4, row.getValue(0));
+        assertEquals(1, row.getValue(1));
+        assertEquals(null, row.getValue(2));
+        assertEquals("bar", row.getValue(3));
+    }
+
+    @Test
+    public void testNested() throws Exception{
+
+        String select = "select t.a, t.b from (select x as a, 1 as b from Foo where x<10) t where a>3";
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE Foo(x INT)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (1)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (4)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (7)");
+        SqlScriptRunner.execCommand(getConnection(), "INSERT INTO Foo (x) VALUES (20)");
+
+        QueryResult res = SqlScriptRunner.execCommand(getConnection(), select);
+        assertEquals(2, res.size());
     }
 
 }

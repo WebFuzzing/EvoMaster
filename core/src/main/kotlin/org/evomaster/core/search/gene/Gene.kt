@@ -90,7 +90,7 @@ abstract class Gene(var name: String) {
      * @return a recursive list of all nested genes, "this" included
      */
     open fun flatView(excludePredicate: (Gene) -> Boolean = {false}): List<Gene>{
-        return if(excludePredicate(this)) listOf() else listOf(this)
+        return listOf(this)
     }
 
     /**

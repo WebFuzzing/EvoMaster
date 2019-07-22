@@ -151,6 +151,15 @@ class RestActionBuilder {
                             }
 
                             var gene = getGene(name, type, p.getFormat(), p.getPattern(), swagger, null, p)
+
+                            if(p.`in` == "path" && gene is StringGene){
+                                /*
+                                    We want to avoid empty paths, and special chars like / which
+                                    would lead to 2 variables
+                                 */
+                                gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/'))
+                            }
+
                             if (!p.required && p.`in` != "path") {
                                 /*
                                     Even if a "path" parameter might not be required, still

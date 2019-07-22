@@ -9,6 +9,8 @@ import java.io.Serializable;
  */
 public class TargetInfo implements Serializable{
 
+    private static final long serialVersionUID = 42L;
+
     public final Integer mappedId;
 
     public final String descriptiveId;

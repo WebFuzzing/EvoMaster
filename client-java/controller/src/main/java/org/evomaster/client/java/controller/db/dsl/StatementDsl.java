@@ -31,20 +31,6 @@ public interface StatementDsl {
 
 
     /**
-     *
-     * @param columnName  name of column in the table
-     * @param insertionId   id of an insertion operation done previously.
-     *                      This field represents a foreign key to that row,
-     *                      where the primary key is dynamically computed by
-     *                      the database (eg, auto-increment).
-     * @param keepAutomaticGeneratedValue indicated that the column is copying an
-     *                                    automatically generated value that might
-     *                                    be used by a foreign key in another table
-     * @return
-     */
-    StatementDsl r(String columnName, long insertionId, boolean keepAutomaticGeneratedValue);
-
-    /**
      * Concatenate a new SQL command
      * @return
      */

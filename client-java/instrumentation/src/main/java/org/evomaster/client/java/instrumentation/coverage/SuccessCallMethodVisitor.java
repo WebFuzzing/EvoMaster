@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.testabilityexception.ExceptionHeuristicsRegistry;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -55,16 +56,57 @@ public class SuccessCallMethodVisitor extends MethodVisitor {
 
         int index = currentIndex++;
 
-        ObjectiveRecorder.registerTarget(
-                ObjectiveNaming.successCallObjectiveName(className, currentLine, index));
+        String targetId = ObjectiveNaming.successCallObjectiveName(className, currentLine, index);
 
-        addInstrumentation(index, false);
+        ObjectiveRecorder.registerTarget(targetId);
+
+        if(!ExceptionHeuristicsRegistry.shouldHandle(owner, name, desc)) {
+            addBaseInstrumentation(index, false);
+        } else {
+            //special heuristics to avoid throwing exception
+            addHeuristicInstrumentation(targetId, owner, name, desc);
+        }
+
         super.visitMethodInsn(opcode, owner, name, desc, itf);
-        addInstrumentation(index, true);
+        addBaseInstrumentation(index, true);
     }
 
+    private void addHeuristicInstrumentation(String targetId, String owner, String name, String desc){
 
-    private void addInstrumentation(int index, boolean covered){
+        int inputs = ExceptionHeuristicsRegistry.numberOfInputs(owner, name, desc);
+        if(inputs != 1){
+            throw new IllegalStateException("Bug in code instrumentation: number of inputs is " + inputs);
+        }
+
+        /*
+            need to duplicate the inputs of the target method, as we will consume them
+            before the method is called
+
+            TODO: if input is a primitive (eg "int"), likely ll need instruction to cast it to a wrapper
+         */
+
+        if(inputs == 1){
+            this.visitInsn(Opcodes.DUP);
+        } else if(inputs == 2){
+            this.visitInsn(Opcodes.DUP2);
+        } else {
+            //TODO: there is no native support for duplicate more than 2 elements
+        }
+
+        this.visitLdcInsn(targetId);
+        this.visitLdcInsn(owner);
+        this.visitLdcInsn(name);
+        this.visitLdcInsn(desc);
+
+        mv.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                ClassName.get(ExecutionTracer.class).getBytecodeName(),
+                ExecutionTracer.EXECUTING_EXCEPTION_METHOD_METHOD_NAME,
+                ExecutionTracer.EXECUTING_EXCEPTION_METHOD_DESCRIPTOR_1,
+                ExecutionTracer.class.isInterface());
+    }
+
+    private void addBaseInstrumentation(int index, boolean covered){
 
         this.visitLdcInsn(className);
         this.visitLdcInsn(currentLine);
