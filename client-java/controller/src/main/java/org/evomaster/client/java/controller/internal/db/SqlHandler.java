@@ -44,6 +44,7 @@ public class SqlHandler {
     private final Map<String, Set<String>> failedWhere;
     private final List<String> deletedData;
 
+    private int numberOfSqlCommands;
 
     private volatile Connection connection;
 
@@ -59,6 +60,7 @@ public class SqlHandler {
         deletedData = new CopyOnWriteArrayList<>();
 
         calculateHeuristics = true;
+        numberOfSqlCommands = 0;
     }
 
     public void reset() {
@@ -69,6 +71,7 @@ public class SqlHandler {
         insertedData.clear();
         failedWhere.clear();
         deletedData.clear();
+        numberOfSqlCommands = 0;
     }
 
     public void setConnection(Connection connection) {
@@ -93,6 +96,8 @@ public class SqlHandler {
         } else if(isUpdate(sql)){
             mergeNewData(updatedData, ColumnTableAnalyzer.getUpdatedDataFields(sql));
         }
+
+        numberOfSqlCommands++;
     }
 
     public ExecutionDto getExecutionDto() {
@@ -107,6 +112,7 @@ public class SqlHandler {
         executionDto.insertedData.putAll(insertedData);
         executionDto.updatedData.putAll(updatedData);
         executionDto.deletedData.addAll(deletedData);
+        executionDto.numberOfSqlCommands = this.numberOfSqlCommands;
 
         return executionDto;
     }

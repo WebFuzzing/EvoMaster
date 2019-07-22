@@ -441,6 +441,17 @@ class EMConfig {
     @Cfg("Where the extra heuristics file (if any) is going to be written (in CSV format)")
     var extraHeuristicsFile = "extra_heuristics.csv"
 
+
+    enum class SecondaryObjectiveStrategy{
+        AVG_DISTANCE,
+        AVG_DISTANCE_SAME_N_ACTIONS,
+        BEST_MIN
+    }
+
+    @Cfg("Strategy used to handle the extra heuristics in the secondary objectives")
+    var secondaryObjectiveStrategy = SecondaryObjectiveStrategy.AVG_DISTANCE
+
+
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Min(0.0) @Max(1.0)
     var structureMutationProbability = 0.5
@@ -500,6 +511,7 @@ class EMConfig {
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
     var maxSqlInitActionsPerMissingData = 5
+
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
             "If larger than that, a response will not be stored internally in EM during the test generation. "+

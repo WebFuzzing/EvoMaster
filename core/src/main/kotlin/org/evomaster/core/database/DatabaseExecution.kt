@@ -20,7 +20,8 @@ class DatabaseExecution(
         val updatedData: Map<String, Set<String>>,
         val insertedData: Map<String, Set<String>>,
         val failedWhere: Map<String, Set<String>>,
-        val deletedData: List<String>
+        val deletedData: List<String>,
+        val numberOfSqlCommands: Int
 ) {
 
     companion object {
@@ -32,7 +33,8 @@ class DatabaseExecution(
                     cloneData(dto?.updatedData),
                     cloneData(dto?.insertedData),
                     cloneData(dto?.failedWhere),
-                    dto?.deletedData?.toList() ?: listOf()
+                    dto?.deletedData?.toList() ?: listOf(),
+                    dto?.numberOfSqlCommands ?: 0
             )
         }
 

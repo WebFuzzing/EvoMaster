@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.examples.db.directintwithsql;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.Main;
 import org.evomaster.core.database.DbAction;
 import org.evomaster.core.problem.rest.HttpVerb;
@@ -154,7 +155,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                 noDataFV.averageExtraDistancesToMinimize(0));
 
         for (int target : noDataFV.getViewOfData().keySet()) {
-            assertTrue(closeDataFV.compareExtraToMinimize(target, noDataFV) >= 0);
+            assertTrue(closeDataFV.compareExtraToMinimize(target, noDataFV, EMConfig.SecondaryObjectiveStrategy.AVG_DISTANCE) >= 0);
         }
 
         //but still not reaching target
