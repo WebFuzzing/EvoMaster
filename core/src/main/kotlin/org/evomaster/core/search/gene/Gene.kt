@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -46,6 +47,19 @@ abstract class Gene(var name: String) {
             forceNewValue: Boolean,
             allGenes: List<Gene> = listOf())
 
+    /**
+     * Apply a mutation to the current gene.
+     * A mutation is just a small change.
+     *
+     *   @param randomness the source of non-determinism
+     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
+     *          we need to refer to them
+     */
+    abstract fun standardMutation(
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            allGenes: List<Gene> = listOf()
+    )
 
     /**
      * Return the value as a printable string.

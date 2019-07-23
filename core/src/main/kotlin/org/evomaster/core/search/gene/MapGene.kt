@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -11,6 +12,8 @@ class MapGene<T>(
         var elements: MutableList<T> = mutableListOf()
 ) : Gene(name)
         where T : Gene {
+
+    private var keyCounter = 0
 
     init {
         if (elements.size > maxSize) {
@@ -54,8 +57,23 @@ class MapGene<T>(
         (0 until n).forEach {
             val gene = template.copy() as T
             gene.randomize(randomness, false)
-            gene.name = "key_$it"
+            gene.name = "key_${keyCounter++}"
             elements.add(gene)
+        }
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        if(elements.size < maxSize && randomness.nextBoolean(0.1)){
+            val gene = template.copy() as T
+            gene.randomize(randomness, false)
+            gene.name = "key_${keyCounter++}"
+            elements.add(gene)
+        } else if(elements.size > 0 && randomness.nextBoolean(0.1)){
+            elements.removeAt(randomness.nextInt(elements.size))
+        } else {
+            val gene = randomness.choose(elements)
+            gene.standardMutation(randomness, apc, allGenes)
         }
     }
 

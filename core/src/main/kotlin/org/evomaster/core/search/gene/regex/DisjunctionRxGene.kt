@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -45,6 +46,22 @@ class DisjunctionRxGene(
         if (!matchEnd) {
             extraPostfix = randomness.nextBoolean()
         }
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        if(!matchStart && randomness.nextBoolean(0.05)){
+            extraPrefix = ! extraPrefix
+        } else if(!matchEnd && randomness.nextBoolean(0.05)){
+            extraPostfix = ! extraPostfix
+        } else {
+            val terms = terms.filter { it.isMutable() }
+            if(terms.isEmpty()){
+                return
+            }
+            val term = randomness.choose(terms)
+            term.standardMutation(randomness, apc, allGenes)
+        }
+
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

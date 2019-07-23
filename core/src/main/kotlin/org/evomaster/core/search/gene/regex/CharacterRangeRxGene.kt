@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -35,6 +36,37 @@ class CharacterRangeRxGene(
         val range = randomness.choose(ranges)
 
         value = randomness.nextChar(range.first, range.second)
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        var t = 0
+        for(i in 0 until ranges.size){
+            val p = ranges[i]
+            if(value >= p.first && value <= p.second){
+                t = i
+                break
+            }
+        }
+
+        val delta = randomness.choose(listOf(1,-1))
+
+        if(value + delta > ranges[t].second){
+            /*
+                going over current max range. check next range
+                and take its minimum
+             */
+            val next = (t+1) % ranges.size
+            value = ranges[next].first
+
+        } else if(value + delta < ranges[t].first){
+
+            val previous = (t - 1 + ranges.size) % ranges.size
+            value = ranges[previous].second
+
+        } else {
+            value += delta
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

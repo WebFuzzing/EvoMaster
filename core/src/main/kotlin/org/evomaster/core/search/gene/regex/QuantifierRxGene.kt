@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import java.lang.IllegalArgumentException
 
@@ -71,6 +72,23 @@ class QuantifierRxGene(
 
         for (i in 0 until length) {
            addNewAtom(randomness, forceNewValue, allGenes)
+        }
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        val length = atoms.size
+
+        if( length > min  && randomness.nextBoolean(0.1)){
+            atoms.removeAt(randomness.nextInt(length))
+        } else if(length < limitedMax && randomness.nextBoolean(0.1)){
+            addNewAtom(randomness, false, listOf())
+        } else {
+            val atoms = atoms.filter { it.isMutable() }
+            if(atoms.isEmpty()){
+                return
+            }
+            val atom = randomness.choose(atoms)
+            atom.standardMutation(randomness, apc, allGenes)
         }
     }
 

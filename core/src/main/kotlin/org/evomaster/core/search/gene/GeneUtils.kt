@@ -1,7 +1,39 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.service.Randomness
+import kotlin.math.pow
+
 
 object GeneUtils {
+
+    /**
+     * List where each element at position "i" has value "2^i"
+     */
+    private val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
+
+    fun getDelta(
+            randomness: Randomness,
+            apc: AdaptiveParameterControl,
+            range: Long = Long.MAX_VALUE,
+            start: Int = intpow2.size,
+            end: Int = 10
+    ): Int {
+        val maxIndex = apc.getExploratoryValue(start, end)
+
+        var n = 0
+        for (i in 0 until maxIndex) {
+            n = i + 1
+            if (intpow2[i] > range) {
+                break
+            }
+        }
+
+        //choose an i for 2^i modification
+        val delta = randomness.chooseUpTo(intpow2, n)
+
+        return delta
+    }
 
     /**
      * Given a number [x], return its string representation, with padded 0s
