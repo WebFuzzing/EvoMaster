@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -99,6 +100,10 @@ class SqlForeignKeyGene(
             }
         }
 
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        randomize(randomness, true, allGenes)
     }
 
 

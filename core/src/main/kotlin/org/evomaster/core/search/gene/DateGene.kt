@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -33,6 +34,14 @@ class DateGene(
             month.randomize(randomness, forceNewValue, allGenes)
             day.randomize(randomness, forceNewValue, allGenes)
         } while (onlyValidDates && !isValidDate())
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        do {
+            val gene = randomness.choose(listOf(year, month, day))
+            gene.standardMutation(randomness, apc, allGenes)
+        } while (onlyValidDates && !isValidDate())
+
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -35,6 +36,12 @@ class TimeGene(
         hour.randomize(randomness, forceNewValue, allGenes)
         minute.randomize(randomness, forceNewValue, allGenes)
         second.randomize(randomness, forceNewValue, allGenes)
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        val gene = randomness.choose(listOf(hour, minute, second))
+        gene.standardMutation(randomness, apc, allGenes)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

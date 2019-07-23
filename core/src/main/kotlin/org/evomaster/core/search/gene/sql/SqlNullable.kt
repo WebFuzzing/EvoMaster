@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import java.lang.IllegalStateException
 
@@ -34,6 +35,17 @@ class SqlNullable(name: String,
             randomness.nextBoolean(0.1)
 
         gene.randomize(randomness, forceNewValue, allGenes)
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        if(! isPresent){
+            isPresent = true
+        } else if(randomness.nextBoolean(0.1)){
+            isPresent = false
+        } else {
+            gene.standardMutation(randomness, apc, allGenes)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

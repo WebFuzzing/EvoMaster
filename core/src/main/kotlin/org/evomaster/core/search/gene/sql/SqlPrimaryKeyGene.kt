@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -37,6 +38,10 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         gene.randomize(randomness, false, allGenes)
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        gene.standardMutation(randomness, apc, allGenes)
     }
 
     override fun copyValueFrom(other: Gene) {

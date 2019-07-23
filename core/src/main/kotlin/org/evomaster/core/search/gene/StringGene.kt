@@ -2,6 +2,8 @@ package org.evomaster.core.search.gene
 
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -42,6 +44,64 @@ class StringGene(
         else
         //TODO much more would need to be done here to handle strings...
             randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomizantion))
+
+        repair()
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        val p = randomness.nextDouble()
+        val s = value
+
+        /*
+            What type of mutations we do on Strings is strongly
+            correlated on how we define the fitness functions.
+            When dealing with equality, as we do left alignment,
+            then it makes sense to prefer insertion/deletion at the
+            end of the strings, and reward more "change" over delete/add
+         */
+
+        val others = allGenes.flatMap { g -> g.flatView() }
+                .filterIsInstance<StringGene>()
+                .map { g -> g.value }
+                .filter { it != value }
+
+        value = when {
+            //seeding: replace
+            p < 0.02 && !others.isEmpty() -> {
+                randomness.choose(others)
+            }
+            //change
+            p < 0.8 && s.isNotEmpty() -> {
+                val delta = getDelta(randomness, apc, start = 6, end = 3)
+                val sign = randomness.choose(listOf(-1, +1))
+                val i = randomness.nextInt(s.length)
+                val array = s.toCharArray()
+                array[i] = s[i] + (sign * delta)
+                String(array)
+            }
+            //delete last
+            p < 0.9 && s.isNotEmpty() && s.length > minLength -> {
+                s.dropLast(1)
+            }
+            //append new
+            s.length < maxLength -> {
+                if (s.isEmpty() || randomness.nextBoolean(0.8)) {
+                    s + randomness.nextWordChar()
+                } else {
+                    val i = randomness.nextInt(s.length)
+                    if (i == 0) {
+                        randomness.nextWordChar() + s
+                    } else {
+                        s.substring(0, i) + randomness.nextWordChar() + s.substring(i, s.length)
+                    }
+                }
+            }
+            else -> {
+                //do nothing
+                s
+            }
+        }
 
         repair()
     }

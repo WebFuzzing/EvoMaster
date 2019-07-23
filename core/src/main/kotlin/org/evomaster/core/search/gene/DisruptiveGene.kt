@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -25,6 +26,12 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         gene.randomize(randomness, forceNewValue, allGenes)
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        if(randomness.nextBoolean(probability)){
+            gene.standardMutation(randomness, apc, allGenes)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -47,8 +48,20 @@ class OptionalGene(name: String,
                 gene.randomize(randomness, true, allGenes)
             }
         }
+    }
 
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
+        if (!isActive) {
+            isActive = true
+        } else {
+
+            if (randomness.nextBoolean(0.01)) {
+                isActive = false
+            } else {
+                gene.standardMutation(randomness, apc, allGenes)
+            }
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

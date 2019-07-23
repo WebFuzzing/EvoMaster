@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import java.lang.IllegalStateException
 
@@ -39,6 +40,15 @@ class CharacterClassEscapeRxGene(
             "w" -> randomness.nextLetter().toString()
             //TODO all cases
             else -> throw IllegalStateException("Type '\\$type' not supported yet")
+        }
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        value = when(type){
+            "d" -> ((value.toInt() + randomness.choose(listOf(1,-1) + 10)) % 10).toString()
+            //TODO all cases
+            else -> throw IllegalStateException("Type '\\${type}' not supported yet")
         }
     }
 
