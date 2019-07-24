@@ -62,9 +62,14 @@ class MapGene<T>(
         }
     }
 
+    override fun isMutable(): Boolean {
+        //it wouldn't make much sense to have 0, but let's just be safe here
+        return maxSize > 0
+    }
+
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
-        if(elements.size < maxSize && randomness.nextBoolean(0.1)){
+        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(0.1))){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"

@@ -45,6 +45,11 @@ class ArrayGene<T>(
     }
 
 
+    override fun isMutable(): Boolean {
+        //it wouldn't make much sense to have 0, but let's just be safe here
+        return maxSize > 0
+    }
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         //maybe not so important here to complicate code to enable forceNewValue
@@ -60,7 +65,7 @@ class ArrayGene<T>(
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
-        if(elements.size < maxSize && randomness.nextBoolean(0.1)){
+        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(0.1))){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             elements.add(gene)
