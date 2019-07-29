@@ -166,7 +166,8 @@ class FitnessValue(
     fun subsumes(
             other: FitnessValue,
             targetSubset: Set<Int>,
-            strategy: EMConfig.SecondaryObjectiveStrategy)
+            strategy: EMConfig.SecondaryObjectiveStrategy,
+            bloatControlForSecondaryObjective: Boolean)
             : Boolean {
 
         var atLeastOneBetter = false
@@ -181,10 +182,18 @@ class FitnessValue(
 
             val extra = compareExtraToMinimize(k, other, strategy)
 
-            if (v > z ||
-                    (v == z && extra > 0) ||
-                    (v == z && extra == 0 && this.size < other.size)) {
-                atLeastOneBetter = true
+            if(bloatControlForSecondaryObjective){
+                if (v > z ||
+                        (v == z && this.size < other.size) ||
+                        (v == z && this.size == other.size && extra > 0)) {
+                    atLeastOneBetter = true
+                }
+            } else {
+                if (v > z ||
+                        (v == z && extra > 0) ||
+                        (v == z && extra == 0 && this.size < other.size)) {
+                    atLeastOneBetter = true
+                }
             }
         }
 

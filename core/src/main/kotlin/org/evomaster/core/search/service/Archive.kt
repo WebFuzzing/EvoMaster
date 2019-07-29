@@ -227,6 +227,13 @@ class Archive<T> where T : Individual {
         return populations.keys.stream().filter { ! isCovered(it) }.count().toInt()
     }
 
+    fun averageTestSizeForReachedButNotCovered() : Double {
+        return populations.entries
+                .filter { ! isCovered(it.key) }
+                .flatMap { it.value }
+                .map { it.individual.size() }
+                .average()
+    }
 
     /**
      * Get all known targets that are not fully covered
@@ -339,9 +346,15 @@ class Archive<T> where T : Individual {
             val copySize = copy.individual.size()
             val extra = copy.fitness.compareExtraToMinimize(k, current[0].fitness, config.secondaryObjectiveStrategy)
 
-            val better = v.distance > currh ||
-                    (v.distance == currh && extra > 0) ||
-                    (v.distance == currh && extra == 0 && copySize < currsize)
+            val better = if(config.bloatControlForSecondaryObjective){
+                v.distance > currh ||
+                        (v.distance == currh && copySize < currsize) ||
+                        (v.distance == currh &&  copySize == currsize && extra > 0)
+            } else {
+                v.distance > currh ||
+                        (v.distance == currh && extra > 0) ||
+                        (v.distance == currh && extra == 0 && copySize < currsize)
+            }
 
             anyBetter = anyBetter || better
 

@@ -46,8 +46,9 @@ class Statistics : SearchListener {
      * intermediate results
      */
     private class Snapshot(
-            val coveredTargets : Int = 0,
-            val reachedNonCoveredTargets : Int = 0
+            val coveredTargets: Int = 0,
+            val reachedNonCoveredTargets: Int = 0,
+            val averageTestSizeForReachedButNotCovered: Double = 0.0
     )
 
     /**
@@ -55,12 +56,12 @@ class Statistics : SearchListener {
      * A snapshot could be taken for example every 5% of search
      * budget evaluations
      */
-    private val snapshots: MutableMap<Double,Snapshot> = mutableMapOf()
+    private val snapshots: MutableMap<Double, Snapshot> = mutableMapOf()
 
     private var snapshotThreshold = -1.0
 
     @PostConstruct
-    private fun postConstruct(){
+    private fun postConstruct() {
         snapshotThreshold = config.snapshotInterval
         time.addListener(this)
     }
@@ -75,7 +76,7 @@ class Statistics : SearchListener {
 
         Files.createDirectories(path.parent)
 
-        if(Files.exists(path) && config.appendToStatisticsFile){
+        if (Files.exists(path) && config.appendToStatisticsFile) {
             path.toFile().appendText("$elements\n")
         } else {
             Files.deleteIfExists(path)
@@ -86,9 +87,9 @@ class Statistics : SearchListener {
         }
     }
 
-    fun writeSnapshot(){
-        if(snapshotThreshold <= 100){
-            if(snapshotThreshold + config.snapshotInterval < 100){
+    fun writeSnapshot() {
+        if (snapshotThreshold <= 100) {
+            if (snapshotThreshold + config.snapshotInterval < 100) {
                 log.warn("Calling collection of snapshots too early: $snapshotThreshold")
             } else {
                 //this happens if interval is not a divider of 100
@@ -105,18 +106,19 @@ class Statistics : SearchListener {
 
         Files.createDirectories(path.parent)
 
-        if(!Files.exists(path) or ! config.appendToStatisticsFile){
+        if (!Files.exists(path) or !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
-            path.toFile().appendText("interval,covered,reachedNonCovered,$confHeader\n")
+            path.toFile().appendText("interval,covered,reachedNonCovered,averageTestSizeForReachedButNotCovered,$confHeader\n")
         }
 
-        snapshots.entries.stream().sorted { o1, o2 ->  o1.key.compareTo(o2.key)}
+        snapshots.entries.stream().sorted { o1, o2 -> o1.key.compareTo(o2.key) }
                 .forEach {
                     path.toFile().appendText("${it.key}," +
                             "${it.value.coveredTargets}," +
                             "${it.value.reachedNonCoveredTargets}," +
+                            "${it.value.averageTestSizeForReachedButNotCovered}," +
                             "$confValues\n")
                 }
     }
@@ -131,14 +133,14 @@ class Statistics : SearchListener {
     }
 
     override fun newActionEvaluated() {
-        if(snapshotThreshold <= 0){
+        if (snapshotThreshold <= 0) {
             //not collecting snapshot data
             return
         }
 
         val elapsed = 100 * time.percentageUsedBudget()
 
-        if(elapsed > snapshotThreshold){
+        if (elapsed > snapshotThreshold) {
             takeSnapshot()
         }
     }
@@ -147,10 +149,11 @@ class Statistics : SearchListener {
 
         val snap = Snapshot(
                 coveredTargets = archive.numberOfCoveredTargets(),
-                reachedNonCoveredTargets = archive.numberOfReachedButNotCoveredTargets()
+                reachedNonCoveredTargets = archive.numberOfReachedButNotCoveredTargets(),
+                averageTestSizeForReachedButNotCovered = archive.averageTestSizeForReachedButNotCovered()
         )
 
-        val key = if(snapshotThreshold <= 100) snapshotThreshold else 100.0
+        val key = if (snapshotThreshold <= 100) snapshotThreshold else 100.0
 
         snapshots.put(key, snap)
 
@@ -187,10 +190,10 @@ class Statistics : SearchListener {
     }
 
 
-    private fun addConfig(list: MutableList<Pair>){
+    private fun addConfig(list: MutableList<Pair>) {
 
         val properties = EMConfig.getConfigurationProperties()
-        properties.forEach{p ->
+        properties.forEach { p ->
             list.add(Pair(p.name, p.getter.call(config).toString()))
         }
     }
@@ -208,7 +211,7 @@ class Statistics : SearchListener {
                 .count()
     }
 
-    private fun codes(solution: Solution<*>): List<Int>{
+    private fun codes(solution: Solution<*>): List<Int> {
 
         return solution.individuals
                 .flatMap { it.evaluatedActions() }
@@ -218,7 +221,7 @@ class Statistics : SearchListener {
                 .map { name ->
                     solution.individuals
                             .flatMap { it.evaluatedActions() }
-                            .filter{ it.action.getName() == name}
+                            .filter { it.action.getName() == name }
                             .map { (it.result as RestCallResult).getStatusCode() }
                             .distinct()
                             .count()

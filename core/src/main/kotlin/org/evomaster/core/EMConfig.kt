@@ -451,6 +451,8 @@ class EMConfig {
     @Cfg("Strategy used to handle the extra heuristics in the secondary objectives")
     var secondaryObjectiveStrategy = SecondaryObjectiveStrategy.AVG_DISTANCE
 
+    @Cfg("Whether secondary objectives are more important than test bloat control")
+    var bloatControlForSecondaryObjective = false
 
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Min(0.0) @Max(1.0)

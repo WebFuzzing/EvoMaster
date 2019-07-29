@@ -2,13 +2,13 @@ package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.*
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.*
 import org.evomaster.core.search.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -42,21 +42,21 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are allowed to mutate
      */
-    abstract fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene>
+    abstract fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>): List<Gene>
 
     /**
      * @param individual an individual to mutate
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are selected to mutate
      */
-    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>
+    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>): List<Gene>
 
     /**
      * @return whether do a structure mutation
      */
-    abstract fun doesStructureMutation(individual : T) : Boolean
+    abstract fun doesStructureMutation(individual: T): Boolean
 
-    open fun postActionAfterMutation(individual: T){}
+    open fun postActionAfterMutation(individual: T) {}
 
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
@@ -72,7 +72,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            var trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
+            var trackedCurrent = if (config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -80,20 +80,24 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             structureMutator.addInitializingActions(current)
 
-            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert { DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>()) }
 
             val mutatedGenes = mutableListOf<Gene>()
             val mutatedInd = mutate(current, mutatedGenes)
 
-            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
+            Lazy.assert { DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>()) }
 
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
             val reachNew = archive.wouldReachNewTarget(mutated)
 
-            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets, config.secondaryObjectiveStrategy)) {
-                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
+            if (reachNew || !current.fitness.subsumes(
+                            mutated.fitness,
+                            targets,
+                            config.secondaryObjectiveStrategy,
+                            config.bloatControlForSecondaryObjective)) {
+                val trackedMutated = if (config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
             }
