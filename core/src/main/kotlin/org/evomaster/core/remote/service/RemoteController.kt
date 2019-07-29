@@ -236,6 +236,14 @@ class RemoteController() : DatabaseExecutor {
         if (!wasSuccess(response)) {
             LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
+            if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
+                //something weird is going on... possibly a bug in the Driver?
+
+                val res = response.readEntity(String::class.java)
+                log.error("Database command failure, HTTP status ${response.status}: $res")
+                return false
+            }
+
             val responseDto = try {
                 response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
             } catch (e: Exception) {
@@ -248,7 +256,7 @@ class RemoteController() : DatabaseExecutor {
                 LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
             }
             /*
-                TODO refactor all methods in this class to print error message, if any
+                TODO refactor all methods in this class to print error messages, if any
              */
 
             return false
