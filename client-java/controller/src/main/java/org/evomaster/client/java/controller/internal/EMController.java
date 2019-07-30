@@ -216,7 +216,7 @@ public class EMController {
             });
 
             List<AdditionalInfo> additionalInfos = sutController.getAdditionalInfoList();
-            if(additionalInfos != null) {
+            if (additionalInfos != null) {
                 additionalInfos.forEach(a -> {
                     AdditionalInfoDto info = new AdditionalInfoDto();
                     info.queryParameters = new HashSet<>(a.getQueryParametersView());
@@ -264,47 +264,60 @@ public class EMController {
     @POST
     public Response executeDatabaseCommand(DatabaseCommandDto dto) {
 
-        Connection connection = sutController.getConnection();
-        if (connection == null) {
-            String msg = "No active database connection";
-            SimpleLogger.warn(msg);
-            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-        }
-
-        if (dto.command == null && (dto.insertions == null || dto.insertions.isEmpty())) {
-            String msg = "No input command";
-            SimpleLogger.warn(msg);
-            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-        }
-
-        if (dto.command != null && dto.insertions != null && !dto.insertions.isEmpty()) {
-            String msg = "Only 1 command can be specified";
-            SimpleLogger.warn(msg);
-            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-        }
-
-
-        QueryResult queryResult = null;
-        Map<Long,Long> idMapping = null;
-
         try {
-            if (dto.command != null) {
-                queryResult = SqlScriptRunner.execCommand(connection, dto.command);
-            } else {
-                idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);
+            Connection connection = sutController.getConnection();
+            if (connection == null) {
+                String msg = "No active database connection";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
-        } catch (Exception e) {
-            String msg = "Failed to execute database command: " + e.getMessage();
-            SimpleLogger.warn(msg);
-            return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-        }
 
-        if (queryResult != null) {
-            return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();
-        } else if(idMapping != null) {
-            return Response.status(200).entity(WrappedResponseDto.withData(idMapping)).build();
-        } else {
-            return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+            if (dto.command == null && (dto.insertions == null || dto.insertions.isEmpty())) {
+                String msg = "No input command";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (dto.command != null && dto.insertions != null && !dto.insertions.isEmpty()) {
+                String msg = "Only 1 command can be specified";
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+
+            QueryResult queryResult = null;
+            Map<Long, Long> idMapping = null;
+
+            try {
+                if (dto.command != null) {
+                    queryResult = SqlScriptRunner.execCommand(connection, dto.command);
+                } else {
+                    idMapping = SqlScriptRunner.execInsert(connection, dto.insertions);
+                }
+            } catch (Exception e) {
+                String msg = "Failed to execute database command: " + e.getMessage();
+                SimpleLogger.warn(msg);
+                return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+            }
+
+            if (queryResult != null) {
+                return Response.status(200).entity(WrappedResponseDto.withData(queryResult.toDto())).build();
+            } else if (idMapping != null) {
+                return Response.status(200).entity(WrappedResponseDto.withData(idMapping)).build();
+            } else {
+                return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
+            }
+
+        } catch (RuntimeException e) {
+            /*
+                FIXME: ideally, would not need to do a try/catch on each single endpoint,
+                as could configure Jetty/Jackson to log all errors.
+                But even after spending hours googling it, haven't managed to configure it
+             */
+
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
     }
 }
