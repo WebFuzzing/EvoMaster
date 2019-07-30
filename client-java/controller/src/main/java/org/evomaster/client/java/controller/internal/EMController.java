@@ -167,7 +167,7 @@ public class EMController {
              */
 
             String msg = e.getMessage();
-            SimpleLogger.error(msg);
+            SimpleLogger.error(msg, e);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
@@ -284,6 +284,18 @@ public class EMController {
                 return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
             }
 
+            if (dto.insertions != null) {
+                if (dto.insertions.stream().anyMatch(i -> i.id == null)) {
+                    String msg = "Insertion with no id";
+                    SimpleLogger.warn(msg);
+                    return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+                }
+                if (dto.insertions.stream().anyMatch(i -> i.targetTable == null || i.targetTable.isEmpty())) {
+                    String msg = "Insertion with no target table";
+                    SimpleLogger.warn(msg);
+                    return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
+                }
+            }
 
             QueryResult queryResult = null;
             Map<Long, Long> idMapping = null;
