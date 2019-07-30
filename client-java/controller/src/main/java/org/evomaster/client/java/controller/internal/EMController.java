@@ -285,11 +285,6 @@ public class EMController {
             }
 
             if (dto.insertions != null) {
-                if (dto.insertions.stream().anyMatch(i -> i.id == null)) {
-                    String msg = "Insertion with no id";
-                    SimpleLogger.warn(msg);
-                    return Response.status(400).entity(WrappedResponseDto.withError(msg)).build();
-                }
                 if (dto.insertions.stream().anyMatch(i -> i.targetTable == null || i.targetTable.isEmpty())) {
                     String msg = "Insertion with no target table";
                     SimpleLogger.warn(msg);
