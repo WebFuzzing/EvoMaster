@@ -1,32 +1,20 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import io.swagger.models.Swagger
-import io.swagger.parser.SwaggerParser
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.remote.SutProblemException
-import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.ConnectException
-import javax.annotation.PostConstruct
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 /**
  * resource-based sampler
@@ -180,7 +168,7 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
     }
 
     private fun sampleIndependentAction(resourceCalls: MutableList<RestResourceCalls>){
-        val key = selectAResource(randomness)
+        val key = randomness.choose(rm.getResourceCluster().filter { it.value.hasIndependentAction() }.keys)//selectAResource(randomness)
         rm.sampleCall(key, false, resourceCalls, config.maxTestSize)
     }
 
@@ -216,8 +204,8 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
     }
 
     private fun selectAComResource(randomness: Randomness) : String{
-        val skiped = rm.getResourceCluster().filter { r -> !r.value.isAnyAction() }.keys
-        val candidates = samplingComResourceCounter.filterNot{ r-> r.key.split(separatorResources).any{ir-> skiped.contains(ir)} }
+        val skip = rm.getResourceCluster().filter { r -> !r.value.isAnyAction() }.keys
+        val candidates = samplingComResourceCounter.filterNot{ r-> r.key.split(separatorResources).any{ir-> skip.contains(ir)} }
         if(candidates.isEmpty())
             throw IllegalStateException("there is no any com-resource available")
         return randomness.choose(candidates.keys)
@@ -300,7 +288,7 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
             rm.sampleCall(key, true, resourceCalls, size)
             size -= resourceCalls.last().actions.size
             executed.add(key)
-            if (resourceCalls.last().template!!.independent) break
+            //if (resourceCalls.last().template!!.independent) break
         }
     }
 }

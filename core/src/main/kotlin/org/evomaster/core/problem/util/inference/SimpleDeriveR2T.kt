@@ -40,6 +40,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
      */
     override fun deriveResourceToTable(resourceNode: RestResourceNode, allTables : Map<String, Table>){
         //1. derive resource to table
+
         //1.1 derive resource to tables based on segments
         resourceNode.getAllSegments(flatten = true).forEach { seg ->
             ParamUtil.parseParams(seg).forEachIndexed stop@{ sindex, token ->
@@ -53,8 +54,21 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                     }
                     return@stop
                 }
+
+                val matchedPropertyMap = allTables.flatMap { t->t.value.columns.filter { c-> !ParamUtil.isGeneralName(c.name) }.map { c->Pair(t.value.name, c.name) } }
+                        .map { p-> Pair(p.first, Pair(p.second,ParserUtil.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
+
+                if(matchedPropertyMap.last().second.second >= ParserUtil.SimilarityThreshold){
+                    matchedPropertyMap.filter { it.second.second == matchedPropertyMap.last().second.second }.forEach {
+                        resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
+                            mutableListOf()
+                        }.add(MatchedInfo(seg, it.first, similarity = it.second.second, inputIndicator = sindex, outputIndicator = 1))
+                    }
+                    return@stop
+                }
             }
         }
+
         //1.2 derive resource to tables based on type
         val reftypes = resourceNode.actions.filter { (it is RestCallAction) && it.parameters.any{ p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}}
                 .flatMap { (it as RestCallAction ).parameters.filter{p-> p is BodyParam && p.gene is ObjectGene && p.gene.refType != null}.map { p-> (p.gene as ObjectGene).refType!!}}
@@ -101,14 +115,18 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
     fun deriveParamsToTable(paramId : String, paramInfo : ParamInfo, r: RestResourceNode, allTables : Map<String, Table>){
 
         val inputIndicator = paramInfo.segmentLevel
-        val relatedTables = r.resourceToTable.derivedMap.filter { it.value.any { m-> m.input == paramInfo.preSegment } }.keys.toHashSet()
 
-        val isBodyParam = (paramInfo.referParam is BodyParam) && (paramInfo.referParam.gene is ObjectGene && paramInfo.referParam.gene.fields.isNotEmpty())
+        val relatedTables = if(r.path.getVariableNames().size > 1)r.resourceToTable.derivedMap.filter { it.value.any { m-> m.input == paramInfo.preSegment } }.keys.toHashSet()
+            else r.resourceToTable.derivedMap.keys.toHashSet()
+
+        val isBodyParam = (paramInfo.referParam is BodyParam) && (ParamUtil.getObjectGene(paramInfo.referParam.gene).run {
+            this != null && this.fields.isNotEmpty()
+        })
 
         var created = false
         if(isBodyParam){
-            var tables = if((paramInfo.referParam.gene as ObjectGene).refType != null){
-                r.resourceToTable.derivedMap.filter { it.value.any { m-> m.input == (paramInfo.referParam.gene).refType} }.keys.toHashSet()
+            var tables = if(ParamUtil.getObjectGene(paramInfo.referParam.gene)?.refType != null){
+                r.resourceToTable.derivedMap.filter { it.value.any { m-> m.input == (ParamUtil.getObjectGene(paramInfo.referParam.gene))!!.refType!!} }.keys.toHashSet()
             } else null
 
             if(tables == null || tables.isEmpty()) tables = relatedTables
@@ -118,8 +136,6 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         if(!created){
             created = deriveRelatedTable(r, paramId, paramInfo, relatedTables, false, inputIndicator, alltables = allTables)
         }
-
-
     }
 
     fun deriveRelatedTable(r : RestResourceNode, paramId: String, paramInfo: ParamInfo, relatedToTables: Set<String>, isBodyParam : Boolean, inputIndicator: Int, alltables : Map<String, Table>) : Boolean{
@@ -152,6 +168,11 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
     }
 
 
+    /**
+     * derive related tables of parameters
+     *
+     * Note that same parameter (e.g., id) may related to multiple related tables.
+     */
     private fun deriveParamWithTable(paramName : String, candidateTables : Set<String>, pToTable : MutableMap<String, MatchedInfo>, inputlevel: Int, tables : Map<String, Table>){
         candidateTables.forEach { tableName ->
             deriveParamWithTable(paramName, tableName, pToTable, inputlevel, tables)
@@ -160,10 +181,24 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
 
     private fun deriveParamWithTable(paramName : String, tableName: String, pToTable : MutableMap<String, MatchedInfo>, inputlevel: Int, tables : Map<String, Table>){
         /*
-            paramName might be \w+id or \w+name, in this case, we compare paramName with table name + column name
+            paramName might be \w+id or \w+name, in this case, we compare paramName with table name of current or referred table + column name
          */
         getTable(tableName, tables)?.let { t->
-            val matchedMap = t.columns.map { Pair(it.name, if(ParamUtil.isGeneralName(it.name)) max(ParserUtil.stringSimilarityScore(paramName, it.name), ParserUtil.stringSimilarityScore(paramName, "$tableName${it.name}")) else ParserUtil.stringSimilarityScore(paramName, it.name)) }.asSequence().sortedBy { e->e.second }
+            val matchedMap = t.columns
+                    .map {
+                        Pair(it.name,
+                                if(ParamUtil.isGeneralName(it.name))
+                                    t.foreignKeys.map { f-> ParserUtil.stringSimilarityScore(paramName, "${f.targetTable}${it.name}")}
+                                            .plus(ParserUtil.stringSimilarityScore(paramName, it.name))
+                                            .plus(ParserUtil.stringSimilarityScore(paramName, "$tableName${it.name}"))
+                                            .asSequence().sorted().last()
+                                else if(ParamUtil.isGeneralName(paramName))
+                                    t.foreignKeys.map { f-> ParserUtil.stringSimilarityScore("${f.targetTable}$paramName", it.name)}
+                                            .plus(ParserUtil.stringSimilarityScore(paramName, it.name))
+                                            .plus(ParserUtil.stringSimilarityScore("$tableName$paramName", it.name))
+                                            .asSequence().sorted().last()
+                                else ParserUtil.stringSimilarityScore(paramName, it.name))
+                    }.asSequence().sortedBy { e->e.second }
             if(matchedMap.last().second >= ParserUtil.SimilarityThreshold){
                 matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                     pToTable.getOrPut(tableName){
@@ -180,7 +215,7 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         val resource = calls.getResourceNode()
 
         val result = mutableMapOf<RestAction, MutableList<ParamGeneBindMap>>()
-//
+
 //        val resourcesMap = mutableMapOf<RestResourceNode, MutableSet<String>>()
 //        val actionMap = mutableMapOf<RestAction, MutableSet<String>>()
 //        calls.actions.forEach {
@@ -228,7 +263,6 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                 if(!found){
                     //cannot bind this paramid with table
                 }
-
             }
         }
         return result
@@ -274,7 +308,6 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         }
         return false
     }
-
 
     /*************************** resource to table and param to table *****************************/
     private fun getTable(tableName: String, tables : Map<String, Table>) : Table?{

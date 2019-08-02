@@ -170,10 +170,10 @@ class RestIndividual (
         return true
     }
 
-    override fun seeGenesIdMap() : Map<Gene, String>{
-        return resourceCalls.flatMap { r -> r.seeGenesIdMap().map { it.key to it.value } }.toMap()
+    override fun getGeneId(gene: Gene): String {
+        val restCalls = resourceCalls.find { r -> !r.getGeneId(gene).isNullOrBlank() } ?: throw IllegalArgumentException("this gene ${gene.name} does not exist in this individual.")
+        return restCalls.getGeneId(gene)!!
     }
-
 
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
 

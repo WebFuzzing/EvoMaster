@@ -17,10 +17,9 @@ import org.evomaster.core.problem.rest.util.RestResourceTemplateHandler
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ImmutableDataHolderGene
-import org.evomaster.core.search.gene.SqlForeignKeyGene
-import org.evomaster.core.search.gene.SqlPrimaryKeyGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -190,10 +189,9 @@ class ResourceManageService {
 
         if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(0.5))){
             //Insert - GET/PUT/PATCH
-            val candidates = ar.getTemplates().filter { it.value.independent }
+            val candidates = ar.getTemplates().filter { setOf("GET", "PUT", "PATCH").contains(it.value.template) && it.value.independent}
             candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
         }
-
 
         val candidate = if(candidateForInsertion.isNullOrBlank()) {
             //prior to select the template with POST
@@ -205,7 +203,7 @@ class ResourceManageService {
             }
         } else candidateForInsertion
 
-        val call = ar.genCalls(candidate,randomness,size,true,true)
+        val call = ar.genCalls(candidate, randomness, size,true,true)
         calls.add(call)
 
         if(hasDBHandler()){
@@ -354,6 +352,7 @@ class ResourceManageService {
         }
     }
     /*********************************** database ***********************************/
+
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
         dbAction.seeGenes().forEach { assert((it is SqlPrimaryKeyGene || it is ImmutableDataHolderGene || it is SqlForeignKeyGene)) }
         val set = dbAction.seeGenes().filter { it is SqlPrimaryKeyGene }.map { ((it as SqlPrimaryKeyGene).gene as ImmutableDataHolderGene).value }.toSet()

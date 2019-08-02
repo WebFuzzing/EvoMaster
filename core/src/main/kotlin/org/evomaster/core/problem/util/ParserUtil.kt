@@ -107,12 +107,19 @@ class ParserUtil {
                 parseActionTokensByDes(description, map)
             parseActionTokensByParam(action.parameters, map)
         }
-        private fun parseActionTokensByDes(description: String, map : MutableMap<String, ActionRToken>){
-            val tokens = getNounTokens(description)
-            tokens.forEach {
-                map.putIfAbsent(formatKey(it.originalText()), ActionRToken(it.originalText(), it.lemma(), false, false, false, isVerbByTag(it.tag())))
-            }
+        private fun parseActionTokensByDes(description: String, map : MutableMap<String, ActionRToken>, simpleParser : Boolean = true){
 
+            if(simpleParser) {
+                val tokens = description.replace(".","").split(" ")
+                tokens.forEach {
+                    map.putIfAbsent(formatKey(it), ActionRToken(formatKey(it), formatKey(it), false, false, false, false))
+                }
+            }else{
+                val tokens = getNounTokens(description)
+                tokens.forEach {
+                    map.putIfAbsent(formatKey(it.originalText()), ActionRToken(it.originalText(), it.lemma(), false, false, false, isVerbByTag(it.tag())))
+                }
+            }
         }
 
         private fun findRToken(key : String, map: MutableMap<String, out RToken>) : RToken?{

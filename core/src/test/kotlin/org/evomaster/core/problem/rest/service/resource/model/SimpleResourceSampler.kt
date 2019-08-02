@@ -17,6 +17,4 @@ class SimpleResourceSampler : ResourceSampler() {
         RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, skipAction, config.doesApplyNameMatching)
         super.initialize(mutableListOf(), actionCluster, sqlInsertBuilder)
     }
-
-
 }

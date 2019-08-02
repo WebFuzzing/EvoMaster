@@ -389,8 +389,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private fun selectGenesByArchive(genesToMutate : List<Gene>, individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
 
-        val candidatesMap = individual.seeGenesIdMap().filter { genesToMutate.contains(it.key) }
-        assert(candidatesMap.size == genesToMutate.size)
+        val candidatesMap = genesToMutate.map { it to individual.getGeneId(it) }.toMap()//individual.seeGenesIdMap().filter { genesToMutate.contains(it.key) }
 
         val genes = when(config.geneSelectionMethod){
             EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)

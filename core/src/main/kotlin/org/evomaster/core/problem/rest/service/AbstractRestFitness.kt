@@ -2,10 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
-import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
-import org.evomaster.client.java.controller.api.dto.ExtraHeuristicDto
-import org.evomaster.client.java.controller.api.dto.SutInfoDto
-import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.*
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -19,6 +16,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -44,6 +42,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     @Inject
     private lateinit var rc: RemoteController
+
+    @Inject
+    private lateinit var extraHeuristicsLogger: ExtraHeuristicsLogger
 
     private val client: Client = {
         val configuration = ClientConfig()
@@ -95,9 +96,20 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
                 val extra = dto.extraHeuristics[i]
 
-                if (!isEmpty(extra)) {
-                    //TODO handling of toMaximize
-                    fv.setExtraToMinimize(i, extra.toMinimize)
+                //TODO handling of toMaximize as well
+                //TODO refactoring when will have other heuristics besides for SQL
+
+                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+                val toMinimize = extra.heuristics
+                        .filter {
+                            it != null
+                                    && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                        }.map { it.value }
+                        .toList()
+
+                if (!toMinimize.isEmpty()) {
+                    fv.setExtraToMinimize(i, toMinimize)
                 }
 
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
@@ -168,20 +180,11 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     open fun doInitializingActions(ind: T) {
     }
 
-
-    private fun isEmpty(dto: ExtraHeuristicDto): Boolean {
-
-        val hasMin = dto.toMinimize != null && !dto.toMinimize.isEmpty()
-        val hasMax = dto.toMaximize != null && !dto.toMaximize.isEmpty()
-
-        return !hasMin && !hasMax
-    }
-
     /**
      * Create local targets for each HTTP status code in each
      * API entry point
      */
-    fun handleResponseTargets(
+    protected fun handleResponseTargets(
             fv: FitnessValue,
             actions: MutableList<RestAction>,
             actionResults: MutableList<ActionResult>) {
@@ -192,18 +195,44 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 .forEach {
                     val status = (actionResults[it] as RestCallResult)
                             .getStatusCode() ?: -1
-                    val desc = "$status:${actions[it].getName()}"
-                    val id = idMapper.handleLocalTarget(desc)
-                    fv.updateTarget(id, 1.0, it)
+                    val name = actions[it].getName()
+
+                    //objective for HTTP specific status code
+                    val statusId = idMapper.handleLocalTarget("$status:$name")
+                    fv.updateTarget(statusId, 1.0, it)
+
+                    /*
+                        Objectives for results on endpoints.
+                        Problem: we might get a4xx/5xx, but then no gradient to keep sampling for
+                        that endpoint. If we get 2xx, and full coverage, then no gradient to try
+                        to keep sampling that endpoint to get a 5xx
+                     */
+                    val okId = idMapper.handleLocalTarget("HTTP_SUCCESS:$name")
+                    val faultId = idMapper.handleLocalTarget("HTTP_FAULT:$name")
+
+                    //OK -> 5xx being better than 4xx, as code executed
+                    //FAULT -> 4xx worse than 2xx (can't find bugs if input is invalid)
+                    if (status in 200..299) {
+                        fv.updateTarget(okId, 1.0, it)
+                        fv.updateTarget(faultId, 0.5, it)
+                    } else if (status in 400..499) {
+                        fv.updateTarget(okId, 0.1, it)
+                        fv.updateTarget(faultId, 0.1, it)
+                    } else if (status in 500..599) {
+                        fv.updateTarget(okId, 0.5, it)
+                        fv.updateTarget(faultId, 1.0, it)
+                    }
                 }
     }
+
+
 
 
     /**
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
      */
-    fun handleRestCall(a: RestCallAction,
+    protected fun handleRestCall(a: RestCallAction,
                                actionResults: MutableList<ActionResult>,
                                chainState: MutableMap<String, String>)
             : Boolean {
@@ -215,23 +244,32 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         val path = a.resolvedPath()
 
-        val fullUri = if (a.locationId != null) {
-            val locationHeader = chainState[locationName(a.locationId!!)]
+        val locationHeader = if (a.locationId != null) {
+            chainState[locationName(a.locationId!!)]
                     ?: throw IllegalStateException("Call expected a missing chained 'location'")
-
-            EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
-
         } else {
-            baseUrl + path
-        }.let {
-            /*
-                TODO this will be need to be done properly, and check if
-                it is or not a valid char
-             */
-            it.replace("\"", "")
+            null
         }
 
-        val builder = client.target(fullUri).request()
+        val fullUri = EMTestUtils.resolveLocation(locationHeader, baseUrl + path)!!
+                .let {
+                    /*
+                        TODO this will be need to be done properly, and check if
+                        it is or not a valid char.
+                        Furthermore, likely needed to be done in resolveLocation,
+                        or at least check how RestAssured would behave
+                     */
+                    it.replace("\"", "")
+                }
+
+        /*
+            TODO: This only considers the first in the list of produced responses
+            This is fine for endpoints that only produce one type of response.
+            Could be a problem in future
+        */
+        val produces = a.produces.first()
+
+        val builder = client.target(fullUri).request(produces)
 
         a.auth.headers.forEach {
             builder.header(it.name, it.value)
@@ -266,14 +304,14 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         val bodyEntity = if (body != null && body is BodyParam) {
             val mode = when {
                 body.isJson() -> "json"
-            //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
                 body.isTextPlain() -> "text"
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
-            Entity.entity(body.gene.getValueAsPrintableString(mode = mode), body.contentType())
+            Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), body.contentType())
         } else if (forms != null) {
             Entity.entity(forms, MediaType.APPLICATION_FORM_URLENCODED_TYPE)
-        } else if(a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH){
+        } else if (a.verb == HttpVerb.PUT || a.verb == HttpVerb.PATCH) {
             /*
                 PUT and PATCH must have a payload. But it might happen that it is missing in the Swagger schema
                 when objects like WebRequest are used. So we default to urlencoded
@@ -403,6 +441,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         }
         return true
     }
+
 
     abstract fun hasParameterChild(a: RestCallAction): Boolean
 

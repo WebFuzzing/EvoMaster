@@ -5,6 +5,9 @@ import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
+import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
+import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 

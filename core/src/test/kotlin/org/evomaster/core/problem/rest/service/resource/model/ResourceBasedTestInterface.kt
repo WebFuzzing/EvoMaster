@@ -1,16 +1,23 @@
 package org.evomaster.core.problem.rest.service.resource.model
 
+import org.junit.jupiter.api.Test
+
 interface ResourceBasedTestInterface {
 
     /**
      * it is mandatory to test whether resource cluster is initialized correctly
      */
-    fun testResourceCluster()
+    fun testInitializedNumOfResourceCluster()
 
     /**
-     * it is mandatory to test whether an individual is sampled correctly using resource-based sampling method
+     * it is mandatory to test whether templates are initialized correctly
      */
-    fun testSampleMethod()
+    fun testInitializedTemplatesForResources()
+
+    /**
+     * it is mandatory to test whether applicable resource-based sampling methods are initialized correctly
+     */
+    fun testApplicableMethods()
 
     /**
      * it is not always required to test whether applicable methods is initialized correctly with specific setting
@@ -31,6 +38,11 @@ interface ResourceBasedTestInterface {
      * it is not always required to test whether applicable methods is initialized correctly with specific setting
      */
     fun testApplicableMethodsForMoreThanTwoDependentResource() {}
+
+    /**
+     * it is mandatory to test whether an individual is sampled correctly using resource-based sampling method
+     */
+    fun testResourceIndividualWithSampleMethods()
 
     /**
      * it is mandatory to test the binding functionality among rest actions
@@ -57,4 +69,58 @@ interface ResourceBasedTestInterface {
      */
     fun testS2dRWithDependency()
 
+    /**
+     * it is mandatory to test Resource Rest Structure
+     */
+    fun testResourceStructureMutator()
+
+    /**
+     * it is mandatory to test Resource Rest Structure with dependency
+     */
+    fun testResourceStructureMutatorWithDependency()
+
+    /**
+     * it is mandatory to test derivation of dependency with fitness
+     */
+    fun testDerivationOfDependency()
+
+    /*************** integrated tests regarding a setting *************************/
+
+    fun setupWithoutDatabaseAndDependency()
+
+    @Test
+    fun testInitializedResourceClusterAndApplicableSampleMethods(){
+        setupWithoutDatabaseAndDependency()
+
+        testInitializedNumOfResourceCluster()
+        testInitializedTemplatesForResources()
+        testApplicableMethods()
+        testResourceIndividualWithSampleMethods()
+        testBindingValuesAmongRestActions()
+
+        testResourceStructureMutator()
+    }
+
+    fun setupWithDatabaseAndNameAnalysis()
+
+    @Test
+    fun testWithDatabaseAndNameAnalysis(){
+        setupWithDatabaseAndNameAnalysis()
+
+        testResourceRelatedToTable()
+        testBindingValueBetweenRestActionAndDbAction()
+    }
+
+    fun setupWithDatabaseAndDependencyAndNameAnalysis()
+
+    @Test
+    fun testWithDependencyAndNameAnalysis(){
+        setupWithDatabaseAndDependencyAndNameAnalysis()
+
+        testDependencyAmongResources()
+        testS2dRWithDependency()
+
+        testResourceStructureMutatorWithDependency()
+        testDerivationOfDependency()
+    }
 }

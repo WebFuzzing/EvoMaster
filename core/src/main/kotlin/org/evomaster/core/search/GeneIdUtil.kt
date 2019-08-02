@@ -27,7 +27,7 @@ object GeneIdUtil{
         return geneA.getValueAsRawString() == geneB.getValueAsRawString()
     }
 
-    fun geneId(gene: Gene):String{
+    private fun geneId(gene: Gene):String{
         return when(gene){
             is DisruptiveGene<*> -> gene.name + SEPARATOR_ACTION_TO_GENE + geneId(gene.gene)
             is OptionalGene -> gene.name + SEPARATOR_ACTION_TO_GENE + geneId(gene.gene)

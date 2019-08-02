@@ -61,10 +61,12 @@ class RestResourceCalls(
      * key is Gene,
      * value is id of Gene
      */
-    fun seeGenesIdMap() : Map<Gene, String>{
+    fun getGeneId(gene: Gene) : String?{
         longestPath().apply {
-            return seeGenes().map { it to GeneIdUtil.generateId(this, it) }.toMap()
+            if (seeGenes().contains(gene))
+                return GeneIdUtil.generateId(this, gene)
         }
+        return null
     }
 
     fun repairGenesAfterMutation(gene: Gene? = null){

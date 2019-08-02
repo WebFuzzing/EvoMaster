@@ -77,12 +77,15 @@ abstract class Individual (trackOperator: TrackOperator? = null, traces : Mutabl
      */
     abstract fun repairInitializationActions(randomness: Randomness)
 
-
     /**
-     * generate id for genes of the individual
+     * generate id for [gene]
      */
-    open fun seeGenesIdMap() : Map<Gene, String>{
-        return seeActions().flatMap { a -> a.seeGenes().map { it to GeneIdUtil.generateId(a, it)}}.toMap()
+    open fun getGeneId(gene : Gene) : String{
+        if(seeActions().isEmpty())
+            return GeneIdUtil.generateId(gene)
+
+        val action = seeActions().find { a-> a.seeGenes().contains(gene) }?: throw IllegalArgumentException("this gene ${gene.name} does not exist in this individual.")
+        return GeneIdUtil.generateId(action, gene)
     }
 }
 

@@ -26,11 +26,13 @@ class RestResourceStructureMutator : StructureMutator() {
         mutateRestResourceCalls(individual)
     }
 
-    private fun mutateRestResourceCalls(ind: RestIndividual) {
+    private fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null ) {
 
         val num = ind.getResourceCalls().size
-        val candidates =
-            MutationType.values()
+
+        val executedStructureMutator = specified?:
+            randomness.choose(
+                MutationType.values()
                     .filter {  num >= it.minSize }
                     .filterNot{
                         (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
@@ -41,8 +43,7 @@ class RestResourceStructureMutator : StructureMutator() {
                                 //if the size of deletable individual is less 2, Delete and SWAP are not applicable
                                 (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
 
-                    }
-        val executedStructureMutator = randomness.choose(candidates)
+                    })
         when(executedStructureMutator){
             MutationType.ADD -> handleAdd(ind)
             MutationType.DELETE -> handleDelete(ind)
