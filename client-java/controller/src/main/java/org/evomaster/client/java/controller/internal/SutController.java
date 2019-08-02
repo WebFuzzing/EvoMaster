@@ -108,7 +108,7 @@ public abstract class SutController implements SutHandler {
             controllerServer.stop();
             return true;
         } catch (Exception e) {
-            SimpleLogger.error(e.toString());
+            SimpleLogger.error("Failed to stop the controller server: " + e.toString());
             return false;
         }
     }

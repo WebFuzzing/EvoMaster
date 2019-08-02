@@ -418,7 +418,7 @@ public abstract class ExternalSutController extends SutController {
                     latch.countDown();
 
                 } catch (Exception e) {
-                    SimpleLogger.error(e.toString());
+                    SimpleLogger.error("Failed to handle external process printer", e);
                 }
             });
 
