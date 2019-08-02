@@ -405,9 +405,10 @@ public abstract class ExternalSutController extends SutController {
 
                     /*
                         if we arrive here, it means the process has no more output.
-                        this could happen if it was started with some misconfiguration
+                        this could happen if it was started with some misconfiguration, or
+                        if it has been stopped
                      */
-                    if(! process.isAlive()){
+                    if(process == null || ! process.isAlive()){
                         SimpleLogger.warn("SUT has terminated");
                     } else {
                         SimpleLogger.warn("SUT is still alive, but its output was closed before" +
