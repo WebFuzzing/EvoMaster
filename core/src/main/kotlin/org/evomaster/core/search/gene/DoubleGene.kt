@@ -1,7 +1,11 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import java.math.BigDecimal
+import java.math.RoundingMode
 
 
 class DoubleGene(name: String,
@@ -14,6 +18,21 @@ class DoubleGene(name: String,
 
         //need for forceNewValue?
         value = randomness.nextDouble()
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        //TODO min/max for Double
+        value = when (randomness.choose(listOf(0, 1, 2))) {
+            //for small changes
+            0 -> value + randomness.nextGaussian()
+            //for large jumps
+            1 -> value + (getDelta(randomness, apc) * randomness.nextGaussian())
+            //to reduce precision, ie chop off digits after the "."
+            2 -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
+            else -> throw IllegalStateException("Regression bug")
+        }
+
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

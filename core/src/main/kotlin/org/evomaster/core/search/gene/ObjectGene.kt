@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 /**
@@ -42,7 +43,15 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
         fields.forEach { f -> f.randomize(randomness, forceNewValue, allGenes) }
     }
 
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
+        if(fields.isEmpty()){
+            return
+        }
+
+        val gene = randomness.choose(fields)
+        gene.standardMutation(randomness, apc, allGenes)
+    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?) : String{
 

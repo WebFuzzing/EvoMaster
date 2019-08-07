@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -24,6 +25,10 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
 
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        throw IllegalStateException("Not supposed to modify an immutable gene")
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         throw IllegalStateException("Not supposed to modify an immutable gene")
     }
 

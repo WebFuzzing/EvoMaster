@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import kotlin.math.roundToInt
 
 /**
  * Search algorithm parameters might change during the search,
@@ -35,7 +36,7 @@ class AdaptiveParameterControl {
      * (when the focused search starts)
      */
     fun getExploratoryValue(start: Int, end: Int) : Int{
-        return Math.round(getExploratoryValue(start.toDouble(), end.toDouble())).toInt()
+        return getExploratoryValue(start.toDouble(), end.toDouble()).roundToInt()
     }
 
     /**

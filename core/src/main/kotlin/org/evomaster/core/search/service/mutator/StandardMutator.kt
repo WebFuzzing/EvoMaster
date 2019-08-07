@@ -1,6 +1,5 @@
 package org.evomaster.core.search.service.mutator
 
-import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -24,10 +23,6 @@ import java.math.RoundingMode
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
-    /**
-     * List where each element at position "i" has value "2^i"
-     */
-    private val intpow2 = (0..30).map { Math.pow(2.0, it.toDouble()).toInt() }
 
     override fun doesStructureMutation(individual : T): Boolean {
         return individual.canMutateStructure() &&
@@ -71,15 +66,15 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         var mutated = false
 
-        while (!mutated) { //no point in returning a copy that is not mutated
+        /*
+            no point in returning a copy that is not mutated,
+            as we do not use xover
+         */
+        while (!mutated) { //
 
             for (gene in genesToMutate) {
 
                 if (!randomness.nextBoolean(p)) {
-                    continue
-                }
-
-                if (gene is DisruptiveGene<*> && !randomness.nextBoolean(gene.probability)) {
                     continue
                 }
 
@@ -112,7 +107,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for (gene in selectGeneToMutate){
             mutatedGene.add(gene)
-
+            gene.standardMutation(randomness, apc, allGenes)
+            //TODO check
             if(randomness.nextBoolean(config.probOfArchiveMutation))
                 mutateGene(gene, allGenes, individual)
             else
@@ -122,7 +118,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         postActionAfterMutation(individualToMutate)
 
         return copy
-
     }
 
     override fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene>): T {

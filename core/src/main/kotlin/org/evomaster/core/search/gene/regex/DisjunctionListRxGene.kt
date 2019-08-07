@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 
@@ -29,6 +30,16 @@ class DisjunctionListRxGene(
         }
 
         disjunctions[activeDisjunction].randomize(randomness, forceNewValue, allGenes)
+    }
+
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        if(disjunctions.size > 1 && randomness.nextBoolean(0.1)){
+            //activate the next disjunction
+            activeDisjunction = (activeDisjunction + 1) % disjunctions.size
+        } else {
+            disjunctions[activeDisjunction].standardMutation(randomness, apc, allGenes)
+        }
+
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

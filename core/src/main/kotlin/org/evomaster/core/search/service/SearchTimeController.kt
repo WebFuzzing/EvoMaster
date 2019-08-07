@@ -17,6 +17,9 @@ class SearchTimeController {
     var evaluatedIndividuals = 0
         private set
 
+    var individualsWithSqlFailedWhere = 0
+        private set
+
     var evaluatedActions = 0
         private set
 
@@ -41,6 +44,10 @@ class SearchTimeController {
 
     fun newIndividualEvaluation() {
         evaluatedIndividuals++
+    }
+
+    fun newIndividualsWithSqlFailedWhere(){
+        individualsWithSqlFailedWhere++
     }
 
     fun newActionEvaluation(n: Int = 1) {

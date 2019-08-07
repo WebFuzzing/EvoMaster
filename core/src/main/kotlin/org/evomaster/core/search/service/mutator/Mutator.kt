@@ -2,13 +2,13 @@ package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.service.*
-import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.service.*
 import org.evomaster.core.search.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -99,7 +99,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
              */
             update(trackedCurrent, mutated, mutatedGenes)
 
-            if (reachNew || !current.fitness.subsumes(mutated.fitness, targets)) {
+            if (reachNew || !current.fitness.subsumes(
+                            mutated.fitness,
+                            targets,
+                            config.secondaryObjectiveStrategy,
+                            config.bloatControlForSecondaryObjective)) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
 
                 if(config.probOfArchiveMutation > 0.0)

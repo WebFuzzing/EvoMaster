@@ -41,6 +41,9 @@ object DbActionTransformer {
                         will be overridden.
                         But, as we need it only for automatically generated ones,
                         this shouldn't matter, as in that case there should be just 1.
+
+                        FIXME: not really true, as can have multi-column PKs that are
+                        FKs to auto-increment values in other tables.
                      */
                     insertion.id = g.uniqueId
                 }

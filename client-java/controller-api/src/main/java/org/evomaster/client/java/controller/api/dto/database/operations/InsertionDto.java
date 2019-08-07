@@ -9,7 +9,8 @@ public class InsertionDto {
      * The ID of this insertion operation.
      * This is needed when we have multiple insertions, where
      * we need to refer (eg foreign key) to the data generated
-     * by a previous insertion
+     * by a previous insertion.
+     * It can be null.
      */
     public Long id;
 

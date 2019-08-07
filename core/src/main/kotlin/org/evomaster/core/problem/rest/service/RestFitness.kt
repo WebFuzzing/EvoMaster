@@ -15,6 +15,10 @@ import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.search.service.SearchTimeController
+import org.glassfish.jersey.client.ClientConfig
+import org.glassfish.jersey.client.ClientProperties
+import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -31,6 +35,55 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
     @Inject
     private lateinit var sampler: RestSampler
 
+    @Inject
+    private lateinit var extraHeuristicsLogger: ExtraHeuristicsLogger
+
+    @Inject
+    private lateinit var searchTimeController: SearchTimeController
+
+
+    private val client: Client = {
+        val configuration = ClientConfig()
+                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+                .property(ClientProperties.READ_TIMEOUT, 10_000)
+                //workaround bug in Jersey client
+                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+        ClientBuilder.newClient(configuration)
+    }.invoke()
+
+    private lateinit var infoDto: SutInfoDto
+
+
+    @PostConstruct
+    private fun initialize() {
+
+        log.debug("Initializing {}", RestFitness::class.simpleName)
+
+        rc.checkConnection()
+
+        val started = rc.startSUT()
+        if (!started) {
+            throw SutProblemException("Failed to start the system under test")
+        }
+
+        infoDto = rc.getSutInfo()
+                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
+
+        log.debug("Done initializing {}", RestFitness::class.simpleName)
+    }
+
+    override fun reinitialize(): Boolean {
+
+        try {
+            rc.stopSUT()
+            initialize()
+        } catch (e: Exception) {
+            log.warn("Failed to re-initialize the SUT: $e")
+            return false
+        }
+
+        return true
+    }
 
     override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
 
@@ -103,6 +156,40 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
             TODO when dealing with seeding, might want to extend EvaluatedIndividual
             to keep track of AdditionalInfo
          */
+    }
+
+    private fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
+        if (configuration.heuristicsForSQL) {
+
+            for (i in 0 until dto.extraHeuristics.size) {
+
+                val extra = dto.extraHeuristics[i]
+
+                //TODO handling of toMaximize as well
+                //TODO refactoring when will have other heuristics besides for SQL
+
+                extraHeuristicsLogger.writeHeuristics(extra.heuristics, i)
+
+                val toMinimize = extra.heuristics
+                        .filter {
+                            it != null
+                                    && it.objective == HeuristicEntryDto.Objective.MINIMIZE_TO_ZERO
+                        }.map { it.value }
+                        .toList()
+
+                if (!toMinimize.isEmpty()) {
+                    fv.setExtraToMinimize(i, toMinimize)
+                }
+
+                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
+            }
+
+            fv.aggregateDatabaseData()
+
+            if(!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
+                searchTimeController.newIndividualsWithSqlFailedWhere()
+            }
+        }
     }
 
     /**

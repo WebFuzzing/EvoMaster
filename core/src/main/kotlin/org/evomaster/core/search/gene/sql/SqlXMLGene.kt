@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
 class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name) {
@@ -17,6 +18,9 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
         objectGene.randomize(randomness, forceNewValue, allGenes)
     }
 
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        objectGene.standardMutation(randomness, apc, allGenes)
+    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         val rawValue = objectGene.getValueAsPrintableString(previousGenes, ObjectGene.XML_MODE, targetFormat)
