@@ -52,7 +52,7 @@ class RestResourceStructureMutator : StructureMutator() {
             MutationType.MODIFY -> handleModify(ind)
         }
 
-        ind.repairDBActions()
+        ind.repairDBActions(rm.getSqlBuilder())
     }
 
     /**

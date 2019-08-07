@@ -103,8 +103,9 @@ object DbActionTransformer {
             if (sqlIdMap.containsKey(g.uniqueIdOfPrimaryKey)){
                 justCreated = true
                 false
+            }else{
+                throw IllegalArgumentException(e.message)
             }
-            else throw IllegalArgumentException(e)
         }
 
         if (isFkReferenceToNonPrintable) {

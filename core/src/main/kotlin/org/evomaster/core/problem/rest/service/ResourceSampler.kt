@@ -161,7 +161,7 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
             }else
                 RestIndividual(restCalls,SampleType.SMART_RESOURCE,sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency))
 
-            individual.repairDBActions()
+            individual.repairDBActions(sqlInsertBuilder)
             return individual
         }
         return null

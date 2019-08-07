@@ -275,11 +275,15 @@ class ResourceManageService {
             dbActions.removeAll(removedDbAction)
 
             val previous = mutableListOf<DbAction>()
+            val created = mutableListOf<DbAction>()
+
             dbActions.forEachIndexed { index, dbAction ->
                 if(index != 0 && dbAction.table.foreignKeys.isNotEmpty() && dbAction.table.foreignKeys.find { fk -> removedDbAction.find { it.table.name == fk.targetTable } !=null } != null)
-                    DbActionUtils.repairFK(dbAction, previous)
+                    DbActionUtils.repairFK(dbAction, previous, created, getSqlBuilder())
                 previous.add(dbAction)
             }
+
+            dbActions.addAll(0, created)
         }
     }
 
@@ -294,6 +298,8 @@ class ResourceManageService {
         val dbActions = mutableListOf<DbAction>()
 
         val failToGenDb = generateDbActionForCall( forceInsert = forceInsert, forceSelect = forceSelect, dbActions = dbActions, relatedTables = relatedTables)
+
+        if(failToGenDb) return false
 
         if(dbActions.isNotEmpty()){
 
@@ -433,7 +439,7 @@ class ResourceManageService {
 
     fun getTableInfo() = tables.toMap()
 
-    private fun getSqlBuilder() : SqlInsertBuilder?{
+    fun getSqlBuilder() : SqlInsertBuilder?{
         if(!hasDBHandler()) return null
         return sqlInsertBuilder
     }

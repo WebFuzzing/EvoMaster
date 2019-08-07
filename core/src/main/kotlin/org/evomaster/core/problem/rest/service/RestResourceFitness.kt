@@ -4,6 +4,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -57,7 +58,11 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            doInitializingCalls(call.dbActions, sqlIdMap)
+            try{
+                doInitializingCalls(call.dbActions, sqlIdMap)
+            }catch (e : Exception){
+                DbActionUtils.verifyForeignKeys(individual.getResourceCalls().flatMap { it.dbActions })
+            }
 
             var terminated = false
 
@@ -143,7 +148,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             return
         }
 
+
         val dto = DbActionTransformer.transform(allDbActions, sqlIdMap)
+
 
         val map = rc.executeDatabaseInsertionsAndGetIdMapping(dto)
         if (map == null) {

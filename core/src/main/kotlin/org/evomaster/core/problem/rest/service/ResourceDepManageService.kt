@@ -1050,13 +1050,15 @@ class ResourceDepManageService {
              */
             //val selections = mutableListOf<DbAction>()
             val previous = mutableListOf<DbAction>()
+            val created = mutableListOf<DbAction>()
             call.dbActions.forEach { dbaction ->
                 if (dbaction.table.foreignKeys.find { dbRelatedToTables.contains(it.targetTable) } != null) {
-                    val refers = DbActionUtils.repairFK(dbaction, dbActions.plus(previous).toMutableList())
+                    val refers = DbActionUtils.repairFK(dbaction, dbActions.plus(previous).toMutableList(), created, rm.getSqlBuilder())
                     //selections.addAll( (sampler as ResourceRestSampler).sqlInsertBuilder!!.generateSelect(refers) )
                 }
                 previous.add(dbaction)
             }
+            call.dbActions.addAll(0, created)
             rm.repairDbActions(dbActions.plus(call.dbActions).toMutableList())
             //call.dbActions.addAll(0, selections)
         }

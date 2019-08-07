@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
@@ -211,26 +212,31 @@ class RestIndividual (
     }
 
 
-    fun repairDBActions(){
+    fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?){
         val previousDbActions = mutableListOf<DbAction>()
 
         getResourceCalls().forEach {
             if (it.dbActions.isNotEmpty()){
                 var result = try{
-                    DbActionUtils.verifyActions(it.dbActions) || DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
+                    DbActionUtils.verifyActions(it.dbActions) && DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
                 }catch (e : IllegalArgumentException ){false}
 
                 if(!result){
+                    val created = mutableListOf<DbAction>()
                     it.dbActions.forEach { db->
-                        DbActionUtils.repairFK(db, previousDbActions)
+                        DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder)
                         previousDbActions.add(db)
                     }
+                    it.dbActions.addAll(0, created)
 
                 }else{
                     previousDbActions.addAll(it.dbActions)
                 }
             }
         }
+
+        if(!DbActionUtils.verifyForeignKeys(previousDbActions))
+            throw IllegalStateException("referred fk cannot be found!")
     }
 
     private fun validateSwap(first : Int, second : Int) : Boolean{

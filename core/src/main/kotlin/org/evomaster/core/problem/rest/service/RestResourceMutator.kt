@@ -28,7 +28,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     override fun postActionAfterMutation(mutatedIndividual: RestIndividual) {
         super.postActionAfterMutation(mutatedIndividual)
         mutatedIndividual.getResourceCalls().forEach { rm.repairRestResourceCalls(it) }
-        mutatedIndividual.repairDBActions()
+        mutatedIndividual.repairDBActions(rm.getSqlBuilder())
     }
 
     override fun doesStructureMutation(individual : RestIndividual): Boolean {

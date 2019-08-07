@@ -110,8 +110,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             gene.standardMutation(randomness, apc, allGenes)
         }
 
-        postActionAfterMutation(individualToMutate)
-
         return copy
     }
 

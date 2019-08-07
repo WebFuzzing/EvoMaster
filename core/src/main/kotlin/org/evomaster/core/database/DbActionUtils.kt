@@ -23,7 +23,10 @@ object DbActionUtils {
             }
 
             if (i == 0) {
-                continue
+                if(fks.isEmpty())
+                    continue
+                else
+                    return false
             }
 
             val previous = actions.subList(0, i)
@@ -345,20 +348,25 @@ object DbActionUtils {
         }
     }
 
-    fun repairFK(dbAction: DbAction, previous : MutableList<DbAction>) : MutableList<SqlPrimaryKeyGene>{
+    fun repairFK(dbAction: DbAction, previous : MutableList<DbAction>, createdDbActions : MutableList<DbAction>,sqlInsertBuilder: SqlInsertBuilder?) : MutableList<SqlPrimaryKeyGene>{
         val repaired = mutableListOf<SqlPrimaryKeyGene>()
         if(dbAction.table.foreignKeys.isEmpty())
             return repaired
 
-        val pks = previous.flatMap { it.seeGenes() }.filter { it is SqlPrimaryKeyGene }
-        dbAction.seeGenes().flatMap { it.flatView() }.filter { it is SqlForeignKeyGene }.forEach { fk->
-            pks.find { pk -> (pk as SqlPrimaryKeyGene).tableName == (fk as SqlForeignKeyGene).targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }?.let {
-                (fk as SqlForeignKeyGene).uniqueIdOfPrimaryKey = (it as SqlPrimaryKeyGene).uniqueId
-                repaired.add(it)
+        val pks = previous.flatMap { it.seeGenes() }.filterIsInstance<SqlPrimaryKeyGene>()
+        dbAction.seeGenes().flatMap { it.flatView() }.filterIsInstance<SqlForeignKeyGene>().forEach { fk->
+            var  found = pks.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+            if (found == null){
+                val created = sqlInsertBuilder?.createSqlInsertionAction(fk.targetTable, mutableSetOf())
+                found = created?.flatMap { it.seeGenes() }?.filterIsInstance<SqlPrimaryKeyGene>()?.find { pk -> pk.tableName == fk.targetTable && pk.uniqueId != fk.uniqueIdOfPrimaryKey }
+                        ?:throw IllegalStateException("fail to create insert db action")
+                createdDbActions.addAll(created)
+                previous.addAll(created)
             }
+            fk.uniqueIdOfPrimaryKey = found.uniqueId
+            repaired.add(found)
         }
         return repaired
 
     }
-
 }
