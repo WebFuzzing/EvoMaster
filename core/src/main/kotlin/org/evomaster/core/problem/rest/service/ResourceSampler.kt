@@ -238,32 +238,17 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
     }
 
     override fun hasSpecialInit(): Boolean {
-        return !adHocInitialIndividuals.isEmpty() && config.probOfSmartSampling > 0
+        return adHocInitialIndividuals.isNotEmpty() && config.probOfSmartSampling > 0
     }
 
     override fun resetSpecialInit() {
         initAdHocInitialIndividuals()
     }
 
-
-    fun feedback(evi : EvaluatedIndividual<*>) {
-        if(evi.hasImprovement && evi.individual is RestIndividual)
+    override fun feedback(evi : EvaluatedIndividual<RestIndividual>) {
+        if(config.resourceSampleStrategy.requiredArchive && evi.hasImprovement && evi.individual is RestIndividual)
             evi.individual.sampleSpec?.let { ssc.reportImprovement(it) }
     }
-
-    private fun updateSamplingResourceCounter(actions: List<RestAction>) {
-        actions
-                .filter {
-                    a -> (a is RestCallAction) && actions.find { ia -> (ia is RestCallAction) && a.path.toString() != ia.path.toString() &&a.path.isAncestorOf(ia.path) } == null
-                }
-                .map {
-                    a -> (a as RestCallAction).path.toString()
-                }.toHashSet()
-                .forEach {
-                    samplingResourceCounter.replace(it, samplingResourceCounter.getValue(it) + 1)
-                }
-    }
-
     private fun sampleRandomComResource(resourceCalls: MutableList<RestResourceCalls>){
         val keys = selectAComResource(randomness)
         var size = config.maxTestSize

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.database.schema.Table
@@ -37,6 +38,9 @@ class ResourceDepManageService {
 
     @Inject
     private lateinit var randomness: Randomness
+
+    @Inject
+    private lateinit var config: EMConfig
 
     /**
      * key is either a path of one resource, or a list of paths of resources
@@ -73,11 +77,11 @@ class ResourceDepManageService {
         val removedMap = mutableMapOf<String, MutableSet<String>>()
 
         resourceRestIndividual.seeActions().forEachIndexed { index, action ->
-            if (action is RestAction) updateParamInfo(action, tables)
+            if (action is RestAction && config.doesApplyNameMatching) updateParamInfo(action, tables)
             // size of extraHeuristics might be less than size of action due to failure of handling rest action
             if (index < dto.extraHeuristics.size) {
                 val dbDto = dto.extraHeuristics[index].databaseExecutionDto
-                if (action is RestCallAction)
+                if (action is RestCallAction && dbDto != null)
                     updateResourceToTable(action, dbDto, tables, addedMap, removedMap)
             }
         }

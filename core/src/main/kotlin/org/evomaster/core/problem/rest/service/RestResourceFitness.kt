@@ -12,6 +12,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -40,12 +41,15 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
+        //individual.enforceCoherence()
+
         val fv = FitnessValue(individual.size().toDouble())
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
 
         //used for things like chaining "location" paths
         val chainState = mutableMapOf<String, String>()
+
         val sqlIdMap = mutableMapOf<Long, Long>()
 
         //run the test, one action at a time
@@ -85,7 +89,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             2) might not be possible to have a too long URL
          */
         //TODO prioritized list
-        val ids = randomness.choose(archive.notCoveredTargets(), 100)
+        val ids = randomness.choose(
+                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
+                100).toSet()
 
         val dto = rc.getTestResults(ids)
         if (dto == null) {
@@ -93,7 +99,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             return null
         }
 
-        dm.updateResourceTables(individual, dto)
+        if(config.doesInvolveDatabase)
+            dm.updateResourceTables(individual, dto)
 
         dto.targets.forEach { t ->
 

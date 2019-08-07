@@ -86,7 +86,7 @@ class ResourceManageService {
 
         resourceCluster.values.forEach{it.init()}
 
-        if(hasDBHandler()){
+        if(hasDBHandler() && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
         }
 

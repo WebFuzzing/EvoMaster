@@ -28,7 +28,7 @@ class ResourceSampleMethodController {
     @Inject
     private lateinit var rm : ResourceManageService
 
-    private val methods : Map<ResourceSamplingMethod, MethodApplicationInfo> = ResourceSamplingMethod.values().map { Pair(it, MethodApplicationInfo()) }.toMap()
+    private val methods : Map<ResourceSamplingMethod, MethodApplicationInfo> = values().map { Pair(it, MethodApplicationInfo()) }.toMap()
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ResourceSampleMethodController::class.java)
@@ -44,11 +44,11 @@ class ResourceSampleMethodController {
     }
 
     private fun initApplicableStrategies(){
-        methods.getValue(ResourceSamplingMethod.S1iR).applicable = true //mutableMap.values.filter { r -> r.hasIndependentAction }.isNotEmpty()
+        methods.getValue(S1iR).applicable = true //mutableMap.values.filter { r -> r.hasIndependentAction }.isNotEmpty()
         rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.let {
-            methods.getValue(ResourceSamplingMethod.S1dR).applicable = it.isNotEmpty()
-            methods.getValue(ResourceSamplingMethod.S2dR).applicable = it.size > 1
-            methods.getValue(ResourceSamplingMethod.SMdR).applicable = it.size > 2
+            methods.getValue(S1dR).applicable = it.isNotEmpty()
+            methods.getValue(S2dR).applicable = it.size > 1
+            methods.getValue(SMdR).applicable = it.size > 2
         }
 
         //FIXME Man Zhang
@@ -99,17 +99,17 @@ class ResourceSampleMethodController {
     }
 
     private fun update(){
-        config.S1iR = methods.getValue(ResourceSamplingMethod.S1iR).probability
-        config.S1dR = methods.getValue(ResourceSamplingMethod.S1dR).probability
-        config.S2dR = methods.getValue(ResourceSamplingMethod.S2dR).probability
-        config.SMdR = methods.getValue(ResourceSamplingMethod.SMdR).probability
+        config.S1iR = methods.getValue(S1iR).probability
+        config.S1dR = methods.getValue(S1dR).probability
+        config.S2dR = methods.getValue(S2dR).probability
+        config.SMdR = methods.getValue(SMdR).probability
     }
 
     private fun set(){
-        methods.getValue(ResourceSamplingMethod.S1iR).probability = config.S1iR
-        methods.getValue(ResourceSamplingMethod.S1dR).probability = config.S1dR
-        methods.getValue(ResourceSamplingMethod.S2dR).probability = config.S2dR
-        methods.getValue(ResourceSamplingMethod.SMdR).probability = config.SMdR
+        methods.getValue(S1iR).probability = config.S1iR
+        methods.getValue(S1dR).probability = config.S1dR
+        methods.getValue(S2dR).probability = config.S2dR
+        methods.getValue(SMdR).probability = config.SMdR
     }
 
     private fun printCounters(){
@@ -125,6 +125,7 @@ class ResourceSampleMethodController {
     }
 
     fun getSampleStrategy() : ResourceSamplingMethod{
+        if(methods.filter { it.value.applicable }.size == 1) return getStrategyWithItsProbability()
         val selected =
             when(config.resourceSampleStrategy){
                 EMConfig.ResourceSamplingStrategy.EqualProbability -> getStrategyWithItsProbability()
@@ -171,19 +172,19 @@ class ResourceSampleMethodController {
 
         val total = methods.filter { it.value.applicable }.keys.map { s->
             when(s){
-                ResourceSamplingMethod.S1iR -> 0
-                ResourceSamplingMethod.S1dR -> 3
-                ResourceSamplingMethod.S2dR -> 2
-                ResourceSamplingMethod.SMdR -> 1
+                S1iR -> 0
+                S1dR -> 3
+                S2dR -> 2
+                SMdR -> 1
             }
         }.sum()
 
         methods.filter { it.value.applicable }.forEach { s->
             when(s.key){
-                ResourceSamplingMethod.S1iR -> s.value.probability = pInd
-                ResourceSamplingMethod.S1dR -> s.value.probability = (1-pInd) * 3 / total
-                ResourceSamplingMethod.S2dR -> s.value.probability = (1-pInd) * 2 / total
-                ResourceSamplingMethod.SMdR -> s.value.probability = (1-pInd) * 1 / total
+                S1iR -> s.value.probability = pInd
+                S1dR -> s.value.probability = (1-pInd) * 3 / total
+                S2dR -> s.value.probability = (1-pInd) * 2 / total
+                SMdR -> s.value.probability = (1-pInd) * 1 / total
             }
         }
     }
@@ -192,7 +193,6 @@ class ResourceSampleMethodController {
      * probability is assigned adaptively regarding used time budget. in a starting point, it is likely to sample one resource then start multiple resources.
      */
     private fun relyOnTB() : ResourceSamplingMethod{
-        if(methods.values.filter { it.applicable }.size == 1) return getStrategyWithItsProbability()
         val focusedStrategy = 0.8
         val passed = time.percentageUsedBudget()
         val threshold = config.focusedSearchActivationTime
@@ -200,11 +200,11 @@ class ResourceSampleMethodController {
         val used = passed/threshold
         resetProbability()
         if(used < TB_THRESHOLD){
-            val one = methods.filter { it.value.applicable && (it.key == ResourceSamplingMethod.S1iR || it.key == ResourceSamplingMethod.S1dR)}.size
+            val one = methods.filter { it.value.applicable && (it.key == S1iR || it.key == ResourceSamplingMethod.S1dR)}.size
             val two = methods.filter { it.value.applicable}.size - one
             methods.filter { it.value.applicable }.forEach { s->
                 when(s.key){
-                    ResourceSamplingMethod.S1iR -> s.value.probability = focusedStrategy/one
+                    S1iR -> s.value.probability = focusedStrategy/one
                     ResourceSamplingMethod.S1dR -> s.value.probability = focusedStrategy/one
                     else -> s.value.probability = (1.0 - focusedStrategy)/two
                 }
@@ -220,7 +220,6 @@ class ResourceSampleMethodController {
      * probability is assigned adaptively regarding Archive,
      */
     private fun relyOnArchive() : ResourceSamplingMethod{
-        if(methods.filter { it.value.applicable }.size == 1) return getStrategyWithItsProbability()
         val delta = 0.1
         val applicableSS = methods.filter { it.value.applicable }
         val total = Array(applicableSS.size){i -> i+1 }.sum()
@@ -231,12 +230,10 @@ class ResourceSampleMethodController {
         return getStrategyWithItsProbability()
     }
 
-
     /**
      * probability is assigned adaptively regarding Archive,
      */
     private fun relyOnConArchive() : ResourceSamplingMethod{
-        if( methods.count { it.value.applicable } == 1) return getStrategyWithItsProbability()
 
         val focusedStrategy = 1.0
         val passed = time.percentageUsedBudget()
@@ -245,12 +242,12 @@ class ResourceSampleMethodController {
         val used = passed/threshold
         resetProbability()
         if(used < CONARCHIVE_THRESHOLD){
-            val one = methods.filter { it.value.applicable && (it.key == ResourceSamplingMethod.S1iR || it.key == ResourceSamplingMethod.S1dR)}.size
+            val one = methods.filter { it.value.applicable && (it.key == S1iR || it.key == S1dR)}.size
             val two = methods.count { it.value.applicable } - one
             methods.filter { it.value.applicable }.forEach { s->
                 when(s.key){
-                    ResourceSamplingMethod.S1iR -> s.value.probability = focusedStrategy/one
-                    ResourceSamplingMethod.S1dR -> s.value.probability = focusedStrategy/one
+                    S1iR -> s.value.probability = focusedStrategy/one
+                    S1dR -> s.value.probability = focusedStrategy/one
                     else -> s.value.probability = (1.0 - focusedStrategy)/two
                 }
             }
@@ -259,14 +256,7 @@ class ResourceSampleMethodController {
             initEqualProbability()
         }
 
-        val delta = 0.1
-        val applicableSS = methods.filter { it.value.applicable }
-        val total = Array(applicableSS.size){i -> i+1 }.sum()
-        applicableSS.asSequence().sortedBy {  it.value.improved }.forEachIndexed { index, ss ->
-            ss.value.probability = ss.value.probability * (1 - delta) + delta * (index + 1)/total
-        }
-        update()
-        return getStrategyWithItsProbability()
+        return relyOnArchive()
     }
 
     private fun getStrategyWithItsProbability(): ResourceSamplingMethod{
