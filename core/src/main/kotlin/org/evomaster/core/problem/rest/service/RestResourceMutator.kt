@@ -50,7 +50,11 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes : MutableList<Gene>) {
         //update resource dependency after mutating strcuture of the resource-based individual
         if(mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
-            val isWorse = previous.fitness.subsumes(mutated.fitness, archive.notCoveredTargets())
+            val isWorse = previous.fitness.subsumes(
+                    mutated.fitness,
+                    archive.notCoveredTargets(),
+                    config.secondaryObjectiveStrategy,
+                    config.bloatControlForSecondaryObjective)
             val isBetter = archive.wouldReachNewTarget(mutated) || !isWorse
             dm.detectDependencyAfterStructureMutation(previous, mutated, if(isBetter) 1 else if(isWorse) -1 else 0)
         }
