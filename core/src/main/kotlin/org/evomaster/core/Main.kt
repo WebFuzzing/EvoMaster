@@ -11,6 +11,8 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.graphql.GraphqlIndividual
+import org.evomaster.core.problem.graphql.service.GraphqlModule
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.problem.web.service.WebModule
@@ -173,6 +175,7 @@ class Main {
             val problemModule = when (problemType) {
                 EMConfig.ProblemType.REST -> RestModule()
                 EMConfig.ProblemType.WEB -> WebModule()
+                EMConfig.ProblemType.GRAPHQL -> GraphqlModule()
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
             }
@@ -209,13 +212,13 @@ class Main {
 
             val key = when (config.algorithm) {
                 EMConfig.Algorithm.MIO -> Key.get(
-                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
+                        object : TypeLiteral<MioAlgorithm<GraphqlIndividual>>() {})
                 EMConfig.Algorithm.RANDOM -> Key.get(
-                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
+                        object : TypeLiteral<RandomAlgorithm<GraphqlIndividual>>() {})
                 EMConfig.Algorithm.WTS -> Key.get(
-                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+                        object : TypeLiteral<WtsAlgorithm<GraphqlIndividual>>() {})
                 EMConfig.Algorithm.MOSA -> Key.get(
-                        object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+                        object : TypeLiteral<MosaAlgorithm<GraphqlIndividual>>() {})
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
 
