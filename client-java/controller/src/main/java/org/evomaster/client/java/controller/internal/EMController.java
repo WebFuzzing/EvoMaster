@@ -4,9 +4,11 @@ import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
+import org.evomaster.client.java.controller.api.dto.problem.GraphqlProblemDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.problem.GraphqlProblem;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.TargetInfo;
@@ -61,6 +63,10 @@ public class EMController {
             dto.restProblem.swaggerJsonUrl = rp.getSwaggerJsonUrl();
             dto.restProblem.endpointsToSkip = rp.getEndpointsToSkip();
 
+        } else if (info instanceof GraphqlProblem) {
+            GraphqlProblem gp = (GraphqlProblem) info;
+            dto.graphqlProblem = new GraphqlProblemDto();
+            dto.graphqlProblem.graphqlEndpointUrl = gp.getGraphqlEndpointUrl();
         } else {
             String msg = "Unrecognized problem type: " + info.getClass().getName();
             SimpleLogger.error(msg);

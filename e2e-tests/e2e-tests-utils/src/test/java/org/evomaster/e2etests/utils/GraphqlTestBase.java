@@ -168,7 +168,7 @@ public abstract class GraphqlTestBase {
 
     protected static void initClass(EmbeddedSutController controller) throws Exception {
 
-        RestTestBase.controller = controller;
+        GraphqlTestBase.controller = controller;
 
         embeddedStarter = new InstrumentedSutStarter(controller);
         embeddedStarter.start();
