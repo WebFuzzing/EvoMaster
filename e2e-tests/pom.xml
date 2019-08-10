@@ -17,6 +17,7 @@
         <module>dropwizard-examples</module>
         <module>spring-examples</module>
         <module>graphql-spring-examples</module>
+        <module>graphql-spring-examples2</module>
     </modules>
 
 
