@@ -63,11 +63,11 @@ class TestCaseWriter {
                 // BMR: test.test should have the used objects attached (if any).
                 //usedObjects = test.test.individual.usedObjects
 
-                if (config.enableCompleteObjects) {
-                    usedObjects = test.test.individual.usedObjects
+                if (config.enableCompleteObjects && test.test.individual is RestIndividual) {
+                    usedObjects = (test.test.individual as RestIndividual).usedObjects
                 }
 
-                handleDbInitialization(format, test.test.individual.dbInitialization, lines)
+                handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
             }
 
 
@@ -447,7 +447,8 @@ class TestCaseWriter {
                     && printableTh != "NotCoveredYet"
                     && !printableTh.contains("logged")
             ) {
-                lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)")
+                //lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)")
+                lines.add(".body(\"get($index).$it\" , $printableTh)")
             }
         }
     }
@@ -471,13 +472,12 @@ class TestCaseWriter {
                         // This would be run if the JSON contains an array of objects.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        resContents.sortBy { it.toString() }
+                        //resContents.sortBy { it.toString() }
                         //assertions on contents
                         if(resContents.size > 0){
-                            resContents.forEachIndexed { index, value ->
-                                val test_i = index
+                            resContents.forEachIndexed { test_index, value ->
                                 if (value::class == LinkedTreeMap::class){
-                                    handleLinkedTreeMapLines(index, (value as LinkedTreeMap<*,*>), lines)
+                                    handleLinkedTreeMapLines(test_index, (value as LinkedTreeMap<*,*>), lines)
                                 }
                                 else {
                                     val printableTh = handleFieldValues(value)
@@ -485,7 +485,7 @@ class TestCaseWriter {
                                             && printableTh != "NotCoveredYet"
                                             && !printableTh.contains("logged")
                                     ) {
-                                        lines.add(".body(\"get($test_i)\", $printableTh)")
+                                        lines.add(".body(\"get($test_index)\", $printableTh)")
                                     }
                                 }
                             }
@@ -525,7 +525,7 @@ class TestCaseWriter {
                         val printableTh = handleFieldValues(actualValue)
                         if (printableTh != "null"
                                 && printableTh != "NotCoveredYet"
-                                && !printableTh.contains("logged")
+                                //&& !printableTh.contains("logged")
                         ) {
                             lines.add(".body(\"\'${it}\'\", ${printableTh})")
                         }
@@ -692,10 +692,24 @@ class TestCaseWriter {
         }
     }
 
+    /**
+     * applyEscapes currently sets up the string for printing.
+     * This includes escaping special chars for java and kotlin.
+     * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
+     * the symbol signifies an object reference (which would likely cause the assertion to fail).
+     */
     private fun applyEscapes(string: String): String {
-        val ret = string.replace("\"", "\\\"")
+
+        val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
+
+        val ret = string.split("@")[0] //first split off any reference that might differ between runs
+                .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
+
+
 
         if (format.isKotlin()) return ret.replace("\$", "\\\$")
         else return ret
