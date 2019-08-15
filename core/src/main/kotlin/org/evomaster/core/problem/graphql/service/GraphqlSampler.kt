@@ -1,6 +1,16 @@
 package org.evomaster.core.problem.graphql.service
 
-//import graphql.schema.idl.TypeDefinitionRegistry
+import graphql.schema.idl.TypeDefinitionRegistry
+import graphql.schema.idl.SchemaParser
+import graphql.introspection.IntrospectionResultToSchema
+import graphql.introspection.Introspection
+import graphql.parser.Parser
+import graphql.language.Document
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
+import java.util.Map
+import graphql.introspection.IntrospectionQuery
 import java.net.URLEncoder
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
@@ -52,25 +62,49 @@ class GraphqlSampler : Sampler<GraphqlIndividual>() {
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         val schema = getSchema(infoDto)
-//        if (swagger.paths == null) {
-//            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
-//        }
+
+        actionCluster.clear()
+        modelCluster.clear()
+        // Here we should create Actions and models from schema
 
     }
 
     override fun sampleAtRandom(): GraphqlIndividual {
-        print("YEEEESSS")
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    private fun getSchema(infoDto: SutInfoDto): String {
+    private fun getSchema(infoDto: SutInfoDto): TypeDefinitionRegistry
+    {
 
         val graphqlEndpointUrl = infoDto?.graphqlProblem?.graphqlEndpointUrl ?: throw java.lang.IllegalStateException("Missing information about the graphql endpoint")
 
-        val query = createSchemaFetchingRequest()
-        val response = connectToEndpoint(graphqlEndpointUrl, 30, query)
+        val query = IntrospectionQuery.INTROSPECTION_QUERY
+        val encodedQuery = URLEncoder.encode(query, "utf-8")
+        val response = connectToEndpoint(graphqlEndpointUrl, 30, encodedQuery)
 
-        return "hi"
+        if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
+            throw SutProblemException("Cannot get graphql schema info from $graphqlEndpointUrl , status=${response.status}")
+        }
+
+
+        val json = response.readEntity(String::class.java)
+
+        var map = mapOf<String,Object>()
+        val gson = Gson()
+        map = gson.fromJson(json, object : TypeToken<Map<String, Object>>() {}.type)
+        var mapJson = gson.toJson(map.getValue("data"))
+
+        var schemaMap = mapOf<String,Object>()
+        schemaMap = gson.fromJson(mapJson, object : TypeToken<Map<String, Object>>() {}.type)
+        val document = IntrospectionResultToSchema().createSchemaDefinition(schemaMap)
+
+        val schema = try{
+            SchemaParser().buildRegistry(document)
+        } catch (e: Exception) {
+            throw SutProblemException("Failed to parse graphql schema: $e")
+        }
+
+        return schema
 
     }
 
@@ -93,28 +127,5 @@ class GraphqlSampler : Sampler<GraphqlIndividual>() {
         }
 
         throw IllegalStateException("Failed to connect to $endPointUrl")
-    }
-
-    private fun createSchemaFetchingRequest(): String {
-
-        // Todo: the query value is a bit ulgy ! should be refactored !
-        val query = "query IntrospectionQuery {      __schema {        queryType { name }        " +
-                "mutationType { name }        subscriptionType { name }        types {          ...FullType        }        " +
-                "directives {          name          description          locations          args {            ...InputValue          }   " +
-                "     }      }    }    fragment FullType on __Type {      kind      name      description      " +
-                "fields(includeDeprecated: true) {        name        description        args {          ...InputValue        }        " +
-                "type {          ...TypeRef        }        isDeprecated        deprecationReason      }      " +
-                "inputFields {        ...InputValue      }      interfaces {        ...TypeRef      }      " +
-                "enumValues(includeDeprecated: true) {        name        description        isDeprecated        deprecationReason      } " +
-                "     possibleTypes {        ...TypeRef      }    }    fragment InputValue on __InputValue" +
-                " {      name      description      type { ...TypeRef }      defaultValue    }    fragment TypeRef on __Type " +
-                "{      kind      name      ofType {        kind        name        ofType " +
-                "{          kind          name          ofType {            kind            name            ofType" +
-                " {              kind              name              ofType {                kind                name                ofType " +
-                "{                  kind                  name                  ofType {                    kind                    name                  }" +
-                "                }              }            }          }        }      }    }"
-
-        return URLEncoder.encode(query, "utf-8")
-
     }
 }

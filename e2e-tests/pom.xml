@@ -16,7 +16,6 @@
         <module>e2e-tests-utils</module>
         <module>dropwizard-examples</module>
         <module>spring-examples</module>
-        <module>graphql-spring-examples</module>
         <module>graphql-spring-examples2</module>
     </modules>
 

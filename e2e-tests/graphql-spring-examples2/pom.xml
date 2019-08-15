@@ -42,6 +42,12 @@
             <artifactId>evomaster-core</artifactId>
             <version>0.2.1-SNAPSHOT</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.graphql-java</groupId>
+                    <artifactId>graphql-java</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
