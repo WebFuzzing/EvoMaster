@@ -447,7 +447,12 @@ class TestCaseWriter {
                     && printableTh != "NotCoveredYet"
                     && !printableTh.contains("logged")
             ) {
-                //lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)")
+                //lines.add(".body(\"find{it.$it == \\\"${map[it]}\\\"}.$it\", $printableTh)") //tried a find
+                //lines.add(".body(\"sort{it.toString()}.$it[$index]\", $printableTh)")
+                //lines.add(".body(\"$it[$index]\", $printableTh)") //just index
+                //lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)") //sort and index
+                //reinstated above due to the problem of non-deterministic ordering of retrieved collections
+                // (eg. ScoutAPI - users)
                 lines.add(".body(\"get($index).$it\" , $printableTh)")
             }
         }
@@ -475,6 +480,9 @@ class TestCaseWriter {
                         //resContents.sortBy { it.toString() }
                         //assertions on contents
                         if(resContents.size > 0){
+                            if(resContents.first()::class == LinkedTreeMap::class) resContents.sortBy { it.toString() }
+                            // Sorting needed as sometimes retrieving collections results in non-deterministic order
+                            // (eg ScoutAPI - users).
                             resContents.forEachIndexed { test_index, value ->
                                 if (value::class == LinkedTreeMap::class){
                                     handleLinkedTreeMapLines(test_index, (value as LinkedTreeMap<*,*>), lines)
@@ -525,7 +533,7 @@ class TestCaseWriter {
                         val printableTh = handleFieldValues(actualValue)
                         if (printableTh != "null"
                                 && printableTh != "NotCoveredYet"
-                                //&& !printableTh.contains("logged")
+                                && !printableTh.contains("logged")
                         ) {
                             lines.add(".body(\"\'${it}\'\", ${printableTh})")
                         }
@@ -704,7 +712,7 @@ class TestCaseWriter {
 
         val ret = string.split("@")[0] //first split off any reference that might differ between runs
                 .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
-                .replace("\\", "\\\\")
+                .replace("""\\""", """\\\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
