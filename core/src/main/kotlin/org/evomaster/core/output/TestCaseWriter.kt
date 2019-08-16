@@ -33,7 +33,6 @@ class TestCaseWriter {
 
 
     fun convertToCompilableTestCode(
-            //format: OutputFormat,
             config: EMConfig,
             test: TestCase,
             baseUrlOfSut: String)
@@ -375,7 +374,8 @@ class TestCaseWriter {
         val verb = call.verb.name.toLowerCase()
         lines.add(".$verb(")
         if (call.locationId != null) {
-            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${applyEscapes(call.resolvedPath())}\")")
+            //lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${applyEscapes(call.resolvedPath())}\")")
+            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
 
         } else {
 
@@ -383,13 +383,13 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${applyEscapes(uri)}\"")
+                lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)
                 val elements = call.path.resolveOnlyQuery(call.parameters)
 
-                lines.append("\"${applyEscapes(path)}?\" + ")
+                lines.append("\"$path?\" + ")
 
                 lines.indented {
                     (0 until elements.lastIndex).forEach { i -> lines.add("\"${applyEscapes(elements[i])}&\" + ") }
@@ -418,15 +418,8 @@ class TestCaseWriter {
             return "nullValue()"
         } else {
             when (resContentsItem::class) {
-                //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${applyEscapes(resContentsItem as String)}\")"
-                /*String::class -> return "containsString(\"${(resContentsItem as String)
-                        .replace("\"", "\\\"")
-                        .replace("\n", "\\n")
-                        .replace("\r", "\\r")}\")"*/
-                //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
-                // The above solution should be refined.
                 LinkedTreeMap::class -> return "NotCoveredYet"
                 ArrayList::class -> return "NotCoveredYet"
                 else -> return "NotCoveredYet"
@@ -453,7 +446,8 @@ class TestCaseWriter {
                 //lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)") //sort and index
                 //reinstated above due to the problem of non-deterministic ordering of retrieved collections
                 // (eg. ScoutAPI - users)
-                lines.add(".body(\"get($index).$it\" , $printableTh)")
+                //lines.add(".body(\"get($index).$it\" , $printableTh)")
+                lines.add(".body(\"$it\", hasItem($printableTh))")
             }
         }
     }
