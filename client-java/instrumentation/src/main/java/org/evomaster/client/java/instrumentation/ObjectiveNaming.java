@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+
 public class ObjectiveNaming {
 
     /**
@@ -28,6 +30,12 @@ public class ObjectiveNaming {
      */
     public static final String FALSE_BRANCH = "_falseBranch";
 
+    /**
+     * Prefix identifier for MethodReplacement objectives, where we want
+     * to cover both possible outcomes, eg true and false
+     */
+    public static final String METHOD_REPLACEMENT = "MethodReplacement";
+
 
     /**
      * Prefix identifier for objectives related to calling methods without exceptions
@@ -48,6 +56,20 @@ public class ObjectiveNaming {
     public static String successCallObjectiveName(String className, int line, int index){
         String name = SUCCESS_CALL + "_at_" + ClassName.get(className).getFullNameWithDots() +
                 "_" + padNumber(line) + "_" + index;
+        return name.intern();
+    }
+
+    public static String methodReplacementObjectiveNameTemplate(String className, int line, int index){
+        String name = METHOD_REPLACEMENT + "_at_" + ClassName.get(className).getFullNameWithDots() +
+                "_" + padNumber(line) + "_" + index;
+        return name.intern();
+    }
+
+    public static String methodReplacementObjectiveName(String template, boolean result, Replacement.TYPE type){
+        if(template==null || !template.startsWith(METHOD_REPLACEMENT)){
+            throw new IllegalArgumentException("Invalid template for boolean method replacement: " + template);
+        }
+        String name = template + "_" + type.name() + "_" + result;
         return name.intern();
     }
 
