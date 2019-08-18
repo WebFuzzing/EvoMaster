@@ -50,100 +50,113 @@ public class StringClassReplacement implements MethodReplacementClass {
         return equals(caller.toLowerCase(), anotherString.toLowerCase(), idTemplate);
     }
 
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int startsWith(String caller, String prefix, int toffset) {
-//        Objects.requireNonNull(caller);
-//        Objects.requireNonNull(prefix);
-//
-//        int pl = prefix.length();
-//
-//        /*
-//            The penalty when there is a mismatch of lengths/offset
-//            should be at least pl, as should be always worse than
-//            when doing "equals" comparisons.
-//            Furthermore, need to add extra penalty in case string is
-//            shorter than prefix
-//         */
-//        int penalty = pl;
-//        if(caller.length() < pl){
-//            penalty += (pl - caller.length());
-//        }
-//
-//        if (toffset < 0) {
-//            long dist = (-toffset + penalty) * Character.MAX_VALUE;
-//            return truncate(-dist);
-//        }
-//
-//        if (toffset > caller.length() - pl) {
-//            assert toffset >= 0;
-//            long dist = (toffset + penalty) * Character.MAX_VALUE;
-//            return truncate(-dist);
-//        }
-//
-//        int len = Math.min(prefix.length(), caller.length());
-//        String sub = caller.substring(toffset, Math.min(toffset + len, caller.length()));
-//
-//        return equals(sub, prefix);
-//    }
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int startsWith(String caller, String prefix) {
-//        return startsWith(caller, prefix, 0);
-//    }
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int endsWith(String caller, String suffix) {
-//        return startsWith(caller, suffix, caller.length() - suffix.length());
-//    }
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int isEmpty(String caller) {
-//        Objects.requireNonNull(caller);
-//
-//        int len = caller.length();
-//        if (len == 0) {
-//            return BooleanReplacement.TRUE_MAX;
-//        } else {
-//            return -len;
-//        }
-//    }
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int contentEquals(String caller, CharSequence cs) {
-//        return equals(caller, cs.toString());
-//    }
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int contentEquals(String caller, StringBuffer sb) {
-//        return equals(caller, sb.toString());
-//    }
-//
-//    @Replacement(type = Replacement.TYPE.BOOLEAN)
-//    public static int contains(String caller, CharSequence s) {
-//        Objects.requireNonNull(caller);
-//        Objects.requireNonNull(s);
-//
-//        if (caller.contains(s)) {
-//            return BooleanReplacement.TRUE_MAX;
-//        }
-//
-//        String k = s.toString();
-//        if (caller.length() <= k.length()) {
-//            return equals(caller, k);
-//        }
-//
-//        assert caller.length() > k.length();
-//        int best = BooleanReplacement.FALSE_MIN;
-//        for (int i = 0; i < (caller.length() - k.length()) + 1; i++) {
-//            String sub = caller.substring(i, i + k.length());
-//            int h = equals(sub, k);
-//            if (h > best) {
-//                best = h;
-//            }
-//        }
-//        return best;
-//    }
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean startsWith(String caller, String prefix, int toffset, String idTemplate) {
+
+        boolean result = caller.startsWith(prefix, toffset);
+
+        int pl = prefix.length();
+
+        /*
+            The penalty when there is a mismatch of lengths/offset
+            should be at least pl, as should be always worse than
+            when doing "equals" comparisons.
+            Furthermore, need to add extra penalty in case string is
+            shorter than prefix
+         */
+        int penalty = pl;
+        if(caller.length() < pl){
+            penalty += (pl - caller.length());
+        }
+
+        Truthness t;
+
+        if (toffset < 0) {
+            long dist = (-toffset + penalty) * Character.MAX_VALUE;
+            t = new Truthness(1d / (1d + dist), 1d);
+        } else if (toffset > caller.length() - pl) {
+            long dist = (toffset + penalty) * Character.MAX_VALUE;
+            t = new Truthness(1d / (1d + dist), 1d);
+        } else {
+            int len = Math.min(prefix.length(), caller.length());
+            String sub = caller.substring(toffset, Math.min(toffset + len, caller.length()));
+            return equals(sub, prefix, idTemplate);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        return result;
+    }
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean startsWith(String caller, String prefix, String idTemplate) {
+        return startsWith(caller, prefix, 0, idTemplate);
+    }
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean endsWith(String caller, String suffix, String idTemplate) {
+        return startsWith(caller, suffix, caller.length() - suffix.length(), idTemplate);
+    }
+
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean isEmpty(String caller, String idTemplate) {
+
+        int len = caller.length();
+        Truthness t;
+        if (len == 0) {
+            t = new Truthness(1,0);
+        } else {
+            t = new Truthness(1d / (1d + len), 1);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        return caller.isEmpty();
+    }
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean contentEquals(String caller, CharSequence cs, String idTemplate) {
+        return equals(caller, cs.toString(), idTemplate);
+    }
+
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean contentEquals(String caller, StringBuffer sb, String idTemplate) {
+        return equals(caller, sb.toString(), idTemplate);
+    }
+
+
+    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    public static boolean contains(String caller, CharSequence s, String idTemplate) {
+
+        boolean result = caller.contains(s);
+
+        String k = s.toString();
+        if (caller.length() <= k.length()) {
+            return equals(caller, k, idTemplate);
+        }
+
+        Truthness t;
+
+        if(result){
+            t = new Truthness(1, 0);
+        } else {
+            assert caller.length() > k.length();
+            long best = Long.MAX_VALUE;
+
+            for (int i = 0; i < (caller.length() - k.length()) + 1; i++) {
+                String sub = caller.substring(i, i + k.length());
+                long h = getLeftAlignmentDistance(sub, k);
+                if (h < best) {
+                    best = h;
+                }
+            }
+            t = new Truthness(1d / (1d + best), 1);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        return result;
+    }
 
     /*
         TODO:

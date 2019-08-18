@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,6 +23,8 @@ class ReplacementListTest {
                     continue;
                 }
 
+                assertTrue(Modifier.isStatic(m.getModifiers()), "Replacement methods must be static");
+
                 if (r.type() == Replacement.TYPE.BOOLEAN) {
                     assertSame(m.getReturnType(), Boolean.TYPE,
                             "Non-boolean return " + m.getReturnType() + " type for " +
@@ -35,6 +38,13 @@ class ReplacementListTest {
                 Class<?> targetClass = mrc.getTargetClass();
                 assertNotNull(targetClass);
 
+                if(! r.replacingStatic()){
+                    //if not replacing a static method, then caller must be passed as first input
+                    assertEquals(targetClass, inputs[0]);
+                    assertTrue(inputs.length>=2);// caller and idTemplate
+                }
+
+
                 Class[] reducedInputs;
                 if(r.replacingStatic()){
                     reducedInputs = Arrays.copyOfRange(inputs, 0, inputs.length-1);
@@ -42,11 +52,14 @@ class ReplacementListTest {
                     reducedInputs = Arrays.copyOfRange(inputs, 1, inputs.length-1);
                 }
 
+                Method targetMethod = null;
                 try {
-                    targetClass.getMethod(m.getName(), reducedInputs);
+                    targetMethod = targetClass.getMethod(m.getName(), reducedInputs);
                 } catch (NoSuchMethodException e) {
                     fail("No target method '"+m.getName()+" in class "+targetClass.getName()+" with the right input parameters");
                 }
+
+                assertEquals(r.replacingStatic(), Modifier.isStatic(targetMethod.getModifiers()));
             }
 
         }
