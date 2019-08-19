@@ -1,6 +1,6 @@
-package com.foo.somedifferentpackage.examples.testabilityexception;
+package com.foo.somedifferentpackage.examples.methodreplacement;
 
-import org.evomaster.client.java.instrumentation.example.testabilityexception.TestabilityExc;
+import org.evomaster.client.java.instrumentation.example.methodreplacement.TestabilityExc;
 
 import java.time.LocalDate;
 

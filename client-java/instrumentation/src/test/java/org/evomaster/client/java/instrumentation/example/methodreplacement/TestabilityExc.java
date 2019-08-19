@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.example.testabilityexception;
+package org.evomaster.client.java.instrumentation.example.methodreplacement;
 
 import java.time.LocalDate;
 

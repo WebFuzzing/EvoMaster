@@ -1,14 +1,14 @@
-package org.evomaster.client.java.instrumentation.deprecated_testabilityexception;
+package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.junit.jupiter.api.Test;
 
-import static org.evomaster.client.java.instrumentation.deprecated_testabilityexception.ExceptionHeuristics.*;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by arcuri82 on 26-Jun-19.
  */
-public class ExceptionHeuristicsTest {
+public class DistanceHelperTest {
 
 
     @Test

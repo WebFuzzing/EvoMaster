@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement.TYPE;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -29,7 +30,7 @@ public class StringClassReplacement implements MethodReplacementClass {
             if (!(anObject instanceof String)) {
                 t = new Truthness(0d, 1d);
             } else {
-                long distance = getLeftAlignmentDistance(caller, anObject.toString());
+                long distance = DistanceHelper.getLeftAlignmentDistance(caller, anObject.toString());
                 t = new Truthness(1d / (1d + distance), 1d);
             }
         }
@@ -146,7 +147,7 @@ public class StringClassReplacement implements MethodReplacementClass {
 
             for (int i = 0; i < (caller.length() - k.length()) + 1; i++) {
                 String sub = caller.substring(i, i + k.length());
-                long h = getLeftAlignmentDistance(sub, k);
+                long h = DistanceHelper.getLeftAlignmentDistance(sub, k);
                 if (h < best) {
                     best = h;
                 }
@@ -166,16 +167,4 @@ public class StringClassReplacement implements MethodReplacementClass {
      */
 
 
-    public static long getLeftAlignmentDistance(String a, String b) {
-
-        long diff = Math.abs(a.length() - b.length());
-        long dist = diff * Character.MAX_VALUE;
-
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            dist += Math.abs(a.charAt(i) - b.charAt(i));
-        }
-
-        assert dist >= 0;
-        return dist;
-    }
 }
