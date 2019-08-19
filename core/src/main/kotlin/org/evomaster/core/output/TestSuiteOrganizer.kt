@@ -70,7 +70,7 @@ class NamingHelper {
         else return ""
     }
 
-    val namingCriteria =  mutableListOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
+    val namingCriteria =  mutableListOf(::criterion1_500, ::criterion3_sampling)
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
@@ -81,7 +81,7 @@ class NamingHelper {
 
 
 class SortingHelper {
-    /** maxStatusCodeComparatorInd sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
+    /** [maxStatusCodeComparatorInd] sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
      *
      * **/
     val maxStatusCodeComparatorInd = compareBy<EvaluatedIndividual<*>>{ind ->
@@ -89,11 +89,29 @@ class SortingHelper {
             (max as RestCallResult).getStatusCode() ?: 0
     }.reversed()
 
-    /** maxNumberOfActionsComparatorInd sorts Evaluated individuals based on the number of actions (most actions first).
-     * **/
+    /**
+     * [statusCode] sorts Evaluated individuals based on the status code, as follows:
+     *          - first:    5xx
+     *          - second:   2xx
+     *          - third:    4xx
+     */
+
+    val statusCode = compareBy<EvaluatedIndividual<*>>{ind ->
+        val max = ind.results.filterIsInstance<RestCallResult>().maxBy { it.getStatusCode()!! }
+        ((max as RestCallResult).getStatusCode()?.rem(500)) ?: 0
+    }
+
+    /** [maxNumberOfActionsComparatorInd] sorts Evaluated individuals based on the number of actions (most actions first).
+     */
     val maxNumberOfActionsComparatorInd = compareBy<EvaluatedIndividual<*>>{ ind ->
         ind.individual.seeActions().size
     }.reversed()
+
+    /** [minActions] sorts Evaluated individuals based on the number of actions (most actions first).
+     */
+    val minActions = compareBy<EvaluatedIndividual<*>>{ ind ->
+        ind.individual.seeActions().size
+    }
 
     /**
      * dbInitSize sorts [EvaluatedIndividual] objects on the basis of the presence (and number) of db initialization actions.
@@ -120,7 +138,7 @@ class SortingHelper {
      *  Note that (currently) the order of the comparators is inverse to their importance/priority
      */
 
-    val comparatorList = mutableListOf(  maxStatusCodeComparatorInd, dbInitSize)
+    val comparatorList = mutableListOf(statusCode, minActions)
 
 
     /**
