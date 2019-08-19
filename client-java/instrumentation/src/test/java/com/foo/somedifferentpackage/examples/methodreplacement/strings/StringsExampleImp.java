@@ -1,8 +1,9 @@
 package com.foo.somedifferentpackage.examples.methodreplacement.strings;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StringClassReplacement;
 import org.evomaster.client.java.instrumentation.example.methodreplacement.strings.StringsExample;
-import org.evomaster.client.java.instrumentation.deprecated_testabilityboolean.BooleanMethodTransformer;
-import org.evomaster.client.java.instrumentation.deprecated_testabilityboolean.StringTransformer;
+
+import static org.evomaster.client.java.instrumentation.ObjectiveNaming.METHOD_REPLACEMENT;
 
 public class StringsExampleImp implements StringsExample {
 
@@ -13,7 +14,7 @@ public class StringsExampleImp implements StringsExample {
 
     @Override
     public boolean isFooWithDirectReturnUsingReplacement(String value){
-        return BooleanMethodTransformer.convertIntToBoolean(StringTransformer.equals("foo", value));
+        return new StringClassReplacement().equals("foo", value, METHOD_REPLACEMENT);
     }
 
     @Override
