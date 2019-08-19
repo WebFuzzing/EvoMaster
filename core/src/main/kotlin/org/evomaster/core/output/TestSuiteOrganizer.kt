@@ -55,7 +55,7 @@ class NamingHelper {
      */
     private fun criterion3_sampling(individual: EvaluatedIndividual<*>): String{
         if(individual.individual is RestIndividual)
-            return "_" + individual.individual.sampleType
+            return "_" + (individual.individual as RestIndividual).sampleType
         else return ""
     }
 
@@ -64,7 +64,7 @@ class NamingHelper {
      * the [RestIndividual] and will change with a new problem
      */
     private fun criterion4_dbInit(individual: EvaluatedIndividual<*>): String{
-        if ((individual.individual is RestIndividual) && individual.individual.dbInitialization.isNotEmpty()){
+        if ((individual.individual is RestIndividual) && (individual.individual as RestIndividual).dbInitialization.isNotEmpty()){
             return "_" + "hasDbInit"
         }
         else return ""
@@ -102,7 +102,7 @@ class SortingHelper {
      */
     val dbInitSize = compareBy<EvaluatedIndividual<*>>{ ind ->
         if(ind.individual is RestIndividual) {
-            ind.individual.dbInitialization.size
+            (ind.individual as RestIndividual).dbInitialization.size
         }
         else 0
     }.reversed()

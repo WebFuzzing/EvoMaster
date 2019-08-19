@@ -1,7 +1,6 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
-import com.google.gson.internal.LinkedTreeMap
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -31,6 +30,9 @@ class TestCaseWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
 
+    companion object{
+        val NOT_COVERED_YET = "NotCoveredYet"
+    }
 
     fun convertToCompilableTestCode(
             config: EMConfig,
@@ -61,11 +63,9 @@ class TestCaseWriter {
             if (test.test.individual is RestIndividual) {
                 // BMR: test.test should have the used objects attached (if any).
                 //usedObjects = test.test.individual.usedObjects
-
-                if (config.enableCompleteObjects && test.test.individual is RestIndividual) {
+                if (config.enableCompleteObjects) {
                     usedObjects = (test.test.individual as RestIndividual).usedObjects
                 }
-
                 handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
             }
 
@@ -420,9 +420,9 @@ class TestCaseWriter {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${applyEscapes(resContentsItem as String)}\")"
-                LinkedTreeMap::class -> return "NotCoveredYet"
-                ArrayList::class -> return "NotCoveredYet"
-                else -> return "NotCoveredYet"
+                Map::class -> return NOT_COVERED_YET
+                ArrayList::class -> return NOT_COVERED_YET
+                else -> return NOT_COVERED_YET
             }
         }
         /* BMR: the code above is due to a somewhat unfortunate problem:
@@ -433,11 +433,11 @@ class TestCaseWriter {
         * */
     }
 
-    private fun handleLinkedTreeMapLines(index: Int, map: LinkedTreeMap<*,*>, lines: Lines){
+    private fun handleMapLines(index: Int, map: Map<*,*>, lines: Lines){
         map.keys.forEach{
             val printableTh = handleFieldValues(map[it])
             if (printableTh != "null"
-                    && printableTh != "NotCoveredYet"
+                    && printableTh != NOT_COVERED_YET
                     && !printableTh.contains("logged")
             ) {
                 //lines.add(".body(\"find{it.$it == \\\"${map[it]}\\\"}.$it\", $printableTh)") //tried a find
@@ -474,17 +474,17 @@ class TestCaseWriter {
                         //resContents.sortBy { it.toString() }
                         //assertions on contents
                         if(resContents.size > 0){
-                            if(resContents.first()::class == LinkedTreeMap::class) resContents.sortBy { it.toString() }
+                            if(resContents.first()::class == Map::class) resContents.sortBy { it.toString() }
                             // Sorting needed as sometimes retrieving collections results in non-deterministic order
                             // (eg ScoutAPI - users).
                             resContents.forEachIndexed { test_index, value ->
-                                if (value::class == LinkedTreeMap::class){
-                                    handleLinkedTreeMapLines(test_index, (value as LinkedTreeMap<*,*>), lines)
+                                if (value::class == Map::class){
+                                    handleMapLines(test_index, (value as Map<*,*>), lines)
                                 }
                                 else {
                                     val printableTh = handleFieldValues(value)
                                     if (printableTh != "null"
-                                            && printableTh != "NotCoveredYet"
+                                            && printableTh != NOT_COVERED_YET
                                             && !printableTh.contains("logged")
                                     ) {
                                         lines.add(".body(\"get($test_index)\", $printableTh)")
@@ -495,7 +495,7 @@ class TestCaseWriter {
                     }
                     '{' -> {
                         // JSON contains an object
-                        val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
+                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
                         addObjectAssertions(resContents, lines)
 
                     }
@@ -518,15 +518,21 @@ class TestCaseWriter {
         //handleExpectations(res, lines, true)
     }
 
-    private fun addObjectAssertions(resContents: LinkedTreeMap<*,*>, lines: Lines){
+    private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
         resContents.keys
+                /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
+                * Even relatively minor timing changes (one second either way) could cause tests to fail
+                * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
+                * Note that this is a temporary (and somewhat hacky) solution.
+                * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
+                */
                 .filter{ !(it as String).contains("timestamp")}
                 .forEach {
                     val actualValue = resContents[it]
                     if (actualValue != null) {
                         val printableTh = handleFieldValues(actualValue)
                         if (printableTh != "null"
-                                && printableTh != "NotCoveredYet"
+                                && printableTh != NOT_COVERED_YET
                                 && !printableTh.contains("logged")
                         ) {
                             lines.add(".body(\"\'${it}\'\", ${printableTh})")
@@ -674,10 +680,10 @@ class TestCaseWriter {
                             // This would be run if the JSON contains a single object
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
-                            (resContents as LinkedTreeMap<*, *>).keys.forEach {
+                            (resContents as Map<*, *>).keys.forEach {
                                 val printableTh = handleFieldValues(resContents[it]!!)
                                 if (printableTh != "null"
-                                        && printableTh != "NotCoveredYet"
+                                        && printableTh != NOT_COVERED_YET
                                 ) {
                                     lines.add(".that(activeExpectations, (\"${it}\" == \"${resContents[it]}\"))")
                                 }
@@ -695,15 +701,14 @@ class TestCaseWriter {
     }
 
     /**
-     * applyEscapes currently sets up the string for printing.
+     * [applyEscapes] currently sets up the string for printing.
      * This includes escaping special chars for java and kotlin.
      * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
      * the symbol signifies an object reference (which would likely cause the assertion to fail).
+     * TODO: Tests are needed to make sure this does not break.
      */
     private fun applyEscapes(string: String): String {
-
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
-
         val ret = string.split("@")[0] //first split off any reference that might differ between runs
                 .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
                 .replace("""\\""", """\\\\""")
