@@ -3,7 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement.TYPE;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
@@ -16,7 +16,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         return String.class;
     }
 
-    @Replacement(type = TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(String caller, Object anObject, String idTemplate) {
 
         //not important if NPE
@@ -35,16 +35,16 @@ public class StringClassReplacement implements MethodReplacementClass {
             }
         }
 
-        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
 
         return result;
     }
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
 
         if(anotherString == null){
-            ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, new Truthness(0,1));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, new Truthness(0,1));
             return false;
         }
 
@@ -52,7 +52,7 @@ public class StringClassReplacement implements MethodReplacementClass {
     }
 
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean startsWith(String caller, String prefix, int toffset, String idTemplate) {
 
         boolean result = caller.startsWith(prefix, toffset);
@@ -85,22 +85,22 @@ public class StringClassReplacement implements MethodReplacementClass {
             return equals(sub, prefix, idTemplate);
         }
 
-        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return result;
     }
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean startsWith(String caller, String prefix, String idTemplate) {
         return startsWith(caller, prefix, 0, idTemplate);
     }
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean endsWith(String caller, String suffix, String idTemplate) {
         return startsWith(caller, suffix, caller.length() - suffix.length(), idTemplate);
     }
 
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(String caller, String idTemplate) {
 
         int len = caller.length();
@@ -111,23 +111,23 @@ public class StringClassReplacement implements MethodReplacementClass {
             t = new Truthness(1d / (1d + len), 1);
         }
 
-        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.isEmpty();
     }
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contentEquals(String caller, CharSequence cs, String idTemplate) {
         return equals(caller, cs.toString(), idTemplate);
     }
 
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contentEquals(String caller, StringBuffer sb, String idTemplate) {
         return equals(caller, sb.toString(), idTemplate);
     }
 
 
-    @Replacement(type = Replacement.TYPE.BOOLEAN)
+    @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contains(String caller, CharSequence s, String idTemplate) {
 
         boolean result = caller.contains(s);
@@ -155,7 +155,7 @@ public class StringClassReplacement implements MethodReplacementClass {
             t = new Truthness(1d / (1d + best), 1);
         }
 
-        ExecutionTracer.executedReplacedMethod(idTemplate, TYPE.BOOLEAN, t);
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return result;
     }
 

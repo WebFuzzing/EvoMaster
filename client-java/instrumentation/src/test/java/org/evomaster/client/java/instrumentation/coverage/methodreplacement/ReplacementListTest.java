@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
@@ -25,7 +26,7 @@ class ReplacementListTest {
 
                 assertTrue(Modifier.isStatic(m.getModifiers()), "Replacement methods must be static");
 
-                if (r.type() == Replacement.TYPE.BOOLEAN) {
+                if (r.type() == ReplacementType.BOOLEAN) {
                     assertSame(m.getReturnType(), Boolean.TYPE,
                             "Non-boolean return " + m.getReturnType() + " type for " +
                                     mrc.getClass().getName() + "#" + m.getName());

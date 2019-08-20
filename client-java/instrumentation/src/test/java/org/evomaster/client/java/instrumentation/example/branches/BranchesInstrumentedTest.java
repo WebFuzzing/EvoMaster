@@ -2,7 +2,7 @@ package org.evomaster.client.java.instrumentation.example.branches;
 
 import com.foo.somedifferentpackage.examples.branches.BranchesImp;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.junit.jupiter.api.BeforeAll;

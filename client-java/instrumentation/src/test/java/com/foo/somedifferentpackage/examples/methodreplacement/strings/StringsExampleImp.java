@@ -3,7 +3,7 @@ package com.foo.somedifferentpackage.examples.methodreplacement.strings;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StringClassReplacement;
 import org.evomaster.client.java.instrumentation.example.methodreplacement.strings.StringsExample;
 
-import static org.evomaster.client.java.instrumentation.ObjectiveNaming.METHOD_REPLACEMENT;
+import static org.evomaster.client.java.instrumentation.shared.ObjectiveNaming.METHOD_REPLACEMENT;
 
 public class StringsExampleImp implements StringsExample {
 

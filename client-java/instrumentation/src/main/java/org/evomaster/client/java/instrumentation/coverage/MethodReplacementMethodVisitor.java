@@ -1,8 +1,8 @@
 package org.evomaster.client.java.instrumentation.coverage;
 
-import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementList;

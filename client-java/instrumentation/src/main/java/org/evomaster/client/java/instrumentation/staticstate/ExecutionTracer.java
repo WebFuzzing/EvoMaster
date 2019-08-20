@@ -1,9 +1,9 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.TargetInfo;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 
@@ -148,7 +148,7 @@ public class ExecutionTracer {
         ObjectiveRecorder.update(id, value);
     }
 
-    public static void executedReplacedMethod(String idTemplate, Replacement.TYPE type, Truthness t){
+    public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t){
 
         String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
         String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);

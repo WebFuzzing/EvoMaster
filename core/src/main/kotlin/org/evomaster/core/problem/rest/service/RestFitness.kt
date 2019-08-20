@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
@@ -158,7 +159,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
             if (t.descriptiveId != null) {
 
                 if(! config.useMethodReplacement &&
-                        t.descriptiveId.startsWith("MethodReplacement")){
+                        t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)){
                     return@forEach
                 }
 

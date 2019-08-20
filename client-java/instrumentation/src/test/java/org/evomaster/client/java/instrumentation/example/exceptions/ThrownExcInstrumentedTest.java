@@ -4,7 +4,7 @@ import com.foo.somedifferentpackage.examples.exceptions.ThrownExcImp;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

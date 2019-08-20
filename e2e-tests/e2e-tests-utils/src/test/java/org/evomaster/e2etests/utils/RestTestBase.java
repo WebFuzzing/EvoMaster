@@ -5,7 +5,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;

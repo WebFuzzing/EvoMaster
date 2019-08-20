@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.tracker;
 
-import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;

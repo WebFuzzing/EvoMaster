@@ -1,6 +1,7 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.shared;
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 
 public class ObjectiveNaming {
 
@@ -33,8 +34,6 @@ public class ObjectiveNaming {
     /**
      * Prefix identifier for MethodReplacement objectives, where we want
      * to cover both possible outcomes, eg true and false
-     *
-     * WARNING: if this value changes, then RestFitness MUST be updated as well
      */
     public static final String METHOD_REPLACEMENT = "MethodReplacement";
 
@@ -67,7 +66,7 @@ public class ObjectiveNaming {
         return name.intern();
     }
 
-    public static String methodReplacementObjectiveName(String template, boolean result, Replacement.TYPE type){
+    public static String methodReplacementObjectiveName(String template, boolean result, ReplacementType type){
         if(template==null || !template.startsWith(METHOD_REPLACEMENT)){
             throw new IllegalArgumentException("Invalid template for boolean method replacement: " + template);
         }

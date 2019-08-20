@@ -1,17 +1,12 @@
 package org.evomaster.e2etests.spring.examples.bodytypes;
 
 import com.foo.rest.examples.spring.bodytypes.BodyTypesController;
-import org.evomaster.client.java.instrumentation.ClassName;
-import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-
-import java.util.List;
 
 /**
  * Created by arcuri82 on 07-Nov-18.

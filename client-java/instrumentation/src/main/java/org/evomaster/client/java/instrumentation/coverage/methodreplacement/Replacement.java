@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
-import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,7 +28,5 @@ public @interface Replacement {
      */
     boolean replacingStatic() default false;
 
-    enum TYPE{BOOLEAN, EXCEPTION}
-
-    TYPE type();
+    ReplacementType type();
 }

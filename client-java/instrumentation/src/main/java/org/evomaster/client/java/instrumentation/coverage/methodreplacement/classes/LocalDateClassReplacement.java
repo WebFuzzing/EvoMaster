@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -17,16 +18,16 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
         return LocalDate.class;
     }
 
-    @Replacement(type = Replacement.TYPE.EXCEPTION, replacingStatic = true)
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static LocalDate parse(CharSequence input, String idTemplate) {
 
         try{
             LocalDate res = LocalDate.parse(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, Replacement.TYPE.EXCEPTION, new Truthness(1,0));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1,0));
             return res;
         }catch (RuntimeException e){
             double h = parseHeuristic(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, Replacement.TYPE.EXCEPTION, new Truthness(h,1));
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h,1));
             throw e;
         }
     }

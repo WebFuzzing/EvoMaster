@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation;
+package org.evomaster.client.java.instrumentation.shared;
 
 import java.util.Objects;
 

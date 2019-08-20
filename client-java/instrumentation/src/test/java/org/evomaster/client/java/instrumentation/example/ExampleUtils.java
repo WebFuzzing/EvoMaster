@@ -1,6 +1,6 @@
 package org.evomaster.client.java.instrumentation.example;
 
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.List;

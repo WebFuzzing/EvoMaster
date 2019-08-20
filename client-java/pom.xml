@@ -16,6 +16,7 @@
         <module>controller</module>
         <module>controller-api</module>
         <module>instrumentation</module>
+        <module>instrumentation-shared</module>
         <module>client-util</module>
         <module>database-spy</module>
     </modules>
