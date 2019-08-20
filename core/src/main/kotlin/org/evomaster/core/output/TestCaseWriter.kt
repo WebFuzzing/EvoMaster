@@ -18,6 +18,7 @@ import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
 import javax.ws.rs.core.MediaType
+import org.evomaster.core.search.gene.GeneUtils.applyEscapes
 
 
 class TestCaseWriter {
@@ -752,9 +753,7 @@ class TestCaseWriter {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
 
-
-
         if (format.isKotlin()) return ret.replace("\$", "\\\$")
         else return ret
-    }*/
+    } */
 }

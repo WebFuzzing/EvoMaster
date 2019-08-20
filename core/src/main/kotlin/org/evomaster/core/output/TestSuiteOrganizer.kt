@@ -6,6 +6,8 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
+import kotlin.reflect.KFunction
+import kotlin.reflect.KFunction1
 
 /**
  * This class is responsible to decide the order in which
@@ -19,13 +21,14 @@ import org.evomaster.core.search.Solution
  */
 class TestSuiteOrganizer {
     companion object {
-        val sortingHelper = SortingHelper()
-        val namingHelper = NamingHelper()
+        private val sortingHelper = SortingHelper()
+        private val namingHelper = NamingHelper()
 
+        private val default_sorting = mutableListOf(0, 1)
 
         fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
-
-            //TODO here in the future we will have something bit smarter
+            sortingHelper.selectCriteriaByIndex(default_sorting)
+            //TODO here in the future we will have something a bit smarter
             return sortingHelper.sort(solution, namingHelper, customNaming)
         }
     }
@@ -70,21 +73,48 @@ class NamingHelper {
         else return ""
     }
 
-    val namingCriteria =  mutableListOf(::criterion1_500, ::criterion3_sampling)
+    private var namingCriteria =  mutableListOf(::criterion1_500, ::criterion3_sampling)
+    private val availableCriteria = mutableListOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
         return namingCriteria.map { it(individual) }.joinToString("")
     }
 
+    fun getAvailableCriteria(): MutableList<KFunction1<EvaluatedIndividual<*>, String>> {
+        return availableCriteria
+    }
+
+    fun selectCriteria(selected: MutableList<KFunction1<EvaluatedIndividual<*>, String>>){
+        if (availableCriteria.containsAll(selected)){
+            namingCriteria = availableCriteria
+        }
+        else {
+            throw UnsupportedOperationException("The naming criteria chosen appear to not be supported at the moment.")
+        }
+    }
+
+    fun selectCriteriaByIndex(selected: MutableList<Int>){
+        if (availableCriteria.indices.toMutableList().containsAll(selected)){
+            namingCriteria = availableCriteria.filterIndexed{ index, _ ->
+                selected.contains(index)
+            } as MutableList<KFunction1<EvaluatedIndividual<*>, String>>
+        }
+        else {
+            throw UnsupportedOperationException("The naming criteria chosen appear to not be supported at the moment.")
+        }
+    }
+
+
 }
 
 
 class SortingHelper {
-    /** [maxStatusCodeComparatorInd] sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
+
+    /** [maxStatusCode] sorts Evaluated individuals based on the highest status code (e.g., 500s are first).
      *
      * **/
-    val maxStatusCodeComparatorInd = compareBy<EvaluatedIndividual<*>>{ind ->
+    private val maxStatusCode: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
         val max = ind.results.filterIsInstance<RestCallResult>().maxBy { it.getStatusCode()!! }
             (max as RestCallResult).getStatusCode() ?: 0
     }.reversed()
@@ -96,20 +126,20 @@ class SortingHelper {
      *          - third:    4xx
      */
 
-    val statusCode = compareBy<EvaluatedIndividual<*>>{ind ->
+    private val statusCode: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
         val max = ind.results.filterIsInstance<RestCallResult>().maxBy { it.getStatusCode()!! }
         ((max as RestCallResult).getStatusCode()?.rem(500)) ?: 0
     }
 
-    /** [maxNumberOfActionsComparatorInd] sorts Evaluated individuals based on the number of actions (most actions first).
+    /** [maxActions] sorts Evaluated individuals based on the number of actions (most actions first).
      */
-    val maxNumberOfActionsComparatorInd = compareBy<EvaluatedIndividual<*>>{ ind ->
+    private val maxActions: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
         ind.individual.seeActions().size
     }.reversed()
 
     /** [minActions] sorts Evaluated individuals based on the number of actions (most actions first).
      */
-    val minActions = compareBy<EvaluatedIndividual<*>>{ ind ->
+    private val minActions: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
         ind.individual.seeActions().size
     }
 
@@ -118,7 +148,7 @@ class SortingHelper {
      * Currently, this is only supported for [RestIndividual].
      * Note, writing the comparator as [EvaluatedIndividual<RestIndividual>>] seems to break the .sortWith() later on.
      */
-    val dbInitSize = compareBy<EvaluatedIndividual<*>>{ ind ->
+    private val dbInitSize: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
         if(ind.individual is RestIndividual) {
             (ind.individual as RestIndividual).dbInitialization.size
         }
@@ -129,29 +159,55 @@ class SortingHelper {
      * coveredTargets sorts [EvaluatedIndividual] objects on the basis of the number of covered targets.
      * The purpose is to give an example of sorting based on fitness information.
      */
-    val coveredTargets = compareBy<EvaluatedIndividual<*>> {
+    private val coveredTargets: Comparator<EvaluatedIndividual<*>> = compareBy {
         it.fitness.coveredTargets()
     }
 
     /**
      *  [comparatorList] holds those comparators that are currently selected for sorting
-     *  Note that (currently) the order of the comparators is inverse to their importance/priority
+     *  Note that the order of the comparators is the order their importance/priority.
      */
 
-    val comparatorList = mutableListOf(statusCode, minActions)
+    //var comparatorList = mutableListOf(statusCode, minActions)
+    var comparatorList = mutableListOf(coveredTargets)
 
+    val availableSortCriteria = mutableListOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
+
+    fun getAvailableCriteria(): MutableList<Comparator<EvaluatedIndividual<*>>> {
+        return availableSortCriteria
+    }
+
+    fun selectCriteria(selected: MutableList<Comparator<EvaluatedIndividual<*>>>){
+        if (availableSortCriteria.containsAll(selected)){
+            comparatorList = selected
+        }
+        else {
+            throw UnsupportedOperationException("The sorting criteria chosen appear to not be supported at the moment.")
+        }
+    }
+
+    fun selectCriteriaByIndex(selected: MutableList<Int>){
+        if (availableSortCriteria.indices.toMutableList().containsAll(selected)){
+            comparatorList = availableSortCriteria.filterIndexed{ index, _ ->
+                selected.contains(index)
+            } as MutableList<Comparator<EvaluatedIndividual<*>>>
+        }
+        else {
+            throw UnsupportedOperationException("The sorting criteria chosen appear to not be supported at the moment.")
+        }
+    }
 
     /**
      *Sorting is done according to the comparator list. If no list is provided, individuals are sorted by max status.
      */
-    fun sortByComparatorList (solution: Solution<*>,
+    private fun sortByComparatorList (solution: Solution<*>,
                               namingHelper: NamingHelper,
-                              comparators: MutableList<Comparator<EvaluatedIndividual<*>>> = mutableListOf(maxStatusCodeComparatorInd)
+                              comparators: MutableList<Comparator<EvaluatedIndividual<*>>> = mutableListOf(statusCode)
 
     ): List<TestCase> {
         var counter = 0
 
-        comparators.forEach { solution.individuals.sortWith(it) }
+        comparators.asReversed().forEach { solution.individuals.sortWith(it) }
 
         return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
     }
@@ -159,7 +215,7 @@ class SortingHelper {
     /**
      * No sorting, and just basic name with incremental counter
      */
-    fun naiveSorting(solution: Solution<*>): List<TestCase> {
+    private fun naiveSorting(solution: Solution<*>): List<TestCase> {
         var counter = 0
         return solution.individuals.map { ind -> TestCase(ind, "test" + (counter++)) }
     }
