@@ -24,6 +24,9 @@ class TestCaseWriter {
 
     private var counter = 0
     private var usedObjects = UsedObjects()
+    private var previous_chained = false
+    private var previous_id = ""
+    private var chained = false
     //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
@@ -345,6 +348,9 @@ class TestCaseWriter {
                 }
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter;")
+
+                previous_chained = res.getHeuristicsForChainedLocation()
+                if(previous_chained) previous_id = "id_$counter"
                 counter++
             }
         } else {
@@ -365,6 +371,7 @@ class TestCaseWriter {
                 } else {
                     lines.append("val id_$counter: String = ")
                 }
+                chained = res.getHeuristicsForChainedLocation()
             }
         }
         lines.append("given()" + getAcceptHeader(call, res))
@@ -525,6 +532,8 @@ class TestCaseWriter {
                 * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
                 * Note that this is a temporary (and somewhat hacky) solution.
                 * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
+                *
+                * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
                 */
                 .filter{ !(it as String).contains("timestamp")}
                 .forEach {
@@ -535,7 +544,11 @@ class TestCaseWriter {
                                 && printableTh != NOT_COVERED_YET
                                 && !printableTh.contains("logged")
                         ) {
-                            lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            if(it != "id") lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            else{
+                                if(!chained && previous_chained) lines.add(".body(\"\'${it}\'\", numberMatches($previous_id))")
+                            }
                         }
                     }
                 }
