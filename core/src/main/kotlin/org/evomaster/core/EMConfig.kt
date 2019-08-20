@@ -570,4 +570,9 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = false
 
+    @Cfg("Apply method replacement heuristics to smooth the search landscape")
+    var useMethodReplacement = true
+
+    @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
+    var expandRestIndividuals = true
 }

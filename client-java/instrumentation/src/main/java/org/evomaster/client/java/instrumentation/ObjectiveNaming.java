@@ -33,6 +33,8 @@ public class ObjectiveNaming {
     /**
      * Prefix identifier for MethodReplacement objectives, where we want
      * to cover both possible outcomes, eg true and false
+     *
+     * WARNING: if this value changes, then RestFitness MUST be updated as well
      */
     public static final String METHOD_REPLACEMENT = "MethodReplacement";
 

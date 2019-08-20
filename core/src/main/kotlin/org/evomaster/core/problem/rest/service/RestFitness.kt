@@ -156,6 +156,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         dto.targets.forEach { t ->
 
             if (t.descriptiveId != null) {
+
+                if(! config.useMethodReplacement &&
+                        t.descriptiveId.startsWith("MethodReplacement")){
+                    return@forEach
+                }
+
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 
@@ -166,7 +172,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         handleResponseTargets(fv, individual.actions, actionResults)
 
-        expandIndividual(individual, dto.additionalInfoList)
+        if(config.expandRestIndividuals) {
+            expandIndividual(individual, dto.additionalInfoList)
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
 
