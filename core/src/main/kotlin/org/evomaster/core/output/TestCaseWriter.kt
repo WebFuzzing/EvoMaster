@@ -24,8 +24,8 @@ class TestCaseWriter {
 
     private var counter = 0
     private var usedObjects = UsedObjects()
-    private var previous_chained = false
-    private var previous_id = ""
+    private var previousChained = false
+    private var previousId = ""
     private var chained = false
     //private var relevantObjects: List<Gene> = listOf()
 
@@ -349,8 +349,8 @@ class TestCaseWriter {
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter;")
 
-                previous_chained = res.getHeuristicsForChainedLocation()
-                if(previous_chained) previous_id = "id_$counter"
+                previousChained = res.getHeuristicsForChainedLocation()
+                if(previousChained) previousId = "id_$counter"
                 counter++
             }
         } else {
@@ -481,12 +481,12 @@ class TestCaseWriter {
                         //resContents.sortBy { it.toString() }
                         //assertions on contents
                         if(resContents.size > 0){
-                            if(resContents.first()::class == Map::class) resContents.sortBy { it.toString() }
+                            if(resContents.first() is Map<*, *>) resContents.sortBy { it.toString() }
                             // Sorting needed as sometimes retrieving collections results in non-deterministic order
                             // (eg ScoutAPI - users).
                             resContents.forEachIndexed { test_index, value ->
-                                if (value::class == Map::class){
-                                    handleMapLines(test_index, (value as Map<*,*>), lines)
+                                if (value is Map<*, *>){
+                                    handleMapLines(test_index, value, lines)
                                 }
                                 else {
                                     val printableTh = handleFieldValues(value)
@@ -547,7 +547,7 @@ class TestCaseWriter {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
                             if(it != "id") lines.add(".body(\"\'${it}\'\", ${printableTh})")
                             else{
-                                if(!chained && previous_chained) lines.add(".body(\"\'${it}\'\", numberMatches($previous_id))")
+                                if(!chained && previousChained) lines.add(".body(\"\'${it}\'\", numberMatches($previousId))")
                             }
                         }
                     }
