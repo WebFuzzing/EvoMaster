@@ -225,6 +225,25 @@ class StringGene(
         }
     }
 
+    fun getValueAsPrintableString(mode: String?, targetFormat: OutputFormat?): String {
+        val rawValue = getValueAsRawString()
+        if (mode != null && mode.equals("xml")) {
+            return StringEscapeUtils.escapeXml(rawValue)
+        } else {
+            when {
+                (targetFormat == null) -> return "\"$rawValue\""
+                else -> return GeneUtils.applyEscapes("\"$rawValue\"", false, targetFormat)
+                /*
+                targetFormat.isKotlin() -> return "\"$rawValue\""
+                        .replace("\\", "\\\\")
+                        .replace("$", "\\$")
+                else -> return "\"$rawValue\""
+                        .replace("\\", "\\\\")
+                 */
+            }
+        }
+    }
+
     override fun getValueAsRawString(): String {
         if (specializationGene != null) {
             return specializationGene!!.getValueAsRawString()

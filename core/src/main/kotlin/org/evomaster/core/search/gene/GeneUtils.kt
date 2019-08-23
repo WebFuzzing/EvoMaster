@@ -1,5 +1,6 @@
 package org.evomaster.core.search.gene
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import kotlin.math.pow
@@ -120,6 +121,40 @@ object GeneUtils {
                 second.value = 59
             }
         }
+    }
+
+    /**
+        [applyEscapes] - applies various escapes needed for assertion generation.
+     Moved here to allow extension to other purposes (SQL escapes, for example) and to
+     allow a more consistent way of making changes.
+
+     * This includes escaping special chars for java and kotlin.
+     * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
+     * the symbol signifies an object reference (which would likely cause the assertion to fail).
+     * TODO: Tests are needed to make sure this does not break.
+
+     */
+    fun applyEscapes(string: String, forAssertions: Boolean = false, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+        var ret = ""
+        val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
+        if (forAssertions) {
+            ret = string.split("@")[0] //first split off any reference that might differ between runs
+                    .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
+        }
+        else{
+            ret = string
+        }
+
+
+        ret = ret.replace("""\\""", """\\\\""")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+
+
+
+        if (format.isKotlin()) return ret.replace("\$", "\\\$")
+        else return ret
     }
 
 }

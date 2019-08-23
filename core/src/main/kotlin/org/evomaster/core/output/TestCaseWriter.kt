@@ -399,8 +399,8 @@ class TestCaseWriter {
                 lines.append("\"$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${applyEscapes(elements[i])}&\" + ") }
-                    lines.add("\"${applyEscapes(elements.last())}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i])}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last())}\"")
                 }
             }
         }
@@ -426,7 +426,7 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${applyEscapes(resContentsItem as String)}\")"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String)}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -720,6 +720,10 @@ class TestCaseWriter {
      * the symbol signifies an object reference (which would likely cause the assertion to fail).
      * TODO: Tests are needed to make sure this does not break.
      */
+
+    /*
+
+
     private fun applyEscapes(string: String): String {
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
         val ret = string.split("@")[0] //first split off any reference that might differ between runs
@@ -733,5 +737,5 @@ class TestCaseWriter {
 
         if (format.isKotlin()) return ret.replace("\$", "\\\$")
         else return ret
-    }
+    }*/
 }
