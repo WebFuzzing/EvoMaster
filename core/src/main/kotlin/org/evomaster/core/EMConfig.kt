@@ -555,7 +555,7 @@ class EMConfig {
     var customNaming = false
 
     /*
-        You need to decode it if you want to know what is says...
+        You need to decode it if you want to know what it says...
      */
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false

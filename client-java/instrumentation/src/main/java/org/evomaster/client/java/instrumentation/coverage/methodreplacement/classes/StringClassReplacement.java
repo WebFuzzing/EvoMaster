@@ -3,9 +3,12 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 
@@ -19,12 +22,26 @@ public class StringClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(String caller, Object anObject, String idTemplate) {
 
+        boolean taintedCaller = TaintInputName.isTaintInput(caller);
+        boolean taintedOther = anObject != null && TaintInputName.isTaintInput(anObject.toString());
+
+        if ( taintedCaller || taintedOther) {
+            if(taintedCaller) {
+                ExecutionTracer.addStringSpecialization(caller,
+                        new StringSpecializationInfo(StringSpecialization.CONSTANT, anObject.toString()));
+            } else {
+                ExecutionTracer.addStringSpecialization(anObject.toString(),
+                        new StringSpecializationInfo(StringSpecialization.CONSTANT, caller));
+            }
+        }
+
+
         //not important if NPE
         boolean result = caller.equals(anObject);
 
         Truthness t;
 
-        if(result){
+        if (result) {
             t = new Truthness(1d, 0d);
         } else {
             if (!(anObject instanceof String)) {
@@ -43,8 +60,8 @@ public class StringClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
 
-        if(anotherString == null){
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, new Truthness(0,1));
+        if (anotherString == null) {
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, new Truthness(0, 1));
             return false;
         }
 
@@ -67,7 +84,7 @@ public class StringClassReplacement implements MethodReplacementClass {
             shorter than prefix
          */
         int penalty = pl;
-        if(caller.length() < pl){
+        if (caller.length() < pl) {
             penalty += (pl - caller.length());
         }
 
@@ -106,7 +123,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         int len = caller.length();
         Truthness t;
         if (len == 0) {
-            t = new Truthness(1,0);
+            t = new Truthness(1, 0);
         } else {
             t = new Truthness(1d / (1d + len), 1);
         }
@@ -139,7 +156,7 @@ public class StringClassReplacement implements MethodReplacementClass {
 
         Truthness t;
 
-        if(result){
+        if (result) {
             t = new Truthness(1, 0);
         } else {
             assert caller.length() > k.length();

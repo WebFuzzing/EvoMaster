@@ -4,6 +4,9 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Meth
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.time.LocalDate;
@@ -20,6 +23,11 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static LocalDate parse(CharSequence input, String idTemplate) {
+
+        if(input != null && TaintInputName.isTaintInput(input.toString())){
+            ExecutionTracer.addStringSpecialization(input.toString(),
+                    new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
+        }
 
         try{
             LocalDate res = LocalDate.parse(input);

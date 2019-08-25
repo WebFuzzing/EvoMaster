@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,10 @@ public class ExecutionTracer {
 
     public static void addHeader(String header){
         additionalInfoList.get(actionIndex).addHeader(header);
+    }
+
+    public static void addStringSpecialization(String taintInputName, StringSpecializationInfo info){
+        additionalInfoList.get(actionIndex).addSpecialization(taintInputName, info);
     }
 
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {

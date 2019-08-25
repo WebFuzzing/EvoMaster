@@ -37,7 +37,7 @@ public class AdditionalInfo implements Serializable {
     /**
      * Map from taint input name to string specializations for it
      */
-    private Map<String, List<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
+    private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
 
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
@@ -46,12 +46,12 @@ public class AdditionalInfo implements Serializable {
         }
         Objects.requireNonNull(info);
 
-        List<StringSpecializationInfo> list = stringSpecializations.putIfAbsent(taintInputName, new CopyOnWriteArrayList<>());
-        list.add(info);
+        Set<StringSpecializationInfo> set = stringSpecializations.putIfAbsent(taintInputName, new CopyOnWriteArraySet<>());
+        set.add(info);
     }
 
-    public Map<String, List<StringSpecializationInfo>> getStringSpecializationsView(){
-        //note: this does not prevent modifying the lists inside it
+    public Map<String, Set<StringSpecializationInfo>> getStringSpecializationsView(){
+        //note: this does not prevent modifying the sets inside it
         return Collections.unmodifiableMap(stringSpecializations);
     }
 
