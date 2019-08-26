@@ -399,8 +399,8 @@ class TestCaseWriter {
                 lines.append("\"$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i])}&\" + ") }
-                    lines.add("\"${GeneUtils.applyEscapes(elements.last())}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], purpose = "queries")}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), purpose = "queries")}\"")
                 }
             }
         }
@@ -426,7 +426,7 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String)}\")"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, purpose = "assertions")}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET

@@ -132,28 +132,63 @@ object GeneUtils {
      * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
      * the symbol signifies an object reference (which would likely cause the assertion to fail).
      * TODO: Tests are needed to make sure this does not break.
+     * Escapes may have to be applied differently between:
+         * Java and Kotlin
+         * calls and assertions
 
      */
-    fun applyEscapes(string: String, forAssertions: Boolean = false, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+
+    fun applyEscapes(string: String, purpose: String = "none", format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String{
+        val ret = when (purpose){
+            "queries" -> applyQueryEscapes(string, format)
+            "assertions" -> applyAssertionEscapes(string, format)
+            "json" -> applyJsonEscapes(string, format)
+            else -> string
+        }
+        //if(forQueries) return applyQueryEscapes(string, format)
+        //else return applyAssertionEscapes(string, format)
+        return ret
+    }
+
+    fun applyJsonEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+        val ret = string.replace("""\""", """\\""")
+        if (format.isKotlin()) return ret
+                .replace("\$", "\\$")
+        else return ret
+    }
+
+    fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
         var ret = ""
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
-        if (forAssertions) {
-            ret = string.split("@")[0] //first split off any reference that might differ between runs
-                    .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
-        }
-        else{
-            ret = string
-        }
-
-
-        ret = ret.replace("""\\""", """\\\\""")
+        ret = string.split("@")[0] //first split off any reference that might differ between runs
+                .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
+                .replace("""\\""", """\\\\""")
+                //.replace("\"", "\\\"")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
+
+        if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
+        //ret.replace("\$", "\\\$")
+        else return ret
+    }
+
+    fun applyQueryEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+        val ret = string
+                .replace("""\"""", """\\\"""")
+                .replace("""\\""", """\\\\""")
+                //.replace("\"", "%22")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
 
 
 
-        if (format.isKotlin()) return ret.replace("\$", "\\\$")
+        if (format.isKotlin()) return ret.replace("\$", "%24")
+        //ret.replace("\$", "\\\$")
         else return ret
     }
 

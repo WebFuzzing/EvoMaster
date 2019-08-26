@@ -216,15 +216,13 @@ class StringGene(
             when {
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
                 (targetFormat == null) -> return "\"$rawValue\""
-                targetFormat.isKotlin() -> return "\"$rawValue\""
-                        .replace("\\", "\\\\")
-                        .replace("$", "\\$")
-                else -> return "\"$rawValue\""
-                        .replace("\\", "\\\\")
+                //else -> return GeneUtils.applyEscapes("\"$rawValue\"", "json", targetFormat)
+                else -> return "\"${GeneUtils.applyEscapes(rawValue, "json", targetFormat)}\""
             }
         }
     }
 
+    /*
     fun getValueAsPrintableString(mode: String?, targetFormat: OutputFormat?): String {
         val rawValue = getValueAsRawString()
         if (mode != null && mode.equals("xml")) {
@@ -232,7 +230,7 @@ class StringGene(
         } else {
             when {
                 (targetFormat == null) -> return "\"$rawValue\""
-                else -> return GeneUtils.applyEscapes("\"$rawValue\"", false, targetFormat)
+                else -> return GeneUtils.applyEscapes(rawValue, "json", targetFormat)
                 /*
                 targetFormat.isKotlin() -> return "\"$rawValue\""
                         .replace("\\", "\\\\")
@@ -243,6 +241,9 @@ class StringGene(
             }
         }
     }
+
+
+     */
 
     override fun getValueAsRawString(): String {
         if (specializationGene != null) {
