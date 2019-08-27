@@ -52,4 +52,30 @@ class OutputFormatterTest {
         val stringGene = StringGene("name", body)
         OutputFormatter.JSON_FORMATTER.getFormatted(body)
     }
+
+    @Test
+    fun testEscapes2(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+
+        val string = """{"id":"9d8UV_=e1T0eWTlc", "value":"93${'$'}v98g"}"""
+        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
+    @Test
+    fun testEscapes3(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+
+        val string = """
+            {"id":"19r\"l_", "value":""}
+        """
+        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
+    @Test
+    fun testEscapes4(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+        val testGene = StringGene("QuoteGene", "Test For the quotes ${'"'}escape")
+
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString())
+    }
 }

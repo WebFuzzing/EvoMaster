@@ -390,7 +390,8 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"$uri\"")
+                lines.append("\"${GeneUtils.applyEscapes(uri, purpose = "uris")}\"")
+                //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)

@@ -140,6 +140,7 @@ object GeneUtils {
 
     fun applyEscapes(string: String, purpose: String = "none", format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String{
         val ret = when (purpose){
+            "uris" -> applyUriEscapes(string, format)
             "queries" -> applyQueryEscapes(string, format)
             "assertions" -> applyAssertionEscapes(string, format)
             "json" -> applyJsonEscapes(string, format)
@@ -151,10 +152,24 @@ object GeneUtils {
     }
 
     fun applyJsonEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string.replace("""\""", """\\""")
+        val ret = string
         if (format.isKotlin()) return ret
                 .replace("\$", "\\$")
+                .replace("\"", "\\\"")
+                .replace("\\", """\\""")
+
         else return ret
+                .replace("\"", "\\\"")
+                .replace("\\", """\\""")
+
+    }
+
+    fun applyUriEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+        val ret = string.replace("\\", "%5C")
+                .replace("\$", "%24")
+                .replace("\'", "%27")
+
+        return ret
     }
 
     fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
@@ -162,8 +177,7 @@ object GeneUtils {
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
         ret = string.split("@")[0] //first split off any reference that might differ between runs
                 .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
-                .replace("""\\""", """\\\\""")
-                //.replace("\"", "\\\"")
+                .replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -172,14 +186,15 @@ object GeneUtils {
 
         if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
-        else return ret
+        else return ret.replace("\$", "\\\$")
     }
 
     fun applyQueryEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
         val ret = string
-                .replace("""\"""", """\\\"""")
-                .replace("""\\""", """\\\\""")
-                //.replace("\"", "%22")
+                //.replace("""\"""", """\\\"""")
+                //.replace("""\\""", """\\\\""")
+                .replace("\\", """\\""")
+                .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\b", "\\b")

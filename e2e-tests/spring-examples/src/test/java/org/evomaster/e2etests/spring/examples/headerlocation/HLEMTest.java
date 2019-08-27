@@ -17,7 +17,7 @@ public class HLEMTest extends HLTestBase {
         runTestHandlingFlakyAndCompilation(
                 "HeaderLocationEM",
                 "org.bar.HeaderLocationEM",
-                5_000,
+                10_000,
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);
