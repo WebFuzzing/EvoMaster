@@ -706,7 +706,7 @@ class TestCaseWriter {
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             //lines.add(".body(isEmptyOrNullString())")
-                            lines.add(".body(containsString(\"${result.getBody()}\"))")
+                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), purpose = "assertions", format = format)}\"))")
                         }
                     }
                 }

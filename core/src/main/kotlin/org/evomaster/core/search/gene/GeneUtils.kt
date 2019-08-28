@@ -186,7 +186,7 @@ object GeneUtils {
 
         if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
-        else return ret.replace("\$", "\\\$")
+        else return ret
     }
 
     fun applyQueryEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
