@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
@@ -156,6 +157,12 @@ class RestFitness : FitnessFunction<RestIndividual>() {
         dto.targets.forEach { t ->
 
             if (t.descriptiveId != null) {
+
+                if(! config.useMethodReplacement &&
+                        t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)){
+                    return@forEach
+                }
+
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 
@@ -166,7 +173,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         handleResponseTargets(fv, individual.actions, actionResults)
 
-        expandIndividual(individual, dto.additionalInfoList)
+        if(config.expandRestIndividuals) {
+            expandIndividual(individual, dto.additionalInfoList)
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
 

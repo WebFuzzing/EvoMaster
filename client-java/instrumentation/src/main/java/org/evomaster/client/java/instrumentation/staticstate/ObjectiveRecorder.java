@@ -182,7 +182,7 @@ public class ObjectiveRecorder {
      * @param descriptiveId of the objective/target
      * @param value         of the coverage heuristic, in [0,1]
      */
-    public static void update(String descriptiveId, double value) {
+    static void update(String descriptiveId, double value) {
 
         Objects.requireNonNull(descriptiveId);
         if (value < 0d || value > 1) {

@@ -8,7 +8,7 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
-import org.evomaster.client.java.instrumentation.testabilityboolean.StringTransformer;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.sql.Timestamp;
@@ -396,7 +396,7 @@ public class HeuristicsCalculator {
     private double computeComparison(String a, String b, ComparisonOperator exp) {
 
         if (exp instanceof EqualsTo) {
-            return StringTransformer.getLeftAlignmentDistance(a, b);
+            return DistanceHelper.getLeftAlignmentDistance(a, b);
         } else if (exp instanceof NotEqualsTo) {
             if (a.equals(b)) {
                 return Double.MAX_VALUE;

@@ -555,7 +555,7 @@ class EMConfig {
     var customNaming = false
 
     /*
-        You need to decode it if you want to know what is says...
+        You need to decode it if you want to know what it says...
      */
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
@@ -570,4 +570,9 @@ class EMConfig {
             "NOTE: this should not cause any tests to fail.")
     var enableBasicAssertions = false
 
+    @Cfg("Apply method replacement heuristics to smooth the search landscape")
+    var useMethodReplacement = true
+
+    @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
+    var expandRestIndividuals = true
 }

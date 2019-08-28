@@ -1,8 +1,12 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
+import org.evomaster.client.java.instrumentation.shared.TaintInputName;
+
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
@@ -30,6 +34,26 @@ public class AdditionalInfo implements Serializable {
      */
     private Set<String> headers = new CopyOnWriteArraySet<>();
 
+    /**
+     * Map from taint input name to string specializations for it
+     */
+    private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
+
+
+    public void addSpecialization(String taintInputName, StringSpecializationInfo info){
+        if(!TaintInputName.isTaintInput(taintInputName)){
+            throw new IllegalArgumentException("No valid input name: " + taintInputName);
+        }
+        Objects.requireNonNull(info);
+
+        Set<StringSpecializationInfo> set = stringSpecializations.putIfAbsent(taintInputName, new CopyOnWriteArraySet<>());
+        set.add(info);
+    }
+
+    public Map<String, Set<StringSpecializationInfo>> getStringSpecializationsView(){
+        //note: this does not prevent modifying the sets inside it
+        return Collections.unmodifiableMap(stringSpecializations);
+    }
 
     public void addQueryParameter(String param){
         if(param != null && ! param.isEmpty()){
