@@ -140,10 +140,11 @@ object GeneUtils {
 
     fun applyEscapes(string: String, purpose: String = "none", format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String{
         val ret = when (purpose){
-            "uris" -> applyUriEscapes(string, format)
+            "uris" -> string
             "queries" -> applyQueryEscapes(string, format)
             "assertions" -> applyAssertionEscapes(string, format)
             "json" -> applyJsonEscapes(string, format)
+            "text" -> applyTextEscapes(string, format)
             else -> string
         }
         //if(forQueries) return applyQueryEscapes(string, format)
@@ -152,24 +153,22 @@ object GeneUtils {
     }
 
     fun applyJsonEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string
-        if (format.isKotlin()) return ret
-                .replace("\$", "\\$")
-                .replace("\"", "\\\"")
-                .replace("\\", """\\""")
-
-        else return ret
+        val ret = when{
+            format.isKotlin() -> string.replace("\$", "\\$")
+            else -> string
+        }
+        return ret
                 .replace("\"", "\\\"")
                 .replace("\\", """\\""")
 
     }
 
-    fun applyUriEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string.replace("\\", "%5C")
-                .replace("\$", "%24")
-                .replace("\'", "%27")
-
-        return ret
+    fun applyTextEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+        val ret = when{
+            format.isKotlin() -> string.replace("\$", "\\$")
+            else -> string
+        }
+        return ret.replace("\\", """\\""")
     }
 
     fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {

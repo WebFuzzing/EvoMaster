@@ -216,7 +216,8 @@ class StringGene(
             when {
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
                 (targetFormat == null) -> return "\"${rawValue.replace("\"", "\\\"")}\""
-                else -> return "\"${GeneUtils.applyEscapes(rawValue, "json", targetFormat)}\""
+                (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
+                else -> return "\"${GeneUtils.applyEscapes(rawValue, "text" ,targetFormat)}\""
             }
 
         }
