@@ -482,9 +482,6 @@ class TestCaseWriter {
                         //resContents.sortBy { it.toString() }
                         //assertions on contents
                         if(resContents.size > 0){
-                            if(resContents.first() is Map<*, *>) resContents.sortBy { it.toString() }
-                            // Sorting needed as sometimes retrieving collections results in non-deterministic order
-                            // (eg ScoutAPI - users).
                             resContents.forEachIndexed { test_index, value ->
                                 if (value is Map<*, *>){
                                     handleMapLines(test_index, value, lines)

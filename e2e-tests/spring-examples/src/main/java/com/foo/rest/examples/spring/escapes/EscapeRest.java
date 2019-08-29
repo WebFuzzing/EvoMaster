@@ -24,7 +24,7 @@ public class EscapeRest {
             dto.response = "Nope";
             dto.valid = false;
         }
-        else if(s.contains("$")){
+        else if(s.contains("$") || s.contains("%24")){
             dto.response = "This contains $";
             dto.valid = true;
         } else {
@@ -47,7 +47,7 @@ public class EscapeRest {
             dto.response = "Nope";
             dto.valid = false;
         }
-        else if(s.contains("\"")){
+        else if(s.contains("\"") || s.contains("%22")){
             dto.response = "This contains \"";
             dto.valid = true;
         } else {

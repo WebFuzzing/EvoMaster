@@ -62,7 +62,24 @@ public class EscapeManualTest extends EscapeTestBase {
                 .then()
                 .statusCode(200)
                 .body("valid", is(true))
-                .body("response", is("This contains \""));
+                .body("response", containsString("\""));
+    }
+
+    @Test
+    public void testContainsQuote2(){
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/escape/containsQuote/doesnt")
+                .then()
+                .statusCode(200)
+                .body("valid", is(false))
+                .body("response", is("Nope"));
+
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/escape/containsQuote/it%2F%2F%22ingdoes")
+                .then()
+                .statusCode(200)
+                .body("valid", is(true))
+                .body("response", containsString("\""));
     }
 
     /*

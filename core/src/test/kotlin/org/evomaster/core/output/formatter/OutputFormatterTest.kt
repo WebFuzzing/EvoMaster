@@ -76,6 +76,14 @@ class OutputFormatterTest {
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val testGene = StringGene("QuoteGene", "Test For the quotes ${'"'}escape")
 
-        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString())
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json"))
+    }
+
+    @Test
+    fun testEscapes5(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+        val testGene = StringGene("QuoteGene", "Test For the quotes ${"D\\\\\"C"}escape")
+
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json"))
     }
 }
