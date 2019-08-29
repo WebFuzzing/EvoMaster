@@ -65,6 +65,8 @@ public class EscapeManualTest extends EscapeTestBase {
                 .body("response", containsString("\""));
     }
 
+
+    /*
     @Test
     public void testContainsQuote2(){
         given().accept(ContentType.JSON)
@@ -82,7 +84,7 @@ public class EscapeManualTest extends EscapeTestBase {
                 .body("response", containsString("\""));
     }
 
-    /*
+
 
 
     @Test
