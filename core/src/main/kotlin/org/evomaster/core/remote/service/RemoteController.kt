@@ -41,16 +41,19 @@ class RemoteController() : DatabaseExecutor {
 
     private var computeSqlHeuristics = true
 
+    private var extractSqlExecutionInfo = true
+
 
     @Inject
     private lateinit var config: EMConfig
 
     private val client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this() {
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
         this.host = host
         this.port = port
-        this.computeSqlHeuristics = computeSqlHeuristics;
+        this.computeSqlHeuristics = computeSqlHeuristics
+        this.extractSqlExecutionInfo = computeSqlHeuristics || extractSqlExecutionInfo
     }
 
     @PostConstruct
@@ -58,6 +61,7 @@ class RemoteController() : DatabaseExecutor {
         host = config.sutControllerHost
         port = config.sutControllerPort
         computeSqlHeuristics = config.heuristicsForSQL
+        extractSqlExecutionInfo = config.extractSqlExecutionInfo
     }
 
     @PreDestroy
@@ -134,7 +138,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.RUN_SUT_PATH)
                     .request()
-                    .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics)))
+                    .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo)))
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
             return false

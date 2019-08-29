@@ -241,6 +241,11 @@ class EMConfig {
                     "collecting heuristics with 'heuristicsForSQL'")
         }
 
+        if(heuristicsForSQL && ! extractSqlExecutionInfo){
+            throw IllegalArgumentException("Cannot collect heuristics SQL data if you not enable " +
+                    "extracting SQL execution info with 'extractSqlExecutionInfo'")
+        }
+
         if(enableTrackEvaluatedIndividual && enableTrackIndividual){
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
@@ -520,6 +525,9 @@ class EMConfig {
 
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
+
+    @Cfg("Enable extracting SQL execution info")
+    var extractSqlExecutionInfo = heuristicsForSQL
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
