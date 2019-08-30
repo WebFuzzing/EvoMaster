@@ -50,7 +50,7 @@ class RemoteController() : DatabaseExecutor {
     private val client: Client = ClientBuilder.newClient()
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
-        if (computeSqlHeuristics && extractSqlExecutionInfo)
+        if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")
         this.host = host
         this.port = port
