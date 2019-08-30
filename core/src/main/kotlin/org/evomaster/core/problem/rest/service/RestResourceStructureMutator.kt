@@ -201,10 +201,8 @@ class RestResourceStructureMutator : StructureMutator() {
 
         max += ind.getResourceCalls()[pos].actions.size
 
-        ind.removeResourceCall(pos)
-
         var pair = if(fromDependency && pos != ind.getResourceCalls().size -1){
-                        dm.handleAddDepResource(ind, max, ind.getResourceCalls().subList(pos, ind.getResourceCalls().size).toMutableList())
+                        dm.handleAddDepResource(ind, max, if (pos == ind.getResourceCalls().size-1) mutableListOf() else ind.getResourceCalls().subList(pos+1, ind.getResourceCalls().size).toMutableList())
                     }else null
 
 
@@ -217,6 +215,8 @@ class RestResourceStructureMutator : StructureMutator() {
                 dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
             }
         }
+
+        ind.removeResourceCall(pos)
 
         maintainAuth(auth, call!!)
         ind.addResourceCall(pos, call)
