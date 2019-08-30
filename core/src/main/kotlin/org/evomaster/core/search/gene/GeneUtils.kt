@@ -138,8 +138,8 @@ object GeneUtils {
 
      */
 
-    fun applyEscapes(string: String, purpose: String = "none", format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String{
-        val ret = when (purpose){
+    fun applyEscapes(string: String, mode: String = "none", format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String{
+        val ret = when (mode){
             "uris" -> string
             "queries" -> applyQueryEscapes(string, format)
             "assertions" -> applyAssertionEscapes(string, format)
@@ -168,7 +168,9 @@ object GeneUtils {
             format.isKotlin() -> string.replace("\$", "\\$")
             else -> string
         }
-        return ret.replace("\\", """\\""")
+        return ret
+                .replace("\"", "\\\"")
+                .replace("\\", """\\""")
     }
 
     fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {

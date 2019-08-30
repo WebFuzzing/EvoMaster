@@ -390,7 +390,7 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${GeneUtils.applyEscapes(uri, purpose = "uris")}\"")
+                lines.append("\"${GeneUtils.applyEscapes(uri, mode = "uris")}\"")
                 //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
@@ -400,8 +400,8 @@ class TestCaseWriter {
                 lines.append("\"$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], purpose = "queries")}&\" + ") }
-                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), purpose = "queries")}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = "queries")}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = "queries")}\"")
                 }
             }
         }
@@ -427,7 +427,7 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, purpose = "assertions")}\")"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -599,7 +599,16 @@ class TestCaseWriter {
                 lines.add(".body(\"$body\")")
             } */ else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
-                lines.add(".body($body)")
+                if (body != "\"\"") {
+                    lines.add(".body($body)")
+                }
+                else {
+                    lines.add(".body(\"${"""\"\""""}\")")
+                }
+
+                //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
+                // inserting \"\" should prevent that problem
+                // TODO: get some tests done of this
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
             }
@@ -703,7 +712,7 @@ class TestCaseWriter {
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             //lines.add(".body(isEmptyOrNullString())")
-                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), purpose = "assertions", format = format)}\"))")
+                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = "assertions", format = format)}\"))")
                         }
                     }
                 }

@@ -1,9 +1,6 @@
 package com.foo.rest.examples.spring.escapes;
 
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;
 
@@ -55,6 +52,14 @@ public class EscapeRest {
             dto.valid = false;
         }
         return dto;
+    }
+
+    @PostMapping(value = "emptyBody", consumes = "text/plain")
+    public int emptyBody( @RequestBody String text){
+        if (!text.equals("\"\""))
+            return 0;
+        else
+            return 1;
     }
 
     /*

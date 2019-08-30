@@ -29,7 +29,7 @@ public class EscapeManualTest extends EscapeTestBase {
         Swagger swagger = new SwaggerParser().parse(swaggerJson);
 
         assertEquals("/", swagger.getBasePath());
-        assertEquals(2, swagger.getPaths().size());
+        assertEquals(3, swagger.getPaths().size());
     }
 
     @Test
@@ -65,6 +65,18 @@ public class EscapeManualTest extends EscapeTestBase {
                 .body("response", containsString("\""));
     }
 
+    @Test
+    public void testEmptyBody(){
+        given().accept("*/*")
+                .contentType("text/plain")
+                .body("d86zL")
+                .post(baseUrlOfSut + "/api/escape/emptyBody")
+                .then()
+                .statusCode(200)
+                .assertThat()
+                .contentType("application/json")
+                .body(containsString("0"));
+    }
 
     /*
     @Test

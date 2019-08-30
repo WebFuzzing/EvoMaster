@@ -24,10 +24,13 @@ public class EscapeEMTest extends EscapeTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/escape/containsDollar/{s}", "false");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/escape/containsQuote/{s}", "false");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "api/escape/emptyBody", "0");
 
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/escape/containsDollar/{s}", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/escape/containsQuote/{s}", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "api/escape/emptyBody", "1");
+
                 });
     }
 }
