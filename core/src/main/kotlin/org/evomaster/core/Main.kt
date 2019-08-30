@@ -12,6 +12,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.problem.rest.service.ResourceRestModule
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.problem.web.service.WebModule
@@ -139,6 +140,8 @@ class Main {
             val solution = run(injector)
 
             writeOverallProcessData(injector)
+
+            writeDependencies(injector)
 
             writeTests(injector, solution, controllerInfo)
 
@@ -311,6 +314,18 @@ class Main {
 
             val process = injector.getInstance(SearchProcessMonitor::class.java)
             process.saveOverall()
+        }
+
+        private fun writeDependencies(injector: Injector) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.exportDependencies) {
+                return
+            }
+
+            val dm = injector.getInstance(ResourceDepManageService::class.java)
+            dm.exportDependencies()
         }
     }
 }

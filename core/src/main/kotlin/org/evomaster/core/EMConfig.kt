@@ -642,6 +642,10 @@ class EMConfig {
     var exportDependencies = false
 
     @Experimental
+    @Cfg("Specify a file that saves derived dependencies")
+    var dependencyFile = "dependencies.csv"
+
+    @Experimental
     @Cfg("Whether to involve database when applying resource-based methods, e.g., resource-based sampling, dependency analysis between resource and tables.")
     var doesInvolveDatabase = false
 

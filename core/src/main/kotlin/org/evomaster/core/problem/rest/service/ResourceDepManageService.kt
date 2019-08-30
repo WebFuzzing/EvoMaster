@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
@@ -25,6 +27,8 @@ import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
+import java.nio.file.Files
+import java.nio.file.Paths
 import kotlin.math.max
 
 
@@ -1174,5 +1178,23 @@ class ResourceDepManageService {
 
     fun getRelatedResource(resource : String) : Set<String> = dependencies[resource]?.flatMap { it.targets }?.toSet()?: setOf()
 
+
+    fun exportDependencies(){
+        val path = Paths.get(config.dependencyFile)
+        Files.createDirectories(path.parent)
+
+        if (dependencies.isNotEmpty()){
+            val header = mutableListOf("key").plus(dependencies.values.first().first().toCSVHeader()).joinToString(",")
+            val content = mutableListOf<String>()
+            dependencies.forEach { (t, u) ->
+                u.forEachIndexed { index, resourceRelatedToResources ->
+                    val row = mutableListOf(if (index == 0) t else "").plus(resourceRelatedToResources.exportCSV())
+                    content.add(row.joinToString(","))
+                }
+            }
+            Files.write(path, listOf(header).plus(content))
+        }
+
+    }
 
 }

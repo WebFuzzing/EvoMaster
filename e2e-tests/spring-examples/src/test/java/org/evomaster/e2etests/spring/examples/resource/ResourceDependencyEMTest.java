@@ -6,6 +6,8 @@ import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
@@ -26,7 +28,6 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                 1_000,
                 false,
                 (args) -> {
-
                     args.add("--heuristicsForSQL");
                     args.add("false");
                     args.add("--generateSqlDataWithSearch");
@@ -37,6 +38,14 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--maxTestSize");
                     args.add("4");
 
+                    args.add("--exportDependencies");
+                    args.add("true");
+
+                    String dependencies = "target/dependencyInfo/dependencies.csv";
+
+                    args.add("--dependencyFile");
+                    args.add(dependencies);
+
                     args.add("--resourceSampleStrategy");
                     args.add("EqualProbability");
                     args.add("--doesInvolveDatabase");
@@ -44,7 +53,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
                     args.add("--doesApplyNameMatching");
-                    args.add("true");
+                    args.add("false");
 
                     args.add("--probOfEnablingResourceDependencyHeuristics");
                     args.add("1.0");
@@ -54,6 +63,8 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assert(Files.exists(Paths.get(dependencies)));
 
                     boolean anyDBExecution = solution.getIndividuals().stream().anyMatch(
                             s -> s.getFitness().isAnyDatabaseExecutionInfo()

@@ -23,6 +23,22 @@ open class ResourceRelatedToResources(
         val rpath = RestPath(target)
         return targets.filter { !exclude.contains(it) && (!exceptDirectHierarchy || !RestPath(it).run { rpath.isDirectChildOf(this) || rpath.isAncestorOf(this)})}
     }
+
+    open fun toCSVHeader() = listOf(
+            "type", "source", "targets", "probability", "additionInfo", "others"
+    )
+
+    open fun toCSV() : List<String> = listOf(
+            this::class.java.simpleName, path.joinToString(getSeparator()), targets.joinToString(getSeparator()), probability.toString(), additionalInfo, ""
+    )
+
+    open fun exportCSV() : List<String>{
+        if (toCSVHeader().size != toCSV().size)
+            throw IllegalArgumentException("inconsistent header and content")
+        return toCSV()
+    }
+
+    open fun getSeparator() = ";"
 }
 /**
  * this class presents mutual relations among resources that are derived based on tables.
@@ -39,6 +55,10 @@ class MutualResourcesRelations(mutualResources: List<String>, probability: Doubl
     override fun getName(): String {
         return "MutualRelations:${notateKey()}"
     }
+
+    override fun toCSV() : List<String> = listOf(
+            this::class.java.simpleName, path.joinToString(getSeparator()), targets.joinToString(getSeparator()), probability.toString(), additionalInfo, referredTables.joinToString(getSeparator())
+    )
 }
 
 class SelfResourcesRelation(path : String, probability: Double = 1.0, info: String = "") : ResourceRelatedToResources(mutableListOf(path), mutableListOf(path), probability, info)
