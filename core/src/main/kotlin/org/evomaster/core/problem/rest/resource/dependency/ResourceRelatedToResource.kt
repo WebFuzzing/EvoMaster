@@ -1,5 +1,7 @@
 package org.evomaster.core.problem.rest.resource.dependency
 
+import org.evomaster.core.problem.rest.RestPath
+
 /**
  *  @param path is a list of path(s), which can be parsed with [RelatedTo.parseMultipleKey]
  *  @param target is a list of paths of related rest resources
@@ -15,6 +17,12 @@ open class ResourceRelatedToResources(
         assert(path.isNotEmpty())
     }
 
+    open fun getDependentResources(target : String, exceptDirectHierarchy : Boolean = true, exclude : List<String> = mutableListOf()) : List<String>{
+        if (!path.contains(target))
+            throw IllegalArgumentException("$target does not belong to this ResourceRelatedToResources")
+        val rpath = RestPath(target)
+        return targets.filter { !exclude.contains(it) && (!exceptDirectHierarchy || !RestPath(it).run { rpath.isDirectChildOf(this) || rpath.isAncestorOf(this)})}
+    }
 }
 /**
  * this class presents mutual relations among resources that are derived based on tables.

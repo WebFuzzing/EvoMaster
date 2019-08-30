@@ -48,11 +48,8 @@ class FeatureServiceResourceBasedTest : ResourceTestBase() {
         // all are related
     }
 
-    override fun testResourceStructureMutator() {
-
-    }
 
     override fun testResourceStructureMutatorWithDependency() {
-
+        testResourceStructureMutatorWithDependencyWithSpecified("/products/{productName}/features", null);
     }
 }

@@ -211,10 +211,12 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
 
     override fun generateRelatedTables(calls: RestResourceCalls, dbActions : MutableList<DbAction>): MutableMap<RestAction, MutableList<ParamGeneBindMap>> {
         val missingParamsInfo = calls.getResourceNode().getMissingParams(calls.template!!.template)
+
+        val result = mutableMapOf<RestAction, MutableList<ParamGeneBindMap>>()
+
         val missingParams = missingParamsInfo.map { it.key }
         val resource = calls.getResourceNode()
 
-        val result = mutableMapOf<RestAction, MutableList<ParamGeneBindMap>>()
 
 //        val resourcesMap = mutableMapOf<RestResourceNode, MutableSet<String>>()
 //        val actionMap = mutableMapOf<RestAction, MutableSet<String>>()

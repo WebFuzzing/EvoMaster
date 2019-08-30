@@ -29,7 +29,7 @@ class RestResourceSampler : ResourceSampler(){
 
         assert(config.resourceSampleStrategy != EMConfig.ResourceSamplingStrategy.NONE)
 
-        log.debug("Initializing {}", RestSampler::class.simpleName)
+        log.debug("Initializing {}", RestResourceSampler::class.simpleName)
 
         rc.checkConnection()
 

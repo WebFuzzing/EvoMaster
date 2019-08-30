@@ -39,12 +39,8 @@ class CatwatchResourceBasedTest : ResourceTestBase() {
         simulateDerivationOfDependencyRegardingFitness("/statistics","/delete","/export")
     }
 
-    override fun testResourceStructureMutator() {
-
-    }
-
     override fun testResourceStructureMutatorWithDependency() {
-
+        testResourceStructureMutatorWithDependencyWithSimulatedDependency("/statistics","/delete","/export")
     }
 
 }

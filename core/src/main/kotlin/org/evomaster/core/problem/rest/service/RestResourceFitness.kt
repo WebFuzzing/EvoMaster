@@ -4,11 +4,8 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
-import org.evomaster.core.database.DbActionUtils
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.AbstractRestFitness
+import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.resource.ResourceStatus
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
@@ -58,11 +55,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         for (call in individual.getResourceCalls()) {
 
-            try{
-                doInitializingCalls(call.dbActions, sqlIdMap)
-            }catch (e : Exception){
-                DbActionUtils.verifyForeignKeys(individual.getResourceCalls().flatMap { it.dbActions })
-            }
+            doInitializingCalls(call.dbActions, sqlIdMap)
 
             var terminated = false
 
@@ -73,6 +66,13 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
                 if (a is RestCallAction) {
                     ok = handleRestCall(a, actionResults, chainState)
+                    /*
+                    update creation of resources regarding response status
+                     */
+                    if (a.verb.run { this == HttpVerb.POST || this == HttpVerb.PUT} && call.status == ResourceStatus.CREATED && (actionResults[indexOfAction] as RestCallResult).getStatusCode().run { this != 201 || this != 200 }){
+                        call.getResourceNode().confirmFailureCreationByPost(call)
+                    }
+
                 } else {
                     throw IllegalStateException("Cannot handle: ${a.javaClass}")
                 }
@@ -104,6 +104,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             return null
         }
 
+        /*
+         update dependency regarding executed dto
+         */
         if(config.doesInvolveDatabase)
             dm.updateResourceTables(individual, dto)
 

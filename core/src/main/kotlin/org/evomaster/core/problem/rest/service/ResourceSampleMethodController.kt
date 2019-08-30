@@ -9,7 +9,6 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import sun.management.MethodInfo
 
 /**
  * dynamically determinate resource-based sample method
@@ -47,8 +46,8 @@ class ResourceSampleMethodController {
         methods.getValue(S1iR).applicable = true //mutableMap.values.filter { r -> r.hasIndependentAction }.isNotEmpty()
         rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.let {
             methods.getValue(S1dR).applicable = it.isNotEmpty()
-            methods.getValue(S2dR).applicable = it.size > 1
-            methods.getValue(SMdR).applicable = it.size > 2
+            methods.getValue(S2dR).applicable = it.size > 1 && config.maxTestSize > 1
+            methods.getValue(SMdR).applicable = it.size > 2 && config.maxTestSize > 2
         }
 
         //FIXME Man Zhang
@@ -76,13 +75,12 @@ class ResourceSampleMethodController {
         println(message)
     }
     private fun validateProbability() {
-        if(methods.values.map { it.probability }.sum() != 1.0){
-            log.warn("a sum of probability of applicable strategies is not 1")
+        if(methods.values.map { it.probability }.sum().run { this > 1.1 && this < 0.9 }){
+            log.warn("a sum of probability of applicable strategies should be 1.0 but ${methods.values.map { it.probability }.sum()}")
         }
     }
 
     private fun initProbability(){
-        //printSummaryOfResources(rm.getResourceCluster())
         when(config.resourceSampleStrategy){
             EMConfig.ResourceSamplingStrategy.EqualProbability -> initEqualProbability()
             EMConfig.ResourceSamplingStrategy.Customized -> initProbabilityWithSpecified()
@@ -94,7 +92,6 @@ class ResourceSampleMethodController {
                 throw IllegalArgumentException("wrong invocation of SmartSamplingController!")
             }
         }
-        //printApplicableStr()
         update()
     }
 
@@ -205,7 +202,7 @@ class ResourceSampleMethodController {
             methods.filter { it.value.applicable }.forEach { s->
                 when(s.key){
                     S1iR -> s.value.probability = focusedStrategy/one
-                    ResourceSamplingMethod.S1dR -> s.value.probability = focusedStrategy/one
+                    S1dR -> s.value.probability = focusedStrategy/one
                     else -> s.value.probability = (1.0 - focusedStrategy)/two
                 }
             }

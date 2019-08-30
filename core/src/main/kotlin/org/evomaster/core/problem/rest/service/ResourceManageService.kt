@@ -184,7 +184,6 @@ class ResourceManageService {
             return
         }
 
-        //assert(!ar.isIndependent())
         var candidateForInsertion : String? = null
 
         if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(0.5))){
@@ -203,7 +202,7 @@ class ResourceManageService {
             }
         } else candidateForInsertion
 
-        val call = ar.genCalls(candidate, randomness, size,true,true)
+        val call = ar.genCalls(candidate, randomness, size,true, true)
         calls.add(call)
 
         if(hasDBHandler()){
@@ -290,7 +289,7 @@ class ResourceManageService {
 
     private fun handleDbActionForCall(call: RestResourceCalls, forceInsert: Boolean, forceSelect: Boolean) : Boolean{
 
-        val paramToTables = dm.extractRelatedTablesForCall(call) // dm.prepareRelatedTablesForCall(call)
+        val paramToTables = dm.extractRelatedTablesForCall(call)
         if(paramToTables.isEmpty()) return false
 
         val relatedTables = paramToTables.values.flatMap { it.map { g->g.tableName } }.toSet()

@@ -26,24 +26,23 @@ class RestResourceStructureMutator : StructureMutator() {
         mutateRestResourceCalls(individual)
     }
 
-    private fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null ) {
+    fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null ) {
 
         val num = ind.getResourceCalls().size
 
+        val validCandidates =  MutationType.values()
+                .filter {  num >= it.minSize }
+                .filterNot{
+                    (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
+                            //if the individual includes all resources, ADD and REPLACE are not applicable
+                            (ind.getResourceCalls().map {
+                                it.resourceInstance?.getKey()
+                            }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
+                            //if the size of deletable individual is less 2, Delete and SWAP are not applicable
+                            (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
+                }
         val executedStructureMutator = specified?:
-            randomness.choose(
-                MutationType.values()
-                    .filter {  num >= it.minSize }
-                    .filterNot{
-                        (ind.seeActions().size == config.maxTestSize && it == MutationType.ADD) ||
-                                //if the individual includes all resources, ADD and REPLACE are not applicable
-                                (ind.getResourceCalls().map {
-                                    it.resourceInstance?.getKey()
-                                }.toSet().size >= rm.getResourceCluster().size && (it == MutationType.ADD || it == MutationType.REPLACE)) ||
-                                //if the size of deletable individual is less 2, Delete and SWAP are not applicable
-                                (ind.getResourceCalls().filter(RestResourceCalls::isDeletable).size < 2 && (it == MutationType.DELETE || it == MutationType.SWAP))
-
-                    })
+            randomness.choose(validCandidates )
         when(executedStructureMutator){
             MutationType.ADD -> handleAdd(ind)
             MutationType.DELETE -> handleDelete(ind)
@@ -135,6 +134,9 @@ class RestResourceStructureMutator : StructureMutator() {
 
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
+        if (max ==0){
+            handleDelete(ind)
+        }
 
         val fromDependency = dm.isDependencyNotEmpty()
                 && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)

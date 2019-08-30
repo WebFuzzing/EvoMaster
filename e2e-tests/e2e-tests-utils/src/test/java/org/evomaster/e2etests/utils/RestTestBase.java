@@ -120,10 +120,12 @@ public abstract class RestTestBase {
 
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda);
 
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            ClassName className = new ClassName(fullClassName);
-            compileRunAndVerifyTests(outputFolderName, className);
-        });
+        if (createTests){
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                ClassName className = new ClassName(fullClassName);
+                compileRunAndVerifyTests(outputFolderName, className);
+            });
+        }
     }
 
     protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){

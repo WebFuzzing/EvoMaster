@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest.util
 
+import org.apache.lucene.search.similarities.Similarity
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
@@ -23,7 +24,7 @@ class ParamUtil {
          * when identifying relationship based on the "tokens", if the token belongs to [GENERAL_NAMES],
          * we may further use up-level token.
          */
-        private val GENERAL_NAMES = mutableListOf("id", "name")
+        private val GENERAL_NAMES = mutableListOf("id", "name", "value")
 
         private val log: Logger = LoggerFactory.getLogger(ParamUtil::class.java)
 
@@ -76,24 +77,44 @@ class ParamUtil {
 
         private fun bindBodyParam(bp : BodyParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
             if(numOfBodyParam(params) != params.size ){
-                params.filter { p -> !(p is BodyParam) }
+                params.filter { p -> p !is BodyParam }
                         .forEach {ip->
                             bindBodyAndOther(bp, targetPath, ip, sourcePath, true, inner)
                         }
             }else if(params.isNotEmpty()){
                 val valueGene = getValueGene(bp.gene)
                 val pValueGene = getValueGene(params[0].gene)
-                if(valueGene !is ObjectGene
-                        || pValueGene !is ObjectGene){
+                if(valueGene !is ObjectGene){
                     //log.warn("improper BodyParam without ObjectGene")
                     return
                 }
-                if((valueGene).fields.map { g -> g.name }.containsAll((pValueGene).fields.map { g -> g.name })){
+                if (pValueGene !is ObjectGene){
+                    val field = valueGene.fields.find {
+                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || ParserUtil.stringSimilarityScore(modifyFieldName(valueGene, it), pValueGene.name) > ParserUtil.SimilarityThreshold)
+                    }?: return
+                    field.copyValueFrom(pValueGene)
+                    return
+                }
+
+                if(valueGene.refType.equals(pValueGene.refType)){
                     valueGene.copyValueFrom(pValueGene)
+                }else{
+                    valueGene.fields.forEach { f->
+                        val mName = modifyFieldName(valueGene, f)
+                        pValueGene.fields.find {
+                            val pMName = modifyFieldName(pValueGene, it)
+                            f::class.java.simpleName == it::class.java.simpleName && (pMName.equals(mName, ignoreCase = true) || ParserUtil.stringSimilarityScore(mName,pMName) > ParserUtil.SimilarityThreshold)
+                        }?.apply {
+                            f.copyValueFrom(this)
+                        }
+                    }
                 }
             }
         }
 
+        private fun modifyFieldName(obj: ObjectGene, field : Gene) : String{
+            return if (isGeneralName(field.name)) (obj.refType?:"") + field.name else field.name
+        }
         /**
          * TODO
          */
@@ -112,10 +133,24 @@ class ParamUtil {
         }
 
         private fun bindBodyAndOther(body : BodyParam, bodyPath:RestPath, other : Param, otherPath : RestPath, b2g: Boolean, inner : Boolean){
+            val otherGene = getValueGene(other.gene)
+            if (!isGeneralName(otherGene.name)){
+                val f = getValueGene(body.gene).run {
+                    if (this is ObjectGene){
+                        fields.find { it.name == otherGene.name}
+                    }else
+                        null
+                }
+                if (f != null && f::class.java.simpleName == otherGene::class.java.simpleName){
+                    copyGene(f, otherGene, b2g)
+                    return
+                }
+            }
+
             val pathMap = geneNameMaps(listOf(other), otherPath.getStaticTokens().reversed())
             val bodyMap = geneNameMaps(listOf(body), bodyPath.getStaticTokens().reversed())
-            pathMap.forEach { pathkey, pathGene ->
-                if(bodyMap.get(pathkey) != null){
+            pathMap.forEach { (pathkey, pathGene) ->
+                if(bodyMap.containsKey(pathkey)){
                     copyGene(bodyMap.getValue(pathkey), pathGene, b2g)
                 }else{
                     val matched = bodyMap.keys.filter { s -> scoreOfMatch(pathkey, s, inner) == 0 }
@@ -123,12 +158,6 @@ class ParamUtil {
                         val first = matched.first()
                         copyGene(bodyMap.getValue(first), pathGene, b2g)
                     }
-//                    else{
-//                        if(inner){
-//                            log.info("cannot find ${pathkey} in its bodyParam ${bodyMap.keys.joinToString(" ")}")
-//                        }else
-//                            log.warn("cannot find ${pathkey} in bodyParam ${bodyMap.keys.joinToString(" ")}")
-//                    }
                 }
             }
         }

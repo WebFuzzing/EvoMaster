@@ -107,12 +107,13 @@ class ResourceDepManageService {
 
         val groupTable = addedMap.flatMap { it.value }.toHashSet()
         groupTable.forEach { table ->
-            val relatedResource = addedMap.filter { it.value.contains(table) }.keys
+            val newRelatedResource = addedMap.filter { it.value.contains(table) }.keys
+            val previousResourcesWithTable = dependencies.values.flatMap { l -> l.filter { d->d is MutualResourcesRelations && d.referredTables.contains(table) }.flatMap { it.targets }}.toHashSet()
 
             var find = false
             dependencies.values.forEach { rlist ->
                 rlist.forEach { mu ->
-                    if (mu is MutualResourcesRelations && mu.targets.containsAll(relatedResource)) {
+                    if (mu is MutualResourcesRelations && mu.targets.containsAll(newRelatedResource.plus(previousResourcesWithTable).toHashSet())) {
                         mu.referredTables.add(table)
                         find = true
                     }
@@ -120,30 +121,38 @@ class ResourceDepManageService {
             }
 
             if (!find) {
-                val updatedMutual = mutableListOf<MutualResourcesRelations>()
-                dependencies.values.forEach { rlist ->
-                    rlist.forEach { mu ->
-                        if (mu is MutualResourcesRelations && mu.targets.any { t -> relatedResource.contains(t) } && mu.referredTables.contains(table)) {
-                            updatedMutual.add(mu)
-                        }
+                //update existing dependency with new related resources if it refers to the table
+                val updateToAddNewResource = mutableMapOf<String, MutableList<MutualResourcesRelations>>()
+                dependencies.forEach { (k, d) ->
+                    d.filter { r -> r is MutualResourcesRelations && r.referredTables.contains(table) }.forEach { r->
+                        updateToAddNewResource.getOrPut(k){ mutableListOf()}.add(r as MutualResourcesRelations)
                     }
                 }
-                if (updatedMutual.isNotEmpty()) {
-                    updatedMutual.forEach { mu ->
-                        val newTargetSet = mu.targets.plus(relatedResource).toHashSet().toList()
-                        val newMut = MutualResourcesRelations(newTargetSet, 1.0, mu.targets.plus(table).toHashSet())
-                        mu.targets.forEach { r ->
-                            dependencies[r]!!.remove(mu)
-                        }
-                        newTargetSet.forEach { r ->
-                            dependencies.getOrPut(r) { mutableListOf() }.add(newMut)
-                        }
-
+                updateToAddNewResource.forEach { (t, u) ->
+                    dependencies.getValue(t).removeAll(u)
+                    u.forEach { m->
+                        val newTargets = m.targets.plus(newRelatedResource).toHashSet()
+                        val newTables = m.referredTables.plus(table).toHashSet()
+                        val newMut = MutualResourcesRelations(newTargets.toList(), 1.0, newTables)
+                        dependencies.getValue(t).add(newMut)
                     }
-                } else {
-                    val newMut = MutualResourcesRelations(relatedResource.toMutableList(), 1.0, mutableSetOf(table))
-                    relatedResource.forEach { r ->
-                        dependencies.getOrPut(r) { mutableListOf() }.add(newMut)
+                }
+
+                //add new dependency for new RelatedResources with table
+                newRelatedResource.forEach {nr->
+                    dependencies.getOrPut(nr) { mutableListOf() }
+                    val append = dependencies.getValue(nr).filter { it is MutualResourcesRelations && newRelatedResource.plus(previousResourcesWithTable).toHashSet().containsAll(it.targets) }
+                    if (append.isNotEmpty()){
+                        append.forEach { a->
+                            dependencies.getValue(nr).remove(a)
+                            val newTargets = a.targets.plus(newRelatedResource).plus(previousResourcesWithTable).toHashSet()
+                            val newTables = (a as MutualResourcesRelations).referredTables.plus(table).toHashSet()
+                            val newMut = MutualResourcesRelations(newTargets.toList(), 1.0, newTables)
+                            dependencies.getValue(nr).add(newMut)
+                        }
+                    }else{
+                        val newMut = MutualResourcesRelations(newRelatedResource.plus(previousResourcesWithTable).toHashSet().toList(), 1.0, mutableSetOf(table))
+                        dependencies.getValue(nr).add(newMut)
                     }
                 }
             }
@@ -219,7 +228,7 @@ class ResourceDepManageService {
 
         }
         dto.queriedData.filter { u -> tables.any { it.key.toLowerCase() == u.key } }.let { get ->
-            updateResourceToTable(action, get, (action.verb == HttpVerb.PATCH || action.verb == HttpVerb.PUT), tables, addedMap, removedMap)
+            updateResourceToTable(action, get, true, tables, addedMap, removedMap)
         }
 
         rm.getResourceNodeFromCluster(action.path.toString()).resourceToTable.updateActionRelatedToTable(action.verb.toString(), dto, tables.keys)
@@ -364,10 +373,12 @@ class ResourceDepManageService {
         }
     }
 
-
+    /**
+     * return all calls of [ind] which are related to [call] with a probability that is more than [minProbability] and not more than [maxProbability]
+     */
     private fun findDependentResources(ind: RestIndividual, call: RestResourceCalls, minProbability: Double = 0.0, maxProbability: Double = 1.0): MutableList<RestResourceCalls> {
         return ind.getResourceCalls().filter { other ->
-            (other != call) && dependencies[call.getResourceNodeKey()]?.find { r -> r.targets.contains(other.getResourceNodeKey()) && r.probability >= minProbability && r.probability <= maxProbability } != null
+            (other != call) && dependencies[call.getResourceNodeKey()]?.any { r -> r.targets.contains(other.getResourceNodeKey()) && r.probability >= minProbability && r.probability <= maxProbability } ?:false
         }.toMutableList()
     }
 
@@ -377,10 +388,13 @@ class ResourceDepManageService {
         }.toMutableList()
     }
 
+    /**
+     * [call] is related to any resource which exists in [ind] with a probability that is more than [minProbability] and not more than [maxProbability]
+     */
     private fun existsDependentResources(ind: RestIndividual, call: RestResourceCalls, minProbability: Double = 0.0, maxProbability: Double = 1.0): Boolean {
-        return ind.getResourceCalls().find { other ->
-            (other != call) && dependencies[call.getResourceNodeKey()]?.find { r -> r.targets.contains(other.getResourceNodeKey()) && r.probability >= minProbability && r.probability <= maxProbability } != null
-        } != null
+        return ind.getResourceCalls().any { other ->
+            (other != call) && dependencies[call.getResourceNodeKey()]?.any { r -> r.targets.contains(other.getResourceNodeKey()) && r.probability >= minProbability && r.probability <= maxProbability }?:false
+        }
     }
 
     private fun isNonDepResources(ind: RestIndividual, call: RestResourceCalls): Boolean {
@@ -803,7 +817,9 @@ class ResourceDepManageService {
             val option = randomness.choose(options)
             val pair = when (option) {
                 0 -> handleAddNewDepResource(if (candidates.isEmpty()) ind.getResourceCalls().toMutableList() else candidates, maxTestSize)
-                1 -> handleAddNotCheckedDepResource(ind, maxTestSize)
+                1 -> {
+                    handleAddNotCheckedDepResource(ind, maxTestSize)?:handleAddNewDepResource(if (candidates.isEmpty()) ind.getResourceCalls().toMutableList() else candidates, maxTestSize)
+                }
                 else -> null
             }
             if (pair != null) return pair
@@ -834,10 +850,12 @@ class ResourceDepManageService {
                 add self relation with a relative low probability, i.e., 20%
              */
             dependencies[first.getResourceNodeKey()]!!.flatMap { dep ->
-                if (dep !is SelfResourcesRelation) dep.targets.filter { !existingRs.contains(it) } else if (randomness.nextBoolean(0.2)) dep.targets else mutableListOf()
+                if (dep !is SelfResourcesRelation)
+                    dep.getDependentResources(first.getResourceNodeKey(), exclude = existingRs)
+                else if (randomness.nextBoolean(0.2)) dep.targets else mutableListOf()
             }.let { templates ->
                 if (templates.isNotEmpty()) {
-                    rm.getResourceNodeFromCluster(randomness.choose(templates)).sampleAnyRestResourceCalls(randomness, maxTestSize).let { second ->
+                    rm.getResourceNodeFromCluster(randomness.choose(templates)).sampleAnyRestResourceCalls(randomness, maxTestSize, prioriDependent = true).let { second ->
                         return Pair(first, second)
                     }
                 }
@@ -851,9 +869,9 @@ class ResourceDepManageService {
             findDependentResources(ind, cur).plus(findNonDependentResources(ind, cur))
         }.map { it.getResourceNodeKey() }.toHashSet()
 
-        rm.getResourceCluster().keys.filter { !checked.contains(it) }.let { templates ->
-            if (templates.isNotEmpty()) {
-                rm.getResourceNodeFromCluster(randomness.choose(templates)).sampleAnyRestResourceCalls(randomness, maxTestSize).let { second ->
+        rm.getResourceCluster().keys.filter { !checked.contains(it) }.let { keys ->
+            if (keys.isNotEmpty()) {
+                rm.getResourceNodeFromCluster(randomness.choose(keys)).sampleAnyRestResourceCalls(randomness, maxTestSize, prioriDependent = true).let { second ->
                     return Pair(null, second)
                 }
             }
@@ -889,8 +907,12 @@ class ResourceDepManageService {
             val option = randomness.choose(options)
             val pair = when (option) {
                 1 -> adjustDepResource(ind)
-                2 -> swapNotConfirmedDepResource(ind)
-                3 -> swapNotCheckedResource(ind)
+                2 -> {
+                    swapNotConfirmedDepResource(ind)?:adjustDepResource(ind)
+                }
+                3 -> {
+                    swapNotCheckedResource(ind)?:adjustDepResource(ind)
+                }
                 else -> null
             }
             if (pair != null) return pair
@@ -950,11 +972,13 @@ class ResourceDepManageService {
         relatedResources.add(calls.last())
 
         while (relatedResources.size < sizeOfResource && size < maxSize) {
-            val candidates = dependencies[first]!!.flatMap { it.targets }.filter { !excluded.contains(it) }
-            if (candidates.isEmpty())
-                break
+            val notRelated = rm.getResourceCluster().keys.filter { r-> (dependencies[first]?.none { t -> t.targets.contains(r)}?:true) && !excluded.contains(r) }
+            val candidates = dependencies[first]!!.flatMap { it.getDependentResources(first, exclude = excluded) }
+            /*
+                if there is no valid candidate, prefer not related resource
+             */
+            val related = if (candidates.isNotEmpty()) randomness.choose(candidates) else if(notRelated.isNotEmpty()) randomness.choose(notRelated) else break
 
-            val related = randomness.choose(candidates)
             excluded.add(related)
             rm.sampleCall(related, true, calls, size, false, if (related.isEmpty()) null else relatedResources)
             relatedResources.add(calls.last())

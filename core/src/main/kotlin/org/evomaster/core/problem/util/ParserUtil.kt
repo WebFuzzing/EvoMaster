@@ -56,7 +56,8 @@ class ParserUtil {
             path.getElements().forEachIndexed { index, map ->
                 map.forEach { eToken, isParam ->
                     if(isParam){
-                        val ptoken = tokens.find { it.originalText() == eToken }!!
+                        val ptoken = tokens.find { it.originalText() == eToken }
+                                ?:throw IllegalArgumentException("cannot find $eToken")
                         tokenMap.putIfAbsent(
                                 formatKey(ptoken.originalText()),
                                 PathRToken(

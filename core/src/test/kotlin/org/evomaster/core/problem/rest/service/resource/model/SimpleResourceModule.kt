@@ -30,6 +30,9 @@ class SimpleResourceModule : AbstractModule(){
         bind(ResourceDepManageService::class.java)
                 .asEagerSingleton()
 
+        bind(StructureMutator::class.java)
+                .to(RestResourceStructureMutator::class.java)
+                .asEagerSingleton()
     }
 
 }

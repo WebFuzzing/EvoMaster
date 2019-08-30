@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
@@ -16,7 +17,6 @@ import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
-import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.rest.service.resource.model.ResourceBasedTestInterface
 import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceModule
@@ -24,15 +24,18 @@ import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSamp
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
 
     private lateinit var config: EMConfig
     private lateinit var sampler: SimpleResourceSampler
+    private lateinit var structureMutator : RestResourceStructureMutator
     private lateinit var rm: ResourceManageService
     private lateinit var dm: ResourceDepManageService
     private lateinit var ssc : ResourceSampleMethodController
@@ -49,6 +52,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         lifecycleManager.start()
 
         sampler = injector.getInstance(SimpleResourceSampler::class.java)
+        structureMutator = injector.getInstance(RestResourceStructureMutator::class.java)
         config = injector.getInstance(EMConfig::class.java)
         rm = injector.getInstance(ResourceManageService::class.java)
         dm = injector.getInstance(ResourceDepManageService::class.java)
@@ -110,7 +114,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     }
 
 
-    fun testAllApplicableMethods(){
+    private fun testAllApplicableMethods(){
         ssc.getApplicableMethods().apply {
             forEach { m->
                 testApplicableMethodWithoutDependency(m)
@@ -262,21 +266,23 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     override fun testS2dRWithDependency(){
 
-        preSteps(doesInvolveDatabase = true, doesAppleNameMatching = true, probOfDep = 0.5)
+        TestUtils.handleFlaky {
+            val related = sampler.sampleWithMethodAndDependencyOption(ResourceSamplingMethod.S2dR, true)
 
-        val related = sampler.sampleWithMethodAndDependencyOption(ResourceSamplingMethod.S2dR, true)
-
-        assertNotNull(related)
-        related!!.getResourceCalls().apply {
-            assertEquals(2, size)
-            val first = first()
-            val second = last()
-            assert(dm.getRelatedResource(first.getResourceNodeKey()).contains(second.getResourceNodeKey()))
+            assertNotNull(related)
+            related!!.getResourceCalls().apply {
+                assertEquals(2, size)
+                val first = first()
+                val second = last()
+                assert(dm.getRelatedResource(first.getResourceNodeKey()).contains(second.getResourceNodeKey()))
+            }
         }
     }
 
     override fun testResourceIndividualWithSampleMethods() {
-        testAllApplicableMethods()
+        TestUtils.handleFlaky {
+            testAllApplicableMethods()
+        }
     }
 
     override fun setupWithoutDatabaseAndDependency() {
@@ -284,11 +290,67 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     }
 
     override fun setupWithDatabaseAndDependencyAndNameAnalysis() {
-        preSteps(doesInvolveDatabase = true, doesAppleNameMatching = true, probOfDep = 0.5)
+        preSteps(doesInvolveDatabase = true, doesAppleNameMatching = true, probOfDep = 0.9)
     }
 
     override fun setupWithDatabaseAndNameAnalysis() {
         preSteps(doesInvolveDatabase = true, doesAppleNameMatching = true)
+    }
+
+    override fun testResourceStructureMutator() {
+        val individual = sampler.sampleWithMethodAndDependencyOption(ResourceSamplingMethod.S1dR, false)
+        assertNotNull(individual)
+        assert(individual!!.getResourceCalls().size == 1)
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.ADD)
+        assert(individual.getResourceCalls().size == 2)
+
+        val first = individual.getResourceCalls()[0].getResourceNode()
+        val second = individual.getResourceCalls()[1].getResourceNode()
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.SWAP)
+        assert(individual.getResourceCalls()[1].getResourceNode().getName() == first.getName())
+        assert(individual.getResourceCalls()[0].getResourceNode().getName() == second.getName())
+
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.DELETE)
+        assert(individual.getResourceCalls().size == 1)
+
+        val current = individual.getResourceCalls()[0].getResourceNode()
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.REPLACE)
+        val replaced = individual.getResourceCalls()[0]
+        assert(current.getName() != replaced.getResourceNode().getName())
+
+        if (replaced.getResourceNode().numOfTemplates() > 1){
+            structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.MODIFY)
+            val modified = individual.getResourceCalls()[0]
+            assert(modified.getResourceNode().getName() == replaced.getResourceNode().getName())
+            assertNotNull(modified.template)
+            assertNotNull(replaced.template)
+            assert(modified.template.toString() != replaced.template.toString())
+        }
+    }
+
+    fun testResourceStructureMutatorWithDependencyWithSimulatedDependency(resourceA: String, resourceB:String, resourceC:String) {
+        simulateDerivationOfDependencyRegardingFitness(resourceA, resourceB, resourceC);
+        testResourceStructureMutatorWithDependencyWithSpecified(resourceA, resourceC)
+    }
+
+    fun testResourceStructureMutatorWithDependencyWithSpecified(resource: String, expectedRelated : String?){
+        val callA = rm.getResourceNodeFromCluster(resource).run {
+            genCalls(randomness.choose(getTemplates().values).template, randomness, config.maxTestSize)
+        }
+        val ind = RestIndividual(mutableListOf(callA), SampleType.SMART_RESOURCE)
+
+        TestUtils.handleFlaky {
+            structureMutator.mutateRestResourceCalls(ind, RestResourceStructureMutator.MutationType.ADD)
+            if (expectedRelated != null){
+                assert(ind.getResourceCalls().any {
+                    c-> c.getResourceNode().getName() == expectedRelated
+                })
+            }else{
+                assert(ind.getResourceCalls().any {
+                    c -> dm.getRelatedResource(resource).contains(c.getResourceNode().getName())
+                })
+            }
+        }
     }
 
     /**

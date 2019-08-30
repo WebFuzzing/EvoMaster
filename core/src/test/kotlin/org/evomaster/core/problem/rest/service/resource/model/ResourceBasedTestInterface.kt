@@ -120,7 +120,7 @@ interface ResourceBasedTestInterface {
         testDependencyAmongResources()
         testS2dRWithDependency()
 
-        testResourceStructureMutatorWithDependency()
+        //testResourceStructureMutatorWithDependency()
         testDerivationOfDependency()
     }
 }

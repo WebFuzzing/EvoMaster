@@ -47,11 +47,8 @@ class ScoutApiResourceBasedTest : ResourceTestBase() {
         simulateDerivationOfDependencyRegardingFitness("/api/v1/system/roles","/api/v1/system/ping","/api/v1/favourites")
     }
 
-    override fun testResourceStructureMutator() {
-
-    }
-
     override fun testResourceStructureMutatorWithDependency() {
-
+        testResourceStructureMutatorWithDependencyWithSimulatedDependency("/api/v1/system/roles","/api/v1/system/ping","/api/v1/favourites")
     }
+
 }

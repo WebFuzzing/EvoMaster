@@ -30,7 +30,11 @@ abstract class CreationChain(
     fun isComplete() :Boolean = isComplete
 }
 
-class PostCreationChain(val actions: MutableList<RestCallAction>) : CreationChain()
+class PostCreationChain(val actions: MutableList<RestCallAction>, private var failToCreate : Boolean = false) : CreationChain(){
+    fun confirmFailure(){
+        failToCreate = true
+    }
+}
 
 class DBCreationChain(val actions: MutableList<DbAction>) : CreationChain()
 

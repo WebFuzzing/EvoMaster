@@ -118,7 +118,6 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
             return ind
         }
 
-
         val withDependency = config.probOfEnablingResourceDependencyHeuristics > 0.0
                     && dm.isDependencyNotEmpty()
                     && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)

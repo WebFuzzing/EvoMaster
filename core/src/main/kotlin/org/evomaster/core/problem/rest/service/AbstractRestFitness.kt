@@ -124,6 +124,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             if(!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
             }
+        }else if(configuration.extractSqlExecutionInfo){
+
+            for (i in 0 until dto.extraHeuristics.size) {
+                val extra = dto.extraHeuristics[i]
+                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
+            }
         }
     }
 

@@ -95,6 +95,8 @@ class FitnessValue(
         databaseExecutions[actionIndex] = databaseExecution
     }
 
+    fun isAnyDatabaseExecutionInfo() = databaseExecutions.isNotEmpty()
+
     fun getViewOfData(): Map<Int, Heuristics> {
         return targets
     }

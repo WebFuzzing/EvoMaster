@@ -43,12 +43,8 @@ class ProxyPrintResourceBasedTest : ResourceTestBase() {
         simulateDerivationOfDependencyRegardingFitness("/env","/admin/register","/autoconfig")
     }
 
-    override fun testResourceStructureMutator() {
-
-    }
-
     override fun testResourceStructureMutatorWithDependency() {
-
+        testResourceStructureMutatorWithDependencyWithSimulatedDependency("/env","/admin/register","/autoconfig")
     }
 
 }
