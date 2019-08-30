@@ -24,6 +24,7 @@
         <module>e2e-tests</module>
         <module>experiments</module>
         <module>report</module>
+        <module>resource-rest-experiments</module>
     </modules>
 
     <issueManagement>
