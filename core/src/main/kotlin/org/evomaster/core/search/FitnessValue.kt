@@ -223,20 +223,28 @@ class FitnessValue(
     }
 
 
+    private fun isEmptyList(list: List<Double>?) : Boolean{
+        return list == null || list.isEmpty()
+    }
+
     private fun averageDistance(distances: List<Double>?): Double {
-        if (distances == null || distances.isEmpty()) {
-            return 0.0
+        if (isEmptyList(distances)) {
+            //return 0.0
+            throw IllegalArgumentException("Cannot compute average on empty list")
         }
 
-        val sum = distances.map { v -> v / distances.size }.sum()
+        val sum = distances!!.map { v -> v / distances.size }.sum()
 
         return sum
     }
 
     private fun compareAverageSameNActions(target: Int, other: FitnessValue): Int {
 
-        val thisN = databaseExecutions[target]?.numberOfSqlCommands ?: 0
-        val otherN = other.databaseExecutions[target]?.numberOfSqlCommands ?: 0
+        val thisAction = targets[target]?.actionIndex
+        val otherAction = other.targets[target]?.actionIndex
+
+        val thisN = databaseExecutions[thisAction]?.numberOfSqlCommands ?: 0
+        val otherN = other.databaseExecutions[otherAction]?.numberOfSqlCommands ?: 0
 
         return when {
             thisN > otherN -> 1
@@ -250,8 +258,22 @@ class FitnessValue(
         val thisAction = targets[target]?.actionIndex
         val otherAction = other.targets[target]?.actionIndex
 
-        val ts = averageDistance(this.extraToMinimize[thisAction])
-        val os = averageDistance(other.extraToMinimize[otherAction])
+        val thisDistances = this.extraToMinimize[thisAction]
+        val otherDistances = other.extraToMinimize[otherAction]
+
+        if(isEmptyList(thisDistances) && isEmptyList(otherDistances)){
+            return 0
+        }
+        if(!isEmptyList(thisDistances) && isEmptyList(otherDistances)){
+            return +1
+        }
+        if(isEmptyList(thisDistances) && !isEmptyList(otherDistances)){
+            return -1
+        }
+
+
+        val ts = averageDistance(thisDistances)
+        val os = averageDistance(otherDistances)
 
         return when {
             ts < os -> +1
@@ -262,14 +284,18 @@ class FitnessValue(
 
 
     private fun compareByBestMin(target: Int, other: FitnessValue): Int {
-        val thisLength = this.extraToMinimize[target]?.size ?: 0
-        val otherLength = other.extraToMinimize[target]?.size ?: 0
+
+        val thisAction = targets[target]?.actionIndex
+        val otherAction = other.targets[target]?.actionIndex
+
+        val thisLength = this.extraToMinimize[thisAction]?.size ?: 0
+        val otherLength = other.extraToMinimize[otherAction]?.size ?: 0
         val minLen = min(thisLength, otherLength)
 
         if (minLen > 0) {
             for (i in 0 until minLen) {
-                val te = this.extraToMinimize[target]!![i]
-                val oe = other.extraToMinimize[target]!![i]
+                val te = this.extraToMinimize[thisAction]!![i]
+                val oe = other.extraToMinimize[otherAction]!![i]
 
                 /*
                     We prioritize the improvement of lowest
@@ -285,8 +311,8 @@ class FitnessValue(
             }
         }
 
-        val thisN = databaseExecutions[target]?.numberOfSqlCommands ?: 0
-        val otherN = other.databaseExecutions[target]?.numberOfSqlCommands ?: 0
+        val thisN = databaseExecutions[thisAction]?.numberOfSqlCommands ?: 0
+        val otherN = other.databaseExecutions[otherAction]?.numberOfSqlCommands ?: 0
 
         /*
             if same min, reward number of SQL commands: if more, the
