@@ -43,6 +43,11 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-client-java-instrumentation-shared</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -54,6 +59,11 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-spring-examples</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-e2e-tests-spring-rest-postgres</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
