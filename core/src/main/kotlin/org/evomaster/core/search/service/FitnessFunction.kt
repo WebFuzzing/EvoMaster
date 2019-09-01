@@ -4,7 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
-import org.evomaster.exps.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 
 
 abstract class FitnessFunction<T>  where T : Individual {

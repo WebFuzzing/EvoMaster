@@ -1,7 +1,9 @@
-package org.evomaster.core.search.service
+package org.evomaster.core.search.service.monitor
 
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.IdMapper
 
 
 /**

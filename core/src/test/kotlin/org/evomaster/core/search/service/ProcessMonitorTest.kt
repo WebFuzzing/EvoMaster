@@ -12,8 +12,9 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
-import org.evomaster.exps.monitor.SearchProcessMonitor
-import org.evomaster.exps.monitor.StepOfSearchProcess
+import org.evomaster.core.search.service.monitor.SearchOverall
+import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.monitor.StepOfSearchProcess
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
