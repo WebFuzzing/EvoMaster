@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.external.AgentController;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.ClassReader;
@@ -20,12 +21,6 @@ import java.util.Objects;
  * Entry point for the JavaAgent that will do the bytecode instrumentation
  */
 public class InstrumentingAgent {
-
-    public static final String EXTERNAL_PORT_PROP = "evomaster.javaagent.external.port";
-
-    public static final String SQL_DRIVER = "evomaster.javaagent.sql.driver";
-
-    public static final String OUTPUT_FILE = "evomaster.javaagent.outputfile";
 
 
     /**
@@ -64,19 +59,19 @@ public class InstrumentingAgent {
         inst.addTransformer(new TransformerForTests());
         active = true;
 
-        String port = System.getProperty(EXTERNAL_PORT_PROP);
+        String port = System.getProperty(InputProperties.EXTERNAL_PORT_PROP);
         if (port != null) {
             SimpleLogger.info("Starting remote instrumenting Agent for packages: " + agentArgs);
             AgentController.start(Integer.parseInt(port));
         }
 
-        String sqlDriver = System.getProperty(SQL_DRIVER);
+        String sqlDriver = System.getProperty(InputProperties.SQL_DRIVER);
         if (sqlDriver != null) {
             SimpleLogger.info("Initializing P6SPY with base driver " + sqlDriver);
             initP6Spy(sqlDriver);
         }
 
-        String outputFile = System.getProperty(OUTPUT_FILE);
+        String outputFile = System.getProperty(InputProperties.OUTPUT_FILE);
         if(outputFile != null){
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 saveCoverageToDisk(outputFile);

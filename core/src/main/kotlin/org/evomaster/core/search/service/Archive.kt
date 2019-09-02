@@ -10,7 +10,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.exps.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import java.lang.Integer.min
 
 
 class Archive<T> where T : Individual {
@@ -341,12 +342,21 @@ class Archive<T> where T : Individual {
             //handle regular case.
             sortAndShrinkIfNeeded(current, k)
 
+            /*
+                as the population are internally sorted by fitness, the indivdidual
+                at position [0] would be the worst
+             */
             val currh = current[0].fitness.getHeuristic(k)
             val currsize = current[0].individual.size()
             val copySize = copy.individual.size()
             val extra = copy.fitness.compareExtraToMinimize(k, current[0].fitness, config.secondaryObjectiveStrategy)
 
-            val better = if(config.bloatControlForSecondaryObjective){
+            val better = if(config.bloatControlForSecondaryObjective
+                    /*
+                        Avoid reducing tests to size 1 if extra was better.
+                        With at least 2 actions, we can have a WRITE followed by a READ
+                     */
+                    && min(copySize, currsize) >= 2){
                 v.distance > currh ||
                         (v.distance == currh && copySize < currsize) ||
                         (v.distance == currh &&  copySize == currsize && extra > 0)

@@ -1,24 +1,15 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.param.HeaderParam
-import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.IdMapper
-import org.evomaster.core.search.service.SearchTimeController
-import org.glassfish.jersey.client.ClientConfig
-import org.glassfish.jersey.client.ClientProperties
-import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -88,6 +79,12 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
         dto.targets.forEach { t ->
 
             if (t.descriptiveId != null) {
+
+                if(! config.useMethodReplacement &&
+                        t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)){
+                    return@forEach
+                }
+
                 idMapper.addMapping(t.id, t.descriptiveId)
             }
 
@@ -98,7 +95,9 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults)
 
-        expandIndividual(individual, dto.additionalInfoList)
+        if(config.expandRestIndividuals) {
+            expandIndividual(individual, dto.additionalInfoList)
+        }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
 

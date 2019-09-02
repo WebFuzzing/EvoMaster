@@ -1,9 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage;
 
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
-import org.evomaster.client.java.instrumentation.ClassName;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
@@ -57,6 +57,7 @@ public class CoverageClassVisitor extends ClassVisitor {
         mv = new LineCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new BranchCovMethodVisitor(mv, bytecodeClassName, name, descriptor);
         mv = new SuccessCallMethodVisitor(mv, bytecodeClassName, name, descriptor);
+        mv = new MethodReplacementMethodVisitor(mv, bytecodeClassName, name, descriptor);
 
         return mv;
     }

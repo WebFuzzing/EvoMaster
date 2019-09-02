@@ -2,6 +2,7 @@ package com.foo.rest.examples.spring.db;
 
 import com.foo.rest.examples.spring.SpringController;
 import com.p6spy.engine.spy.P6SpyDriver;
+import kotlin.random.Random;
 import org.evomaster.client.java.controller.db.DbCleaner;
 import org.hibernate.dialect.H2Dialect;
 import org.springframework.boot.SpringApplication;
@@ -23,9 +24,13 @@ public class SpringWithDbController extends SpringController {
     @Override
     public String startSut() {
 
+        //lot of problem if using same H2 instance. see:
+        //https://github.com/h2database/h2database/issues/227
+        int rand = Random.Default.nextInt();
+
         ctx = SpringApplication.run(applicationClass, new String[]{
                 "--server.port=0",
-                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
+                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb_"+rand+";DB_CLOSE_DELAY=-1;",
                 "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
                 "--spring.jpa.database-platform=" + H2Dialect.class.getName(),
                 "--spring.datasource.username=sa",
@@ -54,7 +59,15 @@ public class SpringWithDbController extends SpringController {
 
     @Override
     public void resetStateOfSUT() {
-        DbCleaner.clearDatabase_H2(connection);
+        if(connection != null) {
+            DbCleaner.clearDatabase_H2(connection);
+        }
+    }
+
+    @Override
+    public void stopSut() {
+        super.stopSut();
+        connection = null;
     }
 
     @Override

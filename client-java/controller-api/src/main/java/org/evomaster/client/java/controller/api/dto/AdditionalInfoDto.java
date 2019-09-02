@@ -1,7 +1,6 @@
 package org.evomaster.client.java.controller.api.dto;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class AdditionalInfoDto {
 
@@ -24,4 +23,13 @@ public class AdditionalInfoDto {
      */
     public Set<String> headers = new HashSet<>();
 
+    /**
+     * Information for taint analysis.
+     * When some string inputs are recognized of a specific type (eg,
+     * they are used as integers or dates), we keep track of it.
+     * The key in this map is the value of the tainted input.
+     * The associated list is its possible specializations (which usually
+     * will be at most 1).
+     */
+    public Map<String, List<StringSpecializationInfoDto>> stringSpecializations = new HashMap<>();
 }

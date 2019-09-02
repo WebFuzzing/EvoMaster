@@ -26,7 +26,7 @@ import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
-import org.evomaster.exps.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import java.lang.reflect.InvocationTargetException
 
 

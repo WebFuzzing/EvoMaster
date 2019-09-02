@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.shared.ClassName;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;

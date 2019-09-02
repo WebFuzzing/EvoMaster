@@ -69,12 +69,12 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             : EvaluatedIndividual<T> {
 
         var current = individual
-        var targets = archive.notCoveredTargets()
+        val targets = archive.notCoveredTargets()
 
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            var trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
+            val trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
 
             if (!time.shouldContinueSearch()) {
                 break

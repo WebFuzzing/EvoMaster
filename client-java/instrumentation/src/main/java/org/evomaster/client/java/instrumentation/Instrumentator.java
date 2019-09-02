@@ -3,7 +3,7 @@ package org.evomaster.client.java.instrumentation;
 
 
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
-import org.evomaster.client.java.instrumentation.testabilityboolean.ReplacementList;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.tracker.TrackerClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -65,8 +65,9 @@ public class Instrumentator {
 
             ClassNode cn = new ClassNode();
             reader.accept(cn, readFlags);
-            ReplacementList.getBooleanMethodTransformers()
-                    .forEach(t -> t.transformClass(cn));
+
+//            ReplacementList.getBooleanMethodTransformers()
+//                    .forEach(t -> t.transformClass(cn));
 
             cv = new CoverageClassVisitor(cv, className);
 

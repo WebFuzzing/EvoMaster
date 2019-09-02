@@ -46,7 +46,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 continue
             }
 
-            var ei = archive.sampleIndividual()
+            val ei = archive.sampleIndividual()
 
             val nMutations = apc.getNumberOfMutations()
 

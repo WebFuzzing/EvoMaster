@@ -1,11 +1,12 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.testabilityexception.ExceptionHeuristicsRegistry;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -75,6 +76,10 @@ public class ExecutionTracer {
 
     public static void addHeader(String header){
         additionalInfoList.get(actionIndex).addHeader(header);
+    }
+
+    public static void addStringSpecialization(String taintInputName, StringSpecializationInfo info){
+        additionalInfoList.get(actionIndex).addSpecialization(taintInputName, info);
     }
 
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
@@ -148,6 +153,15 @@ public class ExecutionTracer {
         ObjectiveRecorder.update(id, value);
     }
 
+    public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t){
+
+        String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
+        String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
+
+        updateObjective(idTrue, t.getOfTrue());
+        updateObjective(idFalse, t.getOfFalse());
+    }
+
 
     public static final String EXECUTED_LINE_METHOD_NAME = "executedLine";
     public static final String EXECUTED_LINE_DESCRIPTOR = "(Ljava/lang/String;I)V";
@@ -181,21 +195,6 @@ public class ExecutionTracer {
         } else {
             updateObjective(id, 0.5);
         }
-    }
-
-
-
-    public static final String EXECUTING_EXCEPTION_METHOD_METHOD_NAME = "executingExceptionMethod";
-    public static final String EXECUTING_EXCEPTION_METHOD_DESCRIPTOR_1 =
-            "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V";
-
-    public static void executingExceptionMethod(
-            Object input,
-            String targetId,
-            String owner, String name, String desc){
-
-        double h = ExceptionHeuristicsRegistry.computeHeuristics(input, owner, name, desc);
-        updateObjective(targetId, h);
     }
 
 

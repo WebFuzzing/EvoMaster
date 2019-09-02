@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation;
 
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

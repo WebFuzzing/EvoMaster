@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import javax.ws.rs.*;
@@ -223,6 +224,14 @@ public class EMController {
                     AdditionalInfoDto info = new AdditionalInfoDto();
                     info.queryParameters = new HashSet<>(a.getQueryParametersView());
                     info.headers = new HashSet<>(a.getHeadersView());
+                    info.stringSpecializations = new HashMap<>();
+                    for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
+                            a.getStringSpecializationsView().entrySet()){
+                        List<StringSpecializationInfoDto> list = entry.getValue().stream()
+                                .map(it -> new StringSpecializationInfoDto(it.getStringSpecialization().toString(), it.getValue()))
+                                .collect(Collectors.toList());
+                        info.stringSpecializations.put(entry.getKey(), list);
+                    }
 
                     dto.additionalInfoList.add(info);
                 });
