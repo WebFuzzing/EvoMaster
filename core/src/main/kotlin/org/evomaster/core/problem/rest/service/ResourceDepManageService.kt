@@ -61,10 +61,10 @@ class ResourceDepManageService {
 
     private val inference = SimpleDeriveResourceBinding()
 
-    fun initDependency(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
-        initDependencyBasedOnDerivedTables(resourceCluster, tables)
-        //deriveDependencyBasedOnSchema(resourceCluster)
-    }
+//    fun initDependency(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
+//        initDependencyBasedOnDerivedTables(resourceCluster, tables)
+//        deriveDependencyBasedOnSchema(resourceCluster)
+//    }
 
     /************************  manage relationship between resource and tables ***********************************/
 
@@ -241,7 +241,7 @@ class ResourceDepManageService {
 
     /************************  derive dependency using parser ***********************************/
 
-    private fun initDependencyBasedOnDerivedTables(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
+    fun initDependencyBasedOnDerivedTables(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
         tables.keys.forEach { table ->
             val mutualResources = resourceCluster.filter { r -> r.getDerivedTables().any { e -> e.equals(table, ignoreCase = true) } }.map { it.getName() }.toList()
             if (mutualResources.isNotEmpty() && mutualResources.size > 1) {
@@ -266,7 +266,7 @@ class ResourceDepManageService {
      * If a description of a Post action includes some tokens (the token must be some "object") that is related to other rest action,
      * we create a "possible dependency" between the actions.
      */
-    private fun deriveDependencyBasedOnSchema(resourceCluster: List<RestResourceNode>) {
+    fun deriveDependencyBasedOnSchema(resourceCluster: List<RestResourceNode>) {
         resourceCluster
                 .filter { it.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.isNotEmpty() }
                 .forEach { r ->

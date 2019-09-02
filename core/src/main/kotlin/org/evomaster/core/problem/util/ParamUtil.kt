@@ -50,7 +50,14 @@ class ParamUtil {
         }
         private fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
             val k = params.find { pa -> pa is PathParam && pa.name == p.name }
-            if(k != null) p.gene.copyValueFrom(k.gene)
+            if(k != null){
+                val mp = getValueGene(p.gene)
+                val mk = getValueGene(k.gene)
+                if (mp::class.java.simpleName == mk::class.java.simpleName)
+                    mp.copyValueFrom(mk)
+                else
+                    copyGene(mp, mk, true)
+            }
             else{
                 if(numOfBodyParam(params) == params.size && params.isNotEmpty()){
                     bindBodyAndOther(params.first{ pa -> pa is BodyParam } as BodyParam, sourcePath, p, targetPath,false, inner)
@@ -97,16 +104,28 @@ class ParamUtil {
                     return
                 }
 
-                if(valueGene.refType.equals(pValueGene.refType)){
-                    valueGene.copyValueFrom(pValueGene)
-                }else{
-                    valueGene.fields.forEach { f->
-                        val mName = modifyFieldName(valueGene, f)
-                        pValueGene.fields.find {
-                            val pMName = modifyFieldName(pValueGene, it)
-                            f::class.java.simpleName == it::class.java.simpleName && (pMName.equals(mName, ignoreCase = true) || StringSimilarityComparator.isSimilar(mName,pMName) )
-                        }?.apply {
-                            f.copyValueFrom(this)
+                bindObjectGeneWithObjectGene(valueGene, pValueGene)
+            }
+        }
+
+        private fun bindObjectGeneWithObjectGene(b : ObjectGene, g : ObjectGene){
+            if(b.refType.equals(g.refType)){
+                b.copyValueFrom(g)
+            }else{
+                b.fields.forEach { f->
+                    val bound = f !is OptionalGene || f.isActive || (Math.random() < 0.5)
+                    if (bound){
+                        val mf = getValueGene(f)
+                        val mName = modifyFieldName(b, mf)
+                        g.fields.find {ot->
+                            val mot = getValueGene(ot)
+                            val pMName = modifyFieldName(g, mot)
+                            mf::class.java.simpleName == mot::class.java.simpleName && (pMName.equals(mName, ignoreCase = true) || StringSimilarityComparator.isSimilar(mName,pMName) )
+                        }?.let {found->
+                            if (found is ObjectGene)
+                                bindObjectGeneWithObjectGene(mf as ObjectGene, found)
+                            else
+                                mf.copyValueFrom(found)
                         }
                     }
                 }

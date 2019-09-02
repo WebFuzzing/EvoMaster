@@ -91,8 +91,10 @@ class ResourceManageService {
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
 
             if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
-                dm.initDependency(resourceCluster.values.toList(), getTableInfo())
+                dm.initDependencyBasedOnDerivedTables(resourceCluster.values.toList(), getTableInfo())
         }
+        if(config.doesApplyNameMatching && config.probOfEnablingResourceDependencyHeuristics > 0.0)
+            dm.deriveDependencyBasedOnSchema(resourceCluster.values.toList())
     }
 
 
