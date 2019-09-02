@@ -14,6 +14,7 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
+import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.ObjectGene
 import kotlin.math.max
 
@@ -45,8 +46,8 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         resourceNode.getAllSegments(flatten = true).forEach { seg ->
             ParamUtil.parseParams(seg).forEachIndexed stop@{ sindex, token ->
                 //check whether any table name matches token
-                val matchedMap = allTables.keys.map { Pair(it, ParserUtil.stringSimilarityScore(it, token)) }.asSequence().sortedBy { e->e.second }
-                if(matchedMap.last().second >= ParserUtil.SimilarityThreshold){
+                val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, token)) }.asSequence().sortedBy { e->e.second }
+                if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                     matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                         resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                             mutableListOf()
@@ -56,9 +57,9 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                 }
 
                 val matchedPropertyMap = allTables.flatMap { t->t.value.columns.filter { c-> !ParamUtil.isGeneralName(c.name) }.map { c->Pair(t.value.name, c.name) } }
-                        .map { p-> Pair(p.first, Pair(p.second,ParserUtil.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
+                        .map { p-> Pair(p.first, Pair(p.second,StringSimilarityComparator.stringSimilarityScore(p.second, token))) }.asSequence().sortedBy { e->e.second.second }
 
-                if(matchedPropertyMap.last().second.second >= ParserUtil.SimilarityThreshold){
+                if(matchedPropertyMap.last().second.second >= StringSimilarityComparator.SimilarityThreshold){
                     matchedPropertyMap.filter { it.second.second == matchedPropertyMap.last().second.second }.forEach {
                         resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                             mutableListOf()
@@ -76,8 +77,8 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         if(reftypes.isNotEmpty()){
             reftypes.forEach { type->
                 if(!resourceNode.isPartOfStaticTokens(type)){
-                    val matchedMap = allTables.keys.map { Pair(it, ParserUtil.stringSimilarityScore(it, type)) }.asSequence().sortedBy { e->e.second }
-                    if(matchedMap.last().second >= ParserUtil.SimilarityThreshold){
+                    val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, type)) }.asSequence().sortedBy { e->e.second }
+                    if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                         matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                             resourceNode.resourceToTable.derivedMap.getOrPut(it.first){
                                 mutableListOf()
@@ -90,9 +91,9 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
         //1.3 derive resource to tables based on tokens on POST action
         resourceNode.actions.filter { it is RestCallAction && it.verb == HttpVerb.POST }.forEach { post->
             (post as RestCallAction).tokens.values.filter { !resourceNode.getName().toLowerCase().contains(it.getKey().toLowerCase()) }.forEach { atoken->
-                val matchedMap = allTables.keys.map { Pair(it, ParserUtil.stringSimilarityScore(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
+                val matchedMap = allTables.keys.map { Pair(it, StringSimilarityComparator.stringSimilarityScore(it, atoken.getKey())) }.asSequence().sortedBy { e->e.second }
                 matchedMap.last().apply {
-                    if(second >= ParserUtil.SimilarityThreshold){
+                    if(second >= StringSimilarityComparator.SimilarityThreshold){
                         resourceNode.resourceToTable.derivedMap.getOrPut(first){
                             mutableListOf()
                         }.add(MatchedInfo(atoken.getKey(), first, similarity = second, inputIndicator = 1, outputIndicator = 0))
@@ -188,18 +189,18 @@ class SimpleDeriveResourceBinding : DeriveResourceBinding{
                     .map {
                         Pair(it.name,
                                 if(ParamUtil.isGeneralName(it.name))
-                                    t.foreignKeys.map { f-> ParserUtil.stringSimilarityScore(paramName, "${f.targetTable}${it.name}")}
-                                            .plus(ParserUtil.stringSimilarityScore(paramName, it.name))
-                                            .plus(ParserUtil.stringSimilarityScore(paramName, "$tableName${it.name}"))
+                                    t.foreignKeys.map { f-> StringSimilarityComparator.stringSimilarityScore(paramName, "${f.targetTable}${it.name}")}
+                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
+                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, "$tableName${it.name}"))
                                             .asSequence().sorted().last()
                                 else if(ParamUtil.isGeneralName(paramName))
-                                    t.foreignKeys.map { f-> ParserUtil.stringSimilarityScore("${f.targetTable}$paramName", it.name)}
-                                            .plus(ParserUtil.stringSimilarityScore(paramName, it.name))
-                                            .plus(ParserUtil.stringSimilarityScore("$tableName$paramName", it.name))
+                                    t.foreignKeys.map { f-> StringSimilarityComparator.stringSimilarityScore("${f.targetTable}$paramName", it.name)}
+                                            .plus(StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
+                                            .plus(StringSimilarityComparator.stringSimilarityScore("$tableName$paramName", it.name))
                                             .asSequence().sorted().last()
-                                else ParserUtil.stringSimilarityScore(paramName, it.name))
+                                else StringSimilarityComparator.stringSimilarityScore(paramName, it.name))
                     }.asSequence().sortedBy { e->e.second }
-            if(matchedMap.last().second >= ParserUtil.SimilarityThreshold){
+            if(matchedMap.last().second >= StringSimilarityComparator.SimilarityThreshold){
                 matchedMap.filter { it.second == matchedMap.last().second }.forEach {
                     pToTable.getOrPut(tableName){
                         MatchedInfo(paramName, it.first, similarity = it.second, inputIndicator = inputlevel, outputIndicator = 1)

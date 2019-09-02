@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.util.inference.model
 
 import org.evomaster.core.problem.rest.util.ParserUtil
+import org.evomaster.core.problem.util.StringSimilarityComparator
 import kotlin.math.min
 
 
@@ -24,6 +25,6 @@ open class MatchedInfo(val input : String, val targetMatched : String, var simil
     }
 
     fun setMin(){
-        similarity = min(similarity, ParserUtil.SimilarityThreshold)
+        similarity = min(similarity, StringSimilarityComparator.SimilarityThreshold)
     }
 }

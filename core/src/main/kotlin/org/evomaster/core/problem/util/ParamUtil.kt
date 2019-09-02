@@ -5,6 +5,7 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
 import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
+import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
@@ -90,7 +91,7 @@ class ParamUtil {
                 }
                 if (pValueGene !is ObjectGene){
                     val field = valueGene.fields.find {
-                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || ParserUtil.stringSimilarityScore(modifyFieldName(valueGene, it), pValueGene.name) > ParserUtil.SimilarityThreshold)
+                        it::class.java.simpleName == pValueGene::class.java.simpleName && (it.name.equals(pValueGene.name, ignoreCase = true) || StringSimilarityComparator.isSimilar(modifyFieldName(valueGene, it), pValueGene.name))
                     }?: return
                     field.copyValueFrom(pValueGene)
                     return
@@ -103,7 +104,7 @@ class ParamUtil {
                         val mName = modifyFieldName(valueGene, f)
                         pValueGene.fields.find {
                             val pMName = modifyFieldName(pValueGene, it)
-                            f::class.java.simpleName == it::class.java.simpleName && (pMName.equals(mName, ignoreCase = true) || ParserUtil.stringSimilarityScore(mName,pMName) > ParserUtil.SimilarityThreshold)
+                            f::class.java.simpleName == it::class.java.simpleName && (pMName.equals(mName, ignoreCase = true) || StringSimilarityComparator.isSimilar(mName,pMName) )
                         }?.apply {
                             f.copyValueFrom(this)
                         }
@@ -466,7 +467,7 @@ class ParamUtil {
                 }
                 if(score == 1.0) return@findGene
             }
-            if(similarity > ParserUtil.SimilarityThreshold ){
+            if(similarity > StringSimilarityComparator.SimilarityThreshold ){
                 if(gene!! is SqlPrimaryKeyGene || gene!! is SqlForeignKeyGene || gene!! is SqlAutoIncrementGene){
                     /*
                         if gene of dbaction is PK, FK or AutoIncrementGene,
@@ -519,16 +520,16 @@ class ParamUtil {
 
         fun compareDBGene(dbAction: DbAction, gene: Gene, pName: String, previousToken : String) : Double{
             val list = mutableListOf<Double>()
-            ParserUtil.stringSimilarityScore(gene.name, pName).apply {
+            StringSimilarityComparator.stringSimilarityScore(gene.name, pName).apply {
                 list.add(this)
                 if(this == 1.0) return this
             }
             if(isGeneralName(gene.name)){
-                ParserUtil.stringSimilarityScore(dbAction.table.name+gene.name, pName).apply {
+                StringSimilarityComparator.stringSimilarityScore(dbAction.table.name+gene.name, pName).apply {
                     list.add(this)
                     if(this == 1.0) return this
                 }
-                ParserUtil.stringSimilarityScore(gene.name, previousToken+pName).apply {
+                StringSimilarityComparator.stringSimilarityScore(gene.name, previousToken+pName).apply {
                     list.add(this)
                     if(this == 1.0) return this
                 }

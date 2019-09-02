@@ -49,14 +49,13 @@ class RestResourceNode(
 
     init {
         when(initMode){
-            InitMode.WITH_TOKEN, InitMode.WITH_DEPENDENCY ->{
+            InitMode.WITH_TOKEN, InitMode.WITH_DERIVED_DEPENDENCY, InitMode.WITH_DEPENDENCY ->{
                 if(path.getStaticTokens().isNotEmpty()){
                     tokens.clear()
-                    ParserUtil.parsePathTokens(this.path, tokens)
+                    ParserUtil.parsePathTokens(this.path, tokens, initMode != InitMode.WITH_DEPENDENCY)
                 }
                 initSegments()
             }
-
             else ->{
                 //do nothing
             }
@@ -106,7 +105,7 @@ class RestResourceNode(
         initVerbs()
         initCreationPoints()
         when(initMode){
-            InitMode.WITH_TOKEN, InitMode.WITH_DEPENDENCY -> initParamInfo()
+            InitMode.WITH_TOKEN, InitMode.WITH_DERIVED_DEPENDENCY, InitMode.WITH_DEPENDENCY -> initParamInfo()
             else -> { }
         }
     }
@@ -834,8 +833,9 @@ enum class InitMode{
     NONE,
     WITH_TOKEN,
     /**
-     * [WITH_DEPENDENCY] subsume [WITH_TOKEN]
+     * [WITH_DERIVED_DEPENDENCY] subsume [WITH_TOKEN]
      */
+    WITH_DERIVED_DEPENDENCY,
     WITH_DEPENDENCY
 }
 

@@ -15,6 +15,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import java.util.*
+import kotlin.math.PI
 
 /**
  * handling name (with string type) matching
@@ -23,8 +24,6 @@ object ParserUtil {
 
     private const val REGEX_NOUN = "([{pos:/NN|NNS|NNP/}])"
     private const val REGEX_VERB = "([{pos:/VB|VBD|VBG|VBN|VBP|VBZ/}])"
-
-    const val SimilarityThreshold = 0.6
 
 //        private const val REGEX = "([{pos:/NN|NNS|NNP|VB|VBD|VBG|VBN|VBP|VBZ/}])"
 //        private val TAGGER_EN : MaxentTagger = MaxentTagger(MaxentTagger.DEFAULT_JAR_PATH)
@@ -35,18 +34,57 @@ object ParserUtil {
     /**
      * configure stanford parser
      */
-    private val PIPELINE = StanfordCoreNLP(object : Properties() {
-        init {
-            setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse")
+    private var PIPELINE : StanfordCoreNLP? = null
+
+    private fun getPipeline(): StanfordCoreNLP {
+        if (PIPELINE == null) {
+            PIPELINE = StanfordCoreNLP(object : Properties() {
+                init {
+                    setProperty("annotators", "tokenize, ssplit, pos, lemma, ner, parse")
+                }
+            })
         }
-    })
+        return PIPELINE!!
+    }
 
     private fun formatKey(source : String) : String = source.toLowerCase()
+
+    fun parsePathTokens(path: RestPath, tokenMap : MutableMap<String, PathRToken>, withParser : Boolean){
+        if (withParser)
+            parsePathTokensWithParser(path, tokenMap)
+        else
+            parsePathTokens(path, tokenMap)
+    }
+
+    private fun parsePathTokens(path: RestPath, tokenMap : MutableMap<String, PathRToken>){
+        var segment = ""
+        var nearestParam = -1
+        path.getElements().forEachIndexed { index, map ->
+            map.forEach { t, isParam ->
+                tokenMap.putIfAbsent(
+                        formatKey(t),
+                        PathRToken(
+                                t,
+                                t, index,
+                                isParam,
+                                false,
+                                segment,
+                                nearestParam))
+            }
+            if (map.values.any { it }){
+                nearestParam = index
+                segment = ""
+            }else{
+                assert(map.keys.size == 1)
+                segment = map.keys.first()
+            }
+        }
+    }
 
     /**
      * parser path of resource, and generate a set of [PathRToken] on [tokenMap]
      */
-    fun parsePathTokens(path: RestPath, tokenMap : MutableMap<String, PathRToken>){
+    private fun parsePathTokensWithParser(path: RestPath, tokenMap : MutableMap<String, PathRToken>){
         val nlpPath = path.getElements().flatMap { it.keys }.joinToString(" ")
         val tokens = getNlpTokens(nlpPath)
 
@@ -234,7 +272,7 @@ object ParserUtil {
 
 
     private fun getNlpTokens(text : String) : List<CoreLabel>{
-        val sentences = PIPELINE.process(text).get(CoreAnnotations.SentencesAnnotation::class.java)
+        val sentences = getPipeline().process(text).get(CoreAnnotations.SentencesAnnotation::class.java)
         if(sentences.size > 0)
             return sentences.flatMap { it.get(CoreAnnotations.TokensAnnotation::class.java) }
         else
@@ -263,49 +301,5 @@ object ParserUtil {
         return result.toList()
     }
 
-
-    /**
-     * TODO Man: need to improve
-     */
-    fun stringSimilarityScore(str1 : String, str2 : String, algorithm : SimilarityAlgorithm =SimilarityAlgorithm.Trigrams): Double{
-        return when(algorithm){
-            SimilarityAlgorithm.Trigrams -> trigrams(bigram(str1.toLowerCase()), bigram(str2.toLowerCase()))
-            //else-> 0.0
-        }
-    }
-
-    private fun trigrams(bigram1: MutableList<CharArray>, bigram2 : MutableList<CharArray>) : Double{
-        val copy = ArrayList<CharArray>(bigram2)
-        var matches = 0
-        var i = bigram1.size
-        while (--i >= 0) {
-            val bigram = bigram1[i]
-            var j = copy.size
-            while (--j >= 0) {
-                val toMatch = copy[j]
-                if (bigram[0] == toMatch[0] && bigram[1] == toMatch[1]) {
-                    copy.removeAt(j)
-                    matches += 2
-                    break
-                }
-            }
-        }
-        return matches.toDouble() / (bigram1.size + bigram2.size)
-    }
-
-    private fun bigram(input: String): MutableList<CharArray> {
-        val bigram = mutableListOf<CharArray>()
-        for (i in 0 until input.length - 1) {
-            val chars = CharArray(2)
-            chars[0] = input[i]
-            chars[1] = input[i + 1]
-            bigram.add(chars)
-        }
-        return bigram
-    }
-
 }
 
-enum class SimilarityAlgorithm{
-    Trigrams
-}

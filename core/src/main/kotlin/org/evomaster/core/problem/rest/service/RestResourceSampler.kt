@@ -48,7 +48,7 @@ class RestResourceSampler : ResourceSampler(){
 
         val actionCluster = mutableMapOf<String, Action>()
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf(), doParserDescription = config.doesApplyNameMatching)
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf(), doParseDescription = config.doesApplyNameMatching)
 
         setupAuthentication(infoDto)
 

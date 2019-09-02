@@ -24,6 +24,7 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
+import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
@@ -244,7 +245,7 @@ class ResourceDepManageService {
         tables.keys.forEach { table ->
             val mutualResources = resourceCluster.filter { r -> r.getDerivedTables().any { e -> e.equals(table, ignoreCase = true) } }.map { it.getName() }.toList()
             if (mutualResources.isNotEmpty() && mutualResources.size > 1) {
-                val mutualRelation = MutualResourcesRelations(mutualResources, ParserUtil.SimilarityThreshold, mutableSetOf(table))
+                val mutualRelation = MutualResourcesRelations(mutualResources, StringSimilarityComparator.SimilarityThreshold, mutableSetOf(table))
 
                 mutualResources.forEach { res ->
                     val relations = dependencies.getOrPut(res) { mutableListOf() }
@@ -280,14 +281,13 @@ class ResourceDepManageService {
                                         .filterIsInstance<RestCallAction>()
                                         .flatMap { it.tokens.values.filter { t -> t.fromDefinition && t.isDirect && t.isType } }
                                         .filter { ot ->
-                                            ParserUtil.stringSimilarityScore(u.getKey(), ot.getKey()) >= ParserUtil.SimilarityThreshold
+                                            StringSimilarityComparator.isSimilar(u.getKey(), ot.getKey())
                                         }.let {
                                             if (it.isNotEmpty()) {
                                                 val addInfo = it.map { t -> t.getKey() }.joinToString(";")
-                                                updateDependencies(or.getName(), mutableListOf(r.getName()), addInfo, ParserUtil.SimilarityThreshold)
-                                                updateDependencies(r.getName(), mutableListOf(or.getName()), addInfo, ParserUtil.SimilarityThreshold)
+                                                updateDependencies(or.getName(), mutableListOf(r.getName()), addInfo, StringSimilarityComparator.SimilarityThreshold)
+                                                updateDependencies(r.getName(), mutableListOf(or.getName()), addInfo, StringSimilarityComparator.SimilarityThreshold)
                                             }
-
                                         }
 
                             }
@@ -928,7 +928,7 @@ class ResourceDepManageService {
     private fun adjustDepResource(ind: RestIndividual): Pair<Int, Int>? {
         val candidates = mutableMapOf<Int, MutableSet<Int>>()
         ind.getResourceCalls().forEachIndexed { index, cur ->
-            findDependentResources(ind, cur, minProbability = ParserUtil.SimilarityThreshold).map { ind.getResourceCalls().indexOf(it) }.filter { second -> index < second }.apply {
+            findDependentResources(ind, cur, minProbability = StringSimilarityComparator.SimilarityThreshold).map { ind.getResourceCalls().indexOf(it) }.filter { second -> index < second }.apply {
                 if (isNotEmpty()) candidates.getOrPut(index) { mutableSetOf() }.addAll(this.toHashSet())
             }
         }
@@ -939,10 +939,10 @@ class ResourceDepManageService {
     }
 
     private fun swapNotConfirmedDepResource(ind: RestIndividual): Pair<Int, Int>? {
-        val probCandidates = ind.getResourceCalls().filter { existsDependentResources(ind, it, maxProbability = ParserUtil.SimilarityThreshold) }
+        val probCandidates = ind.getResourceCalls().filter { existsDependentResources(ind, it, maxProbability = StringSimilarityComparator.SimilarityThreshold) }
         if (probCandidates.isEmpty()) return null
         val first = randomness.choose(probCandidates)
-        val second = randomness.choose(findDependentResources(ind, first, maxProbability = ParserUtil.SimilarityThreshold))
+        val second = randomness.choose(findDependentResources(ind, first, maxProbability = StringSimilarityComparator.SimilarityThreshold))
         return Pair(ind.getResourceCalls().indexOf(first), ind.getResourceCalls().indexOf(second))
     }
 

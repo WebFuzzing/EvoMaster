@@ -75,8 +75,9 @@ class ResourceManageService {
                     RestResourceNode(
                             u.path.copy(),
                             initMode =
-                                if(config.probOfEnablingResourceDependencyHeuristics > 0.0) InitMode.WITH_DEPENDENCY
+                                if(config.probOfEnablingResourceDependencyHeuristics > 0.0 && config.doesApplyNameMatching) InitMode.WITH_DERIVED_DEPENDENCY
                                 else if(config.doesApplyNameMatching) InitMode.WITH_TOKEN
+                                else if (config.probOfEnablingResourceDependencyHeuristics > 0.0) InitMode.WITH_DEPENDENCY
                                 else InitMode.NONE)
                 }
                 resource.actions.add(u)
@@ -88,10 +89,10 @@ class ResourceManageService {
 
         if(hasDBHandler() && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
-        }
 
-        if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
-            dm.initDependency(resourceCluster.values.toList(), getTableInfo())
+            if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
+                dm.initDependency(resourceCluster.values.toList(), getTableInfo())
+        }
     }
 
 

@@ -25,7 +25,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
         runTestHandlingFlakyAndCompilation(
                 "",
                 "",
-                500,
+                1_000,
                 false,
                 (args) -> {
                     args.add("--heuristicsForSQL");
