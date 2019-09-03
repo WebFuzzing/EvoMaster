@@ -59,6 +59,11 @@ public class AdditionalInfo implements Serializable {
      */
     private Deque<StatementDescription> lastExecutedStatementStack = new ArrayDeque<>();
 
+    /**
+     * In case we pop all elements from stack, keep track of last one separately.
+     */
+    private StatementDescription noExceptionStatement = null;
+
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
         if(!TaintInputName.isTaintInput(taintInputName)){
@@ -96,16 +101,24 @@ public class AdditionalInfo implements Serializable {
     }
 
     public String getLastExecutedStatement() {
-        StatementDescription current = lastExecutedStatementStack.peekLast();
-        if(current == null){
-            return null;
+
+        if(lastExecutedStatementStack.isEmpty()){
+            if(noExceptionStatement == null){
+                return null;
+            }
+            return noExceptionStatement.line;
         }
+
+        StatementDescription current = lastExecutedStatementStack.peek();
         return current.line;
     }
 
     public void pushLastExecutedStatement(String lastLine, String lastMethod) {
+
+        noExceptionStatement = null;
+
         StatementDescription statement = new StatementDescription(lastLine, lastMethod);
-        StatementDescription current = lastExecutedStatementStack.peekLast();
+        StatementDescription current = lastExecutedStatementStack.peek();
 
         //if some method, then replace top of stack
         if(current != null && lastMethod.equals(current.method)){
@@ -116,6 +129,9 @@ public class AdditionalInfo implements Serializable {
     }
 
     public void popLastExecutedStatement(){
-        lastExecutedStatementStack.pop();
+        StatementDescription statementDescription = lastExecutedStatementStack.pop();
+        if(lastExecutedStatementStack.isEmpty()){
+            noExceptionStatement = statementDescription;
+        }
     }
 }

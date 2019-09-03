@@ -88,11 +88,6 @@ public class LineCovMethodVisitor extends MethodVisitor {
 
         if (seenAtLeastOneLine && returnCodes.contains(opcode)){
 
-            /*
-                TODO: would need to do something similar for methods with no return
-                statements, ie void output
-             */
-
             mv.visitMethodInsn(
                     Opcodes.INVOKESTATIC,
                     ClassName.get(ExecutionTracer.class).getBytecodeName(),
