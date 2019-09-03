@@ -82,6 +82,17 @@ public class ExecutionTracer {
         additionalInfoList.get(actionIndex).addSpecialization(taintInputName, info);
     }
 
+    public static void markLastExecutedStatement(String lastLine, String lastMethod){
+        additionalInfoList.get(actionIndex).pushLastExecutedStatement(lastLine, lastMethod);
+    }
+
+    public static final String COMPLETED_LAST_EXECUTED_STATEMENT_NAME = "completedLastExecutedStatement";
+    public static final String COMPLETED_LAST_EXECUTED_STATEMENT_DESCRIPTOR = "()V";
+
+    public static void completedLastExecutedStatement(){
+        additionalInfoList.get(actionIndex).popLastExecutedStatement();
+    }
+
     public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
         return objectiveCoverage;
     }
@@ -164,16 +175,22 @@ public class ExecutionTracer {
 
 
     public static final String EXECUTED_LINE_METHOD_NAME = "executedLine";
-    public static final String EXECUTED_LINE_DESCRIPTOR = "(Ljava/lang/String;I)V";
+    public static final String EXECUTED_LINE_DESCRIPTOR = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V";
 
     /**
      * Report on the fact that a given line has been executed.
      */
-    public static void executedLine(String className, int line) {
+    public static void executedLine(String className, String methodName, String descriptor, int line) {
+        //for targets to cover
         String lineId = ObjectiveNaming.lineObjectiveName(className, line);
         String classId = ObjectiveNaming.classObjectiveName(className);
         updateObjective(lineId, 1d);
         updateObjective(classId, 1d);
+
+        //to calculate last executed line
+        String lastLine = className + "_" + line + "_" + methodName;
+        String lastMethod = className + "_" + methodName + "_" + descriptor;
+        markLastExecutedStatement(lastLine, lastMethod);
     }
 
     public static final String EXECUTING_METHOD_METHOD_NAME = "executingMethod";

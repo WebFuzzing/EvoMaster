@@ -22,6 +22,7 @@ import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
@@ -144,6 +145,9 @@ class Main {
             writeStatistics(injector, solution)
 
             val config = injector.getInstance(EMConfig::class.java)
+            val idMapper = injector.getInstance(IdMapper::class.java)
+
+            val faults = solution.overall.potentialFoundFaults(idMapper)
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
@@ -152,6 +156,9 @@ class Main {
                 info("Needed budget: ${stc.neededBudget()}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                 info("Covered targets: ${solution.overall.coveredTargets()}")
+                info("Potential faults: ${faults.size}")
+                faults.sorted()
+                        .forEach{ info(inRed("Fault: ${IdMapper.faultInfo(it)}"))}
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTimeInSeconds == config.defaultMaxTimeInSeconds) {

@@ -39,6 +39,26 @@ public class AdditionalInfo implements Serializable {
      */
     private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
 
+    private class StatementDescription{
+        public final String line;
+        public final String method;
+
+        public StatementDescription(String line, String method) {
+            this.line = line;
+            this.method = method;
+        }
+    }
+
+    /**
+     * Keep track of the last executed statement done in the SUT.
+     * But not in the third-party libraries, just the business logic of the SUT.
+     * The statement is represented with a descriptive unique id, like the class name and line number.
+     *
+     * We need to use a stack to handle method call invocations, as we can know when a statement
+     * starts, but not so easily when it ends.
+     */
+    private Deque<StatementDescription> lastExecutedStatementStack = new ArrayDeque<>();
+
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
         if(!TaintInputName.isTaintInput(taintInputName)){
@@ -73,5 +93,29 @@ public class AdditionalInfo implements Serializable {
 
     public Set<String> getHeadersView(){
         return Collections.unmodifiableSet(headers);
+    }
+
+    public String getLastExecutedStatement() {
+        StatementDescription current = lastExecutedStatementStack.peekLast();
+        if(current == null){
+            return null;
+        }
+        return current.line;
+    }
+
+    public void pushLastExecutedStatement(String lastLine, String lastMethod) {
+        StatementDescription statement = new StatementDescription(lastLine, lastMethod);
+        StatementDescription current = lastExecutedStatementStack.peekLast();
+
+        //if some method, then replace top of stack
+        if(current != null && lastMethod.equals(current.method)){
+            lastExecutedStatementStack.pop();
+        }
+
+        lastExecutedStatementStack.push(statement);
+    }
+
+    public void popLastExecutedStatement(){
+        lastExecutedStatementStack.pop();
     }
 }

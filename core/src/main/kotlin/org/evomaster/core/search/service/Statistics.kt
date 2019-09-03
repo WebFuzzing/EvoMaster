@@ -26,6 +26,8 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var archive: Archive<*>
 
+    @Inject
+    private lateinit var idMapper: IdMapper
 
     /**
      * How often test executions did timeout
@@ -174,6 +176,7 @@ class Statistics : SearchListener {
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
             add(Pair("errors5xx", "" + errors5xx(solution)))
+            add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
