@@ -268,7 +268,7 @@ class EMConfig {
             resource-mio and sql configuration
             TODO if required
          */
-        if(resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)){
+        if(resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)){
             throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
         }
 

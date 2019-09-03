@@ -61,6 +61,10 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
         config.resourceSampleStrategy = EMConfig.ResourceSamplingStrategy.EqualProbability
 
+        config.heuristicsForSQL = false
+        config.generateSqlDataWithSearch = false
+        config.generateSqlDataWithDSE = false
+        config.geneMutationStrategy = EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
     }
 
     @AfterEach
