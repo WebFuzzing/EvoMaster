@@ -31,7 +31,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             throw IllegalArgumentException("Less actions than results")
         }
         if(tracking!=null && tracking.isNotEmpty() && tracking.first().trackOperator !is Sampler<*>){
-            throw IllegalArgumentException("First tracking operator must be sampler")
+            throw IllegalArgumentException("first tracking operator should be a sampler")
         }
         if(withImpacts)
             initImpacts()
@@ -116,6 +116,28 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return copy
     }
 
+    fun getHistoryOfGene(individual: T, gene: Gene) : List<Gene>{
+        val geneId = GeneIdUtil.generateGeneId(individual, gene)
+        getTracking()?: throw IllegalArgumentException("tracking is not enabled")
+        return getTracking()!!.flatMap { it.individual.seeGenes().find { g->GeneIdUtil.generateGeneId(it.individual, g) == geneId}.run {
+            if (this == null) listOf() else listOf(this)
+        } }
+    }
+
+    /**
+     * get latest modification with respect to the [gene]
+     */
+    fun getLatestGene(individual: T, gene: Gene) : Gene?{
+        getTracking()?: throw IllegalArgumentException("tracking is not enabled")
+        if (getTracking()!!.isEmpty()) return null
+        val latestInd = getTracking()!!.last().individual
+
+        val geneId = GeneIdUtil.generateGeneId(individual, gene)
+
+        //the individual was mutated in terms of structure, the gene might be found in history
+        return latestInd.seeGenes().find { GeneIdUtil.generateGeneId(latestInd, it) == geneId }
+    }
+
     private fun copyWithImpacts(copy : EvaluatedIndividual<T>) {
         copy.impactsOfGenes.putAll(impactsOfGenes.map { it.key to it.value.copy() as ImpactOfGene }.toMap())
         copy.impactsOfStructure.putAll(impactsOfStructure.map { it.key to it.value.copy() as ImpactOfStructure }.toMap())
@@ -150,7 +172,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
         individual.seeActions().forEach { a->
             a.seeGenes().forEach { g->
-                val id = GeneIdUtil.generateId(a, g)
+                val id = GeneIdUtil.generateGeneId(a, g)
                 impactsOfGenes.putIfAbsent(id, ImpactOfGene(id, 0.0))
             }
         }
@@ -159,7 +181,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
          */
         if(individual.seeActions().isEmpty()){
             individual.seeGenes().forEach {
-                val id = GeneIdUtil.generateId(it)
+                val id = GeneIdUtil.generateGeneId(it)
                 impactsOfGenes.putIfAbsent(id, ImpactOfGene(id, 0.0))
             }
         }
@@ -169,7 +191,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
 
         if(individual.seeActions().isNotEmpty()){
-            val id = GeneIdUtil.generateId(individual)
+            val id = GeneIdUtil.generateIndividualId(individual)
             impactsOfStructure.putIfAbsent(id, ImpactOfStructure(id, 0.0))
         }
 
@@ -204,8 +226,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val delta = (next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()).absoluteValue
 
         if(impactsOfStructure.isNotEmpty()){
-            val nextSeq = GeneIdUtil.generateId(next.individual)
-            val previousSeq = GeneIdUtil.generateId(previous.individual)
+            val nextSeq = GeneIdUtil.generateIndividualId(next.individual)
+            val previousSeq = GeneIdUtil.generateIndividualId(previous.individual)
             /*
                 a sequence of an individual is used to present its structure,
                     the degree of impact of the structure is evaluated as the max fitness value.
@@ -278,13 +300,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if(individual.seeActions().isNotEmpty()){
             individual.seeActions().forEachIndexed {_, a ->
                 a.seeGenes().forEach {g->
-                    val genes = map.getOrPut(GeneIdUtil.generateId(a, g)){ mutableListOf()}
+                    val genes = map.getOrPut(GeneIdUtil.generateGeneId(a, g)){ mutableListOf()}
                     genes.add(g)
                 }
             }
         }else{
             individual.seeGenes().forEach {g->
-                val genes = map.getOrPut(GeneIdUtil.generateId(g)){ mutableListOf()}
+                val genes = map.getOrPut(GeneIdUtil.generateGeneId(g)){ mutableListOf()}
                 genes.add(g)
             }
         }

@@ -39,6 +39,9 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
                 randomness.nextBoolean(config.structureMutationProbability)
     }
 
+    /**
+     * TODO : support with SQL-related strategy
+     */
     override fun genesToMutation(individual: RestIndividual, evi : EvaluatedIndividual<RestIndividual>): List<Gene> {
         //if data of resource call is existing from db, select other row
         val selectAction = individual.getResourceCalls().filter { it.dbActions.isNotEmpty() && it.dbActions.last().representExistingData }
@@ -48,7 +51,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     }
 
     override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes : MutableList<Gene>) {
-        //update resource dependency after mutating strcuture of the resource-based individual
+        //update resource dependency after mutating structure of the resource-based individual
         if(mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
             val isWorse = previous.fitness.subsumes(
                     mutated.fitness,

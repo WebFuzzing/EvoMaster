@@ -56,19 +56,6 @@ class RestResourceCalls(
         return longestPath().seeGenes()
     }
 
-    /**
-     * this is used to index genes when identifying its impact.
-     * key is Gene,
-     * value is id of Gene
-     */
-    fun getGeneId(gene: Gene) : String?{
-        longestPath().apply {
-            if (seeGenes().contains(gene))
-                return GeneIdUtil.generateId(this, gene)
-        }
-        return null
-    }
-
     fun repairGenesAfterMutation(gene: Gene? = null){
         val target = longestPath()
         if(gene != null) repairGenePerAction(gene, target)

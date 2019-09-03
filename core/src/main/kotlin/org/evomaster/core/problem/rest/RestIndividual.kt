@@ -8,6 +8,7 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TraceableElement
@@ -58,14 +59,22 @@ class RestIndividual (
                 sampleType == SampleType.SMART_RESOURCE
     }
 
-
+    /**
+     * Note that if resource-mio is enabled, [dbInitialization] of a RestIndividual is always empty, since DbActions are created
+     * for initializing an resource for a set of actions on the same resource.
+     * This effects on a configuration with respect to  [EMConfig.geneMutationStrategy] is ONE_OVER_N when resource-mio is enabled.
+     *
+     * In another word, if resource-mio is enabled, whatever [EMConfig.geneMutationStrategy] is, it always follows "GeneMutationStrategy.ONE_OVER_N_BIASED_SQL"
+     * strategy.
+     *
+     * TODO : modify return genes when GeneFilter is one of [GeneFilter.ALL] and [GeneFilter.ONLY_SQL]
+     */
     override fun seeGenes(filter: GeneFilter): List<out Gene> {
 
         return when (filter) {
             GeneFilter.ALL -> dbInitialization.flatMap(DbAction::seeGenes).plus(seeActions().flatMap(Action::seeGenes))
             GeneFilter.NO_SQL -> seeActions().flatMap(Action::seeGenes)
             GeneFilter.ONLY_SQL -> dbInitialization.flatMap(DbAction::seeGenes)
-
         }
     }
 
@@ -169,11 +178,6 @@ class RestIndividual (
             }
         }
         return true
-    }
-
-    override fun getGeneId(gene: Gene): String {
-        val restCalls = resourceCalls.find { r -> !r.getGeneId(gene).isNullOrBlank() } ?: throw IllegalArgumentException("this gene ${gene.name} does not exist in this individual.")
-        return restCalls.getGeneId(gene)!!
     }
 
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()

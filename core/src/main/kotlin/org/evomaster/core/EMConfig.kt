@@ -264,6 +264,14 @@ class EMConfig {
             }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
         }
 
+        /*
+            resource-mio and sql configuration
+            TODO if required
+         */
+        if(resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)){
+            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
+        }
+
         //archive-based mutation
         if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
             throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")

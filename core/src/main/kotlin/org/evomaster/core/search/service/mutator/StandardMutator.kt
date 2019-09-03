@@ -7,6 +7,7 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.GeneIdUtil
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
@@ -143,7 +144,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private fun selectGenesByArchive(genesToMutate : List<Gene>, individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
 
-        val candidatesMap = genesToMutate.map { it to individual.getGeneId(it) }.toMap()//individual.seeGenesIdMap().filter { genesToMutate.contains(it.key) }
+        val candidatesMap = genesToMutate.map { it to GeneIdUtil.generateGeneId(individual, it) }.toMap()
 
         val genes = when(config.geneSelectionMethod){
             EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
@@ -224,36 +225,4 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return selectGenesByOneDivNum(this, size)
         }
     }
-
-    /**
-     * Apply archive-based mutation to mutate genes
-     */
-    //archived mutation
-//    private fun handleDoubleGene(latest: DoubleGene, gene: DoubleGene) {
-//        val diff = gene.value - latest.value
-//        gene.value = gene.value + diff
-//    }
-//
-//    private fun handleIntegerGene(latest: IntegerGene, gene: IntegerGene) {
-//        Lazy.assert { gene.min < gene.max && gene.isMutable() }
-//
-//        //check maximum range. no point in having a delta greater than such range
-//        val range: Long = gene.max.toLong() - gene.min.toLong()
-//
-//        //choose an i for 2^i modification
-//        val delta = getDelta(range)
-//
-//        val sign = when {
-//            (gene.value > latest.value) -> +1
-//            else -> -1
-//        }
-//
-//        val res: Long = (gene.value.toLong()) + (sign * delta)
-//
-//        gene.value = when {
-//            res > gene.max -> gene.max
-//            res < gene.min -> gene.min
-//            else -> res.toInt()
-//        }
-//    }
 }

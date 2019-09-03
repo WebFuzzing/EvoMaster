@@ -42,26 +42,3 @@ open class Impact (
         counter = 0
     }
 }
-
-class ImpactOfGene (
-        id: String,
-        degree: Double,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int =0,
-        counter: Int = 0
-):Impact( id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter){
-    constructor(action: Action, gene : Gene, degree: Double) : this(GeneIdUtil.generateId(action, gene), degree)
-}
-
-
-class ImpactOfStructure (
-        id: String,
-        degree: Double,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0 ,
-        timesOfNoImpacts: Int =0,
-        counter: Int = 0
-) :Impact (id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter){
-    constructor(individual: Individual, degree: Double) : this(GeneIdUtil.generateId(individual), degree)
-}
