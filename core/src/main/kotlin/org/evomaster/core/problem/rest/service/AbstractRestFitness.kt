@@ -93,7 +93,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         return true
     }
 
-    fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
+    protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
         if (configuration.heuristicsForSQL) {
 
             for (i in 0 until dto.extraHeuristics.size) {
@@ -121,14 +121,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
             fv.aggregateDatabaseData()
 
-            if(!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
+            if (!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
-            }
-        }else if(configuration.extractSqlExecutionInfo){
-
-            for (i in 0 until dto.extraHeuristics.size) {
-                val extra = dto.extraHeuristics[i]
-                fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
             }
         }
     }
@@ -139,7 +133,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      * params that were not specified in the Swagger schema
      */
     open fun expandIndividual(
-            individual: T,
+            individual: RestIndividual,
             additionalInfoList: List<AdditionalInfoDto>
     ) {
 
@@ -149,7 +143,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 there are less Info than declared actions.
                 But the other way round should not really happen
              */
-            log.warn("Length mismatch between ${individual.seeActions().size} actions and ${additionalInfoList.size} info data")
+           log.warn("Length mismatch between ${individual.seeActions().size} actions and ${additionalInfoList.size} info data")
             return
         }
 
@@ -170,7 +164,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
             info.headers
                     .filter { name ->
-                        ! action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
+                        !action.parameters.any { it is HeaderParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach {
                         action.parameters.add(HeaderParam(it, OptionalGene(it, StringGene(it), false)))
@@ -178,7 +172,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
             info.queryParameters
                     .filter { name ->
-                        ! action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
+                        !action.parameters.any { it is QueryParam && it.name.equals(name, ignoreCase = true) }
                     }
                     .forEach { name ->
                         action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
@@ -201,7 +195,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     protected fun handleResponseTargets(
             fv: FitnessValue,
             actions: MutableList<RestAction>,
-            actionResults: MutableList<ActionResult>) {
+            actionResults: MutableList<ActionResult>,
+            additionalInfoList: List<AdditionalInfoDto>) {
 
         (0 until actionResults.size)
                 .filter { actions[it] is RestCallAction }
@@ -236,10 +231,22 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         fv.updateTarget(okId, 0.5, it)
                         fv.updateTarget(faultId, 1.0, it)
                     }
+
+                    /*
+                        500 codes "might" be bugs. To distinguish between different bugs
+                        that crash the same endpoint, we need to know what was the last
+                        executed statement in the SUT.
+                        So, we create new targets for it.
+                     */
+                    if (status == 500) {
+                        val statement = additionalInfoList[it].lastExecutedStatement
+                        val postfix = statement ?: "framework_code"
+                        val descriptiveId = idMapper.getFaultDescriptiveId("$postfix $name")
+                        val bugId = idMapper.handleLocalTarget(descriptiveId)
+                        fv.updateTarget(bugId, 1.0, it)
+                    }
                 }
     }
-
-
 
 
     /**
