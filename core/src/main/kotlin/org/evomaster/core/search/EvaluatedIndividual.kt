@@ -108,7 +108,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                 individual.copy() as T,
                 results.map(ActionResult::copy),
                 trackOperator?:individual.trackOperator,
-                getTracking()?.map { (it as EvaluatedIndividual<T> ).copy() }?.toMutableList()?: mutableListOf(),
+                getTracking()?.map { it.copy() }?.toMutableList()?: mutableListOf(),
                 getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
         )
 
@@ -140,7 +140,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
     private fun copyWithImpacts(copy : EvaluatedIndividual<T>) {
-        copy.impactsOfGenes.putAll(impactsOfGenes.map { it.key to it.value.copy() as ImpactOfGene }.toMap())
+        copy.impactsOfGenes.putAll(impactsOfGenes.map { it.key to it.value.copy() }.toMap())
         copy.impactsOfStructure.putAll(impactsOfStructure.map { it.key to it.value.copy() as ImpactOfStructure }.toMap())
         copy.reachedTargets.putAll(reachedTargets.map { it.key to it.value }.toMap())
     }

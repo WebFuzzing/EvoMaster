@@ -11,12 +11,10 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.RestResourceNode
 import org.evomaster.core.problem.rest.resource.dependency.*
 import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.ObjectGene
-import kotlin.math.max
 
 /**
  * process inference related to resource

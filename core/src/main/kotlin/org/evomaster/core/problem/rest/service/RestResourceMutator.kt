@@ -2,8 +2,6 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.ResourceDepManageService
-import org.evomaster.core.problem.rest.service.ResourceManageService
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Archive

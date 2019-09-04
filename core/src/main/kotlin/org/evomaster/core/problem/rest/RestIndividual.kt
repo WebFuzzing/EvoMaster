@@ -8,10 +8,8 @@ import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Individual.GeneFilter
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TrackOperator
 
 
@@ -102,7 +100,7 @@ class RestIndividual (
         /**
          * First repair SQL Genes (i.e. SQL Timestamps)
          */
-        GeneUtils.repairGenes(this.seeGenes(Individual.GeneFilter.ONLY_SQL).flatMap { it.flatView() })
+        GeneUtils.repairGenes(this.seeGenes(GeneFilter.ONLY_SQL).flatMap { it.flatView() })
 
         /**
          * Now repair database constraints (primary keys, foreign keys, unique fields, etc.)

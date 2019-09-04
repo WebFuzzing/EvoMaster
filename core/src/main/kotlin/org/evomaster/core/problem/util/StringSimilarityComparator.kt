@@ -24,7 +24,7 @@ object StringSimilarityComparator {
     }
 
     private fun trigrams(bigram1: MutableList<CharArray>, bigram2 : MutableList<CharArray>) : Double{
-        val copy = ArrayList<CharArray>(bigram2)
+        val copy = ArrayList(bigram2)
         var matches = 0
         var i = bigram1.size
         while (--i >= 0) {

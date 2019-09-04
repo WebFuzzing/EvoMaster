@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.util.inference.model
 
-import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import kotlin.math.min
 

@@ -7,7 +7,7 @@ import org.evomaster.core.search.service.IdMapper
 
 
 /**
- *  @decription This is used to save final archive of search and last evaluated individual
+ * This is used to save final archive of search and last evaluated individual
  *
  */
 open class SearchOverall<T> where T : Individual{

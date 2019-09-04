@@ -56,26 +56,6 @@ class ResourceSampleMethodController {
         if(methods.values.filter { it.applicable }.size == 1 ) config.maxTestSize = 1
     }
 
-    private fun printApplicableStr(){
-        log.debug("Applicable SmartSampleStrategy>>>")
-        log.debug( methods.filter{ it.value.applicable }.mapNotNull { "${it.key} : ${it.value.probability}"}.joinToString (" - "))
-    }
-
-    private fun printSummaryOfResources(mutableMap: Map<String, RestResourceNode>){
-        log.debug("Summary of abstract resources and actions>>>")
-        val message ="""
-            #Rs ${mutableMap.size}
-            #IndRs ${mutableMap.values.filter { it.isIndependent() }.size}
-            #hasIndActionRs ${mutableMap.values.filter { it.hasIndependentAction() }.size}
-            #DepRs ${mutableMap.values.filterNot { it.isIndependent() }.size}
-
-            #Actions ${mutableMap.values.map { it.actions.size }.sum()}
-            #IndActions ${mutableMap.values.map { it.getTemplates().filter { t -> t.value.independent }.size }.sum()}
-            #depActions ${mutableMap.values.map { it.getTemplates().filter { t -> !t.value.independent }.size}.sum()}
-            #depComActions ${mutableMap.values.map { it.getTemplates().filter { t -> !t.value.independent }.size * (it.getTemplates().filter { !it.value.independent }.size -1) }.sum()}
-            """
-        log.debug(message)
-    }
     private fun validateProbability() {
         if(methods.values.map { it.probability }.sum().run { this > 1.1 && this < 0.9 }){
             log.warn("a sum of probability of applicable strategies should be 1.0 but ${methods.values.map { it.probability }.sum()}")
@@ -104,25 +84,6 @@ class ResourceSampleMethodController {
         config.SMdR = methods.getValue(SMdR).probability
     }
 
-    private fun set(){
-        methods.getValue(S1iR).probability = config.S1iR
-        methods.getValue(S1dR).probability = config.S1dR
-        methods.getValue(S2dR).probability = config.S2dR
-        methods.getValue(SMdR).probability = config.SMdR
-    }
-
-    private fun printCounters(){
-        log.debug(methods.values.map { it.times }.joinToString("-"))
-    }
-
-    private fun printImproved(){
-        log.debug("improvement with selected strategy: "+methods.values.map { it.improved }.joinToString("-"))
-    }
-
-    private fun printImprovedPercentage(){
-        log.debug(methods.values.map { it.improved * 1.0/it.times }.joinToString("-"))
-    }
-
     fun getSampleStrategy() : ResourceSamplingMethod{
         if(methods.filter { it.value.applicable }.size == 1) return getStrategyWithItsProbability()
         val selected =
@@ -137,8 +98,8 @@ class ResourceSampleMethodController {
                     throw IllegalStateException()
                 }
             }
-        methods.getValue(selected!!).times += 1
-        return selected!!
+        methods.getValue(selected).times += 1
+        return selected
     }
     private fun initEqualProbability(){
         methods.values.filter { it.applicable }.let {
@@ -199,7 +160,7 @@ class ResourceSampleMethodController {
         val used = passed/threshold
         resetProbability()
         if(used < TB_THRESHOLD){
-            val one = methods.filter { it.value.applicable && (it.key == S1iR || it.key == ResourceSamplingMethod.S1dR)}.size
+            val one = methods.filter { it.value.applicable && (it.key == S1iR || it.key == S1dR)}.size
             val two = methods.filter { it.value.applicable}.size - one
             methods.filter { it.value.applicable }.forEach { s->
                 when(s.key){

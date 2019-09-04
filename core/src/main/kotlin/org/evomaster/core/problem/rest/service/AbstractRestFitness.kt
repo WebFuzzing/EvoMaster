@@ -309,7 +309,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             using pre-chosen one
          */
 
-        a.parameters.filterIsInstance<org.evomaster.core.problem.rest.param.HeaderParam>()
+        a.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
                     builder.header(it.name, it.gene.getValueAsRawString())

@@ -6,7 +6,10 @@ import edu.stanford.nlp.ling.tokensregex.TokenSequencePattern
 import edu.stanford.nlp.pipeline.StanfordCoreNLP
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestPath
-import org.evomaster.core.problem.rest.param.*
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.Param
+import org.evomaster.core.problem.rest.param.PathParam
+import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.problem.rest.resource.ActionRToken
 import org.evomaster.core.problem.rest.resource.PathRToken
 import org.evomaster.core.problem.rest.resource.RToken
@@ -15,7 +18,6 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import java.util.*
-import kotlin.math.PI
 
 /**
  * handling name (with string type) matching

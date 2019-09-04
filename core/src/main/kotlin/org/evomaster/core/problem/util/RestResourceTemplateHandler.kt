@@ -75,44 +75,6 @@ class RestResourceTemplateHandler{
         private fun formatTemplate(stringVerbs : Array<String>) : String = stringVerbs.joinToString(SeparatorTemplate)
 
 
-        fun initSampleSpace(_space : Array<Boolean>, maps : MutableMap<String , Int>) {
-            val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
-            (if(_space.first() && !_space.last())space.subList(1, space.size) else space).forEach {v->
-                maps.getOrPut(v.toString()){0}
-            }
-            val chosen = space.filter { v-> v != HttpVerb.DELETE && v!=HttpVerb.POST }.toTypedArray()
-
-            if(chosen.isEmpty()){
-                if(space.size > 1)
-                    maps.getOrPut(formatTemplate(space.toTypedArray())){0}
-            }else if(chosen.size == 1){
-                if(_space.first()){
-                    maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST, chosen[0]))){0}
-                }
-                if(_space[4]){
-                    maps.getOrPut(formatTemplate(arrayOf(chosen[0], HttpVerb.DELETE))){0}
-                }
-                if(_space.first() && _space[4]){
-                    maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST, chosen[0], HttpVerb.DELETE))){0}
-                }
-            }else{
-                (2 until chosen.size +1).forEach{len->
-                    combination(chosen,len).forEach {tmp->
-                        maps.getOrPut(tmp){0}
-                        if(_space.first()){
-                            maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST.toString(), tmp))){0}
-                        }
-                        if(_space[4]){
-                            maps.getOrPut(formatTemplate(arrayOf(tmp, HttpVerb.DELETE.toString()))){0}
-                        }
-                        if(_space.first() && _space[4]){
-                            maps.getOrPut(formatTemplate(arrayOf(HttpVerb.POST.toString(), tmp, HttpVerb.DELETE.toString()))){0}
-                        }
-                    }
-                }
-            }
-        }
-
         fun sample(_space : Array<Boolean>, randomness: Randomness, slen : Int = 0) : String{
             val space = arrayHttpVerbs.filterIndexed{index, _ ->  _space[index]}
             val len = if(slen != 0) slen else randomness.nextInt(1,space.size)
@@ -137,24 +99,5 @@ class RestResourceTemplateHandler{
 
         }
 
-        fun sampleAll(_space : Array<Boolean>, randomness: Randomness, slen : Int = 0) : String{
-            var space = arrayHttpVerbs.filterIndexed{index, _ ->  if(index == 0) _space.last() else _space[index]}
-
-            var len = if(slen != 0) slen else randomness.nextInt(1,space.size)
-            var nums = List(len){ i -> space.size - i}
-
-            var remove : MutableList<String> = mutableListOf()
-            var result = ""
-            var t = randomness.nextInt(nums.reduce { acc, i -> acc * i })
-            for(id in 0 until len-1){
-                var l = (nums.subList(id+1, len).reduce { acc, i -> acc * i })
-                var i = t/l
-                var value = space.filter { r -> !remove.contains(r.toString()) }[i].toString()
-                result = result + value + SeparatorTemplate
-                remove.add(value)
-                t -= l * i
-            }
-            return result + space.filter { r -> !remove.contains(r.toString()) }[t].toString()
-        }
     }
 }

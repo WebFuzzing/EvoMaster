@@ -3,7 +3,6 @@ package org.evomaster.core.problem.rest.resource
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.search.GeneIdUtil
 import org.evomaster.core.search.gene.Gene
 
 /**

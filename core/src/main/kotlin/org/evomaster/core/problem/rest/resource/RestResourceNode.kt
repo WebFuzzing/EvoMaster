@@ -36,7 +36,7 @@ class RestResourceNode(
 
     /**
      * key is original text of the token
-     * value is PathRToken which contains more analysis info about the orignal text
+     * value is PathRToken which contains more analysis info about the original text
      */
     private val tokens : MutableMap<String, PathRToken> = mutableMapOf()
 
@@ -236,7 +236,7 @@ class RestResourceNode(
                 return Pair(true, post)
             }
             else->{
-                throw IllegalArgumentException("cannot manipulte creations with the inputs")
+                throw IllegalArgumentException("cannot manipulate creations with the inputs")
             }
         }
     }

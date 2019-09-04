@@ -1,7 +1,5 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
@@ -21,7 +19,6 @@ import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToReso
 import org.evomaster.core.problem.rest.resource.dependency.ResourceRelatedToTable
 import org.evomaster.core.problem.rest.resource.dependency.SelfResourcesRelation
 import org.evomaster.core.problem.rest.util.ParamUtil
-import org.evomaster.core.problem.rest.util.ParserUtil
 import org.evomaster.core.problem.rest.util.inference.SimpleDeriveResourceBinding
 import org.evomaster.core.problem.rest.util.inference.model.ParamGeneBindMap
 import org.evomaster.core.problem.util.StringSimilarityComparator
@@ -47,6 +44,9 @@ class ResourceDepManageService {
     @Inject
     private lateinit var config: EMConfig
 
+    companion object{
+        private const val DERIVE_RELATED = 1.0
+    }
     /**
      * key is either a path of one resource, or a list of paths of resources
      * value is a list of related to resources
@@ -60,11 +60,6 @@ class ResourceDepManageService {
     private val uncorrelated: MutableMap<String, MutableSet<String>> = mutableMapOf()
 
     private val inference = SimpleDeriveResourceBinding()
-
-//    fun initDependency(resourceCluster: List<RestResourceNode>, tables: Map<String, Table>) {
-//        initDependencyBasedOnDerivedTables(resourceCluster, tables)
-//        deriveDependencyBasedOnSchema(resourceCluster)
-//    }
 
     /************************  manage relationship between resource and tables ***********************************/
 
@@ -106,7 +101,7 @@ class ResourceDepManageService {
     }
 
     /**
-     * TODO remove dependencies based on feedback from evomaster driver
+     * TODO remove false-derived dependencies based on feedback from evomaster driver
      */
     private fun updateDependencyOnceResourceTableUpdate(addedMap: MutableMap<String, MutableSet<String>>, removedMap: MutableMap<String, MutableSet<String>>) {
 
@@ -138,7 +133,7 @@ class ResourceDepManageService {
                     u.forEach { m->
                         val newTargets = m.targets.plus(newRelatedResource).toHashSet()
                         val newTables = m.referredTables.plus(table).toHashSet()
-                        val newMut = MutualResourcesRelations(newTargets.toList(), 1.0, newTables)
+                        val newMut = MutualResourcesRelations(newTargets.toList(), DERIVE_RELATED, newTables)
                         dependencies.getValue(t).add(newMut)
                     }
                 }
@@ -152,11 +147,11 @@ class ResourceDepManageService {
                             dependencies.getValue(nr).remove(a)
                             val newTargets = a.targets.plus(newRelatedResource).plus(previousResourcesWithTable).toHashSet()
                             val newTables = (a as MutualResourcesRelations).referredTables.plus(table).toHashSet()
-                            val newMut = MutualResourcesRelations(newTargets.toList(), 1.0, newTables)
+                            val newMut = MutualResourcesRelations(newTargets.toList(), DERIVE_RELATED, newTables)
                             dependencies.getValue(nr).add(newMut)
                         }
                     }else{
-                        val newMut = MutualResourcesRelations(newRelatedResource.plus(previousResourcesWithTable).toHashSet().toList(), 1.0, mutableSetOf(table))
+                        val newMut = MutualResourcesRelations(newRelatedResource.plus(previousResourcesWithTable).toHashSet().toList(), DERIVE_RELATED, mutableSetOf(table))
                         dependencies.getValue(nr).add(newMut)
                     }
                 }
@@ -354,7 +349,7 @@ class ResourceDepManageService {
      * update dependencies based on derived info
      * [additionalInfo] is structure mutator in this context
      */
-    private fun updateDependencies(key: String, target: MutableList<String>, additionalInfo: String, probability: Double = 1.0) {
+    private fun updateDependencies(key: String, target: MutableList<String>, additionalInfo: String, probability: Double = DERIVE_RELATED) {
 
         val relation = if (target.size == 1 && target[0] == key) SelfResourcesRelation(key, probability, additionalInfo)
         else ResourceRelatedToResources(listOf(key), target, probability, info = additionalInfo)
@@ -1194,7 +1189,5 @@ class ResourceDepManageService {
             }
             Files.write(path, listOf(header).plus(content))
         }
-
     }
-
 }

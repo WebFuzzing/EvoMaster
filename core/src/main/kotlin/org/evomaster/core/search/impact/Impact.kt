@@ -1,10 +1,5 @@
 package org.evomaster.core.search.impact
 
-import org.evomaster.core.search.Action
-import org.evomaster.core.search.GeneIdUtil
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.Gene
-
 /**
  * @property id of impact, always refer to Gene of Action or structure of individual
  * @property degree of the impact
