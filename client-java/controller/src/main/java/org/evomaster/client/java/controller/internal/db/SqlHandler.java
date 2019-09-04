@@ -83,7 +83,7 @@ public class SqlHandler {
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
-        if(! calculateHeuristics){
+        if(!calculateHeuristics && !extractSqlExecution){
             return;
         }
 

@@ -239,11 +239,11 @@ class ResourceManageService {
             if(forceInsert){
                 generateInserSql(tableName, dbActions)
             }else if(forceSelect){
-                if(dataInDB[tableName] != null && dataInDB[tableName]!!.isNotEmpty()) generateSelectSql(tableName, dbActions)
+                if(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty()) generateSelectSql(tableName, dbActions)
                 else failToGenDB = true
             }else{
-                if(dataInDB[tableName]!= null ){
-                    val size = dataInDB[tableName]!!.size
+                if(getDataInDb(tableName)!= null ){
+                    val size = getDataInDb(tableName)!!.size
                     when{
                         size < config.minRowOfTable -> generateInserSql(tableName, dbActions).apply {
                             failToGenDB = failToGenDB || !this
@@ -364,7 +364,7 @@ class ResourceManageService {
     private fun selectToDataRowDto(dbAction : DbAction, tableName : String) : DataRowDto{
         dbAction.seeGenes().forEach { assert((it is SqlPrimaryKeyGene || it is ImmutableDataHolderGene || it is SqlForeignKeyGene)) }
         val set = dbAction.seeGenes().filter { it is SqlPrimaryKeyGene }.map { ((it as SqlPrimaryKeyGene).gene as ImmutableDataHolderGene).value }.toSet()
-        return randomness.choose(dataInDB[tableName]!!.filter { it.columnData.toSet().equals(set) })
+        return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
     }
 
     private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null && config.doesInvolveDatabase
@@ -392,13 +392,13 @@ class ResourceManageService {
     private fun generateSelectSql(tableName : String, dbActions: MutableList<DbAction>, forceDifferent: Boolean = false, withDbAction: DbAction?=null){
         if(dbActions.map { it.table.name }.contains(tableName)) return
 
-        assert(dataInDB[tableName] != null && dataInDB[tableName]!!.isNotEmpty())
+        assert(getDataInDb(tableName) != null && getDataInDb(tableName)!!.isNotEmpty())
         assert(!forceDifferent || withDbAction == null)
 
         val columns = if(forceDifferent && withDbAction!!.representExistingData){
             selectToDataRowDto(withDbAction, tableName)
         }else {
-            randomness.choose(dataInDB[tableName]!!)
+            randomness.choose(getDataInDb(tableName)!!)
         }
 
         val selectDbAction = sqlInsertBuilder!!.extractExistingByCols(tableName, columns)
@@ -446,4 +446,10 @@ class ResourceManageService {
         return sqlInsertBuilder
     }
 
+    private fun getDataInDb(tableName: String) : MutableList<DataRowDto>?{
+        val found = dataInDB.filterKeys { k-> k.equals(tableName, ignoreCase = true) }.keys
+        if (found.isEmpty()) return null
+        assert(found.size == 1)
+        return dataInDB.getValue(found.first())
+    }
 }
