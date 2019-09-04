@@ -158,8 +158,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
             if (t.descriptiveId != null) {
 
-                if(! config.useMethodReplacement &&
-                        t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)){
+                if (!config.useMethodReplacement &&
+                        t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)) {
                     return@forEach
                 }
 
@@ -171,9 +171,9 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.actions, actionResults)
+        handleResponseTargets(fv, individual.actions, actionResults, dto.additionalInfoList)
 
-        if(config.expandRestIndividuals) {
+        if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList)
         }
 
@@ -213,7 +213,7 @@ class RestFitness : FitnessFunction<RestIndividual>() {
 
             fv.aggregateDatabaseData()
 
-            if(!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
+            if (!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
             }
         }
@@ -301,7 +301,8 @@ class RestFitness : FitnessFunction<RestIndividual>() {
     private fun handleResponseTargets(
             fv: FitnessValue,
             actions: MutableList<RestAction>,
-            actionResults: MutableList<ActionResult>) {
+            actionResults: MutableList<ActionResult>,
+            additionalInfoList: List<AdditionalInfoDto>) {
 
         (0 until actionResults.size)
                 .filter { actions[it] is RestCallAction }
@@ -335,6 +336,20 @@ class RestFitness : FitnessFunction<RestIndividual>() {
                     } else if (status in 500..599) {
                         fv.updateTarget(okId, 0.5, it)
                         fv.updateTarget(faultId, 1.0, it)
+                    }
+
+                    /*
+                        500 codes "might" be bugs. To distinguish between different bugs
+                        that crash the same endpoint, we need to know what was the last
+                        executed statement in the SUT.
+                        So, we create new targets for it.
+                     */
+                    if (status == 500) {
+                        val statement = additionalInfoList[it].lastExecutedStatement
+                        val postfix = statement ?: "framework_code"
+                        val descriptiveId = idMapper.getFaultDescriptiveId("$postfix $name")
+                        val bugId = idMapper.handleLocalTarget(descriptiveId)
+                        fv.updateTarget(bugId, 1.0, it)
                     }
                 }
     }
