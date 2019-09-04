@@ -4,7 +4,9 @@ package org.evomaster.core.problem.rest.resource
  * this is used for text and name analysis with nl parser
  * @property originalText is original text before processing the analysis
  * @property lemma of [originalText]
- * @property assuredVerb presents whether the token is a verb
+ * @property assuredVerb assuredVerb indicates whether the token is a verb.
+ * In our case, the tokens in a path is not a complete sentence, so a word may be a noun or a verb.
+ * so we use assuredVerb to present that the word must be a verb.
  */
 open class RToken(
     val originalText : String,
@@ -16,10 +18,6 @@ open class RToken(
 
     fun equals(other : RToken):Boolean{
         return isCollection == other.isCollection && lemma == other.lemma
-    }
-
-    fun equals(text: String) : Boolean{
-        return text.toLowerCase() == lemma.toLowerCase() || text.toLowerCase() == originalText.toLowerCase()
     }
 
     fun getKey() : String{

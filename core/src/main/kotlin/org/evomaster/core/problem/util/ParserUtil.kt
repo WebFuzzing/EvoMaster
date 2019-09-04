@@ -25,9 +25,6 @@ object ParserUtil {
     private const val REGEX_NOUN = "([{pos:/NN|NNS|NNP/}])"
     private const val REGEX_VERB = "([{pos:/VB|VBD|VBG|VBN|VBP|VBZ/}])"
 
-//        private const val REGEX = "([{pos:/NN|NNS|NNP|VB|VBD|VBG|VBN|VBP|VBZ/}])"
-//        private val TAGGER_EN : MaxentTagger = MaxentTagger(MaxentTagger.DEFAULT_JAR_PATH)
-
     private val PATTERN_NOUN = TokenSequencePattern.compile(REGEX_NOUN)
     private val PATTERN_VERB = TokenSequencePattern.compile(REGEX_VERB)
 
@@ -168,40 +165,17 @@ object ParserUtil {
 
 
     private fun parseActionTokensByParam(params : MutableList<Param>, map : MutableMap<String, ActionRToken>){
-        /*
-         swagger specification: The location of the parameter. Possible values are "query", "header", "path", "formData" or "body".
-          There are five possible parameter types.
-          Path - Used together with Path Templating, where the parameter value is actually part of the operation's URL.
-                This does not include the host or base path of the API. For example, in /items/{itemId}, the path parameter is itemId.
-          Query - Parameters that are appended to the URL. For example, in /items?id=###, the query parameter is id.
-          Header - Custom headers that are expected as part of the request.
-          Body - The payload that's appended to the HTTP request.
-               Since there can only be one payload, there can only be one body parameter.
-               The name of the body parameter has no effect on the parameter itself and is used for documentation purposes only.
-               Since Form parameters are also in the payload, body and form parameters cannot exist together for the same operation.
-          Form - Used to describe the payload of an HTTP request when either application/x-www-form-urlencoded,
-               multipart/form-data or both are used as the content type of the request (in Swagger's definition, the consumes property of an operation).
-               This is the only parameter type that can be used to send files, thus supporting the file type.
-               Since form parameters are sent in the payload, they cannot be declared together with a body parameter for the same operation.
-               Form parameters have a different format based on the content-type used (for further details, consult http://www.w3.org/TR/html401/interact/forms.html#h-17.13.4):
-               application/x-www-form-urlencoded - Similar to the format of Query parameters but as a payload.
-                   For example, foo=1&bar=swagger - both foo and bar are form parameters. This is normally used for simple parameters that are being transferred.
-                   multipart/form-data - each parameter takes a section in the payload with an internal header.
-                   For example, for the header Content-Disposition: form-data; name="submit-name" the name of the parameter is submit-name.
-                   This type of form parameters is more commonly used for file transfers.
-         */
-        params.forEach {p->
-            if(p is BodyParam || p is PathParam || p is QueryParam || p is FormParam){
-                handleParam(p, map)
-            }
+        params.filter {p-> p is BodyParam || p is PathParam || p is QueryParam}.forEach {p->
+            handleParam(p, map)
         }
-
     }
 
     private fun handleParam(param: Param, map: MutableMap<String, ActionRToken>){
         val typeGene = getFirstTypeGene(param.gene)
         if (typeGene is ObjectGene){
-            //name is always body for BodyParam (based on RestActionBuilder), then we ignore to record this info.
+            /*
+            name is always 'body' for BodyParam (based on RestActionBuilder), then we ignore to record this info.
+             */
             handleObjectGene(typeGene, map, true, null, true)
         }else{
             handleTypeGene(typeGene, map, true)
@@ -233,7 +207,7 @@ object ParserUtil {
             token.isType = false
             if(isDirect) token.isDirect = isDirect
         }else{
-            map.putIfAbsent(formatKey(paramName), ActionRToken(paramName, getNlpTokens(paramName)[0].lemma(), true, false, isDirect))
+            map.putIfAbsent(formatKey(paramName), ActionRToken(paramName, getNlpTokens(paramName)[0].lemma(), fromDefinition = true, isType = false, isDirect = isDirect))
         }
     }
 
@@ -247,7 +221,7 @@ object ParserUtil {
                 if(isDirect) token.isDirect = isDirect //avoid to change isDirect from true -> false
                 if(name != null) token.alternativeNames.add(name)
             }else{
-                map.putIfAbsent(formatKey(refType), ActionRToken(refType, getNlpTokens(refType)[0].lemma(), true, true, isDirect).also {
+                map.putIfAbsent(formatKey(refType), ActionRToken(refType, getNlpTokens(refType)[0].lemma(), fromDefinition = true, isType = true, isDirect = isDirect).also {
                     if(name != null) it.alternativeNames.add(name)
                 })
             }
@@ -289,7 +263,6 @@ object ParserUtil {
             return tokens.filter { resultNouns.plus(resultVerbs).contains(it.originalText()) }
         }
         return mutableListOf()
-
     }
 
     private fun getMatched(pattern: TokenSequencePattern, tokens : List<CoreLabel>) : List<String>{

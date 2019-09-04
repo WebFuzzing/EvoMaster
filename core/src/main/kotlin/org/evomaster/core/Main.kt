@@ -316,6 +316,9 @@ class Main {
             process.saveOverall()
         }
 
+        /**
+         * save possible dependencies among resources (e.g., a resource might be related to other resource) derived during search
+         */
         private fun writeDependencies(injector: Injector) {
 
             val config = injector.getInstance(EMConfig::class.java)

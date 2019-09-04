@@ -348,6 +348,11 @@ object DbActionUtils {
         }
     }
 
+    /**
+     * In resource-based individual, SQL actions might be distributed to different set of REST actions regarding resources.
+     * In this context, a FK of an insertion may refer to a PK that are in front of this insertion and belongs to other resource (referred resource).
+     * During mutation, if the referred resource is modified (e.g., removed), the FK will be broken.
+     */
     fun repairFK(dbAction: DbAction, previous : MutableList<DbAction>, createdDbActions : MutableList<DbAction>,sqlInsertBuilder: SqlInsertBuilder?) : MutableList<SqlPrimaryKeyGene>{
         val repaired = mutableListOf<SqlPrimaryKeyGene>()
         if(dbAction.table.foreignKeys.isEmpty())

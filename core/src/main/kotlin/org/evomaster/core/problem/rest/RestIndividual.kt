@@ -219,23 +219,21 @@ class RestIndividual (
     fun repairDBActions(sqlInsertBuilder: SqlInsertBuilder?){
         val previousDbActions = mutableListOf<DbAction>()
 
-        getResourceCalls().forEach {
-            if (it.dbActions.isNotEmpty()){
-                var result = try{
-                    DbActionUtils.verifyActions(it.dbActions) && DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
-                }catch (e : IllegalArgumentException ){false}
+        getResourceCalls().filter { it.dbActions.isNotEmpty() }.forEach {
+            var result = try{
+                DbActionUtils.verifyActions(it.dbActions) && DbActionUtils.verifyActions(previousDbActions.plus(it.dbActions))
+            }catch (e : IllegalArgumentException ){false}
 
-                if(!result){
-                    val created = mutableListOf<DbAction>()
-                    it.dbActions.forEach { db->
-                        DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder)
-                        previousDbActions.add(db)
-                    }
-                    it.dbActions.addAll(0, created)
-
-                }else{
-                    previousDbActions.addAll(it.dbActions)
+            if(!result){
+                val created = mutableListOf<DbAction>()
+                it.dbActions.forEach { db->
+                    DbActionUtils.repairFK(db, previousDbActions, created, sqlInsertBuilder)
+                    previousDbActions.add(db)
                 }
+                it.dbActions.addAll(0, created)
+
+            }else{
+                previousDbActions.addAll(it.dbActions)
             }
         }
 

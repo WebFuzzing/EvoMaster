@@ -589,7 +589,7 @@ class EMConfig {
     var customNaming = false
 
     /*
-        You need to decode it if you want to know what is says...
+        You need to decode it if you want to know what it says...
      */
     @Cfg("QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==")
     var e_u1f984 = false
@@ -651,8 +651,7 @@ class EMConfig {
     var probOfEnablingResourceDependencyHeuristics = 0.0
 
     @Experimental
-    @Cfg("Specify whether to export derived dependencies among resources. " +
-            "if enabled, the dependencies are stored at the same location of generated test cases.")
+    @Cfg("Specify whether to export derived dependencies among resources")
     var exportDependencies = false
 
     @Experimental
@@ -664,7 +663,8 @@ class EMConfig {
     var doesInvolveDatabase = false
 
     @Experimental
-    @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. In other word, if the number is less than the specified, insertion is always applied.")
+    @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
+            "In other word, if the number is less than the specified, insertion is always applied.")
     @Min(0.0)
     var minRowOfTable = 10
 
@@ -674,26 +674,26 @@ class EMConfig {
     var probOfSelectFromDatabase = 0.1
 
     @Experimental
-    @Cfg("Whether to apply text/name analysis with natural la parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
     var doesApplyNameMatching = false
 
     @Experimental
-    @Cfg("Specify a probability to apply S1iR when sample control is Customized")
+    @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Min(0.0)@Max(1.0)
     var S1iR : Double = 0.25
 
     @Experimental
-    @Cfg("Specify a probability to apply S1dR when sample control is Customized")
+    @Cfg("Specify a probability to apply S1dR when resource sampling strategy is 'Customized'")
     @Min(0.0)@Max(1.0)
     var S1dR : Double = 0.25
 
     @Experimental
-    @Cfg("Specify a probability to apply S2dR when sample control is Customized")
+    @Cfg("Specify a probability to apply S2dR when resource sampling strategy is 'Customized'")
     @Min(0.0)@Max(1.0)
     var S2dR : Double = 0.25
 
     @Experimental
-    @Cfg("Specify a probability to apply SMdR when sample control is Customized")
+    @Cfg("Specify a probability to apply SMdR when resource sampling strategy is 'Customized'")
     @Min(0.0)@Max(1.0)
     var SMdR : Double = 0.25
 
@@ -703,7 +703,7 @@ class EMConfig {
     var probOfArchiveMutation = 0.0
 
     @Experimental
-    @Cfg("Specify a percentage to prepare candidates of genes to mutate")
+    @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
     @Min(0.0) @Max(1.0)
     var perOfCandidateGenesToMutate = 0.1
 

@@ -1,10 +1,7 @@
 package org.evomaster.core.problem.rest.util
 
-import org.apache.lucene.search.similarities.Similarity
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.RestPath
 import org.evomaster.core.problem.rest.param.*
-import org.evomaster.core.problem.rest.util.inference.model.MatchedInfo
 import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
@@ -13,6 +10,9 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+/**
+ * this class used to handle binding values among params
+ */
 class ParamUtil {
 
     companion object {
@@ -30,7 +30,6 @@ class ParamUtil {
         private val log: Logger = LoggerFactory.getLogger(ParamUtil::class.java)
 
         fun appendParam(paramsText : String, paramToAppend: String) : String = if(paramsText.isBlank()) paramToAppend else "$paramsText$separator$paramToAppend"
-        fun generateParamText(params: List<String>) : String = params.joinToString(separator)
 
         fun parseParams(params : String) : List<String> = params.split(separator)
         /**
@@ -44,8 +43,8 @@ class ParamUtil {
                 is BodyParam -> bindBodyParam(target, targetPath,sourcePath, params, inner)
                 is PathParam -> bindPathParm(target, targetPath,sourcePath, params, inner)
                 is QueryParam -> bindQueryParm(target, targetPath,sourcePath, params, inner)
-                is FormParam -> bindFormParam(target, targetPath,sourcePath, params)
-                is HeaderParam -> bindHeaderParam(target, targetPath,sourcePath, params)
+                is FormParam -> bindFormParam(target, params)
+                is HeaderParam -> bindHeaderParam(target, params)
             }
         }
         private fun bindPathParm(p : PathParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>, inner : Boolean){
@@ -62,8 +61,6 @@ class ParamUtil {
                 if(numOfBodyParam(params) == params.size && params.isNotEmpty()){
                     bindBodyAndOther(params.first{ pa -> pa is BodyParam } as BodyParam, sourcePath, p, targetPath,false, inner)
                 }
-//                else
-//                    log.warn("cannot find PathParam ${p.name} in params ${params.mapNotNull { it.name }.joinToString(" ")}")
             }
         }
 
@@ -71,15 +68,11 @@ class ParamUtil {
             if(params.isNotEmpty() && numOfBodyParam(params) == params.size){
                 bindBodyAndOther(params.first{ pa -> pa is BodyParam } as BodyParam, sourcePath, p, targetPath,false, inner)
             }else{
-                val sg = params.filter { pa -> !(pa is BodyParam) }.find { pa -> pa.name == p.name
-                        //&& p.gene::class.java.simpleName == pa.gene::class.java.simpleName
-                }
+                val sg = params.filter { pa -> !(pa is BodyParam) }.find { pa -> pa.name == p.name }
                 if(sg != null){
                     //p.gene.copyValueFrom(sg.gene)
                     copyWithTypeAdapter(p.gene, sg.gene)
                 }
-//                else
-//                    log.warn("cannot find QueryParam ${p.name} in params ${params.map { it.name }.joinToString(" ")}")
             }
         }
 
@@ -93,7 +86,6 @@ class ParamUtil {
                 val valueGene = getValueGene(bp.gene)
                 val pValueGene = getValueGene(params[0].gene)
                 if(valueGene !is ObjectGene){
-                    //log.warn("improper BodyParam without ObjectGene")
                     return
                 }
                 if (pValueGene !is ObjectGene){
@@ -135,18 +127,15 @@ class ParamUtil {
         private fun modifyFieldName(obj: ObjectGene, field : Gene) : String{
             return if (isGeneralName(field.name)) (obj.refType?:"") + field.name else field.name
         }
-        /**
-         * TODO
-         */
-        private fun bindHeaderParam(p : HeaderParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+
+
+        private fun bindHeaderParam(p : HeaderParam, params: List<Param>){
             params.find { it is HeaderParam && p.name == it.name}?.apply {
                 p.gene.copyValueFrom(this.gene)
             }
         }
-        /**
-         * TODO
-         */
-        private fun bindFormParam(p : FormParam, targetPath: RestPath, sourcePath: RestPath, params: List<Param>){
+
+        private fun bindFormParam(p : FormParam, params: List<Param>){
             params.find { it is FormParam && p.name == it.name}?.apply {
                 p.gene.copyValueFrom(this.gene)
             }
@@ -167,8 +156,8 @@ class ParamUtil {
                 }
             }
 
-            val pathMap = geneNameMaps(listOf(other), otherPath.getStaticTokens().reversed())
-            val bodyMap = geneNameMaps(listOf(body), bodyPath.getStaticTokens().reversed())
+            val pathMap = geneNameMaps(listOf(other), otherPath.getNonParameterTokens().reversed())
+            val bodyMap = geneNameMaps(listOf(body), bodyPath.getNonParameterTokens().reversed())
             pathMap.forEach { (pathkey, pathGene) ->
                 if(bodyMap.containsKey(pathkey)){
                     copyGene(bodyMap.getValue(pathkey), pathGene, b2g)
@@ -187,10 +176,7 @@ class ParamUtil {
         }
 
         private fun numOfBodyParam(params: List<Param>) : Int{
-            params.filter { it is BodyParam }.let {
-                return it.size
-            }
-            //return 0
+            return params.count { it is BodyParam }
         }
 
         fun existBodyParam(params: List<Param>) : Boolean{
@@ -350,10 +336,6 @@ class ParamUtil {
             return true
         }
 
-        private fun compareParamNames(a : String, b : String) : Boolean{
-            return a.toLowerCase().contains(b.toLowerCase()) || b.toLowerCase().contains(a.toLowerCase())
-        }
-
         private fun scoreOfMatch(target : String, source : String, inner : Boolean) : Int{
             val targets = target.split(separator).filter { it != DISRUPTIVE_NAME  }.toMutableList()
             val sources = source.split(separator).filter { it != DISRUPTIVE_NAME  }.toMutableList()
@@ -459,108 +441,14 @@ class ParamUtil {
             }else{
                 val db2Action = !existingData && (!enableFlexibleBind || checkBindSequence(getValueGene(dbgene), getValueGene(paramGene))?:true)
                 copyGene(b=getValueGene(dbgene), g=getValueGene(paramGene), b2g=db2Action)
-//                if(existingData){
-//                    /*
-//                     If the data is existing in db, bind gene of Param according to the gene from dbaction
-//                        otherwise, bind gene of action according to rest action, i.e., Gene of Param
-//                    */
-//                    copyGene(b=getValueGene(dbgene!!), g=getValueGene(paramGene), b2g=!existingData)
-//                }else{
-//                    if (enableFlexibleBind){
-//
-//                    }
-//                }
-
             }
 
         }
 
-        fun bindParam(dbAction: DbAction, param : Param, previousToken: String, existingData : Boolean) : Boolean{
-            var gene  : Gene? = null
-            var similarity = 0.0
-            dbAction.seeGenes().forEach findGene@{
-                val score = compareDBGene(dbAction, it, param.name, previousToken)
-                if(score>similarity){
-                    similarity = score
-                    gene = it
-                }
-                if(score == 1.0) return@findGene
-            }
-            if(similarity > StringSimilarityComparator.SimilarityThreshold ){
-                if(gene!! is SqlPrimaryKeyGene || gene!! is SqlForeignKeyGene || gene!! is SqlAutoIncrementGene){
-                    /*
-                        if gene of dbaction is PK, FK or AutoIncrementGene,
-                            bind gene of Param according to the gene from dbaction
-                     */
-                    copyGene(getValueGene(gene!!),  getValueGene(param.gene), false)
-                }else{
-                    /*
-                        If the data is existing in db, bind gene of Param according to the gene from dbaction
-                        otherwise, bind gene of action according to rest action, i.e., Gene of Param
-                     */
-                    copyGene(getValueGene(gene!!),  getValueGene(param.gene), !existingData)
-                }
-
-            }else
-                return false
-            return true
-        }
-
-        fun bindParam(dbAction: DbAction, param : Param, matchedInfo: MatchedInfo, existingData : Boolean) : Boolean{
-
-            val gene = if(matchedInfo.targetMatched.toLowerCase() == dbAction.table.name.toLowerCase()){
-                dbAction.seeGenes().find { it is SqlPrimaryKeyGene }.run {
-                    if(this == null)  dbAction.seeGenes().find { containGeneralName(it.name) }
-                    else this
-                }
-            }else{
-                dbAction.seeGenes().find { it.name.toLowerCase() == matchedInfo.targetMatched.toLowerCase() }
-            }
-
-            if(gene != null){
-                if(gene is SqlPrimaryKeyGene || gene is SqlForeignKeyGene || gene is SqlAutoIncrementGene){
-                    /*
-                        if gene of dbaction is PK, FK or AutoIncrementGene,
-                            bind gene of Param according to the gene from dbaction
-                     */
-                    copyGene(getValueGene(gene), getValueGene(param.gene), false)
-                }else{
-                    /*
-                        If the data is existing in db, bind gene of Param according to the gene from dbaction
-                        otherwise, bind gene of action according to rest action, i.e., Gene of Param
-                     */
-                    copyGene(getValueGene(gene), getValueGene(param.gene), !existingData)
-                }
-
-                return true
-            }
-            return false
-        }
-
-        fun compareDBGene(dbAction: DbAction, gene: Gene, pName: String, previousToken : String) : Double{
-            val list = mutableListOf<Double>()
-            StringSimilarityComparator.stringSimilarityScore(gene.name, pName).apply {
-                list.add(this)
-                if(this == 1.0) return this
-            }
-            if(isGeneralName(gene.name)){
-                StringSimilarityComparator.stringSimilarityScore(dbAction.table.name+gene.name, pName).apply {
-                    list.add(this)
-                    if(this == 1.0) return this
-                }
-                StringSimilarityComparator.stringSimilarityScore(gene.name, previousToken+pName).apply {
-                    list.add(this)
-                    if(this == 1.0) return this
-                }
-            }
-            return list.max()!!
-        }
 
         fun isGeneralName(text : String) : Boolean{
             return GENERAL_NAMES.any { it.equals(text, ignoreCase = true) }
         }
-
-        fun containGeneralName(text : String) : Boolean = GENERAL_NAMES.any { text.toLowerCase().contains(it) } && !isGeneralName(text)
 
         private fun genGeneNameInPath(names : MutableList<String>, tokensInPath : List<String>?) : String{
             tokensInPath?.let {
@@ -640,7 +528,7 @@ class ParamUtil {
         }
 
         fun getParamId(param : Param, path : RestPath) : String{
-            return listOf(param.name).plus(path.getStaticTokens().reversed()).joinToString(separator)
+            return listOf(param.name).plus(path.getNonParameterTokens().reversed()).joinToString(separator)
         }
 
         fun generateParamId(list: Array<String>) : String = list.joinToString(separator)

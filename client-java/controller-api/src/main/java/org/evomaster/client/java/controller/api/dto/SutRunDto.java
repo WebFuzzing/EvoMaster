@@ -35,10 +35,7 @@ public class SutRunDto {
         this.extractSqlExecutionInfo = extractSqlExecutionInfo;
     }
 
-    public SutRunDto(Boolean run, Boolean resetState, Boolean calculateSqlHeuristics) {
-        this.run = run;
-        this.resetState = resetState;
-        this.calculateSqlHeuristics = calculateSqlHeuristics;
-        this.extractSqlExecutionInfo = calculateSqlHeuristics!=null && calculateSqlHeuristics;
+    public SutRunDto(Boolean run, Boolean resetState, Boolean calculateSqlHeuristics){
+        this(run, resetState, calculateSqlHeuristics, calculateSqlHeuristics!=null && calculateSqlHeuristics);
     }
 }

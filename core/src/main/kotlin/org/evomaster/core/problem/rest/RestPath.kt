@@ -285,7 +285,10 @@ class RestPath(path: String) {
         return RestPath(this.toString())
     }
 
-    fun getStaticTokens(): List<String> {
+    /**
+     * return extracted tokens which are not parameter in the path
+     */
+    fun getNonParameterTokens(): List<String> {
         return elements.flatMap { it.tokens.filter { t -> !t.isParameter }.map { t -> t.name } }
     }
 

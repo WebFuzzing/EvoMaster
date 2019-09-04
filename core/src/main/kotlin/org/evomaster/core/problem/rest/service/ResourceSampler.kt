@@ -43,10 +43,6 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
     var existingSqlData : List<DbAction> = listOf()
         private set
 
-    private val samplingResourceCounter : MutableMap<String , Int> = mutableMapOf()
-    private val samplingComResourceCounter : MutableMap<String , Int> = mutableMapOf()
-    private val separatorResources = "::"
-
     protected fun initialize(authenticationsInfo: MutableList<AuthenticationInfo>, actions : MutableMap<String, Action>, sqlBuilder: SqlInsertBuilder?) {
 
         assert(config.resourceSampleStrategy != EMConfig.ResourceSamplingStrategy.NONE)
@@ -194,21 +190,9 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
         }
     }
 
-    private fun selectAResource(randomness: Randomness) : String{
-        return randomness.choose(rm.getResourceCluster().filter { r -> r.value.isAnyAction() }.keys)
-    }
 
     private fun selectAIndResourceHasNonInd(randomness: Randomness) : String{
         return randomness.choose(rm.getResourceCluster().filter { r -> r.value.isAnyAction() && !r.value.isIndependent() }.keys)
-    }
-
-    private fun selectAComResource(randomness: Randomness) : String{
-        val skip = rm.getResourceCluster().filter { r -> !r.value.isAnyAction() }.keys
-        val candidates = samplingComResourceCounter.filterNot{ r-> r.key.split(separatorResources).any{ir-> skip.contains(ir)} }
-        if(candidates.isEmpty())
-            throw IllegalStateException("there is no any com-resource available")
-        return randomness.choose(candidates.keys)
-
     }
 
     private fun initAdHocInitialIndividuals() {
@@ -222,18 +206,6 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
 
     private fun initAbstractResources(){
         rm.initResourceNodes(actionCluster, sqlInsertBuilder)
-
-        rm.getResourceCluster().keys.forEach { k->
-            samplingResourceCounter.getOrPut(k){0}
-        }
-
-        rm.getResourceCluster().filter { !it.value.isIndependent() }.keys.forEach { k ->
-            rm.getResourceCluster().filter { !it.value.isIndependent() }.keys.forEach { k1 ->
-                if(k != k1){
-                    samplingComResourceCounter.getOrPut(k+separatorResources+k1){0}
-                }
-            }
-        }
     }
 
     override fun hasSpecialInit(): Boolean {
@@ -248,14 +220,15 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
         if(config.resourceSampleStrategy.requiredArchive && evi.hasImprovement && evi.individual is RestIndividual)
             evi.individual.sampleSpec?.let { ssc.reportImprovement(it) }
     }
+
     private fun sampleRandomComResource(resourceCalls: MutableList<RestResourceCalls>){
-        val keys = selectAComResource(randomness)
+        val candidates = rm.getResourceCluster().filter { !it.value.isIndependent() }.keys
+        assert(candidates.size > 1)
+        val keys = randomness.choose(candidates, 2)
         var size = config.maxTestSize
-        var num = 0
-        for (key in keys.split(separatorResources)){
-            rm.sampleCall(key, true, resourceCalls, config.maxTestSize)
+        keys.forEach {
+            rm.sampleCall(it, true, resourceCalls, size)
             size -= resourceCalls.last().actions.size
-            num++
         }
     }
 
@@ -272,7 +245,6 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
             rm.sampleCall(key, true, resourceCalls, size)
             size -= resourceCalls.last().actions.size
             executed.add(key)
-            //if (resourceCalls.last().template!!.independent) break
         }
     }
 }

@@ -116,18 +116,18 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return copy
     }
 
-    fun getHistoryOfGene(individual: T, gene: Gene) : List<Gene>{
+    fun getHistoryOfGene(gene: Gene) : List<Gene>{
         val geneId = GeneIdUtil.generateGeneId(individual, gene)
         getTracking()?: throw IllegalArgumentException("tracking is not enabled")
         return getTracking()!!.flatMap { it.individual.seeGenes().find { g->GeneIdUtil.generateGeneId(it.individual, g) == geneId}.run {
-            if (this == null) listOf() else listOf(this)
+            if (this == null || this::class.java.simpleName  != gene::class.java.simpleName) listOf() else listOf(this)
         } }
     }
 
     /**
      * get latest modification with respect to the [gene]
      */
-    fun getLatestGene(individual: T, gene: Gene) : Gene?{
+    fun getLatestGene(gene: Gene) : Gene?{
         getTracking()?: throw IllegalArgumentException("tracking is not enabled")
         if (getTracking()!!.isEmpty()) return null
         val latestInd = getTracking()!!.last().individual
@@ -135,7 +135,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val geneId = GeneIdUtil.generateGeneId(individual, gene)
 
         //the individual was mutated in terms of structure, the gene might be found in history
-        return latestInd.seeGenes().find { GeneIdUtil.generateGeneId(latestInd, it) == geneId }
+        val latest = latestInd.seeGenes().find { GeneIdUtil.generateGeneId(latestInd, it) == geneId }?:return null
+        return if (latest::class.java.simpleName == gene::class.java.simpleName) latest else null
     }
 
     private fun copyWithImpacts(copy : EvaluatedIndividual<T>) {

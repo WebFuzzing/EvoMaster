@@ -43,24 +43,26 @@ class ResourceSampleMethodController {
     }
 
     private fun initApplicableStrategies(){
-        methods.getValue(S1iR).applicable = true //mutableMap.values.filter { r -> r.hasIndependentAction }.isNotEmpty()
+        methods.getValue(S1iR).applicable = true
         rm.getResourceCluster().values.filter { r -> !r.isIndependent() }.let {
             methods.getValue(S1dR).applicable = it.isNotEmpty()
             methods.getValue(S2dR).applicable = it.size > 1 && config.maxTestSize > 1
             methods.getValue(SMdR).applicable = it.size > 2 && config.maxTestSize > 2
         }
 
-        //FIXME Man Zhang
+        /**
+         * if only S1iR is applicable, we recommend that maxTestSize is 1.
+         */
         if(methods.values.filter { it.applicable }.size == 1 ) config.maxTestSize = 1
     }
 
     private fun printApplicableStr(){
-        println("Applicable SmartSampleStrategy>>>")
-        println( methods.filter{ it.value.applicable }.mapNotNull { "${it.key} : ${it.value.probability}"}.joinToString (" - "))
+        log.debug("Applicable SmartSampleStrategy>>>")
+        log.debug( methods.filter{ it.value.applicable }.mapNotNull { "${it.key} : ${it.value.probability}"}.joinToString (" - "))
     }
 
     private fun printSummaryOfResources(mutableMap: Map<String, RestResourceNode>){
-        println("Summary of abstract resources and actions>>>")
+        log.debug("Summary of abstract resources and actions>>>")
         val message ="""
             #Rs ${mutableMap.size}
             #IndRs ${mutableMap.values.filter { it.isIndependent() }.size}
@@ -72,7 +74,7 @@ class ResourceSampleMethodController {
             #depActions ${mutableMap.values.map { it.getTemplates().filter { t -> !t.value.independent }.size}.sum()}
             #depComActions ${mutableMap.values.map { it.getTemplates().filter { t -> !t.value.independent }.size * (it.getTemplates().filter { !it.value.independent }.size -1) }.sum()}
             """
-        println(message)
+        log.debug(message)
     }
     private fun validateProbability() {
         if(methods.values.map { it.probability }.sum().run { this > 1.1 && this < 0.9 }){
@@ -110,15 +112,15 @@ class ResourceSampleMethodController {
     }
 
     private fun printCounters(){
-        println(methods.values.map { it.times }.joinToString("-"))
+        log.debug(methods.values.map { it.times }.joinToString("-"))
     }
 
     private fun printImproved(){
-        println("improvement with selected strategy: "+methods.values.map { it.improved }.joinToString("-"))
+        log.debug("improvement with selected strategy: "+methods.values.map { it.improved }.joinToString("-"))
     }
 
     private fun printImprovedPercentage(){
-        println(methods.values.map { it.improved * 1.0/it.times }.joinToString("-"))
+        log.debug(methods.values.map { it.improved * 1.0/it.times }.joinToString("-"))
     }
 
     fun getSampleStrategy() : ResourceSamplingMethod{

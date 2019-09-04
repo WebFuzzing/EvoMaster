@@ -50,7 +50,7 @@ class RestResourceNode(
     init {
         when(initMode){
             InitMode.WITH_TOKEN, InitMode.WITH_DERIVED_DEPENDENCY, InitMode.WITH_DEPENDENCY ->{
-                if(path.getStaticTokens().isNotEmpty()){
+                if(path.getNonParameterTokens().isNotEmpty()){
                     tokens.clear()
                     ParserUtil.parsePathTokens(this.path, tokens, initMode != InitMode.WITH_DEPENDENCY)
                 }
