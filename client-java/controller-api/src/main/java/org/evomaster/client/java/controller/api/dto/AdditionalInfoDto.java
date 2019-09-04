@@ -32,4 +32,12 @@ public class AdditionalInfoDto {
      * will be at most 1).
      */
     public Map<String, List<StringSpecializationInfoDto>> stringSpecializations = new HashMap<>();
+
+
+    /**
+     * Keep track of the last executed statement done in the SUT.
+     * But not in the third-party libraries, just the business logic of the SUT.
+     * The statement is represented with a descriptive unique id, like the class name and line number.
+     */
+    public String lastExecutedStatement = null;
 }

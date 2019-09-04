@@ -3,6 +3,7 @@ package org.evomaster.core.search
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.EMConfig.SecondaryObjectiveStrategy.*
+import org.evomaster.core.search.service.IdMapper
 import kotlin.math.min
 
 /**
@@ -122,6 +123,12 @@ class FitnessValue(
 
     fun coverTarget(id: Int) {
         updateTarget(id, MAX_VALUE)
+    }
+
+    fun potentialFoundFaults(idMapper: IdMapper) : List<String>{
+        return targets.keys
+                .filter { idMapper.isFault(it)}
+                .map { idMapper.getDescriptiveId(it) }
     }
 
     /**

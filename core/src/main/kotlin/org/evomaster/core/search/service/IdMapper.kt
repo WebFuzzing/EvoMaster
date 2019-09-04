@@ -15,12 +15,24 @@ import java.util.concurrent.atomic.AtomicInteger
 class IdMapper {
 
     companion object {
-        fun isLocal(id: Int) : Boolean = id < 0
+
+        private const val FAULT_DESCRIPTIVE_ID_PREFIX = "PotentialFault_"
+
+        fun isFault(descriptiveId: String) = descriptiveId.startsWith(FAULT_DESCRIPTIVE_ID_PREFIX)
+
+        fun faultInfo(descriptiveId: String) : String{
+            if(! isFault(descriptiveId)){
+                throw IllegalArgumentException("Invalid non-fault input id: $descriptiveId")
+            }
+            return descriptiveId.substring(FAULT_DESCRIPTIVE_ID_PREFIX.length)
+        }
+
+        fun isLocal(id: Int): Boolean = id < 0
     }
 
-    private val mapping : MutableMap<Int, String> = mutableMapOf()
+    private val mapping: MutableMap<Int, String> = mutableMapOf()
 
-    private val reverseMapping : MutableMap<String, Int> = mutableMapOf()
+    private val reverseMapping: MutableMap<String, Int> = mutableMapOf()
 
     /**
      * Counter used to create local id, based on the return values
@@ -31,18 +43,24 @@ class IdMapper {
      */
     private val localCounter = AtomicInteger(-1)
 
-    fun addMapping(id: Int, descriptiveId: String){
+    fun addMapping(id: Int, descriptiveId: String) {
         mapping[id] = descriptiveId
         reverseMapping[descriptiveId] = id
     }
 
     fun getDescriptiveId(id: Int) = mapping[id] ?: "undefined"
 
-    fun handleLocalTarget(descriptiveId: String) : Int{
+    fun handleLocalTarget(descriptiveId: String): Int {
         return reverseMapping.getOrPut(descriptiveId, {
             val k = localCounter.decrementAndGet()
             mapping[k] = descriptiveId
             k
         })
     }
+
+    fun getFaultDescriptiveId(postfix: String): String {
+        return FAULT_DESCRIPTIVE_ID_PREFIX + postfix
+    }
+
+    fun isFault(id: Int) : Boolean = mapping[id]?.let{ isFault(it)} ?: false
 }
