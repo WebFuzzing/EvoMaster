@@ -39,7 +39,7 @@ public class AdditionalInfo implements Serializable {
      */
     private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
 
-    private class StatementDescription{
+    private static class StatementDescription implements Serializable{
         public final String line;
         public final String method;
 

@@ -51,6 +51,10 @@ public class ExecutionTracer {
      */
     private static final List<AdditionalInfo> additionalInfoList = new ArrayList<>();
 
+    static {
+        reset();
+    }
+
 
     public static void reset() {
         objectiveCoverage.clear();
