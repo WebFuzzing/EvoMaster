@@ -25,8 +25,8 @@ public class StringClassReplacement implements MethodReplacementClass {
         boolean taintedCaller = TaintInputName.isTaintInput(caller);
         boolean taintedOther = anObject != null && TaintInputName.isTaintInput(anObject.toString());
 
-        if ( taintedCaller || taintedOther) {
-            if(taintedCaller) {
+        if (taintedCaller || taintedOther) {
+            if (taintedCaller) {
                 ExecutionTracer.addStringSpecialization(caller,
                         new StringSpecializationInfo(StringSpecialization.CONSTANT, anObject.toString()));
             } else {
