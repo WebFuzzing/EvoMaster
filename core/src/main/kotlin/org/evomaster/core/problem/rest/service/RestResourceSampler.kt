@@ -52,7 +52,7 @@ class RestResourceSampler : ResourceSampler(){
 
         setupAuthentication(infoDto)
 
-        val sqlBuilder = if (infoDto.sqlSchemaDto != null && (config.shouldGenerateSqlData() || config.doesInvolveDatabase)) {
+        val sqlBuilder = if (infoDto.sqlSchemaDto != null && (config.shouldGenerateSqlData() || config.extractSqlExecutionInfo || (config.probOfApplySQLActionToCreateResources > 0.0))) {
             SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
         }else null
 
