@@ -12,6 +12,8 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.ResourceDepManageService
+import org.evomaster.core.problem.rest.service.ResourceRestModule
 import org.evomaster.core.problem.rest.service.RestModule
 import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
@@ -22,9 +24,10 @@ import org.evomaster.core.search.algorithms.MioAlgorithm
 import org.evomaster.core.search.algorithms.MosaAlgorithm
 import org.evomaster.core.search.algorithms.RandomAlgorithm
 import org.evomaster.core.search.algorithms.WtsAlgorithm
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
-import org.evomaster.exps.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import java.lang.reflect.InvocationTargetException
 
 
@@ -139,11 +142,16 @@ class Main {
 
             writeOverallProcessData(injector)
 
+            writeDependencies(injector)
+
             writeTests(injector, solution, controllerInfo)
 
             writeStatistics(injector, solution)
 
             val config = injector.getInstance(EMConfig::class.java)
+            val idMapper = injector.getInstance(IdMapper::class.java)
+
+            val faults = solution.overall.potentialFoundFaults(idMapper)
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
@@ -152,6 +160,9 @@ class Main {
                 info("Needed budget: ${stc.neededBudget()}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                 info("Covered targets: ${solution.overall.coveredTargets()}")
+                info("Potential faults: ${faults.size}")
+                faults.sorted()
+                        .forEach{ info(inRed("Fault: ${IdMapper.faultInfo(it)}"))}
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTimeInSeconds == config.defaultMaxTimeInSeconds) {
@@ -171,7 +182,7 @@ class Main {
             val problemType = base.getEMConfig().problemType
 
             val problemModule = when (problemType) {
-                EMConfig.ProblemType.REST -> RestModule()
+                EMConfig.ProblemType.REST -> if(base.getEMConfig().resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE) RestModule() else ResourceRestModule()
                 EMConfig.ProblemType.WEB -> WebModule()
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
@@ -310,6 +321,21 @@ class Main {
 
             val process = injector.getInstance(SearchProcessMonitor::class.java)
             process.saveOverall()
+        }
+
+        /**
+         * save possible dependencies among resources (e.g., a resource might be related to other resource) derived during search
+         */
+        private fun writeDependencies(injector: Injector) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.exportDependencies) {
+                return
+            }
+
+            val dm = injector.getInstance(ResourceDepManageService::class.java)
+            dm.exportDependencies()
         }
     }
 }

@@ -77,7 +77,7 @@ class UsedObjects {
         val retGene = when (selectedField.second) {
             GeneSpecialCases.COMPLETE_OBJECT -> mapping[Pair(action.id, gene.getVariableName())]!!
             else -> (mapping[Pair(action.id, gene.getVariableName())] as ObjectGene).fields
-                    .filter { it.name === selectedField?.second }
+                    .filter { it.name === selectedField.second }
                     .first()
         }
         return retGene
@@ -86,7 +86,7 @@ class UsedObjects {
         return mapping.isEmpty()
     }
     fun exists(action: RestCallAction): Boolean{
-        return mapping.keys.map { it.first }.contains((action as RestCallAction).id)
+        return mapping.keys.map { it.first }.contains(action.id)
     }
     fun allExist(actions: MutableList<RestAction>): Boolean {
         val restActions = actions.filter{ it::class == RestCallAction::class}

@@ -241,10 +241,41 @@ class EMConfig {
                     "collecting heuristics with 'heuristicsForSQL'")
         }
 
+        if(heuristicsForSQL && ! extractSqlExecutionInfo){
+            throw IllegalArgumentException("Cannot collect heuristics SQL data if you not enable " +
+                    "extracting SQL execution info with 'extractSqlExecutionInfo'")
+        }
+
         if(enableTrackEvaluatedIndividual && enableTrackIndividual){
             throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
         }
 
+        //resource related parameters
+        if((resourceSampleStrategy != ResourceSamplingStrategy.NONE || doesInvolveDatabase || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
+                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)){
+            throw IllegalArgumentException("Parameters (${
+            arrayOf("resourceSampleStrategy", "doesInvolveDatabase", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics","exportDependencies")
+                    .filterIndexed { index, _ ->
+                        (index == 0 && resourceSampleStrategy!=ResourceSamplingStrategy.NONE) ||
+                                (index == 1 && doesInvolveDatabase) ||
+                                (index == 2 && doesApplyNameMatching) ||
+                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
+                                (index == 4 && exportDependencies)}.joinToString(" and ")
+            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+        }
+
+        /*
+            resource-mio and sql configuration
+            TODO if required
+         */
+        if(resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)){
+            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
+        }
+
+        //archive-based mutation
+        if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
+            throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
+        }
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -449,10 +480,10 @@ class EMConfig {
     }
 
     @Cfg("Strategy used to handle the extra heuristics in the secondary objectives")
-    var secondaryObjectiveStrategy = SecondaryObjectiveStrategy.AVG_DISTANCE
+    var secondaryObjectiveStrategy = SecondaryObjectiveStrategy.BEST_MIN
 
     @Cfg("Whether secondary objectives are more important than test bloat control")
-    var bloatControlForSecondaryObjective = false
+    var bloatControlForSecondaryObjective = true
 
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Min(0.0) @Max(1.0)
@@ -503,6 +534,9 @@ class EMConfig {
     @Cfg("Tracking of SQL commands to improve test generation")
     var heuristicsForSQL = true
 
+    @Cfg("Enable extracting SQL execution info")
+    var extractSqlExecutionInfo = heuristicsForSQL
+
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
     var generateSqlDataWithDSE = false
@@ -512,7 +546,7 @@ class EMConfig {
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
-    var maxSqlInitActionsPerMissingData = 5
+    var maxSqlInitActionsPerMissingData = 1
 
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
@@ -575,4 +609,112 @@ class EMConfig {
 
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
+
+    enum class ResourceSamplingStrategy (val requiredArchive : Boolean = false){
+        NONE,
+        /**
+         * probability for applicable strategy is specified
+         */
+        Customized,
+        /**
+         * probability for applicable strategy is equal
+         */
+        EqualProbability,
+        /**
+         * probability for applicable strategy is derived based on actions
+         */
+        Actions,
+        /**
+         * probability for applicable strategy is adaptive with time
+         */
+        TimeBudgets,
+        /**
+         * probability for applicable strategy is adaptive with performance, i.e., Archive
+         */
+        Archive (true),
+        /**
+         * probability for applicable strategy is adaptive with performance, i.e., Archive
+         */
+        ConArchive (true)
+    }
+
+    @Experimental
+    @Cfg("Specify whether to enable resource-based strategy to sample an individual during search. " +
+            "Note that resource-based sampling is only applicable for REST problem with MIO algorithm.")
+    var resourceSampleStrategy = ResourceSamplingStrategy.NONE
+
+    @Experimental
+    @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
+            "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
+            "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
+    @Min(0.0) @Max(1.0)
+    var probOfEnablingResourceDependencyHeuristics = 0.0
+
+    @Experimental
+    @Cfg("Specify whether to export derived dependencies among resources")
+    var exportDependencies = false
+
+    @Experimental
+    @Cfg("Specify a file that saves derived dependencies")
+    var dependencyFile = "dependencies.csv"
+
+    @Experimental
+    @Cfg("Whether to involve database when applying resource-based methods, e.g., resource-based sampling, dependency analysis between resource and tables.")
+    var doesInvolveDatabase = false
+
+    @Experimental
+    @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +
+            "In other word, if the number is less than the specified, insertion is always applied.")
+    @Min(0.0)
+    var minRowOfTable = 10
+
+    @Experimental
+    @Cfg("Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions")
+    @Min(0.0) @Max(1.0)
+    var probOfSelectFromDatabase = 0.1
+
+    @Experimental
+    @Cfg("Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table")
+    var doesApplyNameMatching = false
+
+    @Experimental
+    @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
+    @Min(0.0)@Max(1.0)
+    var S1iR : Double = 0.25
+
+    @Experimental
+    @Cfg("Specify a probability to apply S1dR when resource sampling strategy is 'Customized'")
+    @Min(0.0)@Max(1.0)
+    var S1dR : Double = 0.25
+
+    @Experimental
+    @Cfg("Specify a probability to apply S2dR when resource sampling strategy is 'Customized'")
+    @Min(0.0)@Max(1.0)
+    var S2dR : Double = 0.25
+
+    @Experimental
+    @Cfg("Specify a probability to apply SMdR when resource sampling strategy is 'Customized'")
+    @Min(0.0)@Max(1.0)
+    var SMdR : Double = 0.25
+
+    @Experimental
+    @Cfg("Specify a probability to enable archive-based mutation")
+    @Min(0.0) @Max(1.0)
+    var probOfArchiveMutation = 0.0
+
+    @Experimental
+    @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
+    @Min(0.0) @Max(1.0)
+    var perOfCandidateGenesToMutate = 0.1
+
+    @Experimental
+    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
+    var geneSelectionMethod = ArchiveGeneSelectionMethod.NONE
+
+    enum class ArchiveGeneSelectionMethod {
+        NONE,
+        AWAY_BAD,
+        APPROACH_GOOD,
+        FEED_BACK
+    }
 }

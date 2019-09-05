@@ -1,4 +1,4 @@
-package org.evomaster.exps.monitor
+package org.evomaster.core.search.service.monitor
 
 import com.google.gson.GsonBuilder
 import com.google.inject.Inject
@@ -44,7 +44,7 @@ class SearchProcessMonitor: SearchListener {
     private lateinit var overall : SearchOverall<*>
 
     var eval: EvaluatedIndividual<*>? = null
-    var step :StepOfSearchProcess<*>? = null
+    var step : StepOfSearchProcess<*>? = null
     var isMutated : Boolean = false
 
     /**
@@ -108,7 +108,7 @@ class SearchProcessMonitor: SearchListener {
                 step!!.added = added
                 step!!.improvedArchive = improveArchive
                 saveStep(step!!.indexOfEvaluation, step!!)
-                if(config.showProgress) log.info("number of targets: ${step!!.populations.size.toString()}")
+                if(config.showProgress) log.info("number of targets: ${step!!.populations.size}")
                 tb++
             }
         }

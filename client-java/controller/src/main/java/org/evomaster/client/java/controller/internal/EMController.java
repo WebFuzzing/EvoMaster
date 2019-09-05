@@ -105,7 +105,9 @@ public class EMController {
             }
 
             boolean sqlHeuristics = dto.calculateSqlHeuristics != null && dto.calculateSqlHeuristics;
-            sutController.enableSqlHeuristics(sqlHeuristics);
+            boolean sqlExecution = dto.extractSqlExecutionInfo != null && dto.extractSqlExecutionInfo;
+
+            sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution);
 
             boolean doReset = dto.resetState != null && dto.resetState;
 
@@ -222,6 +224,7 @@ public class EMController {
                     AdditionalInfoDto info = new AdditionalInfoDto();
                     info.queryParameters = new HashSet<>(a.getQueryParametersView());
                     info.headers = new HashSet<>(a.getHeadersView());
+                    info.lastExecutedStatement = a.getLastExecutedStatement();
                     info.stringSpecializations = new HashMap<>();
                     for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
                             a.getStringSpecializationsView().entrySet()){

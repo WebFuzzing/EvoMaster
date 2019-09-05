@@ -26,7 +26,7 @@ open abstract class OutputFormatter (val name: String) {
 
         fun getFormatters():List<OutputFormatter>?{
             if(formatters.size > 0)
-                return formatters.values.toList();
+                return formatters.values.toList()
             return null
         }
 
@@ -50,7 +50,7 @@ open abstract class OutputFormatter (val name: String) {
             }
         }
         init {
-            registerFormatter(JSON_FORMATTER);
+            registerFormatter(JSON_FORMATTER)
         }
 
 

@@ -68,13 +68,14 @@ abstract class Individual (trackOperator: TrackOperator? = null, traces : Mutabl
      * Returns true if the initialization actions
      * are correct (i.e. all constraints are satisfied)
      */
-    abstract fun verifyInitializationActions(): Boolean;
+    abstract fun verifyInitializationActions(): Boolean
 
     /**
      * Attempts to repair the initialization actions.
      * Initialization actions must pass the verifyInitializationAction()
      * test after this method is invoked.
      */
-    abstract fun repairInitializationActions(randomness: Randomness);
+    abstract fun repairInitializationActions(randomness: Randomness)
+
 }
 

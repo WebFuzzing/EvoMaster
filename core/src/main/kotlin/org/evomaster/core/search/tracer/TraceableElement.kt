@@ -24,7 +24,7 @@ abstract class TraceableElement(
     /**
      * [tracking] of the [TraceableElement] is not editable, so its getter return list
      */
-    fun getTrack() : List<out TraceableElement>?{
+    open fun getTracking() : List<out TraceableElement>?{
         return tracking?.toList()
     }
 

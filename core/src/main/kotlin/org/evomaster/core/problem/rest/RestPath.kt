@@ -280,4 +280,19 @@ class RestPath(path: String) {
     private fun encode(s: String): String {
         return URLEncoder.encode(s, "UTF-8")
     }
+
+    fun copy() : RestPath{
+        return RestPath(this.toString())
+    }
+
+    /**
+     * return extracted tokens which are not parameter in the path
+     */
+    fun getNonParameterTokens(): List<String> {
+        return elements.flatMap { it.tokens.filter { t -> !t.isParameter }.map { t -> t.name } }
+    }
+
+    fun getElements() :List<Map<String, Boolean>>{
+        return elements.map { it.tokens.map { t->Pair(t.name, t.isParameter) }.toMap() }
+    }
 }

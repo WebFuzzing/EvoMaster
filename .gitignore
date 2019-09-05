@@ -44,3 +44,4 @@ experiments/target/
 /extra_heuristics.csv
 /dbconstraint/target/
 /e2e-tests/spring-rest-postgres/target/
+/core/testWithEMB.sh

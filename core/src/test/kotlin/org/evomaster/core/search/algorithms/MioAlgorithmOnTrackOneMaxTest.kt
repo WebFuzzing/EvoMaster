@@ -57,9 +57,9 @@ class MioAlgorithmOnTrackOneMaxTest {
         val solution = mio.search()
 
         solution.individuals.forEach { s->
-            assertNull(s.getTrack())
-            assertNotNull(s.individual.getTrack())
-            s.individual.getTrack()?.apply {
+            assertNull(s.getTracking())
+            assertNotNull(s.individual.getTracking())
+            s.individual.getTracking()?.apply {
                 forEachIndexed { index, t ->
                     if(index == 0)
                         assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
@@ -79,15 +79,15 @@ class MioAlgorithmOnTrackOneMaxTest {
         val solution = mio.search()
 
         solution.individuals.forEach {  s->
-            assertNull(s.individual.getTrack())
+            assertNull(s.individual.getTracking())
             /**
              * [s] might be null when the individual is never mutated
              */
-            if(s.getTrack() == null){
+            if(s.getTracking() == null){
                 assertNotNull(s.individual.trackOperator != null)
                 assert(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
             }
-            s.getTrack()?.forEachIndexed{index, t->
+            s.getTracking()?.forEachIndexed{ index, t->
                 assertNotNull(t.trackOperator)
                 if(index == 0)
                     assert(t.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
@@ -107,8 +107,8 @@ class MioAlgorithmOnTrackOneMaxTest {
         val solution = mio.search()
 
         solution.individuals.forEach { s->
-            assertNull(s.getTrack())
-            assertNull(s.individual.getTrack())
+            assertNull(s.getTracking())
+            assertNull(s.individual.getTracking())
         }
     }
 }

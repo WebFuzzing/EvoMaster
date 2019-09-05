@@ -1,6 +1,9 @@
 package org.evomaster.core.search.algorithms
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.service.ResourceSampleMethodController
+import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchAlgorithm
@@ -35,12 +38,15 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                     sampler.sample()
                 }
 
-                ff.calculateCoverage(ind)?.run { archive.addIfNeeded(this) }
+                ff.calculateCoverage(ind)?.run {
+                    archive.addIfNeeded(this)
+                    sampler.feedback(this)
+                }
 
                 continue
             }
 
-            var ei = archive.sampleIndividual()
+            val ei = archive.sampleIndividual()
 
             val nMutations = apc.getNumberOfMutations()
 

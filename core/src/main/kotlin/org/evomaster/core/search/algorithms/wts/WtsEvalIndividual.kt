@@ -14,7 +14,7 @@ where T : Individual {
     fun calculateCombinedFitness(): Double{
 
         if(suite.isEmpty()){
-            return 0.0;
+            return 0.0
         }
 
         val fv = suite.first().fitness.copy()

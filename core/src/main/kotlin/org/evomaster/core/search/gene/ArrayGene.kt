@@ -80,7 +80,7 @@ class ArrayGene<T>(
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return "[" +
                 elements.map { g -> g.getValueAsPrintableString(previousGenes, mode, targetFormat) }.joinToString(", ") +
-                "]";
+                "]"
     }
 
 
