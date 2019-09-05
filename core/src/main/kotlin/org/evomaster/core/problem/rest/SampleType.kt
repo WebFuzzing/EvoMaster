@@ -8,5 +8,6 @@ package org.evomaster.core.problem.rest
 enum class SampleType {
     RANDOM,
     SMART,
-    SMART_GET_COLLECTION
+    SMART_GET_COLLECTION,
+    SMART_RESOURCE
 }

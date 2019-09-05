@@ -1,0 +1,6 @@
+digraph G {
+  RpR [ label="RpR" ];
+  Rd [ label="Rd" ];
+  RA [ label="RA" ];
+  RpR -> Rd [ label="<depends>" ];
+}

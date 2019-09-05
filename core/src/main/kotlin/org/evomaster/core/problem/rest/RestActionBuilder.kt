@@ -23,9 +23,13 @@ class RestActionBuilder {
         private val log: Logger = LoggerFactory.getLogger(RestActionBuilder::class.java)
         private val idGenerator = AtomicInteger()
 
+        /**
+         * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
+         */
         fun addActionsFromSwagger(swagger: Swagger,
                                   actionCluster: MutableMap<String, Action>,
-                                  endpointsToSkip: List<String> = listOf()) {
+                                  endpointsToSkip: List<String> = listOf(),
+                                  doParseDescription : Boolean = false) {
 
             actionCluster.clear()
 
@@ -60,6 +64,13 @@ class RestActionBuilder {
 
                             val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params, produces = produces)
 
+                            if(doParseDescription) {
+                                var info = o.value.description
+                                if(!info.isNullOrBlank() && !info.endsWith(".")) info += "."
+                                if(!o.value.summary.isNullOrBlank()) info = if(info == null) o.value.summary else (info + " " + o.value.summary)
+                                if(!info.isNullOrBlank() && !info.endsWith(".")) info += "."
+                                action.initTokens(info)
+                            }
                             actionCluster.put(action.getName(), action)
                         }
                     }

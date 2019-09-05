@@ -90,7 +90,7 @@ class DatabaseExecution(
                     existing.addAll(values)
                 }
 
-                if (existing!!.size > 1 && existing.contains("*")) {
+                if (existing.size > 1 && existing.contains("*")) {
                     /*
                             remove unnecessary columns, as anyway we take
                             everything with *

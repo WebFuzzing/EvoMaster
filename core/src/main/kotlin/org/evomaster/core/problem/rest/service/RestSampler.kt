@@ -141,7 +141,7 @@ class RestSampler : Sampler<RestIndividual>(){
 
     private fun getSwagger(infoDto: SutInfoDto): Swagger {
 
-        val swaggerURL = infoDto?.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
+        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
 
         val response = connectToSwagger(swaggerURL, 30)
 
@@ -220,7 +220,7 @@ class RestSampler : Sampler<RestIndividual>(){
             ObjectGene::class -> {
                 // If the gene is an object, select a suitable one from the Model CLuster (based on the Swagger)
                 restrictedModels = modelCluster.filter{ model ->
-                    (model.value as ObjectGene).fields
+                    model.value.fields
                             .map{ it.name }
                             .toSet().containsAll((g as ObjectGene).fields.map { it.name }) }.toMutableMap()
                 if (restrictedModels.isEmpty()) return Pair(ObjectGene("none", mutableListOf()), Pair("none", UsedObjects.GeneSpecialCases.NOT_FOUND))
@@ -328,7 +328,7 @@ class RestSampler : Sampler<RestIndividual>(){
                 UsedObjects.GeneSpecialCases.COMPLETE_OBJECT -> {
                     if (innerGene.isMutable()) innerGene.randomize(randomness, true)
 
-                    individual.usedObjects.assign(Pair((action as RestCallAction), g), innerGene, field)
+                    individual.usedObjects.assign(Pair(action, g), innerGene, field)
                     individual.usedObjects.selectbody(action, innerGene)
                 }
                 else -> {
@@ -336,7 +336,7 @@ class RestSampler : Sampler<RestIndividual>(){
                     val proposedGene = findSelectedGene(field)
 
                     proposedGene.copyValueFrom(innerGene)
-                    individual.usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
+                    individual.usedObjects.assign(Pair(action, g), proposed, field)
                     individual.usedObjects.selectbody(action, proposed)
                 }
             }
@@ -813,7 +813,7 @@ class RestSampler : Sampler<RestIndividual>(){
     }
 
     fun addMissingObjects(individual: RestIndividual){
-        val missingActions = individual.usedObjects.notCoveredActions(individual.actions.filter { it is RestCallAction }.toMutableList())
+        val missingActions = individual.usedObjects.notCoveredActions(individual.seeActions().filterIsInstance<RestCallAction>().toMutableList())
         if (missingActions.isEmpty()){
             return // no actions are missing.
         }

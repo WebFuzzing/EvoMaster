@@ -3,7 +3,10 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.*
 
-
+/**
+ * @property date since the gene is used to handle dbaction, by default the gene should be in correct range.
+ * @property time since the gene is used to handle dbaction, by default the gene should be in correct range.
+ */
 class SqlTimestampGene(
         name: String,
         date: DateGene = DateGene("date",

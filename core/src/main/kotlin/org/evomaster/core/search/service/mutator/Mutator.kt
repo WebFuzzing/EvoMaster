@@ -42,21 +42,23 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are allowed to mutate
      */
-    abstract fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>): List<Gene>
+    abstract fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene>
 
     /**
      * @param individual an individual to mutate
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are selected to mutate
      */
-    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>): List<Gene>
+    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>
 
     /**
      * @return whether do a structure mutation
      */
-    abstract fun doesStructureMutation(individual: T): Boolean
+    abstract fun doesStructureMutation(individual : T) : Boolean
 
-    open fun postActionAfterMutation(individual: T) {}
+    open fun postActionAfterMutation(individual: T){}
+
+    open fun update(previous: EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene>){}
 
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
@@ -72,7 +74,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            val trackedCurrent = if (config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
+            val trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -80,26 +82,40 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             structureMutator.addInitializingActions(current)
 
-            Lazy.assert { DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>()) }
+            Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutatedGenes = mutableListOf<Gene>()
             val mutatedInd = mutate(current, mutatedGenes)
 
-            Lazy.assert { DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>()) }
+            Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
             val reachNew = archive.wouldReachNewTarget(mutated)
 
+            /*
+                enable further actions for extracting
+             */
+            update(trackedCurrent, mutated, mutatedGenes)
+
             if (reachNew || !current.fitness.subsumes(
                             mutated.fitness,
                             targets,
                             config.secondaryObjectiveStrategy,
                             config.bloatControlForSecondaryObjective)) {
-                val trackedMutated = if (config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
+                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
+
+                if(config.probOfArchiveMutation > 0.0)
+                    trackedMutated.updateImpactOfGenes(true)
+
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
+            }else{
+                if(config.probOfArchiveMutation > 0.0){
+                    trackedCurrent.getUndoTracking()!!.add(mutated)
+                    trackedCurrent.updateImpactOfGenes(false)
+                }
             }
         }
         return current

@@ -13,7 +13,7 @@ abstract class ExtractTestBaseH2 {
     companion object {
 
         @JvmStatic
-        protected lateinit var connection: Connection
+        public lateinit var connection: Connection
 
         private var sqlSchemaCommand : String? = null
 

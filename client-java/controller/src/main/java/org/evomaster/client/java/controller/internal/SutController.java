@@ -164,9 +164,11 @@ public abstract class SutController implements SutHandler {
         sqlHandler.handle(sql);
     }
 
-    public final void enableSqlHeuristics(boolean enabled){
-        sqlHandler.setCalculateHeuristics(enabled);
+    public final void enableComputeSqlHeuristicsOrExtractExecution(boolean enableSqlHeuristics, boolean enableSqlExecution){
+        sqlHandler.setCalculateHeuristics(enableSqlHeuristics);
+        sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
     }
+
 
     /**
      * This is needed only during test generation (not execution),
@@ -204,7 +206,8 @@ public abstract class SutController implements SutHandler {
                                     p.distance
                             ))
                     .forEach(h -> dto.heuristics.add(h));
-
+        }
+        if (sqlHandler.isCalculateHeuristics() || sqlHandler.isExtractSqlExecution()){
             ExecutionDto executionDto = sqlHandler.getExecutionDto();
             dto.databaseExecutionDto = executionDto;
         }

@@ -76,6 +76,16 @@ public abstract class RestTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable{
 
+        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, true, lambda);
+    }
+
+    protected void runTestHandlingFlaky(
+            String outputFolderName,
+            String fullClassName,
+            int iterations,
+            boolean createTests,
+            Consumer<List<String>> lambda) throws Throwable{
+
         /*
             Years have passed, still JUnit 5 does not handle global test timeouts :(
             https://github.com/junit-team/junit5/issues/80
@@ -84,7 +94,7 @@ public abstract class RestTestBase {
             ClassName className = new ClassName(fullClassName);
             clearGeneratedFiles(outputFolderName, className);
 
-            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
+            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
 
             handleFlaky(
                     () -> lambda.accept(new ArrayList<>(args))
@@ -98,12 +108,24 @@ public abstract class RestTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, lambda);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, iterations, true, lambda);
+    }
 
-        assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
-            ClassName className = new ClassName(fullClassName);
-            compileRunAndVerifyTests(outputFolderName, className);
-        });
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            int iterations,
+            boolean createTests,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda);
+
+        if (createTests){
+            assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                ClassName className = new ClassName(fullClassName);
+                compileRunAndVerifyTests(outputFolderName, className);
+            });
+        }
     }
 
     protected void compileRunAndVerifyTests(String outputFolderName, ClassName className){
@@ -161,10 +183,14 @@ public abstract class RestTestBase {
         );
     }
 
-    protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
+        protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName){
+            return getArgsWithCompilation(iterations, outputFolderName, testClassName, true);
+        }
+
+        protected List<String> getArgsWithCompilation(int iterations, String outputFolderName, ClassName testClassName, boolean createTests){
 
         return new ArrayList<>(Arrays.asList(
-                "--createTests", "true",
+                "--createTests", "" + createTests,
                 "--seed", "42",
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
@@ -239,7 +265,7 @@ public abstract class RestTestBase {
                                     String path,
                                     String inResponse) {
 
-        List<Action> actions = ind.getIndividual().seeActions();
+        List<RestAction> actions = ind.getIndividual().seeActions();
 
         for (int i = 0; i < actions.size(); i++) {
 

@@ -50,6 +50,8 @@ public class SqlHandler {
 
     private volatile boolean calculateHeuristics;
 
+    private volatile boolean extractSqlExecution;
+
     public SqlHandler() {
         buffer = new CopyOnWriteArrayList<>();
         distances = new ArrayList<>();
@@ -81,7 +83,7 @@ public class SqlHandler {
     public void handle(String sql) {
         Objects.requireNonNull(sql);
 
-        if(! calculateHeuristics){
+        if(!calculateHeuristics && !extractSqlExecution){
             return;
         }
 
@@ -102,7 +104,7 @@ public class SqlHandler {
 
     public ExecutionDto getExecutionDto() {
 
-        if(! calculateHeuristics){
+        if(!calculateHeuristics && !extractSqlExecution){
             return null;
         }
 
@@ -312,7 +314,15 @@ public class SqlHandler {
         return calculateHeuristics;
     }
 
+    public boolean isExtractSqlExecution() {
+        return extractSqlExecution;
+    }
+
     public void setCalculateHeuristics(boolean calculateHeuristics) {
         this.calculateHeuristics = calculateHeuristics;
+    }
+
+    public void setExtractSqlExecution(boolean extractSqlExecution) {
+        this.extractSqlExecution = extractSqlExecution;
     }
 }

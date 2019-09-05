@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.tracer.TrackOperator
 
@@ -70,4 +71,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
                 .map { e -> e.value }
                 .toList()
     }
+
+    /**
+     * this can be used to provide feedback to sampler regarding a fitness of the sampled individual (i.e., [evi]).
+     */
+    open fun feedback(evi : EvaluatedIndividual<T>){}
 }

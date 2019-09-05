@@ -55,9 +55,9 @@ class TimeGene(
         }
 
         return if (withMsZ) {
-            "$s.000Z";
+            "$s.000Z"
         } else {
-            s;
+            s
         }
     }
 
