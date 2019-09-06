@@ -40,6 +40,7 @@ public class TaintEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/integer","integer");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/date","date");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/constant","constant");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/thirdparty","thirdparty");
                 });
     }
 }

@@ -22,11 +22,13 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
     private final String className;
     private final String methodName;
+    private final boolean registerNewTargets;
 
     private int currentLine;
     private int currentIndex;
 
-    public MethodReplacementMethodVisitor(MethodVisitor mv,
+    public MethodReplacementMethodVisitor(boolean registerNewTargets,
+                                          MethodVisitor mv,
                                           String className,
                                           String methodName,
                                           String descriptor) {
@@ -34,6 +36,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
         this.className = className;
         this.methodName = methodName;
+        this.registerNewTargets = registerNewTargets;
         currentLine = 0;
     }
 
@@ -108,7 +111,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
         Replacement br = m.getAnnotation(Replacement.class);
 
-                     /*
+        /*
                     In the case of replacing a non-static method a.foo(x,y),
                     we will need a replacement bar(a,x,y,id)
 
@@ -127,25 +130,32 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
                     This means we do not need to handle "a", but still need to create
                     "id" and replace "foo" with "bar".
-                 */
-        String idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(
-                className, currentLine, currentIndex
-        );
+        */
+        if (registerNewTargets) {
+            String idTemplate = ObjectiveNaming.methodReplacementObjectiveNameTemplate(
+                    className, currentLine, currentIndex
+            );
 
-        currentIndex++;
+            currentIndex++;
 
-        this.visitLdcInsn(idTemplate);
+            String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, br.type());
+            String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, br.type());
+            ObjectiveRecorder.registerTarget(idTrue);
+            ObjectiveRecorder.registerTarget(idFalse);
+
+            this.visitLdcInsn(idTemplate);
+
+        } else {
+            //this.visitLdcInsn(null);
+            this.visitInsn(Opcodes.ACONST_NULL);
+        }
+
         mv.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 Type.getInternalName(m.getDeclaringClass()),
                 m.getName(),
                 Type.getMethodDescriptor(m),
                 false);
-
-        String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, br.type());
-        String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, br.type());
-        ObjectiveRecorder.registerTarget(idTrue);
-        ObjectiveRecorder.registerTarget(idFalse);
     }
 
 

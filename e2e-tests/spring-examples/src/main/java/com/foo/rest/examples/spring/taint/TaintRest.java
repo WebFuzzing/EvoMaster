@@ -1,5 +1,6 @@
 package com.foo.rest.examples.spring.taint;
 
+import net.thirdparty.taint.TaintCheckString;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,5 +43,16 @@ public class TaintRest {
             throw new IllegalArgumentException(":-(");
         }
         return "constant OK";
+    }
+
+    @GetMapping(path = "/thirdparty")
+    public String getThirdParty(
+            @RequestParam(name = "value", required = true)
+                    String value
+    ){
+        if(!TaintCheckString.check(value)){
+            throw new IllegalArgumentException(":-(");
+        }
+        return "thirdparty OK";
     }
 }
