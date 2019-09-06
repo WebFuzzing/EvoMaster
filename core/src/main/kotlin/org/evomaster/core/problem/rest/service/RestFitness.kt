@@ -132,6 +132,10 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
 
             for (entry in dto.stringSpecializations.entries) {
 
+                if(entry.value.isEmpty()){
+                    throw IllegalArgumentException("No specialization info for value ${entry.key}")
+                }
+
                 val specs = entry.value.map {
                     StringSpecializationInfo(
                             StringSpecialization.valueOf(it.stringSpecialization),

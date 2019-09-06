@@ -225,12 +225,17 @@ public class EMController {
                     info.queryParameters = new HashSet<>(a.getQueryParametersView());
                     info.headers = new HashSet<>(a.getHeadersView());
                     info.lastExecutedStatement = a.getLastExecutedStatement();
+
                     info.stringSpecializations = new HashMap<>();
                     for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
                             a.getStringSpecializationsView().entrySet()){
+
+                        assert ! entry.getValue().isEmpty();
+
                         List<StringSpecializationInfoDto> list = entry.getValue().stream()
                                 .map(it -> new StringSpecializationInfoDto(it.getStringSpecialization().toString(), it.getValue()))
                                 .collect(Collectors.toList());
+
                         info.stringSpecializations.put(entry.getKey(), list);
                     }
 
