@@ -24,12 +24,10 @@ import org.evomaster.core.problem.rest.service.resource.model.SimpleResourceSamp
 import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
-import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.Test
 
 abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
 
@@ -92,7 +90,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
     }
 
     private fun preSteps(skip : List<String> = listOf(), doesInvolveDatabase : Boolean = false, doesAppleNameMatching : Boolean = false, probOfDep : Double = 0.0){
-        config.doesInvolveDatabase = doesInvolveDatabase
+        config.probOfApplySQLActionToCreateResources = if(doesInvolveDatabase) 0.5 else 0.0
         config.doesApplyNameMatching = doesAppleNameMatching
 
         config.probOfEnablingResourceDependencyHeuristics = probOfDep
