@@ -10,4 +10,9 @@ class ImpactOfStructure (
         timesOfImpact: Int = 0 ,
         timesOfNoImpacts: Int =0,
         counter: Int = 0
-) :Impact (id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter)
+) :Impact (id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter){
+
+    override fun copy() : ImpactOfStructure{
+        return ImpactOfStructure(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter)
+    }
+}

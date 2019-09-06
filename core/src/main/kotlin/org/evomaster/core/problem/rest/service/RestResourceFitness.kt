@@ -128,7 +128,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         return if(config.enableTrackEvaluatedIndividual)
-            EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, null, mutableListOf(), mutableListOf(), withImpacts = (config.probOfArchiveMutation > 0.0))
+            EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, sampler, mutableListOf(), mutableListOf(), withImpacts = (config.probOfArchiveMutation > 0.0))
         else EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, withImpacts = (config.probOfArchiveMutation > 0.0))
 
         /*

@@ -14,7 +14,7 @@ import org.evomaster.core.search.tracer.TrackOperator
  *
  * Individual allows to track its evolution, created by sampler, changed by mutator or crossover
  * @property trackOperator presents an operatorTag to change an individual, e.g., mutator
- * @property track is a list of Individual, indicating its evolution
+ * @property traces is a list of Individual, indicating its evolution
  */
 abstract class Individual (trackOperator: TrackOperator? = null, traces : MutableList<out Individual>? = null)
     : TraceableElement (trackOperator, traces){
@@ -24,9 +24,6 @@ abstract class Individual (trackOperator: TrackOperator? = null, traces : Mutabl
      */
     abstract fun copy(): Individual
 
-    override fun copy(withTrack: Boolean): TraceableElement {
-        return copy()
-    }
     enum class GeneFilter { ALL, NO_SQL, ONLY_SQL }
 
     /**

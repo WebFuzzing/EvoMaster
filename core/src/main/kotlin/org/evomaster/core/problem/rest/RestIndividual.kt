@@ -10,6 +10,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
 
@@ -123,12 +124,12 @@ class RestIndividual (
         )
     }
 
-    override fun copy(withTrack: Boolean): RestIndividual {
-        when(withTrack){
-            false-> return copy() as RestIndividual
-            else ->{
-                getTracking()?:return copy() as RestIndividual
-                return RestIndividual(
+    override fun copy(copyFilter: TraceableElementCopyFilter): RestIndividual {
+        return when(copyFilter){
+            TraceableElementCopyFilter.NONE-> copy() as RestIndividual
+            TraceableElementCopyFilter.WITH_TRACK, TraceableElementCopyFilter.DEEP_TRACK  ->{
+                getTracking()?: throw IllegalStateException("the individual is initialized or invoked incorrectly regarding tracking")
+                RestIndividual(
                         resourceCalls.map { it.copy() }.toMutableList(),
                         sampleType,
                         sampleSpec?.copy(),
@@ -137,7 +138,7 @@ class RestIndividual (
                         trackOperator,
                         getTracking()!!.map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
                 )
-            }
+            }else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
         }
     }
 

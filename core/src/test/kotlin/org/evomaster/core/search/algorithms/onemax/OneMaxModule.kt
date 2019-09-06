@@ -7,6 +7,7 @@ import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.Mutator
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
 
 class OneMaxModule : AbstractModule() {
@@ -36,6 +37,9 @@ class OneMaxModule : AbstractModule() {
 
         bind(StructureMutator::class.java)
                 .to(EmptyStructureMutator::class.java)
+                .asEagerSingleton()
+
+        bind(ArchiveMutationTrackService::class.java)
                 .asEagerSingleton()
 
     }

@@ -535,7 +535,7 @@ class EMConfig {
     var heuristicsForSQL = true
 
     @Cfg("Enable extracting SQL execution info")
-    var extractSqlExecutionInfo = heuristicsForSQL
+    var extractSqlExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")

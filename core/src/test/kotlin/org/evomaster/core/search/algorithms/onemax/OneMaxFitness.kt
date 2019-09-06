@@ -3,6 +3,7 @@ package org.evomaster.core.search.algorithms.onemax
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 
 
 class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
@@ -15,6 +16,6 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
         (0 until individual.n)
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
-        return EvaluatedIndividual(fv, individual.copy(config.enableTrackIndividual) as OneMaxIndividual, listOf())
+        return EvaluatedIndividual(fv, individual.copy(if(!config.enableTrackIndividual) TraceableElementCopyFilter.NONE else TraceableElementCopyFilter.WITH_TRACK) as OneMaxIndividual, listOf())
     }
 }

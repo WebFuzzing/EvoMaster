@@ -6,6 +6,7 @@ import com.google.inject.Singleton
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
 
 /**
@@ -44,6 +45,9 @@ class BaseModule(val args: Array<String>) : AbstractModule() {
                 .asEagerSingleton()
 
         bind(ExtraHeuristicsLogger::class.java)
+                .asEagerSingleton()
+
+        bind(ArchiveMutationTrackService::class.java)
                 .asEagerSingleton()
     }
 

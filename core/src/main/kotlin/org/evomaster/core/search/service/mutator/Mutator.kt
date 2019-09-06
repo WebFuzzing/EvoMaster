@@ -9,6 +9,8 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.*
+import org.evomaster.core.search.tracer.ArchiveMutationTrackService
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
@@ -30,6 +32,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     @Inject
     protected lateinit var config: EMConfig
+
+    @Inject
+    private lateinit var tracker : ArchiveMutationTrackService
 
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
@@ -74,7 +79,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            val trackedCurrent = if(config.enableTrackEvaluatedIndividual) current.forceCopyWithTrack() else current.copy(config.enableTrackIndividual)
+            val trackedCurrent = when {
+                config.enableTrackEvaluatedIndividual -> current.copy(copyFilter = TraceableElementCopyFilter.WITH_TRACK)
+                config.enableTrackIndividual -> current.copy(TraceableElementCopyFilter.getTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL, current))
+                else -> current.copy()
+            }
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -104,7 +113,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                             targets,
                             config.secondaryObjectiveStrategy,
                             config.bloatControlForSecondaryObjective)) {
-                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated)!! else mutated
+                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent))!! else mutated
 
                 if(config.probOfArchiveMutation > 0.0)
                     trackedMutated.updateImpactOfGenes(true)
