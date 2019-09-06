@@ -251,13 +251,13 @@ class EMConfig {
         }
 
         //resource related parameters
-        if((resourceSampleStrategy != ResourceSamplingStrategy.NONE || doesInvolveDatabase || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
+        if((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
                 && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)){
             throw IllegalArgumentException("Parameters (${
-            arrayOf("resourceSampleStrategy", "doesInvolveDatabase", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics","exportDependencies")
+            arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics","exportDependencies")
                     .filterIndexed { index, _ ->
                         (index == 0 && resourceSampleStrategy!=ResourceSamplingStrategy.NONE) ||
-                                (index == 1 && doesInvolveDatabase) ||
+                                (index == 1 && (probOfApplySQLActionToCreateResources>0.0)) ||
                                 (index == 2 && doesApplyNameMatching) ||
                                 (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
                                 (index == 4 && exportDependencies)}.joinToString(" and ")
@@ -659,8 +659,9 @@ class EMConfig {
     var dependencyFile = "dependencies.csv"
 
     @Experimental
-    @Cfg("Whether to involve database when applying resource-based methods, e.g., resource-based sampling, dependency analysis between resource and tables.")
-    var doesInvolveDatabase = false
+    @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
+    @Min(0.0) @Max(1.0)
+    var probOfApplySQLActionToCreateResources = 0.0
 
     @Experimental
     @Cfg("Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. " +

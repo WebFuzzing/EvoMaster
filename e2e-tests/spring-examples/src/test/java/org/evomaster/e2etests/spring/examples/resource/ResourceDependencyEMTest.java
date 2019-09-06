@@ -48,8 +48,7 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
 
                     args.add("--resourceSampleStrategy");
                     args.add("EqualProbability");
-                    args.add("--doesInvolveDatabase");
-                    args.add("true");
+
                     args.add("--probOfSmartSampling");
                     args.add("1.0");
                     args.add("--doesApplyNameMatching");

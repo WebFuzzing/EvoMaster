@@ -67,7 +67,7 @@ class ResourceManageService {
 
         this.sqlInsertBuilder = sqlInsertBuilder
 
-        if(hasDBHandler()) sqlInsertBuilder?.extractExistingTables(tables)
+        if(config.extractSqlExecutionInfo) sqlInsertBuilder?.extractExistingTables(tables)
 
         actionCluster.values.forEach { u ->
             if (u is RestCallAction) {
@@ -87,7 +87,7 @@ class ResourceManageService {
 
         resourceCluster.values.forEach{it.init()}
 
-        if(hasDBHandler() && config.doesApplyNameMatching){
+        if(config.extractSqlExecutionInfo && config.doesApplyNameMatching){
             dm.initRelatedTables(resourceCluster.values.toMutableList(), getTableInfo())
 
             if(config.probOfEnablingResourceDependencyHeuristics > 0.0)
@@ -189,7 +189,7 @@ class ResourceManageService {
 
         var candidateForInsertion : String? = null
 
-        if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(0.5))){
+        if(hasDBHandler() && ar.getDerivedTables().isNotEmpty() && (if(forceInsert) forceInsert else randomness.nextBoolean(config.probOfApplySQLActionToCreateResources))){
             //Insert - GET/PUT/PATCH
             val candidates = ar.getTemplates().filter { setOf("GET", "PUT", "PATCH").contains(it.value.template) && it.value.independent}
             candidateForInsertion = if(candidates.isNotEmpty()) randomness.choose(candidates.keys) else null
@@ -367,7 +367,7 @@ class ResourceManageService {
         return randomness.choose(getDataInDb(tableName)!!.filter { it.columnData.toSet().equals(set) })
     }
 
-    private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null && config.doesInvolveDatabase
+    private fun hasDBHandler() : Boolean = sqlInsertBuilder!=null && (config.probOfApplySQLActionToCreateResources > 0.0)
 
     private fun snapshotDB(){
         if(hasDBHandler()){
