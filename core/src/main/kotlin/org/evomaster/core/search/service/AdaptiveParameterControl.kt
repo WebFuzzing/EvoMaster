@@ -29,6 +29,10 @@ class AdaptiveParameterControl {
         return getExploratoryValue(config.startNumberOfMutations, config.endNumberOfMutations )
     }
 
+    fun getBaseTaintAnalysisProbability() : Double {
+        return getExploratoryValue(config.baseTaintAnalysisProbability, 0.0)
+    }
+
     /**
      * Based on the current state of the search, ie how long has been passed
      * and how much budget is left before starting a focused search,

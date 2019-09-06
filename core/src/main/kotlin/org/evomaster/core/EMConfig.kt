@@ -276,6 +276,10 @@ class EMConfig {
         if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
             throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
+
+        if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
+            throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
+        }
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -717,4 +721,8 @@ class EMConfig {
         APPROACH_GOOD,
         FEED_BACK
     }
+
+    @Experimental
+    @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")
+    var baseTaintAnalysisProbability = 0.0
 }

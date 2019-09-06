@@ -200,8 +200,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      */
     protected fun handleResponseTargets(
             fv: FitnessValue,
-            actions: MutableList<RestAction>,
-            actionResults: MutableList<ActionResult>,
+            actions: List<RestAction>,
+            actionResults: List<ActionResult>,
             additionalInfoList: List<AdditionalInfoDto>) {
 
         (0 until actionResults.size)
@@ -218,7 +218,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
                     /*
                         Objectives for results on endpoints.
-                        Problem: we might get a4xx/5xx, but then no gradient to keep sampling for
+                        Problem: we might get a 4xx/5xx, but then no gradient to keep sampling for
                         that endpoint. If we get 2xx, and full coverage, then no gradient to try
                         to keep sampling that endpoint to get a 5xx
                      */
