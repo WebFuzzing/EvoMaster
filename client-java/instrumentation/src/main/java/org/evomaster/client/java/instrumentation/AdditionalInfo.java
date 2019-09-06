@@ -71,7 +71,8 @@ public class AdditionalInfo implements Serializable {
         }
         Objects.requireNonNull(info);
 
-        Set<StringSpecializationInfo> set = stringSpecializations.putIfAbsent(taintInputName, new CopyOnWriteArraySet<>());
+        stringSpecializations.putIfAbsent(taintInputName, new CopyOnWriteArraySet<>());
+        Set<StringSpecializationInfo> set = stringSpecializations.get(taintInputName);
         set.add(info);
     }
 

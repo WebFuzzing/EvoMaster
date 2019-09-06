@@ -29,6 +29,10 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
                     new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
         }
 
+        if(idTemplate == null){
+            return LocalDate.parse(input);
+        }
+
         try{
             LocalDate res = LocalDate.parse(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1,0));
