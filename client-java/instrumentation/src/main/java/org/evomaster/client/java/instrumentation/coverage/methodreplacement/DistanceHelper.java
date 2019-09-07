@@ -45,4 +45,5 @@ public class DistanceHelper {
         assert dist >= 0;
         return dist;
     }
+
 }

@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by arcuri82 on 06-Sep-19.
@@ -55,4 +57,19 @@ public class TaintRest {
         }
         return "thirdparty OK";
     }
+
+
+    @GetMapping(path = "/collection")
+    public String getCollection(
+            @RequestParam(name = "value", required = true)
+                    String value
+    ){
+        List<String> list = Arrays.asList("bar12345", "foo12345");
+        if(! list.contains(value)){
+            throw new IllegalArgumentException(":-(");
+        }
+
+        return "collection " + value;
+    }
+
 }

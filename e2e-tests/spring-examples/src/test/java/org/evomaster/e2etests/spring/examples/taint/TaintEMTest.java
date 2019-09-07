@@ -27,7 +27,7 @@ public class TaintEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TaintEM",
                 "org.bar.TaintEM",
-                1000,
+                2000,
                 (args) -> {
 
                     args.add("--baseTaintAnalysisProbability");
@@ -41,6 +41,7 @@ public class TaintEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/date","date");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/constant","constant");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/thirdparty","thirdparty");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taint/collection","collection");
                 });
     }
 }
