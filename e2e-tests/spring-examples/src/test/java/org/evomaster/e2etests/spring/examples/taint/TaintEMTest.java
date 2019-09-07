@@ -27,7 +27,7 @@ public class TaintEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TaintEM",
                 "org.bar.TaintEM",
-                2000,
+                5000,
                 (args) -> {
 
                     args.add("--baseTaintAnalysisProbability");
