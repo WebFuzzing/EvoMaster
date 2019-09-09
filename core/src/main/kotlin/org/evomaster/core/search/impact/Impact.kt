@@ -7,7 +7,7 @@ package org.evomaster.core.search.impact
  * @property timesOfImpact presents how many times the change of the element (i.e., Gene, structure of individual) impacts the [Archive]
  * @property timesOfNoImpacts presents how many times the change of the element (i.e., Gene, structure of individual) did not impact the [Archive]
  */
-open class Impact (
+abstract class Impact (
         val id : String,
         var degree: Double,
         var timesToManipulate : Int = 0,
@@ -15,9 +15,7 @@ open class Impact (
         var timesOfNoImpacts : Int = 0,
         var counter : Int = 0
 ){
-    open fun copy() : Impact{
-        return Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter)
-    }
+    abstract fun copy() : Impact
 
     fun countImpact(hasImpact:Boolean){
         timesToManipulate++

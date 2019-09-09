@@ -7,11 +7,11 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.GeneIdUtil
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.impact.ImpactUtils
 
 /**
  * make the standard mutator open for extending the mutator,
@@ -144,7 +144,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private fun selectGenesByArchive(genesToMutate : List<Gene>, individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
 
-        val candidatesMap = genesToMutate.map { it to GeneIdUtil.generateGeneId(individual, it) }.toMap()
+        /*
+         TODO
+         */
+        val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
 
         val genes = when(config.geneSelectionMethod){
             EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
@@ -165,7 +168,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun selectGenesAwayBad(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
         //remove genes from candidate that has "bad" history with 90%, i.e., timesOfNoImpacts is not 0
         val genes =  genesToMutate.filter { g->
-            evi.impactsOfGenes[candidatesMap.getValue(g)]?.timesOfNoImpacts?.let {
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfNoImpacts?.let {
                 it == 0 || (it > 0 && randomness.nextBoolean(0.1))
             }?:false
         }
@@ -178,7 +181,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     private fun selectGenesApproachGood(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
 
         val sortedByCounter = genesToMutate.toList().sortedBy { g->
-            evi.impactsOfGenes[candidatesMap.getValue(g)]?.timesOfImpact
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfImpact
         }
 
         selectGenesWithSorted(genesToMutate, sortedByCounter).apply {
@@ -197,7 +200,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     private fun selectGenesFeedback(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
         val notVisited =  genesToMutate.filter { g->
-            evi.impactsOfGenes[candidatesMap.getValue(g)]?.let {
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.let {
                 it.timesToManipulate == 0
             }?:false
         }
@@ -205,7 +208,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return selectGenesByOneDivNum(notVisited, notVisited.size)
 
         val zero = genesToMutate.filter { g->
-            evi.impactsOfGenes[candidatesMap.getValue(g)]?.let {
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.let {
                 it.counter == 0 && it.timesToManipulate > 0
             }?:false
         }
@@ -218,7 +221,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         val sortedByCounter = genesToMutate.toList().sortedByDescending { g->
-            evi.impactsOfGenes[candidatesMap.getValue(g)]?.counter
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.counter
         }
 
         selectGenesWithSorted(genesToMutate, sortedByCounter).apply {

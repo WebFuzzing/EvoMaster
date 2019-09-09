@@ -73,6 +73,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
             : EvaluatedIndividual<T> {
 
+        if (config.probOfArchiveMutation > 0.0 && !individual.isInitialized()){
+            val genes = genesToMutation(individual.individual, individual)
+            individual.initImpacts(genes)
+        }
+
         var current = individual
         val targets = archive.notCoveredTargets()
 
@@ -113,17 +118,19 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                             targets,
                             config.secondaryObjectiveStrategy,
                             config.bloatControlForSecondaryObjective)) {
-                val trackedMutated = if(config.enableTrackEvaluatedIndividual) trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent))!! else mutated
+                val trackedMutated = if(config.enableTrackEvaluatedIndividual)
+                    trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent))!!
+                else mutated
 
                 if(config.probOfArchiveMutation > 0.0)
-                    trackedMutated.updateImpactOfGenes(true)
+                    trackedMutated.updateImpactOfGenes(true, mutatedGenes)
 
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
             }else{
                 if(config.probOfArchiveMutation > 0.0){
                     trackedCurrent.getUndoTracking()!!.add(mutated)
-                    trackedCurrent.updateImpactOfGenes(false)
+                    trackedCurrent.updateImpactOfGenes(false, mutatedGenes)
                 }
             }
         }
