@@ -148,8 +148,11 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
                         .find { it.value == entry.key }
 
                 if(stringGene == null){
-                    //is this even possible?
-                    log.warn("No taint input '${entry.key}' in action nr. $i")
+                    /*
+                        This can happen if the taint input is manipulated, but still with
+                        some prefix and postfix
+                     */
+                    log.debug("No taint input '${entry.key}' in action nr. $i")
                 } else {
                     stringGene.specializations = specs
                 }
