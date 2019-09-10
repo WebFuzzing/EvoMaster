@@ -333,7 +333,7 @@ public abstract class RestTestBase {
         assertHasAtLeastOne(solution, verb, expectedStatusCode, null, null);
     }
 
-    private String restActions(Solution<RestIndividual> solution) {
+    protected String restActions(Solution<RestIndividual> solution) {
         StringBuffer msg = new StringBuffer("REST calls:\n");
 
         solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())

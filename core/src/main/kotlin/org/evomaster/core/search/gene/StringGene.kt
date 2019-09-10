@@ -99,9 +99,9 @@ class StringGene(
             end of the strings, and reward more "change" over delete/add
          */
 
-        val others = allGenes.flatMap { g -> g.flatView() }
+        val others = allGenes.flatMap { it.flatView() }
                 .filterIsInstance<StringGene>()
-                .map { g -> g.value }
+                .map { it.value }
                 .filter { it != value }
 
         value = when {

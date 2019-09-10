@@ -119,7 +119,7 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
             Then, we would extend the genotype (but not the phenotype!!!) of this test.
          */
 
-        Lazy.assert{individual.seeActions().size == additionalInfoList.size}
+        Lazy.assert { individual.seeActions().size == additionalInfoList.size }
 
         for (i in 0 until additionalInfoList.size) {
 
@@ -132,7 +132,7 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
 
             for (entry in dto.stringSpecializations.entries) {
 
-                if(entry.value.isEmpty()){
+                if (entry.value.isEmpty()) {
                     throw IllegalArgumentException("No specialization info for value ${entry.key}")
                 }
 
@@ -147,14 +147,26 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
                         .filterIsInstance<StringGene>()
                         .find { it.value == entry.key }
 
-                if(stringGene == null){
+                if (stringGene == null) {
                     /*
                         This can happen if the taint input is manipulated, but still with
                         some prefix and postfix
                      */
                     log.debug("No taint input '${entry.key}' in action nr. $i")
                 } else {
-                    stringGene.specializations = specs
+                    /*
+                        a StringGene might have some characters that are not allowed,
+                        like '/' and '.' in a PathParam.
+                        If we have a constant that uses any of such chars, then we must
+                        skip it.
+                        We allow constant larger than Max (as that should not be a problem),
+                        but not smaller than Min (eg to avoid empty strings in PathParam)
+                     */
+                    stringGene.specializations = specs.filter { s ->
+                        s.stringSpecialization != StringSpecialization.CONSTANT ||
+                                (stringGene.invalidChars.none { c -> s.value.contains(c) } &&
+                                        s.value.length >= stringGene.minLength)
+                    }
                 }
             }
         }
