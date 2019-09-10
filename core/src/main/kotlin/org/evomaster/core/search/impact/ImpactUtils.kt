@@ -54,7 +54,7 @@ class ImpactUtils {
             return generateGeneId(gene)
         }
 
-        fun extractMutatedGeneWithContext(mutatedGenes : MutableList<Gene>, individual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
+        fun extractMutatedGeneWithContext(mutatedGenes : MutableList<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             /*
@@ -68,12 +68,20 @@ class ImpactUtils {
                 action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(action, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                    contexts.add(MutatedGeneWithContext(g, action.getName(), index))
+                    val previous = findGeneById(previousIndividual, id, action.getName(), index)?: throw IllegalArgumentException("mismatched previous individual")
+                    contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous))
                 }
             }
 
             assert(mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size)
             return mutatedGenesWithContext
+        }
+
+        fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int):Gene?{
+            val action = individual.seeActions()[indexOfAction]
+            if (action.getName() != actionName)
+                throw IllegalArgumentException("mismatched gene mutated info")
+            return action.seeGenes().find { generateGeneId(action, it) == id }
         }
 
         fun extractGeneById(actions: List<Action>, id: String) : MutableList<Gene>{

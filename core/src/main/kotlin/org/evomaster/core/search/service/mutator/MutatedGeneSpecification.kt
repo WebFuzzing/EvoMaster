@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 
 /**
@@ -17,4 +18,13 @@ open class MutatedGeneSpecification (
         val addedGenes : MutableList<Gene> = mutableListOf(),
         val removedGene: MutableList<Gene> = mutableListOf(),
         val mutatedPosition : MutableList<Int> = mutableListOf()
-)
+){
+    var mutatedIndividual: Individual? = null
+        private set
+
+    fun setMutatedIndividual(individual: Individual){
+        if (mutatedIndividual!= null)
+            throw IllegalArgumentException("it does not allow setting mutated individual more than one time")
+        mutatedIndividual = individual
+    }
+}

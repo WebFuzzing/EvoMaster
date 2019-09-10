@@ -73,22 +73,13 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     fun mutateAndSave(upToNTimes: Int, individual: EvaluatedIndividual<T>, archive: Archive<T>)
             : EvaluatedIndividual<T> {
 
-        if (config.probOfArchiveMutation > 0.0 && !individual.isInitialized()){
-            val genes = genesToMutation(individual.individual, individual)
-            individual.initImpacts(genes)
-        }
-
         var current = individual
         val targets = archive.notCoveredTargets()
 
         for (i in 0 until upToNTimes) {
 
             //save ei before its individual is mutated
-            val trackedCurrent = when {
-                config.enableTrackEvaluatedIndividual -> current.copy(copyFilter = TraceableElementCopyFilter.WITH_TRACK)
-                config.enableTrackIndividual -> current.copy(TraceableElementCopyFilter.getTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL, current))
-                else -> current.copy()
-            }
+            val trackedCurrent = current.copy(tracker.getCopyFilterForEvalInd(current))
 
             if (!time.shouldContinueSearch()) {
                 break
@@ -100,6 +91,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             val mutatedGenes = MutatedGeneSpecification()
             val mutatedInd = mutate(current, mutatedGenes)
+            mutatedGenes.setMutatedIndividual(mutatedInd)
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 

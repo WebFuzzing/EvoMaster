@@ -127,9 +127,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             expandIndividual(individual, dto.additionalInfoList)
         }
 
-        return if(config.enableTrackEvaluatedIndividual)
-            EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, sampler, mutableListOf(), mutableListOf(), withImpacts = (config.probOfArchiveMutation > 0.0))
-        else EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, withImpacts = (config.probOfArchiveMutation > 0.0))
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual

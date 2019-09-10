@@ -108,7 +108,7 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
             doTaintAnalysis(individual, dto.additionalInfoList)
         }
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
     }
 
     private fun doTaintAnalysis(individual: RestIndividual, additionalInfoList: List<AdditionalInfoDto>) {

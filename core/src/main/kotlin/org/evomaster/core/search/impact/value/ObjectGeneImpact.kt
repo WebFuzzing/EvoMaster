@@ -15,15 +15,18 @@ class ObjectGeneImpact (
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
         positionSensitive: Boolean = false,
-        fields : MutableList<out GeneImpact> = mutableListOf()
+        val fields : MutableMap<String, GeneImpact> = mutableMapOf()
 ) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive){
 
-    val fields : MutableList<out GeneImpact> = fields
 
-    constructor(id: String, objectGene: ObjectGene) : this (id, fields = objectGene.fields.map { ImpactUtils.createGeneImpact(it, it.name) }.toMutableList())
+    constructor(id: String, objectGene: ObjectGene) : this (id, fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
         return ObjectGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, fields)
+    }
+
+    fun countFieldImpact(mutatedFieldName : String, hasImpact : Boolean){
+        fields.getValue(mutatedFieldName).countImpact(hasImpact)
     }
 
 }
