@@ -27,21 +27,21 @@ public class TestabilityExcInstrumentedTest {
     }
 
     @BeforeAll
-    public static void initClass(){
+    public static void initClass() {
         ObjectiveRecorder.reset(true);
     }
 
 
     @BeforeEach
-    public void init(){
+    public void init() {
         ObjectiveRecorder.reset(false);
         ExecutionTracer.reset();
-        assertEquals(0 , ExecutionTracer.getNumberOfObjectives());
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives());
     }
 
 
     @Test
-    public void testParseIntValid() throws Exception{
+    public void testParseIntValid() throws Exception {
 
         TestabilityExc te = getInstance();
 
@@ -57,7 +57,7 @@ public class TestabilityExcInstrumentedTest {
 
 
     @Test
-    public void testParseIntHeuristic() throws Exception{
+    public void testParseIntHeuristic() throws Exception {
 
         TestabilityExc te = getInstance();
 
@@ -70,33 +70,33 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue(h0> 0); //reached
+        assertTrue(h0 > 0); //reached
         assertTrue(h0 < 1);//but no covered
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
         assertThrows(Exception.class, () -> te.parseInt("z"));
         double h1 = ExecutionTracer.getValue(targetId);
-        assertTrue(h1> h0); //better
+        assertTrue(h1 > h0); //better
         assertTrue(h1 < 1);//but still no covered
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
 
         assertThrows(Exception.class, () -> te.parseInt("a"));
         double h2 = ExecutionTracer.getValue(targetId);
-        assertTrue(h2> h1); //better
+        assertTrue(h2 > h1); //better
         assertTrue(h2 < 1);//but still no covered
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
         te.parseInt("1");
         double h3 = ExecutionTracer.getValue(targetId);
-        assertTrue(h3> h2); //better
+        assertTrue(h3 > h2); //better
         assertEquals(1, h3);//covered
         assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
     }
 
 
     @Test
-    public void testParseLocalDateHeuristic() throws Exception{
+    public void testParseLocalDateHeuristic() throws Exception {
 
         TestabilityExc te = getInstance();
 
@@ -109,27 +109,27 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue(h0> 0); //reached
+        assertTrue(h0 > 0); //reached
         assertTrue(h0 < 1);//but no covered
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
         assertThrows(Exception.class, () -> te.parseLocalDate("z"));
         double h1 = ExecutionTracer.getValue(targetId);
-        assertTrue(h1> h0); //better
+        assertTrue(h1 > h0); //better
         assertTrue(h1 < 1);//but still no covered
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
 
         assertThrows(Exception.class, () -> te.parseLocalDate("1234-11-aa"));
         double h2 = ExecutionTracer.getValue(targetId);
-        assertTrue(h2> h1); //better
+        assertTrue(h2 > h1); //better
         assertTrue(h2 < 1);//but still no covered
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
         LocalDate date = te.parseLocalDate("1234-11-11");
         assertEquals(1234, date.getYear());
         double h3 = ExecutionTracer.getValue(targetId);
-        assertTrue(h3> h2); //better
+        assertTrue(h3 > h2); //better
         assertEquals(1, h3);//covered
         assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
     }

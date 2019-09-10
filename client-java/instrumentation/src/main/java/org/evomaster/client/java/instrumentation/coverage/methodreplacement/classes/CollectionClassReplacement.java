@@ -92,4 +92,26 @@ public class CollectionClassReplacement implements MethodReplacementClass {
 
         return result;
     }
+
+    /**
+     * How close is the collection to being empty?
+     *
+     * @param caller
+     * @param idTemplate
+     * @return
+     */
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean isEmpty(Collection caller, String idTemplate) {
+
+        int len = caller.size();
+        Truthness t;
+        if (len == 0) {
+            t = new Truthness(1, 0);
+        } else {
+            t = new Truthness(1d / (1d + len), 1);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return caller.isEmpty();
+    }
 }

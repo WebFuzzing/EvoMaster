@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
@@ -21,6 +22,9 @@ public class DateClassReplacementTest {
         Truthness truthness = DateClassReplacement.getEqualsTruthness(thisDate, thisDate);
         assertTrue(truthness.isTrue());
         assertFalse(truthness.isFalse());
+
+        boolean equalsValue = DateClassReplacement.equals(thisDate, thisDate, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertTrue(equalsValue);
     }
 
     @Test
@@ -29,6 +33,9 @@ public class DateClassReplacementTest {
         Truthness truthness = DateClassReplacement.getEqualsTruthness(thisDate, null);
         assertFalse(truthness.isTrue());
         assertTrue(truthness.isFalse());
+
+        boolean equalsValue = DateClassReplacement.equals(thisDate, null, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertFalse(equalsValue);
     }
 
     @Test
@@ -57,6 +64,7 @@ public class DateClassReplacementTest {
 
         // 11.15 is closer to 11.00 than 11.30
         assertTrue(truthness1.getOfTrue() > truthness2.getOfTrue());
+
 
     }
 
@@ -95,10 +103,55 @@ public class DateClassReplacementTest {
         assertTrue(truthness4.isFalse());
 
         // 11:15 AM is closer to 10:59 AM than 11:30 AM
-        assertTrue(truthness3.getOfTrue()>truthness4.getOfTrue());
+        assertTrue(truthness3.getOfTrue() > truthness4.getOfTrue());
 
     }
 
+    @Test
+    public void testBeforeDate() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+        String time2 = "11:15 AM";
 
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateObject1 = sdf.parse(date1 + " " + time1);
+        Date dateObject2 = sdf.parse(date1 + " " + time2);
+
+        boolean beforeValue = DateClassReplacement.before(dateObject1, dateObject2, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertTrue(beforeValue);
+
+        boolean notBeforeValue = DateClassReplacement.before(dateObject2, dateObject1, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertFalse(notBeforeValue);
+
+        boolean sameDateValue = DateClassReplacement.before(dateObject1, dateObject1, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertFalse(sameDateValue);
+
+    }
+
+    @Test
+    public void testAfterDate() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+        String time2 = "11:15 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateObject1 = sdf.parse(date1 + " " + time1);
+        Date dateObject2 = sdf.parse(date1 + " " + time2);
+
+        boolean afterValue = DateClassReplacement.after(dateObject1, dateObject2, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertFalse(afterValue);
+
+        boolean notAfterValue = DateClassReplacement.after(dateObject2, dateObject1, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertTrue(notAfterValue);
+
+        boolean sameDateValue = DateClassReplacement.after(dateObject1, dateObject1, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertFalse(sameDateValue);
+    }
 
 }

@@ -84,7 +84,7 @@ public class DateClassReplacement implements MethodReplacementClass {
 
         /**
          * We use the same gradient that HeuristicsForJumps.getForValueComparison()
-         * for IF_ICMPLT, ie, a < b
+         * used for IF_ICMPLT, ie, a < b
          */
         return new Truthness(
                 a < b ? 1d : 1d / (1.1d + a - b),
