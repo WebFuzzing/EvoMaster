@@ -18,6 +18,10 @@ import java.lang.annotation.Target;
  * {@code String} id template.
  * However, if replacing a non-static method, then the replacement MUST
  * still be static, and have as first parameter the caller.
+ * <br>
+ * If the id template is {@code null}, then no new target should be registered.
+ * However, we might still want to do taint analysis.
+ * This is the case when instrumenting third-party libraries.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})

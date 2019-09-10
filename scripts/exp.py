@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 
+
 ### Python script used to generate Bash scripts to run on a cluster or locally.
 #   Given N jobs (ie EvoMaster runs), those will be divided equally among M different
 #   Bash scripts.
 #   Once such Bash scripts are generated, on the cluster all of those can be submitted with:
 #
-#   for s in `ls *.sh`; do sbatch $s; done
+#   ./runall.sh
+#
+#  they can also be submitted manually with:
+#
+#  for s in `ls *.sh`; do sbatch $s; done
+#
+#
+#  Currently, for 100k budget, use 300 minutes as timeout
 
-### Other useful commands:
-# scancel --user=<your_username>
-# squeue -u <your_username>
+
+### Other useful commands on the cluster:
+# scancel --user=<your_username>      ->  to cancel all of your jobs (in case you realized there were problems)
+# squeue -u <your_username>           ->  check your running jobs. to count them, you can pipe it to "| wc -l"
+# cost -p                             ->  check how much resources (ie CPU time) we can still use
 
 ### For interactive session:
 # qlogin --account=nn9476k
@@ -20,20 +30,20 @@
 # Max 400 submitted jobs per user at any time.
 
 
-### Some other useful commands as a user on the Abel system are:
+# Some useful commands as a user on the Abel system are:
 #
 # sbatch <job-script-file>   Submit a job script to the queue system
 # squeue                     List of all jobs
 # pending                    List of all pending jobs
 # qsumm                      Summary information about queue usage
 # cost -u                    User CPU Usage information
-# cost -p                    Project CPU Usage information
 # projects                   Lists the projects you are member of
 # module avail               Lists available software Modules
 # module list                Lists your currently used software Modules
 # dusage                     List home directory disk usage
 # dusage -p <project>        List project disk usage
 # scontrol show job <id>     Details of a job
+
 
 ###   If a job failed due to
 #       perl: warning: Setting locale failed.
@@ -49,6 +59,7 @@
 
 import io
 import os
+import pathlib
 import random
 import shutil
 import stat
@@ -57,8 +68,7 @@ import statistics
 import math
 import sys
 
-### CHANGE_ME
-EXP_ID = "an_id_of_your_choice"
+EXP_ID = "sql_ext"
 
 if len(sys.argv) != 9:
     print(
@@ -100,6 +110,7 @@ MINUTES_PER_RUN = int(sys.argv[7])
 # Also not that in the same .sh script there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
+
 # input parameter validation
 if MIN_SEED > MAX_SEED:
     print("ERROR: min seed is greater than max seed")
@@ -112,8 +123,6 @@ else:
     print("ERROR: target folder already exists")
     exit(1)
 
-
-
 ### We might want to have different settings based on whether we are running the
 ### scripts on cluster or locally.
 if CLUSTER:
@@ -123,16 +132,17 @@ if CLUSTER:
     # Note: the values after the SUT names is multiplicative factor for how long
     # experiments should be run. For example, all SUTs have similar runtime, but
     # proxyprint is roughly twice as slow.
+    # Depending on what experiments you are running, might want to de-select some
+    # of the SUTs (eg, by comment them out)
 
     SUTS = [
             ("features-service", 1),
             ("scout-api", 1),
-            ("proxyprint", 2),
-            ("rest-ncs", 1),
-            ("rest-scs", 1),
+            ("proxyprint", 2)
+            # ("rest-ncs", 1), #no db
+            # ("rest-scs", 1), #no db
             ("rest-news", 1),
-            ("catwatch", 1)  # ,
-            # ("ocvn", 1) # currently having problems
+            ("catwatch", 1)
             ]
 
     HOME = os.environ['HOME']
@@ -145,14 +155,14 @@ if CLUSTER:
 
 ## Local configurations
 else:
-    SUTS = [("ocvn", 1)]  # eg, for debugging for debugging
+    SUTS = [("ind0", 1)]
 
     # You will need to define environment variables on your OS
 
     EVOMASTER = os.environ['EVOMASTER']
-    CASESTUDY_DIR = os.environ['EMB_DIR']
+    # CASESTUDY_DIR = os.environ['EMB_DIR']
+    CASESTUDY_DIR = "."
     LOGS_DIR = BASE_DIR
-
 
 
 if NJOBS < len(SUTS):
@@ -179,6 +189,36 @@ CONTROLLER_PID = "CONTROLLER_PID"
 ### By default, we allocate 3 CPUs per run.
 ### Recall that we are running 3 processes, and they are multithreaded.
 CPUS = 3
+
+TIMEOUT_SUT_START_MINUTES = 20
+
+if not CLUSTER:
+    REPORT_DIR = str(pathlib.PurePath(REPORT_DIR).as_posix())
+    SCRIPT_DIR = str(pathlib.PurePath(SCRIPT_DIR).as_posix())
+    TEST_DIR = str(pathlib.PurePath(TEST_DIR).as_posix())
+    LOG_DIR = str(pathlib.PurePath(LOG_DIR).as_posix())
+
+
+
+def createRunallScript():
+    script_path = BASE_DIR + "/runall.sh"
+    script = open(script_path, "w")
+
+    script.write("#!/bin/bash \n\n")
+
+    script.write("DIR=`dirname \"$0\"` \n\n")
+
+    script.write("for s in `ls $DIR/scripts/*.sh`; do\n")
+    script.write("   echo Going to start $s\n")
+    if CLUSTER:
+        script.write("   sbatch $s\n")
+    else:
+        script.write("   $s & \n")
+    script.write("done \n")
+
+    st = os.stat(script_path)
+    os.chmod(script_path, st.st_mode | stat.S_IEXEC)
+
 
 
 def writeScript(code, port, sut_name):
@@ -216,11 +256,16 @@ def createJobHead(port, sut_name, timeoutMinutes):
     sutPort = str(port + 1)
 
     EM_POSTFIX = "-evomaster-runner.jar"
+    SUT_POSTFIX = "-sut.jar"
 
     if CLUSTER:
-        sut_em_path = os.path.join(CASESTUDY_DIR, sut_name + EM_POSTFIX)
-        sut_jar_path = os.path.join(CASESTUDY_DIR, sut_name + ".jar")
-        agent_path = os.path.join(CASESTUDY_DIR, "evomaster-agent.jar")
+        em_runner = sut_name + EM_POSTFIX
+        em_sut = sut_name + SUT_POSTFIX
+        agent = "evomaster-agent.jar"
+
+        sut_em_path = os.path.join(CASESTUDY_DIR, em_runner)
+        sut_jar_path = os.path.join(CASESTUDY_DIR, em_sut)
+        agent_path = os.path.join(CASESTUDY_DIR, agent)
 
         script.write("\nmodule load java/jdk1.8.0_112\n\n")
         script.write("cd $SCRATCH \n")
@@ -230,18 +275,16 @@ def createJobHead(port, sut_name, timeoutMinutes):
         script.write("cp " + agent_path + " . \n")
         script.write("\n")
 
-        em_runner = sut_name + EM_POSTFIX
-        em_sut = sut_name + ".jar"
-        agent = "evomaster-agent.jar"
-
     else:
         em_runner = CASESTUDY_DIR + "/" + sut_name + EM_POSTFIX
-        em_sut = CASESTUDY_DIR + "/" + sut_name + ".jar"
+        em_sut = CASESTUDY_DIR + "/" + sut_name + SUT_POSTFIX
         agent = CASESTUDY_DIR + "/evomaster-agent.jar"
 
     script.write("\n")
 
-    params = " " + controllerPort + " " + sutPort + " " + em_sut + "  600 "
+    timeoutStart = TIMEOUT_SUT_START_MINUTES * 60
+
+    params = " " + controllerPort + " " + sutPort + " " + em_sut + " " + str(timeoutStart)
 
     # JVM properties
     jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+agent
@@ -261,9 +304,6 @@ def createJobHead(port, sut_name, timeoutMinutes):
 
 def closeJob(port, sut_name):
     return "kill $" + CONTROLLER_PID + "\n"
-
-
-####################################
 
 
 ####################################
@@ -295,7 +335,7 @@ class State:
         self.budget -= weight
 
     def getTimeoutMinutes(self):
-        timeoutMinutes = 10 + int(math.ceil(1.2 * self.counter * MINUTES_PER_RUN))
+        timeoutMinutes = TIMEOUT_SUT_START_MINUTES + int(math.ceil(1.1 * self.counter * MINUTES_PER_RUN))
         self.waits.append(timeoutMinutes)
         return timeoutMinutes
 
@@ -316,17 +356,9 @@ def writeWithHeadAndFooter(code, port, sut_name, timeout):
     writeScript(code, port, sut_name)
 
 
-############################################################################
-### CUSTOM.
-### Following will need to be changed based on what kind of experiments
-### we want to run.
-### At the moment, we just show an example of running experiments based on
-### 2 boolean properties: heuristicsForSQL and generateSqlDataWithSearch
-############################################################################
 
-
-def createOneJob(state, sut_name, seed, weight, heuristic, direct):
-    code = addJobBody(state.port, sut_name, seed, heuristic, direct)
+def createOneJob(state, sut_name, seed, weight, config):
+    code = addJobBody(state.port, sut_name, seed, config, weight)
     state.updateBudget(weight)
     state.jobsLeft -= 1
     state.opened = True
@@ -334,19 +366,12 @@ def createOneJob(state, sut_name, seed, weight, heuristic, direct):
     return code
 
 
-def addJobBody(port, sut_name, seed, heuristic, direct):
+def addJobBody(port, sut_name, seed, config, weight):
     script = io.StringIO()
 
     em_log = LOG_DIR + "/log_em_" + sut_name + "_" + str(port) + ".txt"
 
-    params = ""
-
-    label = str(heuristic) + "_" + str(direct)
-
-    ### Custom for these experiments
-    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-    params += " --heuristicsForSQL=" + str(heuristic)
-    params += " --generateSqlDataWithSearch=" + str(direct)
+    params = customParameters(seed, config)
 
     ### standard
     params += " --stoppingCriterion=FITNESS_EVALUATIONS"
@@ -370,20 +395,22 @@ def addJobBody(port, sut_name, seed, heuristic, direct):
         script.write("\n\necho \"Starting SUT with: " + command + "\"\n")
         script.write("echo\n\n")
 
+    if CLUSTER:
+        timeout = int(math.ceil(1.1 * weight * MINUTES_PER_RUN * 60))
+        errorMsg = "ERROR: timeout for " + sut_name
+        command = "timeout " +str(timeout) + "  " + command \
+                  + " || ([ $? -eq 124 ] && echo " + errorMsg + ")"
+
     script.write(command + " \n\n")
 
     return script.getvalue()
 
 
 def createJobs():
-    H = [False, True]
-    D = [False, True]
 
-    ### Here, we need to computer how many experiments we expect per SUT.
-    ### For example, we need to take into account how many repetitions, and
-    ### how many combinations of settings we experiment on.
-    ### Here these are 3 and not 4 because we skip the combination F-T.
-    NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * 3
+    CONFIGS = getConfigs()
+
+    NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
     SUT_WEIGHTS = sum(map(lambda x: x[1], SUTS))
 
     state = State(NRUNS_PER_SUT * SUT_WEIGHTS)
@@ -402,30 +429,23 @@ def createJobs():
 
         for seed in range(MIN_SEED, MAX_SEED + 1):
 
-            random.shuffle(H)
+            random.shuffle(CONFIGS)
 
-            for heuristic in H:
-
-                random.shuffle(D)
-
-                for direct in D:
-
-                    if not heuristic and direct:
-                        continue
+            for config in CONFIGS:
 
                     if state.counter == 0:
-                        code = createOneJob(state, sut_name, seed, weight, heuristic, direct)
+                        code = createOneJob(state, sut_name, seed, weight, config)
 
                     elif (state.counter + weight) < state.perJob \
                             or not state.hasSpareJobs() or \
                             (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / weight):
-                        code += addJobBody(state.port, sut_name, seed, heuristic, direct)
+                        code += addJobBody(state.port, sut_name, seed, config, weight)
                         state.updateBudget(weight)
 
                     else:
                         writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
                         state.resetTmpForNewRun()
-                        code = createOneJob(state, sut_name, seed, weight, heuristic, direct)
+                        code = createOneJob(state, sut_name, seed, weight, config)
                     completedForSut += 1
 
         if state.opened:
@@ -439,4 +459,94 @@ def createJobs():
     print("Total budget: " + str(CPUS * sum(state.waits) / 60) + " hours")
 
 
+
+############################################################################
+### Custom
+### Following will need to be changed based on what kind of experiments
+### we want to run.
+### Here, we have an example in which a Configuration is defined by 6 parameters
+### we want to experiment with.
+############################################################################
+
+
+class Config:
+    def __init__(self, heuristic, direct, maxSqlInitActionsPerMissingData, geneMutationStrategy, secondaryStrategy, bloatControlForSecondaryObjective):
+        self.heuristic = heuristic
+        self.direct = direct
+        self.geneMutationStrategy = geneMutationStrategy
+        self.maxSqlInitActionsPerMissingData = maxSqlInitActionsPerMissingData
+        self.secondaryStrategy = secondaryStrategy
+        self.bloatControlForSecondaryObjective = bloatControlForSecondaryObjective
+
+
+def customParameters(seed, config):
+
+    params = ""
+
+    label = str(config.heuristic) + "_" + str(config.direct)
+
+    ### Custom for these experiments
+    params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
+    params += " --heuristicsForSQL=" + str(config.heuristic)
+    params += " --generateSqlDataWithSearch=" + str(config.direct)
+    params += " --geneMutationStrategy=" + str(config.geneMutationStrategy)
+    params += " --maxSqlInitActionsPerMissingData=" + str(config.maxSqlInitActionsPerMissingData)
+    params += " --secondaryObjectiveStrategy=" + str(config.secondaryStrategy)
+    params += " --bloatControlForSecondaryObjective=" + str(config.bloatControlForSecondaryObjective)
+
+    return params
+
+
+def getConfigs():
+    N1 = "ONE_OVER_N"
+    Nb = "ONE_OVER_N_BIASED_SQL"
+
+    Savg = "AVG_DISTANCE"
+    San = "AVG_DISTANCE_SAME_N_ACTIONS"
+    Smin = "BEST_MIN"
+
+    GENE_STRATEGIES = [N1, Nb]
+    SECONDARY_STRATEGIES = [Savg, San, Smin]
+    Ns = [1,3,5]
+
+    Bs = [True, False]
+
+    # array of configuration objects. We will run experiments for each of
+    # these configurations
+    CONFIGS = []
+
+    if CLUSTER:
+        CONFIGS.append(Config(False, False, 1, N1, Savg, False))
+
+        for s in SECONDARY_STRATEGIES:
+            for b in Bs:
+                CONFIGS.append(Config(True, False, 1, N1, s, b))
+
+        for g in GENE_STRATEGIES:
+            for n in Ns:
+                CONFIGS.append(Config(True, True, n, g, San, False))
+
+#         for s in SECONDARY_STRATEGIES:
+#             for g in GENE_STRATEGIES:
+#                 for n in Ns:
+#                     for b in Bs:
+#                         CONFIGS.append(Config(True, True, n, g, s, b))
+
+        # CONFIGS.append(Config(True, False, 1, N1, Smin, True))
+        # CONFIGS.append(Config(True, True, 1, Nb, Smin, True))
+
+    else:
+        CONFIGS.append(Config(False, False, 1, N1, Savg, False))
+        CONFIGS.append(Config(True, True, 1, Nb, Smin, True))
+
+    return CONFIGS
+
+
+
+
+
+# Create the actual job scripts
 createJobs()
+
+# Create a single ./runall.sh script to submit all the job scripts
+createRunallScript()

@@ -1,7 +1,10 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
+import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestCallAction
@@ -13,7 +16,8 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-
+import org.evomaster.core.Lazy
+import org.evomaster.core.search.gene.StringGene
 
 class RestFitness : AbstractRestFitness<RestIndividual>() {
 
@@ -94,20 +98,67 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         handleExtra(dto, fv)
 
-        handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
+        handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
             expandIndividual(individual, dto.additionalInfoList)
         }
 
-        return if(config.enableTrackEvaluatedIndividual)
-            EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, sampler, mutableListOf(), mutableListOf(), withImpacts = (config.probOfArchiveMutation > 0.0))
-        else EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, withImpacts = (config.probOfArchiveMutation > 0.0))
+        if (config.baseTaintAnalysisProbability > 0) {
+            doTaintAnalysis(individual, dto.additionalInfoList)
+        }
+
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+    }
+
+    private fun doTaintAnalysis(individual: RestIndividual, additionalInfoList: List<AdditionalInfoDto>) {
 
         /*
-            TODO when dealing with seeding, might want to extend EvaluatedIndividual
-            to keep track of AdditionalInfo
+            Analyze if any tainted value was used in the SUT in some special way.
+            If that happened, then such info would end up in the AdditionalInfoDto.
+            Then, we would extend the genotype (but not the phenotype!!!) of this test.
          */
+
+        Lazy.assert{individual.seeActions().size == additionalInfoList.size}
+
+        for (i in 0 until additionalInfoList.size) {
+
+            val dto = additionalInfoList[i]
+            if (dto.stringSpecializations == null || dto.stringSpecializations.isEmpty()) {
+                continue
+            }
+
+            val action = individual.seeActions()[i]
+
+            for (entry in dto.stringSpecializations.entries) {
+
+                if(entry.value.isEmpty()){
+                    throw IllegalArgumentException("No specialization info for value ${entry.key}")
+                }
+
+                val specs = entry.value.map {
+                    StringSpecializationInfo(
+                            StringSpecialization.valueOf(it.stringSpecialization),
+                            it.value)
+                }
+
+                val stringGene = action.seeGenes()
+                        .flatMap { it.flatView() }
+                        .filterIsInstance<StringGene>()
+                        .find { it.value == entry.key }
+
+                if(stringGene == null){
+                    /*
+                        This can happen if the taint input is manipulated, but still with
+                        some prefix and postfix
+                     */
+                    log.debug("No taint input '${entry.key}' in action nr. $i")
+                } else {
+                    stringGene.specializations = specs
+                }
+            }
+        }
+
     }
 
     override fun doInitializingActions(ind: RestIndividual) {

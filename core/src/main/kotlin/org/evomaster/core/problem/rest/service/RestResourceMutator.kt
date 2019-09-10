@@ -5,6 +5,7 @@ import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Archive
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StandardMutator
 
 /**
@@ -48,9 +49,9 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         return individual.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
     }
 
-    override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes : MutableList<Gene>) {
+    override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes : MutatedGeneSpecification?) {
         //update resource dependency after mutating structure of the resource-based individual
-        if(mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
+        if(mutatedGenes!!.mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
             val isWorse = previous.fitness.subsumes(
                     mutated.fitness,
                     archive.notCoveredTargets(),

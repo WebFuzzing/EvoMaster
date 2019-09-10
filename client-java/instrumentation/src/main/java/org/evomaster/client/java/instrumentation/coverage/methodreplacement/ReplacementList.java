@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.CollectionClassReplacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.LocalDateClassReplacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.StringClassReplacement;
@@ -15,7 +16,8 @@ public class ReplacementList {
         return Arrays.asList(
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
-                new StringClassReplacement()
+                new StringClassReplacement(),
+                new CollectionClassReplacement()
         );
     }
 

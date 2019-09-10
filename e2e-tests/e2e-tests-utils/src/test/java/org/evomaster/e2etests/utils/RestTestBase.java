@@ -312,7 +312,9 @@ public abstract class RestTestBase {
         boolean ok = solution.getIndividuals().stream().anyMatch(
                 ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
 
-        assertTrue(ok, restActions(solution));
+        String errorMsg = "Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n";
+
+        assertTrue(ok, errorMsg + restActions(solution));
     }
 
     protected void assertInsertionIntoTable(Solution<RestIndividual> solution, String tableName) {
@@ -335,9 +337,15 @@ public abstract class RestTestBase {
         StringBuffer msg = new StringBuffer("REST calls:\n");
 
         solution.getIndividuals().stream().flatMap(ind -> ind.evaluatedActions().stream())
-                .map(ea -> ea.getAction())
-                .filter(a -> a instanceof RestCallAction)
-                .forEach(a -> msg.append(a.toString()).append("\n"));
+                .filter(ea -> ea.getAction() instanceof RestCallAction)
+                .map(ea -> {
+                    String s = ((RestCallResult)ea.getResult()).getStatusCode() + " ";
+                    s += ea.getAction().toString() + "\n";
+                    return s;
+                })
+                .sorted()
+                .forEach(s -> msg.append(s));
+        ;
 
         return msg.toString();
     }

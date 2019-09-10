@@ -191,6 +191,8 @@ class FitnessValue(
 
             val extra = compareExtraToMinimize(k, other, strategy)
 
+            //FIXME this is inconsistent with what used in Archive. Should be
+            //refactored, avoiding copy&paste
             if(bloatControlForSecondaryObjective){
                 if (v > z ||
                         (v == z && this.size < other.size) ||
