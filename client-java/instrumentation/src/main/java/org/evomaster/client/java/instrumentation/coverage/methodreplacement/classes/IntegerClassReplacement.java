@@ -28,6 +28,10 @@ public class IntegerClassReplacement implements MethodReplacementClass {
                     new StringSpecializationInfo(StringSpecialization.INTEGER, null));
         }
 
+        if(idTemplate == null){
+            return Integer.parseInt(input);
+        }
+
         try{
             int res = Integer.parseInt(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1,0));

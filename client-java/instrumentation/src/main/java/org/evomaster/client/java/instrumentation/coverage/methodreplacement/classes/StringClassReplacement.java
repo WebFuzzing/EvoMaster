@@ -35,9 +35,12 @@ public class StringClassReplacement implements MethodReplacementClass {
             }
         }
 
-
         //not important if NPE
         boolean result = caller.equals(anObject);
+
+        if(idTemplate == null){
+            return result;
+        }
 
         Truthness t;
 
@@ -60,6 +63,10 @@ public class StringClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
 
+        if(idTemplate == null){
+            return caller.equalsIgnoreCase(anotherString);
+        }
+
         if (anotherString == null) {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, new Truthness(0, 1));
             return false;
@@ -73,6 +80,10 @@ public class StringClassReplacement implements MethodReplacementClass {
     public static boolean startsWith(String caller, String prefix, int toffset, String idTemplate) {
 
         boolean result = caller.startsWith(prefix, toffset);
+
+        if(idTemplate == null){
+            return result;
+        }
 
         int pl = prefix.length();
 
@@ -120,6 +131,10 @@ public class StringClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(String caller, String idTemplate) {
 
+        if(idTemplate == null){
+            return caller.isEmpty();
+        }
+
         int len = caller.length();
         Truthness t;
         if (len == 0) {
@@ -148,6 +163,10 @@ public class StringClassReplacement implements MethodReplacementClass {
     public static boolean contains(String caller, CharSequence s, String idTemplate) {
 
         boolean result = caller.contains(s);
+
+        if(idTemplate == null){
+            return result;
+        }
 
         String k = s.toString();
         if (caller.length() <= k.length()) {

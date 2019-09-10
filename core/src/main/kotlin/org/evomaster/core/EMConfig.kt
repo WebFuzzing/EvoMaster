@@ -276,6 +276,10 @@ class EMConfig {
         if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
             throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
+
+        if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
+            throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
+        }
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
@@ -480,10 +484,10 @@ class EMConfig {
     }
 
     @Cfg("Strategy used to handle the extra heuristics in the secondary objectives")
-    var secondaryObjectiveStrategy = SecondaryObjectiveStrategy.BEST_MIN
+    var secondaryObjectiveStrategy = SecondaryObjectiveStrategy.AVG_DISTANCE_SAME_N_ACTIONS
 
-    @Cfg("Whether secondary objectives are more important than test bloat control")
-    var bloatControlForSecondaryObjective = true
+    @Cfg("Whether secondary objectives are less important than test bloat control")
+    var bloatControlForSecondaryObjective = false
 
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Min(0.0) @Max(1.0)
@@ -546,7 +550,7 @@ class EMConfig {
 
     @Cfg("When generating SQL data, how many new rows (max) to generate for each specific SQL Select")
     @Min(1.0)
-    var maxSqlInitActionsPerMissingData = 1
+    var maxSqlInitActionsPerMissingData = 5
 
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
@@ -718,4 +722,8 @@ class EMConfig {
         APPROACH_GOOD,
         FEED_BACK
     }
+
+    @Experimental
+    @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")
+    var baseTaintAnalysisProbability = 0.0
 }

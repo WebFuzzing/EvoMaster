@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation;
 
 
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
+import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.tracker.TrackerClassVisitor;
 import org.objectweb.asm.ClassReader;
@@ -53,7 +54,6 @@ public class Instrumentator {
             throw new IllegalArgumentException("Cannot instrument " + className);
         }
 
-
         int asmFlags = ClassWriter.COMPUTE_FRAMES;
         ClassWriter writer = new ComputeClassWriter(asmFlags);
         ClassVisitor cv = writer;
@@ -61,13 +61,10 @@ public class Instrumentator {
         //avoid reading frames, as we re-compute them
         int readFlags = ClassReader.SKIP_FRAMES;
 
+        ClassNode cn = new ClassNode();
+        reader.accept(cn, readFlags);
+
         if(canInstrumentForCoverage(className)){
-
-            ClassNode cn = new ClassNode();
-            reader.accept(cn, readFlags);
-
-//            ReplacementList.getBooleanMethodTransformers()
-//                    .forEach(t -> t.transformClass(cn));
 
             cv = new CoverageClassVisitor(cv, className);
 
@@ -78,18 +75,14 @@ public class Instrumentator {
              */
             cv = new TrackerClassVisitor(cv, className);
 
-            cn.accept(cv);
-
         } else {
-            /*
-                For "now" we only instrument classes that will directly
-                contribute to coverage, ie the SUT.
-                In the future, likely also to instrument other third-party
-                library classes for testability transformations
-             */
 
-            reader.accept(cv, readFlags);
+            cv = new ThirdPartyClassVisitor(cv, className);
+
+            //reader.accept(cv, readFlags);
         }
+
+        cn.accept(cv);
 
         return writer.toByteArray();
     }

@@ -155,9 +155,10 @@ class RestActionBuilder {
                             if(p.`in` == "path" && gene is StringGene){
                                 /*
                                     We want to avoid empty paths, and special chars like / which
-                                    would lead to 2 variables
+                                    would lead to 2 variables, or anyh other char that does affect the
+                                    structure of the URL, like '.'
                                  */
-                                gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/'))
+                                gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/', '.'))
                             }
 
                             if (!p.required && p.`in` != "path") {
