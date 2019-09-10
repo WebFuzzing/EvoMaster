@@ -30,6 +30,8 @@ public class DateClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(Date caller, Object anObject, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         final Truthness t = getEqualsTruthness(caller, anObject);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.equals(anObject);
@@ -43,6 +45,8 @@ public class DateClassReplacement implements MethodReplacementClass {
      * @return
      */
     static Truthness getEqualsTruthness(Date caller, Object anObject) {
+        Objects.requireNonNull(caller);
+
         final Truthness t;
         if (anObject == null || !(anObject instanceof Date)) {
             t = new Truthness(0d, 1d);
@@ -66,6 +70,8 @@ public class DateClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean before(Date caller, Date when, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         // might throw NPE if when is null
         final boolean res = caller.before(when);
 
@@ -103,6 +109,8 @@ public class DateClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean after(Date caller, Date when, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         // might throw NPE if when is null
         final boolean res = caller.after(when);
 

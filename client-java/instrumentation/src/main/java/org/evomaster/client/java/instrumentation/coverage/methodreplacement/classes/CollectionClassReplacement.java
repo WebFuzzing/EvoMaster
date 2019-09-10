@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.TruthnessHelper;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -11,6 +12,7 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Collection;
+import java.util.Objects;
 
 public class CollectionClassReplacement implements MethodReplacementClass {
 
@@ -22,6 +24,11 @@ public class CollectionClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contains(Collection c, Object o, String idTemplate) {
+        return containsHelper(c, o, idTemplate);
+    }
+
+    static boolean containsHelper(Collection c, Object o, String idTemplate) {
+        Objects.requireNonNull(c);
 
         String inputString = null;
         if (o instanceof String) {
@@ -44,7 +51,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
         }
 
         Number inputNumber = null;
-        if(o instanceof Number){
+        if (o instanceof Number) {
             inputNumber = (Number) o;
         }
 
@@ -53,31 +60,31 @@ public class CollectionClassReplacement implements MethodReplacementClass {
         if (result) {
             t = new Truthness(1d, 0d);
         } else {
-            if(c.isEmpty()){
+            if (c.isEmpty()) {
                 t = new Truthness(0d, 1d);
             } else {
                 double max = 0d;
 
-                for(Object value : c){
+                for (Object value : c) {
                     long distance = -1;
 
-                    if(inputString != null && value instanceof String){
+                    if (inputString != null && value instanceof String) {
                         distance = DistanceHelper.getLeftAlignmentDistance(inputString, (String) value);
-                    } else if(inputNumber != null && value instanceof Number){
+                    } else if (inputNumber != null && value instanceof Number) {
                         /*
                             TODO would need to support all basic types, eg long and double,
                             but likely would need a rewrite of all distance calculations to use
                             something like BigDecimal, to avoid issues with precision loss
                             and numeric overflows
                         */
-                        if(inputNumber instanceof Integer && value instanceof Integer){
+                        if (inputNumber instanceof Integer && value instanceof Integer) {
                             distance = Math.abs((Integer) inputNumber - (Integer) value);
                         }
                     }
 
-                    if(distance > 0){
+                    if (distance > 0) {
                         double h = 1d / (1d + distance);
-                        if(h > max){
+                        if (h > max) {
                             max = h;
                         }
                     }
@@ -104,12 +111,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
     public static boolean isEmpty(Collection caller, String idTemplate) {
 
         int len = caller.size();
-        Truthness t;
-        if (len == 0) {
-            t = new Truthness(1, 0);
-        } else {
-            t = new Truthness(1d / (1d + len), 1);
-        }
+        Truthness t = TruthnessHelper.getTruthnessToEmpty(len);
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.isEmpty();

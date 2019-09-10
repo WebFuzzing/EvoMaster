@@ -15,7 +15,9 @@ public class ReplacementList {
                 new LocalDateClassReplacement(),
                 new StringClassReplacement(),
                 new CollectionClassReplacement(),
-                new DateClassReplacement()
+                new DateClassReplacement(),
+                new MapClassReplacement(),
+                new ObjectsClassReplacement()
         );
     }
 

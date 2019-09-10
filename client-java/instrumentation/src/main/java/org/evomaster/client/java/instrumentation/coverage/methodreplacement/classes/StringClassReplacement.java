@@ -4,12 +4,15 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.TruthnessHelper;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+
+import java.util.Objects;
 
 
 public class StringClassReplacement implements MethodReplacementClass {
@@ -21,6 +24,7 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(String caller, Object anObject, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean taintedCaller = TaintInputName.isTaintInput(caller);
         boolean taintedOther = anObject != null && TaintInputName.isTaintInput(anObject.toString());
@@ -38,7 +42,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         //not important if NPE
         boolean result = caller.equals(anObject);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return result;
         }
 
@@ -62,8 +66,9 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return caller.equalsIgnoreCase(anotherString);
         }
 
@@ -78,10 +83,11 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean startsWith(String caller, String prefix, int toffset, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean result = caller.startsWith(prefix, toffset);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return result;
         }
 
@@ -119,29 +125,30 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean startsWith(String caller, String prefix, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         return startsWith(caller, prefix, 0, idTemplate);
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean endsWith(String caller, String suffix, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         return startsWith(caller, suffix, caller.length() - suffix.length(), idTemplate);
     }
 
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(String caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return caller.isEmpty();
         }
 
         int len = caller.length();
-        Truthness t;
-        if (len == 0) {
-            t = new Truthness(1, 0);
-        } else {
-            t = new Truthness(1d / (1d + len), 1);
-        }
+        Truthness t = TruthnessHelper.getTruthnessToEmpty(len);
+
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.isEmpty();
@@ -161,10 +168,11 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contains(String caller, CharSequence s, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean result = caller.contains(s);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return result;
         }
 
