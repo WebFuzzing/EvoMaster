@@ -70,7 +70,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                     trackOperator = trackOperator, tracking = if (enableTracking) mutableListOf() else null, undoTracking = if (enableTracking) mutableListOf() else null,
                     impactsOfGenes = if (enableImpact) mutableMapOf() else null, impactsOfStructure = if (enableImpact) ActionStructureImpact("StructureSize") else null,
                     reachedTargets = if (enableImpact) mutableMapOf() else null){
-        initImpacts()
+        if(enableImpact) initImpacts()
     }
 
     fun copy(): EvaluatedIndividual<T> {
