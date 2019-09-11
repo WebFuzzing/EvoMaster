@@ -35,7 +35,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
      */
-    abstract fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene> = mutableListOf()): T
+    abstract fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification? = null): T
 
     /**
      * @param individual an individual to mutate
@@ -58,7 +58,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     open fun postActionAfterMutation(individual: T){}
 
-    open fun update(previous: EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene>){}
+    open fun update(previous: EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?){}
 
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
@@ -84,7 +84,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedGenes = mutableListOf<Gene>()
+            val mutatedGenes = MutatedGeneSpecification()
             val mutatedInd = mutate(current, mutatedGenes)
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}

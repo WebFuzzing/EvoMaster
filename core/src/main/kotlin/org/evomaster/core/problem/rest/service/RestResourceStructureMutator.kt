@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 class RestResourceStructureMutator : StructureMutator() {
@@ -19,14 +20,14 @@ class RestResourceStructureMutator : StructureMutator() {
 
     //var executedStructureMutator :MutationType? = null
 
-    override fun mutateStructure(individual: Individual) {
+    override fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?) {
         if(individual !is RestIndividual)
             throw IllegalArgumentException("Invalid individual type")
 
-        mutateRestResourceCalls(individual)
+        mutateRestResourceCalls(individual, mutatedGenes = mutatedGenes)
     }
 
-    fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null ) {
+    fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {
 
         val num = ind.getResourceCalls().size
 
@@ -44,11 +45,11 @@ class RestResourceStructureMutator : StructureMutator() {
         val executedStructureMutator = specified?:
             randomness.choose(validCandidates )
         when(executedStructureMutator){
-            MutationType.ADD -> handleAdd(ind)
-            MutationType.DELETE -> handleDelete(ind)
-            MutationType.SWAP -> handleSwap(ind)
-            MutationType.REPLACE -> handleReplace(ind)
-            MutationType.MODIFY -> handleModify(ind)
+            MutationType.ADD -> handleAdd(ind, mutatedGenes)
+            MutationType.DELETE -> handleDelete(ind, mutatedGenes)
+            MutationType.SWAP -> handleSwap(ind, mutatedGenes)
+            MutationType.REPLACE -> handleReplace(ind, mutatedGenes)
+            MutationType.MODIFY -> handleModify(ind, mutatedGenes)
         }
 
         ind.repairDBActions(rm.getSqlBuilder())
@@ -68,7 +69,7 @@ class RestResourceStructureMutator : StructureMutator() {
     /**
      * delete one resource call
      */
-    private fun handleDelete(ind: RestIndividual){
+    private fun handleDelete(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
 
         val fromDependency = dm.isDependencyNotEmpty()
                 && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
@@ -81,13 +82,16 @@ class RestResourceStructureMutator : StructureMutator() {
             else ind.getResourceCalls().indexOf(randomness.choose(ind.getResourceCalls().filter(RestResourceCalls::isDeletable)))
         //randomness.nextInt(0, ind.getResourceCalls().size - 1)
 
+        mutatedGenes?.removedGene?.addAll(ind.getResourceCalls()[pos].actions.flatMap { it.seeGenes() })
+        mutatedGenes?.mutatedPosition?.add(pos)
+
         ind.removeResourceCall(pos)
     }
 
     /**
      * swap two resource calls
      */
-    private fun handleSwap(ind: RestIndividual){
+    private fun handleSwap(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         val fromDependency = dm.isDependencyNotEmpty()
                 && randomness.nextBoolean(config.probOfEnablingResourceDependencyHeuristics)
 
@@ -95,18 +99,23 @@ class RestResourceStructureMutator : StructureMutator() {
             val pair = dm.handleSwapDepResource(ind)
             if(pair!=null){
                 ind.swapResourceCall(pair.first, pair.second)
+                mutatedGenes?.mutatedPosition?.add(pair.first)
+                mutatedGenes?.mutatedPosition?.add(pair.second)
                 return
             }
         }
 
         if(config.probOfEnablingResourceDependencyHeuristics > 0.0){
-            val position = (0..(ind.getResourceCalls().size-1)).toMutableList()
+            val position = (0 until ind.getResourceCalls().size).toMutableList()
             while (position.isNotEmpty()){
                 val chosen = randomness.choose(position)
                 if(ind.isMovable(chosen)) {
                     val moveTo = randomness.choose(ind.getMovablePosition(chosen))
                     if(chosen < moveTo) ind.swapResourceCall(chosen, moveTo)
                     else ind.swapResourceCall(moveTo, chosen)
+
+                    mutatedGenes?.mutatedPosition?.add(moveTo)
+                    mutatedGenes?.mutatedPosition?.add(chosen)
                     return
                 }
                 position.remove(chosen)
@@ -114,6 +123,8 @@ class RestResourceStructureMutator : StructureMutator() {
             throw IllegalStateException("the individual cannot apply swap mutator!")
         }else{
             val candidates = randomness.choose(Array(ind.getResourceCalls().size){i -> i}.toList(), 2)
+            mutatedGenes?.mutatedPosition?.add(candidates[0])
+            mutatedGenes?.mutatedPosition?.add(candidates[1])
             ind.swapResourceCall(candidates[0], candidates[1])
         }
     }
@@ -124,7 +135,7 @@ class RestResourceStructureMutator : StructureMutator() {
      * Note that if dependency is enabled,
      * the added resource can be its dependent resource with a probability i.e.,[config.probOfEnablingResourceDependencyHeuristics]
      */
-    private fun handleAdd(ind: RestIndividual){
+    private fun handleAdd(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
@@ -134,8 +145,9 @@ class RestResourceStructureMutator : StructureMutator() {
 
         var max = config.maxTestSize
         ind.getResourceCalls().forEach { max -= it.actions.size }
-        if (max ==0){
-            handleDelete(ind)
+        if (max == 0){
+            handleDelete(ind, mutatedGenes)
+            return
         }
 
         val fromDependency = dm.isDependencyNotEmpty()
@@ -148,6 +160,9 @@ class RestResourceStructureMutator : StructureMutator() {
         if(pair == null){
             val randomCall =  rm.handleAddResource(ind, max)
             val pos = randomness.nextInt(0, ind.getResourceCalls().size)
+
+            mutatedGenes?.addedGenes?.addAll(randomCall.actions.flatMap { it.seeGenes() })
+            mutatedGenes?.mutatedPosition?.add(pos)
 
             maintainAuth(auth, randomCall)
             ind.addResourceCall(pos, randomCall)
@@ -166,6 +181,10 @@ class RestResourceStructureMutator : StructureMutator() {
 //                ind.getResourceCalls().size
 //            else
 //                0
+
+            mutatedGenes?.addedGenes?.addAll(pair.second.actions.flatMap { it.seeGenes() })
+            mutatedGenes?.mutatedPosition?.add(addPos)
+
             maintainAuth(auth, pair.second)
             ind.addResourceCall( addPos, pair.second)
         }
@@ -176,7 +195,7 @@ class RestResourceStructureMutator : StructureMutator() {
     /**
      * replace one of resource call with other resource
      */
-    private fun handleReplace(ind: RestIndividual){
+    private fun handleReplace(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
@@ -215,17 +234,19 @@ class RestResourceStructureMutator : StructureMutator() {
                 dm.bindCallWithFront(pair.first!!, mutableListOf(pair.second))
             }
         }
-
+        mutatedGenes?.removedGene?.addAll(ind.getResourceCalls()[pos].actions.flatMap { it.seeGenes() })
+        mutatedGenes?.mutatedPosition?.add(pos)
         ind.removeResourceCall(pos)
 
         maintainAuth(auth, call!!)
+        mutatedGenes?.addedGenes?.addAll(call!!.actions.flatMap { it.seeGenes() })
         ind.addResourceCall(pos, call)
     }
 
     /**
      *  modify one of resource call with other template
      */
-    private fun handleModify(ind: RestIndividual){
+    private fun handleModify(ind: RestIndividual, mutatedGenes: MutatedGeneSpecification?){
         val auth = ind.seeActions().filterIsInstance<RestCallAction>().map { it.auth }.run {
             if (isEmpty()) null
             else randomness.choose(this)
@@ -241,6 +262,11 @@ class RestResourceStructureMutator : StructureMutator() {
             new = old.getResourceNode().sampleOneAction(null, randomness)
         }
         maintainAuth(auth, new)
+
+        mutatedGenes?.removedGene?.addAll(ind.getResourceCalls()[pos].actions.flatMap { it.seeGenes() })
+        mutatedGenes?.addedGenes?.addAll(new!!.actions.flatMap { it.seeGenes() })
+        mutatedGenes?.mutatedPosition?.add(pos)
+
         ind.replaceResourceCall(pos, new)
     }
 

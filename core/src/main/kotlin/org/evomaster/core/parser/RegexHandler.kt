@@ -15,6 +15,21 @@ import org.evomaster.core.search.gene.regex.RegexGene
  */
 object RegexHandler {
 
+    fun createGeneForJVM(regex: String) : RegexGene {
+
+        val stream = CharStreams.fromString(regex)
+        val lexer = RegexJavaLexer(stream)
+        val tokenStream = prepareLexer(lexer)
+        val parser = RegexJavaParser(tokenStream)
+        prepareParser(parser)
+
+        val pattern = parser.pattern()
+
+        val res = GeneRegexJavaVisitor().visit(pattern)
+
+        return res.genes.first() as RegexGene
+    }
+
     /**
      * Given a ECMA262 regex string, generate RegexGene for it.
      * Based on RegexEcma262.g4 file.

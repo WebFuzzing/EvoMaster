@@ -25,6 +25,7 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
@@ -303,26 +304,46 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         val individual = sampler.sampleWithMethodAndDependencyOption(ResourceSamplingMethod.S1dR, false)
         assertNotNull(individual)
         assert(individual!!.getResourceCalls().size == 1)
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.ADD)
+        val addSpec = MutatedGeneSpecification()
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.ADD, addSpec)
+        assert(addSpec.mutatedPosition.size == 1)
+        assert(addSpec.addedGenes.isNotEmpty() || individual.getResourceCalls()[addSpec.mutatedPosition.first()].actions.flatMap { it.seeGenes() }.isEmpty())
         assert(individual.getResourceCalls().size == 2)
 
         val first = individual.getResourceCalls()[0].getResourceNode()
         val second = individual.getResourceCalls()[1].getResourceNode()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.SWAP)
+        val swapSpec = MutatedGeneSpecification()
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.SWAP, swapSpec)
+        assert(swapSpec.addedGenes.isEmpty())
+        assert(swapSpec.removedGene.isEmpty())
+        assert(swapSpec.mutatedPosition.size == 2)
+
         assert(individual.getResourceCalls()[1].getResourceNode().getName() == first.getName())
         assert(individual.getResourceCalls()[0].getResourceNode().getName() == second.getName())
 
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.DELETE)
+        val previousIndividual = individual.copy() as RestIndividual
+        val delSpec = MutatedGeneSpecification()
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.DELETE, delSpec)
+        assert(delSpec.mutatedPosition.size == 1)
+        assert(delSpec.removedGene.isNotEmpty() || previousIndividual.getResourceCalls()[delSpec.mutatedPosition.first()].actions.flatMap { it.seeGenes() }.isEmpty())
         assert(individual.getResourceCalls().size == 1)
 
         val current = individual.getResourceCalls()[0].getResourceNode()
-        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.REPLACE)
+        val replaceSpec = MutatedGeneSpecification()
+        structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.REPLACE, replaceSpec)
         val replaced = individual.getResourceCalls()[0]
+        assert(replaceSpec.removedGene.isNotEmpty() || current.actions.flatMap { it.seeGenes() }.isEmpty())
+        assert(replaceSpec.addedGenes.isNotEmpty() || replaced.actions.flatMap { it.seeGenes() }.isEmpty())
+        assert(replaceSpec.mutatedPosition.size == 1)
         assert(current.getName() != replaced.getResourceNode().getName())
 
         if (replaced.getResourceNode().numOfTemplates() > 1){
-            structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.MODIFY)
+            val modifySpec = MutatedGeneSpecification()
+            structureMutator.mutateRestResourceCalls(individual, RestResourceStructureMutator.MutationType.MODIFY, modifySpec)
             val modified = individual.getResourceCalls()[0]
+            assert(modifySpec.removedGene.isNotEmpty() || replaced.actions.flatMap { it.seeGenes() }.isEmpty())
+            assert(modifySpec.addedGenes.isNotEmpty() || modified.actions.flatMap { it.seeGenes() }.isEmpty())
+            assert(modifySpec.mutatedPosition.size == 1)
             assert(modified.getResourceNode().getName() == replaced.getResourceNode().getName())
             assertNotNull(modified.template)
             assertNotNull(replaced.template)

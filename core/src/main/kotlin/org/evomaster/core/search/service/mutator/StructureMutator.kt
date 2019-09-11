@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.tracer.TrackOperator
 
@@ -24,7 +25,7 @@ abstract class StructureMutator : TrackOperator {
     /**
      * For example, add new actions, or remove old ones
      */
-    abstract fun mutateStructure(individual: Individual)
+    abstract fun mutateStructure(individual: Individual, mutatedGenes: MutatedGeneSpecification?)
 
 
     /**
