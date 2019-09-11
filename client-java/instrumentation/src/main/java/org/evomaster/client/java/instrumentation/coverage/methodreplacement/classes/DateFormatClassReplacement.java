@@ -2,44 +2,55 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.util.Date;
+import java.util.Objects;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.MAX_CHAR_DISTANCE;
 
-
-public class LocalDateClassReplacement implements MethodReplacementClass {
-
+public class DateFormatClassReplacement implements MethodReplacementClass {
     @Override
     public Class<?> getTargetClass() {
-        return LocalDate.class;
+        return DateFormat.class;
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
-    public static LocalDate parse(CharSequence input, String idTemplate) {
+    @Replacement(type = ReplacementType.EXCEPTION)
+    public static Date parse(DateFormat caller, String input, String idTemplate) throws ParseException {
+        Objects.requireNonNull(caller);
 
-        if (input != null && TaintInputName.isTaintInput(input.toString())) {
-            ExecutionTracer.addStringSpecialization(input.toString(),
+        if (TaintInputName.isTaintInput(input)) {
+            ExecutionTracer.addStringSpecialization(input,
                     new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
         }
 
         if (idTemplate == null) {
-            return LocalDate.parse(input);
+            return caller.parse(input);
         }
 
         try {
-            LocalDate res = LocalDate.parse(input);
+            Date res = caller.parse(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
-        } catch (RuntimeException e) {
-            double h = parseHeuristic(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
+        } catch (ParseException e) {
+            Truthness t;
+            if (caller instanceof SimpleDateFormat && ((SimpleDateFormat) caller).toPattern().equals("YYYY-MM-DD HH:SS")) {
+                double h = parseHeuristicDateTime(input);
+                t = new Truthness(h, 1);
+            } else {
+                t = new Truthness(0, 1);
+            }
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, t);
             throw e;
         }
     }
@@ -50,20 +61,20 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
      * @param input
      * @return
      */
-    public static double parseHeuristic(CharSequence input) {
+    public static double parseHeuristicDateTime(CharSequence input) {
 
         if (input == null) {
             return H_REACHED_BUT_NULL;
         }
 
         try {
-            LocalDate.parse(input);
+            new SimpleDateFormat("YYYY-MM-DD HH:MM").parse(input.toString());
             /*
                 due to the simplification later on, still must make
                 sure to get a 1 if no exception is thrown
              */
             return 1d;
-        } catch (RuntimeException e) {
+        } catch (ParseException e) {
             //nothing to do
         }
 
@@ -75,7 +86,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
 
             char c = input.charAt(i);
 
-            //format YYYY-MM-DD
+            //format YYYY-MM-DD HH:MM
 
             if (i >= 0 && i <= 3) {
                 //any Y value is ok
@@ -92,14 +103,29 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
                 distance += distanceToRange(c, '0', '2');
             } else if (i == 9) {
                 distance += distanceToRange(c, '1', '8');
+            } else if (i == 10) {
+                distance += distanceToChar(c, ' ');
+            } else if (i == 11) {
+                // let's simplify and only allow 00 to 19 for HH
+                distance += distanceToRange(c, '0', '1');
+            } else if (i == 12) {
+                distance += distanceToRange(c, '0', '9');
+            } else if (i == 13) {
+                distance += distanceToChar(c, ':');
+            } else if (i == 14) {
+                // allow 00 to 59 for MM
+                distance += distanceToRange(c, '0', '5');
+            } else if (i == 15) {
+                distance += distanceToRange(c, '0', '9');
             } else {
                 distance += MAX_CHAR_DISTANCE;
             }
         }
 
-        if (input.length() < 10) {
+        int requiredLength = "YYYY-MM-DD HH:MM".length();
+        if (input.length() < requiredLength) {
             //too short
-            distance += (MAX_CHAR_DISTANCE * (10 - input.length()));
+            distance += (MAX_CHAR_DISTANCE * (requiredLength - input.length()));
         }
 
         //recall h in [0,1] where the highest the distance the closer to 0

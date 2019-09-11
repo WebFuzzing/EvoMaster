@@ -2,6 +2,8 @@ package com.foo.somedifferentpackage.examples.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.example.methodreplacement.TestabilityExc;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Date;
@@ -56,6 +58,11 @@ public class TestabilityExcImp implements TestabilityExc {
     @Override
     public boolean objectEquals(Object left, Object right) {
         return Objects.equals(left, right);
+    }
+
+    @Override
+    public Date dateFormatParse(DateFormat caller, String input) throws ParseException {
+        return caller.parse(input);
     }
 
 }

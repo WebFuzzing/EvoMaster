@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
@@ -483,5 +484,57 @@ public class TestabilityExcInstrumentedTest {
         te.objectEquals("Hello!", "Hello!");
         double h2 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h2); // true branch was covered
+    }
+
+
+    @Test
+    public void testUnknownPatternDateFormatParse() throws Exception {
+        TestabilityExc te = getInstance();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:SS");
+        assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "07/"));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(0, h0); // no guidance is provided since the pattern is unknown
+    }
+
+    @Test
+    public void testDateFormatParse() throws Exception {
+        TestabilityExc te = getInstance();
+
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-DD HH:SS");
+        assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "1234-aa-aa"));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0); // true branch was reached
+        assertTrue(h0 < 1); // true branch still not covered
+
+        assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "1234-11-aa"));
+
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0); // distance has improved
+        assertTrue(h1 < 1); // but still the true branch is not covered
+
+        assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "1234-11-11"));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1); // true branch was reached
+        assertTrue(h1 < 1); // true branch  not covered
+
+        te.dateFormatParse(sdf, "1234-11-11 11:11");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h3); // true branch was covered
+
     }
 }

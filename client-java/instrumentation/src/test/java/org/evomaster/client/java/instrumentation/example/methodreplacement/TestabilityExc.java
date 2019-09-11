@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement;
 
+import java.text.DateFormat;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Date;
@@ -27,5 +29,8 @@ public interface TestabilityExc {
     boolean containsKey(Map instance, Object o);
 
     boolean objectEquals(Object left, Object right);
+
+    Date dateFormatParse(DateFormat caller, String input) throws ParseException;
+
 
 }
