@@ -269,6 +269,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val previous = if(inTrack) getTracking()!!.last() else this
         val next = if(inTrack) this else getUndoTracking()!!.last()
 
+        /*
+         TODO check side effect regarding fitness calculation
+         */
         val isAnyOverallImprovement = updateReachedTargets(fitness)
         val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
 
@@ -280,7 +283,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if (mutatedGenes.mutatedGenes.isEmpty()){ // structure mutated
             val sizeChanged = (next.individual.seeActions().size != previous.individual.seeActions().size)
             /*
-             TODO MAN: position/sequence sensitive analysis
+             TODO if required position/sequence sensitive analysis
              */
             getImpactsOfStructure().countImpact(next, isAnyChange, sizeChanged)
 
