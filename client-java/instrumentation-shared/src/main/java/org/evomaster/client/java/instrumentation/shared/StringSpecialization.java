@@ -21,5 +21,10 @@ public enum StringSpecialization implements Serializable {
     /**
      * String used with a specific, constant value
      */
-    CONSTANT
+    CONSTANT,
+
+    /**
+     * String constrained by a regular expression
+     */
+    REGEX
 }

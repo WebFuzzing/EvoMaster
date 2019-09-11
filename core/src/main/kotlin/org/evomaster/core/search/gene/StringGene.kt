@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -61,6 +62,12 @@ class StringGene(
                 }
     }
 
+    override fun isMutable() : Boolean{
+        if(specializationGene != null){
+            return specializationGene!!.isMutable()
+        }
+        return true
+    }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
@@ -71,7 +78,7 @@ class StringGene(
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
         if (specializationGene == null && specializations.isNotEmpty()) {
-            chooseSpecialization()
+            chooseSpecialization(randomness)
             assert(specializationGene != null)
         }
 
@@ -144,7 +151,7 @@ class StringGene(
         repair()
     }
 
-    private fun chooseSpecialization() {
+    private fun chooseSpecialization(randomness: Randomness) {
         assert(specializations.isNotEmpty())
 
         specializationGene = when {
@@ -155,6 +162,11 @@ class StringGene(
             specializations.any { it.stringSpecialization == CONSTANT } -> EnumGene<String>(name,
                         specializations.filter { it.stringSpecialization == CONSTANT }.map { it.value }
                 )
+
+            specializations.any { it.stringSpecialization == REGEX } -> RegexHandler.createGeneForJVM(
+                    //TODO maybe we could have an OR here, but then need to proper handle ^ and $ in disjunctions
+                    randomness.choose(specializations.filter{ it.stringSpecialization == REGEX }).value
+            )
 
             else -> {
                 //should never happen
