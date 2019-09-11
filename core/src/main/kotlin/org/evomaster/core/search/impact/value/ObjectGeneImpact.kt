@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 
 /**
  * created by manzh on 2019-09-09
@@ -18,15 +19,26 @@ class ObjectGeneImpact (
         val fields : MutableMap<String, GeneImpact> = mutableMapOf()
 ) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive){
 
-
     constructor(id: String, objectGene: ObjectGene) : this (id, fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
         return ObjectGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, fields)
     }
 
-    fun countFieldImpact(mutatedFieldName : String, hasImpact : Boolean){
-        fields.getValue(mutatedFieldName).countImpact(hasImpact)
+
+    fun countFieldImpact(previous: ObjectGene, current : ObjectGene, hasImpact: Boolean, countDeepImpact : Boolean){
+        current.fields.zip(previous.fields) { cf, pf ->
+            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+        }.filter { !it.second }.map { it.first }.forEach { g->
+            val fImpact = fields.getValue(g.first.name)
+            if (countDeepImpact){
+                val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1)
+                ImpactUtils.processImpact(fImpact, mutatedGeneWithContext,hasImpact, countDeepImpact)
+            }else{
+                fImpact.countImpact(hasImpact)
+            }
+        }
+
     }
 
 }

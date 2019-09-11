@@ -21,4 +21,9 @@ class CollectionGeneImpact (
         return CollectionGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, sizeImpact.copy())
     }
 
+    fun countSizeImpact(differentSize : Boolean, hasImpact : Boolean){
+        if (differentSize)
+            sizeImpact.countImpact(hasImpact)
+    }
+
 }

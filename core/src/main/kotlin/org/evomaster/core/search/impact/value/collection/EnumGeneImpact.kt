@@ -15,16 +15,17 @@ class EnumGeneImpact (
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
         positionSensitive: Boolean = false,
-        values : List<GeneralImpact> = listOf()
+        val values : List<GeneralImpact> = listOf()
 ) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
-
-
-    val values : List<GeneralImpact> = values
 
     constructor(id: String, gene: EnumGene<*>) : this (id, values = gene.values.mapIndexed { index, _ -> GeneralImpact(index.toString()) }.toList())
 
     override fun copy(): EnumGeneImpact {
         return EnumGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive)
+    }
+
+    fun countValueImpact(index : Int, hasImpact: Boolean){
+        values[index].countImpact(hasImpact)
     }
 
 }

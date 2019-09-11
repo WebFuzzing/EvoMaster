@@ -1,5 +1,6 @@
 package org.evomaster.core.search.impact.value
 
+import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
@@ -8,7 +9,7 @@ import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
 /**
  * created by manzh on 2019-09-09
  */
-class OptionalGeneImpact (
+class DisruptiveGeneImpact (
         id: String,
         degree: Double = 0.0,
         timesToManipulate: Int = 0,
@@ -16,21 +17,13 @@ class OptionalGeneImpact (
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
         positionSensitive: Boolean = false,
-        val activeImpact : BinaryGeneImpact = BinaryGeneImpact("isActive"),
         val geneImpact: GeneImpact
 ) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
 
-    constructor(id : String, optionalGene: OptionalGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(optionalGene.gene, id))
+    constructor(id : String, gene: DisruptiveGene<*>) : this(id, geneImpact = ImpactUtils.createGeneImpact(gene.gene, id))
 
-    override fun copy(): OptionalGeneImpact {
-        return OptionalGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, activeImpact.copy(), geneImpact.copy() as GeneImpact)
-    }
-
-    fun countActiveImpact(isActive : Boolean, hasImpact: Boolean){
-        if (isActive)
-            activeImpact._true.countImpact(hasImpact)
-        else
-            activeImpact._false.countImpact(hasImpact)
+    override fun copy(): DisruptiveGeneImpact {
+        return DisruptiveGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, geneImpact.copy() as GeneImpact)
     }
 
 }

@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.impact.value.DisruptiveGeneImpact
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.impact.value.OptionalGeneImpact
 import org.evomaster.core.search.impact.value.StringGeneImpact
@@ -20,7 +21,7 @@ class ImpactUtils {
 
         fun createGeneImpact(gene : Gene, id : String) : GeneImpact{
             return when(gene){
-                is DisruptiveGene<*> -> createGeneImpact(gene.gene, id)
+                is DisruptiveGene<*> -> DisruptiveGeneImpact(id, gene)
                 is OptionalGene -> OptionalGeneImpact(id, gene)
                 is BooleanGene -> BinaryGeneImpact(id)
                 is EnumGene<*> -> EnumGeneImpact(id, gene)
@@ -114,6 +115,47 @@ class ImpactUtils {
          * TODO: handle SQL Actions in an individual
          */
         fun generateIndividualId(individual: Individual) : String = individual.seeActions().joinToString(SEPARATOR_GENE) { it.getName() }
+
+
+        fun processImpact(impact : GeneImpact, gc : MutatedGeneWithContext, hasImpact : Boolean, countDeepObjectImpact : Boolean = false){
+
+            impact.countImpact(hasImpact)
+
+            when(impact){
+                is ObjectGeneImpact -> {
+                    if (gc.previous !is ObjectGene || gc.current !is ObjectGene)
+                        throw IllegalStateException("previous and current gene should be ObjectGene")
+                    impact.countFieldImpact(gc.previous, gc.current, hasImpact, countDeepObjectImpact)
+                }
+                is CollectionGeneImpact -> {
+                    val diff = when{
+                        gc.previous is MapGene<*> && gc.current is MapGene<*> -> gc.previous.elements.size != gc.current.elements.size
+                        gc.previous is ArrayGene<*> && gc.current is ArrayGene<*> -> gc.previous.elements.size != gc.current.elements.size
+                        else -> throw IllegalStateException("previous and current gene should be MapGene or ArrayGene")
+                    }
+                    impact.countSizeImpact(diff, hasImpact)
+                }
+                is EnumGeneImpact ->{
+                    if (gc.current !is EnumGene<*>)
+                        throw IllegalStateException("previous and current gene should be EnumGene")
+                    impact.countValueImpact(gc.current.index, hasImpact)
+                }
+                is OptionalGeneImpact ->{
+                    if (gc.current !is OptionalGene || gc.previous !is OptionalGene)
+                        throw IllegalStateException("previous and current gene should be OptionalGene")
+                    impact.countActiveImpact(gc.current.isActive, hasImpact)
+
+                    val gcGene = MutatedGeneWithContext(current = gc.current.gene, previous = gc.previous.gene, action = gc.action, position = gc.position)
+                    processImpact(impact.geneImpact, gcGene, hasImpact)
+                }
+                is DisruptiveGeneImpact ->{
+                    if (gc.current !is DisruptiveGene<*> || gc.previous !is DisruptiveGene<*>)
+                        throw IllegalStateException("previous and current gene should be DisruptiveGene")
+                    val gcGene = MutatedGeneWithContext(current = gc.current.gene, previous = gc.previous.gene, action = gc.action, position = gc.position)
+                    processImpact(impact.geneImpact, gcGene, hasImpact)
+                }
+            }
+        }
     }
 
 

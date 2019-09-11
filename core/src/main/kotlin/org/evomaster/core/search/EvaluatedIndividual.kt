@@ -1,11 +1,13 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ActionStructureImpact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
+import org.evomaster.core.search.impact.value.ObjectGeneImpact
+import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
+import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElement
@@ -299,13 +301,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 
-        mutatedGenesWithContext.keys.forEach {
-            val impact = getImpactOfGenes().getValue(it)
-            impact.countImpact(isAnyChange)
-            when(impact){
-            /*
-                TODO update impacts with respect to different types of impact, e.g., ObjectGeneImpact
-            */
+        mutatedGenesWithContext.forEach { (t, u) ->
+            val impact = getImpactOfGenes().getValue(t)
+
+            u.forEach { gc ->
+                ImpactUtils.processImpact(impact, gc, isAnyChange)
             }
         }
 

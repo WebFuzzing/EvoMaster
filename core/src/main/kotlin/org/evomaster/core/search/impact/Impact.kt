@@ -24,7 +24,7 @@ abstract class Impact (
             resetCounter()
         } else {
             counter++
-            timesOfNoImpacts
+            timesOfNoImpacts++
         }
     }
     fun increaseDegree(delta : Double){
