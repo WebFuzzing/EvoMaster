@@ -110,10 +110,15 @@ public class CollectionClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(Collection caller, String idTemplate) {
 
+        boolean result = caller.isEmpty();
+        if (idTemplate == null) {
+            return result;
+        }
+
         int len = caller.size();
         Truthness t = TruthnessHelper.getTruthnessToEmpty(len);
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
-        return caller.isEmpty();
+        return result;
     }
 }
