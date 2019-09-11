@@ -83,13 +83,13 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return genesToSelect
     }
 
-    private fun innerMutate(individual: EvaluatedIndividual<T>, mutatedGene: MutableList<Gene>) : T{
+    private fun innerMutate(individual: EvaluatedIndividual<T>, mutatedGene: MutatedGeneSpecification?) : T{
 
         val individualToMutate = individual.individual
 
         if(doesStructureMutation(individualToMutate)){
             val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator) else individualToMutate.copy()) as T
-            structureMutator.mutateStructure(copy)
+            structureMutator.mutateStructure(copy, mutatedGene)
             return copy
         }
 
@@ -103,7 +103,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
 
         for (gene in selectGeneToMutate){
-            mutatedGene.add(gene)
+            mutatedGene?.mutatedGenes?.add(gene)
             /*
              TODO
              NOTE THAT gene.archiveMutation(...) is required to extend for archive-based mutation
@@ -114,7 +114,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return copy
     }
 
-    override fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutableList<Gene>): T {
+    override fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?): T {
 
         // First mutate the individual
         val mutatedIndividual = innerMutate(individual, mutatedGenes)

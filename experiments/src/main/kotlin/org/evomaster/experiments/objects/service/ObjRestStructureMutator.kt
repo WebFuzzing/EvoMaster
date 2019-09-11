@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.SampleType
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.experiments.objects.ObjIndividual
 import org.evomaster.experiments.objects.ObjRestCallAction
@@ -87,7 +88,7 @@ class ObjRestStructureMutator : StructureMutator() {
     }
 
 
-    override fun mutateStructure(individual: Individual) {
+    override fun mutateStructure(individual: Individual, mutatedGene: MutatedGeneSpecification?) {
         if (individual !is ObjIndividual) {
             throw IllegalArgumentException("Invalid individual type")
         }
@@ -103,9 +104,9 @@ class ObjRestStructureMutator : StructureMutator() {
         }
 
         when (individual.sampleType) {
-            SampleType.RANDOM -> mutateForRandomType(individual)
+            SampleType.RANDOM -> mutateForRandomType(individual, mutatedGene)
 
-            SampleType.SMART_GET_COLLECTION -> mutateForSmartGetCollection(individual)
+            SampleType.SMART_GET_COLLECTION -> mutateForSmartGetCollection(individual, mutatedGene)
 
             SampleType.SMART -> throw IllegalStateException(
                     "SMART sampled individuals shouldn't be marked for structure mutations")
@@ -115,7 +116,7 @@ class ObjRestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun mutateForSmartGetCollection(ind: ObjIndividual) {
+    private fun mutateForSmartGetCollection(ind: ObjIndividual, mutatedGene: MutatedGeneSpecification?) {
         /*
             recall: in this case, we have 1 or more POST on same
             collection, followed by a single GET
@@ -176,10 +177,16 @@ class ObjRestStructureMutator : StructureMutator() {
         }
     }
 
-    private fun mutateForRandomType(ind: ObjIndividual) {
+    private fun mutateForRandomType(ind: ObjIndividual, mutatedGene: MutatedGeneSpecification?) {
 
         if (ind.actions.size == 1) {
-            ind.actions.add(sampler.sampleRandomAction(0.05))
+            val action = sampler.sampleRandomAction(0.05)
+
+            //save mutated genes
+            mutatedGene?.addedGenes?.addAll(action.seeGenes())
+            mutatedGene?.mutatedPosition?.add(ind.size())
+
+            ind.actions.add(action)
             return
         }
 
@@ -187,6 +194,11 @@ class ObjRestStructureMutator : StructureMutator() {
 
             //delete one at random
             val chosen = randomness.nextInt(ind.actions.size)
+
+            //save mutated genes
+            mutatedGene?.removedGene?.addAll(ind.seeActions()[chosen].seeGenes())
+            mutatedGene?.mutatedPosition?.add(chosen)
+
             ind.actions.removeAt(chosen)
 
         } else {
@@ -194,6 +206,11 @@ class ObjRestStructureMutator : StructureMutator() {
             //add one at random
             val action = sampler.sampleRandomAction(0.05)
             val chosen = randomness.nextInt(ind.actions.size)
+
+            //save mutated genes
+            mutatedGene?.addedGenes?.addAll(action.seeGenes())
+            mutatedGene?.mutatedPosition?.add(chosen)
+
             ind.actions.add(chosen, action)
         }
 
