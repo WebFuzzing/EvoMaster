@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.example.methodreplacement;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.TestabilityExcImp;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -565,13 +566,48 @@ public class TestabilityExcInstrumentedTest {
 
         te.parseBoolean("T__E");
         double h3 = ExecutionTracer.getValue(targetId);
-        assertTrue(h3> h2);
+        assertTrue(h3 > h2);
         assertTrue(h3 < 1);
 
         te.parseBoolean("TruE");
         double h4 = ExecutionTracer.getValue(targetId);
-        assertTrue(h4> h3);
-        assertEquals(1,h4);
+        assertTrue(h4 > h3);
+        assertEquals(1, h4);
 
+    }
+
+    @Test
+    public void testLongParse() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(Exception.class, () -> te.parseLong(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        assertThrows(Exception.class, () -> te.parseLong("-1___"));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        assertThrows(Exception.class, () -> te.parseLong("-10__"));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        assertThrows(Exception.class, () -> te.parseLong("-102_"));
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.parseLong("-1023");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4 > h3);
+        assertEquals(1, h4);
     }
 }

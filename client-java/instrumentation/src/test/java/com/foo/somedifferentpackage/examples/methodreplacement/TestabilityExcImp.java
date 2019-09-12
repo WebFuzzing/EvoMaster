@@ -70,4 +70,9 @@ public class TestabilityExcImp implements TestabilityExc {
         return Boolean.parseBoolean(input);
     }
 
+    @Override
+    public long parseLong(String input) {
+        return Long.parseLong(input);
+    }
+
 }

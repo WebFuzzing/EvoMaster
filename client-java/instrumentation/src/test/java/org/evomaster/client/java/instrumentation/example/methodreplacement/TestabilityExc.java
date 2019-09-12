@@ -34,4 +34,6 @@ public interface TestabilityExc {
 
     boolean parseBoolean(String input);
 
+    long parseLong(String input);
+
 }
