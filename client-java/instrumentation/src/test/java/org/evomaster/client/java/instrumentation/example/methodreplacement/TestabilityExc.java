@@ -12,32 +12,51 @@ import java.util.Map;
  */
 public interface TestabilityExc {
 
-    int parseInt(String input);
-
-    LocalDate parseLocalDate(String input);
-
-    boolean after(Date instance, Date when);
-
-    boolean before(Date instance, Date when);
-
-    boolean equals(Date instance, Date other);
-
+    // Collection
+    boolean contains(Collection instance, Object o);
     boolean isEmpty(Collection instance);
 
-    boolean contains(Collection instance, Object o);
+    // Date
+    boolean after(Date instance, Date when);
+    boolean before(Date instance, Date when);
+    boolean equals(Date instance, Date other);
 
-    boolean containsKey(Map instance, Object o);
-
-    boolean objectEquals(Object left, Object right);
-
+    // DateFormat
     Date dateFormatParse(DateFormat caller, String input) throws ParseException;
 
+    // Integer
+    int parseInt(String input);
+
+    // LocalDate
+    LocalDate parseLocalDate(String input);
+
+    // Map
+    boolean containsKey(Map instance, Object o);
+
+    // Objects
+    boolean objectEquals(Object left, Object right);
+
+    // Boolean
     boolean parseBoolean(String input);
 
+    // Long
     long parseLong(String input);
 
+    // Float
     float parseFloat(String input);
 
+    // Double
     double parseDouble(String input);
+
+    // String
+    boolean stringEquals(String caller, Object input);
+    boolean stringEqualsIgnoreCase(String caller, String input);
+    boolean stringIsEmpty(String caller);
+    boolean contentEquals(String caller, CharSequence input);
+    boolean contentEquals(String caller, StringBuffer input);
+    boolean contains(String caller, CharSequence input);
+    boolean startsWith(String caller, String prefix);
+    boolean startsWith(String caller, String prefix, int toffset);
+
 
 }

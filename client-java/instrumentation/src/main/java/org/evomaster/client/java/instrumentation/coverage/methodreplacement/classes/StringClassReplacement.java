@@ -156,7 +156,11 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contentEquals(String caller, CharSequence cs, String idTemplate) {
-        return equals(caller, cs.toString(), idTemplate);
+        if (cs == null) {
+            return caller.contentEquals(cs);
+        } else {
+            return equals(caller, cs.toString(), idTemplate);
+        }
     }
 
 

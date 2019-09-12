@@ -760,4 +760,314 @@ public class TestabilityExcInstrumentedTest {
         assertEquals(1, h4);
     }
 
+    @Test
+    public void testStringEquals() throws Exception {
+
+        TestabilityExc te = getInstance();
+        te.stringEquals("Hello", null);
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(0, h0);
+
+        te.stringEquals("Hello", "H");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.stringEquals("Hello", "He");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.stringEquals("Hello", "Hell");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.stringEquals("Hello", "Hello");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h4);
+    }
+
+    @Test
+    public void testStringEqualsIgnoreCase() throws Exception {
+
+        TestabilityExc te = getInstance();
+        te.stringEqualsIgnoreCase("hello", null);
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(0, h0);
+
+        te.stringEqualsIgnoreCase("hello", "H");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.stringEqualsIgnoreCase("HeLLo", "He");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.stringEqualsIgnoreCase("HEllO", "Hell");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.stringEqualsIgnoreCase("HeLLo", "hello");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h4);
+    }
+
+
+    @Test
+    public void testStringIsEmpty() throws Exception {
+
+        TestabilityExc te = getInstance();
+
+        te.stringIsEmpty("OneTwo");
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0); //reached
+        assertTrue(h0 < 1);//but no covered
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.stringIsEmpty("One");
+        double h1 = ExecutionTracer.getValue(targetId);
+
+        assertTrue(h1 > h0); //better
+        assertTrue(h1 < 1);//but not covered
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.stringIsEmpty("");
+        double h2 = ExecutionTracer.getValue(targetId);
+
+        assertTrue(h2 > h1); //better
+        assertEquals(1, h2);//covered
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+    }
+
+    @Test
+    public void testStringContentEquals() throws Exception {
+
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.contentEquals("Hello", null));
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.contentEquals("Hello", "H");
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue( h0>0);
+        assertTrue( h0<1);
+
+        te.contentEquals("Hello", "He");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.contentEquals("Hello", "Hel");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.contentEquals("Hello", "Hell");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.contentEquals("Hello", "Hello");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h4);
+    }
+
+    @Test
+    public void testStringContentEqualsStringBuffer() throws Exception {
+
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.contentEquals("Hello", (StringBuffer)null));
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.contentEquals("Hello", new StringBuffer("H"));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue( h0>0);
+        assertTrue( h0<1);
+
+        te.contentEquals("Hello", new StringBuffer("He"));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.contentEquals("Hello", new StringBuffer("Hel"));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.contentEquals("Hello",new StringBuffer( "Hell"));
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.contentEquals("Hello",new StringBuffer( "Hello"));
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h4);
+    }
+
+    @Test
+    public void testStringContains() throws Exception {
+
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.contains("Hello", null));
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.contains("Hello World", "_____");
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue( h0>0);
+        assertTrue(h0 < 1);
+
+        te.contains("Hello World", "W____");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.contains("Hello World", "Wo___");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.contains("Hello World", "Wor__");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.contains("Hello World", "Worl_");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4 > h3);
+        assertTrue(h4 < 1);
+
+        te.contains("Hello World", "World");
+        double h5 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h5);
+    }
+
+
+    @Test
+    public void testStartsWith() throws Exception {
+
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.startsWith("Hello", null));
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.startsWith("Hello World", "_____");
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue( h0>0);
+        assertTrue(h0 < 1);
+
+        te.startsWith("Hello World", "H____");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.startsWith("Hello World", "He___");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.startsWith("Hello World", "Hel__");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.startsWith("Hello World", "Hell_");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4 > h3);
+        assertTrue(h4 < 1);
+
+        te.startsWith("Hello World", "Hello");
+        double h5 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h5);
+    }
+
+    @Test
+    public void testStartsWithOffSet() throws Exception {
+
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.startsWith("Hello", null, 0));
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        te.startsWith("Hello World", "_____", 0);
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue( h0>0);
+        assertTrue(h0 < 1);
+
+        te.startsWith("Hello World", "H____", 0);
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.startsWith("Hello World", "He___", 0);
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.startsWith("Hello World", "Hel__", 0);
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.startsWith("Hello World", "Hell_", 0);
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4 > h3);
+        assertTrue(h4 < 1);
+
+        te.startsWith("Hello World", "Hello", 0);
+        double h5 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h5);
+    }
 }

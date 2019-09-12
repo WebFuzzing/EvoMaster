@@ -85,4 +85,44 @@ public class TestabilityExcImp implements TestabilityExc {
         return Double.parseDouble(input);
     }
 
+    @Override
+    public boolean stringEquals(String caller, Object input) {
+        return caller.equals(input);
+    }
+
+    @Override
+    public boolean stringEqualsIgnoreCase(String caller, String input) {
+        return caller.equalsIgnoreCase(input);
+    }
+
+    @Override
+    public boolean stringIsEmpty(String caller) {
+        return caller.isEmpty();
+    }
+
+    @Override
+    public boolean contentEquals(String caller, CharSequence input) {
+        return caller.contentEquals(input);
+    }
+
+    @Override
+    public boolean contentEquals(String caller, StringBuffer input) {
+        return caller.contentEquals(input);
+    }
+
+    @Override
+    public boolean contains(String caller, CharSequence input) {
+        return caller.contains(input);
+    }
+
+    @Override
+    public boolean startsWith(String caller, String prefix) {
+        return caller.startsWith(prefix);
+    }
+
+    @Override
+    public boolean startsWith(String caller, String prefix, int toffset) {
+        return caller.startsWith(prefix, toffset);
+    }
+
 }
