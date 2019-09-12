@@ -16,7 +16,7 @@ class ArchiveMutationTrackService {
     private lateinit var config: EMConfig
 
     companion object{
-        private val log: Logger = LoggerFactory.getLogger(TraceableElementCopyFilter::class.java)
+        private val log: Logger = LoggerFactory.getLogger(ArchiveMutationTrackService::class.java)
     }
 
     @PostConstruct

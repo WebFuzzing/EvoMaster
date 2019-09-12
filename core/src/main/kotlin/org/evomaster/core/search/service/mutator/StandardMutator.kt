@@ -144,9 +144,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      */
     private fun selectGenesByArchive(genesToMutate : List<Gene>, individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
 
-        /*
-         TODO
-         */
         val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
 
         val genes = when(config.geneSelectionMethod){
