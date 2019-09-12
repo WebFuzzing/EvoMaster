@@ -610,4 +610,99 @@ public class TestabilityExcInstrumentedTest {
         assertTrue(h4 > h3);
         assertEquals(1, h4);
     }
+
+
+    @Test
+    public void testFloatParse() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.parseFloat(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        assertThrows(NumberFormatException.class, () -> te.parseFloat("-1___"));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        assertThrows(NumberFormatException.class, () -> te.parseFloat("-10__"));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        assertThrows(NumberFormatException.class, () -> te.parseFloat("-10._"));
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.parseFloat("-10.3");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4 > h3);
+        assertEquals(1, h4);
+    }
+
+    @Test
+    public void testLongMaxValueParse() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(Exception.class, () -> te.parseLong(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        te.parseLong(Long.valueOf(Long.MIN_VALUE).toString());
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h1);
+    }
+
+    @Test
+    public void testIntegerMaxValueParse() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(Exception.class, () -> te.parseInt(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        te.parseInt(Integer.valueOf(Integer.MIN_VALUE).toString());
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h1);
+    }
+
+    @Test
+    public void testFloatParseOfInteger() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.parseFloat(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        te.parseFloat("-10000");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertEquals(1, h1);
+    }
+
 }

@@ -36,4 +36,6 @@ public interface TestabilityExc {
 
     long parseLong(String input);
 
+    float parseFloat(String input);
+
 }

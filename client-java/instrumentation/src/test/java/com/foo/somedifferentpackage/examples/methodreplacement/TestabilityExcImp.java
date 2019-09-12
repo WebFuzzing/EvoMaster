@@ -75,4 +75,9 @@ public class TestabilityExcImp implements TestabilityExc {
         return Long.parseLong(input);
     }
 
+    @Override
+    public float parseFloat(String input) {
+        return Float.parseFloat(input);
+    }
+
 }

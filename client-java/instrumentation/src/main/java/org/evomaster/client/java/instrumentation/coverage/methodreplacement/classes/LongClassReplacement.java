@@ -10,8 +10,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement.parseIntHeuristic;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement.parseLongHeuristic;
 
 public class LongClassReplacement implements MethodReplacementClass {
 
@@ -38,7 +37,7 @@ public class LongClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (RuntimeException e) {
-            double h = parseIntHeuristic(input);
+            double h = parseLongHeuristic(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }
