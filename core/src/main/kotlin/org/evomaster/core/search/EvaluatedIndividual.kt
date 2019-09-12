@@ -238,9 +238,16 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         /*
         TODO if required -- NOTE THAT genes in db are not supported
          */
-        individual.seeActions().forEach { a->
-            a.seeGenes().forEach { g->
-                val id = ImpactUtils.generateGeneId(a, g)
+        if (individual.seeActions().isNotEmpty()){
+            individual.seeActions().forEach { a->
+                a.seeGenes().forEach { g->
+                    val id = ImpactUtils.generateGeneId(a, g)
+                    impactsOfGenes!!.getOrPut(id){ ImpactUtils.createGeneImpact(g, id)}
+                }
+            }
+        }else{
+            individual.seeGenes().forEach { g->
+                val id = ImpactUtils.generateGeneId(individual, g)
                 impactsOfGenes!!.getOrPut(id){ ImpactUtils.createGeneImpact(g, id)}
             }
         }

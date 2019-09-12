@@ -21,7 +21,7 @@ class EnumGeneImpact (
     constructor(id: String, gene: EnumGene<*>) : this (id, values = gene.values.mapIndexed { index, _ -> GeneralImpact(index.toString()) }.toList())
 
     override fun copy(): EnumGeneImpact {
-        return EnumGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive)
+        return EnumGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, values)
     }
 
     fun countValueImpact(index : Int, hasImpact: Boolean){

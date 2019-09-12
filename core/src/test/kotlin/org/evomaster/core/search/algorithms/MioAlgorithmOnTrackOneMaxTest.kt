@@ -7,11 +7,14 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.StandardMutator
+import org.evomaster.core.search.tracer.ArchiveMutationTrackService
+import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -21,13 +24,12 @@ class MioAlgorithmOnTrackOneMaxTest {
 
     private lateinit var config: EMConfig
     private lateinit var mio: MioAlgorithm<OneMaxIndividual>
+    private lateinit var tracker : ArchiveMutationTrackService
 
-
-    @BeforeEach
-    fun init(){
+    private fun init(args: Array<String>){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule()))
+                .withModules(* arrayOf<Module>(OneMaxModule(), BaseModule(args)))
                 .build().createInjector()
 
         mio = injector.getInstance(Key.get(
@@ -35,8 +37,7 @@ class MioAlgorithmOnTrackOneMaxTest {
 
         config = injector.getInstance(EMConfig::class.java)
 
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
+        tracker = injector.getInstance(ArchiveMutationTrackService::class.java)
 
         val randomness = injector.getInstance(Randomness::class.java)
         randomness.updateSeed(42)
@@ -51,8 +52,18 @@ class MioAlgorithmOnTrackOneMaxTest {
     @Test
     fun testIndividualWithTrack(){
 
-        config.enableTrackIndividual = true
-        config.enableTrackEvaluatedIndividual = false
+        val args = arrayOf(
+                "--stoppingCriterion",
+                "FITNESS_EVALUATIONS",
+                "--enableTrackIndividual",
+                "true",
+                "--enableTrackEvaluatedIndividual",
+                "false"
+        )
+        init(args)
+        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
         val solution = mio.search()
 
@@ -73,8 +84,20 @@ class MioAlgorithmOnTrackOneMaxTest {
     @Test
     fun testEvaluatedIndividualWithTrack(){
 
-        config.enableTrackIndividual = false
-        config.enableTrackEvaluatedIndividual = true
+        val args = arrayOf(
+                "--stoppingCriterion",
+                "FITNESS_EVALUATIONS",
+                "--enableTrackIndividual",
+                "false",
+                "--enableTrackEvaluatedIndividual",
+                "true"
+        )
+        init(args)
+
+        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assert(tracker.exists(EvaluatedIndividual.ONLY_INDIVIDUAL))
 
         val solution = mio.search()
 
@@ -97,12 +120,50 @@ class MioAlgorithmOnTrackOneMaxTest {
         }
     }
 
+    @Test
+    fun testEvaluatedIndividualWithTrackImpact(){
+
+        val args = arrayOf(
+                "--stoppingCriterion",
+                "FITNESS_EVALUATIONS",
+                "--enableTrackIndividual",
+                "false",
+                "--enableTrackEvaluatedIndividual",
+                "true",
+                "--probOfArchiveMutation",
+                "0.5"
+        )
+        init(args)
+
+        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assert(tracker.exists(EvaluatedIndividual.ONLY_INDIVIDUAL))
+        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT))
+
+        val solution = mio.search()
+
+        solution.individuals.forEach {  s->
+            assertNull(s.individual.getTracking())
+            assertNotNull(s.getImpactOfGenes().isNotEmpty())
+        }
+    }
 
     @Test
     fun testTrackWithoutTrack(){
 
-        config.enableTrackIndividual = false
-        config.enableTrackEvaluatedIndividual = false
+        val args = arrayOf(
+                "--stoppingCriterion",
+                "FITNESS_EVALUATIONS",
+                "--enableTrackIndividual",
+                "false",
+                "--enableTrackEvaluatedIndividual",
+                "false"
+        )
+        init(args)
+        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
         val solution = mio.search()
 

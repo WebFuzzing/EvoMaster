@@ -11,7 +11,12 @@ import org.evomaster.core.search.gene.Gene
  */
 class MutatedGeneWithContext (
         val current : Gene,
-        val action : String,
-        val position : Int,
+        val action : String = NO_ACTION,
+        val position : Int = NO_POSITION,
         val previous : Gene
-)
+){
+    companion object{
+        const val NO_ACTION = "NONE"
+        const val NO_POSITION = -1
+    }
+}
