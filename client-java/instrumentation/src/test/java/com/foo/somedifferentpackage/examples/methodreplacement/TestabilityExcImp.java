@@ -80,4 +80,9 @@ public class TestabilityExcImp implements TestabilityExc {
         return Float.parseFloat(input);
     }
 
+    @Override
+    public double parseDouble(String input) {
+        return Double.parseDouble(input);
+    }
+
 }

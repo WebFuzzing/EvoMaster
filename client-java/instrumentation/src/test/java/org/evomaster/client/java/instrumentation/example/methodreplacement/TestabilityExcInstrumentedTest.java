@@ -705,4 +705,59 @@ public class TestabilityExcInstrumentedTest {
         assertEquals(1, h1);
     }
 
+    @Test
+    public void testDoubleParseOfInteger() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.parseDouble(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        te.parseDouble("-10000");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertEquals(1, h1);
+    }
+
+    @Test
+    public void testDoubleParse() throws Exception {
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.parseDouble(null));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(H_REACHED_BUT_NULL, h0);
+
+        assertThrows(NumberFormatException.class, () -> te.parseDouble("-1___"));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        assertThrows(NumberFormatException.class, () -> te.parseDouble("-10__"));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        assertThrows(NumberFormatException.class, () -> te.parseDouble("-10._"));
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3 > h2);
+        assertTrue(h3 < 1);
+
+        te.parseDouble("-10.3");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4 > h3);
+        assertEquals(1, h4);
+    }
+
 }

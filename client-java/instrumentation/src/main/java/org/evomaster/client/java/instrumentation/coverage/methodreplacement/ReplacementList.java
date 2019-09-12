@@ -15,6 +15,7 @@ public class ReplacementList {
                 new CollectionClassReplacement(),
                 new DateClassReplacement(),
                 new DateFormatClassReplacement(),
+                new DoubleClassReplacement(),
                 new FloatClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),

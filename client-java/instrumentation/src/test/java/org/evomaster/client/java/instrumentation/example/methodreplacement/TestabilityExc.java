@@ -38,4 +38,6 @@ public interface TestabilityExc {
 
     float parseFloat(String input);
 
+    double parseDouble(String input);
+
 }

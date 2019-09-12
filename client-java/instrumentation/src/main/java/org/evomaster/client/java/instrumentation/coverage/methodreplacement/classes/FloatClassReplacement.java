@@ -48,7 +48,7 @@ public class FloatClassReplacement implements MethodReplacementClass {
      * @param input
      * @return
      */
-    private static double parseFloatHeuristic(String input) {
+    static double parseFloatHeuristic(String input) {
 
         if (input == null) {
             return H_REACHED_BUT_NULL;
