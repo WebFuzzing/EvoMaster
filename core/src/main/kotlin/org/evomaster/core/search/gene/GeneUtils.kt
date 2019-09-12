@@ -153,32 +153,31 @@ object GeneUtils {
     }
 
     fun applyJsonEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string
+        val ret = when{
+            format.isKotlin() -> string.replace("\$", "\\\$")
+            else -> string
+        }
+        return ret
                 .replace("\\", """\\""")
                 .replace("\"", "\\\"")
 
-        return when {
-            format.isKotlin() -> ret.replace("\$", "\\\$")
-            else -> ret
-        }
+
     }
 
     fun applyUriEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string.replace("\\", "%5C")
-
-        return if(format.isKotlin()) ret.replace("\$", "%24")
-        else ret
+        val ret = if(format.isKotlin()) string.replace("\$", "%24")
+        else string
+        return ret.replace("\\", "%5C")
     }
 
     fun applyTextEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string
+        val ret = when{
+            format.isKotlin() -> string.replace("\$", "\\\$")
+            else -> string
+        }
+        return ret
                 .replace("\\", """\\""")
                 .replace("\"", "\\\"")
-
-        return when {
-            format.isKotlin() -> ret.replace("\$", "\\\$")
-            else -> ret
-        }
 
     }
 
