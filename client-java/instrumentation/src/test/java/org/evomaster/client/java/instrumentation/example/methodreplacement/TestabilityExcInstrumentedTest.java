@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
 
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -535,6 +536,42 @@ public class TestabilityExcInstrumentedTest {
         te.dateFormatParse(sdf, "1234-11-11 11:11");
         double h3 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h3); // true branch was covered
+
+    }
+
+    @Test
+    public void testBooleanParse() throws Exception {
+        TestabilityExc te = getInstance();
+        te.parseBoolean(null);
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertEquals(0, h0);
+
+        te.parseBoolean("____");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        te.parseBoolean("T___");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        te.parseBoolean("T__E");
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertTrue(h3> h2);
+        assertTrue(h3 < 1);
+
+        te.parseBoolean("TruE");
+        double h4 = ExecutionTracer.getValue(targetId);
+        assertTrue(h4> h3);
+        assertEquals(1,h4);
 
     }
 }

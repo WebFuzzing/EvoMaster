@@ -11,6 +11,7 @@ public class ReplacementList {
 
     public static List<MethodReplacementClass> getList() {
         return Arrays.asList(
+                new BooleanClassReplacement(),
                 new CollectionClassReplacement(),
                 new DateClassReplacement(),
                 new DateFormatClassReplacement(),

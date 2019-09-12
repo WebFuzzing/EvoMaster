@@ -32,5 +32,6 @@ public interface TestabilityExc {
 
     Date dateFormatParse(DateFormat caller, String input) throws ParseException;
 
+    boolean parseBoolean(String input);
 
 }
