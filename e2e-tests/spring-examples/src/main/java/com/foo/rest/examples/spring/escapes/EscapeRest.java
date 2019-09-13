@@ -62,6 +62,13 @@ public class EscapeRest {
             return 1;
     }
 
+    @PostMapping(
+            value = "/api/jsonBody",
+            consumes = {"application/merge-patch+json", "application/json"})
+    public int jsonBody( @RequestBody EscapeResponseDto dto){
+        return 2;
+    }
+
     /*
 
 

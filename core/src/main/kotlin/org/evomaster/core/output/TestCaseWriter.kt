@@ -390,7 +390,7 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${GeneUtils.applyEscapes(uri, mode = "uris")}\"")
+                lines.append("\"${GeneUtils.applyEscapes(uri, mode = "uris", format = format)}\"")
                 //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
@@ -400,8 +400,8 @@ class TestCaseWriter {
                 lines.append("\"$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = "queries")}&\" + ") }
-                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = "queries")}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = "queries", format = format)}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = "queries", format = format)}\"")
                 }
             }
         }
@@ -579,7 +579,19 @@ class TestCaseWriter {
 
                 //needed as JSON uses ""
                 val bodyLines = body.split("\n").map { s ->
-                    "\"" + s.trim().replace("\"", "\\\"") + "\""
+                    //"\"" + s.trim().replace("\"", "\\\"") + "\""
+                    //"\"" + s.trim().replace("\"", "\\\"") + "\""
+                    "\"" + GeneUtils.applyEscapes(s.trim(), "json", format).replace("\\\\u", "\\u") + "\""
+                    /*
+                     The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
+                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
+                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
+
+                     As far as I understand, the addition of an \ in the \unicode should not really happen.
+                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
+                     they are not.
+                     */
+
                 }
 
                 if (bodyLines.size == 1) {

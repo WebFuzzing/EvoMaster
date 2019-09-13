@@ -1,5 +1,6 @@
 package org.evomaster.core.output.formatter
 
+import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.formatter.MismatchedFormatException
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.search.gene.StringGene
@@ -76,7 +77,7 @@ class OutputFormatterTest {
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val testGene = StringGene("QuoteGene", "Test For the quotes ${'"'}escape")
 
-        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json"))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
     }
 
     @Test
@@ -84,6 +85,17 @@ class OutputFormatterTest {
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
         val testGene = StringGene("QuoteGene", "Test For the quotes ${"D\\\\\"C"}escape")
 
-        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json"))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
     }
+
+    @Test
+    fun testEscapes6(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+
+        val string = """
+            {"id":"19r\\l_"}
+        """
+        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
 }

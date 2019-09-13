@@ -1,5 +1,7 @@
 package org.evomaster.e2etests.spring.examples.escape;
 
+import com.foo.rest.examples.spring.escapes.EscapeResponseDto;
+import com.foo.rest.examples.spring.namedresource.NamedResourceDto;
 import io.restassured.http.ContentType;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
@@ -29,7 +31,7 @@ public class EscapeManualTest extends EscapeTestBase {
         Swagger swagger = new SwaggerParser().parse(swaggerJson);
 
         assertEquals("/", swagger.getBasePath());
-        assertEquals(3, swagger.getPaths().size());
+        assertEquals(4, swagger.getPaths().size());
     }
 
     @Test
@@ -77,6 +79,26 @@ public class EscapeManualTest extends EscapeTestBase {
                 .contentType("application/json")
                 .body(containsString("0"));
     }
+
+    @Test
+    public void testJsonBody(){
+        EscapeResponseDto dto = new EscapeResponseDto();
+        dto.response = "someResponse";
+        dto.valid = true;
+
+        given().accept("*/*")
+                .contentType("application/json")
+                .body("{" +
+                        "\"response\": \"iI\\\\\"," +
+                        "\"valid\": \"true\"" +
+                        "}")
+                .post(baseUrlOfSut + "/api/jsonBody")
+                .then()
+                .assertThat()
+                .body(containsString("2"));
+
+    }
+
 
     /*
     @Test
