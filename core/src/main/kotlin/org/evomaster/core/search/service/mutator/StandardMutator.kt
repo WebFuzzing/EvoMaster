@@ -163,37 +163,34 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     }
 
     private fun selectGenesAwayBad(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
-        //remove genes from candidate that has "bad" history with 90%, i.e., timesOfNoImpacts is not 0
-        val genes =  genesToMutate.filter { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfNoImpacts?.let {
-                it == 0 || (it > 0 && randomness.nextBoolean(0.1))
-            }?:false
-        }
-        if(genes.isNotEmpty())
-            return selectGenesByOneDivNum(genes, genes.size)
+        //remove last 10%
+        val removedSize = decideCandidateSize(genesToMutate)
+
+        val genes =  genesToMutate.toList().sortedBy { g->
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfNoImpacts
+        }.subList(0, genesToMutate.size - removedSize)
+
+        return if(genes.isNotEmpty())
+            selectGenesByOneDivNum(genes, genes.size)
         else
-            return emptyList()
+            emptyList()
     }
 
     private fun selectGenesApproachGood(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
 
-        val sortedByCounter = genesToMutate.toList().sortedBy { g->
+        val size = decideCandidateSize(genesToMutate)
+
+        val genes = genesToMutate.toList().sortedByDescending { g->
             evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfImpact
-        }
+        }.subList(0, size)
 
-        selectGenesWithSorted(genesToMutate, sortedByCounter).apply {
-            return selectGenesByOneDivNum(this, size)
-        }
+        return if(genes.isNotEmpty())
+            selectGenesByOneDivNum(genes, genes.size)
+        else
+            emptyList()
 
     }
 
-    private fun selectGenesWithSorted(genesToMutate: List<Gene>, sortedGeneCounter: List<Gene>) : List<Gene>{
-        val size = (genesToMutate.size * config.perOfCandidateGenesToMutate).let {
-            if(it > 1.0) it.toInt() else 1
-        }
-
-        return genesToMutate.filter { sortedGeneCounter.subList(0, size).contains(it) }
-    }
 
     private fun selectGenesFeedback(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
         val notVisited =  genesToMutate.filter { g->
@@ -217,12 +214,19 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return zero
         }
 
-        val sortedByCounter = genesToMutate.toList().sortedByDescending { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.counter
-        }
+        val size = decideCandidateSize(genesToMutate)
 
-        selectGenesWithSorted(genesToMutate, sortedByCounter).apply {
-            return selectGenesByOneDivNum(this, size)
-        }
+        val genes = genesToMutate.toList().sortedBy { g->
+            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.counter
+        }.subList(0, size)
+
+        return if(genes.isNotEmpty())
+            selectGenesByOneDivNum(genes, genes.size)
+        else
+            emptyList()
+    }
+
+    private fun decideCandidateSize(genesToMutate: List<Gene>) = (genesToMutate.size * config.perOfCandidateGenesToMutate).run {
+        if(this < 1.0) 1 else this.toInt()
     }
 }

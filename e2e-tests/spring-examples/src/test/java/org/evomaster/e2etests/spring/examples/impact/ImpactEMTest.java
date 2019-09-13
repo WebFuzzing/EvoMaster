@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.impact;
 
 import com.foo.rest.examples.spring.impact.ImpactRestController;
+import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -23,7 +24,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImpactEMTest extends SpringTestBase {
 
     @Test
-    public void testRunEM() throws Throwable {
+    public void testAwayBad() throws Throwable {
+        testRunEM(EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD);
+    }
+
+    @Test
+    public void testApproachGood() throws Throwable {
+        testRunEM(EMConfig.ArchiveGeneSelectionMethod.APPROACH_GOOD);
+    }
+    @Test
+    public void testFeedback() throws Throwable {
+        testRunEM(EMConfig.ArchiveGeneSelectionMethod.FEED_BACK);
+    }
+
+    public void testRunEM(EMConfig.ArchiveGeneSelectionMethod method) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "",
@@ -33,10 +47,10 @@ public class ImpactEMTest extends SpringTestBase {
                 (args) -> {
 
                     args.add("--probOfArchiveMutation");
-                    args.add("0.5");
+                    args.add("1.0");
 
                     args.add("--geneSelectionMethod");
-                    args.add("APPROACH_GOOD");
+                    args.add(method.toString());
 
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
@@ -46,7 +60,7 @@ public class ImpactEMTest extends SpringTestBase {
                     assertTrue(solution.getIndividuals().size() >= 1);
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
-                            s -> s.getImpactOfGenes().size() > 0 && alwaysLast("noimpactIntField", s)
+                            s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noimpactIntField", s)
                     );
 
                     assertTrue(impactInfoCollected);
@@ -54,9 +68,7 @@ public class ImpactEMTest extends SpringTestBase {
                 });
     }
 
-    private boolean alwaysLast(String geneName, EvaluatedIndividual<RestIndividual> ind){
-
-        if (ind.getImpactOfGenes().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
+    private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){
 
         Gene gene = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
                 .findAny()
@@ -64,17 +76,29 @@ public class ImpactEMTest extends SpringTestBase {
 
         assertNotNull(gene);
 
-        String id = ImpactUtils.Companion.generateGeneId(ind.getIndividual(), gene);
+        return ImpactUtils.Companion.generateGeneId(ind.getIndividual(), gene);
+    }
+
+    private boolean checkNoImpact(String geneName, EvaluatedIndividual<RestIndividual> ind){
+
+        if (ind.getImpactOfGenes().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
+
+        String id = getGeneIdByName(geneName, ind);
 
         boolean last = true;
 
-        GeneImpact noimpact = ind.getImpactOfGenes().get(id);
+        GeneImpact noimpactGene = ind.getImpactOfGenes().get(id);
         for (String keyId : ind.getImpactOfGenes().keySet()){
             if (keyId != id){
-                last = last && (noimpact.getTimesOfImpact() <= ind.getImpactOfGenes().get(keyId).getTimesOfImpact() || noimpact.getTimesOfNoImpacts() >= ind.getImpactOfGenes().get(keyId).getTimesOfNoImpacts());
+                last = last &&
+                        // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
+                        (noimpactGene.getTimesOfImpact() <= ind.getImpactOfGenes().get(keyId).getTimesOfImpact()
+                                || noimpactGene.getTimesOfNoImpacts() >= ind.getImpactOfGenes().get(keyId).getTimesOfNoImpacts())
+                        &&
+                        // getTimesToManipulate should be less than any others
+                        (noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate());
             }
         }
-
         return last;
     }
 
