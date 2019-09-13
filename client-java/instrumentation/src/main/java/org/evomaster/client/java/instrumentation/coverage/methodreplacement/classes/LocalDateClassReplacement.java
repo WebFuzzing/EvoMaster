@@ -75,8 +75,8 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
 
             char c = input.charAt(i);
 
+            // TODO: The code below can be refactored with class DateFormatClassReplacement
             //format YYYY-MM-DD
-
             if (i >= 0 && i <= 3) {
                 //any Y value is ok
                 distance += distanceToDigit(c);

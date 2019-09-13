@@ -23,8 +23,8 @@ public class MapClassReplacement implements MethodReplacementClass {
         // to containsKey(). In order to avoid an stack overflow
         // we compute a fresh collection
         Collection keyCollection = new HashSet<>(c.keySet());
-        final boolean rv =keyCollection.contains(o);
-        if (idTemplate==null) {
+        final boolean rv = keyCollection.contains(o);
+        if (idTemplate == null) {
             return rv;
         }
 

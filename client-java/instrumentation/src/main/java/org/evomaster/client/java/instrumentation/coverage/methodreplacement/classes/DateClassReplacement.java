@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -32,6 +33,10 @@ public class DateClassReplacement implements MethodReplacementClass {
     public static boolean equals(Date caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
+        if (idTemplate == null) {
+            return caller.equals(anObject);
+        }
+
         final Truthness t = getEqualsTruthness(caller, anObject);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.equals(anObject);
@@ -44,7 +49,7 @@ public class DateClassReplacement implements MethodReplacementClass {
      * @param anObject
      * @return
      */
-    static Truthness getEqualsTruthness(Date caller, Object anObject) {
+    protected static Truthness getEqualsTruthness(Date caller, Object anObject) {
         Objects.requireNonNull(caller);
 
         final Truthness t;
@@ -53,9 +58,7 @@ public class DateClassReplacement implements MethodReplacementClass {
         } else {
             final long a = caller.getTime();
             final long b = ((Date) anObject).getTime();
-            t = new Truthness(
-                    1d - Truthness.normalizeValue(Math.abs(a - b)),
-                    a != b ? 1d : 0d);
+            t = TruthnessUtils.getEqualityTruthness(a, b);
         }
         return t;
     }
@@ -74,6 +77,9 @@ public class DateClassReplacement implements MethodReplacementClass {
 
         // might throw NPE if when is null
         final boolean res = caller.before(when);
+        if (idTemplate == null) {
+            return res;
+        }
 
         final Truthness t = getBeforeTruthness(caller, when);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
@@ -81,7 +87,7 @@ public class DateClassReplacement implements MethodReplacementClass {
     }
 
 
-    static Truthness getBeforeTruthness(Date caller, Date when) {
+    protected static Truthness getBeforeTruthness(Date caller, Date when) {
         Objects.requireNonNull(caller);
         Objects.requireNonNull(when);
 
@@ -92,10 +98,7 @@ public class DateClassReplacement implements MethodReplacementClass {
          * We use the same gradient that HeuristicsForJumps.getForValueComparison()
          * used for IF_ICMPLT, ie, a < b
          */
-        return new Truthness(
-                a < b ? 1d : 1d / (1.1d + a - b),
-                a >= b ? 1d : 1d / (1.1d + b - a)
-        );
+        return TruthnessUtils.getLessThanTruthness(a, b);
     }
 
 
@@ -113,6 +116,9 @@ public class DateClassReplacement implements MethodReplacementClass {
 
         // might throw NPE if when is null
         final boolean res = caller.after(when);
+        if (idTemplate == null) {
+            return res;
+        }
 
         final Truthness t = getBeforeTruthness(when, caller);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);

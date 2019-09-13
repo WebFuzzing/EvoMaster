@@ -27,7 +27,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
         return containsHelper(c, o, idTemplate);
     }
 
-    static boolean containsHelper(Collection c, Object o, String idTemplate) {
+    protected static boolean containsHelper(Collection c, Object o, String idTemplate) {
         Objects.requireNonNull(c);
 
         String inputString = null;

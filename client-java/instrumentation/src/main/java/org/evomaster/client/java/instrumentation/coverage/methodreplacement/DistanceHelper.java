@@ -1,5 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import org.evomaster.client.java.instrumentation.heuristic.Truthness;
+
 public class DistanceHelper {
 
     public static final double H_REACHED_BUT_NULL = 0.05d;
@@ -46,4 +48,19 @@ public class DistanceHelper {
         return dist;
     }
 
+    /**
+     * Computes a distance to a==b
+     *
+     * @param a
+     * @param b
+     * @return
+     */
+    public static double getDistanceToEquality(long a, long b) {
+        return Truthness.normalizeValue(Math.abs(a - b));
+    }
+
+
+    public static double getDistanceToEquality(double a, double b) {
+        return Truthness.normalizeValue(Math.abs(a - b));
+    }
 }
