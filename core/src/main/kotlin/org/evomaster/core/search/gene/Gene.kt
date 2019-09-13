@@ -2,6 +2,8 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
@@ -69,10 +71,14 @@ abstract class Gene(var name: String) {
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
      *   @param evi the evaluated individual contains an evolution of the gene with fitness values
+     *   @param selection how to select genes to mutate if [this] contains more than one genes, e.g., ObjectGene
+     *   @param impact info of impact of the gene
      */
     open fun archiveMutation(randomness: Randomness,
                              allGenes: List<Gene>,
                              apc: AdaptiveParameterControl,
+                             selection : ImpactMutationSelection,
+                             impact: GeneImpact,
                              evi: EvaluatedIndividual<*>){
         TODO("not implemented")
     }

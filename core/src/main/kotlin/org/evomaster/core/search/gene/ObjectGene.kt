@@ -1,6 +1,11 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
@@ -102,5 +107,28 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact, evi: EvaluatedIndividual<*>) {
+        assert(impact is ObjectGeneImpact)
+
+        if (selection == ImpactMutationSelection.NONE){
+            standardMutation(randomness, apc)
+            return
+        }
+
+        val genes = fields.map { Pair(it, (impact as ObjectGeneImpact).fields.getValue(it.name)) }
+        val percentage = 1.0/fields.size //only select one
+        val selects = when(selection){
+            ImpactMutationSelection.APPROACH_GOOD -> ImpactUtils.selectApproachGood(genes, percentage)
+            ImpactMutationSelection.AWAY_BAD -> ImpactUtils.selectGenesAwayBad(genes, percentage)
+            ImpactMutationSelection.FEED_BACK -> ImpactUtils.selectFeedback(genes, percentage)
+            else -> throw IllegalStateException("should not happen")
+        }
+        assert(selects.isNotEmpty())
+
+        val selected = randomness.choose(selects)
+        val selectedImpact = (impact as ObjectGeneImpact).fields.getValue(selected.name)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, evi)
     }
 }

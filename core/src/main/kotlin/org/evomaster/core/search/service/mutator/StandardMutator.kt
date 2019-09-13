@@ -11,6 +11,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
 
 /**
@@ -147,83 +148,50 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
 
         val genes = when(config.geneSelectionMethod){
-            EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
-            EMConfig.ArchiveGeneSelectionMethod.APPROACH_GOOD -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
-            EMConfig.ArchiveGeneSelectionMethod.FEED_BACK -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
-            EMConfig.ArchiveGeneSelectionMethod.NONE -> {
-                emptyList()
+            ImpactMutationSelection.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
+            ImpactMutationSelection.APPROACH_GOOD -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
+            ImpactMutationSelection.FEED_BACK -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
+            ImpactMutationSelection.NONE -> {
+                selectGenesByOneDivNum(genesToMutate, genesToMutate.size)
             }
         }
 
-        if (genes.isEmpty())
-            return selectGenesByOneDivNum(genesToMutate, genesToMutate.size)
-
+        assert(genes.isNotEmpty())
         return genes
 
     }
 
     private fun selectGenesAwayBad(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
-        //remove last 10%
-        val removedSize = decideCandidateSize(genesToMutate)
 
-        val genes =  genesToMutate.toList().sortedBy { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfNoImpacts
-        }.subList(0, genesToMutate.size - removedSize)
+        val genes =  genesToMutate.toList().map { g->
+            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
+        }
 
-        return if(genes.isNotEmpty())
-            selectGenesByOneDivNum(genes, genes.size)
-        else
-            emptyList()
+        ImpactUtils.selectGenesAwayBad(genes, config.perOfCandidateGenesToMutate).let {
+            return selectGenesByOneDivNum(it, it.size)
+        }
     }
 
     private fun selectGenesApproachGood(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
 
-        val size = decideCandidateSize(genesToMutate)
+        val genes =  genesToMutate.toList().map { g->
+            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
+        }
 
-        val genes = genesToMutate.toList().sortedByDescending { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.timesOfImpact
-        }.subList(0, size)
-
-        return if(genes.isNotEmpty())
-            selectGenesByOneDivNum(genes, genes.size)
-        else
-            emptyList()
-
+        ImpactUtils.selectApproachGood(genes, config.perOfCandidateGenesToMutate).let {
+            return selectGenesByOneDivNum(it, it.size)
+        }
     }
 
 
     private fun selectGenesFeedback(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
-        val notVisited =  genesToMutate.filter { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.let {
-                it.timesToManipulate == 0
-            }?:false
-        }
-        if(notVisited.isNotEmpty())
-            return selectGenesByOneDivNum(notVisited, notVisited.size)
-
-        val zero = genesToMutate.filter { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.let {
-                it.counter == 0 && it.timesToManipulate > 0
-            }?:false
+        val genes =  genesToMutate.toList().map { g->
+            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
         }
 
-        /*
-            TODO: shall we control the size in case of a large size of zero?
-         */
-        if(zero.isNotEmpty()){
-            return zero
+        ImpactUtils.selectFeedback(genes, config.perOfCandidateGenesToMutate).let {
+            return selectGenesByOneDivNum(it, it.size)
         }
-
-        val size = decideCandidateSize(genesToMutate)
-
-        val genes = genesToMutate.toList().sortedBy { g->
-            evi.getImpactOfGenes()[candidatesMap.getValue(g)]?.counter
-        }.subList(0, size)
-
-        return if(genes.isNotEmpty())
-            selectGenesByOneDivNum(genes, genes.size)
-        else
-            emptyList()
     }
 
     private fun decideCandidateSize(genesToMutate: List<Gene>) = (genesToMutate.size * config.perOfCandidateGenesToMutate).run {

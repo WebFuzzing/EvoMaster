@@ -6,6 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -273,8 +274,8 @@ class EMConfig {
         }
 
         //archive-based mutation
-        if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
-            throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
+        if(geneSelectionMethod != ImpactMutationSelection.NONE && algorithm != Algorithm.MIO){
+            throw IllegalArgumentException("ImpactMutationSelection is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
         if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
@@ -714,14 +715,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var geneSelectionMethod = ArchiveGeneSelectionMethod.NONE
-
-    enum class ArchiveGeneSelectionMethod {
-        NONE,
-        AWAY_BAD,
-        APPROACH_GOOD,
-        FEED_BACK
-    }
+    var geneSelectionMethod = ImpactMutationSelection.NONE
 
     @Experimental
     @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")

@@ -9,6 +9,7 @@ import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.GeneImpact;
+import org.evomaster.core.search.impact.ImpactMutationSelection;
 import org.evomaster.core.search.impact.ImpactUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,19 +26,19 @@ public class ImpactEMTest extends SpringTestBase {
 
     @Test
     public void testAwayBad() throws Throwable {
-        testRunEM(EMConfig.ArchiveGeneSelectionMethod.AWAY_BAD);
+        testRunEM(ImpactMutationSelection.AWAY_BAD);
     }
 
     @Test
     public void testApproachGood() throws Throwable {
-        testRunEM(EMConfig.ArchiveGeneSelectionMethod.APPROACH_GOOD);
+        testRunEM(ImpactMutationSelection.APPROACH_GOOD);
     }
     @Test
     public void testFeedback() throws Throwable {
-        testRunEM(EMConfig.ArchiveGeneSelectionMethod.FEED_BACK);
+        testRunEM(ImpactMutationSelection.FEED_BACK);
     }
 
-    public void testRunEM(EMConfig.ArchiveGeneSelectionMethod method) throws Throwable {
+    public void testRunEM(ImpactMutationSelection method) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "",

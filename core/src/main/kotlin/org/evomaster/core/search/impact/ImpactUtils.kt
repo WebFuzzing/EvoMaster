@@ -11,6 +11,7 @@ import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
+import org.evomaster.core.search.service.Randomness
 
 /**
  * created by manzh on 2019-09-09
@@ -163,8 +164,31 @@ class ImpactUtils {
                 }
             }
         }
+
+        private fun prioritizeNoVisit(genes : List<Pair<Gene, GeneImpact>>): List<Gene>{
+            return genes.filter { it.second.timesToManipulate == 0 }.map { it.first }
+        }
+
+        fun selectGenesAwayBad(genes : List<Pair<Gene, GeneImpact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<Gene>{
+            if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+            val size = decideSize(genes.size, percentage)
+            return genes.sortedBy { it.second.timesOfNoImpacts }.subList(0, genes.size - size).map { it.first }
+        }
+
+        fun selectApproachGood(genes : List<Pair<Gene, GeneImpact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<Gene>{
+            if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+            val size = decideSize(genes.size, percentage)
+            return genes.sortedByDescending { it.second.timesOfImpact }.subList(0, size).map { it.first }
+        }
+
+        fun selectFeedback(genes : List<Pair<Gene, GeneImpact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<Gene>{
+            if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+            val size = decideSize(genes.size, percentage)
+            return genes.sortedBy { it.second.counter }.subList(0, size).map { it.first }
+        }
+
+        private fun decideSize(list : Int, percentage : Double) = (list * percentage).run {
+            if(this < 1.0) 1 else this.toInt()
+        }
     }
-
-
-
 }
