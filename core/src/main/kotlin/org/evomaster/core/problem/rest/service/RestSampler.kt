@@ -63,7 +63,7 @@ class RestSampler : Sampler<RestIndividual>(){
 
         log.debug("Initializing {}", RestSampler::class.simpleName)
 
-        if(configuration.blackBox){
+        if(configuration.blackBox && !configuration.bbExperiments){
             initForBlackBox()
             return
         }
@@ -116,7 +116,7 @@ class RestSampler : Sampler<RestIndividual>(){
 
     private fun initForBlackBox() {
 
-        val swagger = getSwagger(configuration.bbSwaggerUrl!!)
+        val swagger = getSwagger(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }

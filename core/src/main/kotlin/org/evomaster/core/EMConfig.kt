@@ -281,7 +281,7 @@ class EMConfig {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
 
-        if(blackBox){
+        if(blackBox && ! bbExperiments){
             if(bbTargetUrl.isNullOrBlank()){
                 throw IllegalArgumentException("In black-box mode, you need to set the bbTargetUrl option")
             }
@@ -291,6 +291,10 @@ class EMConfig {
             if(outputFormat == OutputFormat.DEFAULT){
                 throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
             }
+        }
+
+        if(!blackBox && bbExperiments){
+            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
     }
 

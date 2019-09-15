@@ -69,7 +69,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         log.debug("Initializing {}", AbstractRestFitness::class.simpleName)
 
-        if(! config.blackBox) {
+        if(! config.blackBox || config.bbExperiments) {
             rc.checkConnection()
 
             val started = rc.startSUT()
@@ -270,7 +270,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                                chainState: MutableMap<String, String>)
             : Boolean {
 
-        var baseUrl = if(!config.blackBox){
+        var baseUrl = if(!config.blackBox || config.bbExperiments){
             infoDto.baseUrlOfSUT
         } else {
             config.bbTargetUrl!!
