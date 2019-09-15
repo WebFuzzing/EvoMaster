@@ -111,6 +111,28 @@ class RemoteController() : DatabaseExecutor {
          return dto.data
     }
 
+    private fun <T> getDto(response: Response, type: GenericType<WrappedResponseDto<T>>) : WrappedResponseDto<T>?{
+
+        if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
+            //something weird is going on... possibly a bug in the Driver?
+
+            val res = response.readEntity(String::class.java)
+            log.error("Driver error. HTTP status ${response.status}. Error: $res")
+            return null
+        }
+
+
+        val dto = try {
+            response.readEntity(type)
+        } catch (e: Exception) {
+            handleFailedDtoParsing(e)
+            null
+        }
+
+        return dto
+    }
+
+
     fun getSutInfo(): SutInfoDto? {
 
         val response = getWebTarget()
@@ -118,12 +140,7 @@ class RemoteController() : DatabaseExecutor {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
-        } catch (e: Exception) {
-            handleFailedDtoParsing(e)
-            null
-        }
+        val dto = getDto(response, object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
 
         if(!checkResponse(response, dto, "Failed to retrieve SUT info")){
             return null
@@ -140,12 +157,7 @@ class RemoteController() : DatabaseExecutor {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
-        } catch (e: Exception) {
-            handleFailedDtoParsing(e)
-            null
-        }
+        val dto = getDto(response, object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
 
         if(!checkResponse(response, dto, "Failed to retrieve EM controller info")){
             return null
@@ -166,12 +178,7 @@ class RemoteController() : DatabaseExecutor {
             return false
         }
 
-        val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
-        } catch (e: Exception) {
-            handleFailedDtoParsing(e)
-            null
-        }
+        val dto = getDto(response, object : GenericType<WrappedResponseDto<Any>>() {})
 
         return checkResponse(response, dto, "Failed to change running state of the SUT")
     }
@@ -221,12 +228,7 @@ class RemoteController() : DatabaseExecutor {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        val dto = try {
-            response.readEntity(object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
-        } catch (e: Exception) {
-            handleFailedDtoParsing(e)
-            null
-        }
+        val dto = getDto(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
         if(!checkResponse(response, dto, "Failed to retrieve target coverage")){
             return null
@@ -270,12 +272,14 @@ class RemoteController() : DatabaseExecutor {
                 return false
             }
 
-            if(responseDto?.error != null) {
+            if(responseDto.error != null) {
                 //this can happen if we do not handle all constraints
                 LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
             }
+
             /*
-                TODO refactor all methods in this class to print error messages, if any
+                TODO refecator this method once we support most of SQL handling, and do not need
+                to have uniqueWarn any longer
              */
 
             return false
@@ -299,18 +303,13 @@ class RemoteController() : DatabaseExecutor {
                 .request()
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
-        val dto = try {
-            response.readEntity(type)
-        } catch (e: Exception) {
-            handleFailedDtoParsing(e)
-            return null
-        }
+        val dto = getDto(response, type)
 
         if (!checkResponse(response, dto, "Failed to execute database command")) {
             return null
         }
 
-        return dto.data
+        return dto?.data
     }
 
 
