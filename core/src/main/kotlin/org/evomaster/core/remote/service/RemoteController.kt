@@ -82,6 +82,35 @@ class RemoteController() : DatabaseExecutor {
         client.close()
     }
 
+    private fun checkResponse(response: Response, msg: String) : Boolean{
+
+        val dto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
+        } catch (e: Exception) {
+            handleFailedDtoParsing(e)
+            null
+        }
+
+        return checkResponse(response, dto, msg)
+    }
+
+    private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String) : Boolean{
+        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
+            log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
+            return false
+        }
+
+        return true
+    }
+
+     private  fun <T> getData(dto: WrappedResponseDto<T>?) : T?{
+         if (dto?.data == null) {
+             log.warn("Missing DTO")
+             return null
+         }
+         return dto.data
+    }
+
     fun getSutInfo(): SutInfoDto? {
 
         val response = getWebTarget()
@@ -96,18 +125,13 @@ class RemoteController() : DatabaseExecutor {
             null
         }
 
-        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
-            log.warn("Failed request to EM controller. HTTP status {}. Message: '{}'", response.status, dto?.error)
+        if(!checkResponse(response, dto, "Failed to retrieve SUT info")){
             return null
         }
 
-        if (dto?.data == null) {
-            log.warn("Missing DTO")
-            return null
-        }
-
-        return dto.data
+        return getData(dto)
     }
+
 
     fun getControllerInfo(): ControllerInfoDto? {
 
@@ -123,17 +147,11 @@ class RemoteController() : DatabaseExecutor {
             null
         }
 
-        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
-            log.warn("Failed request to EM controller. HTTP status {}. Message: '{}'", response.status, dto?.error)
+        if(!checkResponse(response, dto, "Failed to retrieve EM controller info")){
             return null
         }
 
-        if (dto?.data == null) {
-            log.warn("Missing DTO")
-            return null
-        }
-
-        return dto.data
+        return getData(dto)
     }
 
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
@@ -148,13 +166,14 @@ class RemoteController() : DatabaseExecutor {
             return false
         }
 
-        val success = wasSuccess(response)
-
-        if (!success) {
-            log.warn("Failed to change running state of the SUT. HTTP status: {}", response.status)
+        val dto = try {
+            response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
+        } catch (e: Exception) {
+            handleFailedDtoParsing(e)
+            null
         }
 
-        return success
+        return checkResponse(response, dto, "Failed to change running state of the SUT")
     }
 
     /*
@@ -189,12 +208,7 @@ class RemoteController() : DatabaseExecutor {
                 .request()
                 .post(Entity.entity("{\"newSearch\"=true}", MediaType.APPLICATION_JSON_TYPE))
 
-        if (!wasSuccess(response)) {
-            log.warn("Failed to inform SUT of new search. HTTP status: {}", response.status)
-            return false
-        }
-
-        return true
+        return checkResponse(response, "Failed to inform SUT of new search")
     }
 
     fun getTestResults(ids: Set<Int> = setOf()): TestResultsDto? {
@@ -207,11 +221,6 @@ class RemoteController() : DatabaseExecutor {
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .get()
 
-        if (!wasSuccess(response)) {
-            log.warn("Failed to retrieve target coverage. HTTP status: {}", response.status)
-            return null
-        }
-
         val dto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
         } catch (e: Exception) {
@@ -219,19 +228,21 @@ class RemoteController() : DatabaseExecutor {
             null
         }
 
-        return dto?.data
+        if(!checkResponse(response, dto, "Failed to retrieve target coverage")){
+            return null
+        }
+
+        return getData(dto)
     }
 
-    fun registerNewAction(actionIndex: Int) {
+    fun registerNewAction(actionIndex: Int) : Boolean{
 
         val response = getWebTarget()
                 .path(ControllerConstants.NEW_ACTION)
                 .request()
                 .put(Entity.entity(actionIndex, MediaType.APPLICATION_JSON_TYPE))
 
-        if (!wasSuccess(response)) {
-            log.warn("Failed to register new action. HTTP status: {}", response.status)
-        }
+        return checkResponse(response, "Failed to register new action")
     }
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
@@ -288,24 +299,18 @@ class RemoteController() : DatabaseExecutor {
                 .request()
                 .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
 
-        val responseDto = try {
+        val dto = try {
             response.readEntity(type)
         } catch (e: Exception) {
             handleFailedDtoParsing(e)
             return null
         }
 
-        if (!wasSuccess(response)) {
-            log.warn("Failed to execute database command. HTTP status: {}.", response.status)
-
-            if(responseDto?.error != null) {
-                log.warn("Error message: " + responseDto.error)
-            }
-
+        if (!checkResponse(response, dto, "Failed to execute database command")) {
             return null
         }
 
-        return responseDto.data
+        return dto.data
     }
 
 
