@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -41,7 +42,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         private val log: Logger = LoggerFactory.getLogger(AbstractRestFitness::class.java)
     }
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var rc: RemoteController
 
     @Inject
@@ -49,6 +50,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     @Inject
     private lateinit var searchTimeController: SearchTimeController
+
 
     private val client: Client = {
         val configuration = ClientConfig()
@@ -67,15 +69,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         log.debug("Initializing {}", AbstractRestFitness::class.simpleName)
 
-        rc.checkConnection()
+        if(! config.blackBox) {
+            rc.checkConnection()
 
-        val started = rc.startSUT()
-        if (!started) {
-            throw SutProblemException("Failed to start the system under test")
+            val started = rc.startSUT()
+            if (!started) {
+                throw SutProblemException("Failed to start the system under test")
+            }
+
+            infoDto = rc.getSutInfo()
+                    ?: throw SutProblemException("Failed to retrieve the info about the system under test")
         }
-
-        infoDto = rc.getSutInfo()
-                ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
         log.debug("Done initializing {}", AbstractRestFitness::class.simpleName)
     }
@@ -83,7 +87,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     override fun reinitialize(): Boolean {
 
         try {
-            rc.stopSUT()
+            if(! config.blackBox) {
+                rc.stopSUT()
+            }
             initialize()
         } catch (e: Exception) {
             log.warn("Failed to re-initialize the SUT: $e")
@@ -264,7 +270,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                                chainState: MutableMap<String, String>)
             : Boolean {
 
-        var baseUrl = infoDto.baseUrlOfSUT
+        var baseUrl = if(!config.blackBox){
+            infoDto.baseUrlOfSUT
+        } else {
+            config.bbTargetUrl!!
+        }
+
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length - 1)
         }

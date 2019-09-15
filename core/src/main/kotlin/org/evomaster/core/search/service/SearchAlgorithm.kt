@@ -31,7 +31,7 @@ abstract class SearchAlgorithm<T> where T : Individual {
     protected lateinit var config: EMConfig
 
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var mutator: Mutator<T>
 
 

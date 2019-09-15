@@ -39,7 +39,7 @@ class RestSampler : Sampler<RestIndividual>(){
         private val log: Logger = LoggerFactory.getLogger(RestSampler::class.java)
     }
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var rc: RemoteController
 
     @Inject
@@ -63,6 +63,11 @@ class RestSampler : Sampler<RestIndividual>(){
 
         log.debug("Initializing {}", RestSampler::class.simpleName)
 
+        if(configuration.blackBox){
+            initForBlackBox()
+            return
+        }
+
         rc.checkConnection()
 
         val started = rc.startSUT()
@@ -73,7 +78,10 @@ class RestSampler : Sampler<RestIndividual>(){
         val infoDto = rc.getSutInfo()
                 ?: throw SutProblemException("Failed to retrieve the info about the system under test")
 
-        val swagger = getSwagger(infoDto)
+        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
+                ?: throw IllegalStateException("Missing information about the Swagger URL")
+
+        val swagger = getSwagger(swaggerURL)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -106,7 +114,23 @@ class RestSampler : Sampler<RestIndividual>(){
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
 
+    private fun initForBlackBox() {
 
+        val swagger = getSwagger(configuration.bbSwaggerUrl!!)
+        if (swagger.paths == null) {
+            throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
+        }
+
+        actionCluster.clear()
+        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, listOf())
+
+        modelCluster.clear()
+        RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
+
+        initAdHocInitialIndividuals()
+
+        log.debug("Done initializing {}", RestSampler::class.simpleName)
+    }
 
 
     private fun setupAuthentication(infoDto: SutInfoDto) {
@@ -139,9 +163,7 @@ class RestSampler : Sampler<RestIndividual>(){
     }
 
 
-    private fun getSwagger(infoDto: SutInfoDto): Swagger {
-
-        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
+    private fun getSwagger(swaggerURL: String): Swagger {
 
         val response = connectToSwagger(swaggerURL, 30)
 

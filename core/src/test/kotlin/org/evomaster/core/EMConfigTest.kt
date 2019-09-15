@@ -1,8 +1,7 @@
 package org.evomaster.core
 
 import org.evomaster.client.java.controller.api.ControllerConstants
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class EMConfigTest{
@@ -94,5 +93,20 @@ internal class EMConfigTest{
         assertEquals(x, opt.value(options))
         config.updateProperties(options)
         assertEquals("" + config.algorithm, x)
+    }
+
+    @Test
+    fun testEmptyFields(){
+
+        val parser = EMConfig.getOptionParser()
+        val opt = parser.recognizedOptions()["bbTargetUrl"] ?:
+            throw Exception("Cannot find option")
+
+
+        val config = EMConfig()
+        assertEquals("", config.bbTargetUrl)
+
+        val options = parser.parse()
+        assertEquals("", opt.value(options))
     }
 }
