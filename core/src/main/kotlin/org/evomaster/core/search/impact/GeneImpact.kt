@@ -1,5 +1,7 @@
 package org.evomaster.core.search.impact
 
+import org.evomaster.core.search.gene.Gene
+
 /**
  * created by manzh on 2019-09-03
  */
@@ -25,4 +27,6 @@ abstract class GeneImpact (
     fun confirmPositionSensitive(){
         positionSensitive = true
     }
+
+    abstract fun validate(gene : Gene) : Boolean
 }

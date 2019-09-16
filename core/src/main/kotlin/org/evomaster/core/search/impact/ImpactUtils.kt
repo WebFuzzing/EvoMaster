@@ -10,6 +10,8 @@ import org.evomaster.core.search.impact.value.StringGeneImpact
 import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.impact.value.date.DateGeneImpact
+import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
+import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
 import org.evomaster.core.search.service.Randomness
 
@@ -30,10 +32,12 @@ class ImpactUtils {
                 is LongGene -> LongGeneImpact(id)
                 is DoubleGene -> DoubleGeneImpact(id)
                 is FloatGene -> FloatGeneImpact(id)
-                is StringGene -> StringGeneImpact(id)
+                is StringGene -> StringGeneImpact(id, gene)
                 is ObjectGene -> ObjectGeneImpact(id, gene)
                 is MapGene<*>, is ArrayGene<*> -> CollectionGeneImpact(id)
-                is TimeGene, is DateGene, is DateTimeGene -> DateGeneImpact(id)
+                is DateGene -> DateGeneImpact(id, gene)
+                is DateTimeGene -> DateTimeGeneImpact(id, gene)
+                is TimeGene -> TimeGeneImpact(id, gene)
                 else ->{
                     throw IllegalStateException("do not support to generate impacts for ${gene::class.java.simpleName}")
                 }
@@ -133,7 +137,7 @@ class ImpactUtils {
                 is ObjectGeneImpact -> {
                     if (gc.previous !is ObjectGene || gc.current !is ObjectGene)
                         throw IllegalStateException("previous and current gene should be ObjectGene")
-                    impact.countFieldImpact(gc.previous, gc.current, hasImpact, countDeepObjectImpact)
+                    impact.countFieldImpact(previous = gc.previous,current =  gc.current, hasImpact = hasImpact, countDeepImpact = countDeepObjectImpact)
                 }
                 is CollectionGeneImpact -> {
                     val diff = when{
@@ -161,6 +165,29 @@ class ImpactUtils {
                         throw IllegalStateException("previous and current gene should be DisruptiveGene")
                     val gcGene = MutatedGeneWithContext(current = gc.current.gene, previous = gc.previous.gene, action = gc.action, position = gc.position)
                     processImpact(impact.geneImpact, gcGene, hasImpact)
+                }
+                is DateTimeGeneImpact ->{
+                    if (gc.current !is DateTimeGene || gc.previous !is DateTimeGene)
+                        throw IllegalStateException("previous and current gene should be DateTimeGene")
+                    impact.countDateTimeImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                }
+                is TimeGeneImpact -> {
+                    if (gc.current !is TimeGene || gc.previous !is TimeGene)
+                        throw IllegalStateException("previous and current gene should be TimeGene")
+                    impact.countTimeImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                }
+                is DateGeneImpact ->{
+                    if (gc.current !is DateGene || gc.previous !is DateGene)
+                        throw IllegalStateException("previous and current gene should be DateGene")
+                    impact.countDateImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                }
+                is StringGeneImpact ->{
+                    /*
+                     TODO ask Andrea: is a type of specializationGene of StringGene dynamic or stable ?
+                     */
+                    if (gc.current !is StringGene || gc.previous !is StringGene)
+                        throw IllegalStateException("previous and current gene should be DateTimeGene")
+                    impact.countSpecializationGeneImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
                 }
             }
         }

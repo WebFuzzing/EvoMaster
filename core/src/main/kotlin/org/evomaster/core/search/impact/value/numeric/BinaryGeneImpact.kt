@@ -1,5 +1,7 @@
 package org.evomaster.core.search.impact.value.numeric
 
+import org.evomaster.core.search.gene.BooleanGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.value.GeneralImpact
 
@@ -22,4 +24,5 @@ class BinaryGeneImpact (
         return BinaryGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, _false.copy(), _true.copy())
     }
 
+    override fun validate(gene: Gene): Boolean = gene is BooleanGene
 }

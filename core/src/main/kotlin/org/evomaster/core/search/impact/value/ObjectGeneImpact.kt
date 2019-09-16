@@ -1,5 +1,6 @@
 package org.evomaster.core.search.impact.value
 
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
@@ -38,7 +39,7 @@ class ObjectGeneImpact (
                 fImpact.countImpact(hasImpact)
             }
         }
-
     }
 
+    override fun validate(gene: Gene): Boolean = gene is ObjectGene
 }

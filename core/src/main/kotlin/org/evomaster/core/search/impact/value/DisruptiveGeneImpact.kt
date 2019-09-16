@@ -1,6 +1,7 @@
 package org.evomaster.core.search.impact.value
 
 import org.evomaster.core.search.gene.DisruptiveGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
@@ -26,4 +27,5 @@ class DisruptiveGeneImpact (
         return DisruptiveGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, geneImpact.copy() as GeneImpact)
     }
 
+    override fun validate(gene: Gene): Boolean = gene is DisruptiveGene<*>
 }

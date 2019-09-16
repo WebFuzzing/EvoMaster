@@ -6,9 +6,13 @@ import org.evomaster.core.search.impact.value.OptionalGeneImpact
 import org.evomaster.core.search.impact.value.StringGeneImpact
 import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
+import org.evomaster.core.search.impact.value.date.DateGeneImpact
+import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
+import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.DoubleGeneImpact
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 import org.evomaster.core.search.impact.value.numeric.LongGeneImpact
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 /**
@@ -17,7 +21,161 @@ import org.junit.jupiter.api.Test
 class GeneImpactTest {
 
     @Test
-    fun testGeneImpact(){
+    fun testDateTimeGeneImpact(){
+        val dateGene = DateGene("date", IntegerGene("y", 2019), IntegerGene("m", 9), IntegerGene("d", 16))
+        val timeGene = TimeGene("time", IntegerGene("h", 11), IntegerGene("m", 58), IntegerGene("s", 30))
+        val dateTimeGene = DateTimeGene("dateTime", date = dateGene, time = timeGene)
+
+        val id = ImpactUtils.generateGeneId(dateTimeGene)
+        val impact = ImpactUtils.createGeneImpact(dateTimeGene, id)
+
+        assert(impact is DateTimeGeneImpact)
+
+        val tracking0 = dateTimeGene.copy()
+        dateGene.month.value = 10
+        timeGene.hour.value = 12
+        val hasImpact = true
+
+        val mutatedGeneWithContext = MutatedGeneWithContext(current = dateTimeGene, previous = tracking0, action = "none", position = -1 )
+        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact)
+
+        (impact as DateTimeGeneImpact).apply {
+            assertEquals(1, timesToManipulate)
+            assertEquals(1, timesOfImpact)
+            assertEquals(0, timesOfNoImpacts)
+
+            dateGeneImpact.apply {
+                assertEquals(1, timesToManipulate)
+                assertEquals(1, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+
+                yearGeneImpact.apply {
+                    assertEquals(0, timesToManipulate)
+                    assertEquals(0, timesOfImpact)
+                    assertEquals(0, timesOfNoImpacts)
+                }
+
+                monthGeneImpact.apply {
+                    assertEquals(1, timesToManipulate)
+                    assertEquals(1, timesOfImpact)
+                    assertEquals(0, timesOfNoImpacts)
+                }
+
+                dayGeneImpact.apply {
+                    assertEquals(0, timesToManipulate)
+                    assertEquals(0, timesOfImpact)
+                    assertEquals(0, timesOfNoImpacts)
+                }
+            }
+
+            timeGeneImpact.apply {
+                assertEquals(1, timesToManipulate)
+                assertEquals(1, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+
+                hourGeneImpact.apply {
+                    assertEquals(1, timesToManipulate)
+                    assertEquals(1, timesOfImpact)
+                    assertEquals(0, timesOfNoImpacts)
+                }
+
+                minuteGeneImpact.apply {
+                    assertEquals(0, timesToManipulate)
+                    assertEquals(0, timesOfImpact)
+                    assertEquals(0, timesOfNoImpacts)
+                }
+
+                secondGeneImpact.apply {
+                    assertEquals(0, timesToManipulate)
+                    assertEquals(0, timesOfImpact)
+                    assertEquals(0, timesOfNoImpacts)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun testDateGeneImpact(){
+        val dateGene = DateGene("date", IntegerGene("y", 2019), IntegerGene("m", 9), IntegerGene("d", 16))
+        val id = ImpactUtils.generateGeneId(dateGene)
+        val impact = ImpactUtils.createGeneImpact(dateGene, id)
+
+        assert(impact is DateGeneImpact)
+
+        val tracking0 = dateGene.copy()
+        dateGene.month.value = 10
+        val hasImpact = true
+
+        val mutatedGeneWithContext = MutatedGeneWithContext(current = dateGene, previous = tracking0, action = "none", position = -1 )
+        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact)
+
+        (impact as DateGeneImpact).apply {
+            assertEquals(1, timesToManipulate)
+            assertEquals(1, timesOfImpact)
+            assertEquals(0, timesOfNoImpacts)
+
+            yearGeneImpact.apply {
+                assertEquals(0, timesToManipulate)
+                assertEquals(0, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+            }
+
+            monthGeneImpact.apply {
+                assertEquals(1, timesToManipulate)
+                assertEquals(1, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+            }
+
+            dayGeneImpact.apply {
+                assertEquals(0, timesToManipulate)
+                assertEquals(0, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+            }
+        }
+    }
+
+    @Test
+    fun testTimeGeneImpact(){
+        val timeGene = TimeGene("time", IntegerGene("h", 11), IntegerGene("m", 58), IntegerGene("s", 30))
+        val id = ImpactUtils.generateGeneId(timeGene)
+        val impact = ImpactUtils.createGeneImpact(timeGene, id)
+
+        assert(impact is TimeGeneImpact)
+
+        val tracking0 = timeGene.copy()
+        timeGene.hour.value = 12
+        val hasImpact = true
+
+        val mutatedGeneWithContext = MutatedGeneWithContext(current = timeGene, previous = tracking0, action = "none", position = -1 )
+        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact)
+
+        (impact as TimeGeneImpact).apply {
+            assertEquals(1, timesToManipulate)
+            assertEquals(1, timesOfImpact)
+            assertEquals(0, timesOfNoImpacts)
+
+            hourGeneImpact.apply {
+                assertEquals(1, timesToManipulate)
+                assertEquals(1, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+            }
+
+            minuteGeneImpact.apply {
+                assertEquals(0, timesToManipulate)
+                assertEquals(0, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+            }
+
+            secondGeneImpact.apply {
+                assertEquals(0, timesToManipulate)
+                assertEquals(0, timesOfImpact)
+                assertEquals(0, timesOfNoImpacts)
+            }
+        }
+    }
+
+    @Test
+    fun testObjectGeneImpact(){
         val f1 = StringGene("string_1")
         val f2 = IntegerGene("integer_2")
         val f3 = DoubleGene("double_3")

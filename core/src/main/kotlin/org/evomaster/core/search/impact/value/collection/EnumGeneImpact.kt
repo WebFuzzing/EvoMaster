@@ -1,6 +1,7 @@
 package org.evomaster.core.search.impact.value.collection
 
 import org.evomaster.core.search.gene.EnumGene
+import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.value.GeneralImpact
 
@@ -28,4 +29,5 @@ class EnumGeneImpact (
         values[index].countImpact(hasImpact)
     }
 
+    override fun validate(gene: Gene): Boolean = gene is EnumGene<*>
 }

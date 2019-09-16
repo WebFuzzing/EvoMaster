@@ -1,5 +1,8 @@
 package org.evomaster.core.search.impact.value.numeric
 
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.LongGene
+
 /**
  * created by manzh on 2019-09-09
  */
@@ -17,4 +20,5 @@ class LongGeneImpact (
         return LongGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive)
     }
 
+    override fun validate(gene: Gene): Boolean = gene is LongGene
 }

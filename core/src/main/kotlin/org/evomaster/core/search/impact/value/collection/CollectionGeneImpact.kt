@@ -1,5 +1,8 @@
 package org.evomaster.core.search.impact.value.collection
 
+import org.evomaster.core.search.gene.ArrayGene
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.MapGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
@@ -26,4 +29,5 @@ class CollectionGeneImpact (
             sizeImpact.countImpact(hasImpact)
     }
 
+    override fun validate(gene: Gene): Boolean = gene is MapGene<*> || gene is ArrayGene<*>
 }
