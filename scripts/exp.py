@@ -138,7 +138,7 @@ if CLUSTER:
     SUTS = [
             ("features-service", 1),
             ("scout-api", 1),
-            ("proxyprint", 2)
+            ("proxyprint", 2),
             # ("rest-ncs", 1), #no db
             # ("rest-scs", 1), #no db
             ("rest-news", 1),
