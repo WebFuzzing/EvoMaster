@@ -12,13 +12,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * created by manzh on 2019-09-12
  */
 @RestController
-@RequestMapping(path = "/api/intImpact")
+@RequestMapping(path = "/api")
 public class ImpactRest {
 
     public static final List<NoImpactIntFieldsDto> data = new CopyOnWriteArrayList<>();
 
     @RequestMapping(
-            value = "",
+            value = "/intImpact",
             method = RequestMethod.POST,
             consumes = MediaType.APPLICATION_JSON
     )
@@ -26,14 +26,18 @@ public class ImpactRest {
         if (dto.name.isEmpty())
             return ResponseEntity.status(400).build();
 
+        int distance = Integer.MAX_VALUE / 5;
         int response = 0;
-        if (dto.impactIntField >= 0 && dto.impactIntField < 5)
-            response = 5;
-        else if (dto.impactIntField >= 5 && dto.impactIntField < 10)
+        if (dto.impactIntField < (Integer.MIN_VALUE + distance * 2))
+            response = 2;
+        else if (dto.impactIntField < (Integer.MIN_VALUE + distance * 4))
+            response = 4;
+        else if (dto.impactIntField < (Integer.MIN_VALUE + distance * 6))
+            response = 6;
+        else if (dto.impactIntField < (Integer.MIN_VALUE + distance * 8))
+            response = 8;
+        else
             response = 10;
-        else if (dto.impactIntField >= 10 && dto.impactIntField < 15)
-            response = 15;
-        else response = 20;
 
         data.add(dto);
 
@@ -41,7 +45,7 @@ public class ImpactRest {
     }
 
     @RequestMapping(
-            value = "/{name}",
+            value = "/intImpact/{name}",
             method = RequestMethod.POST
     )
     public ResponseEntity create(
@@ -52,14 +56,18 @@ public class ImpactRest {
         if (name.isEmpty())
             return ResponseEntity.status(400).build();
 
+        int distance = Integer.MAX_VALUE / 5;
         int response = 0;
-        if (impactIntField >= 0 && impactIntField < 5)
-            response = 5;
-        else if (impactIntField >= 5 && impactIntField < 10)
+        if (impactIntField < (Integer.MIN_VALUE + distance * 2))
+            response = 2;
+        else if (impactIntField < (Integer.MIN_VALUE + distance * 4))
+            response = 4;
+        else if (impactIntField < (Integer.MIN_VALUE + distance * 6))
+            response = 6;
+        else if (impactIntField < (Integer.MIN_VALUE + distance * 8))
+            response = 8;
+        else
             response = 10;
-        else if (impactIntField >= 10 && impactIntField < 15)
-            response = 15;
-        else response = 20;
 
         data.add(new NoImpactIntFieldsDto(name, impactIntField, noimpactIntField));
 

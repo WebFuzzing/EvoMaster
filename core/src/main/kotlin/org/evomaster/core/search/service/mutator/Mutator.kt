@@ -115,14 +115,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 else mutated
 
                 if(config.probOfArchiveMutation > 0.0)
-                    trackedMutated.updateImpactOfGenes(true, mutatedGenes)
+                    trackedMutated.updateImpactOfGenes(true, mutatedGenes, targets, config.secondaryObjectiveStrategy)
 
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
             }else{
                 if(config.probOfArchiveMutation > 0.0){
                     trackedCurrent.getUndoTracking()!!.add(mutated)
-                    trackedCurrent.updateImpactOfGenes(false, mutatedGenes)
+                    trackedCurrent.updateImpactOfGenes(false, mutatedGenes, targets, config.secondaryObjectiveStrategy)
                 }
             }
         }

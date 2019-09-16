@@ -1,7 +1,6 @@
 package org.evomaster.e2etests.spring.examples.impact;
 
 import com.foo.rest.examples.spring.impact.ImpactRestController;
-import org.evomaster.core.EMConfig;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
@@ -43,7 +42,7 @@ public class ImpactEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "",
                 "",
-                1_000,
+                2_000,
                 false,
                 (args) -> {
 

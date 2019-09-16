@@ -116,6 +116,11 @@ class FitnessValue(
         return targets.values.map { h -> h.distance }.sum()
     }
 
+    fun computeFitnessScore(targetIds : List<Int>): Double {
+
+        return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.distance }.sum()
+    }
+
     fun coveredTargets(): Int {
 
         return targets.values.filter { t -> t.distance == MAX_VALUE }.count()
@@ -209,6 +214,46 @@ class FitnessValue(
         }
 
         return atLeastOneBetter
+    }
+
+    /**
+     * Check if current does differ from [other] regarding [targetSubset].
+     *
+     * Recall: during the search, we might not calculate all targets, eg once they
+     * are covered.
+     *
+     * @param other, the one we compare to
+     * @param targetSubset, only calculate subsumption on these testing targets
+     */
+    fun isDifferent(
+            other: FitnessValue,
+            targetSubset: Set<Int>,
+            strategy: EMConfig.SecondaryObjectiveStrategy)
+            : Boolean {
+
+
+        for (k in targetSubset) {
+
+            val v = this.targets[k]?.distance ?: 0.0
+            val z = other.targets[k]?.distance ?: 0.0
+            if (v == 0.0 && v == z)
+                continue
+
+            if (v != z) {
+                return true
+            }
+
+            val extra = compareExtraToMinimize(k, other, strategy)
+
+            //FIXME this is inconsistent with what used in Archive. Should be
+            //refactored, avoiding copy&paste
+            //This requires Andrea to check. it seems it does not matter whether [bloatControlForSecondaryObjective] is enabled
+            if (this.size != other.size || extra != 0) {
+                return true
+            }
+        }
+
+        return false
     }
 
     fun averageExtraDistancesToMinimize(actionIndex: Int): Double{

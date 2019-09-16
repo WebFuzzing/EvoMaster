@@ -1,5 +1,6 @@
 package org.evomaster.core.search
 
+import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ActionStructureImpact
@@ -265,7 +266,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      * For instance, if the latest modification does not improve the fitness, it will be saved in [undoTracking].
      * in this case, the latest is the last of [undoTracking], not [this]
      */
-    fun updateImpactOfGenes(inTrack : Boolean, mutatedGenes : MutatedGeneSpecification){
+    fun updateImpactOfGenes(inTrack : Boolean, mutatedGenes : MutatedGeneSpecification, notCoveredTargets : Set<Int>, strategy : EMConfig.SecondaryObjectiveStrategy){
         assert(mutatedGenes.mutatedIndividual != null)
         assert(getTracking() != null)
         assert(getUndoTracking() != null)
@@ -277,12 +278,12 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val next = if(inTrack) this else getUndoTracking()!!.last()
 
         /*
-         TODO check side effect regarding fitness calculation
+         it might be a problem if covered targets become worse.
          */
-        val isAnyOverallImprovement = updateReachedTargets(fitness)
-        val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
+        val isAnyChange = updateReachedTargets(fitness) || next.fitness.isDifferent(previous.fitness, notCoveredTargets, strategy)
+//        val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
 
-        compareWithLatest(next, previous, (isAnyOverallImprovement || comparedFitness != 0.0), mutatedGenes)
+        compareWithLatest(next, previous, isAnyChange, mutatedGenes)
     }
 
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification){
@@ -311,6 +312,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 
+        /*
+        NOTE THAT if a number of selected genes to mutate is small (i.e., 3), it is likely that a number of mutated genes is more than 1 if applying 1/n (i.e., 1/3).
+        we might need to further handle this kind of side effects, but it have not be handled yet.
+         */
         mutatedGenesWithContext.forEach { (t, u) ->
             val impact = getImpactOfGenes().getValue(t)
 
@@ -321,6 +326,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     }
 
+    /**
+     * update fitness archived by [this]
+     * return whether [fitness] archive new targets or improve distance
+     */
     private fun updateReachedTargets(fitness: FitnessValue) : Boolean{
         var isAnyOverallImprovement = false
         fitness.getViewOfData().forEach { (t, u) ->
