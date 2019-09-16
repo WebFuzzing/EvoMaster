@@ -29,7 +29,7 @@ public class LongClassReplacement implements MethodReplacementClass {
         }
 
         if (idTemplate == null) {
-            return Integer.parseInt(input);
+            return Long.parseLong(input);
         }
 
         try {
