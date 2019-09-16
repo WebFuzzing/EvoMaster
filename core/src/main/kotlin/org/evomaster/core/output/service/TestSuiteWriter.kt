@@ -31,7 +31,7 @@ class TestSuiteWriter {
 
     fun writeTests(
             solution: Solution<*>,
-            controllerName: String
+            controllerName: String?
     ) {
 
         val name = TestSuiteFileName(config.testSuiteFileName)
@@ -55,7 +55,7 @@ class TestSuiteWriter {
     private fun convertToCompilableTestCode(
             solution: Solution<*>,
             testSuiteFileName: TestSuiteFileName,
-            controllerName: String
+            controllerName: String?
             )
             : String {
 
@@ -176,21 +176,31 @@ class TestSuiteWriter {
         }
     }
 
-    private fun staticVariables(controllerName: String, lines: Lines){
+    private fun staticVariables(controllerName: String?, lines: Lines){
 
         if(config.outputFormat.isJava()) {
-            lines.add("private static final SutHandler $controller = new $controllerName();")
-            lines.add("private static String $baseUrlOfSut;")
+            if(! config.blackBox) {
+                lines.add("private static final SutHandler $controller = new $controllerName();")
+                lines.add("private static String $baseUrlOfSut;")
+            } else {
+                lines.add("private static String $baseUrlOfSut = \"${config.bbTargetUrl}\";")
+            }
+
             if(config.expectationsActive){
                 lines.add("private static boolean activeExpectations = false;")
             }
+
         } else if(config.outputFormat.isKotlin()) {
-            lines.add("private val $controller : SutHandler = $controllerName()")
-            lines.add("private lateinit var $baseUrlOfSut: String")
+            if(! config.blackBox) {
+                lines.add("private val $controller : SutHandler = $controllerName()")
+                lines.add("private lateinit var $baseUrlOfSut: String")
+            } else {
+                lines.add("private val $baseUrlOfSut = \"${config.bbTargetUrl}\"")
+            }
+
             if(config.expectationsActive){
                 lines.add("private val $activeExpectations = false")
             }
-
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.
@@ -212,8 +222,11 @@ class TestSuiteWriter {
         }
 
         lines.block {
-            addStatement("baseUrlOfSut = $controller.startSut()", lines)
-            addStatement("assertNotNull(baseUrlOfSut)", lines)
+            if(! config.blackBox) {
+                addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                addStatement("assertNotNull(baseUrlOfSut)", lines)
+            }
+
             addStatement("RestAssured.urlEncodingEnabled = false", lines)
 
             if (config.enableBasicAssertions){
@@ -223,6 +236,10 @@ class TestSuiteWriter {
     }
 
     private fun tearDownMethod(lines: Lines){
+
+        if(config.blackBox) {
+           return
+        }
 
         val format = config.outputFormat
 
@@ -243,6 +260,10 @@ class TestSuiteWriter {
 
     private fun initTestMethod(lines: Lines){
 
+        if(config.blackBox) {
+            return
+        }
+
         val format = config.outputFormat
 
         when {
@@ -259,7 +280,7 @@ class TestSuiteWriter {
         }
     }
 
-    private fun beforeAfterMethods(controllerName: String, lines: Lines) {
+    private fun beforeAfterMethods(controllerName: String?, lines: Lines) {
 
         lines.addEmpty()
 

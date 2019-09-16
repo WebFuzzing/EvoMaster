@@ -19,13 +19,13 @@ import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
 import org.evomaster.core.search.gene.StringGene
 
-class RestFitness : AbstractRestFitness<RestIndividual>() {
+open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
     }
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var rc: RemoteController
 
     @Inject
