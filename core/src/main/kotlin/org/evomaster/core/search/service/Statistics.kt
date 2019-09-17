@@ -3,6 +3,7 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -29,6 +30,10 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var idMapper: IdMapper
 
+    @Inject(optional = true)
+    private var restSampler: RestSampler? = null
+
+
     /**
      * How often test executions did timeout
      */
@@ -37,7 +42,7 @@ class Statistics : SearchListener {
     /**
      * How often it was not possible to compute coverage for a test
      */
-    private var coverage_failures = 0
+    private var coverageFailures = 0
 
 
     private class Pair(val header: String, val element: String)
@@ -131,7 +136,7 @@ class Statistics : SearchListener {
     }
 
     fun reportCoverageFailure() {
-        coverage_failures++
+        coverageFailures++
     }
 
     override fun newActionEvaluated() {
@@ -173,8 +178,11 @@ class Statistics : SearchListener {
             add(Pair("evaluatedActions", "" + time.evaluatedActions))
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
+            add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
+            add(Pair("endpoints", "" + (restSampler?.numberOfDistinctActions() ?: 0)))
+            add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
             add(Pair("errors5xx", "" + errors5xx(solution)))
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
 
@@ -183,7 +191,7 @@ class Statistics : SearchListener {
             add(Pair("maxReturnCodes", "" + codes.max()))
 
             add(Pair("testTimeouts", "$timeouts"))
-            add(Pair("coverageFailures", "$coverage_failures"))
+            add(Pair("coverageFailures", "$coverageFailures"))
 
             add(Pair("id", config.statisticsColumnId))
         }
@@ -208,6 +216,19 @@ class Statistics : SearchListener {
                 .flatMap { it.evaluatedActions() }
                 .filter {
                     it.result is RestCallResult && it.result.hasErrorCode()
+                }
+                .map { it.action.getName() }
+                .distinct()
+                .count()
+    }
+
+    private fun covered2xxEndpoints(solution: Solution<*>) : Int {
+
+        //count the distinct number of API paths for which we have a 2xx
+        return solution.individuals
+                .flatMap { it.evaluatedActions() }
+                .filter {
+                    it.result is RestCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 .map { it.action.getName() }
                 .distinct()

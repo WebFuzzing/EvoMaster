@@ -114,6 +114,7 @@ class RestSampler : Sampler<RestIndividual>(){
         log.debug("Done initializing {}", RestSampler::class.simpleName)
     }
 
+
     private fun initForBlackBox() {
 
         val swagger = getSwagger(configuration.bbSwaggerUrl)
