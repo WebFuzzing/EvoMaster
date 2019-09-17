@@ -12,7 +12,6 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.util.Date;
 import java.util.Objects;
 
@@ -20,18 +19,32 @@ import static org.evomaster.client.java.instrumentation.coverage.methodreplaceme
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.MAX_CHAR_DISTANCE;
 
 public class DateFormatClassReplacement implements MethodReplacementClass {
+
+    public static final String YYYY_MM_DD = "YYYY-MM-DD";
+    public static final String YYYY_MM_DD_HH_SS = "YYYY-MM-DD HH:SS";
+
     @Override
     public Class<?> getTargetClass() {
         return DateFormat.class;
     }
 
-    @Replacement(type = ReplacementType.EXCEPTION)
-    public static Date parse(DateFormat caller, String input, String idTemplate) throws ParseException {
-        Objects.requireNonNull(caller);
+    private static Date parseSimpleDateFormat(SimpleDateFormat caller, String input, String idTemplate) throws ParseException {
 
+        final String pattern = caller.toPattern();
         if (TaintInputName.isTaintInput(input)) {
+            final StringSpecializationInfo specializationInfo;
+            switch (pattern) {
+                case YYYY_MM_DD:
+                    specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, pattern);
+                    break;
+                case YYYY_MM_DD_HH_SS:
+                    specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD_HH_SS, pattern);
+                    break;
+                default:
+                    specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_FORMAT_PATTERN, pattern);
+            }
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
+                    specializationInfo);
         }
 
         if (idTemplate == null) {
@@ -43,15 +56,55 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (ParseException e) {
-            Truthness t;
-            if (caller instanceof SimpleDateFormat && ((SimpleDateFormat) caller).toPattern().equals("YYYY-MM-DD HH:SS")) {
-                double h = parseHeuristicDateTime(input);
-                t = new Truthness(h, 1);
-            } else {
-                t = new Truthness(0, 1);
+            final double h;
+            switch (pattern) {
+                case YYYY_MM_DD:
+                    h = LocalDateClassReplacement.parseHeuristic(input);
+                    break;
+                case YYYY_MM_DD_HH_SS:
+                    h = parseHeuristicDateTime(input);
+                    break;
+                default:
+                    h = parseHeuristicDateWithPattern(input, pattern);
             }
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, t);
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
+        }
+
+    }
+
+    private static double parseHeuristicDateWithPattern(String input, String dateFormatPattern) {
+        return 0;
+    }
+
+    @Replacement(type = ReplacementType.EXCEPTION)
+    public static Date parse(DateFormat caller, String input, String idTemplate) throws ParseException {
+        Objects.requireNonNull(caller);
+
+        if (caller instanceof SimpleDateFormat) {
+            SimpleDateFormat sdf = (SimpleDateFormat) caller;
+            return parseSimpleDateFormat(sdf, input, idTemplate);
+        } else {
+
+            if (TaintInputName.isTaintInput(input)) {
+                ExecutionTracer.addStringSpecialization(input,
+                        new StringSpecializationInfo(StringSpecialization.DATE_FORMAT_UNKNOWN_PATTERN, null));
+
+            }
+
+            if (idTemplate == null) {
+                return caller.parse(input);
+            }
+
+            try {
+                Date res = caller.parse(input);
+                ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+                return res;
+            } catch (ParseException e) {
+                // we do not have much guidance since we cannot access any pattern
+                ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(0, 1));
+                throw e;
+            }
         }
     }
 

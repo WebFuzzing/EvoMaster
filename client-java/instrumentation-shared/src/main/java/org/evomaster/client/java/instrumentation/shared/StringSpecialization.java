@@ -9,9 +9,24 @@ import java.io.Serializable;
 public enum StringSpecialization implements Serializable {
 
     /**
-     * String used as a Data in YYYY_MM_DD format
+     * String used as a Date with unknown format
+     */
+    DATE_FORMAT_UNKNOWN_PATTERN,
+
+    /**
+     * String used as a Date with not explicitly supported format
+     */
+    DATE_FORMAT_PATTERN,
+
+    /**
+     * String used as a Date in YYYY_MM_DD format
      */
     DATE_YYYY_MM_DD,
+
+    /**
+     * String used as a Date in YYYY_MM_DD_HH_sS format
+     */
+    DATE_YYYY_MM_DD_HH_SS,
 
     /**
      * String used as an integer
