@@ -25,6 +25,15 @@ public class NumberMatcher extends TypeSafeMatcher<Number> {
     public static Matcher<Number> numberMatches(Number item) {
         return new NumberMatcher(item.doubleValue());
     }
+    public static Matcher<Number> numberMatches(String item) {
+        try{
+            Number value = Double.parseDouble(item);
+            return new NumberMatcher(value.doubleValue());
+        }
+        catch(NumberFormatException e){
+            return new NumberMatcher(Double.NaN); // this should not match
+        }
+    }
     public static boolean numbersMatch(Number item1, Number item2){
         if (item1 == null || item2 == null) return false;
         NumberMatcher n1 = new NumberMatcher(item1.doubleValue());

@@ -937,4 +937,30 @@ class TestCaseWriterTest {
         assertEquals(expectedLines.toString(), lines.toString())
     }
 
+    /*
+
+
+    fun testResultValue(){
+        val objectGene = ObjectGene("Object", listOf(StringGene("stringField")))
+        val format = OutputFormat.JAVA_JUNIT_4
+
+        val baseUrlOfSut = "baseUrlOfSut"
+
+        val sampleType = SampleType.RANDOM
+
+        val restActions = emptyList<RestAction>().toMutableList()
+
+
+        val individual = RestIndividual(restActions, sampleType, dbInitialization)
+
+        val fitnessVal = FitnessValue(0.0)
+
+        val results = emptyList<ActionResult>().toMutableList()
+
+        val ei = EvaluatedIndividual<RestIndividual>(fitnessVal, individual, results)
+    }
+
+     */
+
+
 }
