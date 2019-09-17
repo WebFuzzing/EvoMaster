@@ -162,7 +162,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
                 val stringGene = action.seeGenes()
                         .flatMap { it.flatView() }
                         .filterIsInstance<StringGene>()
-                        .find { it.value == entry.key }
+                        .find { it.getValueAsRawString() == entry.key }
 
                 if (stringGene == null) {
                     /*

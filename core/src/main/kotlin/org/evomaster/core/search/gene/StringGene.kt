@@ -99,13 +99,17 @@ class StringGene(
 
         if (specializationGene == null && specializationGenes.isNotEmpty()) {
             selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
+            selectionUpdatedSinceLastMutation = false
             return
 
         } else if (specializationGene != null) {
-            if(selectionUpdatedSinceLastMutation){
-                //force selection of most recent added gene
+            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
+                /*
+                    selection of most recent added gene, but only with a given
+                    probability, albeit high.
+                    point is, switching is not always going to be beneficial
+                 */
                 selectedSpecialization = specializationGenes.lastIndex
-                selectionUpdatedSinceLastMutation = false
             } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
                 //choose another specialization, but with low probability
                 selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
@@ -113,6 +117,7 @@ class StringGene(
                 //just mutate current selection
                 specializationGene.standardMutation(randomness, apc, allGenes)
             }
+            selectionUpdatedSinceLastMutation = false
             return
         }
 
