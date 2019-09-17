@@ -123,8 +123,8 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             this.inputVariables = action.seeGenes()
                     .flatMap { it.flatView() }
                     .filterIsInstance<StringGene>()
-                    .filter { it.specializationGene != null && it.specializationGene is RegexGene}
-                    .map { it.specializationGene!!.getValueAsRawString()}
+                    .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene}
+                    .map { it.getSpecializationGene()!!.getValueAsRawString()}
         })
     }
 
@@ -167,23 +167,11 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
                 if (stringGene == null) {
                     /*
                         This can happen if the taint input is manipulated, but still with
-                        some prefix and postfix
+                        same prefix and postfix
                      */
                     log.debug("No taint input '${entry.key}' in action nr. $i")
                 } else {
-                    /*
-                        a StringGene might have some characters that are not allowed,
-                        like '/' and '.' in a PathParam.
-                        If we have a constant that uses any of such chars, then we must
-                        skip it.
-                        We allow constant larger than Max (as that should not be a problem),
-                        but not smaller than Min (eg to avoid empty strings in PathParam)
-                     */
-                    stringGene.specializations = specs.filter { s ->
-                        s.stringSpecialization != StringSpecialization.CONSTANT ||
-                                (stringGene.invalidChars.none { c -> s.value.contains(c) } &&
-                                        s.value.length >= stringGene.minLength)
-                    }
+                    stringGene.addSpecializations(specs, randomness)
                 }
             }
         }
