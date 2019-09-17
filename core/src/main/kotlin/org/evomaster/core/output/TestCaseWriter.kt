@@ -404,7 +404,7 @@ class TestCaseWriter {
             format.isKotlin() -> lines.append("val $name: ValidatableResponse = ")
             format.isJava() -> lines.append("ValidatableResponse $name = ")
         }
-        lines.append("given()" + getAcceptHeader())
+        lines.append("given()" + getAcceptHeader(call, res))
     }
 
     private fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines){
@@ -492,7 +492,19 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleFieldValues(resContentsItem: Any?, ident: String, name: String): String{
+    private fun handleFieldValues(resContentsItem: Any?): String {
+        if (resContentsItem == null) {
+            return "nullValue()"
+        } else {
+            when (resContentsItem::class) {
+                Double::class -> return "numberMatches(${resContentsItem as Double})"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
+                Map::class -> return NOT_COVERED_YET
+                ArrayList::class -> return NOT_COVERED_YET
+                else -> return NOT_COVERED_YET
+            }
+        }
+        /*
         if (resContentsItem == null) {
             return "nullValue()"
         } else {
@@ -513,13 +525,15 @@ class TestCaseWriter {
                         "${resContentsItem as Double})"
                 //String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
                 String::class -> return "json_$name.getJsonObject(\"$ident\").toString()" +
-                        ".matches(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
+                        ".matches(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
 
                 //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
-                else -> return "NotCoveredYet"
+                Map::class -> return NOT_COVERED_YET
+                ArrayList::class -> return NOT_COVERED_YET
+                else -> return NOT_COVERED_YET
             }
-        }
+        }*/
         /* BMR: the code above is due to a somewhat unfortunate problem:
         - Gson does parses all numbers as Double
         - Hamcrest has a hard time comparing double to int
@@ -603,37 +617,29 @@ class TestCaseWriter {
                                     }
                                 }
                             }
-                            '{' -> {
-                                // JSON contains an object
-                                val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
-                                resContents.keys.filter{!(it as String)
-                                        .contains("timestamp")}
-                                        .forEach {
-                                    val actualValue = resContents[it]
-                                    if (actualValue != null) {
-                                        val printableTh = handleFieldValuesAssert(actualValue)
-                                        if (printableTh != "nullValue()" && printableTh != "NotCoveredYet") {
-                                            lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                                        }
-                                    }
-                                }
-                            }
-                            //'"' -> {
-                                // This branch will be called if the JSON is a String
-                                // Currently, it only supports very basic string matching
-                             //   val resContents = Gson().fromJson(res.getBody(), String::class.java)
-                             //   lines.add(".body(containsString(\"${resContents}\"))")
-                            //}
-                            else -> {
-                                // This branch will be called if the JSON is null (or has a basic type)
-                                // Currently, it converts the contents to String.
-                                // TODO: if the contents are not a valid form of that type, expectations should be developed to handle the case
-                                //val resContents = Gson().fromJson("\"" + res.getBody() + "\"", String::class.java)
-                                //lines.add(".body(containsString(\"${resContents}\"))")
-                            }
                         }
                     }
+                    '{' -> {
+                        // JSON contains an object
+                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
+                        addObjectAssertions(resContents, lines)
+
+                    }
+                    //'"' -> {
+                    // This branch will be called if the JSON is a String
+                    // Currently, it only supports very basic string matching
+                    //   val resContents = Gson().fromJson(res.getBody(), String::class.java)
+                    //   lines.add(".body(containsString(\"${resContents}\"))")
+                    //}
+                    else -> {
+                        // This branch will be called if the JSON is null (or has a basic type)
+                        // Currently, it converts the contents to String.
+                        // TODO: if the contents are not a valid form of that type, expectations should be developed to handle the case
+                        //val resContents = Gson().fromJson("\"" + res.getBody() + "\"", String::class.java)
+                        lines.add(".body(containsString(\"${bodyString}\"))")
+                    }
                 }
+            }
         }
         //handleExpectations(res, lines, true)
     }
@@ -798,16 +804,19 @@ class TestCaseWriter {
         As it is still work in progress, expect quite significant changes to this.
         */
 
-        //Insert basic expectations
-        lines.add("expectationHandler.expect()") // this is a bit idle. Perhaps find a nicer way.
+        lines.add("expectationHandler()")
         lines.indented {
-            addExpectationsWithoutObjects(result, lines, name)
+            lines.add(".expect()")
+            //lines.add(".that(activeExpectations, true)")
+            //lines.add(".that(activeExpectations, false)")
+            if (configuration.enableCompleteObjects == false) {
+                addExpectationsWithoutObjects(result, lines, name)
+            }
+            lines.append(when {
+                format.isJava() -> ";"
+                else -> ""
+            })
         }
-        lines.append(when {
-            format.isJava() -> ";"
-            else -> ""
-        })
-
     }
 
     private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines, name: String) {
