@@ -74,6 +74,8 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
     }
 
     private static double parseHeuristicDateWithPattern(String input, String dateFormatPattern) {
+        // TODO translate dateFormatPattern to Java regular expression
+        // TODO use distance to Java Regular Expression as an approximate gradient to satisfy the pattern
         return 0;
     }
 
