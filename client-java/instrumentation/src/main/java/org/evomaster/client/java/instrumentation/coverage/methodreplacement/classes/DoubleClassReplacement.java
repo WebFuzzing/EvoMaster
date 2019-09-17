@@ -26,7 +26,7 @@ public class DoubleClassReplacement implements MethodReplacementClass {
 
         if (TaintInputName.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.INTEGER, null));
+                    new StringSpecializationInfo(StringSpecialization.DOUBLE, null));
         }
 
         if (idTemplate == null) {

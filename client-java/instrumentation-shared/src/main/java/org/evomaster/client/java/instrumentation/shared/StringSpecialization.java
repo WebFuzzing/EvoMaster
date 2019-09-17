@@ -41,5 +41,26 @@ public enum StringSpecialization implements Serializable {
     /**
      * String constrained by a regular expression
      */
-    REGEX
+    REGEX,
+
+    /**
+     * String parsed to double
+     */
+    DOUBLE,
+
+    /**
+     * String parsed to long
+     */
+    LONG,
+
+    /**
+     * String parsed to boolean
+     */
+    BOOLEAN,
+
+    /**
+     * String parsed to float
+     */
+    FLOAT
+
 }

@@ -10,7 +10,9 @@ public class TruthnessHelper {
      */
     public static Truthness getTruthnessToEmpty(int len) {
         Truthness t;
-        assert (len >= 0);
+        if (len < 0) {
+            throw new IllegalArgumentException("lengths should always be non-negative. Invalid length " + len);
+        }
         if (len == 0) {
             t = new Truthness(1, 0);
         } else {

@@ -25,7 +25,7 @@ public class LongClassReplacement implements MethodReplacementClass {
 
         if (TaintInputName.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.INTEGER, null));
+                    new StringSpecializationInfo(StringSpecialization.LONG, null));
         }
 
         if (idTemplate == null) {

@@ -24,7 +24,7 @@ public class BooleanClassReplacement implements MethodReplacementClass {
 
         if (TaintInputName.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.INTEGER, null));
+                    new StringSpecializationInfo(StringSpecialization.BOOLEAN, null));
         }
 
         if (idTemplate == null) {

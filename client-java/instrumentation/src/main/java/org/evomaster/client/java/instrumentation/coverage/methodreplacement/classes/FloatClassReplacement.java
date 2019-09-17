@@ -25,7 +25,7 @@ public class FloatClassReplacement implements MethodReplacementClass {
 
         if (TaintInputName.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.INTEGER, null));
+                    new StringSpecializationInfo(StringSpecialization.FLOAT, null));
         }
 
         if (idTemplate == null) {

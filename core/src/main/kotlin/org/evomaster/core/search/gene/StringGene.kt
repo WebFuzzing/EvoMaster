@@ -164,6 +164,14 @@ class StringGene(
 
             specializations.any { it.stringSpecialization == INTEGER } -> IntegerGene(name)
 
+            specializations.any { it.stringSpecialization == LONG } -> LongGene(name)
+
+            specializations.any { it.stringSpecialization == BOOLEAN } -> BooleanGene(name)
+
+            specializations.any { it.stringSpecialization == FLOAT } -> FloatGene(name)
+
+            specializations.any { it.stringSpecialization == DOUBLE } -> DoubleGene(name)
+
             specializations.any { it.stringSpecialization == CONSTANT } -> EnumGene<String>(name,
                         specializations.filter { it.stringSpecialization == CONSTANT }.map { it.value }
                 )
@@ -172,6 +180,8 @@ class StringGene(
                     //TODO maybe we could have an OR here, but then need to proper handle ^ and $ in disjunctions
                     randomness.choose(specializations.filter{ it.stringSpecialization == REGEX }).value
             )
+
+
 
             else -> {
                 //should never happen
