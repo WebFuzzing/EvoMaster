@@ -171,7 +171,7 @@ class SortingHelper {
     //var comparatorList = mutableListOf(statusCode, minActions)
     var comparatorList = mutableListOf(coveredTargets)
 
-    val availableSortCriteria = mutableListOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
+    private val availableSortCriteria = mutableListOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
 
     fun getAvailableCriteria(): MutableList<Comparator<EvaluatedIndividual<*>>> {
         return availableSortCriteria

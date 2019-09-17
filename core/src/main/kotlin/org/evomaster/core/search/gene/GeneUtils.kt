@@ -160,7 +160,10 @@ object GeneUtils {
         return ret
                 .replace("\\", """\\""")
                 .replace("\"", "\\\"")
-
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
 
     }
 
@@ -168,6 +171,8 @@ object GeneUtils {
         val ret = if(format.isKotlin()) string.replace("\$", "%24")
         else string
         return ret.replace("\\", "%5C")
+                .replace("\"", "%22")
+                .replace("\n", "%0A")
     }
 
     fun applyTextEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
@@ -178,13 +183,20 @@ object GeneUtils {
         return ret
                 .replace("\\", """\\""")
                 .replace("\"", "\\\"")
-
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
     }
 
     fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
         var ret = ""
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
-        ret = string.split("@")[0] //first split off any reference that might differ between runs
+        ret = if (format.isKotlin()) string.replace("\$", "\${\'\$\'}")
+        //ret.replace("\$", "\\\$")
+        else string
+
+        return ret.split("@")[0] //first split off any reference that might differ between runs
                 .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
                 .replace("\\", """\\""")
                 .replace("\"", "\\\"")
@@ -193,13 +205,15 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
-        //ret.replace("\$", "\\\$")
-        else return ret
+
     }
 
     fun applyQueryEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
-        val ret = string
+        val ret =  if (format.isKotlin()) string.replace("\$", "%24")
+        //ret.replace("\$", "\\\$")
+        else string
+
+        return ret
                 //.replace("""\"""", """\\\"""")
                 //.replace("""\\""", """\\\\""")
                 .replace("\\", """\\""")
@@ -211,9 +225,7 @@ object GeneUtils {
 
 
 
-        if (format.isKotlin()) return ret.replace("\$", "%24")
-        //ret.replace("\$", "\\\$")
-        else return ret
+
     }
 
 }
