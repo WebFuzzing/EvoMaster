@@ -1,7 +1,6 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
-import com.google.gson.internal.LinkedTreeMap
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -25,15 +24,20 @@ class TestCaseWriter {
 
     private var counter = 0
     private var usedObjects = UsedObjects()
+    private var previousChained = false
+    private var previousId = ""
+    private var chained = false
     //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
 
+    companion object{
+        val NOT_COVERED_YET = "NotCoveredYet"
+    }
 
     fun convertToCompilableTestCode(
-            //format: OutputFormat,
             config: EMConfig,
             test: TestCase,
             baseUrlOfSut: String)
@@ -62,12 +66,10 @@ class TestCaseWriter {
             if (test.test.individual is RestIndividual) {
                 // BMR: test.test should have the used objects attached (if any).
                 //usedObjects = test.test.individual.usedObjects
-
                 if (config.enableCompleteObjects) {
-                    usedObjects = test.test.individual.usedObjects
+                    usedObjects = (test.test.individual as RestIndividual).usedObjects
                 }
-
-                handleDbInitialization(format, test.test.individual.dbInitialization, lines)
+                handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
             }
 
 
@@ -346,6 +348,9 @@ class TestCaseWriter {
                 }
 
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter;")
+
+                previousChained = res.getHeuristicsForChainedLocation()
+                if(previousChained) previousId = "id_$counter"
                 counter++
             }
         } else {
@@ -366,6 +371,7 @@ class TestCaseWriter {
                 } else {
                     lines.append("val id_$counter: String = ")
                 }
+                chained = res.getHeuristicsForChainedLocation()
             }
         }
         lines.append("given()" + getAcceptHeader(call, res))
@@ -375,7 +381,8 @@ class TestCaseWriter {
         val verb = call.verb.name.toLowerCase()
         lines.add(".$verb(")
         if (call.locationId != null) {
-            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${applyEscapes(call.resolvedPath())}\")")
+            //lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${applyEscapes(call.resolvedPath())}\")")
+            lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
 
         } else {
 
@@ -383,17 +390,18 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${applyEscapes(uri)}\"")
+                lines.append("\"${GeneUtils.applyEscapes(uri, mode = "uris", format = format)}\"")
+                //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)
                 val elements = call.path.resolveOnlyQuery(call.parameters)
 
-                lines.append("\"${applyEscapes(path)}?\" + ")
+                lines.append("\"$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${applyEscapes(elements[i])}&\" + ") }
-                    lines.add("\"${applyEscapes(elements.last())}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = "queries", format = format)}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = "queries", format = format)}\"")
                 }
             }
         }
@@ -418,16 +426,11 @@ class TestCaseWriter {
             return "nullValue()"
         } else {
             when (resContentsItem::class) {
-                //Double::class -> return "anyOf(equalTo(${(Math.floor(resContentsItem as Double).toInt())}), closeTo(${(resContentsItem as Double)}, 0.1))"
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${applyEscapes(resContentsItem as String)}\")"
-                /*String::class -> return "containsString(\"${(resContentsItem as String)
-                        .replace("\"", "\\\"")
-                        .replace("\n", "\\n")
-                        .replace("\r", "\\r")}\")"*/
-                //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
-                // The above solution should be refined.
-                else -> return "NotCoveredYet"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
+                Map::class -> return NOT_COVERED_YET
+                ArrayList::class -> return NOT_COVERED_YET
+                else -> return NOT_COVERED_YET
             }
         }
         /* BMR: the code above is due to a somewhat unfortunate problem:
@@ -436,6 +439,25 @@ class TestCaseWriter {
         The solution is to use an additional content matcher that can be found in NumberMatcher. This can also
         be used as a template for adding more matchers, should such a step be needed.
         * */
+    }
+
+    private fun handleMapLines(index: Int, map: Map<*,*>, lines: Lines){
+        map.keys.forEach{
+            val printableTh = handleFieldValues(map[it])
+            if (printableTh != "null"
+                    && printableTh != NOT_COVERED_YET
+                    && !printableTh.contains("logged")
+            ) {
+                //lines.add(".body(\"find{it.$it == \\\"${map[it]}\\\"}.$it\", $printableTh)") //tried a find
+                //lines.add(".body(\"sort{it.toString()}.$it[$index]\", $printableTh)")
+                //lines.add(".body(\"$it[$index]\", $printableTh)") //just index
+                //lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)") //sort and index
+                //reinstated above due to the problem of non-deterministic ordering of retrieved collections
+                // (eg. ScoutAPI - users)
+                //lines.add(".body(\"get($index).$it\" , $printableTh)")
+                lines.add(".body(\"$it\", hasItem($printableTh))")
+            }
+        }
     }
 
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
@@ -455,40 +477,32 @@ class TestCaseWriter {
                 when (bodyString?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
-                        // Only assertions on array size are supporte at the moment.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        if (resContents.size > 0) {
-                            resContents.forEachIndexed { index, value ->
-                                val test_i = index
-                                val printableTh = handleFieldValues(value)
-                                if (printableTh != "null"
-                                        && printableTh != "NotCoveredYet"
-                                        && !printableTh.contains("logged")
-                                ) {
-                                    lines.add(".body(\"get($test_i)\", $printableTh)")
+                        //resContents.sortBy { it.toString() }
+                        //assertions on contents
+                        if(resContents.size > 0){
+                            resContents.forEachIndexed { test_index, value ->
+                                if (value is Map<*, *>){
+                                    handleMapLines(test_index, value, lines)
+                                }
+                                else {
+                                    val printableTh = handleFieldValues(value)
+                                    if (printableTh != "null"
+                                            && printableTh != NOT_COVERED_YET
+                                            && !printableTh.contains("logged")
+                                    ) {
+                                        lines.add(".body(\"get($test_index)\", $printableTh)")
+                                    }
                                 }
                             }
                         }
                     }
                     '{' -> {
                         // JSON contains an object
-                        val resContents = Gson().fromJson(res.getBody(), LinkedTreeMap::class.java)
-                        resContents.keys.filter {
-                            !(it as String).contains("timestamp")
-                        }
-                                .forEach {
-                                    val actualValue = resContents[it]
-                                    if (actualValue != null) {
-                                        val printableTh = handleFieldValues(actualValue)
-                                        if (printableTh != "null"
-                                                && printableTh != "NotCoveredYet"
-                                                && !printableTh.contains("logged")
-                                        ) {
-                                            lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                                        }
-                                    }
-                                }
+                        val resContents = Gson().fromJson(res.getBody(), Map::class.java)
+                        addObjectAssertions(resContents, lines)
+
                     }
                     //'"' -> {
                     // This branch will be called if the JSON is a String
@@ -507,6 +521,35 @@ class TestCaseWriter {
             }
         }
         //handleExpectations(res, lines, true)
+    }
+
+    private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
+        resContents.keys
+                /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
+                * Even relatively minor timing changes (one second either way) could cause tests to fail
+                * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
+                * Note that this is a temporary (and somewhat hacky) solution.
+                * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
+                *
+                * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
+                */
+                .filter{ !(it as String).contains("timestamp")}
+                .forEach {
+                    val actualValue = resContents[it]
+                    if (actualValue != null) {
+                        val printableTh = handleFieldValues(actualValue)
+                        if (printableTh != "null"
+                                && printableTh != NOT_COVERED_YET
+                                && !printableTh.contains("logged")
+                        ) {
+                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            if(it != "id") lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            else{
+                                if(!chained && previousChained) lines.add(".body(\"\'${it}\'\", numberMatches($previousId))")
+                            }
+                        }
+                    }
+                }
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
@@ -536,7 +579,19 @@ class TestCaseWriter {
 
                 //needed as JSON uses ""
                 val bodyLines = body.split("\n").map { s ->
-                    "\"" + s.trim().replace("\"", "\\\"") + "\""
+                    //"\"" + s.trim().replace("\"", "\\\"") + "\""
+                    //"\"" + s.trim().replace("\"", "\\\"") + "\""
+                    "\"" + GeneUtils.applyEscapes(s.trim(), "json", format).replace("\\\\u", "\\u") + "\""
+                    /*
+                     The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
+                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
+                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
+
+                     As far as I understand, the addition of an \ in the \unicode should not really happen.
+                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
+                     they are not.
+                     */
+
                 }
 
                 if (bodyLines.size == 1) {
@@ -556,7 +611,16 @@ class TestCaseWriter {
                 lines.add(".body(\"$body\")")
             } */ else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
-                lines.add(".body($body)")
+                if (body != "\"\"") {
+                    lines.add(".body($body)")
+                }
+                else {
+                    lines.add(".body(\"${"""\"\""""}\")")
+                }
+
+                //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
+                // inserting \"\" should prevent that problem
+                // TODO: get some tests done of this
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
             }
@@ -648,10 +712,10 @@ class TestCaseWriter {
                             // This would be run if the JSON contains a single object
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
-                            (resContents as LinkedTreeMap<*, *>).keys.forEach {
+                            (resContents as Map<*, *>).keys.forEach {
                                 val printableTh = handleFieldValues(resContents[it]!!)
                                 if (printableTh != "null"
-                                        && printableTh != "NotCoveredYet"
+                                        && printableTh != NOT_COVERED_YET
                                 ) {
                                     lines.add(".that(activeExpectations, (\"${it}\" == \"${resContents[it]}\"))")
                                 }
@@ -660,7 +724,7 @@ class TestCaseWriter {
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             //lines.add(".body(isEmptyOrNullString())")
-                            lines.add(".body(containsString(\"${result.getBody()}\"))")
+                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = "assertions", format = format)}\"))")
                         }
                     }
                 }
@@ -668,12 +732,29 @@ class TestCaseWriter {
         }
     }
 
+    /**
+     * [applyEscapes] currently sets up the string for printing.
+     * This includes escaping special chars for java and kotlin.
+     * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
+     * the symbol signifies an object reference (which would likely cause the assertion to fail).
+     * TODO: Tests are needed to make sure this does not break.
+     */
+
+    /*
+
+
     private fun applyEscapes(string: String): String {
-        val ret = string.replace("\"", "\\\"")
+        val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
+        val ret = string.split("@")[0] //first split off any reference that might differ between runs
+                .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
+                .replace("""\\""", """\\\\""")
+                .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
 
-        if (format.isKotlin()) return ret.replace("$", "\\$")
+
+
+        if (format.isKotlin()) return ret.replace("\$", "\\\$")
         else return ret
-    }
+    }*/
 }
