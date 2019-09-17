@@ -44,7 +44,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         Pattern pattern = caller.pattern();
         String text = getText(caller);
 
-        if(TaintInputName.isTaintInput(text)){
+        if(ExecutionTracer.isTaintInput(text)){
             /*
                 .matches() does a full match of the text, not a partial.
 

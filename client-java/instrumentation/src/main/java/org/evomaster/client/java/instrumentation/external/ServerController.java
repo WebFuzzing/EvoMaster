@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.external;
 
+import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
@@ -191,8 +192,8 @@ public class ServerController {
         return sendAndExpectACK(Command.NEW_TEST);
     }
 
-    public boolean setActionIndex(int actionIndex) {
-        return sendWithDataAndExpectACK(Command.ACTION_INDEX, actionIndex);
+    public boolean setAction(Action action) {
+        return sendWithDataAndExpectACK(Command.ACTION_INDEX, action);
     }
 
     public synchronized List<TargetInfo> getTargetInfos(Collection<Integer> ids) {

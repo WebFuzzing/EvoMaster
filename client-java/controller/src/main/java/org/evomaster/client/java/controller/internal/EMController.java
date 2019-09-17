@@ -268,9 +268,9 @@ public class EMController {
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
-    public Response newAction(int index) {
+    public Response newAction(ActionDto dto) {
 
-        sutController.newAction(index);
+        sutController.newAction(dto);
 
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }

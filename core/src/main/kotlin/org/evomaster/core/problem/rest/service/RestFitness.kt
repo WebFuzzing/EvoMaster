@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
@@ -17,7 +18,9 @@ import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.regex.RegexGene
 
 open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
@@ -49,8 +52,9 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         for (i in 0 until individual.seeActions().size) {
 
-            rc.registerNewAction(i)
             val a = individual.seeActions()[i]
+
+            registerNewAction(a, i)
 
             var ok = false
 
@@ -109,6 +113,19 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+    }
+
+    private fun registerNewAction(action: RestAction, index: Int){
+
+        rc.registerNewAction(ActionDto().apply {
+            this.index = index
+            //for now, we only include specialized regex
+            this.inputVariables = action.seeGenes()
+                    .flatMap { it.flatView() }
+                    .filterIsInstance<StringGene>()
+                    .filter { it.specializationGene != null && it.specializationGene is RegexGene}
+                    .map { it.specializationGene!!.getValueAsRawString()}
+        })
     }
 
     private fun doTaintAnalysis(individual: RestIndividual, additionalInfoList: List<AdditionalInfoDto>) {
