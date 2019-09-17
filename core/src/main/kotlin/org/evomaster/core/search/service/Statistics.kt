@@ -30,8 +30,8 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var idMapper: IdMapper
 
-//    @Inject(optional = true)
-//    private var restSampler: RestSampler? = null
+    @Inject(optional = true)
+    private var sampler: Sampler<*>? = null
 
 
     /**
@@ -181,7 +181,7 @@ class Statistics : SearchListener {
             add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
-           // add(Pair("endpoints", "" + (restSampler?.numberOfDistinctActions() ?: 0)))
+            add(Pair("endpoints", "" + numberOfEndpoints()))
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
             add(Pair("errors5xx", "" + errors5xx(solution)))
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
@@ -198,6 +198,13 @@ class Statistics : SearchListener {
         addConfig(list)
 
         return list
+    }
+
+    private fun numberOfEndpoints() : Int {
+        if(sampler == null || sampler !is RestSampler){
+            return 0
+        }
+        return sampler!!.numberOfDistinctActions()
     }
 
 
