@@ -26,8 +26,8 @@ public class StringClassReplacement implements MethodReplacementClass {
     public static boolean equals(String caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
-        boolean taintedCaller = TaintInputName.isTaintInput(caller);
-        boolean taintedOther = anObject != null && TaintInputName.isTaintInput(anObject.toString());
+        boolean taintedCaller = ExecutionTracer.isTaintInput(caller);
+        boolean taintedOther = anObject != null && ExecutionTracer.isTaintInput(anObject.toString());
 
         if (taintedCaller || taintedOther) {
             if (taintedCaller) {

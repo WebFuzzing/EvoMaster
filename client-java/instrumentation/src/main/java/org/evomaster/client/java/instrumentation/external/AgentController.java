@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.external;
 
+import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InstrumentationController;
 import org.evomaster.client.java.utils.SimpleLogger;
 
@@ -92,8 +93,8 @@ public class AgentController {
     private static void handleActionIndex(){
         try {
             Object msg = in.readObject();
-            Integer index = (Integer) msg;
-            InstrumentationController.newAction(index);
+            Action action = (Action) msg;
+            InstrumentationController.newAction(action);
 
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling action index: "+e.getMessage());

@@ -19,7 +19,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
     private static Field textField = null;
 
-    static {
+    static{
         try {
             textField = Matcher.class.getDeclaredField("text");
             textField.setAccessible(true);
@@ -35,7 +35,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean matches(Matcher caller, String idTemplate) {
+    public static boolean matches(Matcher caller, String idTemplate){
 
         if (caller == null) {
             caller.matches();
@@ -44,7 +44,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         Pattern pattern = caller.pattern();
         String text = getText(caller);
 
-        if (TaintInputName.isTaintInput(text)) {
+        if(ExecutionTracer.isTaintInput(text)){
             /*
                 .matches() does a full match of the text, not a partial.
 

@@ -23,7 +23,7 @@ public class IntegerClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static int parseInt(String input, String idTemplate) {
 
-        if (TaintInputName.isTaintInput(input)) {
+        if(ExecutionTracer.isTaintInput(input)){
             ExecutionTracer.addStringSpecialization(input,
                     new StringSpecializationInfo(StringSpecialization.INTEGER, null));
         }

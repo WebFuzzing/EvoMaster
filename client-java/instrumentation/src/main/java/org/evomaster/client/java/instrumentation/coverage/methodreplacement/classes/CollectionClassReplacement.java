@@ -35,7 +35,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
             inputString = (String) o;
         }
 
-        if (TaintInputName.isTaintInput(inputString)) {
+        if (ExecutionTracer.isTaintInput(inputString)) {
             for (Object value : c) {
                 if (value instanceof String) {
                     ExecutionTracer.addStringSpecialization(inputString,

@@ -1,6 +1,7 @@
 package org.evomaster.core.search.gene
 
 import org.apache.commons.lang3.StringEscapeUtils
+import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -24,14 +25,7 @@ class StringGene(
          * For example, in a URL Path variable, we do not want have "/", as otherwise
          * it would create 2 distinct paths
          */
-        val invalidChars: List<Char> = listOf(),
-        /**
-         * Based on taint analysis, in some cases we can determine how some Strings are
-         * used in the SUT.
-         * For example, if a String is used as a Date, then it make sense to use a specialization
-         * in which we mutate to have only Strings that are valid dates
-         */
-        var specializations: List<StringSpecializationInfo> = listOf()
+        val invalidChars: List<Char> = listOf()
 
 ) : Gene(name) {
 
@@ -52,19 +46,42 @@ class StringGene(
 
     private var validChar: String? = null
 
-    var specializationGene: Gene? = null
+    /**
+     * Based on taint analysis, in some cases we can determine how some Strings are
+     * used in the SUT.
+     * For example, if a String is used as a Date, then it make sense to use a specialization
+     * in which we mutate to have only Strings that are valid dates
+     */
+    private val specializations: MutableSet<StringSpecializationInfo> = mutableSetOf()
+
+    var specializationGenes: MutableList<Gene> = mutableListOf()
+
+    var selectedSpecialization = -1
+
+    var selectionUpdatedSinceLastMutation = false
+
 
     override fun copy(): Gene {
-        return StringGene(name, value, minLength, maxLength, invalidChars, specializations)
+        return StringGene(name, value, minLength, maxLength, invalidChars)
                 .also {
-                    it.specializationGene = this.specializationGene?.copy()
+                    it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
+                    it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
+                    it.selectedSpecialization = this.selectedSpecialization
+                    it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
                 }
     }
 
+    fun getSpecializationGene() : Gene?{
+        if(selectedSpecialization >= 0 && selectedSpecialization < specializationGenes.size){
+            return specializationGenes[selectedSpecialization]
+        }
+        return null
+    }
+
     override fun isMutable() : Boolean{
-        if(specializationGene != null){
-            return specializationGene!!.isMutable()
+        if(getSpecializationGene() != null){
+            return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
         }
         return true
     }
@@ -72,23 +89,39 @@ class StringGene(
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
-        specializationGene = null
+        selectedSpecialization = -1
     }
+
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
-        if (specializationGene == null && specializations.isNotEmpty()) {
-            chooseSpecialization(randomness)
-            assert(specializationGene != null)
-        }
+        val specializationGene = getSpecializationGene()
 
-        if (specializationGene != null) {
-            specializationGene!!.standardMutation(randomness, apc, allGenes)
+        if (specializationGene == null && specializationGenes.isNotEmpty()) {
+            selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
+            selectionUpdatedSinceLastMutation = false
+            return
+
+        } else if (specializationGene != null) {
+            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
+                /*
+                    selection of most recent added gene, but only with a given
+                    probability, albeit high.
+                    point is, switching is not always going to be beneficial
+                 */
+                selectedSpecialization = specializationGenes.lastIndex
+            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
+                //choose another specialization, but with low probability
+                selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
+            } else{
+                //just mutate current selection
+                specializationGene.standardMutation(randomness, apc, allGenes)
+            }
+            selectionUpdatedSinceLastMutation = false
             return
         }
 
-        if (specializationGene == null
-                && !TaintInputName.isTaintInput(value)
+        if (!TaintInputName.isTaintInput(value)
                 && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
 
             value = TaintInputName.getTaintName(counter++.toString())
@@ -151,42 +184,65 @@ class StringGene(
         repair()
     }
 
-    private fun chooseSpecialization(randomness: Randomness) {
-        assert(specializations.isNotEmpty())
 
-        specializationGene = when {
+    fun addSpecializations(specs: Collection<StringSpecializationInfo>, randomness: Randomness){
 
-            specializations.any { it.stringSpecialization == DATE_YYYY_MM_DD } -> DateGene(name)
+        val toAddSpecs = specs
+                //don't add the same specialization twice
+                .filter { !specializations.contains(it) }
+                /*
+                        a StringGene might have some characters that are not allowed,
+                        like '/' and '.' in a PathParam.
+                        If we have a constant that uses any of such chars, then we must
+                        skip it.
+                        We allow constant larger than Max (as that should not be a problem),
+                        but not smaller than Min (eg to avoid empty strings in PathParam)
+                 */
+                .filter { s -> s.stringSpecialization != StringSpecialization.CONSTANT ||
+                            (invalidChars.none { c -> s.value.contains(c) } && s.value.length >= minLength)}
 
-            specializations.any { it.stringSpecialization == DATE_YYYY_MM_DD_HH_SS } -> DateTimeGene(name)
+        val toAddGenes = mutableListOf<Gene>()
 
-            specializations.any { it.stringSpecialization == DATE_FORMAT_PATTERN ||   it.stringSpecialization == DATE_FORMAT_UNKNOWN_PATTERN } -> DateTimeGene(name)
+        //all constant values are merged in the same enum gene
+        if(toAddSpecs.any { it.stringSpecialization == CONSTANT}){
+            toAddGenes.add(
+                    EnumGene<String>(
+                            name,
+                            toAddSpecs.filter { it.stringSpecialization == CONSTANT }.map { it.value }))
+        }
 
-            specializations.any { it.stringSpecialization == INTEGER } -> IntegerGene(name)
+        if(toAddSpecs.any {it.stringSpecialization == DATE_YYYY_MM_DD}){
+            toAddGenes.add(DateGene(name))
+        }
 
-            specializations.any { it.stringSpecialization == LONG } -> LongGene(name)
+        if(toAddSpecs.any {it.stringSpecialization == INTEGER}){
+            toAddGenes.add(IntegerGene(name))
+        }
 
-            specializations.any { it.stringSpecialization == BOOLEAN } -> BooleanGene(name)
+        //all regex are combined with disjunction in a single gene
+        if(toAddSpecs.any {it.stringSpecialization == REGEX}){
+            val regex = toAddSpecs
+                    .filter { it.stringSpecialization == REGEX }
+                    .map { it.value }
+                    .joinToString("|")
+            toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+        }
 
-            specializations.any { it.stringSpecialization == FLOAT } -> FloatGene(name)
+        /*
+            TODO
+            here we could check if merging with existing genes.
+            - CONSTANT would be relative easy, as just creating a new enum with the union of all constants
+            - REGEX would be tricky, because rather than a disjunction, it would likely need to be an AND,
+              which could be achieved with "(?=)". But that is something we do not support yet in the
+              grammar, and likely it is VERY complicated to do... eg, see:
+              https://stackoverflow.com/questions/24102484/can-regex-match-intersection-between-two-regular-expressions
+         */
 
-            specializations.any { it.stringSpecialization == DOUBLE } -> DoubleGene(name)
-
-            specializations.any { it.stringSpecialization == CONSTANT } -> EnumGene<String>(name,
-                        specializations.filter { it.stringSpecialization == CONSTANT }.map { it.value }
-                )
-
-            specializations.any { it.stringSpecialization == REGEX } -> RegexHandler.createGeneForJVM(
-                    //TODO maybe we could have an OR here, but then need to proper handle ^ and $ in disjunctions
-                    randomness.choose(specializations.filter{ it.stringSpecialization == REGEX }).value
-            )
-
-
-
-            else -> {
-                //should never happen
-                throw IllegalStateException("Cannot handle specialization")
-            }
+        if(toAddGenes.size > 0){
+            selectionUpdatedSinceLastMutation = true
+            toAddGenes.forEach { it.randomize(randomness, false, listOf()) }
+            specializationGenes.addAll(toAddGenes)
+            specializations.addAll(toAddSpecs)
         }
     }
 
@@ -220,8 +276,10 @@ class StringGene(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
 
+        val specializationGene = getSpecializationGene()
+
         if (specializationGene != null) {
-            return "\"" + specializationGene!!.getValueAsPrintableString(previousGenes, mode, targetFormat) + "\""
+            return "\"" + specializationGene.getValueAsPrintableString(previousGenes, mode, targetFormat) + "\""
         }
 
         val rawValue = getValueAsRawString()
@@ -263,8 +321,10 @@ class StringGene(
      */
 
     override fun getValueAsRawString(): String {
+        val specializationGene = getSpecializationGene()
+
         if (specializationGene != null) {
-            return specializationGene!!.getValueAsRawString()
+            return specializationGene.getValueAsRawString()
         }
         return value
     }
@@ -274,11 +334,13 @@ class StringGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         this.value = other.value
-        if (other.specializationGene == null) {
-            this.specializationGene = null
-        } else {
-            this.specializationGene?.copyValueFrom(other.specializationGene!!)
-        }
+        this.selectedSpecialization = other.selectedSpecialization
+
+        this.specializations.clear()
+        this.specializations.addAll(other.specializations)
+
+        this.specializationGenes.clear()
+        this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -286,16 +348,23 @@ class StringGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
 
-        if ((this.specializationGene == null && other.specializationGene != null) ||
-                (this.specializationGene != null && other.specializationGene == null)) {
+        val tg = this.getSpecializationGene()
+        val og = other.getSpecializationGene()
+
+        if ((tg == null && og != null) ||
+                (tg != null && og == null)) {
             return false
         }
 
-        if (this.specializationGene != null) {
-            return this.specializationGene!!.containsSameValueAs(other.specializationGene!!)
+        if (tg != null) {
+            return tg.containsSameValueAs(og!!)
         }
 
         return this.value == other.value
     }
 
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+        return if (excludePredicate(this)) listOf(this)
+        else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
+    }
 }
