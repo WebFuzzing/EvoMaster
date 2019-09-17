@@ -31,9 +31,9 @@ public class InstrumentationController {
         ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
-    public static void newAction(int actionIndex){
+    public static void newAction(Action action){
 
-        ExecutionTracer.setActionIndex(actionIndex);
+        ExecutionTracer.setAction(action);
     }
 
     public static List<TargetInfo> getTargetInfos(Collection<Integer> ids){

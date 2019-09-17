@@ -237,12 +237,12 @@ class RemoteController() : DatabaseExecutor {
         return getData(dto)
     }
 
-    fun registerNewAction(actionIndex: Int) : Boolean{
+    fun registerNewAction(actionDto: ActionDto) : Boolean{
 
         val response = getWebTarget()
                 .path(ControllerConstants.NEW_ACTION)
                 .request()
-                .put(Entity.entity(actionIndex, MediaType.APPLICATION_JSON_TYPE))
+                .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
 
         return checkResponse(response, "Failed to register new action")
     }

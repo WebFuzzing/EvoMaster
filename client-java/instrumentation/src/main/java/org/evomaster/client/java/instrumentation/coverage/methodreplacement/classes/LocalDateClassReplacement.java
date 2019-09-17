@@ -24,7 +24,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static LocalDate parse(CharSequence input, String idTemplate) {
 
-        if(input != null && TaintInputName.isTaintInput(input.toString())){
+        if(input != null && ExecutionTracer.isTaintInput(input.toString())){
             ExecutionTracer.addStringSpecialization(input.toString(),
                     new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
         }

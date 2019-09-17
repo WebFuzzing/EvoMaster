@@ -77,7 +77,7 @@ public abstract class DatabaseTestTemplate {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
-                .body("" + index)
+                .body("{\"index\":" + index + "}")
                 .put(url + NEW_ACTION)
                 .then()
                 .statusCode(204);

@@ -1,6 +1,7 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
@@ -17,7 +18,9 @@ import org.evomaster.core.search.service.IdMapper
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.Lazy
+import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.regex.RegexGene
 
 open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
@@ -49,8 +52,9 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         for (i in 0 until individual.seeActions().size) {
 
-            rc.registerNewAction(i)
             val a = individual.seeActions()[i]
+
+            registerNewAction(a, i)
 
             var ok = false
 
@@ -111,6 +115,19 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
     }
 
+    private fun registerNewAction(action: RestAction, index: Int){
+
+        rc.registerNewAction(ActionDto().apply {
+            this.index = index
+            //for now, we only include specialized regex
+            this.inputVariables = action.seeGenes()
+                    .flatMap { it.flatView() }
+                    .filterIsInstance<StringGene>()
+                    .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene}
+                    .map { it.getSpecializationGene()!!.getValueAsRawString()}
+        })
+    }
+
     private fun doTaintAnalysis(individual: RestIndividual, additionalInfoList: List<AdditionalInfoDto>) {
 
         /*
@@ -145,28 +162,16 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
                 val stringGene = action.seeGenes()
                         .flatMap { it.flatView() }
                         .filterIsInstance<StringGene>()
-                        .find { it.value == entry.key }
+                        .find { it.getValueAsRawString() == entry.key }
 
                 if (stringGene == null) {
                     /*
                         This can happen if the taint input is manipulated, but still with
-                        some prefix and postfix
+                        same prefix and postfix
                      */
                     log.debug("No taint input '${entry.key}' in action nr. $i")
                 } else {
-                    /*
-                        a StringGene might have some characters that are not allowed,
-                        like '/' and '.' in a PathParam.
-                        If we have a constant that uses any of such chars, then we must
-                        skip it.
-                        We allow constant larger than Max (as that should not be a problem),
-                        but not smaller than Min (eg to avoid empty strings in PathParam)
-                     */
-                    stringGene.specializations = specs.filter { s ->
-                        s.stringSpecialization != StringSpecialization.CONSTANT ||
-                                (stringGene.invalidChars.none { c -> s.value.contains(c) } &&
-                                        s.value.length >= stringGene.minLength)
-                    }
+                    stringGene.addSpecializations(specs, randomness)
                 }
             }
         }
