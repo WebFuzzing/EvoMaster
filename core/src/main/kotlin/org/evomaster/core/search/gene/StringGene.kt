@@ -155,7 +155,12 @@ class StringGene(
         assert(specializations.isNotEmpty())
 
         specializationGene = when {
+
             specializations.any { it.stringSpecialization == DATE_YYYY_MM_DD } -> DateGene(name)
+
+            specializations.any { it.stringSpecialization == DATE_YYYY_MM_DD_HH_SS } -> DateTimeGene(name)
+
+            specializations.any { it.stringSpecialization == DATE_FORMAT_PATTERN ||   it.stringSpecialization == DATE_FORMAT_UNKNOWN_PATTERN } -> DateTimeGene(name)
 
             specializations.any { it.stringSpecialization == INTEGER } -> IntegerGene(name)
 
