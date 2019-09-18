@@ -150,7 +150,7 @@ class SortingHelper {
      */
     private val dbInitSize: Comparator<EvaluatedIndividual<*>> = compareBy<EvaluatedIndividual<*>>{ ind ->
         if(ind.individual is RestIndividual) {
-            (ind.individual as RestIndividual).dbInitialization.size
+            ind.individual.dbInitialization.size
         }
         else 0
     }.reversed()
@@ -169,7 +169,7 @@ class SortingHelper {
      */
 
     //var comparatorList = mutableListOf(statusCode, minActions)
-    var comparatorList = mutableListOf(coveredTargets)
+    var comparatorList = mutableListOf(statusCode, coveredTargets)
 
     private val availableSortCriteria = mutableListOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
 
