@@ -43,11 +43,6 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         if (caller == null) {
             caller.matches();
         }
-
-        if (idTemplate == null) {
-            return caller.matches();
-        }
-
         String input = getText(caller);
         String regex = caller.pattern().toString();
 
@@ -64,10 +59,6 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         if (caller == null) {
             // signal a NPE
             caller.find();
-        }
-
-        if (idTemplate == null) {
-            return caller.find();
         }
 
         String input = getText(caller);
