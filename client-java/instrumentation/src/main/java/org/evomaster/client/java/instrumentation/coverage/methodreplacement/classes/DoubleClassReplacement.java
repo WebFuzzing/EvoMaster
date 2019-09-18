@@ -24,7 +24,7 @@ public class DoubleClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static double parseDouble(String input, String idTemplate) {
 
-        if (TaintInputName.isTaintInput(input)) {
+        if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
                     new StringSpecializationInfo(StringSpecialization.DOUBLE, null));
         }

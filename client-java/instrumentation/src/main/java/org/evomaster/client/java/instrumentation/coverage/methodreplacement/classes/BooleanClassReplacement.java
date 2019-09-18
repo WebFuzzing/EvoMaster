@@ -22,7 +22,7 @@ public class BooleanClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
     public static boolean parseBoolean(String input, String idTemplate) {
 
-        if (TaintInputName.isTaintInput(input)) {
+        if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
                     new StringSpecializationInfo(StringSpecialization.BOOLEAN, null));
         }

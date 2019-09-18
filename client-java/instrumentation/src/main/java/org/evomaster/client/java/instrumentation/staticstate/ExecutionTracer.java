@@ -80,6 +80,13 @@ public class ExecutionTracer {
         }
     }
 
+    /**
+     * Check if the given input represented a tainted value from the test cases.
+     * This could be based on static info of the input (eg, according to a precise
+     * name convention given by TaintInputName), or dynamic info given directly by
+     * the test itself (eg, the test at action can register a list of values to check
+     * for)
+     */
     public static boolean isTaintInput(String input){
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
     }

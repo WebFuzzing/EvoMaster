@@ -23,7 +23,7 @@ public class FloatClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static float parseFloat(String input, String idTemplate) {
 
-        if (TaintInputName.isTaintInput(input)) {
+        if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
                     new StringSpecializationInfo(StringSpecialization.FLOAT, null));
         }

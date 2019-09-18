@@ -31,7 +31,7 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
     private static Date parseSimpleDateFormat(SimpleDateFormat caller, String input, String idTemplate) throws ParseException {
 
         final String pattern = caller.toPattern();
-        if (TaintInputName.isTaintInput(input)) {
+        if (ExecutionTracer.isTaintInput(input)) {
             final StringSpecializationInfo specializationInfo;
             switch (pattern) {
                 case YYYY_MM_DD:
@@ -88,7 +88,7 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
             return parseSimpleDateFormat(sdf, input, idTemplate);
         } else {
 
-            if (TaintInputName.isTaintInput(input)) {
+            if (ExecutionTracer.isTaintInput(input)) {
                 ExecutionTracer.addStringSpecialization(input,
                         new StringSpecializationInfo(StringSpecialization.DATE_FORMAT_UNKNOWN_PATTERN, null));
 

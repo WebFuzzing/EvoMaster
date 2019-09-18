@@ -23,7 +23,7 @@ public class LongClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static long parseLong(String input, String idTemplate) {
 
-        if (TaintInputName.isTaintInput(input)) {
+        if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
                     new StringSpecializationInfo(StringSpecialization.LONG, null));
         }
