@@ -7,7 +7,6 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import java.lang.reflect.Field;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by arcuri82 on 11-Sep-19.
@@ -38,17 +37,8 @@ public class MatcherClassReplacement implements MethodReplacementClass {
             caller.matches();
         }
 
-        Pattern pattern = caller.pattern();
         String input = getText(caller);
-        /*
-            .matches() does a full match of the text, not a partial.
-
-            TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-            cases, but not fully correct: eg for multi-lines, and if pattern
-            already has ^ and $
-        */
-        String regex = "^(" + pattern.toString() + ")$";
-
+        String regex = caller.pattern().toString();
         return PatternMatchingHelper.matches(regex, input, idTemplate);
     }
 
@@ -59,18 +49,15 @@ public class MatcherClassReplacement implements MethodReplacementClass {
             caller.find();
         }
 
-        Pattern pattern = caller.pattern();
         String input = getText(caller);
-        int end = caller.end();
-
-        /*
-            .matches() does a full match of the text, not a partial.
-
-            TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-            cases, but not fully correct: eg for multi-lines, and if pattern
-            already has ^ and $
-        */
-        String regex = "^(" + pattern.toString() + ")$";
+        String regex = caller.pattern().toString();
+        int end;
+        try {
+            end = caller.end();
+        } catch (IllegalStateException ex) {
+            // No match available. Therefore, we kept the entire input
+            end = 0;
+        }
 
         /*
             As find() is not idempotent, instead of directly calling
@@ -78,7 +65,19 @@ public class MatcherClassReplacement implements MethodReplacementClass {
             helper on the substring.
          */
         String substring = input.substring(end);
-        return PatternMatchingHelper.matches(regex, substring, idTemplate);
+        /*
+          Since matches() requires all the input to
+          match the regex, and find() only requires
+          the input to appear at least once, we could
+          add some prefix and sufix to match the
+          find
+         */
+
+        String anyPositionRegexMatch = ".*" + regex + ".*";
+        boolean patternMatchResult = PatternMatchingHelper.matches(anyPositionRegexMatch, substring, idTemplate);
+        boolean matcherFindResult = caller.find();
+        assert (patternMatchResult == matcherFindResult);
+        return matcherFindResult;
     }
 
 

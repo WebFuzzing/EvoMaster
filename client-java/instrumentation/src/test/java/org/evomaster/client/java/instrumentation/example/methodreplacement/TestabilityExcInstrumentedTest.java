@@ -1148,13 +1148,13 @@ public class TestabilityExcInstrumentedTest {
         assertTrue(h0 > 0);
         assertTrue(h0 < 1);
 
-        te.patternMatches("Hello", "H_l__");
+        te.stringMatches("Hello", "H_l__");
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
         assertTrue(h1 < 1);
 
 
-        te.patternMatches("Hello", "Hello");
+        te.stringMatches("Hello", "Hello");
         double h2 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h2);
     }
@@ -1164,13 +1164,13 @@ public class TestabilityExcInstrumentedTest {
     public void testMatcherFind() throws Exception {
 
         TestabilityExc te = getInstance();
-        Matcher matcher = Pattern.compile("Hello").matcher("HelloHello");
+        Matcher matcher = Pattern.compile("Hello").matcher("Hello Hello");
         assertTrue(matcher.find());
         assertEquals(5, matcher.end());
         assertEquals(5, matcher.end());
         assertTrue(matcher.find());
-        assertEquals(10, matcher.end());
-        assertEquals(10, matcher.end());
+        assertEquals(11, matcher.end());
+        assertEquals(11, matcher.end());
         assertFalse(matcher.find());
         assertThrows(IllegalStateException.class, () -> matcher.end());
 
@@ -1179,20 +1179,61 @@ public class TestabilityExcInstrumentedTest {
         assertEquals(5, matcher.end());
         assertEquals(5, matcher.end());
         assertTrue(matcher.find());
-        assertEquals(10, matcher.end());
-        assertEquals(10, matcher.end());
+        assertEquals(11, matcher.end());
+        assertEquals(11, matcher.end());
         assertFalse(matcher.find());
         assertThrows(IllegalStateException.class, () -> matcher.end());
 
         matcher.reset();
-        te.matcherFind(matcher);
+        // first match
+        boolean find0 = te.matcherFind(matcher);
         assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(true, find0);
 
         String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
                 .iterator().next();
-        double h0 = ExecutionTracer.getValue(targetId);
+        double h0 = ExecutionTracer.getValue(targetId); // false branch not covered
+        assertEquals(0, h0);
+
+        // second match
+        boolean find1 = te.matcherFind(matcher);
+        assertEquals(true, find1);
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 == h1);
+
+        // no match
+        te.matcherFind(matcher);
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h2);
 
     }
 
+    @Test
+    public void testMatcherNotFind() throws Exception {
 
+        TestabilityExc te = getInstance();
+
+        assertFalse(te.matcherFind(Pattern.compile("World").matcher("Hello W___d")));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();  // true branch
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
+
+        assertFalse(te.matcherFind(Pattern.compile("World").matcher("Hello W_r_d")));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        assertFalse(te.matcherFind(Pattern.compile("World").matcher("Hello W_rld")));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        assertTrue(te.matcherFind(Pattern.compile("World").matcher("Hello World")));
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h3);
+    }
 }

@@ -16,4 +16,5 @@ are listed here:
   These classes will be removed when this [PR](https://github.com/junit-team/junit5/issues/1947)
   will be part of the next JUnit release.  
   
-  
+* _RegexDistanceUtils.java_: from [EvoSuite](http://www.evosuite.org) unit test generator. 
+  Released under GNU Lesser General Public
