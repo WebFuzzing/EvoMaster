@@ -236,6 +236,25 @@ in submodules can lead to duplicated `<version>` declarations with different ver
 All version numbers should be easily audited, and so should be in a single file (i.e., the
 *root* `pom.xml`).
 
+
+### THIRD-PARTY LIBRARIES
+
+Adding a new dependency is fine, but few things to consider:
+
+* __NEVER__ ever add a GPL licensed library, unless it is under the so called _classpath exception_.
+  Note that LGPL libraries are fine.
+ 
+* When adding a new library, check who is maintaining it, and when was its last update.
+  No longer maintained libraries should be avoided. 
+  
+      
+### THIRD-PARTY CODE
+  
+As a rule of thumb, to avoid possible issues with copyrights and license compliance, 
+we should not include code directly from third-party sources.
+However, when that happens, it __MUST__ be made clear in the files themselves (e.g.,
+with comments in their top, with URLs of the original sources). 
+Furthermore, this information should also be added to the [reused_code.md](./reused_code.md) file.  
   
   
 ### Trello
