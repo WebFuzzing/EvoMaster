@@ -215,8 +215,24 @@ class StringGene(
             toAddGenes.add(DateGene(name))
         }
 
+        if(toAddSpecs.any {it.stringSpecialization == BOOLEAN}){
+            toAddGenes.add(BooleanGene(name))
+        }
+
         if(toAddSpecs.any {it.stringSpecialization == INTEGER}){
             toAddGenes.add(IntegerGene(name))
+        }
+
+        if(toAddSpecs.any {it.stringSpecialization == LONG}){
+            toAddGenes.add(LongGene(name))
+        }
+
+        if(toAddSpecs.any {it.stringSpecialization == FLOAT}){
+            toAddGenes.add(FloatGene(name))
+        }
+
+        if(toAddSpecs.any {it.stringSpecialization == DOUBLE}){
+            toAddGenes.add(DoubleGene(name))
         }
 
         //all regex are combined with disjunction in a single gene

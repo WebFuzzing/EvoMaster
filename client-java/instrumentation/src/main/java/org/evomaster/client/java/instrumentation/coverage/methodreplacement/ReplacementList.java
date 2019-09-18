@@ -11,11 +11,19 @@ public class ReplacementList {
 
     public static List<MethodReplacementClass> getList() {
         return Arrays.asList(
+                new BooleanClassReplacement(),
+                new CollectionClassReplacement(),
+                new DateClassReplacement(),
+                new DateFormatClassReplacement(),
+                new DoubleClassReplacement(),
+                new FloatClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
-                new StringClassReplacement(),
-                new CollectionClassReplacement(),
-                new MatcherClassReplacement()
+                new LongClassReplacement(),
+                new MapClassReplacement(),
+                new MatcherClassReplacement(),
+                new ObjectsClassReplacement(),
+                new StringClassReplacement()
         );
     }
 

@@ -37,7 +37,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean matches(Matcher caller, String idTemplate){
 
-        if(caller == null){
+        if (caller == null) {
             caller.matches();
         }
 
@@ -57,11 +57,15 @@ public class MatcherClassReplacement implements MethodReplacementClass {
                     new StringSpecializationInfo(StringSpecialization.REGEX, regex));
         }
 
+        if (idTemplate == null) {
+            return caller.matches();
+        }
+
         //TODO branch distance computation
         return caller.matches();
     }
 
-    private static String getText(Matcher match){
+    private static String getText(Matcher match) {
         try {
             return (String) textField.get(match);
         } catch (IllegalAccessException e) {
