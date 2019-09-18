@@ -1,6 +1,9 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
@@ -58,6 +61,20 @@ class LongGene(
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
         }
         return this.value == other.value
+    }
+
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: ImpactMutationSelection,
+            impact: GeneImpact?,
+            geneReference : String,
+            evi: EvaluatedIndividual<*>
+    ) {
+
+        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? LongGene ?: throw IllegalStateException("latest gene should be LongGene")
+        value += (value - latest.value)
     }
 
 }

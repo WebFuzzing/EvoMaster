@@ -109,7 +109,17 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: ImpactMutationSelection,
+            geneImpact: GeneImpact?,
+            geneReference : String,
+            evi: EvaluatedIndividual<*>) {
+
+        val impact = geneImpact?: evi.getImpactOfGenes()[ImpactUtils.generateGeneId(evi.individual, this)] ?: throw IllegalStateException("cannot find this gene in the individual")
+
         assert(impact is ObjectGeneImpact)
 
         if (selection == ImpactMutationSelection.NONE){
@@ -118,7 +128,11 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
         }
 
         val genes = fields.map { Pair(it, (impact as ObjectGeneImpact).fields.getValue(it.name)) }
-        val percentage = 1.0/fields.size //only select one
+        val percentage = 1.0/fields.size //prefer selecting one
+
+        /*
+            decide what field will be mutated
+         */
         val selects = when(selection){
             ImpactMutationSelection.APPROACH_GOOD -> ImpactUtils.selectApproachGood(genes, percentage)
             ImpactMutationSelection.AWAY_BAD -> ImpactUtils.selectGenesAwayBad(genes, percentage)
@@ -129,6 +143,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
 
         val selected = randomness.choose(selects)
         val selectedImpact = (impact as ObjectGeneImpact).fields.getValue(selected.name)
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, evi)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,evi)
     }
+
+
 }

@@ -36,6 +36,7 @@ class StringGeneImpact (
         const val specializationName = "specialization"
     }
 
+
     constructor(id: String, gene : StringGene)
             : this(
             id,

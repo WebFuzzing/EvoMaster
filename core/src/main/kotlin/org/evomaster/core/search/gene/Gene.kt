@@ -73,12 +73,14 @@ abstract class Gene(var name: String) {
      *   @param evi the evaluated individual contains an evolution of the gene with fitness values
      *   @param selection how to select genes to mutate if [this] contains more than one genes, e.g., ObjectGene
      *   @param impact info of impact of the gene
+     *   @param geneReference a reference (i.e., id generated) to find a gene in this history
      */
     open fun archiveMutation(randomness: Randomness,
                              allGenes: List<Gene>,
                              apc: AdaptiveParameterControl,
                              selection : ImpactMutationSelection,
-                             impact: GeneImpact,
+                             impact: GeneImpact?,
+                             geneReference : String,
                              evi: EvaluatedIndividual<*>){
         TODO("not implemented")
     }
@@ -135,4 +137,8 @@ abstract class Gene(var name: String) {
      */
     abstract fun containsSameValueAs(other: Gene): Boolean
 
+    /**
+     * indicates if the gene reaches its optimal value.
+     */
+    open fun reachOptimal() = false
 }

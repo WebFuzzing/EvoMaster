@@ -30,14 +30,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        return individual.seeGenes(filterMutate).filter { it.isMutable() }
+        return individual.seeGenes(filterMutate).filter { it.isMutable() }.filter { !it.reachOptimal() }
     }
 
     /**
      * Select genes to mutate based on Archive, there are several options:
-     *      1. remove bad genes
-     *      2. select good genes,
-     *      3. recent good genes, similar with feed-back sampling
+     *      1. avoid to mutate genes that has less impacts
+     *      2. prefer to genes that has more impacts
+     *      3. prefer to genes that has recent improvements
      */
     override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
         val genesToMutate = genesToMutation(individual, evi)
@@ -105,11 +105,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for (gene in selectGeneToMutate){
             mutatedGene?.mutatedGenes?.add(gene)
-            /*
-             TODO
-             NOTE THAT gene.archiveMutation(...) is required to extend for archive-based mutation
-             */
-            gene.standardMutation(randomness, apc, allGenes)
+
+            if (randomness.nextBoolean(config.probOfArchiveMutation)){
+                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, null, ImpactUtils.generateGeneId(copy, gene), individual)
+            }else
+                gene.standardMutation(randomness, apc, allGenes)
         }
 
         return copy
@@ -157,7 +157,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         }
 
         assert(genes.isNotEmpty())
-        return genes
+        return listOf(randomness.choose(genes))
 
     }
 

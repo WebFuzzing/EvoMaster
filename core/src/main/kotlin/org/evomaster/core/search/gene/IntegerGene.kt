@@ -1,7 +1,10 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
@@ -93,5 +96,25 @@ class IntegerGene(
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return value.toString()
+    }
+
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: ImpactMutationSelection,
+            impact: GeneImpact?,
+            geneReference : String,
+            evi: EvaluatedIndividual<*>
+    ) {
+
+        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? IntegerGene ?: throw IllegalStateException("latest gene should be IntegerGene")
+        value += (value - latest.value)
+
+        value = when {
+            value > max -> max
+            value < min -> min
+            else -> value
+        }
     }
 }

@@ -4,17 +4,14 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ActionStructureImpact
+import org.evomaster.core.search.impact.ArchiveStringMutationUtils
 import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.impact.MutatedGeneWithContext
-import org.evomaster.core.search.impact.value.ObjectGeneImpact
-import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
-import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
+import org.evomaster.core.search.impact.value.StringGeneImpact
 import org.evomaster.core.search.service.Sampler
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
-import kotlin.math.absoluteValue
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -153,8 +150,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
     }
 
-    fun getHistoryOfGene(gene: Gene) : List<Gene>{
-        val geneId = ImpactUtils.generateGeneId(individual, gene)
+    fun getHistoryOfGene(gene: Gene, geneId : String, length : Int = -1) : List<Gene>{
+        /*
+        TODO if gene is not root gene
+         */
         getTracking()?: throw IllegalArgumentException("tracking is not enabled")
         return getTracking()!!.flatMap { it.individual.seeGenes().find { g->ImpactUtils.generateGeneId(it.individual, g) == geneId}.run {
             if (this == null || this::class.java.simpleName  != gene::class.java.simpleName) listOf() else listOf(this)
@@ -283,10 +282,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val isAnyChange = updateReachedTargets(fitness) || next.fitness.isDifferent(previous.fitness, notCoveredTargets, strategy)
 //        val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
 
-        compareWithLatest(next, previous, isAnyChange, mutatedGenes)
+        compareWithLatest(next, previous, isAnyChange, mutatedGenes, inTrack)
     }
 
-    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification){
+    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification, isBetter: Boolean){
 
         if (mutatedGenes.mutatedGenes.isEmpty()){ // structure mutated
             val sizeChanged = (next.individual.seeActions().size != previous.individual.seeActions().size)
@@ -322,8 +321,21 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             u.forEach { gc ->
                 ImpactUtils.processImpact(impact, gc, isAnyChange)
             }
+            if (impact is StringGeneImpact){
+                //TODO StringGene is mutated one time ideally, but need to check
+                assert(u.size == 1)
+                val previousValue = u.first().previous as StringGene
+                val mutated =  u.first().current as StringGene
+                //find saveGene in [this]
+                val savedGene = findGeneById(impact.id) ?: throw IllegalStateException("cannot find the gene")
+            }
+
         }
 
+    }
+
+    fun findGeneById(id : String) : Gene?{
+        return individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
     }
 
     /**

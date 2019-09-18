@@ -8,6 +8,9 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.impact.ArchiveStringMutationUtils
+import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -105,11 +108,13 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
              */
             update(trackedCurrent, mutated, mutatedGenes)
 
-            if (reachNew || !current.fitness.subsumes(
-                            mutated.fitness,
-                            targets,
-                            config.secondaryObjectiveStrategy,
-                            config.bloatControlForSecondaryObjective)) {
+            val doesImproved = reachNew || !current.fitness.subsumes(
+                    mutated.fitness,
+                    targets,
+                    config.secondaryObjectiveStrategy,
+                    config.bloatControlForSecondaryObjective)
+
+            if (doesImproved) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual)
                     trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent))!!
                 else mutated
@@ -125,6 +130,24 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     trackedCurrent.updateImpactOfGenes(false, mutatedGenes, targets, config.secondaryObjectiveStrategy)
                 }
             }
+
+            // gene mutation evaluation
+            if (config.probOfArchiveMutation > 0.0){
+                mutatedGenes.mutatedGenes.filterIsInstance<StringGene>().forEach { s->
+                    val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
+                    val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes")) as? StringGene ?: throw IllegalStateException("mismatched type of gene")
+                    val previousValue = (trackedCurrent.findGeneById(id) ?: throw IllegalStateException("mismatched genes")) as? StringGene ?: throw IllegalStateException("mismatched type of gene")
+                    ArchiveStringMutationUtils.evaluateMutation(
+                            previous = previousValue.value,
+                            current = s.value,
+                            mutated = s,
+                            savedGene = savedGene,
+                            doesCurrentBetter = doesImproved,
+                            randomness = randomness
+                    )
+                }
+            }
+
         }
         return current
     }

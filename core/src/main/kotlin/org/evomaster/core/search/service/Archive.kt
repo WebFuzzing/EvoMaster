@@ -226,6 +226,16 @@ class Archive<T> where T : Individual {
                 .sorted()
     }
 
+    /**
+     * Useful for debugging
+     */
+    fun reachedTargetHeuristics(): List<String> {
+
+        return populations.entries
+                .map { e -> "key ${e.key} -> best heuristics=${e.value.map { it.fitness.computeFitnessScore() }.max()}" }
+                .sorted()
+    }
+
     fun numberOfCoveredTargets(): Int {
         return populations.keys.stream().filter { isCovered(it) }.count().toInt()
     }
@@ -454,12 +464,4 @@ class Archive<T> where T : Individual {
     fun getSnapshotOfSamplingCounter() : Map<Int, Int>{
         return samplingCounter
     }
-
-    enum class ArchiveUpdateCondition(value : Int){
-        NOT_FULL_POPULATION(0),
-        SHORTER_SOLUTION(1),
-        NEW_TARGETS(2),
-        FITNESS_IMPROVED(3),
-    }
-
 }

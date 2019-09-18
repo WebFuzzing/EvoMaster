@@ -5,9 +5,13 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class StringGene(
@@ -31,7 +35,6 @@ class StringGene(
          * in which we mutate to have only Strings that are valid dates
          */
         var specializations: List<StringSpecializationInfo> = listOf()
-
 ) : Gene(name) {
 
     companion object {
@@ -41,6 +44,8 @@ class StringGene(
             only used to create unique names
          */
         private var counter: Int = 0
+
+        private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
     }
 
     /*
@@ -53,11 +58,42 @@ class StringGene(
 
     var specializationGene: Gene? = null
 
+    /**
+     * chars at 0..[mutatedIndex] (exclusion) are set, only used by archive-based mutation
+     * when [mutatedIndex] = -1, it means that chars of [this] have not be mutated yet
+     */
+    var mutatedIndex : Int = -1
+
+    var preferCharMin = Char.MIN_VALUE.toInt()
+    var preferCharMax = Char.MAX_VALUE.toInt()
+
+    var noImproveCharCounter = 0
+
+    var targetCharFoundAtMutatedIndex = false
+
+    var preferLengthMin = minLength
+    var preferLengthMax = maxLength
+
+    var targetLengthFoundAtMutatedIndex = false
+
+    var noImproveLengthCounter = 0
+
+
     override fun copy(): Gene {
         return StringGene(name, value, minLength, maxLength, invalidChars, specializations)
                 .also {
                     it.specializationGene = this.specializationGene?.copy()
                     it.validChar = this.validChar
+
+                    it.mutatedIndex = mutatedIndex
+                    it.preferCharMin = preferCharMin
+                    it.preferCharMax = preferCharMax
+                    it.targetCharFoundAtMutatedIndex = targetCharFoundAtMutatedIndex
+                    it.preferLengthMin = preferLengthMin
+                    it.preferLengthMax = preferLengthMax
+                    it.targetLengthFoundAtMutatedIndex = targetLengthFoundAtMutatedIndex
+                    it.noImproveCharCounter = noImproveCharCounter
+                    it.noImproveLengthCounter = noImproveLengthCounter
                 }
     }
 
@@ -247,6 +283,43 @@ class StringGene(
         }
 
         return this.value == other.value
+    }
+
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: ImpactMutationSelection,
+            geneImpact: GeneImpact?,
+            geneReference : String,
+            evi: EvaluatedIndividual<*>
+    ) {
+        if (specializationGene == null && specializations.isNotEmpty()) {
+            chooseSpecialization()
+            assert(specializationGene != null)
+        }
+
+        if (specializationGene != null) {
+            val impact = geneImpact?: evi.getImpactOfGenes()[ImpactUtils.generateGeneId(evi.individual, this)] ?: throw IllegalStateException("cannot find this gene in the individual")
+            specializationGene!!.archiveMutation(randomness, allGenes, apc, selection, impact, geneReference, evi)
+            return
+        }
+
+        ArchiveStringMutationUtils.mutate(this, randomness)
+    }
+
+    fun copyMutationInfo(gene : StringGene){
+        mutatedIndex = gene.mutatedIndex
+        targetCharFoundAtMutatedIndex = gene.targetCharFoundAtMutatedIndex
+        targetLengthFoundAtMutatedIndex = gene.targetLengthFoundAtMutatedIndex
+        if (mutatedIndex == -1){
+            preferCharMin = gene.preferCharMin
+            preferCharMax = gene.preferCharMax
+        }
+    }
+
+    override fun reachOptimal() : Boolean{
+       return targetLengthFoundAtMutatedIndex && targetCharFoundAtMutatedIndex && mutatedIndex == value.length
     }
 
 }
