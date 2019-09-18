@@ -1,7 +1,5 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-
 public class DistanceHelper {
 
     public static final double H_REACHED_BUT_NULL = 0.05d;

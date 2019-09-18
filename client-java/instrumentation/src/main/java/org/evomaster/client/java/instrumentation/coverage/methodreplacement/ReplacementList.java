@@ -23,6 +23,7 @@ public class ReplacementList {
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),
                 new ObjectsClassReplacement(),
+                new PatternClassReplacement(),
                 new StringClassReplacement()
         );
     }

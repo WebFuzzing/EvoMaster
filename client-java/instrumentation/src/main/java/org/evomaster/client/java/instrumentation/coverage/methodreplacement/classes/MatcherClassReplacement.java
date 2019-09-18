@@ -1,12 +1,9 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.PatternMatchingHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
-import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.Field;
 import java.util.regex.Matcher;
@@ -19,7 +16,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
     private static Field textField = null;
 
-    static{
+    static {
         try {
             textField = Matcher.class.getDeclaredField("text");
             textField.setAccessible(true);
@@ -35,36 +32,64 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean matches(Matcher caller, String idTemplate){
+    public static boolean matches(Matcher caller, String idTemplate) {
 
         if (caller == null) {
             caller.matches();
         }
 
         Pattern pattern = caller.pattern();
-        String text = getText(caller);
+        String input = getText(caller);
+        /*
+            .matches() does a full match of the text, not a partial.
 
-        if(ExecutionTracer.isTaintInput(text)){
-            /*
-                .matches() does a full match of the text, not a partial.
+            TODO: enclosing the pattern in ^(pattern)$ would be fine for most
+            cases, but not fully correct: eg for multi-lines, and if pattern
+            already has ^ and $
+        */
+        String regex = "^(" + pattern.toString() + ")$";
 
-                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
-                cases, but not fully correct: eg for multi-lines, and if pattern
-                already has ^ and $
-             */
-            String regex = "^(" + pattern.toString() + ")$";
-            ExecutionTracer.addStringSpecialization(text,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, regex));
-        }
-
-        if (idTemplate == null) {
-            return caller.matches();
-        }
-
-        //TODO branch distance computation
-        return caller.matches();
+        return PatternMatchingHelper.matches(regex, input, idTemplate);
     }
 
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean find(Matcher caller, String idTemplate) {
+
+        if (caller == null) {
+            caller.find();
+        }
+
+        Pattern pattern = caller.pattern();
+        String input = getText(caller);
+        int end = caller.end();
+
+        /*
+            .matches() does a full match of the text, not a partial.
+
+            TODO: enclosing the pattern in ^(pattern)$ would be fine for most
+            cases, but not fully correct: eg for multi-lines, and if pattern
+            already has ^ and $
+        */
+        String regex = "^(" + pattern.toString() + ")$";
+
+        /*
+            As find() is not idempotent, instead of directly calling
+            find(), we compute the substring and use the matches()
+            helper on the substring.
+         */
+        String substring = input.substring(end);
+        return PatternMatchingHelper.matches(regex, substring, idTemplate);
+    }
+
+
+    /**
+     * Since a Matcher instance has no way of
+     * accessing the original text for the matching,
+     * we need to access the private fields
+     *
+     * @param match
+     * @return
+     */
     private static String getText(Matcher match) {
         try {
             return (String) textField.get(match);

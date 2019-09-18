@@ -47,6 +47,16 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
 
+        <!-- Dependencies for Java Regex distances -->
+        <dependency>
+            <groupId>net.sf.jgrapht</groupId>
+            <artifactId>jgrapht</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>dk.brics.automaton</groupId>
+            <artifactId>automaton</artifactId>
+        </dependency>
+
     </dependencies>
 
     <build>
