@@ -547,7 +547,7 @@ class TestCaseWriter {
         }
         else{
             when(resContentsItem::class) {
-                Double::class -> return "NumberMatcher.numberMatches(${resContentsItem as Double})"
+                Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
                  //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
@@ -828,7 +828,7 @@ class TestCaseWriter {
                         '[' -> {
                             // This would be run if the JSON contains an array of objects
                             val resContents = Gson().fromJson(result.getBody(), ArrayList::class.java)
-                            val printableTh = "NumberMatcher.numbersMatch(" +
+                            val printableTh = "numbersMatch(" +
                                     "json_$name.getJsonObject(\"size\"), " +
                                     "${resContents.size})"
                             lines.add(".that(expectationsMasterSwitch, ($printableTh))")
