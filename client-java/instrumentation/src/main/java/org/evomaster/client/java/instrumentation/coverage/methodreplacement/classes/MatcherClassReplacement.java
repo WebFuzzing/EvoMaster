@@ -30,6 +30,13 @@ public class MatcherClassReplacement implements MethodReplacementClass {
     }
 
 
+    /**
+     * Matcher.matches() is not pure (updates last matching info)
+     *
+     * @param caller
+     * @param idTemplate
+     * @return
+     */
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean matches(Matcher caller, String idTemplate) {
 
@@ -37,16 +44,30 @@ public class MatcherClassReplacement implements MethodReplacementClass {
             caller.matches();
         }
 
+        if (idTemplate == null) {
+            return caller.matches();
+        }
+
         String input = getText(caller);
         String regex = caller.pattern().toString();
-        return PatternMatchingHelper.matches(regex, input, idTemplate);
+
+        boolean patternMatchesResult = PatternMatchingHelper.matches(regex, input, idTemplate);
+
+        boolean matcherMatchesResults = caller.matches();
+        assert (patternMatchesResult == matcherMatchesResults);
+        return matcherMatchesResults;
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean find(Matcher caller, String idTemplate) {
 
         if (caller == null) {
+            // signal a NPE
             caller.find();
+        }
+
+        if (idTemplate == null) {
+            return caller.find();
         }
 
         String input = getText(caller);

@@ -206,11 +206,11 @@ public class StringClassReplacement implements MethodReplacementClass {
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean matches(String caller, String regex, String idTemplate) {
         Objects.requireNonNull(caller);
-        if (regex==null) {
+        if (regex == null) {
             // signals a NPE
             return caller.matches(regex);
         } else {
-            return PatternMatchingHelper.matches(regex,caller,idTemplate);
+            return PatternMatchingHelper.matches(regex, caller, idTemplate);
         }
     }
 

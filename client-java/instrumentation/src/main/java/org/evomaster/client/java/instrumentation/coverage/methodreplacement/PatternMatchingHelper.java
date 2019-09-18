@@ -11,6 +11,14 @@ import java.util.regex.Pattern;
 
 public class PatternMatchingHelper {
 
+    /**
+     * Invocation to Pattern.matches() is free of side-effects.
+     *
+     * @param regex
+     * @param input
+     * @param idTemplate
+     * @return
+     */
     public static boolean matches(String regex, String input, String idTemplate) {
         Objects.requireNonNull(regex);
         Objects.requireNonNull(input);
