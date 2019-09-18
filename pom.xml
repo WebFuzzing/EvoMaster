@@ -220,7 +220,7 @@
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
                 <artifactId>governator</artifactId>
-                <version>1.17.5</version>
+                <version>1.17.8</version>
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>
