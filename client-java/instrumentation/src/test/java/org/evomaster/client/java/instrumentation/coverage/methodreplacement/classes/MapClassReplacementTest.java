@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Created by arcuri82 on 19-Sep-19.
  */
+@Disabled
 class MapClassReplacementTest {
 
 

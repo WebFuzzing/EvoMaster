@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.text.SimpleDateFormat;
@@ -402,6 +403,7 @@ public class TestabilityExcInstrumentedTest {
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
     }
 
+    @Disabled
     @Test
     public void testMapContainsStringKey() throws Exception {
 
