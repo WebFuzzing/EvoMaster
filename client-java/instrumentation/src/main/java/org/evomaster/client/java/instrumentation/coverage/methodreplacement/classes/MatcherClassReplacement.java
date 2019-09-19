@@ -85,7 +85,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
           find
          */
 
-        String anyPositionRegexMatch = ".*" + regex + ".*";
+        String anyPositionRegexMatch = String.format("(.*)(%s)(.*)", regex);
         boolean patternMatchResult = PatternMatchingHelper.matches(anyPositionRegexMatch, substring, idTemplate);
         boolean matcherFindResult = caller.find();
         assert (patternMatchResult == matcherFindResult);

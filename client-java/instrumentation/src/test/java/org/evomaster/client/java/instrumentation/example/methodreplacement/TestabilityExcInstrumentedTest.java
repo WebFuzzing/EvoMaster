@@ -1236,4 +1236,12 @@ public class TestabilityExcInstrumentedTest {
         double h3 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h3);
     }
+
+    @Test
+    public void testFindVsMatch() {
+        String pattern = "\\?|\\*|\\{((?:\\{[^/]+?\\}|[^/{}]|\\\\[{}])+?)\\}";
+        assertFalse(Pattern.compile(pattern).matcher("*.class").matches());
+        assertTrue(Pattern.compile(pattern).matcher("*.class").find());
+        assertTrue(Pattern.compile("(.*)((" + pattern + "))(.*)").matcher("*.class").matches());
+    }
 }
