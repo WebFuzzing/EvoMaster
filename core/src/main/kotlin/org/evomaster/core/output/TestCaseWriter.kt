@@ -174,6 +174,8 @@ class TestCaseWriter {
 
         } else {
             return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = format))
+            //TODO this is an atypical treatment of escapes. Should we run all escapes through the same procedure?
+            // or is this special enough to be justified?
         }
     }
 

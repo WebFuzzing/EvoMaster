@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.regex
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
@@ -37,12 +38,17 @@ class RegexGene(
         val rawValue = getValueAsRawString()
         when {
             // TODO Should refactor since this code block is equivalent to StringGene.getValueAsPrintableString()
-            (targetFormat == null) -> return "\"$rawValue\""
+            /*(targetFormat == null) -> return "\"$rawValue\""
             targetFormat.isKotlin() -> return "\"$rawValue\""
                     .replace("\\", "\\\\")
                     .replace("$", "\\$")
             else -> return "\"$rawValue\""
                     .replace("\\", "\\\\")
+             */
+            (targetFormat == null) -> return "\"${GeneUtils.applyEscapes(rawValue)}\""
+            //"\"${rawValue.replace("\"", "\\\"")}\""
+            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
+            else -> return "\"${GeneUtils.applyEscapes(rawValue, "text" ,targetFormat)}\""
         }
     }
 

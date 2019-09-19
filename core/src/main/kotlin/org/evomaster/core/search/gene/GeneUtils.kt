@@ -141,7 +141,7 @@ object GeneUtils {
     fun applyEscapes(string: String, mode: String = "none", format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5): String{
         val ret = when (mode){
             "uris" -> applyUriEscapes(string, format)
-            "queries" -> applyQueryEscapes(string, format)
+            "sql" -> applySqlEscapes(string, format)
             "assertions" -> applyAssertionEscapes(string, format)
             "json" -> applyJsonEscapes(string, format)
             "text" -> applyTextEscapes(string, format)
@@ -157,8 +157,7 @@ object GeneUtils {
             format.isKotlin() -> string.replace("\$", "\\\$")
             else -> string
         }
-        return ret
-                .replace("\\", """\\""")
+        return ret.replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
@@ -180,9 +179,8 @@ object GeneUtils {
             format.isKotlin() -> string.replace("\$", "\\\$")
             else -> string
         }
-        return ret
-                .replace("\\", """\\""")
-                .replace("\"", "\\\"")
+        return ret.replace("\\", """\\""")
+                .replace("\"", "\\\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\b", "\\b")
@@ -208,20 +206,13 @@ object GeneUtils {
 
     }
 
-    fun applyQueryEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
-        val ret =  if (format.isKotlin()) string.replace("\$", "%24")
+    fun applySqlEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+        val ret =  if (format.isKotlin()) string.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else string
 
-        return ret
-                //.replace("""\"""", """\\\"""")
-                //.replace("""\\""", """\\\\""")
-                .replace("\\", """\\""")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\b", "\\b")
-                .replace("\t", "\\t")
+        return ret.replace("\\", """\\""")
+                .replace("\"", "\\\\\"")
 
 
 
