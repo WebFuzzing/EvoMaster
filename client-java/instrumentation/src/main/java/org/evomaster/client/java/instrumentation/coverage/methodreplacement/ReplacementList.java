@@ -20,7 +20,7 @@ public class ReplacementList {
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
                 new LongClassReplacement(),
-                new MapClassReplacement(),
+                //new MapClassReplacement(), FIXME
                 new MatcherClassReplacement(),
                 new ObjectsClassReplacement(),
                 new StringClassReplacement()
