@@ -713,7 +713,7 @@ class TestCaseWriter {
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
                             (resContents as Map<*, *>).keys.forEach {
-                                val printableTh = handleFieldValues(resContents[it]!!)
+                                val printableTh = handleFieldValues(resContents[it])
                                 if (printableTh != "null"
                                         && printableTh != NOT_COVERED_YET
                                 ) {

@@ -1,12 +1,12 @@
 package org.evomaster.core.output
 
+import org.evomaster.core.Lazy
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
-import kotlin.reflect.KFunction
 import kotlin.reflect.KFunction1
 
 /**
@@ -207,9 +207,16 @@ class SortingHelper {
     ): List<TestCase> {
         var counter = 0
 
-        comparators.asReversed().forEach { solution.individuals.sortWith(it) }
+        val inds = solution.individuals
 
-        return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
+        comparators.asReversed().forEach {
+            //solution.individuals.sortWith(it)
+            inds.sortedWith(it)
+        }
+
+        //return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
+        return inds.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}
+
     }
 
     /**
@@ -221,10 +228,12 @@ class SortingHelper {
     }
 
     fun sort(solution: Solution<*>, namingHelper: NamingHelper = NamingHelper(), customNaming: Boolean = false): List<TestCase> {
-        if (customNaming){
-            return sortByComparatorList(solution, namingHelper, comparatorList)
+        val newSort = if (customNaming){
+            sortByComparatorList(solution, namingHelper, comparatorList)
         }
-        return naiveSorting(solution)
+        else naiveSorting(solution)
 
+        Lazy.assert { solution.individuals.toSet() == newSort.map { it.test }.toSet()}
+        return newSort
     }
 }
