@@ -109,6 +109,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         if (config.baseTaintAnalysisProbability > 0) {
+            assert(actionResults.size == dto.additionalInfoList.size)
             doTaintAnalysis(individual, dto.additionalInfoList)
         }
 
@@ -136,7 +137,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             Then, we would extend the genotype (but not the phenotype!!!) of this test.
          */
 
-        Lazy.assert { individual.seeActions().size == additionalInfoList.size }
+        Lazy.assert { individual.seeActions().size >= additionalInfoList.size }
 
         for (i in 0 until additionalInfoList.size) {
 

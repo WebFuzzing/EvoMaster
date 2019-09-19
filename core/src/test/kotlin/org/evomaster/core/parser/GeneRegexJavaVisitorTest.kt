@@ -33,4 +33,13 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("^(\\Qfoo.com\\E)$")
     }
 
+    @Test
+    fun testAssertionsAndQuotes(){
+        checkSameAsJava("^((.*))$|^(\\Qfoo.com\\E)$")
+    }
+
+    @Test
+    fun testQuotesInTheMiddle(){
+        checkSameAsJava("^(\\d{4}-\\d{1,2}-\\d{1,2})\\Q-\\E(\\d+)$")
+    }
 }
