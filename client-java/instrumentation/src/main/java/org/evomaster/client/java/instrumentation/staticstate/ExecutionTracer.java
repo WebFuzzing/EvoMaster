@@ -75,7 +75,7 @@ public class ExecutionTracer {
             additionalInfoList.add(new AdditionalInfo());
         }
 
-        if(action.getInputVariables() != null){
+        if(action.getInputVariables() != null && !action.getInputVariables().isEmpty()){
             inputVariables = action.getInputVariables();
         }
     }

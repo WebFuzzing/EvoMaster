@@ -37,7 +37,8 @@ public class TaintMultiEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintMulti/{x}/{date}", "foo");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintMulti/separated/{x}/{date}", "separated");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintMulti/together/{x}-{date}", "together");
                 });
     }
 }

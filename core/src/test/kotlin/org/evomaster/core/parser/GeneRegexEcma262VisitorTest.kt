@@ -267,4 +267,8 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     }
 
 
+    @Test
+    fun testAssertionsInParentheses(){
+        checkSameAsJava("^((.*))$")
+    }
 }

@@ -17,8 +17,8 @@ import java.util.regex.Pattern;
 public class TaintMultiRest {
 
 
-    @GetMapping(path = "/{x:\\d}/{date:\\d.*}")
-    public String getCollection(
+    @GetMapping(path = "/separated/{x:\\d}/{date:\\d.*}")
+    public String getSeparated(
             @PathVariable("date") String date,
             @PathVariable("x") String x
     ){
@@ -33,7 +33,18 @@ public class TaintMultiRest {
 
         String s = "" + v + " " + LocalDate.parse(date);
 
-        return "foo";
+        return "separated";
     }
+
+
+    @GetMapping(path = "/together/{x:\\d}-{date:\\d{4}-\\d{1,2}-\\d{1,2}}")
+    public String getTogether(
+            @PathVariable("date") String date,
+            @PathVariable("x") String x
+    ){
+
+        return "together";
+    }
+
 
 }
