@@ -267,7 +267,9 @@ Current usage:
 - `Done`: tasks that are fully done. We do not delete them, e.g., just in case if need to look at
    them again in the future.
    Even when a task is completed, the moving from `On going` to `Done` should be carried out 
-   __only__ during a developer meeting (so it can be demoed or at least discussed).    
+   __only__ during a developer meeting (so it can be demoed or at least discussed).
+   Furthermore, a done task should be added on top of the `Done` list.
+   In this way, by looking at the top of the list, one can see what were the most recent changes.    
 - `Important, to do soon`: high priority tasks which have not been started yet.
 - `Issues/bugs`: reported bugs which are not trivial to fix. For developers, better to report them
   here than GitHub issue page.
