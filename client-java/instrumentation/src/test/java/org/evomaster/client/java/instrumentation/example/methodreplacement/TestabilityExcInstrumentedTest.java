@@ -403,7 +403,7 @@ public class TestabilityExcInstrumentedTest {
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
     }
 
-    @Disabled
+
     @Test
     public void testMapContainsStringKey() throws Exception {
 

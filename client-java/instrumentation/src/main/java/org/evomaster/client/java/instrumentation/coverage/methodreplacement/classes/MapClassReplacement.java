@@ -24,12 +24,10 @@ public class MapClassReplacement implements MethodReplacementClass {
         }
 
         // keyset() returns an set instance that indirectly calls
-        // to containsKey(). In order to avoid an stack overflow
+        // to containsKey(). In order to avoid a stack overflow
         // we compute a fresh collection
-        Collection keyCollection = new HashSet<>(c.keySet());
-        final boolean rv = keyCollection.contains(o);
+        Collection keyCollection = new HashSet(c.keySet());
 
-        CollectionClassReplacement.containsHelper(keyCollection, o, idTemplate);
-        return rv;
+        return CollectionClassReplacement.containsHelper(keyCollection, o, idTemplate);
     }
 }
