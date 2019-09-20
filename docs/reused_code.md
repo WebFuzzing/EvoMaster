@@ -12,7 +12,7 @@ are listed here:
   
 * _CustomSummaryGeneratingListener.java_ and _CustomMutableTestExecutionSummary.java_:
   from JUnit 5.
-  Released under Eclipse Public License.  
+  Released under Eclipse Public License.
   These classes will be removed when this [PR](https://github.com/junit-team/junit5/issues/1947)
   will be part of the next JUnit release.  
   
