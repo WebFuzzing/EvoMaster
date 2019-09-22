@@ -97,7 +97,7 @@ atom
 
 // Special for Java
 quote
- : SLASH 'Q' quoteBlock SLASH 'E'
+ : SLASH Q quoteBlock SLASH E
 ;
 
 quoteBlock
@@ -108,6 +108,8 @@ quoteChar
  : classAtom
  | SLASH
  | BRACKET_close
+ | Q
+ | E
 ;
 
 //TODO
@@ -246,6 +248,9 @@ BRACE_close                : '}';
 OR                         : '|';
 MINUS                      : '-';
 COMMA                      : ',';
+
+Q: 'Q';
+E: 'E';
 
 
 BaseChar

@@ -4,6 +4,7 @@ import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintType
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.StringGene
@@ -107,14 +108,18 @@ object TaintAnalysis {
                 listOf(right, left)
             }
 
-            genes[0].addSpecializations(
-                    genes[0].getValueAsRawString(),
-                    listOf(StringSpecializationInfo(StringSpecialization.REGEX, choices[0])),
-                    randomness)
-            genes[1].addSpecializations(
-                    genes[1].getValueAsRawString(),
-                    listOf(StringSpecializationInfo(StringSpecialization.REGEX, choices[1])),
-                    randomness)
+            try {
+                genes[0].addSpecializations(
+                        genes[0].getValueAsRawString(),
+                        listOf(StringSpecializationInfo(StringSpecialization.REGEX, choices[0])),
+                        randomness)
+                genes[1].addSpecializations(
+                        genes[1].getValueAsRawString(),
+                        listOf(StringSpecializationInfo(StringSpecialization.REGEX, choices[1])),
+                        randomness)
+            }catch (e: Exception){
+                LoggingUtil.uniqueWarn(log, "Cannot handle partial match on regex: ${s.value}")
+            }
         }
     }
 

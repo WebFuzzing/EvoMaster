@@ -42,4 +42,10 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     fun testQuotesInTheMiddle(){
         checkSameAsJava("^(\\d{4}-\\d{1,2}-\\d{1,2})\\Q-\\E(\\d+)$")
     }
+
+    @Test
+    fun testIssueQuotedE(){
+        checkSameAsJava("\\Qfooebar\\E")
+        checkSameAsJava("\\QfooEbar\\E")
+    }
 }

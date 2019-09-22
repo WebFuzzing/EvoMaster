@@ -5,11 +5,14 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class StringGene(
@@ -30,6 +33,9 @@ class StringGene(
 ) : Gene(name) {
 
     companion object {
+
+        private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
+
         /*
             WARNING
             mutable static state.
@@ -269,7 +275,12 @@ class StringGene(
                     .filter(fullPredicate)
                     .map { it.value }
                     .joinToString("|")
-            toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+
+            try {
+                toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+            } catch (e: Exception){
+                LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+            }
         }
 
 /*

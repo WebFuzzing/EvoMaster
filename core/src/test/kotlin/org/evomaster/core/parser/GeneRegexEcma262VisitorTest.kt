@@ -271,4 +271,10 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
     fun testAssertionsInParentheses(){
         checkSameAsJava("^((.*))$")
     }
+
+    @Test
+    fun testAssertionsInDisjunctions(){
+        checkSameAsJava("^(bar)\$|^(foo)\$|^hello|world\$")
+    }
+
 }
