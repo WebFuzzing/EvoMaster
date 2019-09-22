@@ -233,7 +233,10 @@ public class EMController {
                         assert ! entry.getValue().isEmpty();
 
                         List<StringSpecializationInfoDto> list = entry.getValue().stream()
-                                .map(it -> new StringSpecializationInfoDto(it.getStringSpecialization().toString(), it.getValue()))
+                                .map(it -> new StringSpecializationInfoDto(
+                                        it.getStringSpecialization().toString(),
+                                        it.getValue(),
+                                        it.getType().toString()))
                                 .collect(Collectors.toList());
 
                         info.stringSpecializations.put(entry.getKey(), list);

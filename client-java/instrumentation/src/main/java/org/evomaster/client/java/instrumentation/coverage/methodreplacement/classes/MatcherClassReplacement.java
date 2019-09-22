@@ -2,10 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.lang.reflect.Field;
@@ -44,7 +41,9 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         Pattern pattern = caller.pattern();
         String text = getText(caller);
 
-        if(ExecutionTracer.isTaintInput(text)){
+        TaintType taintType = ExecutionTracer.getTaintType(text);
+
+        if(taintType.isTainted()){
             /*
                 .matches() does a full match of the text, not a partial.
 
@@ -54,7 +53,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
              */
             String regex = "^(" + pattern.toString() + ")$";
             ExecutionTracer.addStringSpecialization(text,
-                    new StringSpecializationInfo(StringSpecialization.REGEX, regex));
+                    new StringSpecializationInfo(StringSpecialization.REGEX, regex, taintType));
         }
 
         if (idTemplate == null) {
