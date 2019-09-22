@@ -2,13 +2,10 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.TargetInfo;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,7 +72,7 @@ public class ExecutionTracer {
             additionalInfoList.add(new AdditionalInfo());
         }
 
-        if(action.getInputVariables() != null){
+        if(action.getInputVariables() != null && !action.getInputVariables().isEmpty()){
             inputVariables = action.getInputVariables();
         }
     }
@@ -89,6 +86,25 @@ public class ExecutionTracer {
      */
     public static boolean isTaintInput(String input){
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
+    }
+
+
+    public static TaintType getTaintType(String input){
+
+        if(input == null){
+            return TaintType.NONE;
+        }
+
+        if(isTaintInput(input)){
+            return TaintType.FULL_MATCH;
+        }
+
+        if(TaintInputName.includesTaintInput(input)
+                || inputVariables.stream().anyMatch(v -> input.contains(v))){
+            return TaintType.PARTIAL_MATCH;
+        }
+
+        return TaintType.NONE;
     }
 
     public static List<AdditionalInfo> exposeAdditionalInfoList() {

@@ -67,7 +67,7 @@ public class AdditionalInfo implements Serializable {
 
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
-        if(!ExecutionTracer.isTaintInput(taintInputName)){
+        if(!ExecutionTracer.getTaintType(taintInputName).isTainted()){
             throw new IllegalArgumentException("No valid input name: " + taintInputName);
         }
         Objects.requireNonNull(info);
