@@ -2,10 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.ActionDto
-import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestAction
@@ -21,10 +18,6 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.evomaster.core.Lazy
-import org.evomaster.core.problem.rest.RestAction
-import org.evomaster.core.search.gene.StringGene
-import org.evomaster.core.search.gene.regex.RegexGene
 
 open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
