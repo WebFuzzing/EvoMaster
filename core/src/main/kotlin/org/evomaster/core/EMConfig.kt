@@ -588,6 +588,14 @@ class EMConfig {
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
     var enableTrackEvaluatedIndividual = false
 
+    @Experimental
+    @Cfg("Specify a maxLength of tracking")
+    @Min(-1.0)
+    var maxLengthOfTraces = 10
+
+    @Experimental
+    @Cfg("Whether to enable archive-based gene mutation")
+    var enableArchiveGeneMutation = false
 
     @Experimental
     @Cfg("Enable custom naming and sorting criteria")

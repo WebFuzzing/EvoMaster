@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -81,6 +82,7 @@ abstract class Gene(var name: String) {
                              selection : ImpactMutationSelection,
                              impact: GeneImpact?,
                              geneReference : String,
+                             archiveMutator: ArchiveMutator,
                              evi: EvaluatedIndividual<*>){
         TODO("not implemented")
     }
@@ -141,4 +143,6 @@ abstract class Gene(var name: String) {
      * indicates if the gene reaches its optimal value.
      */
     open fun reachOptimal() = false
+
+    open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){}
 }

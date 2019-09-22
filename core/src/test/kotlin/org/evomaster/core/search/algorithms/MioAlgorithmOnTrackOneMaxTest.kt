@@ -90,7 +90,9 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "--enableTrackIndividual",
                 "false",
                 "--enableTrackEvaluatedIndividual",
-                "true"
+                "true",
+                "--maxLengthOfTraces",
+                "-1"
         )
         init(args)
 
@@ -121,6 +123,49 @@ class MioAlgorithmOnTrackOneMaxTest {
     }
 
     @Test
+    fun testEvaluatedIndividualWithSpecifiedLengthOfTrack(){
+        val maxLengthOfTraces = 5
+        val args = arrayOf(
+                "--stoppingCriterion",
+                "FITNESS_EVALUATIONS",
+                "--enableTrackIndividual",
+                "false",
+                "--enableTrackEvaluatedIndividual",
+                "true",
+                "--maxLengthOfTraces",
+                maxLengthOfTraces.toString()
+        )
+        init(args)
+
+        assert(tracker.exists(TraceableElementCopyFilter.NONE.name))
+        assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
+        assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
+        assert(tracker.exists(EvaluatedIndividual.ONLY_INDIVIDUAL))
+
+        val solution = mio.search()
+
+        assert(solution.individuals.count { it.getTracking() != null } > 0)
+
+        solution.individuals.forEach {  s->
+
+            assertNull(s.individual.getTracking())
+            /**
+             * [s] might be null when the individual is never mutated
+             */
+            if(s.getTracking() == null){
+                assertNotNull(s.individual.trackOperator != null)
+                assert(s.individual.trackOperator!!.operatorTag().contains(OneMaxSampler::class.java.simpleName))
+            }
+
+            s.getTracking()?.forEachIndexed{ index, t->
+                assertNotNull(t.trackOperator)
+                assert(index < maxLengthOfTraces)
+                assertEquals(StandardMutator::class.java.simpleName, t.trackOperator!!.operatorTag())
+            }
+        }
+    }
+
+    @Test
     fun testEvaluatedIndividualWithTrackImpact(){
 
         val args = arrayOf(
@@ -131,7 +176,9 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "--enableTrackEvaluatedIndividual",
                 "true",
                 "--probOfArchiveMutation",
-                "0.5"
+                "0.5",
+                "--maxLengthOfTraces",
+                "-1"
         )
         init(args)
 

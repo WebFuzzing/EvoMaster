@@ -3,10 +3,12 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 
 class IntegerGene(
@@ -15,12 +17,13 @@ class IntegerGene(
         /** Inclusive */
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
-        val max: Int = Int.MAX_VALUE
+        val max: Int = Int.MAX_VALUE,
+        val valueMutation :IntMutationUpdate = IntMutationUpdate(min, max)
 ) : NumberGene<Int>(name, value) {
 
 
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max)
+        return IntegerGene(name, value, min, max, valueMutation.copy())
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -105,16 +108,30 @@ class IntegerGene(
             selection: ImpactMutationSelection,
             impact: GeneImpact?,
             geneReference : String,
+            archiveMutator : ArchiveMutator,
             evi: EvaluatedIndividual<*>
     ) {
 
-        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? IntegerGene ?: throw IllegalStateException("latest gene should be IntegerGene")
-        value += (value - latest.value)
+//        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? IntegerGene ?: throw IllegalStateException("latest gene should be IntegerGene")
+//        value += (value - latest.value)
+//
+//        value = when {
+//            value > max -> max
+//            value < min -> min
+//            else -> value
+//        }
+        archiveMutator.mutate(this)
+    }
 
-        value = when {
-            value > max -> max
-            value < min -> min
-            else -> value
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        original as? IntegerGene ?:throw IllegalStateException("$original should be IntegerGene")
+        mutated as? IntegerGene ?:throw IllegalStateException("$mutated should be IntegerGene")
+        if (this != mutated){
+            valueMutation.reached = mutated.valueMutation.reached
+        }
+        valueMutation.updateBoundary(original.value, mutated.value, doesCurrentBetter)
+        if (valueMutation.preferMin == valueMutation.preferMax){
+            valueMutation.reached = true
         }
     }
 }

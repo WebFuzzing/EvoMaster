@@ -1,6 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
-import org.evomaster.core.EMConfig
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -13,6 +13,7 @@ import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
  * make the standard mutator open for extending the mutator,
@@ -20,6 +21,9 @@ import org.evomaster.core.search.impact.ImpactUtils
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
+
+    @Inject
+    private lateinit var archiveMutator: ArchiveMutator
 
 
     override fun doesStructureMutation(individual : T): Boolean {
@@ -89,12 +93,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val individualToMutate = individual.individual
 
         if(doesStructureMutation(individualToMutate)){
-            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator) else individualToMutate.copy()) as T
+            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator, maxLength = config.maxLengthOfTraces) else individualToMutate.copy()) as T
             structureMutator.mutateStructure(copy, mutatedGene)
             return copy
         }
 
-        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(this) else individualToMutate.copy()) as T
+        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(this, maxLength = config.maxLengthOfTraces) else individualToMutate.copy()) as T
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -106,8 +110,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         for (gene in selectGeneToMutate){
             mutatedGene?.mutatedGenes?.add(gene)
 
-            if (randomness.nextBoolean(config.probOfArchiveMutation)){
-                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, null, ImpactUtils.generateGeneId(copy, gene), individual)
+            if (gene is StringGene && config.probOfArchiveMutation > 0.0 && config.enableArchiveGeneMutation){
+                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, null, ImpactUtils.generateGeneId(copy, gene), archiveMutator, individual)
             }else
                 gene.standardMutation(randomness, apc, allGenes)
         }
@@ -158,7 +162,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         assert(genes.isNotEmpty())
         return listOf(randomness.choose(genes))
-
     }
 
     private fun selectGenesAwayBad(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{

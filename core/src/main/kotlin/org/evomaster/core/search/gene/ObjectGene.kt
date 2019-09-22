@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
@@ -116,6 +117,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             selection: ImpactMutationSelection,
             geneImpact: GeneImpact?,
             geneReference : String,
+            archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>) {
 
         val impact = geneImpact?: evi.getImpactOfGenes()[ImpactUtils.generateGeneId(evi.individual, this)] ?: throw IllegalStateException("cannot find this gene in the individual")
@@ -143,8 +145,24 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
 
         val selected = randomness.choose(selects)
         val selectedImpact = (impact as ObjectGeneImpact).fields.getValue(selected.name)
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,evi)
+        if (archiveMutator.doesSupport(selected))
+            selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+        else
+            selected.standardMutation(randomness, apc, allGenes)
     }
 
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        original as? ObjectGene ?:throw IllegalStateException("$original should be IntegerGene")
+        mutated as? ObjectGene ?:throw IllegalStateException("$mutated should be IntegerGene")
+
+        mutated.fields.zip(original.fields) { cf, pf ->
+            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+        }.filter { !it.second }.map { it.first }.forEach { g->
+            val current = fields.find { it.name ==  g.first.name}?: throw IllegalArgumentException("mismatched field")
+            if (archiveMutator.doesSupport(current)){
+                current.archiveMutationUpdate(original = g.second, mutated = g.first, doesCurrentBetter = doesCurrentBetter, archiveMutator = archiveMutator)
+            }
+        }
+    }
 
 }

@@ -112,7 +112,7 @@ class RestIndividual (
         }
     }
 
-    override fun next(trackOperator: TrackOperator) : RestIndividual?{
+    override fun next(trackOperator: TrackOperator, maxLength : Int) : RestIndividual?{
         return RestIndividual(
                 resourceCalls.map { it.copy() }.toMutableList(),
                 sampleType,
@@ -120,7 +120,12 @@ class RestIndividual (
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
                 usedObjects,
                 trackOperator,
-                if (getTracking() == null) mutableListOf() else getTracking()!!.plus(this).map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
+                if (getTracking() == null)
+                    mutableListOf()
+                else if (getTracking()!!.size == maxLength) {
+                    getTracking()!!.subList(1, maxLength).plus(this).map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
+                }else
+                    getTracking()!!.plus(this).map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
         )
     }
 

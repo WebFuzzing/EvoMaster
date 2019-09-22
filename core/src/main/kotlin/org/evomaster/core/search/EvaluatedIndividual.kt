@@ -4,7 +4,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ActionStructureImpact
-import org.evomaster.core.search.impact.ArchiveStringMutationUtils
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.value.StringGeneImpact
 import org.evomaster.core.search.service.Sampler
@@ -58,9 +57,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         if(individual.seeActions().size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
-        if(tracking!=null && tracking.isNotEmpty() && tracking.first().trackOperator !is Sampler<*>){
-            throw IllegalArgumentException("first tracking operator should be a sampler")
-        }
+//        if(tracking!=null && tracking.isNotEmpty() && tracking.first().trackOperator !is Sampler<*>){
+//            throw IllegalArgumentException("first tracking operator should be a sampler")
+//        }
     }
 
     constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>, enableTracking: Boolean, trackOperator: TrackOperator?, enableImpact: Boolean):
@@ -191,7 +190,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     }
 
 
-    override fun next(trackOperator: TrackOperator, next: TraceableElement, copyFilter: TraceableElementCopyFilter): EvaluatedIndividual<T>? {
+    override fun next(trackOperator: TrackOperator, next: TraceableElement, copyFilter: TraceableElementCopyFilter, maxLength : Int): EvaluatedIndividual<T>? {
         if (next !is EvaluatedIndividual<*>) throw  IllegalArgumentException("the type of next is mismatched")
 
         when(copyFilter){
@@ -202,8 +201,20 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         next.individual.copy() as T,
                         next.results.map(ActionResult::copy),
                         trackOperator,
-                        getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy()),
-                        getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
+                        tracking = (getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy())).run {
+                            if (size == maxLength && maxLength > 0){
+                                this.removeAt(0)
+                                this
+                            }else
+                                this
+                        },
+                        undoTracking = (getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()).run {
+                            if (size == maxLength && maxLength > 0){
+                                this.removeAt(0)
+                                this
+                            }else
+                                this
+                        }
                 )
             }else ->{
                 if (copyFilter.name == WITH_TRACK_WITH_IMPACT){
@@ -212,8 +223,20 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                             next.individual.copy() as T,
                             next.results.map(ActionResult::copy),
                             trackOperator,
-                            getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy()),
-                            getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf(),
+                            tracking = (getTracking()?.plus(this)?.map { it.copy()}?.toMutableList()?: mutableListOf(this.copy())).run {
+                                if (size == maxLength && maxLength > 0){
+                                    this.removeAt(0)
+                                    this
+                                }else
+                                    this
+                            },
+                            undoTracking = (getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()).run {
+                                if (size == maxLength && maxLength > 0){
+                                    this.removeAt(0 )
+                                    this
+                                }else
+                                    this
+                            },
                             impactsOfGenes = impactsOfGenes!!.map { it.key to it.value.copy() as GeneImpact }.toMap().toMutableMap(),
                             impactsOfStructure = impactsOfStructure!!.copy(),
                             reachedTargets = reachedTargets!!.map { it.key to it.value }.toMap().toMutableMap()
@@ -282,11 +305,19 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val isAnyChange = updateReachedTargets(fitness) || next.fitness.isDifferent(previous.fitness, notCoveredTargets, strategy)
 //        val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
 
-        compareWithLatest(next, previous, isAnyChange, mutatedGenes, inTrack)
+        compareWithLatest(next, previous, isAnyChange, mutatedGenes)
     }
 
-    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification, isBetter: Boolean){
-
+    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification){
+        /**
+         * genes of individual might be added with additionalInfoList
+         */
+        next.individual.seeActions().forEach { a->
+            a.seeGenes().forEach { g ->
+                val id = ImpactUtils.generateGeneId(a, g)
+                impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(g, id))
+            }
+        }
         if (mutatedGenes.mutatedGenes.isEmpty()){ // structure mutated
             val sizeChanged = (next.individual.seeActions().size != previous.individual.seeActions().size)
             /*
@@ -297,10 +328,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             /*
                 update impacts of genes if any new genes are added with respect to structure mutation
              */
-            mutatedGenes.addedGenes.forEach {
-                val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, it)
-                impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(it, id))
-            }
+//            mutatedGenes.addedGenes.forEach {
+//                val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, it)
+//                impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(it, id))
+//            }
 
             /*
              TODO MAN: shall we update impacts of genes regarding deletion of genes?

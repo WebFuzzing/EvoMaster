@@ -32,7 +32,7 @@ abstract class TraceableElement(
      * @param trackOperator presents an operatorTag to refine the TraceElement
      * @return an TraceableElement that is going to be refined by [trackOperator], and its history is [tracking] of [this] plus [this]
      */
-    open fun next(trackOperator: TrackOperator) : TraceableElement? = null
+    open fun next(trackOperator: TrackOperator, maxLength : Int = -1) : TraceableElement? = null
 
     /**
      * @param trackOperator presents an operatorTag to refine the TraceElement
@@ -41,7 +41,7 @@ abstract class TraceableElement(
      * @param copyFilter indicates how to create new element
      * @return an newly created TraceableElement regarding [next], and its history is [tracking] of [this] plus [this]
      */
-    open fun next(trackOperator: TrackOperator, next : TraceableElement, copyFilter: TraceableElementCopyFilter) : TraceableElement? = null
+    open fun next(trackOperator: TrackOperator, next : TraceableElement, copyFilter: TraceableElementCopyFilter, maxLength : Int = -1) : TraceableElement? = null
 
     open fun copy(options: TraceableElementCopyFilter) : TraceableElement{
         TODO("NOT IMPLEMENT")

@@ -144,9 +144,9 @@ class Main {
 
             writeDependencies(injector)
 
-            writeTests(injector, solution, controllerInfo)
-
             writeStatistics(injector, solution)
+
+            writeTests(injector, solution, controllerInfo)
 
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)

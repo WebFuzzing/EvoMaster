@@ -24,12 +24,18 @@ class OneMaxIndividual(
         }
     }
 
-    override fun next(trackOperator: TrackOperator): TraceableElement? {
+    override fun next(trackOperator: TrackOperator, maxLength : Int): TraceableElement? {
         getTracking()?: return OneMaxIndividual(n, trackOperator)
         return OneMaxIndividual(
                 n,
                 trackOperator,
-                getTracking()!!.plus(this).map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()
+                (getTracking()!!.plus(this).map { (it as OneMaxIndividual).copy() as OneMaxIndividual }.toMutableList()).run {
+                    if (size == maxLength){
+                        this.removeAt(0)
+                        this
+                    }else
+                        this
+                }
         )
     }
 

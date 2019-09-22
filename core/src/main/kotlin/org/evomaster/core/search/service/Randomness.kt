@@ -111,7 +111,7 @@ class Randomness {
         return wordChars.filter { it in min..max }
     }
 
-    fun nextChar(min : Int, max : Int) : Char{
+    fun nextChar(min : Int = Char.MIN_VALUE.toInt(), max : Int = Char.MAX_VALUE.toInt()) : Char{
         if (min < Char.MIN_VALUE.toInt())
             throw IllegalArgumentException("$min is less than MIN_VALUE of Char")
         if (max > Char.MAX_VALUE.toInt())
