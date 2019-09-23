@@ -251,7 +251,6 @@ public class RegexDistanceUtils {
         if (!isSupportedRegex(regex)) {
             return getDefaultDistance(arg, regex);
         }
-
         RegexGraph graph = new RegexGraph(arg, regex);
         CostMatrix matrix = new CostMatrix();
         return matrix.calculateStandardCost(graph);
@@ -280,23 +279,6 @@ public class RegexDistanceUtils {
         return true;
     }
 
-    /**
-     * <p>Get the distance between the arg and the given regex.
-     * Insertion/deletion cost 1, whereas replacement is in [0,1] depending
-     * on the actual character values. </p>
-     *
-     * <p> Note: the distance is tailored for the <b>StringAVM<b/> algorithm,
-     * in which characters are only inserted/appended at the end.</p>
-     *
-     * @param arg
-     * @param regex
-     * @return
-     */
-    private static double getDistanceTailoredForStringAVM(String arg, String regex) {
-        RegexGraph graph = new RegexGraph(arg, regex);
-        CostMatrix matrix = new CostMatrix();
-        return matrix.calculateCostForStringAVM(graph);
-    }
 
     private static Automaton getAndCacheAutomaton(String regex) {
         /*

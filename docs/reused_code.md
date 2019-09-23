@@ -18,3 +18,6 @@ are listed here:
   
 * _RegexDistanceUtils.java_: from [EvoSuite](http://www.evosuite.org) unit test generator. 
   Released under GNU Lesser General Public
+  
+* _RegexDistanceUtilsTest.java_: from [EvoSuite](http://www.evosuite.org) unit test generator. 
+  Released under GNU Lesser General Public
