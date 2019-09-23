@@ -3,6 +3,8 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.PatternMatchingHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.shared.*;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import java.lang.reflect.Field;
@@ -48,17 +50,19 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
         boolean patternMatchesResult = PatternMatchingHelper.matches(regex, input, idTemplate);
 
-        boolean matcherMatchesResults = caller.matches();
-        assert (patternMatchesResult == matcherMatchesResults);
-        return matcherMatchesResults;
-    }
+        TaintType taintType = ExecutionTracer.getTaintType(text);
 
-    @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean find(Matcher caller, String idTemplate) {
+        if(taintType.isTainted()){
+            /*
+                .matches() does a full match of the text, not a partial.
 
-        if (caller == null) {
-            // signal a NPE
-            caller.find();
+                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
+                cases, but not fully correct: eg for multi-lines, and if pattern
+                already has ^ and $
+             */
+            String regex = "^(" + pattern.toString() + ")$";
+            ExecutionTracer.addStringSpecialization(text,
+                    new StringSpecializationInfo(StringSpecialization.REGEX, regex, taintType));
         }
 
         String input = getText(caller);

@@ -278,7 +278,7 @@ class RemoteController() : DatabaseExecutor {
             }
 
             /*
-                TODO refecator this method once we support most of SQL handling, and do not need
+                TODO refactor this method once we support most of SQL handling, and do not need
                 to have uniqueWarn any longer
              */
 

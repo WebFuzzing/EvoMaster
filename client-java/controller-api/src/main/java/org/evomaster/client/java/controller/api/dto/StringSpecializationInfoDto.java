@@ -6,10 +6,13 @@ public class StringSpecializationInfoDto {
 
     public String value;
 
+    public String type;
+
     public StringSpecializationInfoDto(){}
 
-    public StringSpecializationInfoDto(String stringSpecialization, String value) {
+    public StringSpecializationInfoDto(String stringSpecialization, String value, String type) {
         this.stringSpecialization = stringSpecialization;
         this.value = value;
+        this.type = type;
     }
 }

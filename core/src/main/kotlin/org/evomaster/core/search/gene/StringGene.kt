@@ -5,11 +5,14 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.search.gene.GeneUtils.getDelta
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class StringGene(
@@ -30,6 +33,9 @@ class StringGene(
 ) : Gene(name) {
 
     companion object {
+
+        private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
+
         /*
             WARNING
             mutable static state.
@@ -124,7 +130,7 @@ class StringGene(
         if (!TaintInputName.isTaintInput(value)
                 && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
 
-            value = TaintInputName.getTaintName(counter++.toString())
+            value = TaintInputName.getTaintName(counter++)
             return
         }
 
@@ -185,7 +191,7 @@ class StringGene(
     }
 
 
-    fun addSpecializations(specs: Collection<StringSpecializationInfo>, randomness: Randomness){
+    fun addSpecializations(key: String, specs: Collection<StringSpecializationInfo>, randomness: Randomness){
 
         val toAddSpecs = specs
                 //don't add the same specialization twice
@@ -205,6 +211,9 @@ class StringGene(
 
         //all constant values are merged in the same enum gene
         if(toAddSpecs.any { it.stringSpecialization == CONSTANT}){
+            /*
+                TODO partial matches
+             */
             toAddGenes.add(
                     EnumGene<String>(
                             name,
@@ -236,13 +245,7 @@ class StringGene(
         }
 
         //all regex are combined with disjunction in a single gene
-        if(toAddSpecs.any {it.stringSpecialization == REGEX}){
-            val regex = toAddSpecs
-                    .filter { it.stringSpecialization == REGEX }
-                    .map { it.value }
-                    .joinToString("|")
-            toAddGenes.add(RegexHandler.createGeneForJVM(regex))
-        }
+        handleRegex(key, toAddSpecs, toAddGenes)
 
         /*
             TODO
@@ -261,6 +264,39 @@ class StringGene(
             specializations.addAll(toAddSpecs)
         }
     }
+
+    private fun handleRegex(key: String, toAddSpecs: List<StringSpecializationInfo>, toAddGenes: MutableList<Gene>) {
+
+        val fullPredicate = {s : StringSpecializationInfo -> s.stringSpecialization == REGEX && s.type.isFullMatch}
+        val partialPredicate = {s : StringSpecializationInfo -> s.stringSpecialization == REGEX && s.type.isPartialMatch}
+
+        if (toAddSpecs.any(fullPredicate)) {
+            val regex = toAddSpecs
+                    .filter(fullPredicate)
+                    .map { it.value }
+                    .joinToString("|")
+
+            try {
+                toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+            } catch (e: Exception){
+                LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
+            }
+        }
+
+/*
+    Handling a partial match on a single gene is quite complicated to implement, plus
+    it might not be so useful.
+    TODO something to investigate in the future if we end up with some of these cases
+ */
+//        if(toAddSpecs.any(partialPredicate)){
+//            val regex = toAddSpecs
+//                    .filter(partialPredicate)
+//                    .map { RegexUtils.extractPartialRegex(key, this.getValueAsRawString(), it.value) }
+//                    .joinToString("|")
+//            toAddGenes.add(RegexHandler.createGeneForJVM(regex))
+//        }
+    }
+
 
     /**
      * Make sure no invalid chars is used
