@@ -4,7 +4,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import java.lang.IllegalStateException
 
 /*
 \w	Find a word character
@@ -44,6 +43,11 @@ class CharacterClassEscapeRxGene(
     }
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        if (value=="") {
+            // if standardMutation was invoked before calling to randomize
+            // then do a randomize first
+            randomize(randomness, forceNewValue = true, allGenes = allGenes)
+        }
 
         value = when(type){
             "d" -> ((value.toInt() + randomness.choose(listOf(1,-1) + 10)) % 10).toString()
