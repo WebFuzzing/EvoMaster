@@ -50,7 +50,7 @@ class CharacterClassEscapeRxGene(
         }
 
         value = when(type){
-            "d" -> ((value.toInt() + randomness.choose(listOf(1,-1) + 10)) % 10).toString()
+            "d" -> ((Math.abs(value.toInt() + randomness.choose(listOf(1,-1) + 10))) % 10).toString()
             //TODO all cases
             else -> throw IllegalStateException("Type '\\${type}' not supported yet")
         }

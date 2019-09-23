@@ -10,19 +10,23 @@ class CharacterClassEscapeRxGeneTest {
     @Test
     fun testRandomize() {
         val randomness = Randomness()
-        val gene = CharacterClassEscapeRxGene("d")
-        gene.randomize(randomness, forceNewValue = true, allGenes = listOf())
-        assertTrue(gene.value.toInt() >= 0)
-        assertTrue(gene.value.toInt() <= 9)
+        for (i in 1..1000) {
+            val gene = CharacterClassEscapeRxGene("d")
+            gene.randomize(randomness, forceNewValue = true, allGenes = listOf())
+            assertTrue(gene.value.toInt() >= 0)
+            assertTrue(gene.value.toInt() <= 9)
+        }
     }
 
     @Test
     fun testStandardMutation() {
         val randomness = Randomness()
-        val gene = CharacterClassEscapeRxGene("d")
-        val apc = AdaptiveParameterControl()
-        gene.standardMutation(randomness, apc = apc, allGenes = listOf())
-        assertTrue(gene.value.toInt() >= 0)
-        assertTrue(gene.value.toInt() <= 9)
+        for (i in 1..1000) {
+            val gene = CharacterClassEscapeRxGene("d")
+            val apc = AdaptiveParameterControl()
+            gene.standardMutation(randomness, apc = apc, allGenes = listOf())
+            assertTrue(gene.value.toInt() >= 0, "invalid digit value: " + gene.value)
+            assertTrue(gene.value.toInt() <= 90, "invalid digit value: " + gene.value)
+        }
     }
 }
