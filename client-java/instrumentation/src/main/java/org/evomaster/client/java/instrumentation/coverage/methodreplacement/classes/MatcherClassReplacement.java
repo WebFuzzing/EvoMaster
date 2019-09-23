@@ -45,14 +45,14 @@ public class MatcherClassReplacement implements MethodReplacementClass {
         if (caller == null) {
             caller.matches();
         }
-        String input = getText(caller);
-        String regex = caller.pattern().toString();
+        String text = getText(caller);
+        String pattern = caller.pattern().toString();
 
-        boolean patternMatchesResult = PatternMatchingHelper.matches(regex, input, idTemplate);
+        boolean patternMatchesResult = PatternMatchingHelper.matches(pattern, text, idTemplate);
 
         TaintType taintType = ExecutionTracer.getTaintType(text);
 
-        if(taintType.isTainted()){
+        if (taintType.isTainted()) {
             /*
                 .matches() does a full match of the text, not a partial.
 
@@ -60,11 +60,22 @@ public class MatcherClassReplacement implements MethodReplacementClass {
                 cases, but not fully correct: eg for multi-lines, and if pattern
                 already has ^ and $
              */
-            String regex = "^(" + pattern.toString() + ")$";
+            String regex = "^(" + caller.pattern().toString() + ")$";
             ExecutionTracer.addStringSpecialization(text,
                     new StringSpecializationInfo(StringSpecialization.REGEX, regex, taintType));
         }
+        boolean matcherMatchesResults = caller.matches();
+        assert (patternMatchesResult == matcherMatchesResults);
+        return matcherMatchesResults;
+    }
 
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean find(Matcher caller, String idTemplate) {
+
+        if (caller == null) {
+            // signal a NPE
+            caller.find();
+        }
         String input = getText(caller);
         String regex = caller.pattern().toString();
         int end;
@@ -89,7 +100,21 @@ public class MatcherClassReplacement implements MethodReplacementClass {
           find
          */
 
+
         String anyPositionRegexMatch = String.format("(.*)(%s)(.*)", regex);
+        TaintType taintType = ExecutionTracer.getTaintType(substring);
+        if (taintType.isTainted()) {
+            /*
+                .matches() does a full match of the text, not a partial.
+
+                TODO: enclosing the pattern in ^(pattern)$ would be fine for most
+                cases, but not fully correct: eg for multi-lines, and if pattern
+                already has ^ and $
+             */
+            ExecutionTracer.addStringSpecialization(substring,
+                    new StringSpecializationInfo(StringSpecialization.REGEX, anyPositionRegexMatch, taintType));
+        }
+
         boolean patternMatchResult = PatternMatchingHelper.matches(anyPositionRegexMatch, substring, idTemplate);
         boolean matcherFindResult = caller.find();
         assert (patternMatchResult == matcherFindResult);
