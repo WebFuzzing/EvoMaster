@@ -13,6 +13,15 @@ object GeneUtils {
      */
     private val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
 
+    enum class EscapeMode {
+        URI,
+        SQL,
+        ASSERTION,
+        JSON,
+        TEXT,
+        NONE
+    }
+
     fun getDelta(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
@@ -138,13 +147,13 @@ object GeneUtils {
 
      */
 
-    fun applyEscapes(string: String, mode: String = "text", format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5): String{
+    fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5): String{
         val ret = when (mode){
-            "uris" -> applyUriEscapes(string, format)
-            "sql" -> applySqlEscapes(string, format)
-            "assertions" -> applyAssertionEscapes(string, format)
-            "json" -> applyJsonEscapes(string, format)
-            "text" -> applyTextEscapes(string, format)
+            EscapeMode.URI -> applyUriEscapes(string, format)
+            EscapeMode.SQL -> applySqlEscapes(string, format)
+            EscapeMode.ASSERTION -> applyAssertionEscapes(string, format)
+            EscapeMode.JSON -> applyJsonEscapes(string, format)
+            EscapeMode.TEXT -> applyTextEscapes(string, format)
             else -> string
         }
         //if(forQueries) return applyQueryEscapes(string, format)
@@ -162,6 +171,7 @@ object GeneUtils {
 
         when{
             format.isKotlin() -> return ret.replace("\$", "\\\$")
+            //ret.replace("\$", "\${\'\$\'}")
             else -> return ret
         }
 
@@ -203,7 +213,7 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
+        if (format.isKotlin())  return ret.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
@@ -212,9 +222,21 @@ object GeneUtils {
         val ret =  string.replace("\\", """\\""")
                 .replace("\"", "\\\\\"")
 
-        if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
+        if (format.isKotlin())  return ret.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
 
+    fun getMode(mode: String?): EscapeMode{
+        when(mode){
+            "uri" -> return EscapeMode.URI
+            "sql" -> return EscapeMode.SQL
+            "assertion" -> return EscapeMode.ASSERTION
+            "json" -> return EscapeMode.JSON
+            "text" -> return EscapeMode.TEXT
+            else -> return EscapeMode.NONE
+        }
+    }
+
 }
+

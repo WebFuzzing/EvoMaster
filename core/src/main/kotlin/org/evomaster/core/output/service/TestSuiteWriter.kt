@@ -60,6 +60,7 @@ class TestSuiteWriter {
             : String {
 
         val lines = Lines()
+        val testSuiteOrganizer = TestSuiteOrganizer()
 
         header(solution, testSuiteFileName, lines)
 
@@ -67,7 +68,7 @@ class TestSuiteWriter {
 
             beforeAfterMethods(controllerName, lines)
 
-            val tests = TestSuiteOrganizer.sortTests(solution, config.customNaming)
+            val tests = testSuiteOrganizer.sortTests(solution, config.customNaming)
 
             for (test in tests) {
                 lines.addEmpty(2)

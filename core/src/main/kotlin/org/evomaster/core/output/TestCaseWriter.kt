@@ -392,7 +392,7 @@ class TestCaseWriter {
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${GeneUtils.applyEscapes(uri, mode = "uris", format = format)}\"")
+                lines.append("\"${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
                 //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
@@ -402,8 +402,8 @@ class TestCaseWriter {
                 lines.append("\"$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = "queries", format = format)}&\" + ") }
-                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = "queries", format = format)}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = GeneUtils.EscapeMode.SQL, format = format)}\"")
                 }
             }
         }
@@ -429,7 +429,7 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION)}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -583,7 +583,7 @@ class TestCaseWriter {
                 val bodyLines = body.split("\n").map { s ->
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
-                    "\"" + GeneUtils.applyEscapes(s.trim(), "json", format).replace("\\\\u", "\\u") + "\""
+                    "\"" + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.JSON, format = format).replace("\\\\u", "\\u") + "\""
                     /*
                      The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
                      Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
@@ -726,7 +726,7 @@ class TestCaseWriter {
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             //lines.add(".body(isEmptyOrNullString())")
-                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = "assertions", format = format)}\"))")
+                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                         }
                     }
                 }

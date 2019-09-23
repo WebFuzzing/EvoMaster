@@ -20,18 +20,18 @@ import kotlin.reflect.KFunction1
  * name each test will have
  */
 class TestSuiteOrganizer {
-    companion object {
-        private val sortingHelper = SortingHelper()
-        private val namingHelper = NamingHelper()
 
-        private val default_sorting = mutableListOf(0, 1)
+    private val sortingHelper = SortingHelper()
+    private val namingHelper = NamingHelper()
 
-        fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
-            sortingHelper.selectCriteriaByIndex(default_sorting)
-            //TODO here in the future we will have something a bit smarter
-            return sortingHelper.sort(solution, namingHelper, customNaming)
-        }
+    private val defaultSorting = listOf(0, 1)
+
+    fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
+        sortingHelper.selectCriteriaByIndex(defaultSorting)
+        //TODO here in the future we will have something a bit smarter
+        return sortingHelper.sort(solution, namingHelper, customNaming)
     }
+
 }
 
 class NamingHelper {
@@ -74,20 +74,20 @@ class NamingHelper {
     }
 
     private var namingCriteria =  mutableListOf(::criterion1_500, ::criterion3_sampling)
-    private val availableCriteria = mutableListOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
+    private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{
         return namingCriteria.map { it(individual) }.joinToString("")
     }
 
-    fun getAvailableCriteria(): MutableList<KFunction1<EvaluatedIndividual<*>, String>> {
+    fun getAvailableCriteria(): List<KFunction1<EvaluatedIndividual<*>, String>> {
         return availableCriteria
     }
 
     fun selectCriteria(selected: MutableList<KFunction1<EvaluatedIndividual<*>, String>>){
         if (availableCriteria.containsAll(selected)){
-            namingCriteria = availableCriteria
+            namingCriteria = selected
         }
         else {
             throw UnsupportedOperationException("The naming criteria chosen appear to not be supported at the moment.")
@@ -96,6 +96,7 @@ class NamingHelper {
 
     fun selectCriteriaByIndex(selected: MutableList<Int>){
         if (availableCriteria.indices.toMutableList().containsAll(selected)){
+            for (i in selected)
             namingCriteria = availableCriteria.filterIndexed{ index, _ ->
                 selected.contains(index)
             } as MutableList<KFunction1<EvaluatedIndividual<*>, String>>
@@ -156,7 +157,7 @@ class SortingHelper {
     }.reversed()
 
     /**
-     * coveredTargets sorts [EvaluatedIndividual] objects on the basis of the number of covered targets.
+     * [coveredTargets] sorts [EvaluatedIndividual] objects on based on the higher number of covered targets.
      * The purpose is to give an example of sorting based on fitness information.
      */
     private val coveredTargets: Comparator<EvaluatedIndividual<*>> = compareBy {
@@ -170,10 +171,9 @@ class SortingHelper {
 
     //var comparatorList = mutableListOf(statusCode, minActions)
     var comparatorList = mutableListOf(statusCode, coveredTargets)
+    private val availableSortCriteria = listOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
 
-    private val availableSortCriteria = mutableListOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
-
-    fun getAvailableCriteria(): MutableList<Comparator<EvaluatedIndividual<*>>> {
+    fun getAvailableCriteria(): List<Comparator<EvaluatedIndividual<*>>> {
         return availableSortCriteria
     }
 
@@ -186,8 +186,8 @@ class SortingHelper {
         }
     }
 
-    fun selectCriteriaByIndex(selected: MutableList<Int>){
-        if (availableSortCriteria.indices.toMutableList().containsAll(selected)){
+    fun selectCriteriaByIndex(selected: List<Int>){
+        if (availableSortCriteria.indices.toList().containsAll(selected)){
             comparatorList = availableSortCriteria.filterIndexed{ index, _ ->
                 selected.contains(index)
             } as MutableList<Comparator<EvaluatedIndividual<*>>>
@@ -202,16 +202,33 @@ class SortingHelper {
      */
     private fun sortByComparatorList (solution: Solution<*>,
                               namingHelper: NamingHelper,
-                              comparators: MutableList<Comparator<EvaluatedIndividual<*>>> = mutableListOf(statusCode)
+                              comparators: List<Comparator<EvaluatedIndividual<*>>> = listOf(statusCode)
 
     ): List<TestCase> {
         var counter = 0
 
         val inds = solution.individuals
 
+        /**
+         * Comparisons, as far as I understand them, are done as follows:
+         * First, the list is sorted based on the first criterion.
+         * Then, the (now sorted) list, is sorted based on the second criterion.
+         * Where two values have equal priority with respect to the most recent sort, they maintain the order (and, thus,
+         * are still sorted according to the first criterion).
+         *
+         * So, a criterion with more priority overrides most other criteria, unless elements have the same value.
+         * If too many criteria are used, the ones that are lower on the priority list will not really have a chance to manifest.
+         *
+         * An example of how this approach is used:
+         * = first priority (thus, last to be executed and most likely to be observed) is the [statusCode]. Thus, every
+         * test case that contains a 500 code is at the top.
+         * = second priority (thus, second to last to be executed), is the [coveredTargets]. Thus, among those test cases
+         * that have the same code, the ones with the most covered targets will be at the top (among their sub-group).
+         */
+
         comparators.asReversed().forEach {
             //solution.individuals.sortWith(it)
-            inds.sortedWith(it)
+            inds.sortWith(it)
         }
 
         //return solution.individuals.map{ ind -> TestCase(ind, "test_"  + (counter++) + namingHelper.suggestName(ind))}

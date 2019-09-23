@@ -98,4 +98,24 @@ class OutputFormatterTest {
         OutputFormatter.JSON_FORMATTER.getFormatted(string)
     }
 
+    @Test
+    fun testEscapes7(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+
+        val string = """
+           {"id":"Ot${'$'}Ag", "value":"Q"}
+        """
+        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
+    @Test
+    fun testEscapes8(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+
+        val string = """
+           {"id":"Ot$ Ag", "value":"Q"}
+        """
+        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
 }

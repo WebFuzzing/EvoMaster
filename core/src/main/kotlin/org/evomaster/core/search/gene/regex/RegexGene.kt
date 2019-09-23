@@ -47,8 +47,8 @@ class RegexGene(
              */
             (targetFormat == null) -> return "\"${GeneUtils.applyEscapes(rawValue)}\""
             //"\"${rawValue.replace("\"", "\\\"")}\""
-            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
-            else -> return "\"${GeneUtils.applyEscapes(rawValue, "text" ,targetFormat)}\""
+            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.getMode(mode), targetFormat)}\""
+            else -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.TEXT ,targetFormat)}\""
         }
     }
 

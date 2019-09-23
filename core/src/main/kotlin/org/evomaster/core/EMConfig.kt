@@ -604,7 +604,6 @@ class EMConfig {
     var enableTrackEvaluatedIndividual = false
 
 
-    @Experimental
     @Cfg("Enable custom naming and sorting criteria")
     var customNaming = true
 
