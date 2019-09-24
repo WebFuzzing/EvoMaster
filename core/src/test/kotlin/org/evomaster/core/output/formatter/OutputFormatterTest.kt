@@ -113,7 +113,7 @@ class OutputFormatterTest {
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
 
         val string = """
-           {"id":"Ot$ Ag", "value":"Q"}
+           {"id":"W5TWLkjlMWY", "value":"\\\\${'$'}UVKnphHS\\w"}
         """
         OutputFormatter.JSON_FORMATTER.getFormatted(string)
     }

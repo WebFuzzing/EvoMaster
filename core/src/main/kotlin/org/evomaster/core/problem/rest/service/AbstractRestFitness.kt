@@ -15,6 +15,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
@@ -297,7 +298,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         Furthermore, likely needed to be done in resolveLocation,
                         or at least check how RestAssured would behave
                      */
-                    it.replace("\"", "")
+                    //it.replace("\"", "")
+                    GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI)
                 }
 
         /*

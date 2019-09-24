@@ -73,7 +73,7 @@ class NamingHelper {
         else return ""
     }
 
-    private var namingCriteria =  mutableListOf(::criterion1_500, ::criterion3_sampling)
+    private var namingCriteria =  listOf(::criterion1_500, ::criterion3_sampling)
     private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
 
 
@@ -85,7 +85,7 @@ class NamingHelper {
         return availableCriteria
     }
 
-    fun selectCriteria(selected: MutableList<KFunction1<EvaluatedIndividual<*>, String>>){
+    fun selectCriteria(selected: List<KFunction1<EvaluatedIndividual<*>, String>>){
         if (availableCriteria.containsAll(selected)){
             namingCriteria = selected
         }
@@ -94,12 +94,12 @@ class NamingHelper {
         }
     }
 
-    fun selectCriteriaByIndex(selected: MutableList<Int>){
-        if (availableCriteria.indices.toMutableList().containsAll(selected)){
+    fun selectCriteriaByIndex(selected: List<Int>){
+        if (availableCriteria.indices.toList().containsAll(selected)){
             for (i in selected)
             namingCriteria = availableCriteria.filterIndexed{ index, _ ->
                 selected.contains(index)
-            } as MutableList<KFunction1<EvaluatedIndividual<*>, String>>
+            } as List<KFunction1<EvaluatedIndividual<*>, String>>
         }
         else {
             throw UnsupportedOperationException("The naming criteria chosen appear to not be supported at the moment.")
@@ -169,15 +169,14 @@ class SortingHelper {
      *  Note that the order of the comparators is the order their importance/priority.
      */
 
-    //var comparatorList = mutableListOf(statusCode, minActions)
-    var comparatorList = mutableListOf(statusCode, coveredTargets)
+    var comparatorList = listOf(statusCode, coveredTargets)
     private val availableSortCriteria = listOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
 
     fun getAvailableCriteria(): List<Comparator<EvaluatedIndividual<*>>> {
         return availableSortCriteria
     }
 
-    fun selectCriteria(selected: MutableList<Comparator<EvaluatedIndividual<*>>>){
+    fun selectCriteria(selected: List<Comparator<EvaluatedIndividual<*>>>){
         if (availableSortCriteria.containsAll(selected)){
             comparatorList = selected
         }
@@ -190,7 +189,7 @@ class SortingHelper {
         if (availableSortCriteria.indices.toList().containsAll(selected)){
             comparatorList = availableSortCriteria.filterIndexed{ index, _ ->
                 selected.contains(index)
-            } as MutableList<Comparator<EvaluatedIndividual<*>>>
+            }
         }
         else {
             throw UnsupportedOperationException("The sorting criteria chosen appear to not be supported at the moment.")

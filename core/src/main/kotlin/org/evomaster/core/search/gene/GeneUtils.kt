@@ -213,7 +213,8 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin())  return ret.replace("\$", "\${\'\$\'}")
+        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+                //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
@@ -222,7 +223,8 @@ object GeneUtils {
         val ret =  string.replace("\\", """\\""")
                 .replace("\"", "\\\\\"")
 
-        if (format.isKotlin())  return ret.replace("\$", "\${\'\$\'}")
+        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+                //.replace("\$", "${'\$'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
