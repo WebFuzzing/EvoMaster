@@ -99,6 +99,14 @@
                                     <pattern>org.objectweb</pattern>
                                     <shadedPattern>shaded.org.objectweb</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>org.jgrapht</pattern>
+                                    <shadedPattern>shaded.org.jgrapht</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>dk.brics.automaton</pattern>
+                                    <shadedPattern>shaded.dk.brics.automaton</shadedPattern>
+                                </relocation>
                             </relocations>
                         </configuration>
                     </execution>

@@ -45,12 +45,12 @@ class CharacterClassEscapeRxGene(
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         if (value=="") {
             // if standardMutation was invoked before calling to randomize
-            // then do a randomize first
-            randomize(randomness, forceNewValue = true, allGenes = allGenes)
+            // then we signal an exception
+            throw IllegalStateException("Cannot apply mutation on an uninitalized gene")
         }
 
         value = when(type){
-            "d" -> ((Math.abs(value.toInt() + randomness.choose(listOf(1,-1) + 10))) % 10).toString()
+            "d" -> ((value.toInt() + randomness.choose(listOf(1,-1)) + 10) % 10).toString()
             //TODO all cases
             else -> throw IllegalStateException("Type '\\${type}' not supported yet")
         }
