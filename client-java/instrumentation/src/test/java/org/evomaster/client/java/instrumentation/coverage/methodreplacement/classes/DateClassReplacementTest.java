@@ -1,41 +1,61 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by jgaleotti on 29-Ago-19.
  */
 public class DateClassReplacementTest {
 
+    @BeforeEach
+    public void setUp() {
+        ExecutionTracer.reset();
+    }
+
     @Test
     public void testEqualsDates() {
         Date thisDate = new Date();
-        Truthness truthness = DateClassReplacement.getEqualsTruthness(thisDate, thisDate);
-        assertTrue(truthness.isTrue());
-        assertFalse(truthness.isFalse());
 
-        boolean equalsValue = DateClassReplacement.equals(thisDate, thisDate, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equalsValue = DateClassReplacement.equals(thisDate, thisDate, idTemplate);
+
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(idTemplate).size());
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertEquals(0, h0);
         assertTrue(equalsValue);
     }
 
     @Test
     public void testEqualsNull() {
         Date thisDate = new Date();
-        Truthness truthness = DateClassReplacement.getEqualsTruthness(thisDate, null);
-        assertFalse(truthness.isTrue());
-        assertTrue(truthness.isFalse());
 
-        boolean equalsValue = DateClassReplacement.equals(thisDate, null, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equalsValue = DateClassReplacement.equals(thisDate, null, idTemplate);
         assertFalse(equalsValue);
+
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(idTemplate).size());
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertEquals(0, h0);
+
+
     }
 
     @Test
@@ -53,19 +73,23 @@ public class DateClassReplacementTest {
         Date dateObject2 = sdf.parse(date1 + " " + time2);
         Date dateObject3 = sdf.parse(date1 + " " + time3);
 
-        Truthness truthness1 = DateClassReplacement.getEqualsTruthness(dateObject1, dateObject2);
-        Truthness truthness2 = DateClassReplacement.getEqualsTruthness(dateObject1, dateObject3);
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals0 = DateClassReplacement.equals(dateObject1, dateObject3, idTemplate);
+        assertFalse(equals0);
 
-        assertFalse(truthness1.isTrue());
-        assertFalse(truthness2.isTrue());
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
 
-        assertTrue(truthness1.isFalse());
-        assertTrue(truthness2.isFalse());
+        boolean equals1 = DateClassReplacement.equals(dateObject1, dateObject2, idTemplate);
+        assertFalse(equals1);
+
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > 0);
 
         // 11.15 is closer to 11.00 than 11.30
-        assertTrue(truthness1.getOfTrue() > truthness2.getOfTrue());
-
-
+        assertTrue(h1 > h0);
     }
 
 
@@ -84,27 +108,33 @@ public class DateClassReplacementTest {
         Date dateObject2 = sdf.parse(date1 + " " + time2);
         Date dateObject3 = sdf.parse(date1 + " " + time3);
 
-        Truthness truthness1 = DateClassReplacement.getBeforeTruthness(dateObject1, dateObject2);
-        Truthness truthness2 = DateClassReplacement.getBeforeTruthness(dateObject1, dateObject3);
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
 
-        assertTrue(truthness1.isTrue());
-        assertTrue(truthness2.isTrue());
+        boolean before0 = DateClassReplacement.before(dateObject3, dateObject1, idTemplate);
+        assertFalse(before0);
 
-        assertFalse(truthness1.isFalse());
-        assertFalse(truthness2.isFalse());
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(idTemplate).size());
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
 
-        Truthness truthness3 = DateClassReplacement.getBeforeTruthness(dateObject2, dateObject1);
-        Truthness truthness4 = DateClassReplacement.getBeforeTruthness(dateObject3, dateObject1);
+        boolean before1 = DateClassReplacement.before(dateObject2, dateObject1, idTemplate);
+        assertFalse(before1);
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 < h1);
 
-        assertFalse(truthness3.isTrue());
-        assertFalse(truthness4.isTrue());
 
-        assertTrue(truthness3.isFalse());
-        assertTrue(truthness4.isFalse());
+        boolean before2 = DateClassReplacement.before(dateObject1, dateObject3, idTemplate);
+        assertTrue(before2);
+        double h2 = ExecutionTracer.getValue(targetId);
 
-        // 11:15 AM is closer to 10:59 AM than 11:30 AM
-        assertTrue(truthness3.getOfTrue() > truthness4.getOfTrue());
+        assertEquals(1, h2);
 
+        boolean before3 = DateClassReplacement.before(dateObject1, dateObject2, idTemplate);
+        assertTrue(before3);
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h3);
     }
 
     @Test
