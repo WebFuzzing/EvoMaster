@@ -19,6 +19,8 @@ public class ReplacementList {
                 new FloatClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
+                new LocalDateTimeClassReplacement(),
+                new LocalTimeClassReplacement(),
                 new LongClassReplacement(),
                 new MapClassReplacement(),
                 new MatcherClassReplacement(),

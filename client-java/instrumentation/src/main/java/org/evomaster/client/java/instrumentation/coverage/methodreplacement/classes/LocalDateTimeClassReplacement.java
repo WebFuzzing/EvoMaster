@@ -11,39 +11,50 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.chrono.ChronoLocalDate;
+import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
 
 
-public class LocalDateClassReplacement implements MethodReplacementClass {
+public class LocalDateTimeClassReplacement implements MethodReplacementClass {
 
     @Override
     public Class<?> getTargetClass() {
-        return LocalDate.class;
+        return LocalDateTime.class;
     }
 
+    /**
+     * Obtains an instance of LocalDateTime from a text string such as 2007-12-03T10:15:30.
+     * The string must represent a valid date-time and is parsed using DateTimeFormatter.ISO_LOCAL_DATE_TIME.
+     *
+     * @param text
+     * @param idTemplate
+     * @return
+     */
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
-    public static LocalDate parse(CharSequence input, String idTemplate) {
+    public static LocalDateTime parse(CharSequence text, String idTemplate) {
 
-        if (input != null && ExecutionTracer.isTaintInput(input.toString())) {
-            ExecutionTracer.addStringSpecialization(input.toString(),
-                    new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        if (text != null && ExecutionTracer.isTaintInput(text.toString())) {
+            // TODO: Change this to the actual format
+            ExecutionTracer.addStringSpecialization(text.toString(),
+                    new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD_HH_SS, null));
         }
 
         if (idTemplate == null) {
-            return LocalDate.parse(input);
+            return LocalDateTime.parse(text);
         }
 
         try {
-            LocalDate res = LocalDate.parse(input);
+            LocalDateTime res = LocalDateTime.parse(text);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
-        } catch (RuntimeException e) {
-            double h = parseHeuristic(input);
+        } catch (DateTimeParseException e) {
+            double h = parseHeuristic(text);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }
@@ -112,7 +123,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean equals(LocalDate caller, Object anObject, String idTemplate) {
+    public static boolean equals(LocalDateTime caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
         if (idTemplate == null) {
@@ -120,54 +131,82 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
         }
 
         final Truthness t;
-        if (anObject == null || !(anObject instanceof LocalDate)) {
+        if (anObject == null || !(anObject instanceof LocalDateTime)) {
             t = new Truthness(0d, 1d);
         } else {
-            final long a = caller.toEpochDay();
-            final long b = ((LocalDate) anObject).toEpochDay();
+            final long a = getMillis(caller);
+            final long b = getMillis((LocalDateTime) anObject);
             t = TruthnessUtils.getEqualityTruthness(a, b);
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.equals(anObject);
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean isBefore(LocalDate caller, ChronoLocalDate when, String idTemplate) {
+    private static Truthness getIsBeforeTruthness(ChronoLocalDateTime<?> caller, ChronoLocalDateTime<?> when) {
         Objects.requireNonNull(caller);
-        return LocalDateTimeClassReplacement.isBefore(
-                toLocalDateTime(caller),
-                when == null ? null : toChronoLocalDateTime(when),
-                idTemplate);
+        Objects.requireNonNull(when);
 
-    }
+        final long a = getMillis(caller);
+        final long b = getMillis(when);
 
-    private static LocalDateTime toLocalDateTime(LocalDate localDate) {
-        Objects.requireNonNull(localDate);
-        return localDate.atTime(LocalTime.MIDNIGHT);
-    }
-
-    private static ChronoLocalDateTime toChronoLocalDateTime(ChronoLocalDate chronoLocalDate) {
-        Objects.requireNonNull(chronoLocalDate);
-        return chronoLocalDate.atTime(LocalTime.MIDNIGHT);
+        /**
+         * We use the same gradient that HeuristicsForJumps.getForValueComparison()
+         * used for IF_ICMPLT, ie, a < b
+         */
+        return TruthnessUtils.getLessThanTruthness(a, b);
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean isAfter(LocalDate caller, ChronoLocalDate when, String idTemplate) {
+    public static boolean isBefore(LocalDateTime caller, ChronoLocalDateTime<?> other, String idTemplate) {
         Objects.requireNonNull(caller);
-        return LocalDateTimeClassReplacement.isAfter(
-                toLocalDateTime(caller),
-                when == null ? null : toChronoLocalDateTime(when),
-                idTemplate);
+
+        // might throw NPE if when is null
+        final boolean res = caller.isBefore(other);
+        if (idTemplate == null) {
+            return res;
+        }
+
+        final Truthness t = getIsBeforeTruthness(caller, other);
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return res;
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean isEqual(LocalDate caller, ChronoLocalDate other, String idTemplate) {
+    public static boolean isAfter(LocalDateTime caller, ChronoLocalDateTime<?> other, String idTemplate) {
         Objects.requireNonNull(caller);
-        return LocalDateTimeClassReplacement.isEqual(
-                toLocalDateTime(caller),
-                other == null ? null : toChronoLocalDateTime(other),
-                idTemplate
-        );
+
+        // might throw NPE if when is null
+        final boolean res = caller.isAfter(other);
+        if (idTemplate == null) {
+            return res;
+        }
+
+        final Truthness t = getIsBeforeTruthness(other, caller);
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return res;
+    }
+
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean isEqual(LocalDateTime caller, ChronoLocalDateTime<?> other, String idTemplate) {
+        Objects.requireNonNull(caller);
+
+        if (idTemplate == null) {
+            return caller.isEqual(other);
+        }
+        final Truthness t;
+        if (other == null) {
+            t = new Truthness(0d, 1d);
+        } else {
+            final long a = getMillis(caller);
+            final long b = getMillis(other);
+            t = TruthnessUtils.getEqualityTruthness(a, b);
+        }
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return caller.isEqual(other);
+    }
+
+    private static long getMillis(ChronoLocalDateTime<?> chronoLocalDateTime) {
+        return chronoLocalDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
     }
 
 }

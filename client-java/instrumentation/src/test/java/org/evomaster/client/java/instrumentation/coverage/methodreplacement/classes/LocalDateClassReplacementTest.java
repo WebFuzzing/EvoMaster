@@ -92,12 +92,12 @@ public class LocalDateClassReplacementTest {
         assertFalse(isBefore1);
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
-        assertNotEquals(1,h1);
+        assertNotEquals(1, h1);
 
-        boolean isBefore2= LocalDateClassReplacement.isBefore(a, b, idTemplate);
+        boolean isBefore2 = LocalDateClassReplacement.isBefore(a, b, idTemplate);
         assertTrue(isBefore2);
         double h2 = ExecutionTracer.getValue(targetId);
-        assertEquals(1,h2);
+        assertEquals(1, h2);
 
     }
 
@@ -122,20 +122,20 @@ public class LocalDateClassReplacementTest {
         assertFalse(isAfter1);
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
-        assertNotEquals(1,h1);
+        assertNotEquals(1, h1);
 
-        boolean isAfter2= LocalDateClassReplacement.isAfter(b, a, idTemplate);
+        boolean isAfter2 = LocalDateClassReplacement.isAfter(b, a, idTemplate);
         assertTrue(isAfter2);
         double h2 = ExecutionTracer.getValue(targetId);
-        assertEquals(1,h2);
+        assertEquals(1, h2);
     }
 
 
     @Test
     public void testIsEqual() {
-        LocalDate a = LocalDate.of(1978,7,31);
-        LocalDate b = LocalDate.of(1988,7,31);
-        LocalDate c = LocalDate.of(1998,7,31);
+        LocalDate a = LocalDate.of(1978, 7, 31);
+        LocalDate b = LocalDate.of(1988, 7, 31);
+        LocalDate c = LocalDate.of(1998, 7, 31);
 
 
         final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
@@ -147,21 +147,23 @@ public class LocalDateClassReplacementTest {
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId);
 
-        assertTrue(h0>0);
-        assertTrue(h0<1);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
 
         boolean isEqual1 = LocalDateClassReplacement.isEqual(a, b, idTemplate);
         assertFalse(isEqual1);
 
         double h1 = ExecutionTracer.getValue(targetId);
 
-        assertTrue(h1>h0);
-        assertTrue(h1<1);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
 
         boolean isEqual2 = LocalDateClassReplacement.isEqual(a, a, idTemplate);
         assertTrue(isEqual2);
 
         double h2 = ExecutionTracer.getValue(targetId);
-        assertEquals(1,h2);
+        assertEquals(1, h2);
     }
+
+
 }
