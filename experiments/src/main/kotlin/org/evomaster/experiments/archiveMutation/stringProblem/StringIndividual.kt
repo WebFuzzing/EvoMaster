@@ -1,4 +1,4 @@
-package org.evomaster.experiments.stringMutation
+package org.evomaster.experiments.archiveMutation.stringProblem
 
 import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
@@ -26,7 +26,7 @@ class StringIndividual (val genes : MutableList<StringGene>,
     override fun repairInitializationActions(randomness: Randomness) {
     }
 
-    override fun seeGenes(filter: GeneFilter): List<out Gene> {
+    override fun seeGenes(filter: GeneFilter): List<StringGene> {
         return genes
     }
 
@@ -37,15 +37,20 @@ class StringIndividual (val genes : MutableList<StringGene>,
     override fun seeActions(): List<out Action> = listOf()
 
     override fun copy(): Individual {
-        return StringIndividual(genes.map { it.copy() as StringGene}.toMutableList())
+        return StringIndividual(genes.map { it.copy() as StringGene }.toMutableList())
     }
 
-    override fun next(trackOperator: TrackOperator): TraceableElement? {
+    override fun next(trackOperator: TrackOperator, maxLength : Int): TraceableElement? {
         getTracking()?: return StringIndividual(genes.map { it.copy() as StringGene }.toMutableList(), trackOperator)
         return StringIndividual(
                 genes.map { it.copy() as StringGene }.toMutableList(),
                 trackOperator,
-                getTracking()!!.plus(this).map { (it as StringIndividual).copy() as StringIndividual }.toMutableList()
+                getTracking()!!.run {
+                    if (size == maxLength)
+                        this.subList(1, this.size)
+                    else
+                        this
+                }.plus(this).map { (it as StringIndividual).copy() as StringIndividual }.toMutableList()
         )
     }
 

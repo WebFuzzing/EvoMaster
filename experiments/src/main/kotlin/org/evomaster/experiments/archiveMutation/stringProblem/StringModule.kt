@@ -1,4 +1,4 @@
-package org.evomaster.experiments.stringMutation
+package org.evomaster.experiments.archiveMutation.stringProblem
 
 import com.google.inject.AbstractModule
 import com.google.inject.TypeLiteral
@@ -11,7 +11,7 @@ import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.service.mutator.StructureMutator
 
 /**
- * created by manzh on 2019-09-16
+ * created by manzh on 2019-09-23
  */
 class StringModule : AbstractModule(){
 
@@ -32,9 +32,6 @@ class StringModule : AbstractModule(){
                 .to(object : TypeLiteral<Archive<StringIndividual>>() {})
 
         bind(object : TypeLiteral<Archive<StringIndividual>>() {})
-                .asEagerSingleton()
-
-        bind(StringProblemDefinition::class.java)
                 .asEagerSingleton()
 
         bind(StructureMutator::class.java)

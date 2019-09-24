@@ -121,9 +121,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent), config.maxLengthOfTraces)!!
                 else mutated
 
-                if(config.probOfArchiveMutation > 0.0)
+                if(config.probOfArchiveMutation > 0.0){
                     trackedMutated.updateImpactOfGenes(true, mutatedGenes, targets, config.secondaryObjectiveStrategy)
-
+                    if (config.enableArchiveGeneMutation)
+                        trackedMutated.mutatedGeneSpecification = mutatedGenes.copyFrom(trackedMutated)
+                }
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
             }else{
@@ -145,7 +147,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
                 }
             }
-
         }
         return current
     }

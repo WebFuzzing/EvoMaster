@@ -53,13 +53,12 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      */
     var hasImprovement = false
 
+    var mutatedGeneSpecification : MutatedGeneSpecification? = null
+
     init{
         if(individual.seeActions().size < results.size){
             throw IllegalArgumentException("Less actions than results")
         }
-//        if(tracking!=null && tracking.isNotEmpty() && tracking.first().trackOperator !is Sampler<*>){
-//            throw IllegalArgumentException("first tracking operator should be a sampler")
-//        }
     }
 
     constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>, enableTracking: Boolean, trackOperator: TrackOperator?, enableImpact: Boolean):
@@ -108,7 +107,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         trackOperator?:individual.trackOperator,
                         getTracking()?.map { it.copy() }?.toMutableList()?: mutableListOf(),
                         getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
-                )
+                ).also { current->
+                    mutatedGeneSpecification?.let {
+                        current.mutatedGeneSpecification = it.copyFrom(current)
+                    }
+                }
             }
 
             TraceableElementCopyFilter.DEEP_TRACK -> {
@@ -141,7 +144,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                                 impactsOfGenes = impactsOfGenes!!.map { it.key to it.value.copy() as GeneImpact }.toMap().toMutableMap(),
                                 impactsOfStructure = impactsOfStructure!!.copy(),
                                 reachedTargets = reachedTargets!!.map { it.key to it.value }.toMap().toMutableMap()
-                        )
+                        ).also { current->
+                            mutatedGeneSpecification?.let {
+                                current.mutatedGeneSpecification = it.copyFrom(current)
+                            }
+                        }
                     }
                     else -> throw IllegalStateException("${copyFilter.name} is not implemented!")
                 }
@@ -215,7 +222,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                             }else
                                 this
                         }
-                )
+                ).also { current->
+                    mutatedGeneSpecification?.let {
+                        current.mutatedGeneSpecification = it.copyFrom(current)
+                    }
+                }
             }else ->{
                 if (copyFilter.name == WITH_TRACK_WITH_IMPACT){
                     val copy = EvaluatedIndividual(
@@ -240,7 +251,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                             impactsOfGenes = impactsOfGenes!!.map { it.key to it.value.copy() as GeneImpact }.toMap().toMutableMap(),
                             impactsOfStructure = impactsOfStructure!!.copy(),
                             reachedTargets = reachedTargets!!.map { it.key to it.value }.toMap().toMutableMap()
-                    )
+                    ).also { current->
+                        mutatedGeneSpecification?.let {
+                            current.mutatedGeneSpecification = it.copyFrom(current)
+                        }
+                    }
                     return copy
                 }else if (copyFilter.name == ONLY_INDIVIDUAL) IllegalArgumentException("incorrect invocation")
                 throw IllegalStateException("${copyFilter.name} is not implemented!")
@@ -326,41 +341,27 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             getImpactsOfStructure().countImpact(next, isAnyChange, sizeChanged)
 
             /*
-                update impacts of genes if any new genes are added with respect to structure mutation
-             */
-//            mutatedGenes.addedGenes.forEach {
-//                val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, it)
-//                impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(it, id))
-//            }
-
-            /*
              TODO MAN: shall we update impacts of genes regarding deletion of genes?
              */
 
             return
         }
 
+        /*
+        NOTE THAT a number of mutated genes is more than 1 if applying 1/n.
+        This might have side effects to impact analysis, so we ignore to collect impacts info from this case.
+         */
+        if (mutatedGenes.mutatedGenes.size > 0) return
+
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 
-        /*
-        NOTE THAT if a number of selected genes to mutate is small (i.e., 3), it is likely that a number of mutated genes is more than 1 if applying 1/n (i.e., 1/3).
-        we might need to further handle this kind of side effects, but it have not be handled yet.
-         */
+
         mutatedGenesWithContext.forEach { (t, u) ->
             val impact = getImpactOfGenes().getValue(t)
 
             u.forEach { gc ->
                 ImpactUtils.processImpact(impact, gc, isAnyChange)
             }
-            if (impact is StringGeneImpact){
-                //TODO StringGene is mutated one time ideally, but need to check
-                assert(u.size == 1)
-                val previousValue = u.first().previous as StringGene
-                val mutated =  u.first().current as StringGene
-                //find saveGene in [this]
-                val savedGene = findGeneById(impact.id) ?: throw IllegalStateException("cannot find the gene")
-            }
-
         }
 
     }

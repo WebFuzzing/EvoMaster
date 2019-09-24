@@ -36,7 +36,7 @@ class StringGene(
          */
         var specializations: List<StringSpecializationInfo> = listOf(),
 
-        val charMutation : IntMutationUpdate = IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()),
+        val charsMutation : MutableList<IntMutationUpdate> = mutableListOf(),
 
         val lengthMutation : IntMutationUpdate = IntMutationUpdate(minLength, maxLength)
 ) : Gene(name) {
@@ -68,11 +68,10 @@ class StringGene(
 
 
     override fun copy(): Gene {
-        return StringGene(name, value, minLength, maxLength, invalidChars, specializations, charMutation.copy(), lengthMutation.copy())
+        return StringGene(name, value, minLength, maxLength, invalidChars, specializations, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy())
                 .also {
                     it.specializationGene = this.specializationGene?.copy()
                     it.validChar = this.validChar
-
                     it.mutatedIndex = mutatedIndex
                 }
     }
@@ -290,51 +289,114 @@ class StringGene(
     }
 
     override fun reachOptimal() : Boolean{
-       return lengthMutation.reached && charMutation.reached && mutatedIndex == value.length
+       return lengthMutation.reached && (charsMutation.all { it.reached  }  || charsMutation.isEmpty())
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 
-        if (mutated != this){
-            mutatedIndex = mutated.mutatedIndex
-            charMutation.reached = mutated.charMutation.reached
-            lengthMutation.reached = mutated.lengthMutation.reached
-            /**
-             * min and max might be changed based on different randomness strategies
-             */
-            if (mutatedIndex == -1){
-                charMutation.preferMin = mutated.charMutation.preferMin
-                charMutation.preferMax = mutated.charMutation.preferMax
-            }
-        }
-
         val previous = original.value
         val current = mutated.value
 
         if (previous.length != current.length){
-            lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
+            if (this != mutated){
+                this.lengthMutation.reached = mutated.lengthMutation.reached
+            }
+            lengthUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
+        }else{
+            if (mutatedIndex == -1){
+                initCharMutation()
+            }
+            if (this != mutated)
+                mutatedIndex = mutated.mutatedIndex
 
-            if (lengthMutation.preferMin == lengthMutation.preferMax){
-                lengthMutation.reached = true
-                if (value.isEmpty()){
-                    charMutation.reached = true
+            charUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
+        }
+    }
+    private fun charUpdate(previous:String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        val charUpdate = if (archiveMutator.relaxIndexStringGeneMutation()) charsMutation[mutatedIndex] else charsMutation.first()
+        if (this != mutated){
+            charUpdate.reached = (if (archiveMutator.relaxIndexStringGeneMutation()) mutated.charsMutation[mutatedIndex] else mutated.charsMutation.first()).reached
+        }
+
+        val pchar = previous[mutatedIndex].toInt()
+        val cchar = current[mutatedIndex].toInt()
+
+        /*
+            1) current char is not in min..max, but current is better -> reset
+            2) cmutation is optimal, but current is better -> reset
+         */
+        val reset = doesCurrentBetter && (
+                cchar !in charUpdate.preferMin..charUpdate.preferMax ||
+                        charUpdate.reached
+                )
+
+        if (reset){
+            charUpdate.preferMax = Char.MAX_VALUE.toInt()
+            charUpdate.preferMin = Char.MIN_VALUE.toInt()
+            charUpdate.reached = false
+            return
+        }
+        charUpdate.updateBoundary(pchar, cchar,doesCurrentBetter)
+
+        val exclude = value[mutatedIndex].toInt()
+
+        if (!archiveMutator.checkIfHasCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = invalidChars.map { it.toInt() }.plus(exclude))){
+            charUpdate.reached = true
+            if (!archiveMutator.relaxIndexStringGeneMutation()){
+                mutatedIndex += 1
+                charUpdate.counter = 0
+                archiveMutator.resetCharMutationUpdate(charUpdate)
+            }
+        }
+    }
+
+    private fun lengthUpdate(previous:String, current: String, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        //update charsMutation regarding value
+        val added = value.length - charsMutation.size
+        if (added != 0){
+            if (added > 0){
+                (0 until added).forEach { _->
+                    charsMutation.add(IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()))
+                }
+            }else{
+                (0 until -added).forEach {
+                    charsMutation.removeAt(charsMutation.size - 1)
+                }
+            }
+        }
+        /*
+            1) current.length is not in min..max, but current is better -> reset
+            2) lengthMutation is optimal, but current is better -> reset
+         */
+        val reset = doesCurrentBetter && (
+                current.length !in lengthMutation.preferMin..lengthMutation.preferMax ||
+                        lengthMutation.reached
+                )
+
+        if (reset){
+            lengthMutation.preferMin = minLength
+            lengthMutation.preferMax = maxLength
+            lengthMutation.reached = false
+            return
+        }
+
+        lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
+
+        if (lengthMutation.preferMin == lengthMutation.preferMax){
+            lengthMutation.reached = true
+            if (value.isEmpty()){
+                if (!archiveMutator.relaxIndexStringGeneMutation()){
+                    charsMutation.first().reached = true
                     mutatedIndex = 0
                 }
             }
-        }else{
-            charMutation.updateBoundary(previous[mutatedIndex].toInt(), current[mutatedIndex].toInt(), doesCurrentBetter)
-
-            val exclude = value[mutatedIndex].toInt()
-
-            if (!archiveMutator.checkIfHasCandidates(charMutation.preferMin, charMutation.preferMax, exclude = invalidChars.map { it.toInt() }.plus(exclude))){
-                charMutation.reached = true
-                mutatedIndex += 1
-                charMutation.counter = 0
-                archiveMutator.resetChar(this)
-            }
         }
+    }
 
+    private fun initCharMutation(){
+        charsMutation.clear()
+        charsMutation.addAll((0 until value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
     }
 }

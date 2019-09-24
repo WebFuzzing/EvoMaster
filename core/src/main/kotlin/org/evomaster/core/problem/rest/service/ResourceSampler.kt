@@ -217,7 +217,7 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
     }
 
     override fun feedback(evi : EvaluatedIndividual<RestIndividual>) {
-        if(config.resourceSampleStrategy.requiredArchive && evi.hasImprovement && evi.individual is RestIndividual)
+        if(config.resourceSampleStrategy.requiredArchive && evi.hasImprovement)
             evi.individual.sampleSpec?.let { ssc.reportImprovement(it) }
     }
 

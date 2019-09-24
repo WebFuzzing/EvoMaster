@@ -410,6 +410,8 @@ class Archive<T> where T : Individual {
         }
         processMonitor.record(added, anyBetter, ei)
 
+        ei.hasImprovement = anyBetter
+
         if(added) archiveTrack.add(ei)
         return added
     }

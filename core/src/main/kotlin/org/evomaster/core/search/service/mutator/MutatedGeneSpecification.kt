@@ -1,7 +1,9 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.impact.ImpactUtils
 
 /**
  * created by manzh on 2019-09-10
@@ -26,5 +28,22 @@ open class MutatedGeneSpecification (
         if (mutatedIndividual!= null)
             throw IllegalArgumentException("it does not allow setting mutated individual more than one time")
         mutatedIndividual = individual
+    }
+
+    fun copyFrom(current: EvaluatedIndividual<*>) : MutatedGeneSpecification{
+        val spec = MutatedGeneSpecification()
+        mutatedGenes.forEach { s->
+            val id = ImpactUtils.generateGeneId(mutatedIndividual!!, s)
+            val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
+            spec.mutatedGenes.add(savedGene)
+        }
+        addedGenes.forEach { s->
+            val id = ImpactUtils.generateGeneId(mutatedIndividual!!, s)
+            val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
+            spec.addedGenes.add(savedGene)
+        }
+        spec.mutatedPosition.addAll(mutatedPosition.toMutableList())
+        spec.setMutatedIndividual(current.individual)
+        return spec
     }
 }

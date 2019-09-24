@@ -726,6 +726,14 @@ class EMConfig {
     var geneSelectionMethod = ImpactMutationSelection.NONE
 
     @Experimental
+    @Cfg("Specify whether to enable impact gene selection strategy adaptively")
+    var adaptiveGeneSelection = false
+
+    @Experimental
+    @Cfg("Specify whether to disable structure mutation during focus search")
+    var disableStructureMutationDuringFocusSearch = false
+
+    @Experimental
     @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")
     var baseTaintAnalysisProbability = 0.0
 }

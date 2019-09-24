@@ -13,6 +13,7 @@ import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
@@ -25,8 +26,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     @Inject
     private lateinit var archiveMutator: ArchiveMutator
 
-
     override fun doesStructureMutation(individual : T): Boolean {
+        /**
+         * disable structure mutation (add/remove) during focus search
+         */
+        if (config.disableStructureMutationDuringFocusSearch && apc.doesFocusSearch()){return false}
+
         return individual.canMutateStructure() &&
                 config.maxTestSize > 1 && // if the maxTestSize is 1, there is no point to do structure mutation
                 randomness.nextBoolean(config.structureMutationProbability)
@@ -34,7 +39,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        return individual.seeGenes(filterMutate).filter { it.isMutable() }.filter { !it.reachOptimal() }
+        return individual.seeGenes(filterMutate).filter { it.isMutable() }.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}
     }
 
     /**
@@ -47,8 +52,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        if(randomness.nextBoolean(config.probOfArchiveMutation))
-            return selectGenesByArchive(genesToMutate, individual, evi)
+        if(config.geneSelectionMethod != ImpactMutationSelection.NONE && randomness.nextBoolean(config.probOfArchiveMutation)){
+            val selectedGene = archiveMutator.selectGenesByArchive(genesToMutate, individual, evi)
+            return selectGenesByDefault(selectedGene, individual)
+        }
         return selectGenesByDefault(genesToMutate, individual)
     }
 
@@ -98,7 +105,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
         }
 
-        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(this, maxLength = config.maxLengthOfTraces) else individualToMutate.copy()) as T
+        val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
+            individualToMutate.next(this, maxLength = config.maxLengthOfTraces)
+        else individualToMutate.copy()) as T
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -144,60 +153,4 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     }
 
-    /**
-     * Apply archive-based mutation to select genes to mutate
-     */
-    private fun selectGenesByArchive(genesToMutate : List<Gene>, individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
-
-        val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
-
-        val genes = when(config.geneSelectionMethod){
-            ImpactMutationSelection.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
-            ImpactMutationSelection.APPROACH_GOOD -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
-            ImpactMutationSelection.FEED_BACK -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
-            ImpactMutationSelection.NONE -> {
-                selectGenesByOneDivNum(genesToMutate, genesToMutate.size)
-            }
-        }
-
-        assert(genes.isNotEmpty())
-        return listOf(randomness.choose(genes))
-    }
-
-    private fun selectGenesAwayBad(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
-
-        val genes =  genesToMutate.toList().map { g->
-            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
-        }
-
-        ImpactUtils.selectGenesAwayBad(genes, config.perOfCandidateGenesToMutate).let {
-            return selectGenesByOneDivNum(it, it.size)
-        }
-    }
-
-    private fun selectGenesApproachGood(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
-
-        val genes =  genesToMutate.toList().map { g->
-            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
-        }
-
-        ImpactUtils.selectApproachGood(genes, config.perOfCandidateGenesToMutate).let {
-            return selectGenesByOneDivNum(it, it.size)
-        }
-    }
-
-
-    private fun selectGenesFeedback(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<T>): List<Gene>{
-        val genes =  genesToMutate.toList().map { g->
-            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
-        }
-
-        ImpactUtils.selectFeedback(genes, config.perOfCandidateGenesToMutate).let {
-            return selectGenesByOneDivNum(it, it.size)
-        }
-    }
-
-    private fun decideCandidateSize(genesToMutate: List<Gene>) = (genesToMutate.size * config.perOfCandidateGenesToMutate).run {
-        if(this < 1.0) 1 else this.toInt()
-    }
 }

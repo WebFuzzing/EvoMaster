@@ -1,9 +1,10 @@
-package org.evomaster.experiments.stringMutation
+package org.evomaster.experiments.archiveMutation.stringProblem
 
 import com.google.inject.Inject
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.experiments.archiveMutation.ArchiveProblemDefinition
 
 /**
  * created by manzh on 2019-09-16
@@ -12,12 +13,12 @@ import org.evomaster.core.search.service.FitnessFunction
 class StringFitness: FitnessFunction<StringIndividual>() {
 
     @Inject
-    lateinit var spd : StringProblemDefinition
+    lateinit var sp : ArchiveProblemDefinition<StringIndividual>
 
     override fun doCalculateCoverage(individual: StringIndividual): EvaluatedIndividual<StringIndividual>? {
         val fv = FitnessValue(individual.size().toDouble())
 
-        spd.distance(individual.genes).forEach { (t, u) ->
+        sp.distance(individual).forEach { (t, u) ->
             fv.updateTarget(t, u)
         }
 

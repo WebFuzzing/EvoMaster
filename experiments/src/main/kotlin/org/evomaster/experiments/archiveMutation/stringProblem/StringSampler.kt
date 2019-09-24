@@ -1,7 +1,8 @@
-package org.evomaster.experiments.stringMutation
+package org.evomaster.experiments.archiveMutation.stringProblem
 
 import com.google.inject.Inject
 import org.evomaster.core.search.service.Sampler
+import org.evomaster.experiments.archiveMutation.ArchiveProblemDefinition
 
 /**
  * created by manzh on 2019-09-16
@@ -9,13 +10,13 @@ import org.evomaster.core.search.service.Sampler
 class StringSampler : Sampler<StringIndividual>() {
 
     @Inject
-    lateinit var spd : StringProblemDefinition
+    lateinit var sp : ArchiveProblemDefinition<StringIndividual>
 
 
     override fun sampleAtRandom(): StringIndividual {
 
         val ind = StringIndividual(
-                spd.nTargets,
+                sp.nGenes,
                 this,
                 if (config.enableTrackIndividual) mutableListOf<StringIndividual>() else null
         )
