@@ -39,6 +39,12 @@ public enum StringSpecialization implements Serializable {
     CONSTANT,
 
     /**
+     * String used with a specific, constant value, ignoring its case
+     */
+    CONSTANT_IGNORE_CASE,
+
+
+    /**
      * String constrained by a regular expression
      */
     REGEX,

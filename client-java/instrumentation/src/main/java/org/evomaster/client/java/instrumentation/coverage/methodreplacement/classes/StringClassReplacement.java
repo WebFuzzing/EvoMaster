@@ -9,7 +9,6 @@ import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Objects;
@@ -68,8 +67,25 @@ public class StringClassReplacement implements MethodReplacementClass {
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
         Objects.requireNonNull(caller);
 
+        boolean taintedCaller = ExecutionTracer.isTaintInput(caller);
+        boolean taintedOther = ExecutionTracer.isTaintInput(anotherString);
+
+        if (taintedCaller || taintedOther) {
+            if (taintedCaller) {
+                ExecutionTracer.addStringSpecialization(caller,
+                        new StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, anotherString));
+            } else {
+                ExecutionTracer.addStringSpecialization(anotherString,
+                        new StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, caller));
+            }
+        }
+
+        //not important if NPE
+        boolean result = caller.equalsIgnoreCase(anotherString);
+
+
         if (idTemplate == null) {
-            return caller.equalsIgnoreCase(anotherString);
+            return result;
         }
 
         if (anotherString == null) {
@@ -77,7 +93,20 @@ public class StringClassReplacement implements MethodReplacementClass {
             return false;
         }
 
-        return equals(caller.toLowerCase(), anotherString.toLowerCase(), idTemplate);
+        Truthness t;
+
+        if (result) {
+            t = new Truthness(1d, 0d);
+        } else {
+            long distance = DistanceHelper.getLeftAlignmentDistance(
+                    caller.toLowerCase(),
+                    anotherString.toLowerCase());
+            t = new Truthness(1d / (1d + distance), 1d);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+
+        return result;
     }
 
 

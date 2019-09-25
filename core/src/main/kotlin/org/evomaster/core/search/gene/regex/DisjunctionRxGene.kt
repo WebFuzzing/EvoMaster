@@ -10,9 +10,9 @@ class DisjunctionRxGene(
         name: String,
         val terms: List<RxTerm>,
         /**  does this disjunction match the beginning of the string, or could it be at any position? */
-        val matchStart: Boolean,
+        var matchStart: Boolean,
         /** does this disjunction match the end of the string, or could it be at any position? */
-        val matchEnd: Boolean
+        var matchEnd: Boolean
 ) : RxAtom(name) {
 
     /**

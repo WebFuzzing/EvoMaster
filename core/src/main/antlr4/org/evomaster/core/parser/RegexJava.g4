@@ -151,6 +151,7 @@ patternCharacter
  : BaseChar
  | MINUS
  | DecimalDigit
+ | E | Q
  ;
 
 
@@ -193,7 +194,7 @@ classAtomNoDash
  : BaseChar
  | DecimalDigit
  | COMMA | CARET | DOLLAR | SLASH | DOT | STAR | PLUS | QUESTION
- | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR;
+ | PAREN_open | PAREN_close | BRACKET_open | BRACE_open | BRACE_close | OR | E | Q;
 
 
 //TODO

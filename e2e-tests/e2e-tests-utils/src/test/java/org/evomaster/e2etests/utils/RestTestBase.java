@@ -293,7 +293,7 @@ public abstract class RestTestBase {
             }
 
             String body = res.getBody();
-            if (inResponse != null && !body.contains(inResponse)) {
+            if (inResponse != null && (body==null ||  !body.contains(inResponse))) {
                 continue;
             }
 

@@ -33,7 +33,8 @@ class DisjunctionListRxGene(
     }
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        if(disjunctions.size > 1 && randomness.nextBoolean(0.1)){
+        if(disjunctions.size > 1
+                && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(0.1))){
             //activate the next disjunction
             activeDisjunction = (activeDisjunction + 1) % disjunctions.size
         } else {
