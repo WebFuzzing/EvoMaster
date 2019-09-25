@@ -267,13 +267,16 @@ public abstract class RestTestBase {
 
         List<RestAction> actions = ind.getIndividual().seeActions();
 
-        for (int i = 0; i < actions.size(); i++) {
+        boolean stopped = false;
+
+        for (int i = 0; i < actions.size() && !stopped; i++) {
 
             if (!(actions.get(i) instanceof RestCallAction)) {
                 continue;
             }
 
             RestCallAction action = (RestCallAction) actions.get(i);
+
             if (action.getVerb() != verb) {
                 continue;
             }
@@ -286,6 +289,8 @@ public abstract class RestTestBase {
             }
 
             RestCallResult res = (RestCallResult) ind.getResults().get(i);
+            stopped = res.getStopping();
+
             Integer statusCode = res.getStatusCode();
 
             if (!statusCode.equals(expectedStatusCode)) {
