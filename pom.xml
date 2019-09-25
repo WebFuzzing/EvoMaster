@@ -114,6 +114,8 @@
         <testcontainers.version>1.10.1</testcontainers.version>
         <antlr.version>4.7.2</antlr.version>
         <nlp.version>3.9.2</nlp.version>
+        <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
+        <jgrapht.version>0.8.3</jgrapht.version>
     </properties>
 
 
@@ -273,8 +275,18 @@
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr.version}</version>
             </dependency>
-
-
+            <dependency><!-- Used for Java Regex distances -->
+                <!-- BSD -->
+                <groupId>dk.brics.automaton</groupId>
+                <artifactId>automaton</artifactId>
+                <version>${dk.brics.automaton.version}</version>
+            </dependency>
+            <dependency><!-- Used for Java Regex distances -->
+                <!-- LGPL -->
+                <groupId>net.sf.jgrapht</groupId>
+                <artifactId>jgrapht</artifactId>
+                <version>${jgrapht.version}</version>
+            </dependency>
             <!-- Logging -->
             <dependency>
                 <groupId>org.slf4j</groupId>

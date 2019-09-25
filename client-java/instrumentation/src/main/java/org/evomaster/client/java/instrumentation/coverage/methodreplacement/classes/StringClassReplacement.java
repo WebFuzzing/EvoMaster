@@ -1,10 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.TruthnessHelper;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
@@ -236,11 +233,22 @@ public class StringClassReplacement implements MethodReplacementClass {
         return result;
     }
 
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean matches(String caller, String regex, String idTemplate) {
+        Objects.requireNonNull(caller);
+        if (regex == null) {
+            // signals a NPE
+            return caller.matches(regex);
+        } else {
+            return PatternMatchingHelper.matches(regex, caller, idTemplate);
+        }
+    }
+
+
     /*
         TODO:
         public boolean regionMatches(int toffset, String other, int ooffset, int len)
         public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len)
-        public boolean matches(String regex)
      */
 
 

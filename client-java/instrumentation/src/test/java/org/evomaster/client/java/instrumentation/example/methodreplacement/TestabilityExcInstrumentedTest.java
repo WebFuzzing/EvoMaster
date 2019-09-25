@@ -2,7 +2,6 @@ package org.evomaster.client.java.instrumentation.example.methodreplacement;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.TestabilityExcImp;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -11,10 +10,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
 import static org.junit.jupiter.api.Assertions.*;
@@ -871,10 +871,10 @@ public class TestabilityExcInstrumentedTest {
     public void testStringContentEquals() throws Exception {
 
         TestabilityExc te = getInstance();
-        assertThrows(NullPointerException.class, () -> te.contentEquals("Hello", null));
+        assertThrows(NullPointerException.class, () -> te.stringContentEquals("Hello", null));
         assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
-        te.contentEquals("Hello", "H");
+        te.stringContentEquals("Hello", "H");
         assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
@@ -882,25 +882,25 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue( h0>0);
-        assertTrue( h0<1);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
 
-        te.contentEquals("Hello", "He");
+        te.stringContentEquals("Hello", "He");
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
         assertTrue(h1 < 1);
 
-        te.contentEquals("Hello", "Hel");
+        te.stringContentEquals("Hello", "Hel");
         double h2 = ExecutionTracer.getValue(targetId);
         assertTrue(h2 > h1);
         assertTrue(h2 < 1);
 
-        te.contentEquals("Hello", "Hell");
+        te.stringContentEquals("Hello", "Hell");
         double h3 = ExecutionTracer.getValue(targetId);
         assertTrue(h3 > h2);
         assertTrue(h3 < 1);
 
-        te.contentEquals("Hello", "Hello");
+        te.stringContentEquals("Hello", "Hello");
         double h4 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h4);
     }
@@ -909,10 +909,10 @@ public class TestabilityExcInstrumentedTest {
     public void testStringContentEqualsStringBuffer() throws Exception {
 
         TestabilityExc te = getInstance();
-        assertThrows(NullPointerException.class, () -> te.contentEquals("Hello", (StringBuffer)null));
+        assertThrows(NullPointerException.class, () -> te.stringContentEquals("Hello", (StringBuffer) null));
         assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
-        te.contentEquals("Hello", new StringBuffer("H"));
+        te.stringContentEquals("Hello", new StringBuffer("H"));
         assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
 
@@ -920,25 +920,25 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue( h0>0);
-        assertTrue( h0<1);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
 
-        te.contentEquals("Hello", new StringBuffer("He"));
+        te.stringContentEquals("Hello", new StringBuffer("He"));
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
         assertTrue(h1 < 1);
 
-        te.contentEquals("Hello", new StringBuffer("Hel"));
+        te.stringContentEquals("Hello", new StringBuffer("Hel"));
         double h2 = ExecutionTracer.getValue(targetId);
         assertTrue(h2 > h1);
         assertTrue(h2 < 1);
 
-        te.contentEquals("Hello",new StringBuffer( "Hell"));
+        te.stringContentEquals("Hello", new StringBuffer("Hell"));
         double h3 = ExecutionTracer.getValue(targetId);
         assertTrue(h3 > h2);
         assertTrue(h3 < 1);
 
-        te.contentEquals("Hello",new StringBuffer( "Hello"));
+        te.stringContentEquals("Hello", new StringBuffer("Hello"));
         double h4 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h4);
     }
@@ -958,7 +958,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue( h0>0);
+        assertTrue(h0 > 0);
         assertTrue(h0 < 1);
 
         te.contains("Hello World", "W____");
@@ -1002,7 +1002,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue( h0>0);
+        assertTrue(h0 > 0);
         assertTrue(h0 < 1);
 
         te.startsWith("Hello World", "H____");
@@ -1045,7 +1045,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertTrue( h0>0);
+        assertTrue(h0 > 0);
         assertTrue(h0 < 1);
 
         te.startsWith("Hello World", "H____", 0);
@@ -1071,5 +1071,179 @@ public class TestabilityExcInstrumentedTest {
         te.startsWith("Hello World", "Hello", 0);
         double h5 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h5);
+    }
+
+    @Test
+    public void testMatcherMatches() throws Exception {
+
+        TestabilityExc te = getInstance();
+        te.matcherMatches(Pattern.compile("_____").matcher("Hello"));
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
+
+        te.matcherMatches(Pattern.compile("H_l__").matcher("Hello"));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+
+        te.matcherMatches(Pattern.compile("Hello").matcher("Hello"));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h2);
+    }
+
+    @Test
+    public void testPatternMatches() throws Exception {
+
+        TestabilityExc te = getInstance();
+        te.patternMatches("Hello", "_____");
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
+
+        te.patternMatches("Hello", "H_l__");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+
+        te.patternMatches("Hello", "Hello");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h2);
+    }
+
+
+    @Test
+    public void testNullPatternMatches() throws Exception {
+
+        TestabilityExc te = getInstance();
+        assertThrows(NullPointerException.class, () -> te.patternMatches(null, "___"));
+
+        assertThrows(NullPointerException.class, () -> te.patternMatches("Hello", null));
+
+        assertThrows(NullPointerException.class, () -> te.patternMatches(null, null));
+
+    }
+
+    @Test
+    public void testStringMatches() throws Exception {
+
+        TestabilityExc te = getInstance();
+        te.stringMatches("Hello", "_____");
+
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
+
+        te.stringMatches("Hello", "H_l__");
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+
+        te.stringMatches("Hello", "Hello");
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h2);
+    }
+
+
+    @Test
+    public void testMatcherFind() throws Exception {
+
+        TestabilityExc te = getInstance();
+        Matcher matcher = Pattern.compile("Hello").matcher("Hello Hello");
+        assertTrue(matcher.find());
+        assertEquals(5, matcher.end());
+        assertEquals(5, matcher.end());
+        assertTrue(matcher.find());
+        assertEquals(11, matcher.end());
+        assertEquals(11, matcher.end());
+        assertFalse(matcher.find());
+        assertThrows(IllegalStateException.class, () -> matcher.end());
+
+        matcher.reset();
+        assertTrue(matcher.find());
+        assertEquals(5, matcher.end());
+        assertEquals(5, matcher.end());
+        assertTrue(matcher.find());
+        assertEquals(11, matcher.end());
+        assertEquals(11, matcher.end());
+        assertFalse(matcher.find());
+        assertThrows(IllegalStateException.class, () -> matcher.end());
+
+        matcher.reset();
+        // first match
+        boolean find0 = te.matcherFind(matcher);
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+        assertEquals(true, find0);
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId); // false branch not covered
+        assertEquals(0, h0);
+
+        // second match
+        boolean find1 = te.matcherFind(matcher);
+        assertEquals(true, find1);
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 == h1);
+
+        // no match
+        te.matcherFind(matcher);
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h2);
+
+    }
+
+    @Test
+    public void testMatcherNotFind() throws Exception {
+
+        TestabilityExc te = getInstance();
+
+        assertFalse(te.matcherFind(Pattern.compile("World").matcher("Hello W___d")));
+        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();  // true branch
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
+
+        assertFalse(te.matcherFind(Pattern.compile("World").matcher("Hello W_r_d")));
+        double h1 = ExecutionTracer.getValue(targetId);
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        assertFalse(te.matcherFind(Pattern.compile("World").matcher("Hello W_rld")));
+        double h2 = ExecutionTracer.getValue(targetId);
+        assertTrue(h2 > h1);
+        assertTrue(h2 < 1);
+
+        assertTrue(te.matcherFind(Pattern.compile("World").matcher("Hello World")));
+        double h3 = ExecutionTracer.getValue(targetId);
+        assertEquals(1, h3);
+    }
+
+    @Test
+    public void testFindVsMatch() {
+        String pattern = "\\?|\\*|\\{((?:\\{[^/]+?\\}|[^/{}]|\\\\[{}])+?)\\}";
+        assertFalse(Pattern.compile(pattern).matcher("*.class").matches());
+        assertTrue(Pattern.compile(pattern).matcher("*.class").find());
+        assertTrue(Pattern.compile("(.*)((" + pattern + "))(.*)").matcher("*.class").matches());
     }
 }
