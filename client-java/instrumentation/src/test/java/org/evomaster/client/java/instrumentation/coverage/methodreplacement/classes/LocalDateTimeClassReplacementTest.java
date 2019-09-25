@@ -7,13 +7,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Created by arcuri82 on 26-Jun-19.
  */
-public class LocalDateClassReplacementTest {
+public class LocalDateTimeClassReplacementTest {
 
 
     @BeforeEach
@@ -23,19 +24,21 @@ public class LocalDateClassReplacementTest {
 
     @Test
     public void testParseValid() {
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("0001-01-01"));
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("1982-11-27"));
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("1970-01-01"));
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("9999-12-31"));
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        LocalDateTimeClassReplacement.parse("0001-01-01T00:00:00", idTemplate);
+        LocalDateTimeClassReplacement.parse("0001-01-01T00:00:00", idTemplate);
+        LocalDateTimeClassReplacement.parse("1982-01-27T00:00:00", idTemplate);
+        LocalDateTimeClassReplacement.parse("1970-01-01T00:00:00", idTemplate);
+        LocalDateTimeClassReplacement.parse("9999-03-23T00:00:00", idTemplate);
     }
 
     @Test
     public void testParseTooShortLong() {
 
-        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDate("1");
-        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-"); //2 shorter
-        double ok = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-11"); //ok
-        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-111"); // 1 too long
+        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1");
+        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-");
+        double ok = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-11T00:00:00");
+        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-111");
 
         assertEquals(1d, ok);
         assertTrue(h0 < h1);
@@ -49,6 +52,8 @@ public class LocalDateClassReplacementTest {
     @Test
     public void testParseNearlyCorrect() {
 
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+
         /*
             recall ASCII:
             '-' -> 45
@@ -57,11 +62,11 @@ public class LocalDateClassReplacementTest {
             'a' -> 97
          */
 
-        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDate("a234-11-11");
-        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234a11-11");
-        double h2 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11a11");
-        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-aa");
-        double h4 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234a11a11");
+        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("a234-01-11T00:00:00");
+        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234a01-11T00:00:00");
+        double h2 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01a11T00:00:00");
+        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-a˜˜taT00:00:00");
+        double h4 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234a01a11T00:00:00");
 
         assertTrue(h1 < h0);
         assertTrue(h2 < h0);
@@ -75,10 +80,10 @@ public class LocalDateClassReplacementTest {
     public void testIsBefore() {
         final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
 
-        LocalDate a = LocalDate.of(2012, 6, 30);
-        LocalDate b = LocalDate.of(2012, 7, 1);
+        LocalDateTime a = LocalDate.of(2012, 6, 30).atStartOfDay();
+        LocalDateTime b = LocalDate.of(2012, 7, 1).atStartOfDay();
 
-        boolean isBefore0 = LocalDateClassReplacement.isBefore(b, a, idTemplate);
+        boolean isBefore0 = LocalDateTimeClassReplacement.isBefore(b, a, idTemplate);
         assertFalse(isBefore0);
 
 
@@ -88,13 +93,13 @@ public class LocalDateClassReplacementTest {
         double h0 = ExecutionTracer.getValue(targetId);
         assertTrue(h0 > 0);
 
-        boolean isBefore1 = LocalDateClassReplacement.isBefore(a, a, idTemplate);
+        boolean isBefore1 = LocalDateTimeClassReplacement.isBefore(a, a, idTemplate);
         assertFalse(isBefore1);
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
         assertNotEquals(1, h1);
 
-        boolean isBefore2 = LocalDateClassReplacement.isBefore(a, b, idTemplate);
+        boolean isBefore2 = LocalDateTimeClassReplacement.isBefore(a, b, idTemplate);
         assertTrue(isBefore2);
         double h2 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h2);
@@ -105,10 +110,10 @@ public class LocalDateClassReplacementTest {
     public void testIsAfter() {
         final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
 
-        LocalDate a = LocalDate.of(2012, 6, 30);
-        LocalDate b = LocalDate.of(2012, 7, 1);
+        LocalDateTime a = LocalDate.of(2012, 6, 30).atStartOfDay();
+        LocalDateTime b = LocalDate.of(2012, 7, 1).atStartOfDay();
 
-        boolean isAfter0 = LocalDateClassReplacement.isAfter(a, b, idTemplate);
+        boolean isAfter0 = LocalDateTimeClassReplacement.isAfter(a, b, idTemplate);
         assertFalse(isAfter0);
 
 
@@ -118,13 +123,13 @@ public class LocalDateClassReplacementTest {
         double h0 = ExecutionTracer.getValue(targetId);
         assertTrue(h0 > 0);
 
-        boolean isAfter1 = LocalDateClassReplacement.isAfter(a, a, idTemplate);
+        boolean isAfter1 = LocalDateTimeClassReplacement.isAfter(a, a, idTemplate);
         assertFalse(isAfter1);
         double h1 = ExecutionTracer.getValue(targetId);
         assertTrue(h1 > h0);
         assertNotEquals(1, h1);
 
-        boolean isAfter2 = LocalDateClassReplacement.isAfter(b, a, idTemplate);
+        boolean isAfter2 = LocalDateTimeClassReplacement.isAfter(b, a, idTemplate);
         assertTrue(isAfter2);
         double h2 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h2);
@@ -133,13 +138,13 @@ public class LocalDateClassReplacementTest {
 
     @Test
     public void testIsEqual() {
-        LocalDate a = LocalDate.of(1978, 7, 31);
-        LocalDate b = LocalDate.of(1988, 7, 31);
-        LocalDate c = LocalDate.of(1998, 7, 31);
+        LocalDateTime a = LocalDate.of(1978, 7, 31).atStartOfDay();
+        LocalDateTime b = LocalDate.of(1988, 7, 31).atStartOfDay();
+        LocalDateTime c = LocalDate.of(1998, 7, 31).atStartOfDay();
 
 
         final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
-        boolean isEqual0 = LocalDateClassReplacement.isEqual(a, c, idTemplate);
+        boolean isEqual0 = LocalDateTimeClassReplacement.isEqual(a, c, idTemplate);
         assertFalse(isEqual0);
         assertEquals(1, ExecutionTracer.getNonCoveredObjectives(idTemplate).size());
 
@@ -150,7 +155,7 @@ public class LocalDateClassReplacementTest {
         assertTrue(h0 > 0);
         assertTrue(h0 < 1);
 
-        boolean isEqual1 = LocalDateClassReplacement.isEqual(a, b, idTemplate);
+        boolean isEqual1 = LocalDateTimeClassReplacement.isEqual(a, b, idTemplate);
         assertFalse(isEqual1);
 
         double h1 = ExecutionTracer.getValue(targetId);
@@ -158,7 +163,7 @@ public class LocalDateClassReplacementTest {
         assertTrue(h1 > h0);
         assertTrue(h1 < 1);
 
-        boolean isEqual2 = LocalDateClassReplacement.isEqual(a, a, idTemplate);
+        boolean isEqual2 = LocalDateTimeClassReplacement.isEqual(a, a, idTemplate);
         assertTrue(isEqual2);
 
         double h2 = ExecutionTracer.getValue(targetId);

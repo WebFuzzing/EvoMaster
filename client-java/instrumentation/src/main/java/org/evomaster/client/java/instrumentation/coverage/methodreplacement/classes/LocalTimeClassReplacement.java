@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
@@ -14,8 +15,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
 import java.util.Objects;
-
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
 
 
 public class LocalTimeClassReplacement implements MethodReplacementClass {
@@ -49,68 +48,12 @@ public class LocalTimeClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (DateTimeParseException | NullPointerException e) {
-            double h = getDistanceToLocalTimeWithOrWithoutSeconds(input);
+            double h = DateTimeParsingUtils.getDistanceToISOLocalTime(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }
     }
 
-    private static final int EXPECTED_SIZE_OF_INPUT = "HH:MM:SS".length();
-
-    private static double getDistanceToLocalTimeWithOrWithoutSeconds(CharSequence input) {
-        return Math.min(
-                getDistanceToLocalTimeWithoutSeconds(input),
-                getDistanceToLocalTimeWithSeconds(input));
-    }
-
-    private static double getDistanceToLocalTimeWithoutSeconds(CharSequence input) {
-        return getDistanceToLocalTimeWithSeconds(input == null ? null : input + ":00");
-    }
-
-    /**
-     * returns a value that represents how close is the input to the format HH:MM or HH:MM:SS
-     *
-     * @param input
-     * @return
-     */
-    private static double getDistanceToLocalTimeWithSeconds(CharSequence input) {
-
-        if (input == null) {
-            return H_REACHED_BUT_NULL;
-        }
-
-        final double base = H_NOT_NULL;
-
-        long distance = 0;
-
-        for (int i = 0; i < input.length(); i++) {
-
-            char c = input.charAt(i);
-
-            //format HH:MM:SS
-            //let's simplify and only allow 00:00:00 to 19:59:59
-
-            if (i == 0) {
-                distance += distanceToRange(c, '0', '1');
-            } else if (i == 1 || i == 4 || i == 7) {
-                distance += distanceToRange(c, '0', '9');
-            } else if (i == 2 || i == 5) {
-                distance += distanceToChar(c, ':');
-            } else if (i == 3 || i == 6) {
-                distance += distanceToRange(c, '0', '5');
-            } else {
-                distance += MAX_CHAR_DISTANCE;
-            }
-        }
-
-        if (input.length() < EXPECTED_SIZE_OF_INPUT) {
-            //too short
-            distance += (MAX_CHAR_DISTANCE * (EXPECTED_SIZE_OF_INPUT - input.length()));
-        }
-
-        //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
-    }
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(LocalTime caller, Object anObject, String idTemplate) {

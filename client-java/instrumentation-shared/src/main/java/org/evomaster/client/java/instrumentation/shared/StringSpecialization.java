@@ -24,9 +24,15 @@ public enum StringSpecialization implements Serializable {
     DATE_YYYY_MM_DD,
 
     /**
-     * String used as a Date in YYYY_MM_DD_HH_sS format
+     * String used as a Date in YYYY_MM_DD_HH_SS format
      */
     DATE_YYYY_MM_DD_HH_SS,
+
+
+    /**
+     * An ISO Local Date Time (i.e. ISO_LOCAL_DATE + 'T' + ISO_LOCAL_TIME)
+     */
+    ISO_LOCAL_DATE_TIME,
 
     /**
      * An ISO Local Time (with or without no seconds)
