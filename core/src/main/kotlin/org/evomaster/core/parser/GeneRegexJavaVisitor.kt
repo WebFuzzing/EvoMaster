@@ -171,7 +171,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock(block, block)
+            val gene = PatternCharacterBlock("block", block)
 
             return VisitResult(gene)
         }
@@ -183,10 +183,19 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
 
         if(ctx.disjunction() != null){
 
-            val disj = ctx.disjunction().accept(this).genes.firstOrNull() as DisjunctionRxGene
+            val res = ctx.disjunction().accept(this)
+
+            val disjList = DisjunctionListRxGene(res.genes.map { it as DisjunctionRxGene })
+
             //TODO tmp hack until full handling of ^$. Assume full match when nested disjunctions
-            val match = DisjunctionRxGene(disj.name, disj.terms, true, true)
-            return VisitResult(match)
+            for(gene in disjList.disjunctions){
+                gene.extraPrefix = false
+                gene.extraPostfix = false
+                gene.matchStart = true
+                gene.matchEnd = true
+            }
+
+            return VisitResult(disjList)
         }
 
         if(ctx.DOT() != null){

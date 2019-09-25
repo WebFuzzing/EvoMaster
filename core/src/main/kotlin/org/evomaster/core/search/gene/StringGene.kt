@@ -8,11 +8,14 @@ import org.evomaster.client.java.instrumentation.shared.TaintInputName
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
+import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.util.stream.Collectors
 
 
 class StringGene(
@@ -220,6 +223,15 @@ class StringGene(
                             toAddSpecs.filter { it.stringSpecialization == CONSTANT }.map { it.value }))
         }
 
+        if(toAddSpecs.any { it.stringSpecialization == CONSTANT_IGNORE_CASE}){
+            toAddGenes.add(RegexHandler.createGeneForJVM(
+                    toAddSpecs.filter { it.stringSpecialization == CONSTANT_IGNORE_CASE }
+                            .map { "^(${RegexUtils.ignoreCaseRegex(it.value)})$" }
+                            .joinToString("|")
+            ))
+        }
+
+
         if(toAddSpecs.any {it.stringSpecialization == DATE_YYYY_MM_DD}){
             toAddGenes.add(DateGene(name))
         }
@@ -264,6 +276,7 @@ class StringGene(
             specializations.addAll(toAddSpecs)
         }
     }
+
 
     private fun handleRegex(key: String, toAddSpecs: List<StringSpecializationInfo>, toAddGenes: MutableList<Gene>) {
 

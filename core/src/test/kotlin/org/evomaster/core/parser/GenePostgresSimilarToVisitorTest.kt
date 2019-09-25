@@ -164,6 +164,10 @@ class GenePostgresSimilarToVisitorTest : RegexTestTemplate(){
         checkSameAsJava("[0-9]{2}")
     }
 
+    @Test
+    fun testCanSamplePair(){
+        checkCanSample("(a|b)(c|d)", listOf("ac", "ad", "bc", "bd"), 500)
+    }
 
     //------------ different behavior from Java Regex  ----------------------
 
