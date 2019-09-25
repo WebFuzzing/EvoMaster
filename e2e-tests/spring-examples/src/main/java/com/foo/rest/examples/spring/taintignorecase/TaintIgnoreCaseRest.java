@@ -23,9 +23,9 @@ public class TaintIgnoreCaseRest {
             @RequestParam(name = "value", required = true)
                     String value
     ){
-        if(value.equalsIgnoreCase("aBc123efd")
-                && value.startsWith("abc")
-        && value.endsWith("EFD")){
+        if(value.equalsIgnoreCase("A123b")
+                && value.startsWith("a")
+        && value.endsWith("B")){
             return value;
         }
 

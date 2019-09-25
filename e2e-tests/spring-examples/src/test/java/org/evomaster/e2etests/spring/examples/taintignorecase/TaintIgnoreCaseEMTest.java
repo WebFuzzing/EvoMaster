@@ -38,7 +38,7 @@ public class TaintIgnoreCaseEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintIgnoreCase/ignorecase","abc123DEF");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintIgnoreCase/ignorecase","a123B");
                 });
     }
 }
