@@ -13,7 +13,7 @@ open class DateTimeGene(
         name: String,
         val date: DateGene = DateGene("date"),
         val time: TimeGene = TimeGene("time"),
-        private val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
+        val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
 ) : Gene(name) {
 
     enum class DateTimeGeneFormat {
@@ -26,7 +26,8 @@ open class DateTimeGene(
     override fun copy(): Gene = DateTimeGene(
             name,
             date.copy() as DateGene,
-            time.copy() as TimeGene
+            time.copy() as TimeGene,
+            dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
