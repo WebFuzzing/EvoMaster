@@ -124,18 +124,21 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
 
         assert(impact is ObjectGeneImpact)
 
-        if (selection == ImpactMutationSelection.NONE){
+        val genes = fields.map { Pair(it, (impact as ObjectGeneImpact).fields.getValue(it.name)) }
+        val methodSelection = archiveMutator.decideGeneSelectionMethod(genes)
+
+        if (methodSelection == ImpactMutationSelection.NONE){
             standardMutation(randomness, apc)
             return
         }
 
-        val genes = fields.map { Pair(it, (impact as ObjectGeneImpact).fields.getValue(it.name)) }
+
         val percentage = 1.0/fields.size //prefer selecting one
 
         /*
             decide what field will be mutated
          */
-        val selects = when(selection){
+        val selects = when(methodSelection){
             ImpactMutationSelection.APPROACH_GOOD -> ImpactUtils.selectApproachGood(genes, percentage)
             ImpactMutationSelection.AWAY_BAD -> ImpactUtils.selectGenesAwayBad(genes, percentage)
             ImpactMutationSelection.FEED_BACK -> ImpactUtils.selectFeedback(genes, percentage)

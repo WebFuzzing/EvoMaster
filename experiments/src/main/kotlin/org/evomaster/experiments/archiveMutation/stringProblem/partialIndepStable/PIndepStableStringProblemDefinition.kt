@@ -33,15 +33,8 @@ class PIndepStableStringProblemDefinition : StringProblemDefinition() {
         assert(list.size * 3 == optima.size)
         val result = mutableMapOf<Int, Double>()
         (0 until nTargets).forEach{ index ->
-            result[index] = distance(index, list[index * 3].value )
+            result[index] = leftDistance(optima[index], list[index * 3].value )
         }
         return result
     }
-
-    private fun distance(index : Int, value : String) : Double{
-        val target = optima[index]
-        return leftDistance(target, value)
-    }
-
-
 }

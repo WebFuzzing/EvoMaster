@@ -70,12 +70,12 @@ class ADepMain {
             val manager = injector.getInstance(LifecycleManager::class.java)
             manager.start()
             val solution = mio.search()
-            println("Needed budget: ${stc.neededBudget()}")
-            println("covered targets: ${solution.overall.coveredTargets()}")
-            archive.reachedTargetHeuristics().forEach(::println)
-            solution.individuals.forEachIndexed { index, evaluatedIndividual ->
-                println("individual $index : ${evaluatedIndividual.individual.seeGenes().filterIsInstance<StringGene>().map { it.value }.joinToString(", ")}")
-            }
+//            println("Needed budget: ${stc.neededBudget()}")
+//            println("covered targets: ${solution.overall.coveredTargets()}")
+//            archive.reachedTargetHeuristics().forEach(::println)
+//            solution.individuals.forEachIndexed { index, evaluatedIndividual ->
+//                println("individual $index : ${evaluatedIndividual.individual.seeGenes().filterIsInstance<StringGene>().map { it.value }.joinToString(", ")}")
+//            }
             if (config.writeStatistics){
                 statistics.writeStatistics(solution)
             }
@@ -103,7 +103,7 @@ class ADepMain {
                 "--createTests",
                 false.toString(),
                 "--enableArchiveGeneMutation",
-                true.toString()
+                if (probOfArchiveMutation>0.0)true.toString() else false.toString()
         )
     }
 }

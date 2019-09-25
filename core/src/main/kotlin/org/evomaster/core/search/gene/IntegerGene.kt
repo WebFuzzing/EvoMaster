@@ -126,12 +126,14 @@ class IntegerGene(
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         original as? IntegerGene ?:throw IllegalStateException("$original should be IntegerGene")
         mutated as? IntegerGene ?:throw IllegalStateException("$mutated should be IntegerGene")
-        if (this != mutated){
-            valueMutation.reached = mutated.valueMutation.reached
-        }
-        valueMutation.updateBoundary(original.value, mutated.value, doesCurrentBetter)
-        if (valueMutation.preferMin == valueMutation.preferMax){
-            valueMutation.reached = true
-        }
+
+        throw IllegalStateException("should not be invoked")
+//        if (this != mutated){
+//            valueMutation.reached = mutated.valueMutation.reached
+//        }
+//        valueMutation.updateBoundary(original.value, mutated.value, doesCurrentBetter)
+//        if (valueMutation.preferMin == valueMutation.preferMax){
+//            valueMutation.reached = true
+//        }
     }
 }

@@ -20,7 +20,7 @@ interface UpdateBoundary<T> where T : Number{
 
 class IntMutationUpdate(preferMin: Int, preferMax: Int, counter: Int = 0, reached: Boolean = false) : MutationBoundaryUpdate<Int>(preferMin, preferMax, counter, reached), UpdateBoundary<Int>{
 
-    override fun copy(): IntMutationUpdate = IntMutationUpdate(preferMin,preferMax, counter, reached)
+    override fun copy(): IntMutationUpdate = IntMutationUpdate(preferMin, preferMax, counter, reached)
 
     override fun updateBoundary(previous: Int, current: Int, doesCurrentBetter: Boolean) {
         val value = (previous + current) / 2.0

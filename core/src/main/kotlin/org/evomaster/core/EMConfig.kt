@@ -594,10 +594,6 @@ class EMConfig {
     var maxLengthOfTraces = 10
 
     @Experimental
-    @Cfg("Whether to enable archive-based gene mutation")
-    var enableArchiveGeneMutation = false
-
-    @Experimental
     @Cfg("Enable custom naming and sorting criteria")
     var customNaming = false
 
@@ -727,7 +723,23 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to enable impact gene selection strategy adaptively")
-    var adaptiveGeneSelection = false
+    var adaptiveGeneSelection = AdaptiveSelection.FIXED_SELECTION
+
+    enum class AdaptiveSelection{
+        FIXED_SELECTION,
+        RANDOM,
+        GUIDED
+    }
+
+    @Experimental
+    @Cfg("Whether to enable archive-based gene mutation")
+    var archiveGeneMutation = ArchiveGeneMutation.NONE
+
+    enum class ArchiveGeneMutation{
+        NONE,
+        SPECIFIED,
+        ADAPTIVE
+    }
 
     @Experimental
     @Cfg("Specify whether to disable structure mutation during focus search")

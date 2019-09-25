@@ -7,6 +7,6 @@ enum class ImpactMutationSelection {
     NONE,
     AWAY_BAD,
     APPROACH_GOOD,
-    FEED_BACK,
-    FOCUS_LATEST
+    FEED_BACK
+    //FOCUS_LATEST
 }

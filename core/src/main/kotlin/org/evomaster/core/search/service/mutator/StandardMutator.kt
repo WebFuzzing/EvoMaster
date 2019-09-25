@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -11,9 +12,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
@@ -52,11 +51,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        if(config.geneSelectionMethod != ImpactMutationSelection.NONE && randomness.nextBoolean(config.probOfArchiveMutation)){
-            val selectedGene = archiveMutator.selectGenesByArchive(genesToMutate, individual, evi)
-            return selectGenesByDefault(selectedGene, individual)
-        }
-        return selectGenesByDefault(genesToMutate, individual)
+        val selectedGene = if(randomness.nextBoolean(config.probOfArchiveMutation)){
+            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi)
+        } else genesToMutate
+
+        return selectGenesByDefault(selectedGene, individual)
     }
 
     private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{
@@ -119,7 +118,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         for (gene in selectGeneToMutate){
             mutatedGene?.mutatedGenes?.add(gene)
 
-            if (gene is StringGene && config.probOfArchiveMutation > 0.0 && config.enableArchiveGeneMutation){
+            if (gene is StringGene && config.probOfArchiveMutation > 0.0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE){
                 gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, null, ImpactUtils.generateGeneId(copy, gene), archiveMutator, individual)
             }else
                 gene.standardMutation(randomness, apc, allGenes)

@@ -10,6 +10,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.experiments.archiveMutation.ArchiveProblemType
@@ -24,6 +25,7 @@ import org.evomaster.experiments.archiveMutation.stringProblem.partialIndepStabl
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.time.LocalDateTime
 
 /**
  * created by manzh on 2019-09-16
@@ -32,82 +34,101 @@ class Main {
 
     companion object{
 
+        private val targets = listOf(1)
+        private val runs = 30
+        private val budgets = listOf(1000)
+        private val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
+        private val adaptiveGeneSelections = EMConfig.AdaptiveSelection.values().toList().sorted()
+        private val archiveGeneMutation = EMConfig.ArchiveGeneMutation.values().toList().sorted()
+        private val probOfArchiveMutations = listOf(0.5, 1.0)
+        private val focusSearch = arrayOf(false)
+        private val problems = ArchiveProblemType.values().toList()
+
         @JvmStatic
         fun main(args: Array<String>) {
-            //default(args)
-            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_focusLatest/"
-            allSetting(folder, listOf(1), 1, listOf(1000), listOf(ImpactMutationSelection.NONE), listOf(1.0), includeNone = false)
+            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced/"
+            default(arrayOf(folder))
+//            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced/"
+//            allSetting(folder,
+//                    targets = listOf(1),
+//                    runs =  30,
+//                    budgets = listOf(1000),
+//                    impactSelection = impactSelection,
+//                    probOfArchiveMutations = listOf(1.0),
+//                    includeNone = true, focusSearch = arrayOf(false),
+//                    problems = listOf(ArchiveProblemType.ALL_DEP_DYNAMIC),
+//                    archiveGeneMutation = archiveGeneMutation,
+//                    adaptiveGeneSelections = adaptiveGeneSelections)
         }
 
         private fun default(args: Array<String>){
             val baseFolder = if (args.size == 1) args.first() else "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results/"
-            val targets = listOf(1, 10, 50, 100)
-            val runs = 30
-            val budgets = listOf(1000, 10000, 100000)
-            val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
-            val probOfArchiveMutations = listOf(0.5, 1.0)
-            allSetting(baseFolder, targets, runs, budgets, impactSelection, probOfArchiveMutations)
+
+            allSetting(baseFolder, targets, runs, budgets, impactSelection, probOfArchiveMutations, true, focusSearch, problems = problems, archiveGeneMutation = archiveGeneMutation, adaptiveGeneSelections = adaptiveGeneSelections)
         }
 
-        private fun allSetting(baseFolder: String, targets : List<Int>, runs :Int, budgets : List<Int>, impactSelection : List<ImpactMutationSelection>, probOfArchiveMutations : List<Double>, includeNone : Boolean = true){
+        private fun allSetting(
+                baseFolder: String,
+                targets : List<Int>,
+                runs :Int,
+                budgets : List<Int>,
+                impactSelection : List<ImpactMutationSelection>,
+                probOfArchiveMutations : List<Double>,
+                includeNone : Boolean = true,
+                focusSearch : Array<Boolean>,
+                problems: List<ArchiveProblemType>,
+                archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>,
+                adaptiveGeneSelections : List<EMConfig.AdaptiveSelection>){
+
             if (!Files.exists(Paths.get(baseFolder))) Files.createDirectories(Paths.get(baseFolder))
             val path = Paths.get("${baseFolder}summary.txt")
             if (!Files.exists(path)) Files.createFile(path)
             val specifiedLength = 16
-            val formatMaxLength = 28
 
+            val configs = produceConfigs(
+                    impactSelection = impactSelection,
+                    probOfArchiveMutations = probOfArchiveMutations,
+                    archiveGeneMutation = archiveGeneMutation,
+                    adaptiveGeneSelections = adaptiveGeneSelections,
+                    includeNone = includeNone,
+                    focusSearch = focusSearch
+            )
+            Files.write(path, "=========${LocalDateTime.now()}=============${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
             targets.forEach { n->
                 budgets.forEach { budget->
-                    val head = mutableListOf("Runs, Budgets($runs, $budget)")
-                    if (includeNone){
-                        head.add("${ImpactMutationSelection.NONE.name}[false]")
-                        head.add("${ImpactMutationSelection.NONE.name}[true]")
-                    }
-
-                    probOfArchiveMutations.forEach { p->
-                        impactSelection.forEach { s->
-                            head.add("${s.name}[$p]")
-                        }
-                    }
-                    val headStr = head.map { s -> formatString(formatMaxLength, s) }.joinToString("\t")
-                    Files.write(path, ( headStr + System.lineSeparator()).toByteArray(), StandardOpenOption.APPEND)
-                    println(headStr)
-                    ArchiveProblemType.values().forEach { pt->
-                        arrayOf(false, true).forEach {fs->
-                            val results = Array( (if (includeNone) 2 else 0) + impactSelection.size * probOfArchiveMutations.size){0}
-                            val item = "$pt($n, $fs)"
+                    problems.forEach { pt->
+                        configs.forEach { config->
+                            var total = 0
                             (0 until runs).forEach { i ->
-                                if (includeNone){
-                                    val defaultSolution =
-                                            run(getArgs(budget = budget, method = ImpactMutationSelection.NONE, probOfArchiveMutation = 0.0, problem = pt, n = n, run = i, writeStatistics = true, disableStructureMutationDuringFocusSearch = fs, baseFolder = baseFolder), nTargets = n, specifiedLength = specifiedLength, problem = pt)
-                                    results[0] += defaultSolution.overall.coveredTargets()
+                                val solution = run(
+                                        getArgs(
+                                                budget = budget,
+                                                n = n,
+                                                run = i,
+                                                problem = pt,
+                                                baseFolder = baseFolder,
+                                                writeStatistics = true,
+                                                config = config
 
-                                    val defaultSolution1 =
-                                            run(getArgs(budget = budget, method = ImpactMutationSelection.NONE, probOfArchiveMutation = 1.0, problem = pt, n = n, run = i, writeStatistics = true, disableStructureMutationDuringFocusSearch = fs, baseFolder = baseFolder), nTargets = n, specifiedLength = specifiedLength, problem = pt)
-                                    results[1] += defaultSolution1.overall.coveredTargets()
-                                }
-                                var index = if (includeNone) 2 else 0
-                                probOfArchiveMutations.forEach { p->
-                                    impactSelection.forEach {selection->
-                                        val archivedSolution = run(getArgs(budget = budget, method = selection, probOfArchiveMutation = p,  problem = pt, n = n,run = i, writeStatistics = true, disableStructureMutationDuringFocusSearch = fs, baseFolder = baseFolder), nTargets = n, specifiedLength = specifiedLength, problem = pt)
-                                        results[index] += archivedSolution.overall.coveredTargets()
-                                        index++
-                                    }
-                                }
-
+                                        ),
+                                        n,
+                                        specifiedLength,
+                                        problem = pt
+                                )
+                                total += solution.overall.coveredTargets()
                             }
-                            val result = listOf(item).plus(results.map { format(it/runs.toDouble())}).map { s -> formatString(formatMaxLength, s) }.joinToString("\t")
-                            Files.write(path, (result+System.lineSeparator()).toByteArray(), StandardOpenOption.APPEND)
-                            println(result)
+                            val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
+                            Files.write(path, row.toByteArray(), StandardOpenOption.APPEND)
+                            //Files.write(path, (System.lineSeparator()).toByteArray(), StandardOpenOption.APPEND)
                         }
                     }
-                    Files.write(path, (System.lineSeparator()).toByteArray(), StandardOpenOption.APPEND)
+
                 }
             }
 
         }
         private fun format(value : Double) = "%.2f".format(value)
-        private fun formatString(len : Int, value :String) = "%${len}s".format(value)
+        private fun formatString(len : Int, value :String) = if (value.length > len) value else "%${len}s".format(value)
 
 
         private fun run(args: Array<String>, nTargets : Int = 1, specifiedLength : Int = 16, maxLength: Int = 16, problem: ArchiveProblemType) : Solution<StringIndividual>{
@@ -143,24 +164,44 @@ class Main {
             manager.start()
             val solution = mio.search()
             //usedBudgets.add(stc.lastActionImprovement/stc.evaluatedActions.toDouble())
-
+//            solution.individuals.forEach { i->
+//                i.individual.seeGenes().filterIsInstance<StringGene>().map { g-> "${g.name}:${g.mutatedtimes}-${g.resetTimes}-${g.resetTimes/g.mutatedtimes.toDouble()}"}.forEach(::println)
+//            }
             if (config.writeStatistics){
                 statistics.writeStatistics(solution)
             }
             manager.close()
             return solution
         }
+        private fun getArgs(
+                budget : Int = 100000, n: Int, run : Int, writeStatistics : Boolean = true, baseFolder: String, problem: ArchiveProblemType, config: ExpConfig
+        ) = getArgs(
+                budget=budget,
+                n=n,
+                run = run,
+                writeStatistics = writeStatistics,
+                baseFolder = baseFolder,
+                problem = problem,
+                disableStructureMutationDuringFocusSearch = config.disableStructureMutationDuringFocusSearch,
+                probOfArchiveMutation = config.probOfArchiveMutation,
+                method = config.method,
+                archiveGeneMutation = config.archiveGeneMutation,
+                adaptiveGeneSelection = config.adaptiveGeneSelection
+
+        )
 
         private fun getArgs(
                 budget: Int = 100000,
-                probOfArchiveMutation : Double = 1.0,
-                method : ImpactMutationSelection = ImpactMutationSelection.FEED_BACK,
                 n: Int,
                 problem: ArchiveProblemType,
                 run : Int,
                 writeStatistics : Boolean = true,
+                baseFolder : String,
                 disableStructureMutationDuringFocusSearch : Boolean,
-                baseFolder : String
+                probOfArchiveMutation : Double = 1.0,
+                method : ImpactMutationSelection = ImpactMutationSelection.FEED_BACK,
+                archiveGeneMutation : EMConfig.ArchiveGeneMutation,
+                adaptiveGeneSelection : EMConfig.AdaptiveSelection
         ) = arrayOf(
                 "--stoppingCriterion",
                 "FITNESS_EVALUATIONS",
@@ -190,13 +231,100 @@ class Main {
                 "${baseFolder}R${run}_T${n}_${problem.name}_${if (probOfArchiveMutation>0.0)"archive_statistics.csv" else "standard_statistics.csv"}",
                 "--snapshotStatisticsFile",
                 "${baseFolder}R${run}_T${n}_${problem.name}_${if (probOfArchiveMutation>0.0)"archive_snapshot.csv" else "standard_snapshot.csv"}",
-                "--enableArchiveGeneMutation",
-                if (probOfArchiveMutation > 0.0) true.toString() else false.toString(),
+                "--archiveGeneMutation",
+                archiveGeneMutation.toString(),
                 "--disableStructureMutationDuringFocusSearch",
                 disableStructureMutationDuringFocusSearch.toString(),
+                "--adaptiveGeneSelection",
+                adaptiveGeneSelection.toString(),
                 "--statisticsColumnId",
                 "$n-${problem.name}"
 
         )
+
+        fun produceConfigs(impactSelection : List<ImpactMutationSelection>,
+                           probOfArchiveMutations : List<Double>,
+                           includeNone : Boolean = true,
+                           focusSearch : Array<Boolean>,
+                           archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>,
+                           adaptiveGeneSelections : List<EMConfig.AdaptiveSelection>) : List<ExpConfig>{
+            val configs = mutableListOf<ExpConfig>()
+
+            if (includeNone){
+                configs.add(
+                        ExpConfig(
+                                probOfArchiveMutation = 0.0,
+                                method = ImpactMutationSelection.NONE,
+                                disableStructureMutationDuringFocusSearch = false,
+                                adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
+                                archiveGeneMutation = EMConfig.ArchiveGeneMutation.NONE
+                        )
+                )
+
+                configs.add(
+                        ExpConfig(
+                                probOfArchiveMutation = 1.0,
+                                method = ImpactMutationSelection.NONE,
+                                disableStructureMutationDuringFocusSearch = false,
+                                adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
+                                archiveGeneMutation = EMConfig.ArchiveGeneMutation.SPECIFIED
+                        )
+                )
+
+                configs.add(
+                        ExpConfig(
+                                probOfArchiveMutation = 1.0,
+                                method = ImpactMutationSelection.NONE,
+                                disableStructureMutationDuringFocusSearch = false,
+                                adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
+                                archiveGeneMutation = EMConfig.ArchiveGeneMutation.ADAPTIVE
+                        )
+                )
+            }
+
+            focusSearch.forEach { fs->
+                probOfArchiveMutations.forEach { p->
+                    adaptiveGeneSelections.forEach {aSelection->
+                        when(aSelection){
+                            EMConfig.AdaptiveSelection.FIXED_SELECTION -> {
+                                impactSelection.forEach {selection->
+                                    archiveGeneMutation.forEach {gMutation->
+                                        configs.add(ExpConfig(
+                                                probOfArchiveMutation = p,
+                                                method = selection,
+                                                disableStructureMutationDuringFocusSearch = fs,
+                                                adaptiveGeneSelection = aSelection,
+                                                archiveGeneMutation = gMutation
+                                        ))
+                                    }
+                                }
+                            }else->{
+                            archiveGeneMutation.forEach {gMutation->
+                                configs.add(ExpConfig(
+                                        probOfArchiveMutation = p,
+                                        method = ImpactMutationSelection.NONE,
+                                        disableStructureMutationDuringFocusSearch = fs,
+                                        adaptiveGeneSelection = aSelection,
+                                        archiveGeneMutation = gMutation
+                                ))
+                            }
+                         }
+                        }
+                    }
+                }
+            }
+
+            return configs
+        }
+
+        data class ExpConfig(
+                val probOfArchiveMutation : Double ,
+                val method : ImpactMutationSelection ,
+                val disableStructureMutationDuringFocusSearch : Boolean,
+                val archiveGeneMutation : EMConfig.ArchiveGeneMutation,
+                val adaptiveGeneSelection : EMConfig.AdaptiveSelection
+        ){
+            fun getName() = "$probOfArchiveMutation-$adaptiveGeneSelection[$method]-$archiveGeneMutation"
+        }
     }
 }

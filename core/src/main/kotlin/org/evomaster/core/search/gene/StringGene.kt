@@ -48,6 +48,10 @@ class StringGene(
             only used to create unique names
          */
         private var counter: Int = 0
+
+        private const val NEVER_ARCHIVE_MUTATION = -2
+        private const val CHAR_MUTATION_INITIALIZED = -1
+
     }
 
     /*
@@ -61,10 +65,26 @@ class StringGene(
     var specializationGene: Gene? = null
 
     /**
-     * chars at 0..[mutatedIndex] (exclusion) are set, only used by archive-based mutation
-     * when [mutatedIndex] = -1, it means that chars of [this] have not be mutated yet
+     * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
+     * when [mutatedIndex] = -1, it means that charsMutation of [this] is initialized
      */
-    var mutatedIndex : Int = -1
+    var mutatedIndex : Int = NEVER_ARCHIVE_MUTATION
+
+    /**
+     * degree of dependency of this [gene]
+     */
+    var degreeOfIndependency = ArchiveMutator.WITHIN_NORMAL
+    private set
+
+    var mutatedtimes = 0
+    private set
+
+    var resetTimes = 0
+    private set
+
+    fun charMutationInitialized(){
+        mutatedIndex = CHAR_MUTATION_INITIALIZED
+    }
 
 
     override fun copy(): Gene {
@@ -73,6 +93,9 @@ class StringGene(
                     it.specializationGene = this.specializationGene?.copy()
                     it.validChar = this.validChar
                     it.mutatedIndex = mutatedIndex
+                    it.degreeOfIndependency = degreeOfIndependency
+                    it.mutatedtimes = mutatedtimes
+                    it.resetTimes = resetTimes
                 }
     }
 
@@ -284,7 +307,7 @@ class StringGene(
             specializationGene!!.archiveMutation(randomness, allGenes, apc, selection, impact, geneReference, archiveMutator, evi)
             return
         }
-
+        mutatedtimes += 1
         archiveMutator.mutate(this)
     }
 
@@ -296,16 +319,21 @@ class StringGene(
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 
+        if (this != mutated){
+            mutatedtimes += 1
+        }
+
         val previous = original.value
         val current = mutated.value
 
         if (previous.length != current.length){
             if (this != mutated){
                 this.lengthMutation.reached = mutated.lengthMutation.reached
+                this.mutatedIndex = mutated.mutatedIndex
             }
             lengthUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
         }else{
-            if (mutatedIndex == -1){
+            if (mutatedIndex < 0){
                 initCharMutation()
             }
             if (this != mutated)
@@ -317,7 +345,8 @@ class StringGene(
     private fun charUpdate(previous:String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         val charUpdate = if (archiveMutator.relaxIndexStringGeneMutation()) charsMutation[mutatedIndex] else charsMutation.first()
         if (this != mutated){
-            charUpdate.reached = (if (archiveMutator.relaxIndexStringGeneMutation()) mutated.charsMutation[mutatedIndex] else mutated.charsMutation.first()).reached
+            charUpdate.reached =
+                mutated.charsMutation[mutatedIndex] .reached
         }
 
         val pchar = previous[mutatedIndex].toInt()
@@ -336,19 +365,17 @@ class StringGene(
             charUpdate.preferMax = Char.MAX_VALUE.toInt()
             charUpdate.preferMin = Char.MIN_VALUE.toInt()
             charUpdate.reached = false
+            resetTimes+=1
+            if(resetTimes >=2) degreeOfIndependency = 0.8
             return
         }
         charUpdate.updateBoundary(pchar, cchar,doesCurrentBetter)
 
         val exclude = value[mutatedIndex].toInt()
+        val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(exclude).toSet()
 
-        if (!archiveMutator.checkIfHasCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = invalidChars.map { it.toInt() }.plus(exclude))){
+        if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList() )){
             charUpdate.reached = true
-            if (!archiveMutator.relaxIndexStringGeneMutation()){
-                mutatedIndex += 1
-                charUpdate.counter = 0
-                archiveMutator.resetCharMutationUpdate(charUpdate)
-            }
         }
     }
 
@@ -358,13 +385,17 @@ class StringGene(
         if (added != 0){
             if (added > 0){
                 (0 until added).forEach { _->
-                    charsMutation.add(IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()))
+                    charsMutation.add(archiveMutator.createCharMutationUpdate())
                 }
             }else{
-                (0 until -added).forEach {
-                    charsMutation.removeAt(charsMutation.size - 1)
+                (0 until -added).forEach { _ ->
+                    charsMutation.removeAt(value.length)
                 }
             }
+        }
+
+        if (value.length != charsMutation.size){
+            throw IllegalArgumentException("invalid!")
         }
         /*
             1) current.length is not in min..max, but current is better -> reset
@@ -379,19 +410,14 @@ class StringGene(
             lengthMutation.preferMin = minLength
             lengthMutation.preferMax = maxLength
             lengthMutation.reached = false
+            resetTimes +=1
+            if(resetTimes >=2) degreeOfIndependency = 0.8
             return
         }
-
         lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
 
-        if (lengthMutation.preferMin == lengthMutation.preferMax){
+        if(0 == archiveMutator.validateCandidates(lengthMutation.preferMin, lengthMutation.preferMax, exclude = setOf(previous.length, current.length, value.length).toList())){
             lengthMutation.reached = true
-            if (value.isEmpty()){
-                if (!archiveMutator.relaxIndexStringGeneMutation()){
-                    charsMutation.first().reached = true
-                    mutatedIndex = 0
-                }
-            }
         }
     }
 

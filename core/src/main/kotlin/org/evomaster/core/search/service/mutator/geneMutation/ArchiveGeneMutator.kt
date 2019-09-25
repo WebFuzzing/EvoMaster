@@ -2,13 +2,17 @@ package org.evomaster.core.search.service.mutator.geneMutation
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -29,29 +33,38 @@ class ArchiveMutator {
     lateinit var apc : AdaptiveParameterControl
 
     companion object{
-        private const val WITHIN_NORMAL = 0.9
+        const val WITHIN_NORMAL = 0.9
+        private val log: Logger = LoggerFactory.getLogger(ArchiveMutator::class.java)
     }
 
-    fun withinNormal() : Boolean{
-        return randomness.nextBoolean(WITHIN_NORMAL)
+    fun withinNormal(prob : Double = WITHIN_NORMAL) : Boolean{
+        return randomness.nextBoolean(prob)
     }
 
     /**
      * return whether archive mutator supports this kind of gene regarding archive-based gene mutation
      */
     fun doesSupport(gene : Gene) : Boolean{
-        return gene is StringGene || gene is IntegerGene || gene is ObjectGene
+        return gene is StringGene  || gene is ObjectGene || ParamUtil.getValueGene(gene) is StringGene || ParamUtil.getValueGene(gene) is ObjectGene //|| gene is IntegerGene
     }
 
     fun mutate(gene : Gene){
         val p = gene.copy()
-        val result = when(gene){
-            is StringGene -> if (!relaxIndexStringGeneMutation()) mutateFixed(gene) else mutateRelax(gene)
-            is IntegerGene -> mutate(gene)
-            else -> TODO("NOT IMPLEMENT")
+        when(gene){
+            is StringGene -> mutateRelax(gene)
+            //is IntegerGene -> mutate(gene)
+            else -> {
+                if (ParamUtil.getValueGene(gene) is StringGene){
+                    mutate(ParamUtil.getValueGene(gene))
+                }
+                else{
+                    log.warn("not implemented error")
+                }
+
+            }
         }
         if (p.containsSameValueAs(gene))
-            throw IllegalStateException("bug $p")
+            log.warn("value of gene shouldn't be same with previous")
     }
 
     /**
@@ -61,18 +74,49 @@ class ArchiveMutator {
 
         val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
 
-        val genes = when(config.geneSelectionMethod){
+        val collected =  genesToMutate.toList().map { g->
+            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
+        }
+
+        val method = decideGeneSelectionMethod(collected)
+
+
+        val genes = when(method){
             ImpactMutationSelection.AWAY_BAD -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
             ImpactMutationSelection.APPROACH_GOOD -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
             ImpactMutationSelection.FEED_BACK -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
-            ImpactMutationSelection.FOCUS_LATEST -> selectGenesFocusLatest(genesToMutate, candidatesMap, evi)
-            ImpactMutationSelection.NONE -> {
-                throw IllegalArgumentException("shouldn't be invoked in this fun")
+            else -> {
+                genesToMutate
             }
         }
-
-        assert(genes.isNotEmpty())
+        if (genes.isEmpty()){
+            log.warn("Archive-based mutation should not produce empty genes to mutate")
+        }
         return genes
+    }
+
+    fun decideGeneSelectionMethod(genes : List<Pair<Gene, GeneImpact>>) : ImpactMutationSelection {
+        return when (config.adaptiveGeneSelection) {
+            EMConfig.AdaptiveSelection.FIXED_SELECTION -> config.geneSelectionMethod
+            EMConfig.AdaptiveSelection.RANDOM -> randomGeneSelectionMethod()
+            EMConfig.AdaptiveSelection.GUIDED -> methodGuidedByImpact(genes)
+        }
+    }
+
+    private fun randomGeneSelectionMethod() : ImpactMutationSelection = randomness.choose(listOf(ImpactMutationSelection.APPROACH_GOOD, ImpactMutationSelection.AWAY_BAD, ImpactMutationSelection.FEED_BACK))
+
+    private fun methodGuidedByImpact(genes : List<Pair<Gene, GeneImpact>>) : ImpactMutationSelection{
+
+        val sortedWithNoImpact = genes.map { it.second.timesOfNoImpacts/it.second.timesToManipulate.toDouble() }.sorted()
+        val distance = abs(sortedWithNoImpact.first() - sortedWithNoImpact.last())
+        if (distance > 0.5){
+            val bad = sortedWithNoImpact.count { it < 0.5 }
+            if (bad < sortedWithNoImpact.size)
+                return ImpactMutationSelection.AWAY_BAD
+            else
+                return ImpactMutationSelection.APPROACH_GOOD
+        }
+        return ImpactMutationSelection.FEED_BACK
     }
 
     private fun selectGenesFocusLatest(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<*>): List<Gene>{
@@ -80,7 +124,7 @@ class ArchiveMutator {
             return genesToMutate
 
         if (evi.getTracking()!!.size > 1 && evi.mutatedGeneSpecification == null)
-            throw IllegalArgumentException("mutatedGeneSpecification should be null")
+            log.warn("mutatedGeneSpecification should be null")
         val select = if (evi.getTracking()!!.size > 1 && evi.mutatedGeneSpecification!!.mutatedGenes.isNotEmpty())
             genesToMutate.filter { evi.mutatedGeneSpecification!!.mutatedGenes.contains(it) }
         else listOf()
@@ -107,7 +151,6 @@ class ArchiveMutator {
         return ImpactUtils.selectApproachGood(genes, config.perOfCandidateGenesToMutate)
     }
 
-
     private fun selectGenesFeedback(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<*>): List<Gene>{
         val genes =  genesToMutate.toList().map { g->
             Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
@@ -128,40 +171,6 @@ class ArchiveMutator {
         return true
     }
 
-    private fun mutateFixed(gene : StringGene, probOfModifyChar : Double = 0.8, priorLengthMutation : Boolean = false) : Boolean{
-        /*
-            when gene is empty or last char reaches optima, append a new char
-         */
-        if (gene.value.isEmpty() || gene.mutatedIndex == gene.value.length){
-            append(gene, CharPool.WORD, modifyCharMutation = false)
-            return false
-        }
-
-        if (priorLengthMutation){
-            if (!gene.lengthMutation.reached){
-                modifyLength(gene)
-                return false
-            }
-        }
-
-        if (gene.charsMutation.first().reached && !gene.lengthMutation.reached){
-
-            if (gene.mutatedIndex == gene.value.length - 1){
-                delete(gene, modifyCharMutation = false)
-                return false
-            }
-
-            val modify = randomness.nextBoolean(probOfModifyChar)
-            when(modify){
-                true-> modify(gene)
-                false-> modifyLength(gene)
-            }
-            return  modify
-        }else{
-            modify(gene)
-            return true
-        }
-    }
 
     /**
      * mutate [gene] using archive-based method
@@ -175,8 +184,9 @@ class ArchiveMutator {
         /**
          * init charsMutation
          */
-        if (gene.mutatedIndex == -1 && gene.charsMutation.isEmpty()){
-            gene.charsMutation.addAll((0 until gene.value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
+        if (gene.mutatedIndex == -2){
+            gene.charsMutation.addAll((0 until gene.value.length).map { createCharMutationUpdate() })
+            gene.charMutationInitialized()
         }
 
         /*
@@ -194,7 +204,8 @@ class ArchiveMutator {
             }
         }
 
-        val p = randomness.nextBoolean(WITHIN_NORMAL)
+        val p = withinNormal()
+
         val normalCharMutation = randomness.nextBoolean(probOfModifyChar)
         var doCharMutation = if (gene.charsMutation.all { it.reached }) !p else normalCharMutation
         var doLenMutation = if (gene.lengthMutation.reached) !p else !normalCharMutation
@@ -215,9 +226,29 @@ class ArchiveMutator {
             val last = if (exclude.isNotEmpty()) exclude.max()!! else -1
             modifyLength(gene, last, modifyCharMutation = true)
         }else
-            throw IllegalStateException("should not reach")
+            log.warn("at least one of doCharMutation {} and doLenMutation {} should be enabled", doCharMutation, doLenMutation)
 
         return doCharMutation
+    }
+
+    private fun approachPrefer(gene: StringGene) : Boolean{
+        return when(config.archiveGeneMutation){
+            EMConfig.ArchiveGeneMutation.SPECIFIED -> withinNormal()
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> withinNormal(gene.degreeOfIndependency)
+            EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
+        }
+    }
+
+    /*
+        if Independency is higher, far away from approachSlightMutation
+        if Indpendency is lower, close to approachSlightMutation
+     */
+    private fun approachSlightMutation(gene: StringGene) : Boolean{
+        return when(config.archiveGeneMutation){
+            EMConfig.ArchiveGeneMutation.SPECIFIED -> randomness.nextBoolean()
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> gene.resetTimes > 0 && withinNormal()
+            EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
+        }
     }
 
     private fun decideIndex(gene: StringGene) : Int{
@@ -229,7 +260,8 @@ class ArchiveMutator {
 //            else
 //                return randomness.choose(it)
 //        }
-        var index = if (withinNormal()){
+
+        var index = if (approachPrefer(gene)){
             (0 until gene.value.length).filter { !exclude.contains(it) }.min()
         }else null
         if (index != null) return index
@@ -257,7 +289,7 @@ class ArchiveMutator {
                 }
             }
         }else{
-            val normal = withinNormal()
+            val normal = approachPrefer(gene)//withinNormal(gene.degreeOfIndependency)
             when{
                 current == gene.maxLength || (current == gene.lengthMutation.preferMax && normal)|| !p -> {
                     delete(gene, modifyCharMutation = modifyCharMutation)
@@ -270,45 +302,67 @@ class ArchiveMutator {
         }
 
         if (current == gene.value.length || gene.value.length !in (gene.minLength..gene.maxLength))
-            throw IllegalArgumentException("mutate a length of the gene improperly")
+            log.warn("length of value of string gene should be changed after length mutation: previous {} vs. current {}", current, gene.value.length)
+        if (modifyCharMutation && gene.value.length != gene.charsMutation.size){
+            log.warn("size of charsMutation {} should be always accord with a length {} of the string gene", gene.charsMutation.size, gene.value.length)
+        }
     }
 
     /*
     regarding char mutation, we prefer to mutate relative closer one instead of making a jump in middle.
      */
-    private fun modify(gene : StringGene) {
-        if (gene.charsMutation.first().reached){
-            gene.charsMutation.first().reached = false
-        }else if (gene.mutatedIndex == -1){
-            gene.mutatedIndex += 1
-            resetCharMutationUpdate(gene.charsMutation.first())
-        }
-        modify(gene, gene.mutatedIndex, gene.charsMutation.first())
-    }
+//    private fun modify(gene : StringGene) {
+//        if (gene.charsMutation.first().reached){
+//            gene.charsMutation.first().reached = false
+//        }else if (gene.mutatedIndex == -1){
+//            gene.mutatedIndex += 1
+//            resetCharMutationUpdate(gene.charsMutation.first())
+//        }
+//        modify(gene, gene.mutatedIndex, gene.charsMutation.first())
+//    }
 
     private fun modify(gene : StringGene, index:Int, charMutation : IntMutationUpdate) {
         val current = gene.value.toCharArray()[index].toInt()
 
         when (validateCandidates(charMutation.preferMin, charMutation.preferMax, listOf(current))) {
             0 -> {
-                //FIXME
                 if (!charMutation.reached)
-                    throw IllegalArgumentException("validCandidates can only be empty when selected is optimal")
-                val char = randomFromCurrentAdaptively(current, Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt(), Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt(), start = 6, end = 3).toChar()
+                    log.warn("validCandidates can only be empty when selected is optimal")
+                val char = randomFromCurrentAdaptively(
+                        current,
+                        Char.MIN_VALUE.toInt(),
+                        Char.MAX_VALUE.toInt(),
+                        Char.MIN_VALUE.toInt(),
+                        Char.MAX_VALUE.toInt(),
+                        start = 6,
+                        end = 3).toChar()
                 gene.value = modifyIndex(gene.value, gene.mutatedIndex, char = char)
             }
             1 -> gene.value = modifyIndex(gene.value, gene.mutatedIndex, (charMutation.preferMin..charMutation.preferMax).first{it != current}.toChar())
             else -> {
-                val char = //(random(false, false, current, 0.5, (charMutation.preferMin..charMutation.preferMax).filter { it != current })).toChar()
-                randomFromCurrentAdaptively(current, charMutation.preferMin, charMutation.preferMax, Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt(), start = 6, end = 3).toChar()
+                val char =
+                        if(approachSlightMutation(gene)) //prefer middle if the degree of independent is quite high
+                            randomFromCurrentAdaptively(
+                                    current,
+                                    charMutation.preferMin,
+                                    charMutation.preferMax,
+                                    Char.MIN_VALUE.toInt(),
+                                    Char.MAX_VALUE.toInt(),
+                                    start = 6,
+                                    end = 3).toChar()
+                        else
+                            preferMiddle(charMutation.preferMin,charMutation.preferMax,current).toChar()
+
                 gene.value = modifyIndex(gene.value, gene.mutatedIndex, char = char)
             }
         }
         if (current == gene.value.toCharArray()[index].toInt())
-            throw IllegalArgumentException("mutate a char of the gene improperly")
+            log.warn("char should be modified after char mutation: previous {} vs. current {}", current, gene.value.toCharArray()[index].toInt())
     }
 
     private fun random(enableCounter : Boolean, exceed : Boolean, current: Int, probOfMiddle : Double, validCandidates: List<Int>) : Int{
+        if (validCandidates.isEmpty())
+            throw IllegalArgumentException("")
         if (enableCounter){
             if (exceed)
                 return findClosest(current, validCandidates, randomness)
@@ -318,6 +372,13 @@ class ArchiveMutator {
             true -> validCandidates[validCandidates.size/2]
             false -> randomness.choose(validCandidates)
         }
+    }
+
+    private fun preferMiddle(min: Int, max: Int, current: Int) : Int{
+        if (min > max)
+            log.warn("min {} should not be more than max {}", min, max)
+        val cand =  (min..max).filter { it != current }.toList()
+        return if (randomness.nextBoolean(0.8)) cand[cand.size/2] else randomness.choose(cand)
     }
 
     private fun findClosest(current: Int, validates : List<Int>, randomness: Randomness) : Int{
@@ -338,29 +399,35 @@ class ArchiveMutator {
      */
     private fun randomFromCurrentAdaptively(current: Int, minValue: Int, maxValue: Int, hardMinValue : Int, hardMaxValue : Int, start : Int, end : Int) : Int{
         //val middle = (maxValue - minValue)/2
-        val normal = withinNormal()
-        val range = if (normal) max(abs(maxValue - current), abs(minValue - current)).toLong() else (hardMaxValue - hardMinValue).toLong()
+        val prefer = withinNormal()
+        val range = max(abs((if (prefer) maxValue else hardMaxValue) - current), abs((if (prefer)minValue else hardMinValue) - current)).toLong()
         val delta = GeneUtils.getDelta(randomness, apc, range = range, start =start, end = end)
-        val value = if (normal && current + delta > maxValue)
+        val value = if (prefer && current + delta > maxValue)
             current - delta
-        else if (normal && current - delta < minValue)
+        else if (prefer && current - delta < minValue)
              current + delta
-        else current + delta * randomness.choose(listOf(-1, 1))
+        else
+            current + delta * randomness.choose(listOf(-1, 1))
 
-        return if (value < hardMinValue) hardMinValue.run { if (this == current) this + 1 else this } else if (value > hardMaxValue) hardMaxValue.run { if (this == current) this - 1 else this } else value
+        return when{
+            value < hardMinValue -> if (current == hardMinValue) hardMinValue + 1 else hardMinValue
+            value > hardMaxValue -> if (current == hardMaxValue) hardMaxValue - 1 else hardMaxValue
+            else -> value
+        }
     }
 
     private fun delete(gene : StringGene, num: Int = 1, modifyCharMutation : Boolean){
         if (modifyCharMutation){
             assert(gene.value.length == gene.charsMutation.size)
-            (0 until num).forEach {
-                gene.charsMutation.removeAt(gene.charsMutation.size - 1)
-            }
         }
         gene.value = gene.value.dropLast(num)
 
-        if (modifyCharMutation && gene.charsMutation.size != gene.value.length){
-            throw IllegalArgumentException("bug")
+        if (modifyCharMutation){
+            if (num == 0)
+                log.warn("mutated length of the gene should be more than 0")
+            (0 until num).forEach { _ ->
+                gene.charsMutation.removeAt(gene.value.length)
+            }
         }
     }
 
@@ -368,18 +435,18 @@ class ArchiveMutator {
         if (modifyCharMutation){
             assert(gene.value.length == gene.charsMutation.size)
         }
+
+        if (num == 0)
+            log.warn("mutated length of the gene should be more than 0")
+
         (0 until num).forEach { _ ->
             gene.value += when(charPool){
                 CharPool.WORD -> randomness.nextWordChar()
                 CharPool.ALL -> randomness.nextChar(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt())
             }
-            if (modifyCharMutation)
-                gene.charsMutation.add(IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()))
         }
-
-        if (modifyCharMutation && gene.charsMutation.size != gene.value.length){
-            throw IllegalArgumentException("bug")
-        }
+        if (modifyCharMutation)
+            gene.charsMutation.addAll((0 until num).map { createCharMutationUpdate() })
     }
 
     private fun modifyIndex(value : String, index : Int, char: Char) : String{
@@ -387,26 +454,18 @@ class ArchiveMutator {
         return value.toCharArray().also {it[index] = char }.joinToString("")
     }
 
-
-    fun resetCharMutationUpdate(charMutation: IntMutationUpdate){
-        charMutation.preferMin = Char.MIN_VALUE.toInt()
-        charMutation.preferMax = Char.MAX_VALUE.toInt()
-    }
-
     /**
      * [min] and [max] are inclusive
      */
-    private fun validateCandidates(min : Int, max:Int, exclude : List<Int>) : Int {
+    fun validateCandidates(min : Int, max:Int, exclude : List<Int>) : Int {
+        if (max < min)
+            return 0
         return (min..max).filter { !exclude.contains(it) }.size
     }
-
-    fun checkIfHasCandidates(min : Int, max:Int, exclude : List<Int>) = validateCandidates(min, max, exclude) > 0
 
     fun relaxIndexStringGeneMutation() : Boolean = true
 
     fun createCharMutationUpdate() = IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt())
-
-    fun createLengthMutationUpdate(gene : StringGene) = IntMutationUpdate(gene.minLength, gene.maxLength)
 }
 
 enum class CharPool{

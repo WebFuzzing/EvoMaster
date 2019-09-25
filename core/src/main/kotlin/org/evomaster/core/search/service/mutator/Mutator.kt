@@ -8,7 +8,6 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -123,8 +122,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
                 if(config.probOfArchiveMutation > 0.0){
                     trackedMutated.updateImpactOfGenes(true, mutatedGenes, targets, config.secondaryObjectiveStrategy)
-                    if (config.enableArchiveGeneMutation)
-                        trackedMutated.mutatedGeneSpecification = mutatedGenes.copyFrom(trackedMutated)
+//                    if (config.archiveGeneMutation)
+//                        trackedMutated.mutatedGeneSpecification = mutatedGenes.copyFrom(trackedMutated)
                 }
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
@@ -139,14 +138,19 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             TODO, handle StringGene that are inside of root gene
              */
             // gene mutation evaluation
-            if (config.probOfArchiveMutation > 0.0 && config.enableArchiveGeneMutation){
+            if (config.probOfArchiveMutation > 0.0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE){
                 mutatedGenes.mutatedGenes.filter { archiveMutator.doesSupport(it) }.forEach { s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
                     val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
                     val previousValue = (trackedCurrent.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
                     savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
+                    //(savedGene as StringGene).validateMutationUpdate(archiveMutator)
                 }
             }
+
+//            current.individual.seeGenes().filterIsInstance<StringGene>().forEach {
+//                it.validateMutationUpdate(archiveMutator)
+//            }
         }
         return current
     }
