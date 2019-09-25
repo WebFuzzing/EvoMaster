@@ -344,7 +344,7 @@ class StringGene(
         val specializationGene = getSpecializationGene()
 
         if (specializationGene != null) {
-            return "\"" + specializationGene.getValueAsPrintableString(previousGenes, mode, targetFormat) + "\""
+            return "\"" + specializationGene.getValueAsRawString() + "\""
         }
 
         val rawValue = getValueAsRawString()
