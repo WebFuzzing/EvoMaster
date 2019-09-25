@@ -42,6 +42,15 @@ class QuantifierRxGene(
         } else {
             max
         }
+
+        if(min == limitedMax && !template.isMutable()){
+            /*
+                this means this whole gene is immutable. still need to initialize it
+             */
+            for(i in 0 until min){
+                atoms.add(template.copy() as RxAtom)
+            }
+        }
     }
 
 
@@ -65,12 +74,12 @@ class QuantifierRxGene(
 
         val length = randomness.nextInt(min, limitedMax)
 
+        atoms.clear()
+
         if (length == 0) {
             //nothing to do
             return
         }
-
-        atoms.clear()
 
         for (i in 0 until length) {
            addNewAtom(randomness, forceNewValue, allGenes)
@@ -78,7 +87,7 @@ class QuantifierRxGene(
     }
 
     override fun isMutable(): Boolean {
-        return min != limitedMax || atoms.any { it.isMutable() }
+        return min != limitedMax || template.isMutable()
     }
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
