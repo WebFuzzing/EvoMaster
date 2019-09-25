@@ -29,7 +29,7 @@ public class ObjectsClassReplacement implements MethodReplacementClass {
             t = new Truthness(1d, 0d);
         } else {
             if (left != null && right != null) {
-                t = computeDistance(left, right);
+                t = computeDistance(left, right, idTemplate);
             } else {
                 // can't apply known heuristics with null values
                 t = new Truthness(0d, 1d);
@@ -39,13 +39,13 @@ public class ObjectsClassReplacement implements MethodReplacementClass {
         return result;
     }
 
-    private static Truthness computeDistance(Object left, Object right) {
+    private static Truthness computeDistance(Object left, Object right, String idTemplate) {
         Objects.requireNonNull(left);
         Objects.requireNonNull(right);
 
         if (left instanceof String && right instanceof String) {
 
-            // string equals
+            // TODO Add string specialization info for left and right
             String caller = (String) left;
             long distance = DistanceHelper.getLeftAlignmentDistance(caller, right.toString());
             return new Truthness(1d / (1d + distance), 1d);

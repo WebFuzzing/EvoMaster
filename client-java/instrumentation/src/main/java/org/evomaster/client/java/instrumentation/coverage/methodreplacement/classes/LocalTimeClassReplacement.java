@@ -13,47 +13,50 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.ChronoLocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
 
-
-public class LocalDateClassReplacement implements MethodReplacementClass {
+public class LocalTimeClassReplacement implements MethodReplacementClass {
 
     @Override
     public Class<?> getTargetClass() {
-        return LocalDate.class;
+        return LocalTime.class;
     }
 
+    /**
+     * Parses a time without an offset, such as '10:15' or '10:15:30'.
+     *
+     * @param input
+     * @param idTemplate
+     * @return
+     */
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
-    public static LocalDate parse(CharSequence input, String idTemplate) {
+    public static LocalTime parse(CharSequence input, String idTemplate) {
 
         if (input != null && ExecutionTracer.isTaintInput(input.toString())) {
             ExecutionTracer.addStringSpecialization(input.toString(),
-                    new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, null));
+                    new StringSpecializationInfo(StringSpecialization.ISO_LOCAL_TIME, null));
         }
 
         if (idTemplate == null) {
-            return LocalDate.parse(input);
+            return LocalTime.parse(input);
         }
 
         try {
-            LocalDate res = LocalDate.parse(input);
+            LocalTime res = LocalTime.parse(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
-        } catch (RuntimeException e) {
-            double h = DateTimeParsingUtils.getDistanceToISOLocalDate(input);
+        } catch (DateTimeParseException | NullPointerException e) {
+            double h = DateTimeParsingUtils.getDistanceToISOLocalTime(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }
     }
 
 
-
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean equals(LocalDate caller, Object anObject, String idTemplate) {
+    public static boolean equals(LocalTime caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
         if (idTemplate == null) {
@@ -61,11 +64,11 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
         }
 
         final Truthness t;
-        if (anObject == null || !(anObject instanceof LocalDate)) {
+        if (anObject == null || !(anObject instanceof LocalTime)) {
             t = new Truthness(0d, 1d);
         } else {
-            final long a = caller.toEpochDay();
-            final long b = ((LocalDate) anObject).toEpochDay();
+            final long a = caller.toSecondOfDay();
+            final long b = ((LocalTime) anObject).toSecondOfDay();
             t = TruthnessUtils.getEqualityTruthness(a, b);
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
@@ -73,42 +76,29 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean isBefore(LocalDate caller, ChronoLocalDate when, String idTemplate) {
+    public static boolean isBefore(LocalTime caller, LocalTime when, String idTemplate) {
         Objects.requireNonNull(caller);
         return LocalDateTimeClassReplacement.isBefore(
                 toLocalDateTime(caller),
-                when == null ? null : toChronoLocalDateTime(when),
+                when == null ? null : toLocalDateTime(when),
                 idTemplate);
 
     }
 
-    private static LocalDateTime toLocalDateTime(LocalDate localDate) {
-        Objects.requireNonNull(localDate);
-        return localDate.atTime(LocalTime.MIDNIGHT);
-    }
-
-    private static ChronoLocalDateTime toChronoLocalDateTime(ChronoLocalDate chronoLocalDate) {
-        Objects.requireNonNull(chronoLocalDate);
-        return chronoLocalDate.atTime(LocalTime.MIDNIGHT);
-    }
-
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean isAfter(LocalDate caller, ChronoLocalDate when, String idTemplate) {
+    public static boolean isAfter(LocalTime caller, LocalTime when, String idTemplate) {
         Objects.requireNonNull(caller);
         return LocalDateTimeClassReplacement.isAfter(
                 toLocalDateTime(caller),
-                when == null ? null : toChronoLocalDateTime(when),
+                when == null ? null : toLocalDateTime(when),
                 idTemplate);
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean isEqual(LocalDate caller, ChronoLocalDate other, String idTemplate) {
-        Objects.requireNonNull(caller);
-        return LocalDateTimeClassReplacement.isEqual(
-                toLocalDateTime(caller),
-                other == null ? null : toChronoLocalDateTime(other),
-                idTemplate
-        );
+    private static final LocalDate LOCAL_DATE = LocalDate.of(1970, 1, 1);
+
+    private static LocalDateTime toLocalDateTime(LocalTime localTime) {
+        Objects.requireNonNull(localTime);
+        return localTime.atDate(LOCAL_DATE);
     }
 
 }

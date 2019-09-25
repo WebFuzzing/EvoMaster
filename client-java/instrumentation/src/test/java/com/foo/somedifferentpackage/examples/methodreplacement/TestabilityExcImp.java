@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Created by arcuri82 on 27-Jun-19.
@@ -101,12 +103,12 @@ public class TestabilityExcImp implements TestabilityExc {
     }
 
     @Override
-    public boolean contentEquals(String caller, CharSequence input) {
+    public boolean stringContentEquals(String caller, CharSequence input) {
         return caller.contentEquals(input);
     }
 
     @Override
-    public boolean contentEquals(String caller, StringBuffer input) {
+    public boolean stringContentEquals(String caller, StringBuffer input) {
         return caller.contentEquals(input);
     }
 
@@ -123,6 +125,26 @@ public class TestabilityExcImp implements TestabilityExc {
     @Override
     public boolean startsWith(String caller, String prefix, int toffset) {
         return caller.startsWith(prefix, toffset);
+    }
+
+    @Override
+    public boolean stringMatches(String caller, String regex) {
+        return caller.matches(regex);
+    }
+
+    @Override
+    public boolean patternMatches(String regex, CharSequence input) {
+        return Pattern.matches(regex, input);
+    }
+
+    @Override
+    public boolean matcherFind(Matcher matcher) {
+        return matcher.find();
+    }
+
+    @Override
+    public boolean matcherMatches(Matcher matcher) {
+        return matcher.matches();
     }
 
 }

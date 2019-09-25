@@ -1,12 +1,12 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.text.DateFormat;
@@ -59,7 +59,7 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
             final double h;
             switch (pattern) {
                 case YYYY_MM_DD:
-                    h = LocalDateClassReplacement.parseHeuristic(input);
+                    h = DateTimeParsingUtils.getDistanceToISOLocalDate(input);
                     break;
                 case YYYY_MM_DD_HH_SS:
                     h = parseHeuristicDateTime(input);

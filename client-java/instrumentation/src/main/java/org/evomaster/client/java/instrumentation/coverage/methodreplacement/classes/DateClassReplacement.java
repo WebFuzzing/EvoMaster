@@ -49,7 +49,7 @@ public class DateClassReplacement implements MethodReplacementClass {
      * @param anObject
      * @return
      */
-    protected static Truthness getEqualsTruthness(Date caller, Object anObject) {
+    private static Truthness getEqualsTruthness(Date caller, Object anObject) {
         Objects.requireNonNull(caller);
 
         final Truthness t;
@@ -87,7 +87,7 @@ public class DateClassReplacement implements MethodReplacementClass {
     }
 
 
-    protected static Truthness getBeforeTruthness(Date caller, Date when) {
+    private static Truthness getBeforeTruthness(Date caller, Date when) {
         Objects.requireNonNull(caller);
         Objects.requireNonNull(when);
 
@@ -124,5 +124,6 @@ public class DateClassReplacement implements MethodReplacementClass {
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return res;
     }
+
 
 }
