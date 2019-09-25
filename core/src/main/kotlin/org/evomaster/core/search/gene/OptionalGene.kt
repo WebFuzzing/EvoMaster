@@ -65,7 +65,7 @@ class OptionalGene(name: String,
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        return gene.getValueAsPrintableString(targetFormat = targetFormat)
+        return gene.getValueAsPrintableString(mode = mode, targetFormat = targetFormat)
     }
 
     override fun getValueAsRawString(): String {

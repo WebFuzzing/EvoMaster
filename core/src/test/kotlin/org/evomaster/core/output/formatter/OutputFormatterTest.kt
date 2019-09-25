@@ -75,15 +75,7 @@ class OutputFormatterTest {
     @Test
     fun testEscapes4(){
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
-        val testGene = StringGene("QuoteGene", "Test For the quotes ${'"'}escape")
-
-        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
-    }
-
-    @Test
-    fun testEscapes5(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
-        val testGene = StringGene("QuoteGene", "Test For the quotes ${"D\\\\\"C"}escape")
+        val testGene = StringGene("QuoteGene", "Test For the quotes${'"'}escape")
 
         OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
     }
@@ -111,11 +103,11 @@ class OutputFormatterTest {
     @Test
     fun testEscapes8(){
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
+        val testGene = StringGene("DollarGene", "Test For the dollar${'$'}escape")
 
-        val string = """
-           {"id":"W5TWLkjlMWY", "value":"\\\\${'$'}UVKnphHS\\w"}
-        """
-        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.JAVA_JUNIT_5))
+
     }
 
 }

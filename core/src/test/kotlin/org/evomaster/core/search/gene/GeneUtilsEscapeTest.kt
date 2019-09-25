@@ -11,28 +11,36 @@ internal class GeneUtilsEscapeTest {
 
     @Test
     fun testEscapes(){
-        val testJson = "{\n" +
+        /*val testJson = "{\n" +
                 "\"name\" : \"contains\\\"now\"\n" +
                 "\"values\" : \"various\u001dother\u0016unicode\"\n" +
                 "\"kotlinTest\" : \"some\$kotlin\"\n" +
             "}"
 
+         */
+        val testJson2 = """{"name":"kotlin"}"""
+
+        val testJson = StringGene("Quote\\Gene", "Test For the quotes${'$'}escape")
+
         val formatKotlin = OutputFormat.KOTLIN_JUNIT_5
         val formatJava5 = OutputFormat.JAVA_JUNIT_5
         println("TestJson Raw: $testJson")
-        println("TestJson Kotlin: ${GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatKotlin)}")
-        println("TestJson Java: ${GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatJava5)}")
+        println("TestJson Kotlin: ${testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin)}")
+        println("TestJson Java: ${testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin)}")
 
-        assertTrue(GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatKotlin).contains("\\"))
-        assertTrue(GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatJava5).contains("\\"))
+        //assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\\"))
+        //assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\\"))
 
-        assertTrue(GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatKotlin).contains("\""))
-        assertTrue(GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatKotlin).contains("\$"))
+        assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\""))
+        assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\$"))
 
-        assertFalse(GeneUtils.applyEscapes(testJson, mode = EscapeMode.JSON, format = formatKotlin).contains("\\u"))
+        assertFalse(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\\u"))
 
         //escaped JSON does not trigger formatter problems?
-        //OutputFormatter.JSON_FORMATTER.getFormatted(GeneUtils.applyEscapes(testJson, "json", formatKotlin))
-        //OutputFormatter.JSON_FORMATTER.getFormatted(GeneUtils.applyEscapes(testJson, "json", formatJava5))
+
+
+        OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatJava5))
+
     }
 }

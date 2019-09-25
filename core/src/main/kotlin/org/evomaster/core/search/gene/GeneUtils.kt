@@ -14,6 +14,17 @@ object GeneUtils {
     private val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
 
     enum class EscapeMode {
+        /**
+         * The [EscapeMode] enum is here to clarify the supported types of Escape modes.
+         *
+         * Different purposes require different modes of escape (e.g. URI may require percent encoding). This is to
+         * keep track of what modes are supported and how they map to the respective implementations.
+         *
+         * Any mode that is not supported will go under NONE, and will result in no escapes being applied at all. The
+         * purpose is to ensure that, even if the mode being used is unsupported, the system will not throw an exception.
+         * It may not behave as desired, but it should not crash.
+         *
+         */
         URI,
         SQL,
         ASSERTION,
@@ -147,37 +158,39 @@ object GeneUtils {
 
      */
 
-    fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5): String{
+    fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat): String{
         val ret = when (mode){
             EscapeMode.URI -> applyUriEscapes(string, format)
             EscapeMode.SQL -> applySqlEscapes(string, format)
             EscapeMode.ASSERTION -> applyAssertionEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            else -> string
+            EscapeMode.NONE -> string
         }
         //if(forQueries) return applyQueryEscapes(string, format)
         //else return applyAssertionEscapes(string, format)
         return ret
     }
 
-    fun applyJsonEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = string.replace("\\", """\\""")
+    fun applyJsonEscapes(string: String, format: OutputFormat):String{
+        val ret = string
+                .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        when{
-            format.isKotlin() -> return ret.replace("\$", "\\\$")
-            //ret.replace("\$", "\${\'\$\'}")
-            else -> return ret
+        return ret
+        /*if(format.isKotlin()){
+            return ret//.replace("\$", "\$")
         }
+        else return ret
 
+         */
     }
 
-    fun applyUriEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+    fun applyUriEscapes(string: String, format: OutputFormat):String{
         val ret = string.replace("\\", "%5C")
                 .replace("\"", "%22")
                 .replace("\n", "%0A")
@@ -186,7 +199,7 @@ object GeneUtils {
         else return ret
     }
 
-    fun applyTextEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+    fun applyTextEscapes(string: String, format: OutputFormat):String{
         val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -201,7 +214,7 @@ object GeneUtils {
 
     }
 
-    fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+    fun applyAssertionEscapes(string: String, format: OutputFormat): String {
         var ret = ""
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
         ret = string.split("@")[0] //first split off any reference that might differ between runs
@@ -219,26 +232,14 @@ object GeneUtils {
         else return ret
     }
 
-    fun applySqlEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+    fun applySqlEscapes(string: String, format: OutputFormat): String {
         val ret =  string.replace("\\", """\\""")
                 .replace("\"", "\\\\\"")
 
         if (format.isKotlin())  return ret.replace("\$", "\\\$")
-                //.replace("\$", "${'\$'}")
+                //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
-
-    fun getMode(mode: String?): EscapeMode{
-        when(mode){
-            "uri" -> return EscapeMode.URI
-            "sql" -> return EscapeMode.SQL
-            "assertion" -> return EscapeMode.ASSERTION
-            "json" -> return EscapeMode.JSON
-            "text" -> return EscapeMode.TEXT
-            else -> return EscapeMode.NONE
-        }
-    }
-
 }
 

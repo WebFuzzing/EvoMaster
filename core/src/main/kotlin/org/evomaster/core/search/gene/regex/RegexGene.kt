@@ -45,9 +45,9 @@ class RegexGene(
             else -> return "\"$rawValue\""
                     .replace("\\", "\\\\")
              */
-            (targetFormat == null) -> return "\"${GeneUtils.applyEscapes(rawValue)}\""
+            (targetFormat == null) -> return "\"${rawValue}\""
             //"\"${rawValue.replace("\"", "\\\"")}\""
-            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.getMode(mode), targetFormat)}\""
+            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.valueOf(mode.toUpperCase()), targetFormat)}\""
             else -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.TEXT ,targetFormat)}\""
         }
     }

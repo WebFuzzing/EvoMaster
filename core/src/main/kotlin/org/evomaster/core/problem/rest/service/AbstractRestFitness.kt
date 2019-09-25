@@ -299,7 +299,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         or at least check how RestAssured would behave
                      */
                     //it.replace("\"", "")
-                    GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI)
+                    GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
                 }
 
         /*

@@ -24,7 +24,7 @@ class TestSuiteOrganizer {
     private val sortingHelper = SortingHelper()
     private val namingHelper = NamingHelper()
 
-    private val defaultSorting = listOf(0, 1)
+    private val defaultSorting = listOf(0, 1, 2)
 
     fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
         sortingHelper.selectCriteriaByIndex(defaultSorting)
@@ -170,7 +170,9 @@ class SortingHelper {
      */
 
     var comparatorList = listOf(statusCode, coveredTargets)
-    private val availableSortCriteria = listOf(statusCode, minActions, maxStatusCode, maxActions, dbInitSize, coveredTargets)
+    private val availableSortCriteria = listOf(statusCode, minActions, coveredTargets, maxStatusCode, maxActions, dbInitSize)
+
+
 
     fun getAvailableCriteria(): List<Comparator<EvaluatedIndividual<*>>> {
         return availableSortCriteria
