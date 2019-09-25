@@ -7,11 +7,11 @@ import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlAutoIncrementGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlTimestampGene
-import org.junit.jupiter.api.*
 import org.junit.jupiter.api.Assertions.*
-import java.lang.IllegalArgumentException
-import java.lang.RuntimeException
+import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertAll
 import java.sql.Connection
 import java.sql.DriverManager
 
@@ -184,7 +184,7 @@ class SqlInsertBuilderTest {
 
         val genes = actions[0].seeGenes()
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is SqlTimestampGene)
+        assertTrue(genes[0] is DateTimeGene)
     }
 
     @Test
@@ -281,7 +281,7 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
 
         assertEquals(1, genes.size)
-        assertTrue(genes[0] is SqlTimestampGene)
+        assertTrue(genes[0] is DateTimeGene)
     }
 
     @Test

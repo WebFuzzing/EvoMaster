@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.database.DbActionGeneBuilder
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType.*
 import org.evomaster.core.database.schema.ForeignKey
@@ -465,7 +466,7 @@ class TestCaseWriterTest {
 
         val id = 0L
 
-        val gene = SqlTimestampGene(aColumn.name)
+        val gene = DbActionGeneBuilder().buildSqlTimestampGene(aColumn.name)
 
         val insertIntoTableAction = DbAction(aTable, setOf(aColumn), id, mutableListOf(gene))
 
@@ -568,7 +569,7 @@ class TestCaseWriterTest {
 
         val pkGeneUniqueId = 12345L
 
-        val timeStampGene = SqlTimestampGene(idColumn.name)
+        val timeStampGene = DbActionGeneBuilder().buildSqlTimestampGene(idColumn.name)
         val primaryKeyTable0Gene = SqlPrimaryKeyGene(idColumn.name, "Table0", timeStampGene, pkGeneUniqueId)
         val primaryKeyTable1Gene = SqlPrimaryKeyGene(idColumn.name, "Table1", timeStampGene, 10)
 

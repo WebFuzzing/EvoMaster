@@ -18,11 +18,11 @@ class SqlTimestampGene(
                 hour = IntegerGene("hour", 0, 0, 23),
                 minute = IntegerGene("minute", 0, 0, 59),
                 second = IntegerGene("second", 0, 0, 59),
-                withMsZ = false)
+                timeGeneFormat = TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT)
 ) : DateTimeGene(name, date, time) {
 
     init {
-        require(!time.withMsZ) { "Must not have MsZ in SQL Timestamps" }
+        require(time.timeGeneFormat==TimeGene.TimeGeneFormat.ISO_LOCAL_DATE_FORMAT) { "Must not have MsZ in SQL Timestamps" }
     }
 
     override fun copy(): Gene = SqlTimestampGene(

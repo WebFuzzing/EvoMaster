@@ -3,9 +3,10 @@ package org.evomaster.core.database
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.Table
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.ImmutableDataHolderGene
+import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
-import org.evomaster.core.search.gene.sql.SqlTimestampGene
 
 /**
  *  An action executed on the database.
@@ -41,7 +42,7 @@ class DbAction(
             }
 
             for (pk in computedGenes) {
-                if(!((pk is SqlPrimaryKeyGene && pk.gene is ImmutableDataHolderGene) || pk is ImmutableDataHolderGene)) {
+                if (!((pk is SqlPrimaryKeyGene && pk.gene is ImmutableDataHolderGene) || pk is ImmutableDataHolderGene)) {
                     throw IllegalArgumentException("Invalid gene: ${pk.name}")
                 }
             }
@@ -70,7 +71,7 @@ class DbAction(
             based on the column name
          */
         if (column.name.contains("time", ignoreCase = true)) {
-            return SqlTimestampGene(column.name)
+            return DbActionGeneBuilder().buildSqlTimestampGene(column.name)
         } else {
             //go for a default string
             return StringGene(name = column.name, minLength = 0, maxLength = column.size)
