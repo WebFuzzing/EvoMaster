@@ -18,6 +18,10 @@ class DisjunctionListRxGene(
         return copy
     }
 
+    override fun isMutable(): Boolean {
+        return disjunctions.size > 1 || disjunctions.any { it.isMutable() }
+    }
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         /*

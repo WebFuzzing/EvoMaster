@@ -48,6 +48,10 @@ class DisjunctionRxGene(
         }
     }
 
+    override fun isMutable(): Boolean {
+        return !matchStart || !matchEnd || terms.any { it.isMutable() }
+    }
+
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         if(!matchStart && randomness.nextBoolean(0.05)){
             extraPrefix = ! extraPrefix

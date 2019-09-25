@@ -59,6 +59,8 @@ class QuantifierRxGene(
         return copy
     }
 
+
+
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
         val length = randomness.nextInt(min, limitedMax)
@@ -73,6 +75,10 @@ class QuantifierRxGene(
         for (i in 0 until length) {
            addNewAtom(randomness, forceNewValue, allGenes)
         }
+    }
+
+    override fun isMutable(): Boolean {
+        return min != limitedMax || atoms.any { it.isMutable() }
     }
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {

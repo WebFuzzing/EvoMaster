@@ -20,6 +20,9 @@ class CharacterRangeRxGene(
         }
     }
 
+    override fun isMutable(): Boolean {
+        return ranges.size > 1 || ranges[0].let { it.first != it.second }
+    }
 
     override fun copy(): Gene {
         val copy = CharacterRangeRxGene(negated, ranges)
