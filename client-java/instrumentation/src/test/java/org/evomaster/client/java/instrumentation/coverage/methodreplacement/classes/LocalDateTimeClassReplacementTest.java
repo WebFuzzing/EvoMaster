@@ -51,9 +51,6 @@ public class LocalDateTimeClassReplacementTest {
 
     @Test
     public void testParseNearlyCorrect() {
-
-        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
-
         /*
             recall ASCII:
             '-' -> 45
@@ -73,7 +70,6 @@ public class LocalDateTimeClassReplacementTest {
         assertEquals(h1, h2);
         assertTrue(h3 < h1);
         assertTrue(h4 < h1);
-        assertTrue(h4 < h3);
     }
 
     @Test
