@@ -171,7 +171,7 @@ class GeneRegexJavaVisitor : RegexJavaBaseVisitor<VisitResult>(){
             val block = ctx.patternCharacter().map { it.text }
                     .joinToString("")
 
-            val gene = PatternCharacterBlock(block, block)
+            val gene = PatternCharacterBlock("block", block)
 
             return VisitResult(gene)
         }
