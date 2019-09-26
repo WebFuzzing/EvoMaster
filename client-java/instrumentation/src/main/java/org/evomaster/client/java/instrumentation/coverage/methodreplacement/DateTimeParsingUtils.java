@@ -10,8 +10,13 @@ import java.util.Objects;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
 
+/**
+ * Utilities for returning heuristic values of how close a given string is to being
+ * successfully parsed. The heuristic value is a number in [0,1] where:
+ * 1 states for a successfully parsed input, while 0 states for the lowest score
+ * for the input to being parsed.
+ */
 public class DateTimeParsingUtils {
-
 
     private static final String ISO_LOCAL_TIME_PATTERN = "HH:MM:SS";
 
@@ -33,21 +38,21 @@ public class DateTimeParsingUtils {
      * @param input
      * @return
      */
-    private static double getDistanceToLocalTimeWithoutSeconds(CharSequence input) {
+    private static double getHeuristicToLocalTimeWithoutSecondsParsing(CharSequence input) {
         Objects.requireNonNull(input);
 
-        return getDistanceToLocalTimeWithSeconds(input + ":00");
+        return getHeuristicToLocalTimeWithSecondsParsing(input + ":00");
     }
 
     /**
      * returns how close the input was to HH:MM:SS. If the input
-     * fails to parse, then the distance only considers hours in the range
+     * fails to parse, then the heuristic only considers hours in the range
      * 00 to 19.
      *
      * @param input
      * @return
      */
-    private static double getDistanceToLocalTimeWithSeconds(CharSequence input) {
+    private static double getHeuristicToLocalTimeWithSecondsParsing(CharSequence input) {
         Objects.requireNonNull(input);
 
         try {
@@ -57,17 +62,18 @@ public class DateTimeParsingUtils {
                 if no exception is thrown
              */
             LocalTime.parse(input);
-            return H_PARSED_OK;
+            return 1d - H_PARSED_OK;
         } catch (DateTimeParseException ex) {
-            return getApproximateDistanceToLocalTimeWithSeconds(input);
+            return getHeuristicToLocalTimeWithSeconds(input);
 
         }
 
     }
 
     /**
-     * Returns the approximate (i.e. simplified) distance of a string
+     * Returns the approximate (i.e. simplified) heuristic value for a string
      * to the format HH:MM:SS.
+     *
      * For simplification, only the range of hours between 00 and 19
      * are considered.
      *
@@ -75,7 +81,7 @@ public class DateTimeParsingUtils {
      *              the HH:MM:SS format
      * @return
      */
-    private static double getApproximateDistanceToLocalTimeWithSeconds(CharSequence input) {
+    private static double getHeuristicToLocalTimeWithSeconds(CharSequence input) {
         Objects.requireNonNull(input);
 
         final double base = H_NOT_NULL;
@@ -107,7 +113,9 @@ public class DateTimeParsingUtils {
         }
 
         //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+
+        final double h = base + ((1d - base) / (distance + 1));
+        return h;
     }
 
     /**
@@ -116,15 +124,15 @@ public class DateTimeParsingUtils {
      * @param input
      * @return
      */
-    public static double getDistanceToISOLocalDateTime(CharSequence input) {
+    public static double getHeuristicToISOLocalDateTimeParsing(CharSequence input) {
         if (input == null) {
             return H_REACHED_BUT_NULL;
         }
         try {
             LocalDateTime.parse(input);
-            return H_PARSED_OK;
+            return 1d - H_PARSED_OK;
         } catch (DateTimeParseException ex) {
-            return getApproximateDistanceToISOLocalDateTime(input);
+            return getHeuristicToISOLocalDateTime(input);
         }
     }
 
@@ -139,7 +147,7 @@ public class DateTimeParsingUtils {
      *              the YYYY-MM-DDTHH:MM format
      * @return
      */
-    private static double getApproximateDistanceToISOLocalDateTime(CharSequence input) {
+    private static double getHeuristicToISOLocalDateTime(CharSequence input) {
         Objects.requireNonNull(input);
 
         final double base = H_NOT_NULL;
@@ -189,7 +197,8 @@ public class DateTimeParsingUtils {
         }
 
         //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+        final double h = base + ((1d - base) / (distance + 1));
+        return h;
     }
 
     /**
@@ -200,23 +209,28 @@ public class DateTimeParsingUtils {
      * @param input
      * @return
      */
-    public static double getDistanceToISOLocalTime(CharSequence input) {
+    public static double getHeuristicToISOLocalTimeParsing(CharSequence input) {
         if (input == null) {
             return H_REACHED_BUT_NULL;
         }
 
-        return Math.min(
-                getDistanceToLocalTimeWithoutSeconds(input),
-                getDistanceToLocalTimeWithSeconds(input));
+        /*
+         * returns the highest value (i.e. closer) to actually
+         * satisfy the parsing with or without seconds
+         */
+        return Math.max(
+                getHeuristicToLocalTimeWithoutSecondsParsing(input),
+                getHeuristicToLocalTimeWithSecondsParsing(input));
     }
 
     /**
-     * returns a distance that represents how close is the value to the format YYYY-MM-DD
+     * returns the heuristic value in [0,1] that
+     * represents how close is the value to the format YYYY-MM-DD
      *
      * @param input
      * @return
      */
-    public static double getDistanceToISOLocalDate(CharSequence input) {
+    public static double getHeuristicToISOLocalDateParsing(CharSequence input) {
         if (input == null) {
             return H_REACHED_BUT_NULL;
         }
@@ -229,18 +243,23 @@ public class DateTimeParsingUtils {
             LocalDate.parse(input);
             return H_PARSED_OK;
         } catch (DateTimeParseException e) {
-            return getApproximateDistanceToISOLocalDate(input);
+            return getHeuristicToISOLocalDate(input);
         }
     }
 
     /**
-     * Distance for successfully parsed input
+     * Heuristic value for successfully parsed input
      */
-    private static final double H_PARSED_OK = 0d;
+    private static final double H_PARSED_OK = 1d;
+
+    /**
+     * Heuristic value for successfully parsed input
+     */
+    private static final double H_NOT_SUPPORTED = 0d;
 
 
     /**
-     * Returns the approximate (i.e. simplified) distance of a string
+     * Returns the approximate (i.e. simplified) heuristic value of a string
      * to the format YYYY-MM-DD.
      * For simplification, only the range of days between 01 and 28,
      * and months between 01 and 09.
@@ -249,7 +268,7 @@ public class DateTimeParsingUtils {
      *              the YYYY-MM-DD format
      * @return
      */
-    private static double getApproximateDistanceToISOLocalDate(CharSequence input) {
+    private static double getHeuristicToISOLocalDate(CharSequence input) {
         Objects.requireNonNull(input);
 
         //nothing to do
@@ -298,7 +317,7 @@ public class DateTimeParsingUtils {
      * @param input
      * @return
      */
-    public static double getDistanceToDateTime(CharSequence input) {
+    public static double getHeuristicToDateTimeParsing(CharSequence input) {
         if (input == null) {
             return H_REACHED_BUT_NULL;
         }
@@ -310,14 +329,15 @@ public class DateTimeParsingUtils {
             new SimpleDateFormat(DATE_TIME_NO_SECONDS_FORMAT).parse(input.toString());
             return H_PARSED_OK;
         } catch (ParseException e) {
-            return getApproximateDistanceToDateTime(input);
+            return getHeuristicToDateTime(input);
         }
 
     }
 
     /**
-     * Returns the approximate (i.e. simplified) distance of a string
+     * Returns the approximate (i.e. simplified) heuristic value for a string
      * to the format YYYY-MM-DD HH:MM.
+     *
      * For simplification, only the range of days between 01 and 28,
      * and months between 01 and 09, and hours between 00 and 19.
      *
@@ -325,7 +345,7 @@ public class DateTimeParsingUtils {
      *              the YYYY-MM-DD HH:MM format
      * @return
      */
-    private static double getApproximateDistanceToDateTime(CharSequence input) {
+    private static double getHeuristicToDateTime(CharSequence input) {
         Objects.requireNonNull(input);
 
         final double base = H_NOT_NULL;
@@ -379,10 +399,11 @@ public class DateTimeParsingUtils {
         }
 
         //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+        final double h = base + ((1d - base) / (distance + 1));
+        return h;
     }
 
-    public static double getDistanceToDateTimePattern(String input, String dateFormatPattern) {
+    public static double getHeuristicToDateTimePatternParsing(String input, String dateFormatPattern) {
         if (input == null) {
             return H_REACHED_BUT_NULL;
         }
@@ -397,7 +418,7 @@ public class DateTimeParsingUtils {
         } catch (ParseException e) {
             // TODO translate dateFormatPattern to Java regular expression
             // TODO use distance to Java Regular Expression as an approximate gradient to satisfy the pattern
-            return 1d;
+            return H_NOT_SUPPORTED;
         }
     }
 }

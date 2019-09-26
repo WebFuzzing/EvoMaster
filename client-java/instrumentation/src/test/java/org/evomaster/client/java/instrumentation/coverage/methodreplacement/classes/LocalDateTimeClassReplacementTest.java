@@ -35,10 +35,10 @@ public class LocalDateTimeClassReplacementTest {
     @Test
     public void testParseTooShortLong() {
 
-        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1");
-        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-");
-        double ok = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-11T00:00:00");
-        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-111");
+        double h0 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1");
+        double h1 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234-01-");
+        double ok = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234-01-11T00:00:00");
+        double h3 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234-01-111");
 
         assertEquals(1d, ok);
         assertTrue(h0 < h1);
@@ -59,11 +59,11 @@ public class LocalDateTimeClassReplacementTest {
             'a' -> 97
          */
 
-        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("a234-01-11T00:00:00");
-        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234a01-11T00:00:00");
-        double h2 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01a11T00:00:00");
-        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234-01-a˜˜taT00:00:00");
-        double h4 = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1234a01a11T00:00:00");
+        double h0 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("a234-01-11T00:00:00");
+        double h1 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234a01-11T00:00:00");
+        double h2 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234-01a11T00:00:00");
+        double h3 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234-01-a˜˜taT00:00:00");
+        double h4 = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1234a01a11T00:00:00");
 
         assertTrue(h1 < h0);
         assertTrue(h2 < h0);

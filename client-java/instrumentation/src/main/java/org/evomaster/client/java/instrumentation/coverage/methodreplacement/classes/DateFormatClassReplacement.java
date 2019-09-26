@@ -56,13 +56,13 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
             final double h;
             switch (pattern) {
                 case YYYY_MM_DD:
-                    h = DateTimeParsingUtils.getDistanceToISOLocalDate(input);
+                    h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(input);
                     break;
                 case YYYY_MM_DD_HH_SS:
-                    h = DateTimeParsingUtils.getDistanceToDateTime(input);
+                    h = DateTimeParsingUtils.getHeuristicToDateTimeParsing(input);
                     break;
                 default:
-                    h = DateTimeParsingUtils.getDistanceToDateTimePattern(input, pattern);
+                    h = DateTimeParsingUtils.getHeuristicToDateTimePatternParsing(input, pattern);
             }
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;

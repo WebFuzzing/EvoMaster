@@ -16,8 +16,8 @@ public class DateTimeParsingUtilsTest {
     @Test
     public void testSuccessfulParsingInputOfISOLocalDate() {
         LocalDate localDate = LocalDate.of(1978,7,31);
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDate(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(localDate.format(DateTimeFormatter.ISO_LOCAL_DATE));
+        assertEquals(1d,h);
     }
     @Test
     public void testSuccessfulParsingInput() {
@@ -25,13 +25,13 @@ public class DateTimeParsingUtilsTest {
         LocalTime localTime = LocalTime.of(23,59,59);
         LocalDateTime localDateTime = LocalDateTime.of(localDate,localTime);
         String input = localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDateTime(input);
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing(input);
+        assertEquals(1d,h);
     }
 
     @Test
     public void testUnsuccessfulParsingInput() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1978-__-__T13:45");
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1978-__-__T13:45");
         assertTrue(h>0);
         assertTrue(h<1);
     }
@@ -40,8 +40,8 @@ public class DateTimeParsingUtilsTest {
     public void testSuccessfulLocalDateParsing() {
         LocalDate localDate = LocalDate.of(1978,12,31);
         String input = localDate.format(DateTimeFormatter.ISO_LOCAL_DATE);
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDate(input);
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(input);
+        assertEquals(1d,h);
     }
 
     @Test
@@ -50,38 +50,38 @@ public class DateTimeParsingUtilsTest {
         String input = localTime.format(DateTimeFormatter.ISO_LOCAL_TIME);
         LocalTime.parse(input,DateTimeFormatter.ISO_LOCAL_TIME);
         LocalTime.parse(input);
-        double h = DateTimeParsingUtils.getDistanceToISOLocalTime(input);
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalTimeParsing(input);
+        assertEquals(1d,h);
     }
 
     @Test
     public void testDistanceToISOLocalDateTimeToNull() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDateTime(null);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing(null);
         assertEquals(H_REACHED_BUT_NULL, h);
     }
 
     @Test
     public void testDistanceToISOLocalDateToNull() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDate(null);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(null);
         assertEquals(H_REACHED_BUT_NULL, h);
     }
 
     @Test
     public void testDistanceToISOLocalTimeToNull() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalTime(null);
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalTimeParsing(null);
         assertEquals(H_REACHED_BUT_NULL, h);
     }
 
     @Test
     public void testUnsuccessfulParsingInputTooSmall() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1978-__-__");
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1978-__-__");
         assertTrue(h>0);
         assertTrue(h<1);
     }
 
     @Test
     public void testDistanceToISOLocalDateToInvalid() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDate("Hello World");
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("Hello World");
         assertTrue(h>0);
         assertTrue(h<1);
     }
@@ -89,33 +89,33 @@ public class DateTimeParsingUtilsTest {
 
     @Test
     public void testDistanceToDateTimeToInvalid() {
-        double h = DateTimeParsingUtils.getDistanceToDateTime("Hello World");
+        double h = DateTimeParsingUtils.getHeuristicToDateTimeParsing("Hello World");
         assertTrue(h>0);
         assertTrue(h<1);
     }
 
     @Test
     public void testDistanceToDateTimeToNull() {
-        double h = DateTimeParsingUtils.getDistanceToDateTime(null);
+        double h = DateTimeParsingUtils.getHeuristicToDateTimeParsing(null);
         assertEquals(H_REACHED_BUT_NULL, h);
     }
 
 
     @Test
     public void testDistanceToDateTimeToValid() {
-        double h = DateTimeParsingUtils.getDistanceToDateTime("1978-07-31 11:23");
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToDateTimeParsing("1978-07-31 11:23");
+        assertEquals(1d,h);
     }
 
     @Test
     public void testDistanceToDateTimeToToValidPrefix() {
-        double h = DateTimeParsingUtils.getDistanceToDateTime("1978-07-31 11:23TTTTT");
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToDateTimeParsing("1978-07-31 11:23TTTTT");
+        assertEquals(1d,h);
     }
 
     @Test
     public void testDistanceToDateTimeToTooLongInvalid() {
-        double h = DateTimeParsingUtils.getDistanceToDateTime("1978-07-31 11:______________");
+        double h = DateTimeParsingUtils.getHeuristicToDateTimeParsing("1978-07-31 11:______________");
         assertTrue(h>0);
         assertTrue(h<1);
     }
@@ -124,34 +124,34 @@ public class DateTimeParsingUtilsTest {
     public void testDistanceToDateTimeToOtherPatterns() {
         String input = "19780731";
         String pattern = "YYYYMMDD";
-        double h = DateTimeParsingUtils.getDistanceToDateTimePattern(input , pattern);
-        assertEquals(0,h);
+        double h = DateTimeParsingUtils.getHeuristicToDateTimePatternParsing(input , pattern);
+        assertEquals(1d,h);
     }
 
     @Test
     public void testDistanceToDateTimeToOtherPatternsWithNullInput() {
         String pattern = "YYYYMMDD";
-        double h = DateTimeParsingUtils.getDistanceToDateTimePattern(null , pattern);
+        double h = DateTimeParsingUtils.getHeuristicToDateTimePatternParsing(null , pattern);
         assertEquals(H_REACHED_BUT_NULL, h);
     }
 
     @Test
     public void testDistanceToISOLocalDateIsTooShort() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDate("1978-07");
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1978-07");
         assertTrue(h>0);
         assertTrue(h<1);
     }
 
     @Test
     public void testDistanceToISOLocalDateTimeIsTooLong() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalDateTime("1978-07-31T__:__:_________");
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing("1978-07-31T__:__:_________");
         assertTrue(h>0);
         assertTrue(h<1);
     }
 
     @Test
     public void testDistanceToISOLocalTimeIsTooShort() {
-        double h = DateTimeParsingUtils.getDistanceToISOLocalTime("");
+        double h = DateTimeParsingUtils.getHeuristicToISOLocalTimeParsing("");
         assertTrue(h>0);
         assertTrue(h<1);
     }
