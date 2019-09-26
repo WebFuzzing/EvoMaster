@@ -30,6 +30,8 @@ class RestStructureMutator : StructureMutator() {
                 ?: throw IllegalArgumentException("Invalid individual type")
 
         val fw = individual.fitness.getViewOfAggregatedFailedWhere()
+                //TODO likely to remove/change once we ll support VIEWs
+                .filter { sampler.canInsertInto(it.key) }
 
         if (fw.isEmpty()) {
             return
