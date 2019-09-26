@@ -117,8 +117,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for (gene in selectGeneToMutate){
             mutatedGene?.mutatedGenes?.add(gene)
+            mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
 
-            if (gene is StringGene && config.probOfArchiveMutation > 0.0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE){
+            if (config.probOfArchiveMutation > 0.0 && archiveMutator.doesSupport(gene)){
                 gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, null, ImpactUtils.generateGeneId(copy, gene), archiveMutator, individual)
             }else
                 gene.standardMutation(randomness, apc, allGenes)

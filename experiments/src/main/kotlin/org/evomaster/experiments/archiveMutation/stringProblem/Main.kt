@@ -40,13 +40,13 @@ class Main {
         private val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
         private val adaptiveGeneSelections = EMConfig.AdaptiveSelection.values().toList().sorted()
         private val archiveGeneMutation = EMConfig.ArchiveGeneMutation.values().toList().sorted()
-        private val probOfArchiveMutations = listOf(0.5, 1.0)
+        private val probOfArchiveMutations = listOf(0.25, 0.5, 0.75, 1.0)
         private val focusSearch = arrayOf(false)
         private val problems = ArchiveProblemType.values().toList()
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced/"
+            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced3/"
             default(arrayOf(folder))
 //            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced/"
 //            allSetting(folder,
@@ -97,6 +97,7 @@ class Main {
             targets.forEach { n->
                 budgets.forEach { budget->
                     problems.forEach { pt->
+                        Files.write(path, "--------${pt.name}-------${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
                         configs.forEach { config->
                             var total = 0
                             (0 until runs).forEach { i ->

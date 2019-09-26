@@ -12,6 +12,8 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class StringGene(
@@ -51,7 +53,7 @@ class StringGene(
 
         private const val NEVER_ARCHIVE_MUTATION = -2
         private const val CHAR_MUTATION_INITIALIZED = -1
-
+        private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
     }
 
     /*
@@ -73,7 +75,7 @@ class StringGene(
     /**
      * degree of dependency of this [gene]
      */
-    var degreeOfIndependency = ArchiveMutator.WITHIN_NORMAL
+    var degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL
     private set
 
     var mutatedtimes = 0
@@ -86,16 +88,15 @@ class StringGene(
         mutatedIndex = CHAR_MUTATION_INITIALIZED
     }
 
-
     override fun copy(): Gene {
         return StringGene(name, value, minLength, maxLength, invalidChars, specializations, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy())
                 .also {
                     it.specializationGene = this.specializationGene?.copy()
                     it.validChar = this.validChar
-                    it.mutatedIndex = mutatedIndex
-                    it.degreeOfIndependency = degreeOfIndependency
-                    it.mutatedtimes = mutatedtimes
-                    it.resetTimes = resetTimes
+                    it.mutatedIndex = this.mutatedIndex
+                    it.degreeOfIndependence = this.degreeOfIndependence
+                    it.mutatedtimes = this.mutatedtimes
+                    it.resetTimes = this.resetTimes
                 }
     }
 
@@ -309,6 +310,12 @@ class StringGene(
         }
         mutatedtimes += 1
         archiveMutator.mutate(this)
+        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+            log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
+        }
+        if (charsMutation.size != value.length){
+            log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
+        }
     }
 
     override fun reachOptimal() : Boolean{
@@ -321,6 +328,13 @@ class StringGene(
 
         if (this != mutated){
             mutatedtimes += 1
+            if (this.mutatedIndex == -2){
+                initCharMutation()
+            }
+            this.mutatedIndex = mutated.mutatedIndex
+        }
+        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+            log.warn("archiveMutationUpdate: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
         }
 
         val previous = original.value
@@ -329,21 +343,14 @@ class StringGene(
         if (previous.length != current.length){
             if (this != mutated){
                 this.lengthMutation.reached = mutated.lengthMutation.reached
-                this.mutatedIndex = mutated.mutatedIndex
             }
             lengthUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
         }else{
-            if (mutatedIndex < 0){
-                initCharMutation()
-            }
-            if (this != mutated)
-                mutatedIndex = mutated.mutatedIndex
-
             charUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
         }
     }
     private fun charUpdate(previous:String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        val charUpdate = if (archiveMutator.relaxIndexStringGeneMutation()) charsMutation[mutatedIndex] else charsMutation.first()
+        val charUpdate = charsMutation[mutatedIndex]
         if (this != mutated){
             charUpdate.reached =
                 mutated.charsMutation[mutatedIndex] .reached
@@ -366,7 +373,7 @@ class StringGene(
             charUpdate.preferMin = Char.MIN_VALUE.toInt()
             charUpdate.reached = false
             resetTimes+=1
-            if(resetTimes >=2) degreeOfIndependency = 0.8
+            if(resetTimes >=2) degreeOfIndependence = 0.8
             return
         }
         charUpdate.updateBoundary(pchar, cchar,doesCurrentBetter)
@@ -411,7 +418,7 @@ class StringGene(
             lengthMutation.preferMax = maxLength
             lengthMutation.reached = false
             resetTimes +=1
-            if(resetTimes >=2) degreeOfIndependency = 0.8
+            if(resetTimes >=2) degreeOfIndependence = 0.8
             return
         }
         lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)

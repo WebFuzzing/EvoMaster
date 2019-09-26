@@ -110,6 +110,9 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
     }
 
+    /**
+     * @param geneImpact null is only allowed when the gene is root.
+     */
     override fun archiveMutation(
             randomness: Randomness,
             allGenes: List<Gene>,
@@ -120,18 +123,15 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>) {
 
-        val impact = geneImpact?: evi.getImpactOfGenes()[ImpactUtils.generateGeneId(evi.individual, this)] ?: throw IllegalStateException("cannot find this gene in the individual")
+        val impact = geneImpact
+                ?:evi.getImpactOfGenes()[geneReference]
+            ?: throw IllegalStateException("cannot find this gene in the individual")
 
         assert(impact is ObjectGeneImpact)
 
         val genes = fields.map { Pair(it, (impact as ObjectGeneImpact).fields.getValue(it.name)) }
+
         val methodSelection = archiveMutator.decideGeneSelectionMethod(genes)
-
-        if (methodSelection == ImpactMutationSelection.NONE){
-            standardMutation(randomness, apc)
-            return
-        }
-
 
         val percentage = 1.0/fields.size //prefer selecting one
 
@@ -142,16 +142,21 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             ImpactMutationSelection.APPROACH_GOOD -> ImpactUtils.selectApproachGood(genes, percentage)
             ImpactMutationSelection.AWAY_BAD -> ImpactUtils.selectGenesAwayBad(genes, percentage)
             ImpactMutationSelection.FEED_BACK -> ImpactUtils.selectFeedback(genes, percentage)
-            else -> throw IllegalStateException("should not happen")
+            else -> fields
         }
         assert(selects.isNotEmpty())
 
         val selected = randomness.choose(selects)
         val selectedImpact = (impact as ObjectGeneImpact).fields.getValue(selected.name)
-        if (archiveMutator.doesSupport(selected))
-            selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
-        else
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (archiveMutator.doesSupport(selected))
+                selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+            else
+                selected.standardMutation(randomness, apc, allGenes)
+        }else{
             selected.standardMutation(randomness, apc, allGenes)
+        }
+
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

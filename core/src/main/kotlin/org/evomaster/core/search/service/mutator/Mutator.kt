@@ -138,19 +138,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             TODO, handle StringGene that are inside of root gene
              */
             // gene mutation evaluation
-            if (config.probOfArchiveMutation > 0.0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE){
-                mutatedGenes.mutatedGenes.filter { archiveMutator.doesSupport(it) }.forEach { s->
+            if (archiveMutator.enableArchiveGeneMutation()){
+                mutatedGenes.mutatedGenes.filter { archiveMutator.doesSupport(it) }.forEachIndexed { index, s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
                     val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
-                    val previousValue = (trackedCurrent.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
+                    val previousValue = (trackedCurrent.findGeneById(id, mutatedGenes.mutatedPosition[index]) ?: throw IllegalStateException("mismatched genes"))
                     savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
-                    //(savedGene as StringGene).validateMutationUpdate(archiveMutator)
                 }
             }
-
-//            current.individual.seeGenes().filterIsInstance<StringGene>().forEach {
-//                it.validateMutationUpdate(archiveMutator)
-//            }
         }
         return current
     }

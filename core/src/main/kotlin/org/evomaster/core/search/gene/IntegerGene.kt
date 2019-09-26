@@ -112,28 +112,7 @@ class IntegerGene(
             evi: EvaluatedIndividual<*>
     ) {
 
-//        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? IntegerGene ?: throw IllegalStateException("latest gene should be IntegerGene")
-//        value += (value - latest.value)
-//
-//        value = when {
-//            value > max -> max
-//            value < min -> min
-//            else -> value
-//        }
-        archiveMutator.mutate(this)
-    }
-
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        original as? IntegerGene ?:throw IllegalStateException("$original should be IntegerGene")
-        mutated as? IntegerGene ?:throw IllegalStateException("$mutated should be IntegerGene")
-
-        throw IllegalStateException("should not be invoked")
-//        if (this != mutated){
-//            valueMutation.reached = mutated.valueMutation.reached
-//        }
-//        valueMutation.updateBoundary(original.value, mutated.value, doesCurrentBetter)
-//        if (valueMutation.preferMin == valueMutation.preferMax){
-//            valueMutation.reached = true
-//        }
+        standardMutation(randomness, apc, allGenes)
+        //archiveMutator.mutate(this)
     }
 }

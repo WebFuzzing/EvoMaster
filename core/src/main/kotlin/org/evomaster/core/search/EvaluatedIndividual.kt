@@ -366,8 +366,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     }
 
-    fun findGeneById(id : String) : Gene?{
-        return individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+    fun findGeneById(id : String, index : Int = -1) : Gene?{
+        return if (index == -1) individual.seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+        else {
+            if (index > individual.seeActions().size)
+                throw IllegalArgumentException("index $index is out of boundary of actions ${individual.seeActions().size} of the individual")
+            return individual.seeActions()[index].seeGenes().find { ImpactUtils.generateGeneId(individual, it) == id }
+        }
     }
 
     /**
