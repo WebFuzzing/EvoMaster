@@ -312,6 +312,8 @@ class SqlInsertBuilder(
         return tableConstraints
     }
 
+    fun isTable(tableName: String) = tables[tableName.toUpperCase()] != null || tables[tableName.toLowerCase()] != null
+
     private fun getTable(tableName: String): Table {
         return tables[tableName]
                 ?: tables[tableName.toUpperCase()]

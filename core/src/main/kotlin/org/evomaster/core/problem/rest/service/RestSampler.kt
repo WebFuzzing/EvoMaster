@@ -211,6 +211,12 @@ class RestSampler : Sampler<RestIndividual>(){
     }
 
 
+    fun canInsertInto(tableName: String) : Boolean {
+        //TODO might need to refactor/remove once we deal with VIEWs
+
+        return sqlInsertBuilder?.isTable(tableName) ?: false
+    }
+
     fun sampleSqlInsertion(tableName: String, columns: Set<String>): List<DbAction> {
 
         val actions = sqlInsertBuilder?.createSqlInsertionAction(tableName, columns)
