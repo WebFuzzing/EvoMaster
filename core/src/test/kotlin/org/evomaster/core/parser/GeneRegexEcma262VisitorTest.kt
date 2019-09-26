@@ -277,4 +277,55 @@ open class GeneRegexEcma262VisitorTest : RegexTestTemplate(){
         checkSameAsJava("^(bar)\$|^(foo)\$|^hello|world\$")
     }
 
+    @Test
+    fun testIssueWithE(){
+        checkSameAsJava("(a|A)(b|B)(c|C)123(d|D)(e|E)(f|F)")
+    }
+
+    @Test
+    fun testCanSampleInSimpleDisjunction(){
+        checkCanSample("a|b", listOf("a", "b"), 500)
+    }
+
+    @Test
+    fun testCanSampleIn2Disjunction(){
+        checkCanSample("a|b|c", listOf("a", "b", "c"), 500)
+    }
+
+    @Test
+    fun testCanSamplePair(){
+        checkCanSample("(a|b)(c|d)", listOf("ac", "ad", "bc", "bd"), 500)
+    }
+
+    @Test
+    fun testCanSamplePairIgnoreCase(){
+        checkCanSample("(a|A)(b|B)", listOf("ab", "aB", "Ab", "AB"), 500)
+    }
+
+    @Test
+    fun testCanSampleEQPairIgnoreCase(){
+        checkCanSample("(e|E)(q|Q)", listOf("eq", "eQ", "Eq", "EQ"), 500)
+    }
+
+    @Test
+    fun testCanSampleWhenPrefix(){
+        checkCanSample("x(a|b|c)", listOf("xa", "xb", "xc"), 500)
+    }
+
+    @Test
+    fun testCanSampleSequence(){
+        checkCanSample("x(a|b)123(c|d)y", listOf("xa123cy","xb123cy","xa123dy","xb123dy"), 500)
+    }
+
+    @Test
+    fun testCanSampleSequenceInFullMatch(){
+        checkCanSample("^(x(a|b)123(c|d)y)$", listOf("xa123cy","xb123cy","xa123dy","xb123dy"), 500)
+    }
+
+
+    @Test
+    fun testIssueWithNestedParentheses(){
+        // p = 1 / 2^6 = 1 / 64
+        checkCanSample("^((a|A)(b|B)(c|C)123(e|E)(f|F)(d|D))$", "aBc123EFd", 10_000)
+    }
 }

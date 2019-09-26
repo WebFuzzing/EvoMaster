@@ -11,15 +11,24 @@ class CharacterRangeRxGene(
         val ranges: List<Pair<Char,Char>>
 ) : RxAtom("."){
 
-    var value : Char = ' '
-
     init {
         //TODO this will need to be supported
         if(negated){
             throw IllegalArgumentException("Negated ranges are not supported yet")
         }
+
+        if(ranges.isEmpty()){
+            throw IllegalArgumentException("No defined ranges")
+        }
     }
 
+    var value : Char = ranges[0].first
+
+
+
+    override fun isMutable(): Boolean {
+        return ranges.size > 1 || ranges[0].let { it.first != it.second }
+    }
 
     override fun copy(): Gene {
         val copy = CharacterRangeRxGene(negated, ranges)
