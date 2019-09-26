@@ -61,11 +61,11 @@ open class DateTimeGene(
         }
         return when (dateTimeGeneFormat) {
             DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT -> {
-                "${formattedDate}" + "T" + "${formattedTime}"
+                "${formattedDate}T${formattedTime}"
             }
 
             DateTimeGeneFormat.DEFAULT_DATE_TIME -> {
-                "${formattedDate}" + " " + "${formattedTime}"
+                "${formattedDate} ${formattedTime}"
             }
         }
 

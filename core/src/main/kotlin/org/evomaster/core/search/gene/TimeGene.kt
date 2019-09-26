@@ -96,4 +96,26 @@ class TimeGene(
                 .plus(minute.flatView(excludePredicate))
                 .plus(second.flatView(excludePredicate))
     }
+
+    private fun isValidHourRange(gene: IntegerGene): Boolean {
+        return gene.min == 0 && gene.max == 23
+    }
+
+    private fun isValidMinuteRange(gene: IntegerGene): Boolean {
+        return gene.min == 0 && gene.max == 59
+    }
+
+    private fun isValidSecondRange(gene: IntegerGene): Boolean {
+        return gene.min == 0 && gene.max == 59
+    }
+
+    /**
+     * Queries the time gent to know if it can
+     * store only valid hours (i.e. range 00:00:00 to 23:59:59)
+     */
+    val onlyValidHours: Boolean
+        get() = isValidHourRange(this.hour)
+                && isValidMinuteRange(this.minute)
+                && isValidSecondRange(this.second)
+
 }

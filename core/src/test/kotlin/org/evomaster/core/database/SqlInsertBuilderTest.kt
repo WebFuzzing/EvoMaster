@@ -185,6 +185,11 @@ class SqlInsertBuilderTest {
         val genes = actions[0].seeGenes()
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DateTimeGene)
+
+        val dateTimeGene = genes[0] as DateTimeGene
+        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME, dateTimeGene.dateTimeGeneFormat)
+        assertTrue(dateTimeGene.date.onlyValidDates)
+        assertTrue(dateTimeGene.time.onlyValidHours)
     }
 
     @Test
@@ -265,6 +270,7 @@ class SqlInsertBuilderTest {
     }
 
 
+
     @Test
     fun testTimeStampColumn() {
 
@@ -282,6 +288,11 @@ class SqlInsertBuilderTest {
 
         assertEquals(1, genes.size)
         assertTrue(genes[0] is DateTimeGene)
+
+        val dateTimeGene = genes[0] as DateTimeGene
+        assertEquals(DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME, dateTimeGene.dateTimeGeneFormat)
+        assertTrue(dateTimeGene.date.onlyValidDates)
+        assertTrue(dateTimeGene.time.onlyValidHours)
     }
 
     @Test
@@ -962,7 +973,7 @@ class SqlInsertBuilderTest {
         try {
             builder.createSqlInsertionAction("FOO", setOf("f_id"))
             fail<Object>()
-        } catch (ex: IllegalArgumentException ) {
+        } catch (ex: IllegalArgumentException) {
 
         }
     }
@@ -989,10 +1000,9 @@ class SqlInsertBuilderTest {
 
         val enumGene = actions[0].seeGenes()[0] as EnumGene<*>;
 
-        assertEquals(setOf("hi","low"), enumGene.values.toSet());
+        assertEquals(setOf("hi", "low"), enumGene.values.toSet());
 
     }
-
 
 
 }
