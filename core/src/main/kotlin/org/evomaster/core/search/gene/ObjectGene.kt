@@ -58,7 +58,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
         val buffer = StringBuffer()
 
         //by default, return in JSON format
-        if (mode == null || mode.equals(GeneUtils.EscapeMode.JSON)) {
+        if (mode == null || mode == GeneUtils.EscapeMode.JSON) {
             buffer.append("{")
 
             fields.filter {

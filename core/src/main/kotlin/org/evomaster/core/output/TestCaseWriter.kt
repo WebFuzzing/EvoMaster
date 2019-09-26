@@ -583,17 +583,7 @@ class TestCaseWriter {
                 val bodyLines = body.split("\n").map { s ->
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
-                    "\"" + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.ASSERTION, format = format).replace("\\\\u", "\\u") + "\""
-                    /*
-                     The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
-                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
-                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
-
-                     As far as I understand, the addition of an \ in the \unicode should not really happen.
-                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
-                     they are not.
-                     */
-
+                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
                 }
 
                 if (bodyLines.size == 1) {

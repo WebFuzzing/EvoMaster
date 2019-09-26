@@ -34,6 +34,7 @@ object GeneUtils {
         JSON,
         TEXT,
         XML,
+        BODY,
         NONE
     }
 
@@ -170,6 +171,7 @@ object GeneUtils {
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
             EscapeMode.NONE -> string
+            EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
         //if(forQueries) return applyQueryEscapes(string, format)
@@ -233,9 +235,32 @@ object GeneUtils {
                 .replace("\t", "\\t")
 
         if (format.isKotlin())  return ret.replace("\$", "\\\$")
+        else return ret
+    }
+
+    fun applyBodyEscapes(string: String, format: OutputFormat): String {
+        var ret = string.replace("\\", """\\""")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
+
+        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+                .replace("\\\\u", "\\u")
                 //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
-        else return ret
+        else return ret.replace("\\\\u", "\\u")
+
+        /*
+                   The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
+                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
+                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
+
+                     As far as I understand, the addition of an \ in the \unicode should not really happen.
+                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
+                     they are not.
+                     */
     }
 
     fun applySqlEscapes(string: String, format: OutputFormat): String {

@@ -347,7 +347,7 @@ class StringGene(
         }
 
         val rawValue = getValueAsRawString()
-        if (mode != null && mode.equals(EscapeMode.XML)) {
+        if (mode != null && mode == EscapeMode.XML) {
             return StringEscapeUtils.escapeXml(rawValue)
         } else {
             when {
@@ -355,7 +355,7 @@ class StringGene(
                 (targetFormat == null) -> return "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
                 (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
-                else -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.TEXT ,targetFormat)}\""
+                else -> return "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT ,targetFormat)}\""
             }
 
         }
