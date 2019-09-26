@@ -34,7 +34,7 @@ class RegexGene(
         return disjunctions.getValueAsPrintableString(targetFormat = null)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         val rawValue = getValueAsRawString()
         when {
             // TODO Should refactor since this code block is equivalent to StringGene.getValueAsPrintableString()
@@ -47,7 +47,7 @@ class RegexGene(
              */
             (targetFormat == null) -> return "\"${rawValue}\""
             //"\"${rawValue.replace("\"", "\\\"")}\""
-            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.valueOf(mode.toUpperCase()), targetFormat)}\""
+            (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
             else -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.TEXT ,targetFormat)}\""
         }
     }

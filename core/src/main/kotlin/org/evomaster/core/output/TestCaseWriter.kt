@@ -574,9 +574,9 @@ class TestCaseWriter {
             if (bodyParam.isJson()) {
 
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "JSON", targetFormat = format))
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format))
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = "JSON", targetFormat = format)
+                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
                 }
 
                 //needed as JSON uses ""
@@ -612,7 +612,7 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
             } */ else if (bodyParam.isTextPlain()) {
-                val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
+                val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     lines.add(".body($body)")
                 }

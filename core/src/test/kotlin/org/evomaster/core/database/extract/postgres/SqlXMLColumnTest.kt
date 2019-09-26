@@ -198,7 +198,7 @@ class SqlXMLColumnTest : ExtractTestBasePostgres() {
         val childElement = ObjectGene("childElement", listOf())
         val parentElement = ObjectGene("parentElement", listOf(childElement))
         val newGene = SqlXMLGene("xmldata", parentElement)
-        val expectedXML = newGene.getValueAsPrintableString(mode = "xml")
+        val expectedXML = newGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.XML)
 
         val newInsertAction = DbAction(table = action.table, selectedColumns = action.selectedColumns, id = action.geInsertionId(), computedGenes = listOf(newGene))
 

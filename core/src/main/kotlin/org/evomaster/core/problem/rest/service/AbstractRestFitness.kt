@@ -3,7 +3,6 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -343,9 +342,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         val bodyEntity = if (body != null && body is BodyParam) {
             val mode = when {
-                body.isJson() -> "json"
+                body.isJson() -> GeneUtils.EscapeMode.JSON
                 //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-                body.isTextPlain() -> "text"
+                body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
             Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), body.contentType())

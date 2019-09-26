@@ -2,7 +2,6 @@ package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.formatter.OutputFormatter
-import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -25,22 +24,22 @@ internal class GeneUtilsEscapeTest {
         val formatKotlin = OutputFormat.KOTLIN_JUNIT_5
         val formatJava5 = OutputFormat.JAVA_JUNIT_5
         println("TestJson Raw: $testJson")
-        println("TestJson Kotlin: ${testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin)}")
-        println("TestJson Java: ${testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin)}")
+        println("TestJson Kotlin: ${testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin)}")
+        println("TestJson Java: ${testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin)}")
 
         //assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\\"))
         //assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\\"))
 
-        assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\""))
-        assertTrue(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\$"))
+        assertTrue(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin).contains("\""))
+        assertTrue(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin).contains("\$"))
 
-        assertFalse(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin).contains("\\u"))
+        assertFalse(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin).contains("\\u"))
 
         //escaped JSON does not trigger formatter problems?
 
 
-        OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatKotlin))
-        OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = "json", targetFormat = formatJava5))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatKotlin))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testJson.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = formatJava5))
 
     }
 }

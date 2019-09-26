@@ -10,12 +10,11 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.search.gene.GeneUtils.getDelta
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.stream.Collectors
+import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 
 
 class StringGene(
@@ -339,7 +338,7 @@ class StringGene(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: EscapeMode?, targetFormat: OutputFormat?): String {
 
         val specializationGene = getSpecializationGene()
 
@@ -348,14 +347,14 @@ class StringGene(
         }
 
         val rawValue = getValueAsRawString()
-        if (mode != null && mode.equals("xml")) {
+        if (mode != null && mode.equals(EscapeMode.XML)) {
             return StringEscapeUtils.escapeXml(rawValue)
         } else {
             when {
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
                 (targetFormat == null) -> return "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
-                (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.valueOf(mode.toUpperCase()), targetFormat)}\""
+                (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
                 else -> return "\"${GeneUtils.applyEscapes(rawValue, GeneUtils.EscapeMode.TEXT ,targetFormat)}\""
             }
 

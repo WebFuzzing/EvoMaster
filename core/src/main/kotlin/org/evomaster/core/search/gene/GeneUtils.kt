@@ -3,8 +3,9 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import java.net.URLEncoder
 import kotlin.math.pow
-
+import org.apache.commons.lang3.StringEscapeUtils
 
 object GeneUtils {
 
@@ -13,23 +14,26 @@ object GeneUtils {
      */
     private val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
 
+
+    /**
+     * The [EscapeMode] enum is here to clarify the supported types of Escape modes.
+     *
+     * Different purposes require different modes of escape (e.g. URI may require percent encoding). This is to
+     * keep track of what modes are supported and how they map to the respective implementations.
+     *
+     * Any mode that is not supported will go under NONE, and will result in no escapes being applied at all. The
+     * purpose is to ensure that, even if the mode being used is unsupported, the system will not throw an exception.
+     * It may not behave as desired, but it should not crash.
+     *
+     */
     enum class EscapeMode {
-        /**
-         * The [EscapeMode] enum is here to clarify the supported types of Escape modes.
-         *
-         * Different purposes require different modes of escape (e.g. URI may require percent encoding). This is to
-         * keep track of what modes are supported and how they map to the respective implementations.
-         *
-         * Any mode that is not supported will go under NONE, and will result in no escapes being applied at all. The
-         * purpose is to ensure that, even if the mode being used is unsupported, the system will not throw an exception.
-         * It may not behave as desired, but it should not crash.
-         *
-         */
+
         URI,
         SQL,
         ASSERTION,
         JSON,
         TEXT,
+        XML,
         NONE
     }
 
@@ -166,6 +170,7 @@ object GeneUtils {
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
             EscapeMode.NONE -> string
+            EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
         //if(forQueries) return applyQueryEscapes(string, format)
         //else return applyAssertionEscapes(string, format)
@@ -191,6 +196,7 @@ object GeneUtils {
     }
 
     fun applyUriEscapes(string: String, format: OutputFormat):String{
+        //val ret = URLEncoder.encode(string, "utf-8")
         val ret = string.replace("\\", "%5C")
                 .replace("\"", "%22")
                 .replace("\n", "%0A")

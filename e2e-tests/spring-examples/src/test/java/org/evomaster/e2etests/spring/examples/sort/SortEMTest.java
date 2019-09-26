@@ -47,8 +47,8 @@ public class SortEMTest extends NRTestBase {
                             assertTrue(previous.getName().contains("500"));
                         }
                         // Check that a TC with 400 in the name is preceded by another 400 or by a 500.
-                        if(current.getName().contains("400")){
-                            assertTrue(previous.getName().contains("400") || previous.getName().contains("500"));
+                        if(current.getName().contains("200")){
+                            assertTrue(previous.getName().contains("200") || previous.getName().contains("500"));
                         }
 
                         //Check that neighbouring TC with the same code are sorted by number of actions

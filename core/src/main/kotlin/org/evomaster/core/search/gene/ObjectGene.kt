@@ -53,12 +53,12 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
         gene.standardMutation(randomness, apc, allGenes)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?) : String{
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?) : String{
 
         val buffer = StringBuffer()
 
         //by default, return in JSON format
-        if (mode == null || mode.equals(JSON_MODE, ignoreCase = true)) {
+        if (mode == null || mode.equals(GeneUtils.EscapeMode.JSON)) {
             buffer.append("{")
 
             fields.filter {
@@ -70,7 +70,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
 
             buffer.append("}")
 
-        } else if (mode.equals(XML_MODE, ignoreCase = true)) {
+        } else if (mode.equals(GeneUtils.EscapeMode.XML)) {
 
             /*
                 Note: this is a very basic support, which should not really depend
