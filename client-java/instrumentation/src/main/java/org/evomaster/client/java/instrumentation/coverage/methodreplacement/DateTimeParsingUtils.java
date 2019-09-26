@@ -62,7 +62,7 @@ public class DateTimeParsingUtils {
                 if no exception is thrown
              */
             LocalTime.parse(input);
-            return 1d - H_PARSED_OK;
+            return H_PARSED_OK;
         } catch (DateTimeParseException ex) {
             return getHeuristicToLocalTimeWithSeconds(input);
 
@@ -130,7 +130,7 @@ public class DateTimeParsingUtils {
         }
         try {
             LocalDateTime.parse(input);
-            return 1d - H_PARSED_OK;
+            return H_PARSED_OK;
         } catch (DateTimeParseException ex) {
             return getHeuristicToISOLocalDateTime(input);
         }
