@@ -19,7 +19,7 @@ class DateGene(
         val month: IntegerGene = IntegerGene("month", 3, 0, 13),
         val day: IntegerGene = IntegerGene("day", 12, 0, 32),
         val onlyValidDates: Boolean = false,
-        private val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
+        val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : Gene(name) {
 
     enum class DateGeneFormat {
