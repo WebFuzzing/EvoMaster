@@ -53,7 +53,7 @@ public class BranchCovMethodVisitor extends MethodVisitor {
             branch coverage
          */
 
-        UnitsInfoRecorder.markNewBranch();
+        UnitsInfoRecorder.markNewBranchPair();
         ObjectiveRecorder.registerTarget(
                 ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, true));
         ObjectiveRecorder.registerTarget(

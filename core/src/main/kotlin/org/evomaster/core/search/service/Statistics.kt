@@ -1,9 +1,11 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -33,6 +35,8 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private var sampler: Sampler<*>? = null
 
+    @Inject(optional = true)
+    private var remoteController: RemoteController? = null
 
     /**
      * How often test executions did timeout
@@ -170,6 +174,8 @@ class Statistics : SearchListener {
 
     private fun getData(solution: Solution<*>): List<Pair> {
 
+        val unitsInfo = remoteController?.getSutInfo()?.unitsInfoDto
+
         val list: MutableList<Pair> = mutableListOf()
 
         list.apply {
@@ -185,6 +191,16 @@ class Statistics : SearchListener {
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
             add(Pair("errors5xx", "" + errors5xx(solution)))
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+
+            add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
+            add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
+            add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
+            add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
+            add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
+            add(Pair("numberOfUnits", "" + (unitsInfo?.numberOfUnits ?: 0)))
+
+            add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
+            add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))

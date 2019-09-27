@@ -56,8 +56,8 @@ public class UnitsInfoRecorder implements Serializable {
         singleton.numberOfLines.incrementAndGet();
     }
 
-    public static void markNewBranch(){
-        singleton.numberOfBranches.incrementAndGet();
+    public static void markNewBranchPair(){
+        singleton.numberOfBranches.addAndGet(2);
     }
 
     public static void markNewReplacedMethodInSut(){
