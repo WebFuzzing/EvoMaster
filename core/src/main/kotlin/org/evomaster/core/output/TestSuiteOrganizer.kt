@@ -127,9 +127,10 @@ class SortingHelper {
      *          - third:    4xx
      */
 
+
     private val statusCode: Comparator<EvaluatedIndividual<*>> = compareBy { ind ->
-        val max = ind.results.filterIsInstance<RestCallResult>().maxBy { it.getStatusCode()!! }
-        ((max as RestCallResult).getStatusCode()?.rem(500)) ?: 0
+        val min = ind.results.filterIsInstance<RestCallResult>().minBy { it.getStatusCode()!!.rem(500) }
+            ((min as RestCallResult).getStatusCode())?.rem(500) ?: 0
     }
 
     /** [maxActions] sorts Evaluated individuals based on the number of actions (most actions first).
