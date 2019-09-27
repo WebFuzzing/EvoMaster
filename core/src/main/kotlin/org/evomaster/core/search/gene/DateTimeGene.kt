@@ -12,13 +12,22 @@ import org.evomaster.core.search.service.Randomness
 open class DateTimeGene(
         name: String,
         val date: DateGene = DateGene("date"),
-        val time: TimeGene = TimeGene("time")
+        val time: TimeGene = TimeGene("time"),
+        val dateTimeGeneFormat: DateTimeGeneFormat = DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT
 ) : Gene(name) {
+
+    enum class DateTimeGeneFormat {
+        // YYYY-MM-DDTHH:SS:MM
+        ISO_LOCAL_DATE_TIME_FORMAT,
+        // YYYY-MM-DD HH:SS:MM
+        DEFAULT_DATE_TIME
+    }
 
     override fun copy(): Gene = DateTimeGene(
             name,
             date.copy() as DateGene,
-            time.copy() as TimeGene
+            time.copy() as TimeGene,
+            dateTimeGeneFormat = this.dateTimeGeneFormat
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -44,9 +53,22 @@ open class DateTimeGene(
     }
 
     override fun getValueAsRawString(): String {
-        return "${date.getValueAsRawString()}" +
-                "T" +
-                "${time.getValueAsRawString()}"
+        val formattedDate = GeneUtils.let {
+            "${it.padded(date.year.value, 4)}-${it.padded(date.month.value, 2)}-${it.padded(date.day.value, 2)}"
+        }
+        val formattedTime = GeneUtils.let {
+            "${it.padded(time.hour.value, 2)}:${it.padded(time.minute.value, 2)}:${it.padded(time.second.value, 2)}"
+        }
+        return when (dateTimeGeneFormat) {
+            DateTimeGeneFormat.ISO_LOCAL_DATE_TIME_FORMAT -> {
+                "${formattedDate}T${formattedTime}"
+            }
+
+            DateTimeGeneFormat.DEFAULT_DATE_TIME -> {
+                "${formattedDate} ${formattedTime}"
+            }
+        }
+
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -65,7 +87,7 @@ open class DateTimeGene(
                 && this.time.containsSameValueAs(other.time)
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
     }

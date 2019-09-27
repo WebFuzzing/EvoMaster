@@ -23,19 +23,19 @@ public class LocalDateClassReplacementTest {
 
     @Test
     public void testParseValid() {
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("0001-01-01"));
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("1982-11-27"));
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("1970-01-01"));
-        assertEquals(1d, DateTimeParsingUtils.getDistanceToISOLocalDate("9999-12-31"));
+        assertEquals(1d, DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("0001-01-01"));
+        assertEquals(1d, DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1982-11-27"));
+        assertEquals(1d, DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1970-01-01"));
+        assertEquals(1d, DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("9999-12-31"));
     }
 
     @Test
     public void testParseTooShortLong() {
 
-        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDate("1");
-        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-"); //2 shorter
-        double ok = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-11"); //ok
-        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-111"); // 1 too long
+        double h0 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1");
+        double h1 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234-11-"); //2 shorter
+        double ok = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234-11-11"); //ok
+        double h3 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234-11-111"); // 1 too long
 
         assertEquals(1d, ok);
         assertTrue(h0 < h1);
@@ -57,11 +57,11 @@ public class LocalDateClassReplacementTest {
             'a' -> 97
          */
 
-        double h0 = DateTimeParsingUtils.getDistanceToISOLocalDate("a234-11-11");
-        double h1 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234a11-11");
-        double h2 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11a11");
-        double h3 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234-11-aa");
-        double h4 = DateTimeParsingUtils.getDistanceToISOLocalDate("1234a11a11");
+        double h0 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("a234-11-11");
+        double h1 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234a11-11");
+        double h2 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234-11a11");
+        double h3 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234-11-aa");
+        double h4 = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing("1234a11a11");
 
         assertTrue(h1 < h0);
         assertTrue(h2 < h0);
