@@ -7,7 +7,6 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.text.SimpleDateFormat;
@@ -495,7 +494,7 @@ public class TestabilityExcInstrumentedTest {
     public void testUnknownPatternDateFormatParse() throws Exception {
         TestabilityExc te = getInstance();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("MM/dd/yyyy HH:SS");
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMDD HH:SS");
         assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "07/"));
 
         assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));

@@ -15,8 +15,16 @@ class TimeGene(
         val hour: IntegerGene = IntegerGene("hour", 0, -1, 25),
         val minute: IntegerGene = IntegerGene("minute", 0, -1, 60),
         val second: IntegerGene = IntegerGene("second", 0, -1, 60),
-        val withMsZ: Boolean = true
+        val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
 ) : Gene(name) {
+
+    enum class TimeGeneFormat {
+        // format HH:MM:SS
+        ISO_LOCAL_DATE_FORMAT,
+
+        // HH:MM:SS.000Z
+        TIME_WITH_MILLISECONDS
+    }
 
     /*
         Note: would need to handle timezone and second fractions,
@@ -28,7 +36,7 @@ class TimeGene(
             hour.copy() as IntegerGene,
             minute.copy() as IntegerGene,
             second.copy() as IntegerGene,
-            withMsZ
+            timeGeneFormat = this.timeGeneFormat
     )
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -49,15 +57,17 @@ class TimeGene(
     }
 
     override fun getValueAsRawString(): String {
-
-        val s = GeneUtils.let {
-            "${it.padded(hour.value, 2)}:${it.padded(minute.value, 2)}:${it.padded(second.value, 2)}"
-        }
-
-        return if (withMsZ) {
-            "$s.000Z"
-        } else {
-            s
+        return when (timeGeneFormat) {
+            TimeGeneFormat.ISO_LOCAL_DATE_FORMAT -> {
+                GeneUtils.let {
+                    "${it.padded(hour.value, 2)}:${it.padded(minute.value, 2)}:${it.padded(second.value, 2)}"
+                }
+            }
+            TimeGeneFormat.TIME_WITH_MILLISECONDS -> {
+                GeneUtils.let {
+                    "${it.padded(hour.value, 2)}:${it.padded(minute.value, 2)}:${it.padded(second.value, 2)}.000Z"
+                }
+            }
         }
     }
 
@@ -80,10 +90,32 @@ class TimeGene(
     }
 
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(hour.flatView(excludePredicate))
                 .plus(minute.flatView(excludePredicate))
                 .plus(second.flatView(excludePredicate))
     }
+
+    private fun isValidHourRange(gene: IntegerGene): Boolean {
+        return gene.min == 0 && gene.max == 23
+    }
+
+    private fun isValidMinuteRange(gene: IntegerGene): Boolean {
+        return gene.min == 0 && gene.max == 59
+    }
+
+    private fun isValidSecondRange(gene: IntegerGene): Boolean {
+        return gene.min == 0 && gene.max == 59
+    }
+
+    /**
+     * Queries the time gent to know if it can
+     * store only valid hours (i.e. range 00:00:00 to 23:59:59)
+     */
+    val onlyValidHours: Boolean
+        get() = isValidHourRange(this.hour)
+                && isValidMinuteRange(this.minute)
+                && isValidSecondRange(this.second)
+
 }

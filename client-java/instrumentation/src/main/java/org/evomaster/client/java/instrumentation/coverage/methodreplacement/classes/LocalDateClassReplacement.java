@@ -17,8 +17,6 @@ import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
-
 
 public class LocalDateClassReplacement implements MethodReplacementClass {
 
@@ -44,7 +42,7 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (RuntimeException e) {
-            double h = DateTimeParsingUtils.getDistanceToISOLocalDate(input);
+            double h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }

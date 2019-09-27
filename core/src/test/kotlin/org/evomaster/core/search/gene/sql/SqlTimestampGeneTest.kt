@@ -1,6 +1,6 @@
 package org.evomaster.core.search.gene.sql
 
-import org.evomaster.core.search.gene.sql.SqlTimestampGene
+import org.evomaster.core.database.DbActionGeneBuilder
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Test
 import java.time.LocalDate
@@ -13,7 +13,7 @@ class SqlTimestampGeneTest {
 
     @Test
     fun testValidLocalDateTime() {
-        val gene = SqlTimestampGene("timestamp")
+        val gene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
         val rawString = gene.getValueAsRawString()
         val formatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT_PATTERN)
         LocalDateTime.parse(rawString, formatter)
@@ -21,7 +21,7 @@ class SqlTimestampGeneTest {
 
     @Test
     fun testValidDate() {
-        val gene = SqlTimestampGene("timestamp")
+        val gene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
         val rawString = gene.date.getValueAsRawString()
         val formatter = DateTimeFormatter.ISO_LOCAL_DATE
         LocalDate.parse(rawString, formatter)
@@ -32,7 +32,7 @@ class SqlTimestampGeneTest {
 
         val randomness = Randomness()
 
-        val gene = SqlTimestampGene("timestamp")
+        val gene = DbActionGeneBuilder().buildSqlTimestampGene("timestamp")
 
         for (i in 1..10000) {
             gene.randomize(randomness, forceNewValue = true)

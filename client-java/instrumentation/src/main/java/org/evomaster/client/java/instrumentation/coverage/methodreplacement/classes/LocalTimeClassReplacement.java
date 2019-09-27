@@ -48,7 +48,7 @@ public class LocalTimeClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (DateTimeParseException | NullPointerException e) {
-            double h = DateTimeParsingUtils.getDistanceToISOLocalTime(input);
+            double h = DateTimeParsingUtils.getHeuristicToISOLocalTimeParsing(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }

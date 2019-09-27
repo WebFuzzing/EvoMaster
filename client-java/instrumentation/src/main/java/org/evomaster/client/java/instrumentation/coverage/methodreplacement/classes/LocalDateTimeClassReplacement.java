@@ -49,7 +49,7 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (DateTimeParseException | NullPointerException ex) {
-            double h = DateTimeParsingUtils.getDistanceToISOLocalDateTime(text);
+            double h = DateTimeParsingUtils.getHeuristicToISOLocalDateTimeParsing(text);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw ex;
         }
