@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Meth
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementList;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -124,6 +125,12 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
         Method m = r.get();
         replaceMethod(m);
+
+        if(registerNewTargets){
+            UnitsInfoRecorder.markNewReplacedMethodInSut();
+        } else {
+            UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
+        }
     }
 
     private void replaceMethod(Method m) {

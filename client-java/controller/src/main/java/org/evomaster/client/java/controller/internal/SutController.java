@@ -11,6 +11,7 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
@@ -353,4 +354,18 @@ public abstract class SutController implements SutHandler {
      * Specify the format in which the test cases should be generated
      */
     public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
+
+
+    public abstract UnitsInfoDto getUnitsInfoDto();
+
+    protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
+        UnitsInfoDto dto = new UnitsInfoDto();
+        dto.numberOfBranches = recorder.getNumberOfBranches();
+        dto.numberOfLines = recorder.getNumberOfLines();
+        dto.numberOfReplacedMethodsInSut = recorder.getNumberOfReplacedMethodsInSut();
+        dto.numberOfReplacedMethodsInThirdParty = recorder.getNumberOfReplacedMethodsInThirdParty();
+        dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
+        dto.numberOfUnits = recorder.getNumberOfUnits();
+        return dto;
+    }
 }

@@ -69,6 +69,8 @@ public class EMController {
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
         }
 
+        dto.unitsInfoDto = sutController.getUnitsInfoDto();
+
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
 

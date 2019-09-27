@@ -8,5 +8,5 @@ import java.io.Serializable;
  */
 public enum Command implements Serializable {
 
-    NEW_SEARCH, NEW_TEST, TARGET_INFOS, ACK, ACTION_INDEX, ADDITIONAL_INFO
+    NEW_SEARCH, NEW_TEST, TARGETS_INFO, ACK, ACTION_INDEX, ADDITIONAL_INFO, UNITS_INFO
 }
