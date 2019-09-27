@@ -2,8 +2,10 @@ package org.evomaster.client.java.instrumentation.example.triangle;
 
 import com.foo.somedifferentpackage.examples.triangle.TriangleClassificationImpl;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
+import org.evomaster.client.java.instrumentation.example.methodreplacement.TestabilityExc;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -22,6 +24,27 @@ public class BranchCovTCTest {
     @AfterAll
     public static void reset(){
         ExecutionTracer.reset();
+    }
+
+
+    @Test
+    public void testUnitsInfo() throws Exception{
+
+        UnitsInfoRecorder.reset();
+        UnitsInfoRecorder info = UnitsInfoRecorder.getInstance();
+        assertEquals(0, info.getNumberOfUnits());
+        assertEquals(0, info.getNumberOfLines());
+        assertEquals(0, info.getNumberOfBranches());
+
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
+        TriangleClassification tc =  (TriangleClassification)
+                cl.loadClass(TriangleClassificationImpl.class.getName())
+                        .newInstance();
+
+        info = UnitsInfoRecorder.getInstance();
+        assertEquals(1, info.getNumberOfUnits());
+        assertEquals(11, info.getNumberOfLines());
+        assertEquals(28, info.getNumberOfBranches());
     }
 
     @Test
