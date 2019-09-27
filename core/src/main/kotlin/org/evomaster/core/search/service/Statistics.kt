@@ -59,7 +59,10 @@ class Statistics : SearchListener {
     private class Snapshot(
             val coveredTargets: Int = 0,
             val reachedNonCoveredTargets: Int = 0,
-            val averageTestSizeForReachedButNotCovered: Double = 0.0
+            val averageTestSizeForReachedButNotCovered: Double = 0.0,
+            val covered2xx: Int = 0,
+            val errors5xx: Int = 0,
+            val potentialFaults: Int = 0
     )
 
     /**
@@ -121,7 +124,7 @@ class Statistics : SearchListener {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
-            path.toFile().appendText("interval,covered,reachedNonCovered,averageTestSizeForReachedButNotCovered,$confHeader\n")
+            path.toFile().appendText("interval,covered,reachedNonCovered,averageTestSizeForReachedButNotCovered,covered2xx,errors5xx,potentialFaults,$confHeader\n")
         }
 
         snapshots.entries.stream().sorted { o1, o2 -> o1.key.compareTo(o2.key) }
@@ -130,6 +133,9 @@ class Statistics : SearchListener {
                             "${it.value.coveredTargets}," +
                             "${it.value.reachedNonCoveredTargets}," +
                             "${it.value.averageTestSizeForReachedButNotCovered}," +
+                            "${it.value.covered2xx}," +
+                            "${it.value.errors5xx}," +
+                            "${it.value.potentialFaults}," +
                             "$confValues\n")
                 }
     }
@@ -158,10 +164,15 @@ class Statistics : SearchListener {
 
     private fun takeSnapshot() {
 
+        val solution = archive.extractSolution()
+
         val snap = Snapshot(
                 coveredTargets = archive.numberOfCoveredTargets(),
                 reachedNonCoveredTargets = archive.numberOfReachedButNotCoveredTargets(),
-                averageTestSizeForReachedButNotCovered = archive.averageTestSizeForReachedButNotCovered()
+                averageTestSizeForReachedButNotCovered = archive.averageTestSizeForReachedButNotCovered(),
+                covered2xx = covered2xxEndpoints(solution),
+                errors5xx = errors5xx(solution),
+                potentialFaults = solution.overall.potentialFoundFaults(idMapper).size
         )
 
         val key = if (snapshotThreshold <= 100) snapshotThreshold else 100.0
