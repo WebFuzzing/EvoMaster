@@ -39,6 +39,11 @@ public class SortEMTest extends NRTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
+                    //check it has some 500s?
+                    assertHasAtLeastOne(solution, HttpVerb.PATCH, 500);
+                    assertHasAtLeastOne(solution, HttpVerb.PUT, 500);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 500);
+
                     TestSuiteOrganizer organizer = new TestSuiteOrganizer();
 
                     List<TestCase> tclist = organizer.sortTests(solution, true);
