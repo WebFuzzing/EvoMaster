@@ -1,19 +1,23 @@
 package org.evomaster.experiments.archiveMutation.stringProblem.allDepDynamic
 
+import com.google.inject.Inject
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.experiments.archiveMutation.stringProblem.StringIndividual
 import org.evomaster.experiments.archiveMutation.stringProblem.StringProblemDefinition
+import javax.annotation.PostConstruct
 
 /**
  * created by manzh on 2019-09-16
  */
-class ADepDynamicStringProblemDefinition : StringProblemDefinition() {
+class ADepDynamicStringProblemDefinition() : StringProblemDefinition() {
 
-    override fun init(n : Int, sLength : Int, maxLength: Int ){
-        nTargets = n
-        nGenes = n * 2
-        specifiedLength = sLength
-        this.maxLength = maxLength
+    @PostConstruct
+    fun postConstruct() {
+        this.rateOfImpact = sConfig.rateOfImpact
+        nTargets = sConfig.numTarget
+        nGenes = sConfig.numTarget * 2
+        specifiedLength = sConfig.sLength
+        this.maxLength = sConfig.maxLength
     }
 
     override fun distance(individual: StringIndividual): Map<Int, Double> {

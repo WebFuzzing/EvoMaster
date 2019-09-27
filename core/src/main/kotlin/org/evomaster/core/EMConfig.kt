@@ -713,7 +713,7 @@ class EMConfig {
     var probOfArchiveMutation = 0.0
 
     @Experimental
-    @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
+    @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
     @Min(0.0) @Max(1.0)
     var perOfCandidateGenesToMutate = 0.1
 
@@ -727,8 +727,9 @@ class EMConfig {
 
     enum class AdaptiveSelection{
         FIXED_SELECTION,
-        RANDOM,
-        GUIDED
+        RANDOM
+//        ,
+//        GUIDED
     }
 
     @Experimental

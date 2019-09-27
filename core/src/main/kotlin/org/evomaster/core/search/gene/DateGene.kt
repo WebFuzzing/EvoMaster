@@ -1,8 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -42,6 +48,34 @@ class DateGene(
             gene.standardMutation(randomness, apc, allGenes)
         } while (onlyValidDates && !isValidDate())
 
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        if (impact != null && impact is DateGeneImpact){
+            if (impact.yearGeneImpact.timesToManipulate == 0){
+                year.archiveMutation(
+                        randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi
+                )
+                return
+            }
+            if (impact.monthGeneImpact.timesToManipulate == 0){
+                month.archiveMutation(
+                        randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi
+                )
+                return
+            }
+
+            if (impact.dayGeneImpact.timesToManipulate == 0){
+                day.archiveMutation(
+                        randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi
+                )
+                return
+            }
+
+
+        }else{
+            standardMutation(randomness, apc, allGenes)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
@@ -93,6 +127,10 @@ class DateGene(
             listOf(this).plus(year.flatView(excludePredicate))
                     .plus(month.flatView(excludePredicate))
                     .plus(day.flatView(excludePredicate))
+    }
+
+    override fun reachOptimal(): Boolean {
+        return year.reachOptimal() && month.reachOptimal() && day.reachOptimal()
     }
 
 }

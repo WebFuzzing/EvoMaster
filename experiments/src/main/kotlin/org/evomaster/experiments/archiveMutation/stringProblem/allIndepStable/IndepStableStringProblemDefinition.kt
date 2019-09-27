@@ -6,6 +6,7 @@ import org.evomaster.core.search.service.mutator.geneMutation.CharPool
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.experiments.archiveMutation.stringProblem.StringIndividual
 import org.evomaster.experiments.archiveMutation.stringProblem.StringProblemDefinition
+import javax.annotation.PostConstruct
 
 /**
  * created by manzh on 2019-09-16
@@ -14,11 +15,13 @@ class IndepStableStringProblemDefinition : StringProblemDefinition() {
 
     var optima: MutableList<String> = mutableListOf()
 
-    override fun init(n : Int, sLength : Int, maxLength: Int){
-        nTargets = n
-        nGenes = n
-        specifiedLength = sLength
-        this.maxLength = maxLength
+    @PostConstruct
+    fun postConstruct() {
+        rateOfImpact = sConfig.rateOfImpact
+        nTargets = sConfig.numTarget
+        nGenes = nTargets
+        specifiedLength = sConfig.sLength
+        this.maxLength = sConfig.maxLength
         optima.clear()
         (0 until nTargets).forEach { _ ->
             optima.add(randomString())

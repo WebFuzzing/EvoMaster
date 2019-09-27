@@ -9,6 +9,8 @@ import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * @property refType presents the name of reference type of the object
@@ -19,6 +21,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
         val JSON_MODE = "json"
 
         val XML_MODE = "xml"
+
+        private val log: Logger = LoggerFactory.getLogger(ObjectGene::class.java)
 
     }
     override fun copy(): Gene {
@@ -118,45 +122,36 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             allGenes: List<Gene>,
             apc: AdaptiveParameterControl,
             selection: ImpactMutationSelection,
-            geneImpact: GeneImpact?,
+            impact: GeneImpact?,
             geneReference : String,
             archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>) {
 
-        val impact = geneImpact
-                ?:evi.getImpactOfGenes()[geneReference]
-            ?: throw IllegalStateException("cannot find this gene in the individual")
+        val canFields = fields.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}
+        val selects =  if (impact != null && impact is ObjectGeneImpact){
+            val genes = canFields.map { Pair(it, impact.fields.getValue(it.name)) }
+            /*
+               decide what a method to select field to mutate
+            */
+            val methodSelection = archiveMutator.decideGeneSelectionMethod(genes)
+            val percentage = 1.0/canFields.size //prefer selecting one
+            when(methodSelection){
+                ImpactMutationSelection.APPROACH_IMPACT -> ImpactUtils.selectApproachGood(genes, percentage)
+                ImpactMutationSelection.AWAY_NOIMPACT -> ImpactUtils.selectGenesAwayBad(genes, percentage)
+                //ImpactMutationSelection.FEEDBACK_DIRECT -> ImpactUtils.selectFeedback(genes, percentage)
+                else -> canFields
+            }
+        }else canFields
 
-        assert(impact is ObjectGeneImpact)
-
-        val genes = fields.map { Pair(it, (impact as ObjectGeneImpact).fields.getValue(it.name)) }
-
-        val methodSelection = archiveMutator.decideGeneSelectionMethod(genes)
-
-        val percentage = 1.0/fields.size //prefer selecting one
-
-        /*
-            decide what field will be mutated
-         */
-        val selects = when(methodSelection){
-            ImpactMutationSelection.APPROACH_GOOD -> ImpactUtils.selectApproachGood(genes, percentage)
-            ImpactMutationSelection.AWAY_BAD -> ImpactUtils.selectGenesAwayBad(genes, percentage)
-            ImpactMutationSelection.FEED_BACK -> ImpactUtils.selectFeedback(genes, percentage)
-            else -> fields
+        if (selects.isEmpty()){
+            log.warn("selected fields to mutate should not be empty")
+            standardMutation(randomness,apc, allGenes)
+            return
         }
-        assert(selects.isNotEmpty())
 
         val selected = randomness.choose(selects)
-        val selectedImpact = (impact as ObjectGeneImpact).fields.getValue(selected.name)
-        if (archiveMutator.enableArchiveGeneMutation()){
-            if (archiveMutator.doesSupport(selected))
-                selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
-            else
-                selected.standardMutation(randomness, apc, allGenes)
-        }else{
-            selected.standardMutation(randomness, apc, allGenes)
-        }
-
+        val selectedImpact = if (impact != null && impact is ObjectGeneImpact) impact.fields.getValue(selected.name) else null
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
@@ -171,6 +166,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
                 current.archiveMutationUpdate(original = g.second, mutated = g.first, doesCurrentBetter = doesCurrentBetter, archiveMutator = archiveMutator)
             }
         }
+    }
+
+    override fun reachOptimal(): Boolean {
+        return fields.all { it.reachOptimal() }
     }
 
 }

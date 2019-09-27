@@ -1,7 +1,6 @@
 package org.evomaster.core.search.impact
 
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.value.GeneralImpact
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -35,9 +34,9 @@ class ActionStructureImpact (
     }
 
 
-    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, hasImpacts : Boolean, hasSizeImpact : Boolean){
-        countImpact(hasImpacts)
-        sizeImpact.countImpact(hasSizeImpact)
+    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, hasImpacts : Boolean, hasSizeImpact : Boolean, isWorse : Boolean){
+        countImpactAndPerformance(hasImpacts, isWorse)
+        sizeImpact.countImpactAndPerformance(hasSizeImpact, isWorse)
         updateStructure(evaluatedIndividual)
     }
 

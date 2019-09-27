@@ -37,7 +37,7 @@ class GeneImpactTest {
         val hasImpact = true
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = dateTimeGene, previous = tracking0, action = "none", position = -1 )
-        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact)
+        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact, isWorse = false)
 
         (impact as DateTimeGeneImpact).apply {
             assertEquals(1, timesToManipulate)
@@ -107,7 +107,7 @@ class GeneImpactTest {
         val hasImpact = true
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = dateGene, previous = tracking0, action = "none", position = -1 )
-        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact)
+        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact, isWorse = false)
 
         (impact as DateGeneImpact).apply {
             assertEquals(1, timesToManipulate)
@@ -147,7 +147,7 @@ class GeneImpactTest {
         val hasImpact = true
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = timeGene, previous = tracking0, action = "none", position = -1 )
-        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact)
+        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact,isWorse = false)
 
         (impact as TimeGeneImpact).apply {
             assertEquals(1, timesToManipulate)
@@ -222,7 +222,7 @@ class GeneImpactTest {
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = objGene, previous =  tracking0, action = "none", position = -1)
 
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext, hasImpact)
+        ImpactUtils.processImpact(impact, mutatedGeneWithContext, hasImpact,isWorse = false)
 
         //check whether all impacts are updated correctly
         assert(impact.timesOfImpact == 1)
@@ -245,7 +245,7 @@ class GeneImpactTest {
         val tracking1 = objGene.copy()
         f5_1.value = if (f5_1.value.length == f5_1.maxLength) f5_1.value.substring(1) else "${f5_1.value}z"
         val mutatedGeneWithContext1 = MutatedGeneWithContext(current = objGene, previous =  tracking1, action = "none", position = -1)
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext1, hasImpact = false, countDeepObjectImpact = true)
+        ImpactUtils.processImpact(impact, mutatedGeneWithContext1, hasImpact = false, countDeepObjectImpact = true,isWorse = false)
 
         assert(impact.timesOfImpact == 1)
         assert(impact.timesOfNoImpacts == 1)
@@ -287,7 +287,7 @@ class GeneImpactTest {
         f7.elements.add(f7_3)
 
         val mutatedGeneWithContext2 = MutatedGeneWithContext(current = objGene, previous =  tracking2, action = "none", position = -1)
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext2, hasImpact = false, countDeepObjectImpact = true)
+        ImpactUtils.processImpact(impact, mutatedGeneWithContext2, hasImpact = false, countDeepObjectImpact = true,isWorse = false)
 
         assert(impact.timesOfImpact == 1)
         assert(impact.timesOfNoImpacts == 2)
@@ -398,7 +398,7 @@ class GeneImpactTest {
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = optionalGene, previous =  previous, action = "action", position = 0)
 
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext, hasImpact)
+        ImpactUtils.processImpact(impact, mutatedGeneWithContext, hasImpact,isWorse = false)
 
         assert(impact.timesOfImpact == 1)
         assert(impact.timesOfNoImpacts == 0)

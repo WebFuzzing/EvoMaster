@@ -1,11 +1,9 @@
 package org.evomaster.core.search.impact.value.date
 
-import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.TimeGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -36,12 +34,12 @@ class TimeGeneImpact(
 
     override fun validate(gene: Gene): Boolean = gene is TimeGene
 
-    fun countTimeImpact(previous: TimeGene, current : TimeGene, hasImpact: Boolean){
+    fun countTimeImpact(previous: TimeGene, current : TimeGene, hasImpact: Boolean, isWorse : Boolean){
         if (!current.hour.containsSameValueAs(previous.hour))
-            hourGeneImpact.countImpact(hasImpact)
+            hourGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
         if (!current.minute.containsSameValueAs(previous.minute))
-            minuteGeneImpact.countImpact(hasImpact)
+            minuteGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
         if (!current.second.containsSameValueAs(previous.second))
-            secondGeneImpact.countImpact(hasImpact)
+            secondGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
     }
 }

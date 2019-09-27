@@ -1,5 +1,6 @@
 package org.evomaster.experiments.archiveMutation.stringProblem
 
+import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper
 import org.evomaster.core.search.service.mutator.geneMutation.CharPool
 import org.evomaster.experiments.archiveMutation.ArchiveProblemDefinition
@@ -9,13 +10,18 @@ import org.evomaster.experiments.archiveMutation.ArchiveProblemDefinition
  */
 abstract class StringProblemDefinition : ArchiveProblemDefinition<StringIndividual>() {
 
+    @Inject
+    lateinit var sConfig : StringProblemConfig
+
     var maxLength = 16
 
     var specifiedLength = -1
 
-    val charPool : CharPool = CharPool.ALL
+    var charPool : CharPool = CharPool.ALL
 
-    abstract fun init(n : Int, sLength : Int = -1, maxLength: Int = 16)
+    var rateOfImpact : Double = 1.0
+
+    //abstract fun init(n : Int, sLength : Int = -1, maxLength: Int = 16, rateOfImpact : Double)
 
     fun leftDistance(target : String, value: String) : Double{
         val distance = DistanceHelper.getLeftAlignmentDistance(target, value)

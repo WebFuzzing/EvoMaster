@@ -32,14 +32,14 @@ class DateTimeGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is DateTimeGene
 
-    fun countDateTimeImpact(previous: DateTimeGene, current : DateTimeGene, hasImpact: Boolean){
+    fun countDateTimeImpact(previous: DateTimeGene, current : DateTimeGene, hasImpact: Boolean, isWorse : Boolean){
         if (!current.date.containsSameValueAs(previous.date)){
-            dateGeneImpact.countImpact(hasImpact)
-            dateGeneImpact.countDateImpact(previous = previous.date, current = current.date, hasImpact = hasImpact)
+            dateGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
+            dateGeneImpact.countDateImpact(previous = previous.date, current = current.date, hasImpact = hasImpact, isWorse = isWorse)
         }
         if (!current.time.containsSameValueAs(previous.time)){
-            timeGeneImpact.countImpact(hasImpact)
-            timeGeneImpact.countTimeImpact(previous = previous.time, current = current.time, hasImpact = hasImpact)
+            timeGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
+            timeGeneImpact.countTimeImpact(previous = previous.time, current = current.time, hasImpact = hasImpact, isWorse = isWorse)
         }
     }
 }

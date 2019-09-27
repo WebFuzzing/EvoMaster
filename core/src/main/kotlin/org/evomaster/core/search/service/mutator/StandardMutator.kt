@@ -120,7 +120,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
 
             if (config.probOfArchiveMutation > 0.0 && archiveMutator.doesSupport(gene)){
-                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, null, ImpactUtils.generateGeneId(copy, gene), archiveMutator, individual)
+                val id = ImpactUtils.generateGeneId(copy, gene)
+                val impact = individual.getImpactOfGenes()[id]
+                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual)
             }else
                 gene.standardMutation(randomness, apc, allGenes)
         }

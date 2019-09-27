@@ -308,13 +308,18 @@ class StringGene(
             specializationGene!!.archiveMutation(randomness, allGenes, apc, selection, impact, geneReference, archiveMutator, evi)
             return
         }
-        mutatedtimes += 1
-        archiveMutator.mutate(this)
-        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
-            log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
-        }
-        if (charsMutation.size != value.length){
-            log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
+
+        if (archiveMutator.enableArchiveGeneMutation()){
+            mutatedtimes += 1
+            archiveMutator.mutate(this)
+            if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+                log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
+            }
+            if (charsMutation.size != value.length){
+                log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
+            }
+        }else{
+            standardMutation(randomness, apc, allGenes)
         }
     }
 

@@ -13,7 +13,6 @@ import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
-import org.evomaster.core.search.service.Randomness
 
 /**
  * created by manzh on 2019-09-09
@@ -129,15 +128,15 @@ class ImpactUtils {
         fun generateIndividualId(individual: Individual) : String = individual.seeActions().joinToString(SEPARATOR_GENE) { it.getName() }
 
 
-        fun processImpact(impact : GeneImpact, gc : MutatedGeneWithContext, hasImpact : Boolean, countDeepObjectImpact : Boolean = false){
+        fun processImpact(impact : GeneImpact, gc : MutatedGeneWithContext, hasImpact : Boolean, countDeepObjectImpact : Boolean = false, isWorse : Boolean){
 
-            impact.countImpact(hasImpact)
+            impact.countImpactAndPerformance(hasImpact, isWorse)
 
             when(impact){
                 is ObjectGeneImpact -> {
                     if (gc.previous !is ObjectGene || gc.current !is ObjectGene)
                         throw IllegalStateException("previous and current gene should be ObjectGene")
-                    impact.countFieldImpact(previous = gc.previous,current =  gc.current, hasImpact = hasImpact, countDeepImpact = countDeepObjectImpact)
+                    impact.countFieldImpact(previous = gc.previous,current =  gc.current, hasImpact = hasImpact, countDeepImpact = countDeepObjectImpact, isWorse = isWorse)
                 }
                 is CollectionGeneImpact -> {
                     val diff = when{
@@ -145,41 +144,41 @@ class ImpactUtils {
                         gc.previous is ArrayGene<*> && gc.current is ArrayGene<*> -> gc.previous.elements.size != gc.current.elements.size
                         else -> throw IllegalStateException("previous and current gene should be MapGene or ArrayGene")
                     }
-                    impact.countSizeImpact(diff, hasImpact)
+                    impact.countSizeImpact(diff, hasImpact, isWorse)
                 }
                 is EnumGeneImpact ->{
                     if (gc.current !is EnumGene<*>)
                         throw IllegalStateException("previous and current gene should be EnumGene")
-                    impact.countValueImpact(gc.current.index, hasImpact)
+                    impact.countValueImpact(gc.current.index, hasImpact, isWorse)
                 }
                 is OptionalGeneImpact ->{
                     if (gc.current !is OptionalGene || gc.previous !is OptionalGene)
                         throw IllegalStateException("previous and current gene should be OptionalGene")
-                    impact.countActiveImpact(gc.current.isActive, hasImpact)
+                    impact.countActiveImpact(gc.current.isActive, hasImpact, isWorse)
 
                     val gcGene = MutatedGeneWithContext(current = gc.current.gene, previous = gc.previous.gene, action = gc.action, position = gc.position)
-                    processImpact(impact.geneImpact, gcGene, hasImpact)
+                    processImpact(impact.geneImpact, gcGene, hasImpact, isWorse = isWorse)
                 }
                 is DisruptiveGeneImpact ->{
                     if (gc.current !is DisruptiveGene<*> || gc.previous !is DisruptiveGene<*>)
                         throw IllegalStateException("previous and current gene should be DisruptiveGene")
                     val gcGene = MutatedGeneWithContext(current = gc.current.gene, previous = gc.previous.gene, action = gc.action, position = gc.position)
-                    processImpact(impact.geneImpact, gcGene, hasImpact)
+                    processImpact(impact.geneImpact, gcGene, hasImpact, isWorse = isWorse)
                 }
                 is DateTimeGeneImpact ->{
                     if (gc.current !is DateTimeGene || gc.previous !is DateTimeGene)
                         throw IllegalStateException("previous and current gene should be DateTimeGene")
-                    impact.countDateTimeImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                    impact.countDateTimeImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact, isWorse = isWorse)
                 }
                 is TimeGeneImpact -> {
                     if (gc.current !is TimeGene || gc.previous !is TimeGene)
                         throw IllegalStateException("previous and current gene should be TimeGene")
-                    impact.countTimeImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                    impact.countTimeImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact, isWorse = isWorse)
                 }
                 is DateGeneImpact ->{
                     if (gc.current !is DateGene || gc.previous !is DateGene)
                         throw IllegalStateException("previous and current gene should be DateGene")
-                    impact.countDateImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                    impact.countDateImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact, isWorse = isWorse)
                 }
                 is StringGeneImpact ->{
                     /*
@@ -187,7 +186,7 @@ class ImpactUtils {
                      */
                     if (gc.current !is StringGene || gc.previous !is StringGene)
                         throw IllegalStateException("previous and current gene should be DateTimeGene")
-                    impact.countSpecializationGeneImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact)
+                    impact.countSpecializationGeneImpact(current = gc.current, previous = gc.previous, hasImpact = hasImpact, isWorse = isWorse)
                 }
             }
         }
@@ -205,14 +204,20 @@ class ImpactUtils {
         fun selectApproachGood(genes : List<Pair<Gene, GeneImpact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<Gene>{
             if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
             val size = decideSize(genes.size, percentage)
-            return genes.sortedByDescending { it.second.timesOfImpact }.subList(0, size).map { it.first }
+            return sortGenes(genes).subList(0, size)
         }
 
-        fun selectFeedback(genes : List<Pair<Gene, GeneImpact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<Gene>{
-            if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
-            val size = decideSize(genes.size, percentage)
-            return genes.sortedBy { it.second.counter }.subList(0, size).map { it.first }
+        private fun sortGenes(genes : List<Pair<Gene, GeneImpact>>, feedback : Boolean = false) : List<Gene>{
+            val no = genes.sortedBy { if (feedback) it.second.counter else it.second.timesOfNoImpacts }
+            val worse = genes.sortedBy { it.second.wCounter }
+            return genes.sortedBy { g-> no.indexOf(g) + worse.indexOf(g) }.map { it.first }
         }
+
+//        fun selectFeedback(genes : List<Pair<Gene, GeneImpact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<Gene>{
+//            if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+//            val size = decideSize(genes.size, percentage)
+//            return sortGenes(genes, true).subList(0, size)
+//        }
 
         private fun decideSize(list : Int, percentage : Double) = (list * percentage).run {
             if(this < 1.0) 1 else this.toInt()

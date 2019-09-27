@@ -1,8 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class ArrayGene<T>(
@@ -18,6 +25,10 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
+    }
+
+    companion object{
+        val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
     }
 
     override fun copy(): Gene {
@@ -77,6 +88,48 @@ class ArrayGene<T>(
         }
     }
 
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        var add = elements.isEmpty()
+        var delete = elements.size == maxSize
+
+        val modifySize = if (impact != null && impact is CollectionGeneImpact){
+            val probOfMutateSize = if (impact.sizeImpact.timesToManipulate == 0) 0.1
+            else impact.sizeImpact.timesOfImpact/impact.sizeImpact.timesToManipulate.toDouble().run {
+                when {
+                    this == 0.0 -> 0.05
+                    this > 0.5 -> 0.2
+                    else -> this
+                }
+            }
+            randomness.nextBoolean(probOfMutateSize)
+        }else {
+            randomness.nextBoolean(0.1)
+        }
+        if (modifySize){
+            val p = randomness.nextBoolean()
+            add = add || p
+            delete = delete || !p
+        }
+
+        if (add && add == delete)
+            log.warn("add and delete an element cannot happen in a mutation")
+
+        when{
+            add ->{
+                val gene = template.copy() as T
+                gene.randomize(randomness, false)
+                elements.add(gene)
+            }
+            delete ->{
+                elements.removeAt(randomness.nextInt(elements.size))
+            }
+            else -> {
+                val gene = randomness.choose(elements)
+                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi)
+            }
+        }
+    }
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return "[" +
                 elements.map { g -> g.getValueAsPrintableString(previousGenes, mode, targetFormat) }.joinToString(", ") +
@@ -88,4 +141,6 @@ class ArrayGene<T>(
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
+
+
 }

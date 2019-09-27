@@ -27,16 +27,16 @@ class ObjectGeneImpact (
     }
 
 
-    fun countFieldImpact(previous: ObjectGene, current : ObjectGene, hasImpact: Boolean, countDeepImpact : Boolean){
+    fun countFieldImpact(previous: ObjectGene, current : ObjectGene, hasImpact: Boolean, countDeepImpact : Boolean, isWorse : Boolean){
         current.fields.zip(previous.fields) { cf, pf ->
             Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
         }.filter { !it.second }.map { it.first }.forEach { g->
             val fImpact = fields.getValue(g.first.name)
             if (countDeepImpact){
                 val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1)
-                ImpactUtils.processImpact(fImpact, mutatedGeneWithContext,hasImpact, countDeepImpact)
+                ImpactUtils.processImpact(fImpact, mutatedGeneWithContext,hasImpact, countDeepImpact, isWorse)
             }else{
-                fImpact.countImpact(hasImpact)
+                fImpact.countImpactAndPerformance(hasImpact, isWorse)
             }
         }
     }

@@ -72,9 +72,10 @@ abstract class Gene(var name: String) {
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
      *   @param evi the evaluated individual contains an evolution of the gene with fitness values
-     *   @param selection how to select genes to mutate if [this] contains more than one genes, e.g., ObjectGene
-     *   @param impact info of impact of the gene
-     *   @param geneReference a reference (i.e., id generated) to find a gene in this history
+     *   @param selection how to select genes to mutate if [this] contains more than one genes(e.g., ObjectGene) or other characteristics(e.g., size of ArrayGene)
+     *   @param impact info of impact of the gene if it has, but in some case impact might be null, e.g., an element at ArrayGene
+     *   @param geneReference a reference (i.e., id generated) to find a gene in this history, which always refers to 'root' gene in the [evi]
+     *   @param archiveMutator mutate genes using archive-based methods if the method is enabled or supports this type of [this] gene.
      */
     open fun archiveMutation(randomness: Randomness,
                              allGenes: List<Gene>,
@@ -84,7 +85,11 @@ abstract class Gene(var name: String) {
                              geneReference : String,
                              archiveMutator: ArchiveMutator,
                              evi: EvaluatedIndividual<*>){
-        TODO("not implemented")
+
+        if (archiveMutator.enableArchiveGeneMutation() && archiveMutator.doesSupport(this)){
+            archiveMutator.mutate(this)
+        }else
+            standardMutation(randomness,apc, allGenes)
     }
 
     /**
@@ -144,5 +149,7 @@ abstract class Gene(var name: String) {
      */
     open fun reachOptimal() = false
 
-    open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){}
+    open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){
+
+    }
 }

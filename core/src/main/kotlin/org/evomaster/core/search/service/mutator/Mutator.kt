@@ -142,7 +142,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 mutatedGenes.mutatedGenes.filter { archiveMutator.doesSupport(it) }.forEachIndexed { index, s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
                     val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
-                    val previousValue = (trackedCurrent.findGeneById(id, mutatedGenes.mutatedPosition[index]) ?: throw IllegalStateException("mismatched genes"))
+                    val actionIndex = if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[index] else -1
+                    val previousValue = (trackedCurrent.findGeneById(id, actionIndex) ?: throw IllegalStateException("mismatched genes"))
                     savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
                 }
             }

@@ -30,17 +30,17 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
     @Test
     public void testAwayBad() throws Throwable {
-        testRunEM(ImpactMutationSelection.AWAY_BAD);
+        testRunEM(ImpactMutationSelection.AWAY_NOIMPACT);
     }
 
     @Test
     public void testApproachGood() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_GOOD);
+        testRunEM(ImpactMutationSelection.APPROACH_IMPACT);
     }
-    @Test
-    public void testFeedback() throws Throwable {
-        testRunEM(ImpactMutationSelection.FEED_BACK);
-    }
+//    @Test
+//    public void testFeedback() throws Throwable {
+//        testRunEM(ImpactMutationSelection.FEEDBACK_DIRECT);
+//    }
 
     public void testRunEM(ImpactMutationSelection method) throws Throwable {
 

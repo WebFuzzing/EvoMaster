@@ -2,7 +2,6 @@ package org.evomaster.experiments.archiveMutation.stringProblem
 
 import com.google.inject.Injector
 import com.google.inject.Key
-import com.google.inject.Module
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import com.netflix.governator.lifecycle.LifecycleManager
@@ -10,18 +9,14 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.Statistics
+import org.evomaster.core.search.service.mutator.geneMutation.CharPool
 import org.evomaster.experiments.archiveMutation.ArchiveProblemType
-import org.evomaster.experiments.archiveMutation.stringProblem.allDepDynamic.ADepDynamicStringProblemDefinition
 import org.evomaster.experiments.archiveMutation.stringProblem.allDepDynamic.ADepDynamicStringModule
 import org.evomaster.experiments.archiveMutation.stringProblem.allIndepStable.IndepStableStringModule
-import org.evomaster.experiments.archiveMutation.stringProblem.allIndepStable.IndepStableStringProblemDefinition
 import org.evomaster.experiments.archiveMutation.stringProblem.partialDepDynamic.PDepDynamicStringModule
-import org.evomaster.experiments.archiveMutation.stringProblem.partialDepDynamic.PDepDynamicStringProblemDefinition
 import org.evomaster.experiments.archiveMutation.stringProblem.partialIndepStable.PIndepStableStringModule
-import org.evomaster.experiments.archiveMutation.stringProblem.partialIndepStable.PIndepStableStringProblemDefinition
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -34,9 +29,9 @@ class Main {
 
     companion object{
 
-        private val targets = listOf(1)
+        private val targets = listOf(4)
         private val runs = 30
-        private val budgets = listOf(1000)
+        private val budgets = listOf(5000)
         private val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
         private val adaptiveGeneSelections = EMConfig.AdaptiveSelection.values().toList().sorted()
         private val archiveGeneMutation = EMConfig.ArchiveGeneMutation.values().toList().sorted()
@@ -46,25 +41,86 @@ class Main {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced3/"
-            default(arrayOf(folder))
-//            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced/"
-//            allSetting(folder,
-//                    targets = listOf(1),
-//                    runs =  30,
-//                    budgets = listOf(1000),
-//                    impactSelection = impactSelection,
-//                    probOfArchiveMutations = listOf(1.0),
-//                    includeNone = true, focusSearch = arrayOf(false),
-//                    problems = listOf(ArchiveProblemType.ALL_DEP_DYNAMIC),
-//                    archiveGeneMutation = archiveGeneMutation,
-//                    adaptiveGeneSelections = adaptiveGeneSelections)
+            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced_adaptive_selection2/"
+            adaptiveSelection(folder)
+            //default(arrayOf(folder))
+        }
+        /**
+         * exp for impact selection
+         */
+        private fun adaptiveSelection(baseFolder: String){
+            val problems = listOf(ArchiveProblemType.PAR_IND_STABLE)
+            val rateOfImpacts = listOf(0.2, 0.5, 0.8, 1.0)
+            val configs = produceConfigs(
+                    impactSelection = impactSelection,
+                    probOfArchiveMutations = probOfArchiveMutations,
+                    archiveGeneMutation = listOf(EMConfig.ArchiveGeneMutation.NONE),
+                    adaptiveGeneSelections = adaptiveGeneSelections,
+                    includeNone = true,
+                    baseLineWithMutation = false,
+                    focusSearch = focusSearch
+            )
+
+            if (!Files.exists(Paths.get(baseFolder))) Files.createDirectories(Paths.get(baseFolder))
+            val path = Paths.get("${baseFolder}summary.txt")
+            if (!Files.exists(path)) Files.createFile(path)
+            val specifiedLength = 5
+
+            Files.write(path, "=========${LocalDateTime.now()}===== length of string is $specifiedLength========${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
+            targets.forEach { n->
+                budgets.forEach { budget->
+                    rateOfImpacts.forEach { rp->
+                        problems.forEach { pt->
+                            Files.write(path, "--------${pt.name}($rp): $n targets, $runs runs, $budget fitness evaluations-------${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
+                            configs.forEach { config->
+                                var total = 0
+                                (0 until runs).forEach { i ->
+                                    val solution = run(
+                                            getArgs(
+                                                    budget = budget,
+                                                    n = n,
+                                                    run = i,
+                                                    problem = pt,
+                                                    baseFolder = baseFolder,
+                                                    writeStatistics = true,
+                                                    config = config
+
+                                            ),
+                                            n,
+                                            specifiedLength,
+                                            problem = pt,
+                                            rateOfImpact = rp,
+                                            charPool = CharPool.WORD)
+                                    total += solution.overall.coveredTargets()
+                                }
+                                val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
+                                Files.write(path, row.toByteArray(), StandardOpenOption.APPEND)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
+
+        /**
+         * exp for string gene mutation
+         */
         private fun default(args: Array<String>){
             val baseFolder = if (args.size == 1) args.first() else "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results/"
 
-            allSetting(baseFolder, targets, runs, budgets, impactSelection, probOfArchiveMutations, true, focusSearch, problems = problems, archiveGeneMutation = archiveGeneMutation, adaptiveGeneSelections = adaptiveGeneSelections)
+            allSetting(
+                    baseFolder,
+                    targets,
+                    runs,
+                    budgets,
+                    impactSelection,
+                    probOfArchiveMutations,
+                    true,
+                    focusSearch,
+                    problems = problems,
+                    archiveGeneMutation = archiveGeneMutation,
+                    adaptiveGeneSelections = adaptiveGeneSelections)
         }
 
         private fun allSetting(
@@ -114,8 +170,8 @@ class Main {
                                         ),
                                         n,
                                         specifiedLength,
-                                        problem = pt
-                                )
+                                        problem = pt,
+                                        rateOfImpact = 0.0)
                                 total += solution.overall.coveredTargets()
                             }
                             val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
@@ -132,25 +188,19 @@ class Main {
         private fun formatString(len : Int, value :String) = if (value.length > len) value else "%${len}s".format(value)
 
 
-        private fun run(args: Array<String>, nTargets : Int = 1, specifiedLength : Int = 16, maxLength: Int = 16, problem: ArchiveProblemType) : Solution<StringIndividual>{
+        private fun run(args: Array<String>, nTargets : Int = 1, specifiedLength : Int = 16, maxLength: Int = 16, problem: ArchiveProblemType, rateOfImpact : Double, charPool: CharPool = CharPool.ALL) : Solution<StringIndividual>{
 
-            val modules = when(problem){
-                ArchiveProblemType.ALL_DEP_DYNAMIC -> arrayOf<Module>(ADepDynamicStringModule(),StringModule(), BaseModule(args))
-                ArchiveProblemType.PAR_DEP_DYNAMIC -> arrayOf<Module>(PDepDynamicStringModule(),StringModule(), BaseModule(args))
-                ArchiveProblemType.ALL_IND_STABLE -> arrayOf<Module>(IndepStableStringModule(), StringModule(), BaseModule(args))
-                ArchiveProblemType.PAR_IND_STABLE -> arrayOf<Module>(PIndepStableStringModule(), StringModule(), BaseModule(args))
+            val specialized = when(problem){
+                ArchiveProblemType.ALL_DEP_DYNAMIC -> ADepDynamicStringModule(nTargets, specifiedLength, maxLength, 1.0)
+                ArchiveProblemType.PAR_DEP_DYNAMIC -> PDepDynamicStringModule(nTargets, specifiedLength, maxLength, if (rateOfImpact <= 0) 0.4 else rateOfImpact)
+                ArchiveProblemType.ALL_IND_STABLE -> IndepStableStringModule(nTargets, specifiedLength, maxLength, 1.0)
+                ArchiveProblemType.PAR_IND_STABLE -> PIndepStableStringModule(nTargets, specifiedLength, maxLength, if (rateOfImpact <= 0) 0.4 else rateOfImpact, charPool)
             }
+
 
             val injector: Injector = LifecycleInjector.builder()
-                    .withModules(* modules)
+                    .withModules(* arrayOf(BaseModule(args),StringModule(),specialized))
                     .build().createInjector()
-
-            when(problem){
-                ArchiveProblemType.ALL_DEP_DYNAMIC -> injector.getInstance(ADepDynamicStringProblemDefinition::class.java).init(nTargets, specifiedLength, maxLength)
-                ArchiveProblemType.PAR_DEP_DYNAMIC -> injector.getInstance(PDepDynamicStringProblemDefinition::class.java).init(nTargets, specifiedLength, maxLength)
-                ArchiveProblemType.ALL_IND_STABLE -> injector.getInstance(IndepStableStringProblemDefinition::class.java).init(nTargets, specifiedLength, maxLength)
-                ArchiveProblemType.PAR_IND_STABLE -> injector.getInstance(PIndepStableStringProblemDefinition::class.java).init(nTargets, specifiedLength, maxLength)
-            }
 
 
             val mio = injector.getInstance(Key.get(
@@ -200,7 +250,7 @@ class Main {
                 baseFolder : String,
                 disableStructureMutationDuringFocusSearch : Boolean,
                 probOfArchiveMutation : Double = 1.0,
-                method : ImpactMutationSelection = ImpactMutationSelection.FEED_BACK,
+                method : ImpactMutationSelection = ImpactMutationSelection.NONE,
                 archiveGeneMutation : EMConfig.ArchiveGeneMutation,
                 adaptiveGeneSelection : EMConfig.AdaptiveSelection
         ) = arrayOf(
@@ -246,6 +296,7 @@ class Main {
         fun produceConfigs(impactSelection : List<ImpactMutationSelection>,
                            probOfArchiveMutations : List<Double>,
                            includeNone : Boolean = true,
+                           baseLineWithMutation : Boolean = true,
                            focusSearch : Array<Boolean>,
                            archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>,
                            adaptiveGeneSelections : List<EMConfig.AdaptiveSelection>) : List<ExpConfig>{
@@ -262,25 +313,27 @@ class Main {
                         )
                 )
 
-                configs.add(
-                        ExpConfig(
-                                probOfArchiveMutation = 1.0,
-                                method = ImpactMutationSelection.NONE,
-                                disableStructureMutationDuringFocusSearch = false,
-                                adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
-                                archiveGeneMutation = EMConfig.ArchiveGeneMutation.SPECIFIED
-                        )
-                )
+               if (baseLineWithMutation){
+                   configs.add(
+                           ExpConfig(
+                                   probOfArchiveMutation = 1.0,
+                                   method = ImpactMutationSelection.NONE,
+                                   disableStructureMutationDuringFocusSearch = false,
+                                   adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
+                                   archiveGeneMutation = EMConfig.ArchiveGeneMutation.SPECIFIED
+                           )
+                   )
 
-                configs.add(
-                        ExpConfig(
-                                probOfArchiveMutation = 1.0,
-                                method = ImpactMutationSelection.NONE,
-                                disableStructureMutationDuringFocusSearch = false,
-                                adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
-                                archiveGeneMutation = EMConfig.ArchiveGeneMutation.ADAPTIVE
-                        )
-                )
+                   configs.add(
+                           ExpConfig(
+                                   probOfArchiveMutation = 1.0,
+                                   method = ImpactMutationSelection.NONE,
+                                   disableStructureMutationDuringFocusSearch = false,
+                                   adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
+                                   archiveGeneMutation = EMConfig.ArchiveGeneMutation.ADAPTIVE
+                           )
+                   )
+               }
             }
 
             focusSearch.forEach { fs->

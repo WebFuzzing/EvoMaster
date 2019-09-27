@@ -25,4 +25,11 @@ class BinaryGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is BooleanGene
+
+    fun countValueImpact(current : BooleanGene, hasImpact: Boolean, isWorse : Boolean){
+        if (current.value){
+            _true.countImpactAndPerformance(hasImpact, isWorse)
+        }else
+            _false.countImpactAndPerformance(hasImpact, isWorse)
+    }
 }

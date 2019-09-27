@@ -49,7 +49,7 @@ class StringGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is StringGene
 
-    fun countSpecializationGeneImpact(previous : StringGene, current : StringGene, hasImpact : Boolean){
+    fun countSpecializationGeneImpact(previous : StringGene, current : StringGene, hasImpact : Boolean, isWorse :Boolean){
         /*
         TODO
          is it possible that the specializationGene of StringGene is not initialized?
@@ -61,7 +61,7 @@ class StringGeneImpact (
                 && previous.specializationGene != null
                 && current.specializations::class.java.simpleName == previous.specializationGene!!::class.java.simpleName){
             val gcGene = MutatedGeneWithContext(current = current.specializationGene!!, previous = previous.specializationGene!!)
-            ImpactUtils.processImpact(specializationGeneImpact!!, gcGene, hasImpact)
+            ImpactUtils.processImpact(specializationGeneImpact!!, gcGene, hasImpact, isWorse = isWorse)
         }
 
     }

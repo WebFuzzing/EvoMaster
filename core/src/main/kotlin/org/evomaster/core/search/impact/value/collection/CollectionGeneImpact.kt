@@ -24,9 +24,9 @@ class CollectionGeneImpact (
         return CollectionGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, sizeImpact.copy())
     }
 
-    fun countSizeImpact(differentSize : Boolean, hasImpact : Boolean){
+    fun countSizeImpact(differentSize : Boolean, hasImpact : Boolean, isWorse: Boolean){
         if (differentSize)
-            sizeImpact.countImpact(hasImpact)
+            sizeImpact.countImpactAndPerformance(hasImpact, isWorse)
     }
 
     override fun validate(gene: Gene): Boolean = gene is MapGene<*> || gene is ArrayGene<*>

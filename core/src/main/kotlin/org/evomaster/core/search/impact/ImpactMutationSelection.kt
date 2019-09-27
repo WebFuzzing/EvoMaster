@@ -5,8 +5,16 @@ package org.evomaster.core.search.impact
  */
 enum class ImpactMutationSelection {
     NONE,
-    AWAY_BAD,
-    APPROACH_GOOD,
-    FEED_BACK
-    //FOCUS_LATEST
+    /**
+     * avoid genes (only 10%) which have lower degree of impacts
+     */
+    AWAY_NOIMPACT,
+    /**
+     * select genes which have higher degree of impacts
+     */
+    APPROACH_IMPACT,
+    /**
+     * select genes which have recent impacts
+     */
+    //FEEDBACK_DIRECT
 }

@@ -320,10 +320,10 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val isAnyChange = updateReachedTargets(fitness) || next.fitness.isDifferent(previous.fitness, notCoveredTargets, strategy)
 //        val comparedFitness = next.fitness.computeFitnessScore() - previous.fitness.computeFitnessScore()
 
-        compareWithLatest(next, previous, isAnyChange, mutatedGenes)
+        compareWithLatest(next, previous, isAnyChange, mutatedGenes, !inTrack)
     }
 
-    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification){
+    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification, isWorse : Boolean){
         /**
          * genes of individual might be added with additionalInfoList
          */
@@ -338,7 +338,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             /*
              TODO if required position/sequence sensitive analysis
              */
-            getImpactsOfStructure().countImpact(next, isAnyChange, sizeChanged)
+            getImpactsOfStructure().countImpact(next, isAnyChange, sizeChanged, isWorse)
 
             /*
              TODO MAN: shall we update impacts of genes regarding deletion of genes?
@@ -355,12 +355,11 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 
-
         mutatedGenesWithContext.forEach { (t, u) ->
             val impact = getImpactOfGenes().getValue(t)
 
             u.forEach { gc ->
-                ImpactUtils.processImpact(impact, gc, isAnyChange)
+                ImpactUtils.processImpact(impact, gc, isAnyChange, isWorse = isWorse)
             }
         }
 

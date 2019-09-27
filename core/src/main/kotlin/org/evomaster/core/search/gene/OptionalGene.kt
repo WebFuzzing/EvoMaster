@@ -35,8 +35,7 @@ class OptionalGene(name: String,
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
-
-
+        
         if (!forceNewValue) {
             isActive = randomness.nextBoolean()
             gene.randomize(randomness, false, allGenes)

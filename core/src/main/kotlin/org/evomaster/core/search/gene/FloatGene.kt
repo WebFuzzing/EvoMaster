@@ -56,19 +56,4 @@ class FloatGene(name: String,
         }
         return this.value == other.value
     }
-
-    override fun archiveMutation(
-            randomness: Randomness,
-            allGenes: List<Gene>,
-            apc: AdaptiveParameterControl,
-            selection: ImpactMutationSelection,
-            impact: GeneImpact?,
-            geneReference : String,
-            archiveMutator : ArchiveMutator,
-            evi: EvaluatedIndividual<*>
-    ) {
-
-        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? FloatGene ?: throw IllegalStateException("latest gene should be FloatGene")
-        value += (value - latest.value)
-    }
 }

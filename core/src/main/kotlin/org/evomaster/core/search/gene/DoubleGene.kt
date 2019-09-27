@@ -56,19 +56,4 @@ class DoubleGene(name: String,
         }
         return this.value == other.value
     }
-
-    override fun archiveMutation(
-            randomness: Randomness,
-            allGenes: List<Gene>,
-            apc: AdaptiveParameterControl,
-            selection: ImpactMutationSelection,
-            impact: GeneImpact?,
-            geneReference : String,
-            archiveMutator : ArchiveMutator,
-            evi: EvaluatedIndividual<*>
-    ) {
-
-        val latest = (evi.getLatestGene(this)?:standardMutation(randomness, apc, allGenes)) as? DoubleGene ?: throw IllegalStateException("latest gene should be DoubleGene")
-        value += (value - latest.value)
-    }
 }

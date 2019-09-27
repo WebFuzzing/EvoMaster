@@ -25,8 +25,8 @@ class EnumGeneImpact (
         return EnumGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, values)
     }
 
-    fun countValueImpact(index : Int, hasImpact: Boolean){
-        values[index].countImpact(hasImpact)
+    fun countValueImpact(index : Int, hasImpact: Boolean, isWorse : Boolean){
+        values[index].countImpactAndPerformance(hasImpact, isWorse)
     }
 
     override fun validate(gene: Gene): Boolean = gene is EnumGene<*>

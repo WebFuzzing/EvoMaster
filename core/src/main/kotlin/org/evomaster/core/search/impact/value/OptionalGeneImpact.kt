@@ -27,11 +27,11 @@ class OptionalGeneImpact (
         return OptionalGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, activeImpact.copy(), geneImpact.copy() as GeneImpact)
     }
 
-    fun countActiveImpact(isActive : Boolean, hasImpact: Boolean){
+    fun countActiveImpact(isActive : Boolean, hasImpact: Boolean, isWorse: Boolean){
         if (isActive)
-            activeImpact._true.countImpact(hasImpact)
+            activeImpact._true.countImpactAndPerformance(hasImpact, isWorse)
         else
-            activeImpact._false.countImpact(hasImpact)
+            activeImpact._false.countImpactAndPerformance(hasImpact, isWorse)
     }
 
     override fun validate(gene: Gene): Boolean = gene is OptionalGene
