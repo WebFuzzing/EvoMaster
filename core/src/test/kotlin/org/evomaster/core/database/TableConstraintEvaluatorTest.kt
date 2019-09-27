@@ -4,8 +4,8 @@ import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
 import org.evomaster.core.database.schema.Table
+import org.evomaster.core.search.gene.DateTimeGene
 import org.evomaster.core.search.gene.IntegerGene
-import org.evomaster.core.search.gene.sql.SqlTimestampGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.dbconstraint.*
@@ -417,7 +417,7 @@ class TableConstraintEvaluatorTest {
         val table = Table("table0", setOf(statusColumn, pAtColumn), setOf(), setOf(constraint))
         val action = DbAction(table = table, selectedColumns = setOf(statusColumn, pAtColumn), id = 0L)
         (action.seeGenes()[0] as StringGene).copyValueFrom(StringGene("status", value = "B"))
-        (action.seeGenes()[1] as SqlTimestampGene).copyValueFrom(SqlTimestampGene("p_at"))
+        (action.seeGenes()[1] as DateTimeGene).copyValueFrom(DbActionGeneBuilder().buildSqlTimestampGene("p_at"))
 
         val evaluator = TableConstraintEvaluator()
 

@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation;
 
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.instrumentation.shared.TaintInputName;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.io.Serializable;
 import java.util.*;
@@ -66,7 +67,7 @@ public class AdditionalInfo implements Serializable {
 
 
     public void addSpecialization(String taintInputName, StringSpecializationInfo info){
-        if(!TaintInputName.isTaintInput(taintInputName)){
+        if(!ExecutionTracer.getTaintType(taintInputName).isTainted()){
             throw new IllegalArgumentException("No valid input name: " + taintInputName);
         }
         Objects.requireNonNull(info);

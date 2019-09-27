@@ -114,6 +114,8 @@
         <testcontainers.version>1.10.1</testcontainers.version>
         <antlr.version>4.7.2</antlr.version>
         <nlp.version>3.9.2</nlp.version>
+        <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
+        <jgrapht.version>0.8.3</jgrapht.version>
     </properties>
 
 
@@ -220,7 +222,7 @@
             <dependency> <!-- This is needed as Guice has no LifeCycle management -->
                 <groupId>com.netflix.governator</groupId>
                 <artifactId>governator</artifactId>
-                <version>1.17.5</version>
+                <version>1.17.8</version>
                 <exclusions>
                     <!--It looks like it uses quite a few old versions -->
                     <exclusion>
@@ -273,8 +275,18 @@
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr.version}</version>
             </dependency>
-
-
+            <dependency><!-- Used for Java Regex distances -->
+                <!-- BSD -->
+                <groupId>dk.brics.automaton</groupId>
+                <artifactId>automaton</artifactId>
+                <version>${dk.brics.automaton.version}</version>
+            </dependency>
+            <dependency><!-- Used for Java Regex distances -->
+                <!-- LGPL -->
+                <groupId>net.sf.jgrapht</groupId>
+                <artifactId>jgrapht</artifactId>
+                <version>${jgrapht.version}</version>
+            </dependency>
             <!-- Logging -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -506,6 +518,12 @@
                 <groupId>org.junit.platform</groupId>
                 <artifactId>junit-platform-launcher</artifactId>
                 <version>${junit.platform.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit.jupiter.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>

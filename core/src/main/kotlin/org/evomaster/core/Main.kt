@@ -12,6 +12,7 @@ import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.BlackBoxRestModule
 import org.evomaster.core.problem.rest.service.ResourceDepManageService
 import org.evomaster.core.problem.rest.service.ResourceRestModule
 import org.evomaster.core.problem.rest.service.RestModule
@@ -178,12 +179,23 @@ class Main {
         fun init(args: Array<String>): Injector {
 
             val base = BaseModule(args)
+            val config = base.getEMConfig()
 
             val problemType = base.getEMConfig().problemType
 
             val problemModule = when (problemType) {
-                EMConfig.ProblemType.REST -> if(base.getEMConfig().resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE) RestModule() else ResourceRestModule()
+                EMConfig.ProblemType.REST -> {
+                    if(config.blackBox){
+                        BlackBoxRestModule(config.bbExperiments)
+                    } else if(config.resourceSampleStrategy == EMConfig.ResourceSamplingStrategy.NONE){
+                        RestModule()
+                    } else {
+                        ResourceRestModule()
+                    }
+                }
+
                 EMConfig.ProblemType.WEB -> WebModule()
+
                 //this should never happen, unless we add new type and forget to add it here
                 else -> throw IllegalStateException("Unrecognized problem type: $problemType")
             }
@@ -211,31 +223,36 @@ class Main {
 
         fun run(injector: Injector): Solution<*> {
 
-            //TODO check problem type
-            val rc = injector.getInstance(RemoteController::class.java)
-            rc.startANewSearch()
-
             val config = injector.getInstance(EMConfig::class.java)
 
+            //TODO check problem type
 
-            val key = when (config.algorithm) {
-                EMConfig.Algorithm.MIO -> Key.get(
-                        object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.RANDOM -> Key.get(
-                        object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.WTS -> Key.get(
-                        object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
-                EMConfig.Algorithm.MOSA -> Key.get(
-                        object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+            if(! config.blackBox || config.bbExperiments) {
+                val rc = injector.getInstance(RemoteController::class.java)
+                rc.startANewSearch()
+            }
+
+            val key = when {
+                config.blackBox || config.algorithm == EMConfig.Algorithm.RANDOM ->
+                    Key.get(object : TypeLiteral<RandomAlgorithm<RestIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MIO ->
+                    Key.get(object : TypeLiteral<MioAlgorithm<RestIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.WTS ->
+                    Key.get(object : TypeLiteral<WtsAlgorithm<RestIndividual>>() {})
+
+                config.algorithm == EMConfig.Algorithm.MOSA ->
+                    Key.get(object : TypeLiteral<MosaAlgorithm<RestIndividual>>() {})
+
                 else -> throw IllegalStateException("Unrecognized algorithm ${config.algorithm}")
             }
 
             val imp = injector.getInstance(key)
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
-            val solution = imp.search()
 
-            return solution
+            return imp.search()
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
@@ -256,7 +273,13 @@ class Main {
                     " Used experimental settings: $options")
         }
 
-        private fun checkState(injector: Injector): ControllerInfoDto {
+        private fun checkState(injector: Injector): ControllerInfoDto? {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if(config.blackBox){
+                return null
+            }
 
             val rc = injector.getInstance(RemoteController::class.java)
 
@@ -267,13 +290,17 @@ class Main {
                 LoggingUtil.getInfoLogger().warn("The system under test is running without instrumentation")
             }
 
+            if(dto.fullName.isNullOrBlank()){
+                throw IllegalStateException("Failed to retrieve the name of the EvoMaster Driver")
+            }
+
             //TODO check if the type of controller does match the output format
 
             return dto
         }
 
 
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto) {
+        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -288,9 +315,11 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
 
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+
             writer.writeTests(
                     solution,
-                    controllerInfoDto.fullName
+                    controllerInfoDto?.fullName
             )
         }
 

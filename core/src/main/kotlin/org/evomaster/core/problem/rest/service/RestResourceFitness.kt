@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 
 import com.google.inject.Inject
+import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.problem.rest.*
@@ -60,7 +61,9 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             var terminated = false
 
             for (a in call.actions){
-                rc.registerNewAction(indexOfAction)
+
+                //TODO handling of inputVariables
+                rc.registerNewAction(ActionDto().apply { index = indexOfAction})
 
                 var ok = false
 

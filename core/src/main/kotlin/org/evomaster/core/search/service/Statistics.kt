@@ -1,8 +1,11 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -29,6 +32,12 @@ class Statistics : SearchListener {
     @Inject
     private lateinit var idMapper: IdMapper
 
+    @Inject(optional = true)
+    private var sampler: Sampler<*>? = null
+
+    @Inject(optional = true)
+    private var remoteController: RemoteController? = null
+
     /**
      * How often test executions did timeout
      */
@@ -37,28 +46,18 @@ class Statistics : SearchListener {
     /**
      * How often it was not possible to compute coverage for a test
      */
-    private var coverage_failures = 0
+    private var coverageFailures = 0
 
 
     private class Pair(val header: String, val element: String)
 
-    /**
-     * We might collect some info from the search, but
-     * not only on the final solution, also on the
-     * intermediate results
-     */
-    private class Snapshot(
-            val coveredTargets: Int = 0,
-            val reachedNonCoveredTargets: Int = 0,
-            val averageTestSizeForReachedButNotCovered: Double = 0.0
-    )
 
     /**
      * List, in chronological order, of statistics snapshots.
      * A snapshot could be taken for example every 5% of search
      * budget evaluations
      */
-    private val snapshots: MutableMap<Double, Snapshot> = mutableMapOf()
+    private val snapshots: MutableMap<Double, List<Pair>> = mutableMapOf()
 
     private var snapshotThreshold = -1.0
 
@@ -78,15 +77,14 @@ class Statistics : SearchListener {
 
         Files.createDirectories(path.parent)
 
-        if (Files.exists(path) && config.appendToStatisticsFile) {
-            path.toFile().appendText("$elements\n")
-        } else {
+        if (!Files.exists(path) or !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
             path.toFile().appendText("$headers\n")
-            path.toFile().appendText("$elements\n")
         }
+
+        path.toFile().appendText("$elements\n")
     }
 
     fun writeSnapshot() {
@@ -99,10 +97,7 @@ class Statistics : SearchListener {
             }
         }
 
-        val properties = EMConfig.getConfigurationProperties()
-        val confHeader = properties.map { it.name }.joinToString(",")
-        val confValues = properties.map { it.getter.call(config).toString() }.joinToString(",")
-
+        val headers = "interval," + snapshots.values.first().map { it.header }.joinToString(",")
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
 
@@ -112,16 +107,14 @@ class Statistics : SearchListener {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
-            path.toFile().appendText("interval,covered,reachedNonCovered,averageTestSizeForReachedButNotCovered,$confHeader\n")
+            path.toFile().appendText("$headers\n")
         }
 
-        snapshots.entries.stream().sorted { o1, o2 -> o1.key.compareTo(o2.key) }
+        snapshots.entries.stream()
+                .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
                 .forEach {
-                    path.toFile().appendText("${it.key}," +
-                            "${it.value.coveredTargets}," +
-                            "${it.value.reachedNonCoveredTargets}," +
-                            "${it.value.averageTestSizeForReachedButNotCovered}," +
-                            "$confValues\n")
+                    val elements = it.value.map { it.element }.joinToString(",")
+                    path.toFile().appendText("${it.key},$elements\n")
                 }
     }
 
@@ -131,7 +124,7 @@ class Statistics : SearchListener {
     }
 
     fun reportCoverageFailure() {
-        coverage_failures++
+        coverageFailures++
     }
 
     override fun newActionEvaluated() {
@@ -149,21 +142,21 @@ class Statistics : SearchListener {
 
     private fun takeSnapshot() {
 
-        val snap = Snapshot(
-                coveredTargets = archive.numberOfCoveredTargets(),
-                reachedNonCoveredTargets = archive.numberOfReachedButNotCoveredTargets(),
-                averageTestSizeForReachedButNotCovered = archive.averageTestSizeForReachedButNotCovered()
-        )
+        val solution = archive.extractSolution()
+
+        val snap = getData(solution)
 
         val key = if (snapshotThreshold <= 100) snapshotThreshold else 100.0
 
-        snapshots.put(key, snap)
+        snapshots[key] = snap
 
         //next step
         snapshotThreshold += config.snapshotInterval
     }
 
     private fun getData(solution: Solution<*>): List<Pair> {
+
+        val unitsInfo = remoteController?.getSutInfo()?.unitsInfoDto
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -173,23 +166,43 @@ class Statistics : SearchListener {
             add(Pair("evaluatedActions", "" + time.evaluatedActions))
             add(Pair("elapsedSeconds", "" + time.getElapsedSeconds()))
             add(Pair("generatedTests", "" + solution.individuals.size))
+            add(Pair("generatedTestTotalSize", "" + solution.individuals.map{ it.individual.size()}.sum()))
             add(Pair("coveredTargets", "" + solution.overall.coveredTargets()))
             add(Pair("lastActionImprovement", "" + time.lastActionImprovement))
+            add(Pair("endpoints", "" + numberOfEndpoints()))
+            add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
             add(Pair("errors5xx", "" + errors5xx(solution)))
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+
+            add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
+            add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
+            add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
+            add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
+            add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
+            add(Pair("numberOfUnits", "" + (unitsInfo?.numberOfUnits ?: 0)))
+
+            add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
+            add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))
             add(Pair("maxReturnCodes", "" + codes.max()))
 
             add(Pair("testTimeouts", "$timeouts"))
-            add(Pair("coverageFailures", "$coverage_failures"))
+            add(Pair("coverageFailures", "$coverageFailures"))
 
             add(Pair("id", config.statisticsColumnId))
         }
         addConfig(list)
 
         return list
+    }
+
+    private fun numberOfEndpoints() : Int {
+        if(sampler == null || sampler !is RestSampler){
+            return 0
+        }
+        return sampler!!.numberOfDistinctActions()
     }
 
 
@@ -208,6 +221,19 @@ class Statistics : SearchListener {
                 .flatMap { it.evaluatedActions() }
                 .filter {
                     it.result is RestCallResult && it.result.hasErrorCode()
+                }
+                .map { it.action.getName() }
+                .distinct()
+                .count()
+    }
+
+    private fun covered2xxEndpoints(solution: Solution<*>) : Int {
+
+        //count the distinct number of API paths for which we have a 2xx
+        return solution.individuals
+                .flatMap { it.evaluatedActions() }
+                .filter {
+                    it.result is RestCallResult && it.result.getStatusCode()?.let { c -> c in 200..299 } ?: false
                 }
                 .map { it.action.getName() }
                 .distinct()

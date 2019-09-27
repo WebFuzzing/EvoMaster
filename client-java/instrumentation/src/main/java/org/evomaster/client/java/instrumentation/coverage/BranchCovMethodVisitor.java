@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -52,6 +53,7 @@ public class BranchCovMethodVisitor extends MethodVisitor {
             branch coverage
          */
 
+        UnitsInfoRecorder.markNewBranchPair();
         ObjectiveRecorder.registerTarget(
                 ObjectiveNaming.branchObjectiveName(className, latestVisitLine, branchId, true));
         ObjectiveRecorder.registerTarget(

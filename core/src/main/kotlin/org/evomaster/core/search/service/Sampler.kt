@@ -28,6 +28,8 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     abstract fun sampleAtRandom(): T
 
 
+    fun numberOfDistinctActions() = actionCluster.size
+
     /**
      * Create a new individual. Usually each call to this method
      * will create a new, different individual, but there is no

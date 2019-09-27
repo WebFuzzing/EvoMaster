@@ -6,16 +6,14 @@ import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.SutHandler;
-import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto;
+import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.controller.api.ControllerConstants;
-import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
-import org.evomaster.client.java.controller.api.dto.ExtraHeuristicsDto;
-import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto;
 import org.evomaster.client.java.controller.api.dto.database.schema.DbSchemaDto;
@@ -266,22 +264,22 @@ public abstract class SutController implements SutHandler {
      * in the test sequence is executed, and their order, we need to keep track of which
      * action does cover what.
      */
-    public final void newAction(int actionIndex) {
+    public final void newAction(ActionDto dto) {
 
-        if (actionIndex > extras.size()) {
+        if (dto.index > extras.size()) {
             extras.add(computeExtraHeuristics());
         }
-        this.actionIndex = actionIndex;
+        this.actionIndex = dto.index;
 
         resetExtraHeuristics();
 
-        newActionSpecificHandler(actionIndex);
+        newActionSpecificHandler(dto);
     }
 
 
     public abstract void newTestSpecificHandler();
 
-    public abstract void newActionSpecificHandler(int actionIndex);
+    public abstract void newActionSpecificHandler(ActionDto dto);
 
 
     /**
@@ -356,4 +354,18 @@ public abstract class SutController implements SutHandler {
      * Specify the format in which the test cases should be generated
      */
     public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
+
+
+    public abstract UnitsInfoDto getUnitsInfoDto();
+
+    protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
+        UnitsInfoDto dto = new UnitsInfoDto();
+        dto.numberOfBranches = recorder.getNumberOfBranches();
+        dto.numberOfLines = recorder.getNumberOfLines();
+        dto.numberOfReplacedMethodsInSut = recorder.getNumberOfReplacedMethodsInSut();
+        dto.numberOfReplacedMethodsInThirdParty = recorder.getNumberOfReplacedMethodsInThirdParty();
+        dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
+        dto.numberOfUnits = recorder.getNumberOfUnits();
+        return dto;
+    }
 }

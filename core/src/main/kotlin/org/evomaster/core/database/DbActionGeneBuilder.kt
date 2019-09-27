@@ -288,11 +288,29 @@ class DbActionGeneBuilder {
         return RegexGene(geneName, disjunctions = DisjunctionListRxGene(disjunctions = disjunctionRxGenes))
     }
 
-    private fun handleTimestampColumn(column: Column): SqlTimestampGene {
+    fun buildSqlTimestampGene(name: String): DateTimeGene {
+        return DateTimeGene(
+                name = name,
+                date = DateGene("date",
+                        year = IntegerGene("year", 2016, 1900, 2100),
+                        month = IntegerGene("month", 3, 1, 12),
+                        day = IntegerGene("day", 12, 1, 31),
+                        onlyValidDates = true),
+                time = TimeGene("time",
+                        hour = IntegerGene("hour", 0, 0, 23),
+                        minute = IntegerGene("minute", 0, 0, 59),
+                        second = IntegerGene("second", 0, 0, 59)
+                        ),
+                dateTimeGeneFormat =  DateTimeGene.DateTimeGeneFormat.DEFAULT_DATE_TIME
+        )
+
+    }
+
+    private fun handleTimestampColumn(column: Column): DateTimeGene {
         return if (column.enumValuesAsStrings != null) {
             throw RuntimeException("Unsupported enum in TIMESTAMP. Please implement")
         } else {
-            SqlTimestampGene(column.name)
+            return buildSqlTimestampGene(column.name)
         }
     }
 
@@ -356,7 +374,7 @@ class DbActionGeneBuilder {
          * Throws an exception if the enum values is non-null and empty
          */
         private fun checkNotEmpty(enumValuesAsStrings: List<String>) {
-            if (enumValuesAsStrings!=null && enumValuesAsStrings.isEmpty()) {
+            if (enumValuesAsStrings != null && enumValuesAsStrings.isEmpty()) {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             }
         }

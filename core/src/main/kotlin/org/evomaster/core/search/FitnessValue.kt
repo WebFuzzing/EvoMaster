@@ -126,6 +126,14 @@ class FitnessValue(
         return targets.values.filter { t -> t.distance == MAX_VALUE }.count()
     }
 
+    fun coveredTargets(prefix: String, idMapper: IdMapper) : Int{
+
+        return targets.entries
+                .filter { it.value.distance == MAX_VALUE }
+                .filter { idMapper.getDescriptiveId(it.key).startsWith(prefix) }
+                .count()
+    }
+
     fun coverTarget(id: Int) {
         updateTarget(id, MAX_VALUE)
     }

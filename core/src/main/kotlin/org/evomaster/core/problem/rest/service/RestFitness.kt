@@ -1,31 +1,31 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.IdMapper
+import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import org.evomaster.core.Lazy
-import org.evomaster.core.search.gene.StringGene
 
-class RestFitness : AbstractRestFitness<RestIndividual>() {
+open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(RestFitness::class.java)
     }
 
-    @Inject
+    @Inject(optional = true)
     private lateinit var rc: RemoteController
 
     @Inject
@@ -49,8 +49,9 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
         //run the test, one action at a time
         for (i in 0 until individual.seeActions().size) {
 
-            rc.registerNewAction(i)
             val a = individual.seeActions()[i]
+
+            registerNewAction(a, i)
 
             var ok = false
 
@@ -105,61 +106,27 @@ class RestFitness : AbstractRestFitness<RestIndividual>() {
         }
 
         if (config.baseTaintAnalysisProbability > 0) {
-            doTaintAnalysis(individual, dto.additionalInfoList)
+            assert(actionResults.size == dto.additionalInfoList.size)
+            TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
     }
 
-    private fun doTaintAnalysis(individual: RestIndividual, additionalInfoList: List<AdditionalInfoDto>) {
+    private fun registerNewAction(action: RestAction, index: Int){
 
-        /*
-            Analyze if any tainted value was used in the SUT in some special way.
-            If that happened, then such info would end up in the AdditionalInfoDto.
-            Then, we would extend the genotype (but not the phenotype!!!) of this test.
-         */
-
-        Lazy.assert{individual.seeActions().size == additionalInfoList.size}
-
-        for (i in 0 until additionalInfoList.size) {
-
-            val dto = additionalInfoList[i]
-            if (dto.stringSpecializations == null || dto.stringSpecializations.isEmpty()) {
-                continue
-            }
-
-            val action = individual.seeActions()[i]
-
-            for (entry in dto.stringSpecializations.entries) {
-
-                if(entry.value.isEmpty()){
-                    throw IllegalArgumentException("No specialization info for value ${entry.key}")
-                }
-
-                val specs = entry.value.map {
-                    StringSpecializationInfo(
-                            StringSpecialization.valueOf(it.stringSpecialization),
-                            it.value)
-                }
-
-                val stringGene = action.seeGenes()
-                        .flatMap { it.flatView() }
-                        .filterIsInstance<StringGene>()
-                        .find { it.value == entry.key }
-
-                if(stringGene == null){
-                    /*
-                        This can happen if the taint input is manipulated, but still with
-                        some prefix and postfix
-                     */
-                    log.debug("No taint input '${entry.key}' in action nr. $i")
-                } else {
-                    stringGene.specializations = specs
-                }
-            }
-        }
-
+        rc.registerNewAction(ActionDto().apply {
+            this.index = index
+            //for now, we only include specialized regex
+            this.inputVariables = action.seeGenes()
+                    .flatMap { it.flatView() }
+                    .filterIsInstance<StringGene>()
+                    .filter { it.getSpecializationGene() != null && it.getSpecializationGene() is RegexGene}
+                    .map { it.getSpecializationGene()!!.getValueAsRawString()}
+        })
     }
+
+
 
     override fun doInitializingActions(ind: RestIndividual) {
 

@@ -113,7 +113,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         //run the test, one action at a time
         for (i in 0 until individual.actions.size) {
 
-            rc.registerNewAction(i)
+            //rc.registerNewAction(i)
             val a = individual.actions[i]
 
             var ok = false

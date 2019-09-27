@@ -1,11 +1,11 @@
 package org.evomaster.client.java.controller;
 
+import org.evomaster.client.java.controller.api.dto.ActionDto;
+import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
-import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.InstrumentationController;
-import org.evomaster.client.java.instrumentation.InstrumentingAgent;
-import org.evomaster.client.java.instrumentation.TargetInfo;
+import org.evomaster.client.java.instrumentation.*;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +39,12 @@ public abstract class EmbeddedSutController extends SutController {
     }
 
     @Override
-    public final void newActionSpecificHandler(int actionIndex){
-        ExecutionTracer.setActionIndex(actionIndex);
+    public final void newActionSpecificHandler(ActionDto dto){
+        ExecutionTracer.setAction(new Action(dto.index, dto.inputVariables));
+    }
+
+    @Override
+    public final UnitsInfoDto getUnitsInfoDto(){
+         return getUnitsInfoDto(UnitsInfoRecorder.getInstance());
     }
 }

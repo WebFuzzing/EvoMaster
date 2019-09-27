@@ -10,214 +10,195 @@ import java.util.regex.Pattern
 /**
  * Created by arcuri82 on 12-Jun-19.
  */
-class GenePostgresSimilarToVisitorTest {
+class GenePostgresSimilarToVisitorTest : RegexTestTemplate(){
 
-    private fun checkSimilarTo(similarTo: String) : RegexGene {
-        //used when syntax is the same as in Java regex
-        return checkSimilarTo(similarTo, similarTo)
+    override fun createGene(regex: String): RegexGene {
+        return RegexHandler.createGeneForPostgresSimilarTo(regex)
     }
-
-    private fun checkSimilarTo(similarTo: String, javaRegex: String) : RegexGene {
-
-        val randomness = Randomness()
-
-        val gene = RegexHandler.createGeneForPostgresSimilarTo(similarTo)
-
-        for(seed in 1..100L) {
-            randomness.updateSeed(seed)
-
-            gene.randomize(randomness, false, listOf())
-
-            val instance = gene.getValueAsRawString()
-
-            val pattern = Pattern.compile(javaRegex)
-            val matcher = pattern.matcher(instance)
-            assertTrue(matcher.find(), "String not matching SIMILAR TO:\n$similarTo\n$instance")
-        }
-
-        return gene
-    }
-
 
     @Test
     fun testEmpty(){
-        checkSimilarTo("", "")
+        checkSameAsJava("")
     }
 
     @Test
     fun testBaseStringSingleChar(){
-        checkSimilarTo("a")
+        checkSameAsJava("a")
     }
 
     @Test
     fun testBaseStringMultiChar(){
-        checkSimilarTo("abc")
+        checkSameAsJava("abc")
     }
 
     @Test
     fun testSingleDigit(){
-        checkSimilarTo("1")
+        checkSameAsJava("1")
     }
 
     @Test
     fun testMultiDigits(){
-        checkSimilarTo("123")
+        checkSameAsJava("123")
     }
 
     @Test
     fun testLetterDigits(){
-        checkSimilarTo("abc123")
+        checkSameAsJava("abc123")
     }
 
 
     @Test
     fun testUpperCaseString(){
-        checkSimilarTo("ABCD")
+        checkSameAsJava("ABCD")
     }
 
 
     @Test
     fun testQuantifierSingle(){
-        checkSimilarTo("a{2}")
+        checkSameAsJava("a{2}")
     }
 
 
     @Test
     fun testQuantifierRange(){
-        checkSimilarTo("a{3,5}")
+        checkSameAsJava("a{3,5}")
     }
 
     @Test
     fun testQuantifierOnlyMin(){
-        checkSimilarTo("a{2,}")
+        checkSameAsJava("a{2,}")
     }
 
     @Test
     fun testQuantifierStar(){
-        checkSimilarTo("a*")
+        checkSameAsJava("a*")
     }
 
     @Test
     fun testQuantifierPlus(){
-        checkSimilarTo("a+")
+        checkSameAsJava("a+")
     }
 
     @Test
     fun testQuantifierOptional(){
-        checkSimilarTo("a?")
+        checkSameAsJava("a?")
     }
 
     @Test
     fun testQuantifierCombined(){
-        checkSimilarTo("a*b+c{1}d{2,}e{2,100}")
+        checkSameAsJava("a*b+c{1}d{2,}e{2,100}")
     }
 
     @Test
     fun testParentheses(){
-        checkSimilarTo("()")
+        checkSameAsJava("()")
     }
 
     @Test
     fun testParenthesesWithText(){
-        checkSimilarTo("(hello)")
+        checkSameAsJava("(hello)")
     }
 
     @Test
     fun testParenthesesSequence(){
-        checkSimilarTo("(a)(b)(c)")
+        checkSameAsJava("(a)(b)(c)")
     }
 
     @Test
     fun testParenthesesNested(){
-        checkSimilarTo("(a(bc)(d))")
+        checkSameAsJava("(a(bc)(d))")
     }
 
     @Test
     fun testParenthesesWithQuantifiers(){
-        checkSimilarTo("(a1)*(bc)+(d2)?")
+        checkSameAsJava("(a1)*(bc)+(d2)?")
     }
 
     @Test
     fun testDisjunction(){
-        checkSimilarTo("a|b")
+        checkSameAsJava("a|b")
     }
 
     @Test
     fun testDisjunctionSequence(){
-        checkSimilarTo("a|b|c|def|gh")
+        checkSameAsJava("a|b|c|def|gh")
     }
 
     @Test
     fun testDisjunctionNested(){
-        checkSimilarTo("(a(b|c))d")
+        checkSameAsJava("(a(b|c))d")
     }
 
     @Test
     fun testClassRangeSingleChar(){
-        checkSimilarTo("[a]")
+        checkSameAsJava("[a]")
     }
 
     @Test
     fun testClassRangeMultiChars(){
-        checkSimilarTo("[abc]")
+        checkSameAsJava("[abc]")
     }
 
     @Test
     fun testClassRangeMultiCharsWithSpecialSymbols(){
-        checkSimilarTo("[abc123(){}/?+*]")
+        checkSameAsJava("[abc123(){}/?+*]")
     }
 
     @Test
     fun testClassRangeChars(){
-        checkSimilarTo("[a-z]")
+        checkSameAsJava("[a-z]")
     }
 
     @Test
     fun testClassRangeDigits(){
-        checkSimilarTo("[0-9]")
+        checkSameAsJava("[0-9]")
     }
 
     @Test
     fun testClassRangeMulti(){
-        checkSimilarTo("[a-zA-Z0-9]")
+        checkSameAsJava("[a-zA-Z0-9]")
     }
 
     @Test
     fun testClassRangeQuantifier(){
-        checkSimilarTo("[0-9]{2}")
+        checkSameAsJava("[0-9]{2}")
     }
 
+    @Test
+    fun testCanSamplePair(){
+        checkCanSample("(a|b)(c|d)", listOf("ac", "ad", "bc", "bd"), 500)
+    }
 
     //------------ different behavior from Java Regex  ----------------------
 
     @Test
     fun testAnyChar(){
-        checkSimilarTo("_",".")
+        check("_",".")
     }
 
     @Test
     fun testAnyCharMulti(){
-        checkSimilarTo("___","...")
+        check("___","...")
     }
 
     @Test
     fun testAnyCharMixed(){
-        checkSimilarTo("_a_b_c_",".a.b.c.")
+        check("_a_b_c_",".a.b.c.")
     }
 
     @Test
     fun testPercent(){
-        checkSimilarTo("%",".*")
+        check("%",".*")
     }
 
     @Test
     fun testPercentMixed(){
-        checkSimilarTo("%a%b%",".*a.*b.*")
+        check("%a%b%",".*a.*b.*")
     }
 
     @Test
     fun testClassRangeIndExample(){
-        checkSimilarTo("/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?",
+        check("/foo/__/bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?",
                 "/foo/../bar/(left|right)/[0-9]{4}-[0-9]{2}-[0-9]{2}(/[0-9]*)?")
     }
 }

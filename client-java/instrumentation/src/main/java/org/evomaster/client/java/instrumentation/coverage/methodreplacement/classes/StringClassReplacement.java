@@ -1,15 +1,14 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
-import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.*;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+
+import java.util.Objects;
 
 
 public class StringClassReplacement implements MethodReplacementClass {
@@ -21,12 +20,13 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(String caller, Object anObject, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        boolean taintedCaller = TaintInputName.isTaintInput(caller);
-        boolean taintedOther = anObject != null && TaintInputName.isTaintInput(anObject.toString());
+        boolean taintedCaller = ExecutionTracer.isTaintInput(caller);
+        boolean taintedOther = anObject != null && ExecutionTracer.isTaintInput(anObject.toString());
 
-        if ( taintedCaller || taintedOther) {
-            if(taintedCaller) {
+        if (taintedCaller || taintedOther) {
+            if (taintedCaller) {
                 ExecutionTracer.addStringSpecialization(caller,
                         new StringSpecializationInfo(StringSpecialization.CONSTANT, anObject.toString()));
             } else {
@@ -38,7 +38,7 @@ public class StringClassReplacement implements MethodReplacementClass {
         //not important if NPE
         boolean result = caller.equals(anObject);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return result;
         }
 
@@ -62,9 +62,27 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equalsIgnoreCase(String caller, String anotherString, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if(idTemplate == null){
-            return caller.equalsIgnoreCase(anotherString);
+        boolean taintedCaller = ExecutionTracer.isTaintInput(caller);
+        boolean taintedOther = ExecutionTracer.isTaintInput(anotherString);
+
+        if (taintedCaller || taintedOther) {
+            if (taintedCaller) {
+                ExecutionTracer.addStringSpecialization(caller,
+                        new StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, anotherString));
+            } else {
+                ExecutionTracer.addStringSpecialization(anotherString,
+                        new StringSpecializationInfo(StringSpecialization.CONSTANT_IGNORE_CASE, caller));
+            }
+        }
+
+        //not important if NPE
+        boolean result = caller.equalsIgnoreCase(anotherString);
+
+
+        if (idTemplate == null) {
+            return result;
         }
 
         if (anotherString == null) {
@@ -72,16 +90,30 @@ public class StringClassReplacement implements MethodReplacementClass {
             return false;
         }
 
-        return equals(caller.toLowerCase(), anotherString.toLowerCase(), idTemplate);
+        Truthness t;
+
+        if (result) {
+            t = new Truthness(1d, 0d);
+        } else {
+            long distance = DistanceHelper.getLeftAlignmentDistance(
+                    caller.toLowerCase(),
+                    anotherString.toLowerCase());
+            t = new Truthness(1d / (1d + distance), 1d);
+        }
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+
+        return result;
     }
 
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean startsWith(String caller, String prefix, int toffset, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean result = caller.startsWith(prefix, toffset);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return result;
         }
 
@@ -119,29 +151,30 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean startsWith(String caller, String prefix, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         return startsWith(caller, prefix, 0, idTemplate);
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean endsWith(String caller, String suffix, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         return startsWith(caller, suffix, caller.length() - suffix.length(), idTemplate);
     }
 
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(String caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return caller.isEmpty();
         }
 
         int len = caller.length();
-        Truthness t;
-        if (len == 0) {
-            t = new Truthness(1, 0);
-        } else {
-            t = new Truthness(1d / (1d + len), 1);
-        }
+        Truthness t = TruthnessHelper.getTruthnessToEmpty(len);
+
 
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.isEmpty();
@@ -149,7 +182,11 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contentEquals(String caller, CharSequence cs, String idTemplate) {
-        return equals(caller, cs.toString(), idTemplate);
+        if (cs == null) {
+            return caller.contentEquals(cs);
+        } else {
+            return equals(caller, cs.toString(), idTemplate);
+        }
     }
 
 
@@ -161,10 +198,11 @@ public class StringClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean contains(String caller, CharSequence s, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean result = caller.contains(s);
 
-        if(idTemplate == null){
+        if (idTemplate == null) {
             return result;
         }
 
@@ -195,11 +233,22 @@ public class StringClassReplacement implements MethodReplacementClass {
         return result;
     }
 
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean matches(String caller, String regex, String idTemplate) {
+        Objects.requireNonNull(caller);
+        if (regex == null) {
+            // signals a NPE
+            return caller.matches(regex);
+        } else {
+            return PatternMatchingHelper.matches(regex, caller, idTemplate);
+        }
+    }
+
+
     /*
         TODO:
         public boolean regionMatches(int toffset, String other, int ooffset, int len)
         public boolean regionMatches(boolean ignoreCase, int toffset, String other, int ooffset, int len)
-        public boolean matches(String regex)
      */
 
 

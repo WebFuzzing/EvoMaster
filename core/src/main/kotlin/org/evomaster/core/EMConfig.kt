@@ -30,7 +30,7 @@ class EMConfig {
 
             val config = EMConfig()
 
-            val parser = EMConfig.getOptionParser()
+            val parser = getOptionParser()
             val options = parser.parse(*args)
 
             if (!options.has("help")) {
@@ -86,7 +86,7 @@ class EMConfig {
                 parser.accepts(m.name, getDescription(m))
                         .withRequiredArg()
                         .describedAs(argTypeName)
-                        .defaultsTo("" + m.call(defaultInstance))
+                        .defaultsTo(m.call(defaultInstance).toString())
             }
 
             parser.formatHelpWith(MyHelpFormatter())
@@ -280,6 +280,22 @@ class EMConfig {
 
         if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
+        }
+
+        if(blackBox && ! bbExperiments){
+            if(bbTargetUrl.isNullOrBlank()){
+                throw IllegalArgumentException("In black-box mode, you need to set the bbTargetUrl option")
+            }
+            if(problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()){
+                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
+            }
+            if(outputFormat == OutputFormat.DEFAULT){
+                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
+            }
+        }
+
+        if(!blackBox && bbExperiments){
+            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
     }
 
@@ -608,10 +624,9 @@ class EMConfig {
             "A variable called activeExpectations is added to each test case, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
     var expectationsActive = false
 
-    @Experimental
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +
             "NOTE: this should not cause any tests to fail.")
-    var enableBasicAssertions = false
+    var enableBasicAssertions = true
 
     @Cfg("Apply method replacement heuristics to smooth the search landscape")
     var useMethodReplacement = true
@@ -749,4 +764,21 @@ class EMConfig {
     @Experimental
     @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")
     var baseTaintAnalysisProbability = 0.0
+
+
+    @Experimental
+    @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
+    var blackBox = false
+
+    @Experimental
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached")
+    var bbTargetUrl: String = ""
+
+    @Experimental
+    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can downloaded from")
+    var bbSwaggerUrl: String = ""
+
+    @Experimental
+    @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
+    var bbExperiments = false
 }

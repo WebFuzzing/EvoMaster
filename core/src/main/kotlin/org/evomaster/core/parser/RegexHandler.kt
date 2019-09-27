@@ -15,6 +15,36 @@ import org.evomaster.core.search.gene.regex.RegexGene
  */
 object RegexHandler {
 
+    /*
+        WARNING mutable static state, but those are just caches.
+        Key -> regex
+     */
+    private val cacheJVM : MutableMap<String, RegexGene> = mutableMapOf()
+    private val cacheEcma262 : MutableMap<String, RegexGene> = mutableMapOf()
+    private val cachePostgresLike : MutableMap<String, RegexGene> = mutableMapOf()
+    private val cachePostgresSimilarTo : MutableMap<String, RegexGene> = mutableMapOf()
+
+    fun createGeneForJVM(regex: String) : RegexGene {
+
+        if(cacheJVM.contains(regex)){
+            return cacheJVM[regex]!!.copy() as RegexGene
+        }
+
+        val stream = CharStreams.fromString(regex)
+        val lexer = RegexJavaLexer(stream)
+        val tokenStream = prepareLexer(lexer)
+        val parser = RegexJavaParser(tokenStream)
+        prepareParser(parser)
+
+        val pattern = parser.pattern()
+
+        val res = GeneRegexJavaVisitor().visit(pattern)
+
+        val gene= res.genes.first() as RegexGene
+        cacheJVM[regex] = gene.copy() as RegexGene
+        return gene
+    }
+
     /**
      * Given a ECMA262 regex string, generate RegexGene for it.
      * Based on RegexEcma262.g4 file.
@@ -23,6 +53,10 @@ object RegexHandler {
      * has features we do not support yet
      */
     fun createGeneForEcma262(regex: String): RegexGene {
+
+        if(cacheEcma262.contains(regex)){
+            return cacheEcma262[regex]!!.copy() as RegexGene
+        }
 
         val stream = CharStreams.fromString(regex)
         val lexer = RegexEcma262Lexer(stream)
@@ -34,7 +68,9 @@ object RegexHandler {
 
         val res = GeneRegexEcma262Visitor().visit(pattern)
 
-        return res.genes.first() as RegexGene
+        val gene= res.genes.first() as RegexGene
+        cacheEcma262[regex] = gene.copy() as RegexGene
+        return gene
     }
 
     /**
@@ -46,6 +82,10 @@ object RegexHandler {
      */
     fun createGeneForPostgresLike(regex: String): RegexGene {
 
+        if(cachePostgresLike.contains(regex)){
+            return cachePostgresLike[regex]!!.copy() as RegexGene
+        }
+
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresLikeLexer(stream)
         val tokenStream = prepareLexer(lexer)
@@ -56,7 +96,9 @@ object RegexHandler {
 
         val res = GenePostgresLikeVisitor().visit(pattern)
 
-        return res.genes.first() as RegexGene
+        val gene= res.genes.first() as RegexGene
+        cachePostgresLike[regex] = gene.copy() as RegexGene
+        return gene
     }
 
     /**
@@ -68,6 +110,10 @@ object RegexHandler {
      */
     fun createGeneForPostgresSimilarTo(regex: String): RegexGene {
 
+        if(cachePostgresSimilarTo.contains(regex)){
+            return cachePostgresSimilarTo[regex]!!.copy() as RegexGene
+        }
+
         val stream = CharStreams.fromString(regex)
         val lexer = PostgresSimilarToLexer(stream)
         val tokenStream = prepareLexer(lexer)
@@ -78,7 +124,9 @@ object RegexHandler {
 
         val res = GenePostgresSimilarToVisitor().visit(pattern)
 
-        return res.genes.first() as RegexGene
+        val gene= res.genes.first() as RegexGene
+        cachePostgresSimilarTo[regex] = gene.copy() as RegexGene
+        return gene
     }
 
     private fun prepareLexer(lexer: Lexer) : CommonTokenStream{

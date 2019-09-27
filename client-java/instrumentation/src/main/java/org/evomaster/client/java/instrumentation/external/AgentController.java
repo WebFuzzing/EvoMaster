@@ -1,6 +1,8 @@
 package org.evomaster.client.java.instrumentation.external;
 
+import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InstrumentationController;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 
 import java.io.IOException;
@@ -66,7 +68,7 @@ public class AgentController {
                         InstrumentationController.resetForNewTest();
                         sendObject(Command.ACK);
                         break;
-                    case TARGET_INFOS:
+                    case TARGETS_INFO:
                         handleTargetInfos();
                         break;
                     case ACTION_INDEX:
@@ -75,6 +77,9 @@ public class AgentController {
                         break;
                     case ADDITIONAL_INFO:
                         handleAdditionalInfo();
+                        break;
+                    case UNITS_INFO:
+                        handleUnitsInfo();
                         break;
                     default:
                         SimpleLogger.error("Unrecognized command: "+command);
@@ -89,15 +94,22 @@ public class AgentController {
         thread.start();
     }
 
+    private static void handleUnitsInfo() {
+        try {
+            out.writeObject(UnitsInfoRecorder.getInstance());
+        } catch (Exception e) {
+            SimpleLogger.error("Failure in handling units info: "+e.getMessage());
+        }
+    }
+
     private static void handleActionIndex(){
         try {
             Object msg = in.readObject();
-            Integer index = (Integer) msg;
-            InstrumentationController.newAction(index);
+            Action action = (Action) msg;
+            InstrumentationController.newAction(action);
 
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling action index: "+e.getMessage());
-            return;
         }
     }
 
@@ -106,7 +118,6 @@ public class AgentController {
             out.writeObject(InstrumentationController.getAdditionalInfoList());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling additional info: "+e.getMessage());
-            return;
         }
     }
 
@@ -119,7 +130,6 @@ public class AgentController {
 
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling ids: "+e.getMessage());
-            return;
         }
     }
 

@@ -24,15 +24,20 @@ class DateGene(
         val year: IntegerGene = IntegerGene("year", 2016, 1900, 2100),
         val month: IntegerGene = IntegerGene("month", 3, 0, 13),
         val day: IntegerGene = IntegerGene("day", 12, 0, 32),
-        val onlyValidDates: Boolean = false
+        val onlyValidDates: Boolean = false,
+        val dateGeneFormat: DateGeneFormat = DateGeneFormat.ISO_LOCAL_DATE_FORMAT
 ) : Gene(name) {
 
+    enum class DateGeneFormat {
+        ISO_LOCAL_DATE_FORMAT
+    }
 
     override fun copy(): Gene = DateGene(name,
             year.copy() as IntegerGene,
             month.copy() as IntegerGene,
             day.copy() as IntegerGene,
-            onlyValidDates = onlyValidDates)
+            dateGeneFormat = this.dateGeneFormat,
+            onlyValidDates = this.onlyValidDates)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
         do {
@@ -83,8 +88,10 @@ class DateGene(
     }
 
     override fun getValueAsRawString(): String {
-        return GeneUtils.let {
-            "${it.padded(year.value, 4)}-${it.padded(month.value, 2)}-${it.padded(day.value, 2)}"
+        return when (dateGeneFormat) {
+            DateGeneFormat.ISO_LOCAL_DATE_FORMAT -> GeneUtils.let {
+                "${it.padded(year.value, 4)}-${it.padded(month.value, 2)}-${it.padded(day.value, 2)}"
+            }
         }
     }
 

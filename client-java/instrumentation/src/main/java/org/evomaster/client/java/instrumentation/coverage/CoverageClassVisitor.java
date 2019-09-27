@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
@@ -18,6 +19,8 @@ public class CoverageClassVisitor extends ClassVisitor {
     public CoverageClassVisitor(ClassVisitor cv, ClassName className) {
         super(Constants.ASM, cv);
         bytecodeClassName = className.getBytecodeName();
+
+        UnitsInfoRecorder.markNewUnit();
     }
 
     @Override

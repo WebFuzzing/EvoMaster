@@ -46,4 +46,39 @@ public class DistanceHelper {
         return dist;
     }
 
+    /**
+     * Computes a distance to a==b. If a-b overflows,
+     *
+     * @param a
+     * @param b
+     * @return
+     */
+    public static double getDistanceToEquality(long a, long b) {
+        return getDistanceToEquality((double) a, (double) b);
+    }
+
+
+    public static double getDistanceToEquality(int a, int b) {
+        return getDistanceToEquality((double) a, (double) b);
+    }
+
+    public static double getDistanceToEquality(double a, double b) {
+        if (!Double.isFinite(a) || !Double.isFinite(b)) {
+            // one of the values is not finite
+            return Double.MAX_VALUE;
+        }
+
+        final double distance;
+        if (a < b) {
+            distance = b - a;
+        } else {
+            distance = a - b;
+        }
+        if (distance < 0 || !Double.isFinite(distance)) {
+            // overflow has occured
+            return Double.MAX_VALUE;
+        } else {
+            return distance;
+        }
+    }
 }

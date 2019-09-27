@@ -50,7 +50,10 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     }
 
     override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes : MutatedGeneSpecification?) {
-        //update resource dependency after mutating structure of the resource-based individual
+        /*
+            update resource dependency after mutating structure of the resource-based individual
+            NOTE THAT [this] can be only applied with MIO. In MIO, [mutatedGenes] must not be null.
+         */
         if(mutatedGenes!!.mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
             val isWorse = previous.fitness.subsumes(
                     mutated.fitness,

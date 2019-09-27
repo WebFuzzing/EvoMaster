@@ -1,17 +1,13 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
+import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
-import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.shared.*;
 import org.evomaster.client.java.instrumentation.TargetInfo;
-import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.heuristic.HeuristicsForJumps;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -45,6 +41,12 @@ public class ExecutionTracer {
     private static int actionIndex = 0;
 
     /**
+     * A set of possible values used in the tests, needed for some kinds
+     * of taint analyses
+     */
+    private static Set<String> inputVariables = new HashSet<>();
+
+    /**
      * Besides code coverage, there might be other events that we want to
      * keep track during test execution.
      * We keep track of it separately for each action
@@ -61,13 +63,48 @@ public class ExecutionTracer {
         actionIndex = 0;
         additionalInfoList.clear();
         additionalInfoList.add(new AdditionalInfo());
+        inputVariables = new HashSet<>();
     }
 
-    public static void setActionIndex(int index){
-        if(index != actionIndex) {
-            actionIndex = index;
+    public static void setAction(Action action){
+        if(action.getIndex() != actionIndex) {
+            actionIndex = action.getIndex();
             additionalInfoList.add(new AdditionalInfo());
         }
+
+        if(action.getInputVariables() != null && !action.getInputVariables().isEmpty()){
+            inputVariables = action.getInputVariables();
+        }
+    }
+
+    /**
+     * Check if the given input represented a tainted value from the test cases.
+     * This could be based on static info of the input (eg, according to a precise
+     * name convention given by TaintInputName), or dynamic info given directly by
+     * the test itself (eg, the test at action can register a list of values to check
+     * for)
+     */
+    public static boolean isTaintInput(String input){
+        return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
+    }
+
+
+    public static TaintType getTaintType(String input){
+
+        if(input == null){
+            return TaintType.NONE;
+        }
+
+        if(isTaintInput(input)){
+            return TaintType.FULL_MATCH;
+        }
+
+        if(TaintInputName.includesTaintInput(input)
+                || inputVariables.stream().anyMatch(v -> input.contains(v))){
+            return TaintType.PARTIAL_MATCH;
+        }
+
+        return TaintType.NONE;
     }
 
     public static List<AdditionalInfo> exposeAdditionalInfoList() {

@@ -7,6 +7,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Meth
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementList;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -71,6 +72,25 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
+
+        /*
+         * This is a very special case. This can happen when we replace a method
+         * for X.foo() in a class Y, when Y extends X, and then it calls foo in
+         * the superclass X with super.foo()
+         * As it is now, this would lead to an infinite recursion in the replaced
+         * method if we call foo() there (as it would be executed on the instance of Y,
+         * not the super method in X).
+         * Given an instance of Y, it is not possible to directly call X.foo() from outside Y.
+         * TODO: Maybe there can be a general solution for this, but, considering it is likely rare,
+         * we can do it for later. Eg, it would mainly affect the use of special containers like
+         * in Guava when they have "super.()" calls.
+         * For now, we just skip them.
+         */
+        if(opcode == Opcodes.INVOKESPECIAL){
+            super.visitMethodInsn(opcode, owner, name, desc, itf);
+            return;
+        }
+
         Class<?> klass = null;
         try {
             klass = this.getClass().getClassLoader().loadClass(ClassName.get(owner).getFullNameWithDots());
@@ -105,6 +125,12 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
         Method m = r.get();
         replaceMethod(m);
+
+        if(registerNewTargets){
+            UnitsInfoRecorder.markNewReplacedMethodInSut();
+        } else {
+            UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
+        }
     }
 
     private void replaceMethod(Method m) {

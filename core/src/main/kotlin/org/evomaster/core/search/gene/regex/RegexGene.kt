@@ -21,6 +21,10 @@ class RegexGene(
         disjunctions.randomize(randomness, forceNewValue, allGenes)
     }
 
+    override fun isMutable(): Boolean {
+        return disjunctions.isMutable()
+    }
+
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         disjunctions.standardMutation(randomness, apc, allGenes)
     }

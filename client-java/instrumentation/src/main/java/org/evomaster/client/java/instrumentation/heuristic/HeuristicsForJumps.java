@@ -43,24 +43,19 @@ public class HeuristicsForJumps {
 
     public static Truthness getForValueComparison(int firstValue, int secondValue, int opcode) {
 
-        double a = firstValue;
-        double b = secondValue;
+        int a = firstValue;
+        int b = secondValue;
 
         switch (opcode) {
             case Opcodes.IF_ICMPEQ: // ie, a == b
-                return new Truthness(
-                        1d - Truthness.normalizeValue(Math.abs(a - b)),
-                        a != b ? 1d : 0d
-                );
-
+            {
+                return TruthnessUtils.getEqualityTruthness(a,b);
+            }
             case Opcodes.IF_ICMPNE: // ie, a != b
                 return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPEQ).invert();
 
             case Opcodes.IF_ICMPLT: // ie, a < b
-                return new Truthness(
-                        a < b ? 1d : 1d / (1.1d + a - b) ,
-                        a >= b ? 1d : 1d / (1.1d + b - a)
-                );
+                return TruthnessUtils.getLessThanTruthness(a, b);
 
             case Opcodes.IF_ICMPGE: // ie, a >= b  ->  ! (a < b)
                 return getForValueComparison(firstValue, secondValue, Opcodes.IF_ICMPLT).invert();
@@ -75,6 +70,8 @@ public class HeuristicsForJumps {
                 throw new IllegalArgumentException("Cannot handle opcode " + opcode);
         }
     }
+
+
 
 
     public static Truthness getForObjectComparison(Object first, Object second, int opcode) {
@@ -97,7 +94,7 @@ public class HeuristicsForJumps {
 
     public static Truthness getForNullComparison(Object obj, int opcode) {
 
-        switch (opcode){
+        switch (opcode) {
 
             case Opcodes.IFNULL: // ie, obj == null
                 return getForObjectComparison(obj, null, Opcodes.IF_ACMPEQ);

@@ -35,6 +35,12 @@ public class Truthness {
         return new Truthness(ofFalse, ofTrue);
     }
 
+    /**
+     * scales to a positive double value to the [0,1] range
+     *
+     * @param v a non-negative double value
+     * @return
+     */
     public static double normalizeValue(double v) {
         if (v < 0) {
             throw new IllegalArgumentException("Negative value: " + v);
