@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.tracker;
 
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -63,6 +64,8 @@ public class TrackerMethodVisitor extends MethodVisitor {
                         Tracker.TRACK_QUERY_PARAMETER_DESCRIPTOR,
                         Tracker.class.isInterface()); //false
 
+                UnitsInfoRecorder.markNewTrackedMethod();
+
             } else if((name.equals("getHeader") && desc.equals("(Ljava/lang/String;)Ljava/lang/String;"))
                     ||
                     (name.equals("getHeaderValues") && desc.equals("(Ljava/lang/String;)[Ljava/lang/String;"))){
@@ -73,6 +76,8 @@ public class TrackerMethodVisitor extends MethodVisitor {
                         Tracker.TRACK_HEADER_METHOD_NAME,
                         Tracker.TRACK_HEADER_DESCRIPTOR,
                         Tracker.class.isInterface()); //false
+
+                UnitsInfoRecorder.markNewTrackedMethod();
             }
         }
 

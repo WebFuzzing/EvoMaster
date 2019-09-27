@@ -56,4 +56,10 @@ public class SutInfoDto {
      * know its schema to be able to do operations on it.
      */
     public DbSchemaDto sqlSchemaDto;
+
+
+    /**
+     * Information about the "units" in the SUT.
+     */
+    public UnitsInfoDto unitsInfoDto;
 }

@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -67,6 +68,7 @@ public class LineCovMethodVisitor extends MethodVisitor {
             will pop these 4 elements as input parameters.
          */
 
+        UnitsInfoRecorder.markNewLine();
         ObjectiveRecorder.registerTarget(ObjectiveNaming.lineObjectiveName(className, line));
 
         this.visitLdcInsn(className);

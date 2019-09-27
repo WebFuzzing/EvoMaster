@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.ActionDto;
+import org.evomaster.client.java.controller.api.dto.UnitsInfoDto;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.client.java.instrumentation.Action;
 import org.evomaster.client.java.instrumentation.InputProperties;
@@ -309,7 +310,7 @@ public abstract class ExternalSutController extends SutController {
     @Override
     public final List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
         checkInstrumentation();
-        return serverController.getTargetInfos(ids);
+        return serverController.getTargetsInfo(ids);
     }
 
     @Override
@@ -325,6 +326,17 @@ public abstract class ExternalSutController extends SutController {
             serverController.setAction(new Action(dto.index, dto.inputVariables));
         }
     }
+
+    @Override
+    public final UnitsInfoDto getUnitsInfoDto(){
+
+        if(!isInstrumentationActivated()){
+            return null;
+        }
+
+        return getUnitsInfoDto(serverController.getUnitsInfoRecorder());
+    }
+
 
     //-----------------------------------------
 

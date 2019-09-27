@@ -1,9 +1,11 @@
 package org.evomaster.core.search.service
 
 import com.google.inject.Inject
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.service.RestSampler
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Solution
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -33,6 +35,8 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private var sampler: Sampler<*>? = null
 
+    @Inject(optional = true)
+    private var remoteController: RemoteController? = null
 
     /**
      * How often test executions did timeout
@@ -47,26 +51,13 @@ class Statistics : SearchListener {
 
     private class Pair(val header: String, val element: String)
 
-    /**
-     * We might collect some info from the search, but
-     * not only on the final solution, also on the
-     * intermediate results
-     */
-    private class Snapshot(
-            val coveredTargets: Int = 0,
-            val reachedNonCoveredTargets: Int = 0,
-            val averageTestSizeForReachedButNotCovered: Double = 0.0,
-            val covered2xx: Int = 0,
-            val errors5xx: Int = 0,
-            val potentialFaults: Int = 0
-    )
 
     /**
      * List, in chronological order, of statistics snapshots.
      * A snapshot could be taken for example every 5% of search
      * budget evaluations
      */
-    private val snapshots: MutableMap<Double, Snapshot> = mutableMapOf()
+    private val snapshots: MutableMap<Double, List<Pair>> = mutableMapOf()
 
     private var snapshotThreshold = -1.0
 
@@ -86,15 +77,14 @@ class Statistics : SearchListener {
 
         Files.createDirectories(path.parent)
 
-        if (Files.exists(path) && config.appendToStatisticsFile) {
-            path.toFile().appendText("$elements\n")
-        } else {
+        if (!Files.exists(path) or !config.appendToStatisticsFile) {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
             path.toFile().appendText("$headers\n")
-            path.toFile().appendText("$elements\n")
         }
+
+        path.toFile().appendText("$elements\n")
     }
 
     fun writeSnapshot() {
@@ -107,10 +97,7 @@ class Statistics : SearchListener {
             }
         }
 
-        val properties = EMConfig.getConfigurationProperties()
-        val confHeader = properties.map { it.name }.joinToString(",")
-        val confValues = properties.map { it.getter.call(config).toString() }.joinToString(",")
-
+        val headers = "interval," + snapshots.values.first().map { it.header }.joinToString(",")
 
         val path = Paths.get(config.snapshotStatisticsFile).toAbsolutePath()
 
@@ -120,19 +107,14 @@ class Statistics : SearchListener {
             Files.deleteIfExists(path)
             Files.createFile(path)
 
-            path.toFile().appendText("interval,covered,reachedNonCovered,averageTestSizeForReachedButNotCovered,covered2xx,errors5xx,potentialFaults,$confHeader\n")
+            path.toFile().appendText("$headers\n")
         }
 
-        snapshots.entries.stream().sorted { o1, o2 -> o1.key.compareTo(o2.key) }
+        snapshots.entries.stream()
+                .sorted { o1, o2 -> o1.key.compareTo(o2.key) }
                 .forEach {
-                    path.toFile().appendText("${it.key}," +
-                            "${it.value.coveredTargets}," +
-                            "${it.value.reachedNonCoveredTargets}," +
-                            "${it.value.averageTestSizeForReachedButNotCovered}," +
-                            "${it.value.covered2xx}," +
-                            "${it.value.errors5xx}," +
-                            "${it.value.potentialFaults}," +
-                            "$confValues\n")
+                    val elements = it.value.map { it.element }.joinToString(",")
+                    path.toFile().appendText("${it.key},$elements\n")
                 }
     }
 
@@ -162,24 +144,19 @@ class Statistics : SearchListener {
 
         val solution = archive.extractSolution()
 
-        val snap = Snapshot(
-                coveredTargets = archive.numberOfCoveredTargets(),
-                reachedNonCoveredTargets = archive.numberOfReachedButNotCoveredTargets(),
-                averageTestSizeForReachedButNotCovered = archive.averageTestSizeForReachedButNotCovered(),
-                covered2xx = covered2xxEndpoints(solution),
-                errors5xx = errors5xx(solution),
-                potentialFaults = solution.overall.potentialFoundFaults(idMapper).size
-        )
+        val snap = getData(solution)
 
         val key = if (snapshotThreshold <= 100) snapshotThreshold else 100.0
 
-        snapshots.put(key, snap)
+        snapshots[key] = snap
 
         //next step
         snapshotThreshold += config.snapshotInterval
     }
 
     private fun getData(solution: Solution<*>): List<Pair> {
+
+        val unitsInfo = remoteController?.getSutInfo()?.unitsInfoDto
 
         val list: MutableList<Pair> = mutableListOf()
 
@@ -196,6 +173,16 @@ class Statistics : SearchListener {
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
             add(Pair("errors5xx", "" + errors5xx(solution)))
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+
+            add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
+            add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
+            add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
+            add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
+            add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
+            add(Pair("numberOfUnits", "" + (unitsInfo?.numberOfUnits ?: 0)))
+
+            add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
+            add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))
 
             val codes = codes(solution)
             add(Pair("avgReturnCodes", "" + codes.average()))

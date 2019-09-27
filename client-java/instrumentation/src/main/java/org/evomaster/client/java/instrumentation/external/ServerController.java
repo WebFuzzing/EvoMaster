@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.external;
 
 import org.evomaster.client.java.instrumentation.Action;
+import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
 import org.evomaster.client.java.instrumentation.TargetInfo;
@@ -196,8 +197,8 @@ public class ServerController {
         return sendWithDataAndExpectACK(Command.ACTION_INDEX, action);
     }
 
-    public synchronized List<TargetInfo> getTargetInfos(Collection<Integer> ids) {
-        boolean sent = sendCommand(Command.TARGET_INFOS);
+    public synchronized List<TargetInfo> getTargetsInfo(Collection<Integer> ids) {
+        boolean sent = sendCommand(Command.TARGETS_INFO);
         if (!sent) {
             SimpleLogger.error("Failed to send message");
             return null;
@@ -242,5 +243,26 @@ public class ServerController {
         }
 
         return (List<AdditionalInfo>) response;
+    }
+
+    public synchronized UnitsInfoRecorder getUnitsInfoRecorder(){
+
+        boolean sent = sendCommand(Command.UNITS_INFO);
+        if (!sent) {
+            SimpleLogger.error("Failed to send message");
+            return null;
+        }
+
+        Object response = waitAndGetResponse();
+        if (response == null) {
+            SimpleLogger.error("Failed to read response about units info");
+            return null;
+        }
+
+        if (!(response instanceof UnitsInfoRecorder)) {
+            throw new IllegalStateException(errorMsgExpectingResponse(response, "a UnitsInfoRecorder"));
+        }
+
+        return (UnitsInfoRecorder) response;
     }
 }
