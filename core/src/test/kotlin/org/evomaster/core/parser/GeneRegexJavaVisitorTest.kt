@@ -48,4 +48,10 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
         checkSameAsJava("\\Qfooebar\\E")
         checkSameAsJava("\\QfooEbar\\E")
     }
+
+    @Test
+    fun testIssueWithControlCharactersInIgnoreCase(){
+        val s = "a[](){}\\\"^$.b"
+        checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.toUpperCase(), s.toLowerCase()), 50)
+    }
 }
