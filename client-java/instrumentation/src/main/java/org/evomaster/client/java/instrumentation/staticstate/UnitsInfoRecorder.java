@@ -1,6 +1,9 @@
 package org.evomaster.client.java.instrumentation.staticstate;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -21,7 +24,7 @@ public class UnitsInfoRecorder implements Serializable {
 
     //see entries in UnitsInfoDto
 
-    private AtomicInteger numberOfUnits;
+    private Set<String> unitNames;
     private AtomicInteger numberOfLines;
     private AtomicInteger numberOfBranches;
     private AtomicInteger numberOfReplacedMethodsInSut;
@@ -29,7 +32,7 @@ public class UnitsInfoRecorder implements Serializable {
     private AtomicInteger numberOfTrackedMethods;
 
     private UnitsInfoRecorder(){
-        numberOfUnits = new AtomicInteger(0);
+        unitNames = new CopyOnWriteArraySet<>();
         numberOfLines = new AtomicInteger(0);
         numberOfBranches = new AtomicInteger(0);
         numberOfReplacedMethodsInSut = new AtomicInteger(0);
@@ -48,8 +51,8 @@ public class UnitsInfoRecorder implements Serializable {
         return singleton;
     }
 
-    public static void markNewUnit(){
-        singleton.numberOfUnits.incrementAndGet();
+    public static void markNewUnit(String name){
+        singleton.unitNames.add(name);
     }
 
     public static void markNewLine(){
@@ -75,7 +78,11 @@ public class UnitsInfoRecorder implements Serializable {
 
 
     public  int getNumberOfUnits() {
-        return numberOfUnits.get();
+        return unitNames.size();
+    }
+
+    public  Set<String> getUnitNames() {
+        return Collections.unmodifiableSet(unitNames);
     }
 
     public  int getNumberOfLines() {

@@ -20,7 +20,7 @@ public class CoverageClassVisitor extends ClassVisitor {
         super(Constants.ASM, cv);
         bytecodeClassName = className.getBytecodeName();
 
-        UnitsInfoRecorder.markNewUnit();
+        UnitsInfoRecorder.markNewUnit(className.getFullNameWithDots());
     }
 
     @Override

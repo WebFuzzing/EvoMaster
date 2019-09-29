@@ -108,6 +108,7 @@ public class ServerController {
 
         try {
             out.writeObject(obj);
+            out.reset(); //Note: this is critical, due to caching
         } catch (IOException e) {
             SimpleLogger.error("IO exception while sending object", e);
             return false;
@@ -204,10 +205,8 @@ public class ServerController {
             return null;
         }
 
-        try {
-            out.writeObject(ids);
-        } catch (IOException e) {
-            SimpleLogger.error("Failed to send ids", e);
+        if(! sendObject(ids)){
+            SimpleLogger.error("Failed to send ids");
             return null;
         }
 
