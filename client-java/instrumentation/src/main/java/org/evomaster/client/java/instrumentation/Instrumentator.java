@@ -90,7 +90,18 @@ public class Instrumentator {
 
     private boolean canInstrumentForCoverage(ClassName className){
 
-        return prefixes.stream()
-                .anyMatch(s -> className.getFullNameWithDots().startsWith(s));
+        String name = className.getFullNameWithDots();
+
+        /*
+            we need to exclude classes that are automatically generated at runtime, eg like
+            proxies in Spring.
+            TODO is there an easy way to detect it besides checking for pattern names common in
+            existing libraries? Doesn't look like...
+            https://stackoverflow.com/questions/7504509/java-detect-if-class-is-a-proxy
+         */
+        List<String> exclusions = Arrays.asList("BySpringCGLIB");
+
+        return prefixes.stream().anyMatch(s -> name.startsWith(s))
+                && exclusions.stream().noneMatch(s -> name.contains(s));
     }
 }

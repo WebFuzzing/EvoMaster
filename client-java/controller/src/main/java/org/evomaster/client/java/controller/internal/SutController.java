@@ -359,13 +359,18 @@ public abstract class SutController implements SutHandler {
     public abstract UnitsInfoDto getUnitsInfoDto();
 
     protected UnitsInfoDto getUnitsInfoDto(UnitsInfoRecorder recorder){
+
+        if(recorder == null){
+            return null;
+        }
+
         UnitsInfoDto dto = new UnitsInfoDto();
         dto.numberOfBranches = recorder.getNumberOfBranches();
         dto.numberOfLines = recorder.getNumberOfLines();
         dto.numberOfReplacedMethodsInSut = recorder.getNumberOfReplacedMethodsInSut();
         dto.numberOfReplacedMethodsInThirdParty = recorder.getNumberOfReplacedMethodsInThirdParty();
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
-        dto.numberOfUnits = recorder.getNumberOfUnits();
+        dto.unitNames = recorder.getUnitNames();
         return dto;
     }
 }

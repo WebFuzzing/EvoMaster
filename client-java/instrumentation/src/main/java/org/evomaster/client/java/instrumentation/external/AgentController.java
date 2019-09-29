@@ -62,18 +62,18 @@ public class AgentController {
                 switch(command){
                     case NEW_SEARCH:
                         InstrumentationController.resetForNewSearch();
-                        sendObject(Command.ACK);
+                        sendCommand(Command.ACK);
                         break;
                     case NEW_TEST:
                         InstrumentationController.resetForNewTest();
-                        sendObject(Command.ACK);
+                        sendCommand(Command.ACK);
                         break;
                     case TARGETS_INFO:
                         handleTargetInfos();
                         break;
                     case ACTION_INDEX:
                         handleActionIndex();
-                        sendObject(Command.ACK);
+                        sendCommand(Command.ACK);
                         break;
                     case ADDITIONAL_INFO:
                         handleAdditionalInfo();
@@ -94,9 +94,17 @@ public class AgentController {
         thread.start();
     }
 
+    private static void sendCommand(Command command){
+        try {
+            sendObject(command);
+        } catch (Exception e) {
+            SimpleLogger.error("Failure to send command " + command+": "+e.getMessage());
+        }
+    }
+
     private static void handleUnitsInfo() {
         try {
-            out.writeObject(UnitsInfoRecorder.getInstance());
+            sendObject(UnitsInfoRecorder.getInstance());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling units info: "+e.getMessage());
         }
@@ -115,7 +123,7 @@ public class AgentController {
 
     private static void handleAdditionalInfo(){
         try {
-            out.writeObject(InstrumentationController.getAdditionalInfoList());
+            sendObject(InstrumentationController.getAdditionalInfoList());
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling additional info: "+e.getMessage());
         }
@@ -126,19 +134,31 @@ public class AgentController {
         try {
             Object msg = in.readObject();
             Collection<Integer> ids = (Collection<Integer>) msg;
-            out.writeObject(InstrumentationController.getTargetInfos(ids));
+            sendObject(InstrumentationController.getTargetInfos(ids));
 
         } catch (Exception e) {
             SimpleLogger.error("Failure in handling ids: "+e.getMessage());
         }
     }
 
-    private static void sendObject(Object obj){
+    private static void sendObject(Object obj) throws IOException{
 
         try {
             out.writeObject(obj);
+            out.reset();
+            /*
+                Note: reset is critical, see https://www.javaspecialists.eu/archive/Issue088.html
+                The "problem" is that Java will cache the objects based on identity...
+                if you modify an object and try to send it, it is not sent!!!
+                furthermore, sent objects are never GCed, so can run out of memory...
+                WTF?!?
+                but caching is good for immutable objects like String...
+                but as "external" drivers are only for experiments, can afford loss of performance
+                to avoid weird bugs when we send a mutable object by mistake
+             */
         } catch (IOException e) {
             SimpleLogger.error("Failure in sending message: "+e.getMessage());
+            throw  e;
         }
     }
 }

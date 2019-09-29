@@ -70,6 +70,11 @@ public class EMController {
         }
 
         dto.unitsInfoDto = sutController.getUnitsInfoDto();
+        if(dto.unitsInfoDto == null){
+            String msg = "Failed to extract units info";
+            SimpleLogger.error(msg);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        }
 
         return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
     }
