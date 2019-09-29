@@ -38,7 +38,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        return individual.seeGenes(filterMutate).filter { it.isMutable() }.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}
+        return individual.seeGenes(filterMutate).filter { it.isMutable() }.run {
+            val notReached = this.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}
+            if (notReached.isEmpty()) this else notReached
+        }
     }
 
     /**
@@ -116,10 +119,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return copy
 
         for (gene in selectGeneToMutate){
-            mutatedGene?.mutatedGenes?.add(gene)
-            mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
+            val isDb = copy.seeInitializingActions().any { it.seeGenes().contains(gene) }
+            if (isDb){
+                mutatedGene?.mutatedDbGenes?.add(gene)
+                mutatedGene?.mutatedDbActionPosition?.add(copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) })
+            }else{
+                mutatedGene?.mutatedGenes?.add(gene)
+                mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
+            }
 
-            if (config.probOfArchiveMutation > 0.0 && archiveMutator.doesSupport(gene)){
+            if (config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()){
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 val impact = individual.getImpactOfGenes()[id]
                 gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual)

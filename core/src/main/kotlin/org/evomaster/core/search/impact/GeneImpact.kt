@@ -29,4 +29,8 @@ abstract class GeneImpact (
     }
 
     abstract fun validate(gene : Gene) : Boolean
+
+    open fun countImpactWithMutatedGeneWithContext(gc : MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean){
+        countImpactAndPerformance(hasImpact, noImprovement)
+    }
 }

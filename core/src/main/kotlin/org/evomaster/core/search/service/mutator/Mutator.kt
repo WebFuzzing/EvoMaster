@@ -88,12 +88,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             if (!time.shouldContinueSearch()) {
                 break
             }
+            val mutatedGenes = MutatedGeneSpecification()
 
-            structureMutator.addInitializingActions(current)
-
+            structureMutator.addInitializingActions(current, mutatedGenes)
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedGenes = MutatedGeneSpecification()
             val mutatedInd = mutate(current, mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
@@ -121,16 +120,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 else mutated
 
                 if(config.probOfArchiveMutation > 0.0){
-                    trackedMutated.updateImpactOfGenes(true, mutatedGenes, targets, config.secondaryObjectiveStrategy)
-//                    if (config.archiveGeneMutation)
-//                        trackedMutated.mutatedGeneSpecification = mutatedGenes.copyFrom(trackedMutated)
+                    trackedMutated.updateImpactOfGenes(true, mutatedGenes, targets, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective)
                 }
                 archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
             }else{
                 if(config.probOfArchiveMutation > 0.0){
                     trackedCurrent.getUndoTracking()!!.add(mutated)
-                    trackedCurrent.updateImpactOfGenes(false, mutatedGenes, targets, config.secondaryObjectiveStrategy)
+                    trackedCurrent.updateImpactOfGenes(false, mutatedGenes, targets, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective)
                 }
             }
 
@@ -141,9 +138,17 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             if (archiveMutator.enableArchiveGeneMutation()){
                 mutatedGenes.mutatedGenes.filter { archiveMutator.doesSupport(it) }.forEachIndexed { index, s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
-                    val savedGene = (current.findGeneById(id) ?: throw IllegalStateException("mismatched genes"))
                     val actionIndex = if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[index] else -1
                     val previousValue = (trackedCurrent.findGeneById(id, actionIndex) ?: throw IllegalStateException("mismatched genes"))
+                    val savedGene = (current.findGeneById(id, actionIndex) ?: throw IllegalStateException("mismatched genes"))
+                    savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
+                }
+
+                mutatedGenes.mutatedDbGenes.filter { archiveMutator.doesSupport(it) }.forEachIndexed { index, s->
+                    val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
+                    val actionIndex = if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[index] else -1
+                    val savedGene = (current.findGeneById(id, actionIndex, isDb = true) ?: throw IllegalStateException("mismatched genes"))
+                    val previousValue = (trackedCurrent.findGeneById(id, actionIndex, isDb = true) ?: throw IllegalStateException("mismatched genes"))
                     savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
                 }
             }
@@ -154,7 +159,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     fun mutateAndSave(individual: EvaluatedIndividual<T>, archive: Archive<T>)
             : EvaluatedIndividual<T>? {
 
-        structureMutator.addInitializingActions(individual)
+        structureMutator.addInitializingActions(individual,null)
 
         return ff.calculateCoverage(mutate(individual))
                 ?.also { archive.addIfNeeded(it) }

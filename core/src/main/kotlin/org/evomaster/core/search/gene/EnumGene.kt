@@ -1,8 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 
@@ -11,7 +17,7 @@ class EnumGene<T>(
         val values: List<T>,
         var index: Int = 0,
         val optionMutationUpdate : IntMutationUpdate = IntMutationUpdate(0, values.size -1)
-) : Gene(name), GeneIndependenceInfo {
+) : Gene(name) {
 
     init {
         if (values.isEmpty()) {
@@ -28,11 +34,7 @@ class EnumGene<T>(
 
     override fun copy(): Gene {
         //recall: "values" is immutable
-        val copy = EnumGene<T>(name, values, index, optionMutationUpdate.copy()).also {
-            it.degreeOfIndependence = this.degreeOfIndependence
-            it.resetTimes = this.resetTimes
-            it.mutatedtimes = this .mutatedtimes
-        }
+        val copy = EnumGene<T>(name, values, index, optionMutationUpdate.copy())
         return copy
     }
 
@@ -53,7 +55,20 @@ class EnumGene<T>(
         index = next
     }
 
-    //override
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        if (values.size == 2 || impact == null || impact !is EnumGeneImpact || !archiveMutator.enableArchiveSelection()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
+        val candidates = (0 until values.size).filter { index != it }.map {
+            Pair(it, impact.values[it])
+        }
+
+        val selects = archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1))
+        index = randomness.choose(selects)
+
+    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
 

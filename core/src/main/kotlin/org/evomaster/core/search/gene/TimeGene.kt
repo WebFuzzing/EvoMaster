@@ -1,8 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.value.date.DateGeneImpact
+import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
  * Using RFC3339
@@ -50,6 +57,23 @@ class TimeGene(
 
         val gene = randomness.choose(listOf(hour, minute, second))
         gene.standardMutation(randomness, apc, allGenes)
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        var genes : List<Pair<Gene, GeneImpact>>? = null
+
+        val selects = if (impact != null && impact is TimeGeneImpact && archiveMutator.enableArchiveSelection()){
+            genes = listOf(
+                    Pair(hour, impact.hourGeneImpact),
+                    Pair(minute , impact.minuteGeneImpact),
+                    Pair(second, impact.secondGeneImpact)
+            )
+            archiveMutator.selectGenesByArchive(genes, 1.0/3)
+        }else listOf(hour, minute, second)
+
+        val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(hour, minute, second))
+        val selectedImpact = genes?.first { it.first == selected }?.second
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

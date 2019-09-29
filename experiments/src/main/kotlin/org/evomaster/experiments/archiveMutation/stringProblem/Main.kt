@@ -31,7 +31,7 @@ class Main {
 
         private val targets = listOf(4)
         private val runs = 30
-        private val budgets = listOf(5000)
+        private val budgets = listOf(3000)
         private val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
         private val adaptiveGeneSelections = EMConfig.AdaptiveSelection.values().toList().sorted()
         private val archiveGeneMutation = EMConfig.ArchiveGeneMutation.values().toList().sorted()
@@ -50,7 +50,7 @@ class Main {
          */
         private fun adaptiveSelection(baseFolder: String){
             val problems = listOf(ArchiveProblemType.PAR_IND_STABLE)
-            val rateOfImpacts = listOf(0.2, 0.5, 0.8, 1.0)
+            val rateOfImpacts = listOf(0.2) //0.2, 0.5, 0.8, 1.0
             val configs = produceConfigs(
                     impactSelection = impactSelection,
                     probOfArchiveMutations = probOfArchiveMutations,
@@ -71,8 +71,11 @@ class Main {
                 budgets.forEach { budget->
                     rateOfImpacts.forEach { rp->
                         problems.forEach { pt->
-                            Files.write(path, "--------${pt.name}($rp): $n targets, $runs runs, $budget fitness evaluations-------${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
+                            val header = "--------${pt.name}($rp): $n targets, $runs runs, $budget fitness evaluations-------"
+                            Files.write(path, "$header${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
+                            println(header)
                             configs.forEach { config->
+                                println(config.getName())
                                 var total = 0
                                 (0 until runs).forEach { i ->
                                     val solution = run(
@@ -82,7 +85,7 @@ class Main {
                                                     run = i,
                                                     problem = pt,
                                                     baseFolder = baseFolder,
-                                                    writeStatistics = true,
+                                                    writeStatistics = false,
                                                     config = config
 
                                             ),
@@ -91,6 +94,7 @@ class Main {
                                             problem = pt,
                                             rateOfImpact = rp,
                                             charPool = CharPool.WORD)
+                                    println(solution.overall.coveredTargets())
                                     total += solution.overall.coveredTargets()
                                 }
                                 val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
@@ -153,8 +157,10 @@ class Main {
             targets.forEach { n->
                 budgets.forEach { budget->
                     problems.forEach { pt->
-                        Files.write(path, "--------${pt.name}-------${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
+                        val head = "--------${pt.name}-------"
+                        Files.write(path, "$head${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
                         configs.forEach { config->
+                            println("$head ${config.getName()}")
                             var total = 0
                             (0 until runs).forEach { i ->
                                 val solution = run(
@@ -172,6 +178,7 @@ class Main {
                                         specifiedLength,
                                         problem = pt,
                                         rateOfImpact = 0.0)
+                                println(solution.overall.coveredTargets())
                                 total += solution.overall.coveredTargets()
                             }
                             val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
@@ -199,7 +206,7 @@ class Main {
 
 
             val injector: Injector = LifecycleInjector.builder()
-                    .withModules(* arrayOf(BaseModule(args),StringModule(),specialized))
+                    .withModules(* arrayOf(specialized,StringModule(),BaseModule(args)))
                     .build().createInjector()
 
 
@@ -207,9 +214,9 @@ class Main {
                     object : TypeLiteral<MioAlgorithm<StringIndividual>>() {}))
             //val stc = injector.getInstance(SearchTimeController::class.java)
 
-            val config = injector.getInstance(EMConfig::class.java)
+            //val config = injector.getInstance(EMConfig::class.java)
 
-            val statistics = injector.getInstance(Statistics::class.java)
+            //val statistics = injector.getInstance(Statistics::class.java)
 
             val manager = injector.getInstance(LifecycleManager::class.java)
             manager.start()
@@ -218,9 +225,9 @@ class Main {
 //            solution.individuals.forEach { i->
 //                i.individual.seeGenes().filterIsInstance<StringGene>().map { g-> "${g.name}:${g.mutatedtimes}-${g.resetTimes}-${g.resetTimes/g.mutatedtimes.toDouble()}"}.forEach(::println)
 //            }
-            if (config.writeStatistics){
-                statistics.writeStatistics(solution)
-            }
+//            if (config.writeStatistics){
+//                statistics.writeStatistics(solution)
+//            }
             manager.close()
             return solution
         }
@@ -289,7 +296,13 @@ class Main {
                 "--adaptiveGeneSelection",
                 adaptiveGeneSelection.toString(),
                 "--statisticsColumnId",
-                "$n-${problem.name}"
+                "$n-${problem.name}",
+                "--heuristicsForSQL",
+                false.toString(),
+                "--extractSqlExecutionInfo",
+                false.toString(),
+                "--generateSqlDataWithSearch",
+                false.toString()
 
         )
 

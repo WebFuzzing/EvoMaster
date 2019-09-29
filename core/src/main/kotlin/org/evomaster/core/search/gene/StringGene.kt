@@ -11,17 +11,13 @@ import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.stream.Collectors
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 
 
 class StringGene(
@@ -37,19 +33,21 @@ class StringGene(
          * For example, in a URL Path variable, we do not want have "/", as otherwise
          * it would create 2 distinct paths
          */
-        val invalidChars: List<Char> = listOf()
         val invalidChars: List<Char> = listOf(),
+
         /**
-         * Based on taint analysis, in some cases we can determine how some Strings are
-         * used in the SUT.
-         * For example, if a String is used as a Date, then it make sense to use a specialization
-         * in which we mutate to have only Strings that are valid dates
+         * collect info of mutation on its chars of [value]
          */
-        var specializations: List<StringSpecializationInfo> = listOf(),
-
         val charsMutation : MutableList<IntMutationUpdate> = mutableListOf(),
+        /**
+         * collect info of mutation on its length of [value]
+         */
+        val lengthMutation : IntMutationUpdate = IntMutationUpdate(minLength, maxLength),
+        /**
+         * collect info regarding whether [this] gene is related to others
+         */
+        val dependencyInfo :GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)
 
-        val lengthMutation : IntMutationUpdate = IntMutationUpdate(minLength, maxLength)
 ) : Gene(name) {
 
     companion object {
@@ -65,7 +63,6 @@ class StringGene(
 
         private const val NEVER_ARCHIVE_MUTATION = -2
         private const val CHAR_MUTATION_INITIALIZED = -1
-        private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
     }
 
     /*
@@ -100,22 +97,21 @@ class StringGene(
     /**
      * degree of dependency of this [gene]
      */
-    var degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL
-    private set
-
-    var mutatedtimes = 0
-    private set
-
-    var resetTimes = 0
-    private set
+//    var degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL
+//    private set
+//
+//    var mutatedtimes = 0
+//    private set
+//
+//    var resetTimes = 0
+//    private set
 
     fun charMutationInitialized(){
         mutatedIndex = CHAR_MUTATION_INITIALIZED
     }
 
     override fun copy(): Gene {
-        return StringGene(name, value, minLength, maxLength, invalidChars)
-        return StringGene(name, value, minLength, maxLength, invalidChars, specializations, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy())
+        return StringGene(name, value, minLength, maxLength, invalidChars, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy())
                 .also {
                     it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
                     it.specializations.addAll(this.specializations)
@@ -123,9 +119,6 @@ class StringGene(
                     it.selectedSpecialization = this.selectedSpecialization
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
                     it.mutatedIndex = this.mutatedIndex
-                    it.degreeOfIndependence = this.degreeOfIndependence
-                    it.mutatedtimes = this.mutatedtimes
-                    it.resetTimes = this.resetTimes
                 }
     }
 
@@ -490,19 +483,41 @@ class StringGene(
             archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>
     ) {
-        if (specializationGene == null && specializations.isNotEmpty()) {
-            chooseSpecialization()
-            assert(specializationGene != null)
+        val specializationGene = getSpecializationGene()
+
+        if (specializationGene == null && specializationGenes.isNotEmpty()) {
+            selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
+            selectionUpdatedSinceLastMutation = false
+            return
+
+        } else if (specializationGene != null) {
+            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
+                /*
+                    selection of most recent added gene, but only with a given
+                    probability, albeit high.
+                    point is, switching is not always going to be beneficial
+                 */
+                selectedSpecialization = specializationGenes.lastIndex
+            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
+                //choose another specialization, but with low probability
+                selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
+            } else{
+                //just mutate current selection
+                specializationGene.standardMutation(randomness, apc, allGenes)
+            }
+            selectionUpdatedSinceLastMutation = false
+            return
         }
 
-        if (specializationGene != null) {
-            val impact = geneImpact?: evi.getImpactOfGenes()[ImpactUtils.generateGeneId(evi.individual, this)] ?: throw IllegalStateException("cannot find this gene in the individual")
-            specializationGene!!.archiveMutation(randomness, allGenes, apc, selection, impact, geneReference, archiveMutator, evi)
+        if (!TaintInputName.isTaintInput(value)
+                && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
+
+            value = TaintInputName.getTaintName(counter++)
             return
         }
 
         if (archiveMutator.enableArchiveGeneMutation()){
-            mutatedtimes += 1
+            dependencyInfo.mutatedtimes +=1
             archiveMutator.mutate(this)
             if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
                 log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
@@ -524,7 +539,7 @@ class StringGene(
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 
         if (this != mutated){
-            mutatedtimes += 1
+            dependencyInfo.mutatedtimes +=1
             if (this.mutatedIndex == -2){
                 initCharMutation()
             }
@@ -569,8 +584,8 @@ class StringGene(
             charUpdate.preferMax = Char.MAX_VALUE.toInt()
             charUpdate.preferMin = Char.MIN_VALUE.toInt()
             charUpdate.reached = false
-            resetTimes+=1
-            if(resetTimes >=2) degreeOfIndependence = 0.8
+            dependencyInfo.resetTimes +=1
+            if(dependencyInfo.resetTimes >=2) dependencyInfo.degreeOfIndependence = 0.8
             return
         }
         charUpdate.updateBoundary(pchar, cchar,doesCurrentBetter)
@@ -614,8 +629,8 @@ class StringGene(
             lengthMutation.preferMin = minLength
             lengthMutation.preferMax = maxLength
             lengthMutation.reached = false
-            resetTimes +=1
-            if(resetTimes >=2) degreeOfIndependence = 0.8
+            dependencyInfo.resetTimes +=1
+            if(dependencyInfo.resetTimes >=2) dependencyInfo.degreeOfIndependence = 0.8
             return
         }
         lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)

@@ -35,7 +35,7 @@ class Statistics : SearchListener {
     @Inject(optional = true)
     private var sampler: Sampler<*>? = null
 
-    @Inject(optional = true)
+    //@Inject(optional = true)
     private var remoteController: RemoteController? = null
 
     /**

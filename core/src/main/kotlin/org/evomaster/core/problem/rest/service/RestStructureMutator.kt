@@ -20,7 +20,7 @@ class RestStructureMutator : StructureMutator() {
     @Inject
     private lateinit var sampler: RestSampler
 
-    override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
 
         if (!config.shouldGenerateSqlData()) {
             return
@@ -41,6 +41,7 @@ class RestStructureMutator : StructureMutator() {
                 || ! ind.dbInitialization.any { it.representExistingData }) {
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
+            mutatedGenes?.addedInitializationGenes?.addAll( sampler.existingSqlData.flatMap { it.seeGenes() })
         }
 
         val max = config.maxSqlInitActionsPerMissingData
@@ -61,6 +62,7 @@ class RestStructureMutator : StructureMutator() {
                  */
                 val position = sampler.existingSqlData.size
                 ind.dbInitialization.addAll(position, insertions)
+                mutatedGenes?.addedInitializationGenes?.addAll(insertions.flatMap { it.seeGenes() })
             }
 
             /*
@@ -79,6 +81,10 @@ class RestStructureMutator : StructureMutator() {
 
         ind.repairInitializationActions(randomness)
 
+        /**
+         * since more dbGenes are added, it requires to update impacts map
+         */
+        individual.updateDbActionGenes(ind)
     }
 
     private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {

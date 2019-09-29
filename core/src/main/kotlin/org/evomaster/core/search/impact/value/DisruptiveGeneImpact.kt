@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
 
 /**
@@ -28,4 +29,20 @@ class DisruptiveGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is DisruptiveGene<*>
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+        countImpactAndPerformance(hasImpact, noImprovement)
+
+        if (gc.previous == null) return
+
+        if (gc.previous !is DisruptiveGene<*> || gc.current  !is DisruptiveGene<*>){
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
+        }
+
+        val mutatedGeneWithContext = MutatedGeneWithContext(
+                previous = gc.previous.gene,
+                current = gc.current.gene
+        )
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+    }
 }

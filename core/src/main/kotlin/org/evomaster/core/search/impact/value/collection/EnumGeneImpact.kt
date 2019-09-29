@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.collection
 import org.evomaster.core.search.gene.EnumGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.GeneralImpact
 
 /**
@@ -25,8 +26,13 @@ class EnumGeneImpact (
         return EnumGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, values)
     }
 
-    fun countValueImpact(index : Int, hasImpact: Boolean, isWorse : Boolean){
-        values[index].countImpactAndPerformance(hasImpact, isWorse)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+        countImpactAndPerformance(hasImpact, noImprovement)
+
+        if (gc.current !is EnumGene<*>)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be EnumGene")
+
+        values[gc.current.index].countImpactAndPerformance(hasImpact, noImprovement)
     }
 
     override fun validate(gene: Gene): Boolean = gene is EnumGene<*>

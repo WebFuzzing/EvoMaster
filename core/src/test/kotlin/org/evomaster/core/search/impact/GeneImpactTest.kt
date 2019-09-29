@@ -4,7 +4,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.impact.value.OptionalGeneImpact
 import org.evomaster.core.search.impact.value.StringGeneImpact
-import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
+import org.evomaster.core.search.impact.value.collection.MapGeneImpact
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
@@ -37,7 +37,7 @@ class GeneImpactTest {
         val hasImpact = true
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = dateTimeGene, previous = tracking0, action = "none", position = -1 )
-        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact, isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext( gc = mutatedGeneWithContext, hasImpact = hasImpact, noImprovement = false)
 
         (impact as DateTimeGeneImpact).apply {
             assertEquals(1, timesToManipulate)
@@ -107,7 +107,7 @@ class GeneImpactTest {
         val hasImpact = true
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = dateGene, previous = tracking0, action = "none", position = -1 )
-        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact, isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext( gc = mutatedGeneWithContext, hasImpact = hasImpact, noImprovement = false)
 
         (impact as DateGeneImpact).apply {
             assertEquals(1, timesToManipulate)
@@ -147,7 +147,7 @@ class GeneImpactTest {
         val hasImpact = true
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = timeGene, previous = tracking0, action = "none", position = -1 )
-        ImpactUtils.processImpact(impact = impact, gc = mutatedGeneWithContext, hasImpact = hasImpact,isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext(  gc = mutatedGeneWithContext, hasImpact = hasImpact,noImprovement = false)
 
         (impact as TimeGeneImpact).apply {
             assertEquals(1, timesToManipulate)
@@ -212,7 +212,7 @@ class GeneImpactTest {
             assert(fields.getValue(f6.name) is EnumGeneImpact)
             assert((fields.getValue(f6.name) as EnumGeneImpact).values.size == f6.values.size)
 
-            assert(fields.getValue(f7.name) is CollectionGeneImpact)
+            assert(fields.getValue(f7.name) is MapGeneImpact)
         }
 
         val tracking0 = objGene.copy()
@@ -222,7 +222,7 @@ class GeneImpactTest {
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = objGene, previous =  tracking0, action = "none", position = -1)
 
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext, hasImpact,isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext( mutatedGeneWithContext, hasImpact,noImprovement = false)
 
         //check whether all impacts are updated correctly
         assert(impact.timesOfImpact == 1)
@@ -245,7 +245,7 @@ class GeneImpactTest {
         val tracking1 = objGene.copy()
         f5_1.value = if (f5_1.value.length == f5_1.maxLength) f5_1.value.substring(1) else "${f5_1.value}z"
         val mutatedGeneWithContext1 = MutatedGeneWithContext(current = objGene, previous =  tracking1, action = "none", position = -1)
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext1, hasImpact = false, countDeepObjectImpact = true,isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext(  mutatedGeneWithContext1, hasImpact = false, noImprovement = false)
 
         assert(impact.timesOfImpact == 1)
         assert(impact.timesOfNoImpacts == 1)
@@ -287,7 +287,7 @@ class GeneImpactTest {
         f7.elements.add(f7_3)
 
         val mutatedGeneWithContext2 = MutatedGeneWithContext(current = objGene, previous =  tracking2, action = "none", position = -1)
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext2, hasImpact = false, countDeepObjectImpact = true,isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext( mutatedGeneWithContext2, hasImpact = false, noImprovement = false)
 
         assert(impact.timesOfImpact == 1)
         assert(impact.timesOfNoImpacts == 2)
@@ -339,7 +339,7 @@ class GeneImpactTest {
                 assert(u.timesToManipulate == 1)
 
                 //check whether impacts of collection genes are updated correctly
-                (u as CollectionGeneImpact).sizeImpact.apply {
+                (u as MapGeneImpact).sizeImpact.apply {
                     assert(timesOfImpact == 0)
                     assert(timesOfNoImpacts == 1)
                     assert(timesToManipulate == 1)
@@ -398,7 +398,7 @@ class GeneImpactTest {
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = optionalGene, previous =  previous, action = "action", position = 0)
 
-        ImpactUtils.processImpact(impact, mutatedGeneWithContext, hasImpact,isWorse = false)
+        impact.countImpactWithMutatedGeneWithContext( mutatedGeneWithContext, hasImpact,noImprovement = false)
 
         assert(impact.timesOfImpact == 1)
         assert(impact.timesOfNoImpacts == 0)

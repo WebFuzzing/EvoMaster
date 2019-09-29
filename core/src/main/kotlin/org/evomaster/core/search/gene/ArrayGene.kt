@@ -4,7 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
-import org.evomaster.core.search.impact.value.collection.CollectionGeneImpact
+import org.evomaster.core.search.impact.value.collection.MapGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -88,20 +88,21 @@ class ArrayGene<T>(
         }
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: ImpactMutationSelection,
+            impact: GeneImpact?,
+            geneReference: String,
+            archiveMutator: ArchiveMutator,
+            evi: EvaluatedIndividual<*>
+    ) {
         var add = elements.isEmpty()
         var delete = elements.size == maxSize
 
-        val modifySize = if (impact != null && impact is CollectionGeneImpact){
-            val probOfMutateSize = if (impact.sizeImpact.timesToManipulate == 0) 0.1
-            else impact.sizeImpact.timesOfImpact/impact.sizeImpact.timesToManipulate.toDouble().run {
-                when {
-                    this == 0.0 -> 0.05
-                    this > 0.5 -> 0.2
-                    else -> this
-                }
-            }
-            randomness.nextBoolean(probOfMutateSize)
+        val modifySize = if (impact != null && impact is MapGeneImpact && archiveMutator.enableArchiveSelection() && impact.sizeImpact.niCounter < 2){
+            randomness.nextBoolean(0.3)
         }else {
             randomness.nextBoolean(0.1)
         }

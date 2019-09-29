@@ -28,15 +28,6 @@ public class ImpactEMTest extends SpringTestBase {
         testRunEM(ImpactMutationSelection.AWAY_NOIMPACT);
     }
 
-    @Test
-    public void testApproachGood() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_IMPACT);
-    }
-//    @Test
-//    public void testFeedback() throws Throwable {
-//        testRunEM(ImpactMutationSelection.FEEDBACK_DIRECT);
-//    }
-
     public void testRunEM(ImpactMutationSelection method) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(

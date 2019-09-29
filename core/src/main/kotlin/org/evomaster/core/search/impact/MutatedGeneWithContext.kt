@@ -13,7 +13,7 @@ class MutatedGeneWithContext (
         val current : Gene,
         val action : String = NO_ACTION,
         val position : Int = NO_POSITION,
-        val previous : Gene
+        val previous : Gene?
 ){
     companion object{
         const val NO_ACTION = "NONE"

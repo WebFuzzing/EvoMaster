@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -34,12 +35,21 @@ class DateGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is DateGene
 
-    fun countDateImpact(previous: DateGene, current : DateGene, hasImpact: Boolean, isWorse : Boolean){
-        if (!current.year.containsSameValueAs(previous.year))
-            yearGeneImpact.countImpactAndPerformance(hasImpact, isWorse = isWorse)
-        if (!current.month.containsSameValueAs(previous.month))
-            monthGeneImpact.countImpactAndPerformance(hasImpact, isWorse = isWorse)
-        if (!current.day.containsSameValueAs(previous.day))
-            dayGeneImpact.countImpactAndPerformance(hasImpact, isWorse = isWorse)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+
+        countImpactAndPerformance(hasImpact, noImprovement)
+
+        if (gc.previous == null) return
+
+        if (gc.previous !is DateGene || gc.current !is DateGene)
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be DateGene")
+
+        if (!gc.current.year.containsSameValueAs(gc.previous.year))
+            yearGeneImpact.countImpactAndPerformance(hasImpact, noImprovement  = noImprovement)
+        if (!gc.current.month.containsSameValueAs(gc.previous.month))
+            monthGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
+        if (!gc.current.day.containsSameValueAs(gc.previous.day))
+            dayGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
     }
+
 }

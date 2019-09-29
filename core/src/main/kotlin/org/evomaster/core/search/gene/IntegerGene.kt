@@ -19,14 +19,10 @@ class IntegerGene(
         /** Inclusive */
         val max: Int = Int.MAX_VALUE,
         val valueMutation :IntMutationUpdate = IntMutationUpdate(min, max)
-) : NumberGene<Int>(name, value) , GeneIndependenceInfo{
+) : NumberGene<Int>(name, value) {
 
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max, valueMutation.copy()).also {
-            it.degreeOfIndependence = this.degreeOfIndependence
-            it.mutatedtimes = this.mutatedtimes
-            it.resetTimes = this.resetTimes
-        }
+        return IntegerGene(name, value, min, max, valueMutation.copy())
     }
 
     override fun copyValueFrom(other: Gene) {

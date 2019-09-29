@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -56,31 +57,22 @@ class DateGene(
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
-        if (impact != null && impact is DateGeneImpact){
-            if (impact.yearGeneImpact.timesToManipulate == 0){
-                year.archiveMutation(
-                        randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi
-                )
-                return
-            }
-            if (impact.monthGeneImpact.timesToManipulate == 0){
-                month.archiveMutation(
-                        randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi
-                )
-                return
-            }
 
-            if (impact.dayGeneImpact.timesToManipulate == 0){
-                day.archiveMutation(
-                        randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi
-                )
-                return
-            }
+        var genes : List<Pair<Gene, GeneImpact>>? = null
 
+        val selects =  if (impact != null && impact is DateGeneImpact && archiveMutator.enableArchiveSelection()){
+            genes = listOf(
+                    Pair(year, impact.yearGeneImpact),
+                    Pair(month , impact.monthGeneImpact),
+                    Pair(day , impact.dayGeneImpact)
+            )
+            archiveMutator.selectGenesByArchive(genes, 1.0/3)
+        }else
+            listOf(year, month, day)
 
-        }else{
-            standardMutation(randomness, apc, allGenes)
-        }
+        val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(year, month, day))
+        val selectedImpact = genes?.first { it.first == selected }?.second
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

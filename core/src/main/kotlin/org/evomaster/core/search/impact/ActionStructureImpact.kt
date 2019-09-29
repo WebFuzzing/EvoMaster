@@ -34,9 +34,9 @@ class ActionStructureImpact (
     }
 
 
-    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, hasImpacts : Boolean, hasSizeImpact : Boolean, isWorse : Boolean){
+    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, hasImpacts : Boolean, sizeChanged : Boolean, isWorse : Boolean){
         countImpactAndPerformance(hasImpacts, isWorse)
-        sizeImpact.countImpactAndPerformance(hasSizeImpact, isWorse)
+        if (sizeChanged) sizeImpact.countImpactAndPerformance(hasImpacts, isWorse)
         updateStructure(evaluatedIndividual)
     }
 

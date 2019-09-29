@@ -1,8 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
+import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
  * Using RFC3339
@@ -46,6 +53,21 @@ open class DateTimeGene(
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         val gene = randomness.choose(listOf(date, time))
         gene.standardMutation(randomness, apc, allGenes)
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        var genes : List<Pair<Gene, GeneImpact>>? = null
+        val selects = if(impact != null && impact is DateTimeGeneImpact && archiveMutator.enableArchiveSelection()){
+            genes = listOf(
+                    Pair(date, impact.dateGeneImpact),
+                    Pair(time , impact.timeGeneImpact)
+            )
+            archiveMutator.selectGenesByArchive(genes, 1.0/3)
+        }else listOf(date, time)
+
+        val selected = randomness.choose(selects)
+        val selectedImpact = genes?.first { it.first == selected }?.second
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

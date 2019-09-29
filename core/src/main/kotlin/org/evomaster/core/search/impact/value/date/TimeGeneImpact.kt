@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.TimeGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -34,12 +35,21 @@ class TimeGeneImpact(
 
     override fun validate(gene: Gene): Boolean = gene is TimeGene
 
-    fun countTimeImpact(previous: TimeGene, current : TimeGene, hasImpact: Boolean, isWorse : Boolean){
-        if (!current.hour.containsSameValueAs(previous.hour))
-            hourGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
-        if (!current.minute.containsSameValueAs(previous.minute))
-            minuteGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
-        if (!current.second.containsSameValueAs(previous.second))
-            secondGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+
+        countImpactAndPerformance(hasImpact, noImprovement)
+
+        if (gc.previous == null) return
+
+        if (gc.previous !is TimeGene || gc.current !is TimeGene)
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be TimeGene")
+
+        if (!gc.current.hour.containsSameValueAs(gc.previous.hour))
+            hourGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
+        if (!gc.current.minute.containsSameValueAs(gc.previous.minute))
+            minuteGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
+        if (!gc.current.second.containsSameValueAs(gc.previous.second))
+            secondGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
     }
 }

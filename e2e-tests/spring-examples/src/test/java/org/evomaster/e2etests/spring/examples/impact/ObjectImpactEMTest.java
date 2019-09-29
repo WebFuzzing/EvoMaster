@@ -9,6 +9,7 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.ObjectGene;
 import org.evomaster.core.search.impact.GeneImpact;
+import org.evomaster.core.search.impact.Impact;
 import org.evomaster.core.search.impact.ImpactMutationSelection;
 import org.evomaster.core.search.impact.ImpactUtils;
 import org.evomaster.core.search.impact.value.ObjectGeneImpact;
@@ -32,15 +33,6 @@ public class ObjectImpactEMTest extends SpringTestBase {
     public void testAwayBad() throws Throwable {
         testRunEM(ImpactMutationSelection.AWAY_NOIMPACT);
     }
-
-    @Test
-    public void testApproachGood() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_IMPACT);
-    }
-//    @Test
-//    public void testFeedback() throws Throwable {
-//        testRunEM(ImpactMutationSelection.FEEDBACK_DIRECT);
-//    }
 
     public void testRunEM(ImpactMutationSelection method) throws Throwable {
 
@@ -105,12 +97,12 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
         assert(impact instanceof ObjectGraph);
 
-        GeneImpact noImpactField = ((ObjectGeneImpact)impact).getFields().get(fieldName);
+        Impact noImpactField = ((ObjectGeneImpact)impact).getFields().get(fieldName);
         assertNotNull(noImpactField);
 
         for (String keyId : ((ObjectGeneImpact)impact).getFields().keySet()){
             if (keyId != fieldName){
-                GeneImpact other = ((ObjectGeneImpact)impact).getFields().get(keyId);
+                Impact other = ((ObjectGeneImpact)impact).getFields().get(keyId);
                 last = last &&
                         // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
                         (noImpactField.getTimesOfImpact() <= other.getTimesOfImpact()

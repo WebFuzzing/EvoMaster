@@ -19,7 +19,7 @@ class ObjRestStructureMutator : StructureMutator() {
     @Inject
     private lateinit var sampler: ObjRestSampler
 
-    override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGene: MutatedGeneSpecification?) {
 
         if (!config.shouldGenerateSqlData()) {
             return

@@ -12,9 +12,9 @@ enum class ImpactMutationSelection {
     /**
      * select genes which have higher degree of impacts
      */
-    APPROACH_IMPACT,
+    APPROACH_IMPACT_N,
     /**
-     * select genes which have recent impacts
+     * select genes which have higher degree of impacts
      */
-    //FEEDBACK_DIRECT
+    APPROACH_IMPACT_I,
 }

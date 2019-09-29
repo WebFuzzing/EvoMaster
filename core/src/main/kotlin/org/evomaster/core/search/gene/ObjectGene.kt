@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
@@ -127,30 +128,19 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>) {
 
-        val canFields = fields.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}
-        val selects =  if (impact != null && impact is ObjectGeneImpact){
-            val genes = canFields.map { Pair(it, impact.fields.getValue(it.name)) }
-            /*
-               decide what a method to select field to mutate
-            */
-            val methodSelection = archiveMutator.decideGeneSelectionMethod(genes)
-            val percentage = 1.0/canFields.size //prefer selecting one
-            when(methodSelection){
-                ImpactMutationSelection.APPROACH_IMPACT -> ImpactUtils.selectApproachGood(genes, percentage)
-                ImpactMutationSelection.AWAY_NOIMPACT -> ImpactUtils.selectGenesAwayBad(genes, percentage)
-                //ImpactMutationSelection.FEEDBACK_DIRECT -> ImpactUtils.selectFeedback(genes, percentage)
-                else -> canFields
-            }
+        val canFields = fields.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}.run {
+            if (isEmpty())
+                fields
+            else this
+        }
+        var genes : List<Pair<Gene, Impact>>? = null
+        val selects =  if (impact != null && impact is ObjectGeneImpact && archiveMutator.enableArchiveSelection()){
+            genes = canFields.map { Pair(it, impact.fields.getValue(it.name)) }
+            archiveMutator.selectGenesByArchive(genes, 1.0/3)
         }else canFields
 
-        if (selects.isEmpty()){
-            log.warn("selected fields to mutate should not be empty")
-            standardMutation(randomness,apc, allGenes)
-            return
-        }
-
-        val selected = randomness.choose(selects)
-        val selectedImpact = if (impact != null && impact is ObjectGeneImpact) impact.fields.getValue(selected.name) else null
+        val selected = randomness.choose(if (selects.isNotEmpty()) selects else canFields)
+        val selectedImpact = genes?.first { it.first == selected }?.second as? GeneImpact
         selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
     }
 

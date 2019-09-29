@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.DateTimeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 
 /**
  * created by manzh on 2019-09-16
@@ -32,14 +33,23 @@ class DateTimeGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is DateTimeGene
 
-    fun countDateTimeImpact(previous: DateTimeGene, current : DateTimeGene, hasImpact: Boolean, isWorse : Boolean){
-        if (!current.date.containsSameValueAs(previous.date)){
-            dateGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
-            dateGeneImpact.countDateImpact(previous = previous.date, current = current.date, hasImpact = hasImpact, isWorse = isWorse)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+
+        countImpactAndPerformance(hasImpact, noImprovement)
+
+        if (gc.previous == null) return
+
+        if (gc.previous !is DateTimeGene || gc.current !is DateTimeGene)
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be DateTimeGene")
+
+        if (!gc.current.date.containsSameValueAs(gc.previous.date)){
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = gc.previous.date, current = gc.current.date)
+            dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
         }
-        if (!current.time.containsSameValueAs(previous.time)){
-            timeGeneImpact.countImpactAndPerformance(hasImpact, isWorse)
-            timeGeneImpact.countTimeImpact(previous = previous.time, current = current.time, hasImpact = hasImpact, isWorse = isWorse)
+        if (!gc.current.time.containsSameValueAs(gc.previous.time)){
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = gc.previous.time, current = gc.current.time)
+            timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
         }
     }
+
 }

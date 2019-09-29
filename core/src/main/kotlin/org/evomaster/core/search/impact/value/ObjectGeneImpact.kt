@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 
@@ -17,28 +18,40 @@ class ObjectGeneImpact (
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
         positionSensitive: Boolean = false,
-        val fields : MutableMap<String, GeneImpact> = mutableMapOf()
+        val fields : MutableMap<String, Impact> = mutableMapOf()
 ) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive){
 
     constructor(id: String, objectGene: ObjectGene) : this (id, fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
-        return ObjectGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, fields)
+        return ObjectGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, fields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
     }
 
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+        countImpactAndPerformance(hasImpact, noImprovement)
 
-    fun countFieldImpact(previous: ObjectGene, current : ObjectGene, hasImpact: Boolean, countDeepImpact : Boolean, isWorse : Boolean){
-        current.fields.zip(previous.fields) { cf, pf ->
+        //for field
+        if (gc.previous == null){
+//            gc.current.fields.forEach {
+//                val fImpact = fields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+//                val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  it, action = "none", position = -1)
+//                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+//            }
+            return
+        }
+        if (gc.previous !is ObjectGene)
+            throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be ObjectGene")
+        if (gc.current !is ObjectGene)
+            throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
+
+        gc.current.fields.zip(gc.previous.fields) { cf, pf ->
             Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
         }.filter { !it.second }.map { it.first }.forEach { g->
-            val fImpact = fields.getValue(g.first.name)
-            if (countDeepImpact){
-                val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1)
-                ImpactUtils.processImpact(fImpact, mutatedGeneWithContext,hasImpact, countDeepImpact, isWorse)
-            }else{
-                fImpact.countImpactAndPerformance(hasImpact, isWorse)
-            }
+            val fImpact = fields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1)
+            fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
         }
+
     }
 
     override fun validate(gene: Gene): Boolean = gene is ObjectGene

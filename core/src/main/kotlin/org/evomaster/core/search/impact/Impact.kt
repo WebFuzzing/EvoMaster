@@ -7,7 +7,7 @@ package org.evomaster.core.search.impact
  * @property timesOfImpact presents how many times the change of the element (i.e., Gene, structure of individual) impacts the [Archive]
  * @property timesOfNoImpacts presents how many times the change of the element (i.e., Gene, structure of individual) did not impact the [Archive]
  * @property counter continuous times of no impact
- * @property wCounter continuous times of worse results
+ * @property niCounter continuous times of worse results
  */
 abstract class Impact (
         val id : String,
@@ -16,22 +16,22 @@ abstract class Impact (
         var timesOfImpact : Int = 0,
         var timesOfNoImpacts : Int = 0,
         var counter : Int = 0,
-        var wCounter : Int = 0
+        var niCounter : Int = 0
 ){
     abstract fun copy() : Impact
 
-    fun countImpactAndPerformance(hasImpact:Boolean, isWorse : Boolean){
-        if (isWorse && !hasImpact)
-            throw IllegalArgumentException("if isWorse is $isWorse, hasImpact must be true, but $hasImpact")
+    fun countImpactAndPerformance(hasImpact:Boolean, noImprovement : Boolean){
+//        if (!noImprovement && !hasImpact)
+//            throw IllegalArgumentException("if isBetter is ${!noImprovement}, hasImpact must be true, but $hasImpact")
 
         timesToManipulate +=1
         if (hasImpact) {
             timesOfImpact +=1
             resetCounter()
-            if (isWorse)
-                wCounter +=1
+            if (noImprovement)
+                niCounter +=1
             else
-                wCounter = 0
+                niCounter = 0
         } else {
             counter+=1
             timesOfNoImpacts+=1

@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.numeric
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.GeneralImpact
 
 /**
@@ -26,10 +27,14 @@ class BinaryGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is BooleanGene
 
-    fun countValueImpact(current : BooleanGene, hasImpact: Boolean, isWorse : Boolean){
-        if (current.value){
-            _true.countImpactAndPerformance(hasImpact, isWorse)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+        countImpactAndPerformance(hasImpact, noImprovement)
+        if (gc.current !is BooleanGene)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be BooleanGene")
+
+        if (gc.current.value){
+            _true.countImpactAndPerformance(hasImpact, noImprovement)
         }else
-            _false.countImpactAndPerformance(hasImpact, isWorse)
+            _false.countImpactAndPerformance(hasImpact, noImprovement)
     }
 }

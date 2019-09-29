@@ -6,7 +6,7 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -52,8 +52,8 @@ class ArchiveMutator {
         val p = gene.copy()
         when(gene){
             is StringGene -> mutate(gene)
-            is IntegerGene -> mutate(gene)
-            is EnumGene<*> -> mutate(gene)
+//            is IntegerGene -> mutate(gene)
+//            is EnumGene<*> -> mutate(gene)
             else -> {
                 if (ParamUtil.getValueGene(gene) is StringGene){
                     mutate(ParamUtil.getValueGene(gene))
@@ -75,32 +75,40 @@ class ArchiveMutator {
         val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
 
         val collected =  genesToMutate.toList().map { g->
-            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
+            val id = candidatesMap[g]?:throw IllegalArgumentException("mismatched")
+            Pair(g, evi.getImpactOfGenes(id)!!)
         }
 
-        val method = decideArchiveGeneSelectionMethod(collected)
+        val genes = if (enableArchiveSelection()){
+            selectGenesByArchive(collected, config.perOfCandidateGenesToMutate)
+        } else
+            genesToMutate
 
-
-        val genes = when(method){
-            ImpactMutationSelection.AWAY_NOIMPACT -> selectGenesAwayBad(genesToMutate,candidatesMap,evi)
-            ImpactMutationSelection.APPROACH_IMPACT -> selectGenesApproachGood(genesToMutate,candidatesMap,evi)
-           // ImpactMutationSelection.FEEDBACK_DIRECT -> selectGenesFeedback(genesToMutate, candidatesMap, evi)
-            else -> {
-                genesToMutate
-            }
-        }
         if (genes.isEmpty()){
             log.warn("Archive-based mutation should not produce empty genes to mutate")
+            return genesToMutate
         }
         return genes
     }
 
-    fun decideGeneSelectionMethod(genes : List<Pair<Gene, GeneImpact>>) : ImpactMutationSelection {
-        val archive = randomness.nextBoolean(config.probOfArchiveMutation)
-        return if (archive) decideArchiveGeneSelectionMethod(genes) else ImpactMutationSelection.NONE
+    fun <T> selectGenesByArchive(genes: List<Pair<T, Impact>>, percentage : Double) : List<T>{
+        val method = decideArchiveGeneSelectionMethod(genes.map { it.second })
+        val selects = when(method){
+            ImpactMutationSelection.AWAY_NOIMPACT -> ImpactUtils.selectGenesAwayBad(genes, percentage = percentage, prioritizeNoVisit = true)
+            ImpactMutationSelection.APPROACH_IMPACT_N -> ImpactUtils.selectApproachGood(genes, percentage = percentage, prioritizeNoVisit = true)
+            ImpactMutationSelection.APPROACH_IMPACT_I -> ImpactUtils.selectApproachGood2(genes, percentage = percentage, prioritizeNoVisit = true)
+            else -> {
+                genes.map { it.first }
+            }
+        }
+        if (selects.isEmpty()){
+            log.warn("Archive-based mutation should not produce empty genes to mutate")
+            return genes.map { it.first }
+        }
+        return selects
     }
 
-    fun decideArchiveGeneSelectionMethod(genes : List<Pair<Gene, GeneImpact>>) : ImpactMutationSelection {
+    fun decideArchiveGeneSelectionMethod(genes : List<Impact>) : ImpactMutationSelection {
         return when (config.adaptiveGeneSelection) {
             EMConfig.AdaptiveSelection.FIXED_SELECTION -> config.geneSelectionMethod
             EMConfig.AdaptiveSelection.RANDOM -> randomGeneSelectionMethod()
@@ -109,7 +117,7 @@ class ArchiveMutator {
     }
 
     private fun randomGeneSelectionMethod() : ImpactMutationSelection
-            = randomness.choose(listOf(ImpactMutationSelection.APPROACH_IMPACT, ImpactMutationSelection.AWAY_NOIMPACT))
+            = randomness.choose(listOf(ImpactMutationSelection.APPROACH_IMPACT_N, ImpactMutationSelection.APPROACH_IMPACT_I, ImpactMutationSelection.AWAY_NOIMPACT))
 
 //    private fun methodGuidedByImpact(genes : List<Pair<Gene, GeneImpact>>) : ImpactMutationSelection{
 //
@@ -166,22 +174,22 @@ class ArchiveMutator {
 //    }
 
     private fun mutate(gene : IntegerGene){
-        val value = mutate(
-                gene,
-                gene.value,
-                gene.valueMutation,
-                gene.min,
-                gene.max,
-                15,
-                5
-        )
-        gene.value = value
+//        val value = mutate(
+//                gene,
+//                gene.value,
+//                gene.valueMutation,
+//                gene.min,
+//                gene.max,
+//                15,
+//                5
+//        )
+//        gene.value = value
     }
 
-    private fun mutate(gene : EnumGene<*>) {
-        val index = mutate(gene, gene.index, gene.optionMutationUpdate, 0, gene.values.size, 2, 1)
-        gene.index = index
-    }
+//    private fun mutate(gene : EnumGene<*>) {
+//        val index = mutate(gene, gene.index, gene.optionMutationUpdate, 0, gene.values.size, 2, 1)
+//        gene.index = index
+//    }
 
     private fun mutate(independence : GeneIndependenceInfo, current: Int, update: IntMutationUpdate, hardMinValue: Int, hardMaxValue: Int, slightStart : Int, slightEnd : Int) : Int{
         val preferSlight = approachSlightMutation(independence)
@@ -263,7 +271,7 @@ class ArchiveMutator {
     private fun approachPrefer(gene: StringGene) : Boolean{
         return when(config.archiveGeneMutation){
             EMConfig.ArchiveGeneMutation.SPECIFIED -> withinNormal()
-            EMConfig.ArchiveGeneMutation.ADAPTIVE -> withinNormal(gene.degreeOfIndependence)
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> withinNormal(gene.dependencyInfo.degreeOfIndependence)
             EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
         }
     }
@@ -275,7 +283,7 @@ class ArchiveMutator {
     private fun approachSlightMutation(gene: StringGene) : Boolean{
         return when(config.archiveGeneMutation){
             EMConfig.ArchiveGeneMutation.SPECIFIED -> randomness.nextBoolean()
-            EMConfig.ArchiveGeneMutation.ADAPTIVE -> gene.resetTimes > 0 && withinNormal()
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> gene.dependencyInfo.resetTimes > 0 && withinNormal()
             EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
         }
     }
@@ -467,7 +475,8 @@ class ArchiveMutator {
         return (min..max).filter { !exclude.contains(it) }.size
     }
 
-    fun relaxIndexStringGeneMutation() : Boolean = true
+    fun enableArchiveSelection() = (config.geneSelectionMethod != ImpactMutationSelection.NONE || config.adaptiveGeneSelection != EMConfig.AdaptiveSelection.FIXED_SELECTION)
+            && randomness.nextBoolean(config.probOfArchiveMutation)
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
 
