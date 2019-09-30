@@ -28,15 +28,20 @@ class SqlXmlGeneImpact (
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+
         countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
-        if (gc.current  !is SqlXMLGene  || gc.previous !is SqlXMLGene){
+        if (gc.previous == null && hasImpact) return
+
+        if (gc.current  !is SqlXMLGene )
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlXMLGene")
+
+        if ( gc.previous != null && gc.previous !is SqlXMLGene){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be SqlXMLGene")
         }
 
         val mutatedGeneWithContext = MutatedGeneWithContext(
-                previous = gc.previous.objectGene,
+                previous = if (gc.previous==null) null else (gc.previous as SqlXMLGene).objectGene,
                 current = gc.current.objectGene
         )
         geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)

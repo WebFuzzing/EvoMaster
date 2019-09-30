@@ -34,18 +34,18 @@ class SqlUUIDGeneImpact (
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
         countImpactAndPerformance(hasImpact, noImprovement)
-        if (gc.previous == null) return
-        if (gc.previous !is SqlUUIDGene){
+        if (gc.previous == null && hasImpact) return
+        if (gc.previous != null && gc.previous !is SqlUUIDGene){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
         }
         if (gc.current  !is SqlUUIDGene){
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
         }
 
-        if (!gc.current.mostSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).mostSigBits)){
+        if (gc.previous == null || !gc.current.mostSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).mostSigBits)){
             mostSigBitsImpact.countImpactAndPerformance(hasImpact, noImprovement)
         }
-        if (!gc.current.leastSigBits.containsSameValueAs(gc.previous.leastSigBits)){
+        if (gc.previous == null || !gc.current.leastSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).leastSigBits)){
             leastSigBitsImpact.countImpactAndPerformance(hasImpact, noImprovement)
         }
     }

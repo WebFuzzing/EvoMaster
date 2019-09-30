@@ -29,20 +29,20 @@ class ObjectGeneImpact (
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
         countImpactAndPerformance(hasImpact, noImprovement)
-
-        //for field
+        if (gc.previous == null && hasImpact) return
+        if (gc.current !is ObjectGene)
+            throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
         if (gc.previous == null){
-//            gc.current.fields.forEach {
-//                val fImpact = fields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
-//                val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  it, action = "none", position = -1)
-//                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
-//            }
+            gc.current.fields.forEach {
+                val fImpact = fields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
+                val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  it, action = "none", position = -1)
+                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+            }
             return
         }
         if (gc.previous !is ObjectGene)
             throw IllegalArgumentException("gc.previous ${gc.previous::class.java.simpleName} should be ObjectGene")
-        if (gc.current !is ObjectGene)
-            throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
+
 
         gc.current.fields.zip(gc.previous.fields) { cf, pf ->
             Pair(Pair(cf, pf), cf.containsSameValueAs(pf))

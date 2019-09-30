@@ -37,17 +37,20 @@ class DateTimeGeneImpact (
 
         countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
+        if (gc.previous == null && hasImpact) return
 
-        if (gc.previous !is DateTimeGene || gc.current !is DateTimeGene)
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be DateTimeGene")
+        if (gc.current !is DateTimeGene)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be DateTimeGene")
 
-        if (!gc.current.date.containsSameValueAs(gc.previous.date)){
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = gc.previous.date, current = gc.current.date)
+        if (gc.previous != null && gc.previous !is DateTimeGene)
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DateTimeGene")
+
+        if (gc.previous == null || !gc.current.date.containsSameValueAs((gc.previous as DateTimeGene).date)){
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).date, current = gc.current.date)
             dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
         }
-        if (!gc.current.time.containsSameValueAs(gc.previous.time)){
-            val mutatedGeneWithContext = MutatedGeneWithContext(previous = gc.previous.time, current = gc.current.time)
+        if (gc.previous == null || !gc.current.time.containsSameValueAs((gc.previous as DateTimeGene).time)){
+            val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).time, current = gc.current.time)
             timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
         }
     }

@@ -359,7 +359,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         NOTE THAT a number of mutated genes is more than 1 if applying 1/n.
         This might have side effects to impact analysis, so we ignore to collect impacts info from this case.
          */
-        if (mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1) return
+        if (mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && isAnyChange) return
 
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 

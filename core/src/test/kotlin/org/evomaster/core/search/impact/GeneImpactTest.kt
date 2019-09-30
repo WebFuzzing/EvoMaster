@@ -394,14 +394,14 @@ class GeneImpactTest {
         f2.value = f2.value + 1
         optionalGene.isActive = false
 
-        val hasImpact = true
+        val hasImpact = false
 
         val mutatedGeneWithContext = MutatedGeneWithContext(current = optionalGene, previous =  previous, action = "action", position = 0)
 
         impact.countImpactWithMutatedGeneWithContext( mutatedGeneWithContext, hasImpact,noImprovement = false)
 
-        assert(impact.timesOfImpact == 1)
-        assert(impact.timesOfNoImpacts == 0)
+        assert(impact.timesOfImpact == 0)
+        assert(impact.timesOfNoImpacts == 1)
         assert(impact.timesToManipulate == 1)
 
         //check whether active gene impacts of OptionalGene are created correctly
@@ -412,15 +412,15 @@ class GeneImpactTest {
         }
 
         impact.activeImpact._false.apply {
-            assert(timesOfImpact == 1)
-            assert(timesOfNoImpacts == 0)
+            assert(timesOfImpact == 0)
+            assert(timesOfNoImpacts == 1)
             assert(timesToManipulate == 1)
         }
 
         (impact.geneImpact as ObjectGeneImpact).fields.forEach { (t, u) ->
             if (t == f2.name){
-                assert(u.timesOfImpact == 1)
-                assert(u.timesOfNoImpacts == 0)
+                assert(u.timesOfImpact == 0)
+                assert(u.timesOfNoImpacts == 1)
                 assert(u.timesToManipulate == 1)
             }else{
                 assert(u.timesOfImpact == 0)

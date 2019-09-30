@@ -37,6 +37,17 @@ class OptionalGeneImpact (
             activeImpact._true.countImpactAndPerformance(hasImpact, noImprovement)
         else
             activeImpact._false.countImpactAndPerformance(hasImpact, noImprovement)
+
+        if (gc.previous == null && hasImpact) return
+
+        if (gc.previous != null && gc.previous !is OptionalGene)
+            throw IllegalStateException("gc.pervious (${gc.previous::class.java.simpleName}) should be OptionalGene")
+
+        val mutatedGeneWithContext = MutatedGeneWithContext(
+                previous = if (gc.previous==null) null else (gc.previous as OptionalGene).gene,
+                current = gc.current.gene
+        )
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
     }
 
 

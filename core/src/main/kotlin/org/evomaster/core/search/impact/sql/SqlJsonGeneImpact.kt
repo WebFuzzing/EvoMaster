@@ -32,9 +32,19 @@ class SqlJsonGeneImpact (
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
         countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
-        if ( gc.previous !is SqlJSONGene || gc.current !is SqlJSONGene){
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be SqlJSONGene")
+        if (gc.current !is SqlJSONGene)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlJSONGene")
+        if (gc.previous == null && hasImpact) return
+        if (gc.previous == null){
+            val mutatedGeneWithContext = MutatedGeneWithContext(
+                    previous = null,
+                    current = gc.current.objectGene
+            )
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+            return
+        }
+        if ( gc.previous !is SqlJSONGene){
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlJSONGene")
         }
 
         val mutatedGeneWithContext = MutatedGeneWithContext(

@@ -27,12 +27,13 @@ class ArrayGeneImpact (
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
         countImpactAndPerformance(hasImpact, noImprovement)
-        if (gc.previous == null) return
+        if (gc.previous == null && hasImpact) return
+        if (gc.current !is ArrayGene<*>)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be ArrayGene")
+        if ((gc.previous != null && gc.previous !is ArrayGene<*>))
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be ArrayGene")
 
-        if (gc.previous !is ArrayGene<*> || gc.current !is ArrayGene<*>)
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be ArrayGene")
-
-        if (gc.previous.elements.size != gc.current.elements.size)
+        if (gc.previous == null || (gc.previous as ArrayGene<*>).elements.size != gc.current.elements.size)
             sizeImpact.countImpactAndPerformance(hasImpact, noImprovement)
     }
 

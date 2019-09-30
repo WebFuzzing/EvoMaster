@@ -40,16 +40,19 @@ class TimeGeneImpact(
 
         countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
+        if (gc.previous == null && hasImpact) return
 
-        if (gc.previous !is TimeGene || gc.current !is TimeGene)
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be TimeGene")
+        if (gc.current !is TimeGene)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be TimeGene")
 
-        if (!gc.current.hour.containsSameValueAs(gc.previous.hour))
+        if (gc.previous != null && gc.previous !is TimeGene )
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be TimeGene")
+
+        if (gc.previous == null || !gc.current.hour.containsSameValueAs((gc.previous as TimeGene).hour))
             hourGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
-        if (!gc.current.minute.containsSameValueAs(gc.previous.minute))
+        if (gc.previous == null || !gc.current.minute.containsSameValueAs((gc.previous as TimeGene).minute))
             minuteGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
-        if (!gc.current.second.containsSameValueAs(gc.previous.second))
+        if (gc.previous == null || !gc.current.second.containsSameValueAs((gc.previous as TimeGene).second))
             secondGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
     }
 }

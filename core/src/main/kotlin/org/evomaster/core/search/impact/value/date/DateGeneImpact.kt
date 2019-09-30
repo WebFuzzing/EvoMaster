@@ -39,16 +39,17 @@ class DateGeneImpact (
 
         countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
+        if (gc.previous == null && hasImpact) return
+        if (gc.current !is DateGene)
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be DateGene")
+        if (gc.previous !=null && gc.previous !is DateGene)
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DateGene")
 
-        if (gc.previous !is DateGene || gc.current !is DateGene)
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be DateGene")
-
-        if (!gc.current.year.containsSameValueAs(gc.previous.year))
+        if (gc.previous == null || !gc.current.year.containsSameValueAs((gc.previous as DateGene).year))
             yearGeneImpact.countImpactAndPerformance(hasImpact, noImprovement  = noImprovement)
-        if (!gc.current.month.containsSameValueAs(gc.previous.month))
+        if (gc.previous == null || !gc.current.month.containsSameValueAs((gc.previous as DateGene).month))
             monthGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
-        if (!gc.current.day.containsSameValueAs(gc.previous.day))
+        if (gc.previous == null || !gc.current.day.containsSameValueAs((gc.previous as DateGene).day))
             dayGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
     }
 

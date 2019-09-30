@@ -33,14 +33,16 @@ class DisruptiveGeneImpact (
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
         countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
-
-        if (gc.previous !is DisruptiveGene<*> || gc.current  !is DisruptiveGene<*>){
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) and gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
+        if (gc.previous == null && hasImpact) return
+        if (gc.current  !is DisruptiveGene<*>){
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
+        }
+        if (gc.previous != null && gc.previous !is DisruptiveGene<*>){
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
         }
 
         val mutatedGeneWithContext = MutatedGeneWithContext(
-                previous = gc.previous.gene,
+                previous = if (gc.previous==null) null else (gc.previous as DisruptiveGene<*>).gene,
                 current = gc.current.gene
         )
         geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)

@@ -39,13 +39,14 @@ class SqlNullableImpact (
         else
             presentImpact._false.countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null) return
-        if (gc.previous !is SqlNullable){
+        if (gc.previous == null && hasImpact) return
+
+        if (gc.previous != null && gc.previous !is SqlNullable){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
         }
 
         val mutatedGeneWithContext = MutatedGeneWithContext(
-                previous = gc.previous.gene,
+                previous = if (gc.previous == null) null else (gc.previous as SqlNullable).gene,
                 current = gc.current.gene
         )
         geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
