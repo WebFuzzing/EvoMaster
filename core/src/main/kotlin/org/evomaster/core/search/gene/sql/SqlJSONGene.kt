@@ -1,13 +1,23 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.sql.SqlJsonGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name) {
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(SqlJSONGene::class.java)
+    }
 
     override fun copy(): Gene = SqlJSONGene(
             name,
@@ -58,5 +68,30 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
             listOf(this).plus(objectGene.flatView(excludePredicate))
     }
 
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        if(!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
 
+        objectGene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is SqlJsonGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi)
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is SqlJSONGene){
+                log.warn("original ({}) should be SqlJSONGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is SqlJSONGene){
+                log.warn("mutated ({}) should be SqlJSONGene", mutated::class.java.simpleName)
+                return
+            }
+            objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, doesCurrentBetter, archiveMutator)
+        }
+    }
+
+    override fun reachOptimal(): Boolean {
+        return objectGene.reachOptimal()
+    }
 }

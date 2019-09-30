@@ -4,12 +4,12 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ImpactMutationSelection
-import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Using RFC3339
@@ -24,6 +24,10 @@ class TimeGene(
         val second: IntegerGene = IntegerGene("second", 0, -1, 60),
         val timeGeneFormat: TimeGeneFormat = TimeGeneFormat.TIME_WITH_MILLISECONDS
 ) : Gene(name) {
+
+    companion object{
+        val log : Logger = LoggerFactory.getLogger(TimeGene::class.java)
+    }
 
     enum class TimeGeneFormat {
         // format HH:MM:SS
@@ -60,9 +64,14 @@ class TimeGene(
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        if (!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
         var genes : List<Pair<Gene, GeneImpact>>? = null
 
-        val selects = if (impact != null && impact is TimeGeneImpact && archiveMutator.enableArchiveSelection()){
+        val selects = if (impact != null && impact is TimeGeneImpact && archiveMutator.applyArchiveSelection()){
             genes = listOf(
                     Pair(hour, impact.hourGeneImpact),
                     Pair(minute , impact.minuteGeneImpact),
@@ -74,6 +83,31 @@ class TimeGene(
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(hour, minute, second))
         val selectedImpact = genes?.first { it.first == selected }?.second
         selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is TimeGene){
+                log.warn("original ({}) should be TimeGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is TimeGene){
+                log.warn("mutated ({}) should be TimeGene", mutated::class.java.simpleName)
+                return
+            }
+
+            if (!mutated.hour.containsSameValueAs(original.hour)){
+                hour.archiveMutationUpdate(original.hour, mutated.hour, doesCurrentBetter, archiveMutator)
+            }
+            if (!mutated.minute.containsSameValueAs(original.minute))
+                minute.archiveMutationUpdate(original.minute, mutated.minute, doesCurrentBetter, archiveMutator)
+            if (!mutated.second.containsSameValueAs(original.second))
+                second.archiveMutationUpdate(original.second, mutated.second, doesCurrentBetter, archiveMutator)
+        }
+    }
+
+    override fun reachOptimal(): Boolean {
+        return hour.reachOptimal() && minute.reachOptimal() && second.reachOptimal()
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

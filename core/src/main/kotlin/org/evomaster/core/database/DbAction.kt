@@ -79,7 +79,7 @@ class DbAction(
     }
 
     override fun getName(): String {
-        return "SQL_Insert_${table.name}_${selectedColumns.map { it.name }.joinToString("_")}"
+        return "SQL_Insert_${table.name}_${selectedColumns.map { it.name }.sorted().joinToString("_")}"
     }
 
     override fun seeGenes(): List<out Gene> {

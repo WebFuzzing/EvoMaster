@@ -1,9 +1,13 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 
 class SqlAutoIncrementGene(name: String) : Gene(name) {
@@ -49,4 +53,12 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
     override fun isMutable() = false
 
     override fun isPrintable() = false
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        throw IllegalStateException("AutoIncrement fields are not part of the search")
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        throw IllegalStateException("AutoIncrement fields are not part of the search")
+    }
 }

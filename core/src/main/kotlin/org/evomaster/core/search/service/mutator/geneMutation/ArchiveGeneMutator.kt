@@ -76,10 +76,12 @@ class ArchiveMutator {
 
         val collected =  genesToMutate.toList().map { g->
             val id = candidatesMap[g]?:throw IllegalArgumentException("mismatched")
+            if(evi.getImpactOfGenes(id) == null)
+                throw IllegalArgumentException("cannot find geneImpact info with id $id")
             Pair(g, evi.getImpactOfGenes(id)!!)
         }
 
-        val genes = if (enableArchiveSelection()){
+        val genes = if (applyArchiveSelection()){
             selectGenesByArchive(collected, config.perOfCandidateGenesToMutate)
         } else
             genesToMutate
@@ -475,10 +477,14 @@ class ArchiveMutator {
         return (min..max).filter { !exclude.contains(it) }.size
     }
 
-    fun enableArchiveSelection() = (config.geneSelectionMethod != ImpactMutationSelection.NONE || config.adaptiveGeneSelection != EMConfig.AdaptiveSelection.FIXED_SELECTION)
+    fun applyArchiveSelection() = enableArchiveSelection()
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
+    fun enableArchiveSelection() = (config.geneSelectionMethod != ImpactMutationSelection.NONE || config.adaptiveGeneSelection != EMConfig.AdaptiveSelection.FIXED_SELECTION) && config.probOfArchiveMutation > 0.0
+
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
+
+    fun enableArchiveMutation() = enableArchiveGeneMutation() || enableArchiveSelection()
 
     fun createCharMutationUpdate() = IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt())
 }

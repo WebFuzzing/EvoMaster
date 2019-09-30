@@ -85,11 +85,15 @@ abstract class Gene(var name: String) {
                              geneReference : String,
                              archiveMutator: ArchiveMutator,
                              evi: EvaluatedIndividual<*>){
-
-        if (archiveMutator.enableArchiveGeneMutation() && archiveMutator.doesSupport(this)){
-            archiveMutator.mutate(this)
-        }else
-            standardMutation(randomness,apc, allGenes)
+        standardMutation(randomness, apc, allGenes)
+//        if (!archiveMutator.enableArchiveMutation()){
+//            standardMutation(randomness,apc, allGenes)
+//        }else{
+//            if (archiveMutator.doesSupport(this))
+//                archiveMutator.mutate(this)
+//            else
+//                TODO("ArchiveGeneMutation for ${this::class.java.simpleName} was NOT IMPLEMENT")
+//        }
     }
 
     /**
@@ -150,6 +154,6 @@ abstract class Gene(var name: String) {
     open fun reachOptimal() = false
 
     open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){
-
+        //do nothing
     }
 }

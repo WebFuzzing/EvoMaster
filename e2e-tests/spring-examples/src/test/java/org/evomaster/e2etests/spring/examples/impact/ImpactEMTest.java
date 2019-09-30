@@ -24,8 +24,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImpactEMTest extends SpringTestBase {
 
     @Test
-    public void testAwayBad() throws Throwable {
+    public void testAWAY_NOIMPACT() throws Throwable {
         testRunEM(ImpactMutationSelection.AWAY_NOIMPACT);
+    }
+
+    @Test
+    public void testAPPROACH_IMPACT_N() throws Throwable {
+        testRunEM(ImpactMutationSelection.APPROACH_IMPACT_N);
+    }
+
+    @Test
+    public void testAPPROACH_IMPACT_I() throws Throwable {
+        testRunEM(ImpactMutationSelection.APPROACH_IMPACT_I);
     }
 
     public void testRunEM(ImpactMutationSelection method) throws Throwable {
@@ -85,9 +95,10 @@ public class ImpactEMTest extends SpringTestBase {
                         // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
                         (noimpactGene.getTimesOfImpact() <= ind.getImpactOfGenes().get(keyId).getTimesOfImpact()
                                 || noimpactGene.getTimesOfNoImpacts() >= ind.getImpactOfGenes().get(keyId).getTimesOfNoImpacts())
-                        &&
-                        // getTimesToManipulate should be less than any others
-                        (noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate());
+                        //&&
+                        // ideally getTimesToManipulate might be less than any others
+                        //(noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate())
+                ;
             }
         }
         return last;

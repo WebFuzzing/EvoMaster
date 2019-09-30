@@ -41,7 +41,7 @@ class Main {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val folder = "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced_adaptive_selection2/"
+            val folder = if (args.size == 1) args.first() else "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced_adaptive_selection/"
             adaptiveSelection(folder)
             //default(arrayOf(folder))
         }
@@ -49,15 +49,15 @@ class Main {
          * exp for impact selection
          */
         private fun adaptiveSelection(baseFolder: String){
-            val problems = listOf(ArchiveProblemType.PAR_IND_STABLE)
-            val rateOfImpacts = listOf(0.2) //0.2, 0.5, 0.8, 1.0
+            val problems = listOf(ArchiveProblemType.PAR_IND_STABLE, ArchiveProblemType.PAR_DEP_DYNAMIC)
+            val rateOfImpacts = listOf(0.2, 0.5, 0.8, 1.0) //0.2, 0.5, 0.8, 1.0
             val configs = produceConfigs(
                     impactSelection = impactSelection,
                     probOfArchiveMutations = probOfArchiveMutations,
-                    archiveGeneMutation = listOf(EMConfig.ArchiveGeneMutation.NONE),
+                    archiveGeneMutation = archiveGeneMutation,
                     adaptiveGeneSelections = adaptiveGeneSelections,
                     includeNone = true,
-                    baseLineWithMutation = false,
+                    baseLineWithMutation = true,
                     focusSearch = focusSearch
             )
 
@@ -94,7 +94,7 @@ class Main {
                                             problem = pt,
                                             rateOfImpact = rp,
                                             charPool = CharPool.WORD)
-                                    println(solution.overall.coveredTargets())
+                                    //println(solution.overall.coveredTargets())
                                     total += solution.overall.coveredTargets()
                                 }
                                 val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"

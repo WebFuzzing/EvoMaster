@@ -535,6 +535,8 @@ class StringGene(
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (!archiveMutator.enableArchiveGeneMutation()) return
+
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 

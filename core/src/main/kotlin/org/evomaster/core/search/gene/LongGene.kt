@@ -46,6 +46,10 @@ class LongGene(
         value += (sign * delta)
     }
 
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        standardMutation(randomness, apc, allGenes)
+    }
+
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
         return value.toString()
     }

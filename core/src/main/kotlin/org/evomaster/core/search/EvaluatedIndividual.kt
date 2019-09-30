@@ -1,6 +1,7 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.ActionStructureImpact
@@ -275,8 +276,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             assert(size == 0)
         }
 
-        updateDbActionGenes(individual)
         updateActionGenes(individual)
+        updateDbActionGenes(individual)
 
         impactsOfStructure!!.updateStructure(this)
 
@@ -285,27 +286,27 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
     }
 
-    fun <T:Individual> updateDbActionGenes(individual: T){
-        individual.seeInitializingActions().forEach { db->
+    fun <T:Individual> updateDbActionGenes(_individual: T){
+        _individual.seeInitializingActions().forEach { db->
             db.seeGenes().filter { it.isMutable() }.forEach { g->
                 val id = ImpactUtils.generateGeneId(db, g)
-                impactsOfGenes!!.getOrPut(id){ ImpactUtils.createGeneImpact(g, id)}
+                impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(g, id))
             }
         }
     }
 
-    private fun updateActionGenes(individual: T){
-        if (individual.seeActions().isNotEmpty()){
-            individual.seeActions().forEach { a->
+    private fun updateActionGenes(_individual: T){
+        if (_individual.seeActions().isNotEmpty()){
+            _individual.seeActions().forEach { a->
                 a.seeGenes().filter { it.isMutable() }.forEach { g->
                     val id = ImpactUtils.generateGeneId(a, g)
-                    impactsOfGenes!!.getOrPut(id){ ImpactUtils.createGeneImpact(g, id)}
+                    impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(g, id))
                 }
             }
         }else{
-            individual.seeGenes().filter { it.isMutable() }.forEach { g->
+            _individual.seeGenes().filter { it.isMutable() }.forEach { g->
                 val id = ImpactUtils.generateGeneId(individual, g)
-                impactsOfGenes!!.getOrPut(id){ ImpactUtils.createGeneImpact(g, id)}
+                impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(g, id))
             }
         }
     }

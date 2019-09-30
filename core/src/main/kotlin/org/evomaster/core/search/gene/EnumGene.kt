@@ -3,7 +3,6 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
@@ -56,7 +55,7 @@ class EnumGene<T>(
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
-        if (values.size == 2 || impact == null || impact !is EnumGeneImpact || !archiveMutator.enableArchiveSelection()){
+        if (!archiveMutator.applyArchiveSelection() || values.size == 2 || impact == null || impact !is EnumGeneImpact){
             standardMutation(randomness, apc, allGenes)
             return
         }
@@ -99,6 +98,6 @@ class EnumGene<T>(
     }
 
     override fun reachOptimal(): Boolean {
-        return optionMutationUpdate.reached
+        return optionMutationUpdate.reached || values.size == 1
     }
 }

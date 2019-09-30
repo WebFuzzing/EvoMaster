@@ -6,7 +6,6 @@ import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactMutationSelection
-import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -128,15 +127,20 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>) {
 
+        if (!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
         val canFields = fields.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}.run {
             if (isEmpty())
                 fields
             else this
         }
         var genes : List<Pair<Gene, Impact>>? = null
-        val selects =  if (impact != null && impact is ObjectGeneImpact && archiveMutator.enableArchiveSelection()){
+        val selects =  if (impact != null && impact is ObjectGeneImpact && archiveMutator.applyArchiveSelection()){
             genes = canFields.map { Pair(it, impact.fields.getValue(it.name)) }
-            archiveMutator.selectGenesByArchive(genes, 1.0/3)
+            archiveMutator.selectGenesByArchive(genes, 1.0/canFields.size)
         }else canFields
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else canFields)
@@ -145,14 +149,14 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        original as? ObjectGene ?:throw IllegalStateException("$original should be IntegerGene")
-        mutated as? ObjectGene ?:throw IllegalStateException("$mutated should be IntegerGene")
+        if (archiveMutator.enableArchiveGeneMutation()){
+            original as? ObjectGene ?:throw IllegalStateException("$original should be ObjectGene")
+            mutated as? ObjectGene ?:throw IllegalStateException("$mutated should be ObjectGene")
 
-        mutated.fields.zip(original.fields) { cf, pf ->
-            Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
-        }.filter { !it.second }.map { it.first }.forEach { g->
-            val current = fields.find { it.name ==  g.first.name}?: throw IllegalArgumentException("mismatched field")
-            if (archiveMutator.doesSupport(current)){
+            mutated.fields.zip(original.fields) { cf, pf ->
+                Pair(Pair(cf, pf), cf.containsSameValueAs(pf))
+            }.filter { !it.second }.map { it.first }.forEach { g->
+                val current = fields.find { it.name ==  g.first.name}?: throw IllegalArgumentException("mismatched field")
                 current.archiveMutationUpdate(original = g.second, mutated = g.first, doesCurrentBetter = doesCurrentBetter, archiveMutator = archiveMutator)
             }
         }

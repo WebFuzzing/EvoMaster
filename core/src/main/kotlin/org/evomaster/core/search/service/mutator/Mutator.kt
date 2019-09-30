@@ -91,6 +91,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val mutatedGenes = MutatedGeneSpecification()
 
             structureMutator.addInitializingActions(current, mutatedGenes)
+
+            if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
+                current.updateDbActionGenes(current.individual)
+            }
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutatedInd = mutate(current, mutatedGenes)
@@ -131,25 +135,29 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 }
             }
 
-            /*
-            TODO, handle StringGene that are inside of root gene
-             */
             // gene mutation evaluation
             if (archiveMutator.enableArchiveGeneMutation()){
-                mutatedGenes.mutatedGenes.filter { archiveMutator.doesSupport(it) }.forEachIndexed { index, s->
+                /**
+                 * if len(mutatedGenes.mutatedGenes) + len(mutatedGenes.mutatedDbGenes) > 1, shall we evaluate this mutation?
+                 */
+                mutatedGenes.mutatedGenes.forEachIndexed { index, s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
                     val actionIndex = if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[index] else -1
-                    val previousValue = (trackedCurrent.findGeneById(id, actionIndex) ?: throw IllegalStateException("mismatched genes"))
-                    val savedGene = (current.findGeneById(id, actionIndex) ?: throw IllegalStateException("mismatched genes"))
+                    val previousValue = (trackedCurrent.findGeneById(id, actionIndex) ?: throw IllegalStateException("cannot find mutated gene with id ($id) in current individual"))
+                    val savedGene = (current.findGeneById(id, actionIndex) ?: throw IllegalStateException("cannot find mutated gene with id ($id) in its original individual"))
                     savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
                 }
 
-                mutatedGenes.mutatedDbGenes.filter { archiveMutator.doesSupport(it) }.forEachIndexed { index, s->
+                mutatedGenes.mutatedDbGenes.forEachIndexed { index, s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
                     val actionIndex = if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[index] else -1
-                    val savedGene = (current.findGeneById(id, actionIndex, isDb = true) ?: throw IllegalStateException("mismatched genes"))
-                    val previousValue = (trackedCurrent.findGeneById(id, actionIndex, isDb = true) ?: throw IllegalStateException("mismatched genes"))
-                    savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
+                    val savedGene = (current.findGeneById(id, actionIndex, isDb = true) ?: throw IllegalStateException("SQLGene: cannot find mutated Sql- gene with id ($id) in current individual"))
+                    /*
+                    it may happen, i.e., a gene may be added during 'structureMutator.addInitializingActions(current, mutatedGenes)'
+                     */
+                    val previousValue = trackedCurrent.findGeneById(id, actionIndex, isDb = true)
+                    if (previousValue != null)
+                        savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
                 }
             }
         }

@@ -13,9 +13,13 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 
 class RestStructureMutator : StructureMutator() {
+
+    @Inject
+    private lateinit var archiveMutator: ArchiveMutator
 
     @Inject
     private lateinit var sampler: RestSampler
@@ -80,11 +84,6 @@ class RestStructureMutator : StructureMutator() {
         }
 
         ind.repairInitializationActions(randomness)
-
-        /**
-         * since more dbGenes are added, it requires to update impacts map
-         */
-        individual.updateDbActionGenes(ind)
     }
 
     private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {

@@ -1,9 +1,16 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * A wrapper around a Gene to represent a column in a SQL database
@@ -27,6 +34,10 @@ class SqlPrimaryKeyGene(name: String,
         }
     }
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(SqlPrimaryKeyGene::class.java)
+    }
+
     override fun getForeignKey(): SqlForeignKeyGene? {
         if(gene is SqlWrapperGene){
             return gene.getForeignKey()
@@ -42,6 +53,32 @@ class SqlPrimaryKeyGene(name: String,
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         gene.standardMutation(randomness, apc, allGenes)
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+        if (!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+        gene.archiveMutation(randomness,allGenes, apc, selection, if(impact != null || impact !is SqlPrimaryKeyGeneImpact) null else (impact as SqlPrimaryKeyGeneImpact).geneImpact, geneReference, archiveMutator, evi)
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is SqlPrimaryKeyGene){
+                log.warn("original ({}) should be SqlPrimaryKeyGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is SqlPrimaryKeyGene){
+                log.warn("mutated ({}) should be SqlPrimaryKeyGene", mutated::class.java.simpleName)
+                return
+            }
+            gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+        }
+    }
+
+    override fun reachOptimal(): Boolean {
+        return gene.reachOptimal()
     }
 
     override fun copyValueFrom(other: Gene) {

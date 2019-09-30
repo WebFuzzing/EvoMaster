@@ -29,6 +29,8 @@ class ArrayGene<T>(
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
+
+        private const val MODIFY_SIZE = 0.1
     }
 
     override fun copy(): Gene {
@@ -76,11 +78,11 @@ class ArrayGene<T>(
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(0.1))){
+        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             elements.add(gene)
-        } else if(elements.size > 0 && randomness.nextBoolean(0.1)){
+        } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
             elements.removeAt(randomness.nextInt(elements.size))
         } else {
             val gene = randomness.choose(elements)
@@ -98,22 +100,29 @@ class ArrayGene<T>(
             archiveMutator: ArchiveMutator,
             evi: EvaluatedIndividual<*>
     ) {
+
+        if (!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
         var add = elements.isEmpty()
         var delete = elements.size == maxSize
 
-        val modifySize = if (impact != null && impact is MapGeneImpact && archiveMutator.enableArchiveSelection() && impact.sizeImpact.niCounter < 2){
+        val fmodifySize = if (add || delete) false
+        else if (archiveMutator.applyArchiveSelection() && impact != null && impact is MapGeneImpact && impact.sizeImpact.niCounter < 2){
             randomness.nextBoolean(0.3)
         }else {
-            randomness.nextBoolean(0.1)
+            randomness.nextBoolean(MODIFY_SIZE)
         }
-        if (modifySize){
+        if (fmodifySize){
             val p = randomness.nextBoolean()
             add = add || p
             delete = delete || !p
         }
 
         if (add && add == delete)
-            log.warn("add and delete an element cannot happen in a mutation")
+            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
 
         when{
             add ->{
@@ -128,6 +137,33 @@ class ArrayGene<T>(
                 val gene = randomness.choose(elements)
                 gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi)
             }
+        }
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is ArrayGene<*>){
+                log.warn("original ({}) should be ArrayGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is ArrayGene<*>){
+                log.warn("mutated ({}) should be ArrayGene", mutated::class.java.simpleName)
+                return
+            }
+            if (original.elements.size != mutated.elements.size) return
+            val mutatedElements = mutated.elements.filterIndexed { index, gene ->
+                !gene.containsSameValueAs(original.elements[index])
+            }
+            if (mutatedElements.size > 1){
+                log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
+                return
+            }
+            val index = mutated.elements.indexOf(mutatedElements.first())
+            if (index > elements.size - 1){
+                log.warn("cannot find element at index {}", index)
+                return
+            }
+            elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], doesCurrentBetter, archiveMutator)
         }
     }
 
