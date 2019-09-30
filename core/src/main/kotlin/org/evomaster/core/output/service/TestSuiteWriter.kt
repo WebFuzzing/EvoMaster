@@ -154,6 +154,7 @@ class TestSuiteWriter {
             addImport("io.restassured.config.JsonConfig", lines)
             addImport("io.restassured.path.json.config.JsonPathConfig", lines)
             addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
+            addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
         }
 
         if(config.expectationsActive) {

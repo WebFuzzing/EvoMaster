@@ -541,17 +541,19 @@ class TestCaseWriter {
         */
     }
 
-    private fun handleFieldValuesAssert(resContentsItem: Any?): String{
+    private fun handleFieldValuesExpect(objectName: String, fieldName: String, resContentsItem: Any?): String{
         if (resContentsItem == null) {
-            return "nullValue()"
+            return NOT_COVERED_YET
         }
         else{
             when(resContentsItem::class) {
-                Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
+                Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"\'$fieldName\'\")," +
+                        " ${resContentsItem as Double})"
+                String::class -> return "stringsMatch(json_$objectName.getJsonObject(\"\'$fieldName\'\")," +
+                        "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = "assertions", format = format)}\")"
                  //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
-                else -> return "NotCoveredYet"
+                else -> return NOT_COVERED_YET
             }
         }
         /* BMR: the code above is due to a somewhat unfortunate problem:
@@ -804,7 +806,7 @@ class TestCaseWriter {
         As it is still work in progress, expect quite significant changes to this.
         */
 
-        lines.add("expectationHandler()")
+        lines.add("expectationHandler")
         lines.indented {
             lines.add(".expect()")
             //lines.add(".that(activeExpectations, true)")
@@ -832,17 +834,25 @@ class TestCaseWriter {
                                     "json_$name.getJsonObject(\"size\"), " +
                                     "${resContents.size})"
                             lines.add(".that(expectationsMasterSwitch, ($printableTh))")
+                            //TODO: individual objects in this collection also need handling
+
                         }
                         '{' -> {
                             // This would be run if the JSON contains a single object
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
                             (resContents as Map<*, *>).keys.forEach {
-                                val printableTh = handleFieldValues(resContents[it])
+                                val printableTh = handleFieldValuesExpect(name, it.toString(), resContents[it])
                                 if (printableTh != "null"
                                         && printableTh != NOT_COVERED_YET
                                 ) {
-                                    lines.add(".that(expectationsMasterSwitch, (\"${it}\" == \"${resContents[it]}\"))")
+                                    /*lines.add(".that(expectationsMasterSwitch, (" +
+                                            "\"${it}\" == " +
+                                            "\"${resContents[it]}\"))")
+
+                                     */
+
+                                    lines.add(".that(expectationsMasterSwitch, $printableTh)")
                                 }
                             }
                         }
