@@ -14,6 +14,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
@@ -297,7 +298,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         Furthermore, likely needed to be done in resolveLocation,
                         or at least check how RestAssured would behave
                      */
-                    it.replace("\"", "")
+                    //it.replace("\"", "")
+                    GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
                 }
 
         /*
@@ -341,9 +343,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         val bodyEntity = if (body != null && body is BodyParam) {
             val mode = when {
-                body.isJson() -> "json"
+                body.isJson() -> GeneUtils.EscapeMode.JSON
                 //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-                body.isTextPlain() -> "text"
+                body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
             Entity.entity(body.gene.getValueAsPrintableString(mode = mode, targetFormat = configuration.outputFormat), body.contentType())

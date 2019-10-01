@@ -604,9 +604,8 @@ class EMConfig {
     var enableTrackEvaluatedIndividual = false
 
 
-    @Experimental
     @Cfg("Enable custom naming and sorting criteria")
-    var customNaming = false
+    var customNaming = true
 
     /*
         You need to decode it if you want to know what it says...

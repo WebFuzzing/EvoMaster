@@ -3,8 +3,9 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import java.net.URLEncoder
 import kotlin.math.pow
-
+import org.apache.commons.lang3.StringEscapeUtils
 
 object GeneUtils {
 
@@ -12,6 +13,30 @@ object GeneUtils {
      * List where each element at position "i" has value "2^i"
      */
     private val intpow2 = (0..30).map { 2.0.pow(it).toInt() }
+
+
+    /**
+     * The [EscapeMode] enum is here to clarify the supported types of Escape modes.
+     *
+     * Different purposes require different modes of escape (e.g. URI may require percent encoding). This is to
+     * keep track of what modes are supported and how they map to the respective implementations.
+     *
+     * Any mode that is not supported will go under NONE, and will result in no escapes being applied at all. The
+     * purpose is to ensure that, even if the mode being used is unsupported, the system will not throw an exception.
+     * It may not behave as desired, but it should not crash.
+     *
+     */
+    enum class EscapeMode {
+
+        URI,
+        SQL,
+        ASSERTION,
+        JSON,
+        TEXT,
+        XML,
+        BODY,
+        NONE
+    }
 
     fun getDelta(
             randomness: Randomness,
@@ -138,50 +163,66 @@ object GeneUtils {
 
      */
 
-    fun applyEscapes(string: String, mode: String = "none", format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5): String{
+    fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat): String{
         val ret = when (mode){
-            "uris" -> applyUriEscapes(string, format)
-            "queries" -> applyQueryEscapes(string, format)
-            "assertions" -> applyAssertionEscapes(string, format)
-            "json" -> applyJsonEscapes(string, format)
-            "text" -> applyTextEscapes(string, format)
-            else -> string
+            EscapeMode.URI -> applyUriEscapes(string, format)
+            EscapeMode.SQL -> applySqlEscapes(string, format)
+            EscapeMode.ASSERTION -> applyAssertionEscapes(string, format)
+            EscapeMode.JSON -> applyJsonEscapes(string, format)
+            EscapeMode.TEXT -> applyTextEscapes(string, format)
+            EscapeMode.NONE -> string
+            EscapeMode.BODY -> applyBodyEscapes(string, format)
+            EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
         //if(forQueries) return applyQueryEscapes(string, format)
         //else return applyAssertionEscapes(string, format)
         return ret
     }
 
-    fun applyJsonEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = when{
-            format.isKotlin() -> string.replace("\$", "\\\$")
-            else -> string
-        }
-        return ret
-                .replace("\\", """\\""")
+    fun applyJsonEscapes(string: String, format: OutputFormat):String{
+        val ret = string
+                .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
 
-
-    }
-
-    fun applyUriEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = if(format.isKotlin()) string.replace("\$", "%24")
-        else string
-        return ret.replace("\\", "%5C")
-    }
-
-    fun applyTextEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = when{
-            format.isKotlin() -> string.replace("\$", "\\\$")
-            else -> string
-        }
         return ret
-                .replace("\\", """\\""")
+        /*if(format.isKotlin()){
+            return ret//.replace("\$", "\$")
+        }
+        else return ret
+
+         */
+    }
+
+    fun applyUriEscapes(string: String, format: OutputFormat):String{
+        //val ret = URLEncoder.encode(string, "utf-8")
+        val ret = string.replace("\\", "%5C")
+                .replace("\"", "%22")
+                .replace("\n", "%0A")
+
+        if(format.isKotlin()) return ret.replace("\$", "%24")
+        else return ret
+    }
+
+    fun applyTextEscapes(string: String, format: OutputFormat):String{
+        val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\b", "\\b")
+                .replace("\t", "\\t")
+
+        when{
+            format.isKotlin() -> return ret.replace("\$", "\\\$")
+            else -> return ret
+        }
 
     }
 
-    fun applyAssertionEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
+    fun applyAssertionEscapes(string: String, format: OutputFormat): String {
         var ret = ""
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
         ret = string.split("@")[0] //first split off any reference that might differ between runs
@@ -193,27 +234,43 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin()) return ret.replace("\$", "\${\'\$\'}")
-        //ret.replace("\$", "\\\$")
+        if (format.isKotlin())  return ret.replace("\$", "\\\$")
         else return ret
     }
 
-    fun applyQueryEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
-        val ret = string
-                //.replace("""\"""", """\\\"""")
-                //.replace("""\\""", """\\\\""")
-                .replace("\\", """\\""")
+    fun applyBodyEscapes(string: String, format: OutputFormat): String {
+        var ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
+        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+                .replace("\\\\u", "\\u")
+                //.replace("\$", "\${\'\$\'}")
+        //ret.replace("\$", "\\\$")
+        else return ret.replace("\\\\u", "\\u")
 
+        /*
+                   The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
+                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
+                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
 
-        if (format.isKotlin()) return ret.replace("\$", "%24")
+                     As far as I understand, the addition of an \ in the \unicode should not really happen.
+                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
+                     they are not.
+                     */
+    }
+
+    fun applySqlEscapes(string: String, format: OutputFormat): String {
+        val ret =  string.replace("\\", """\\""")
+                .replace("\"", "\\\\\"")
+
+        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+                //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
-
 }
+

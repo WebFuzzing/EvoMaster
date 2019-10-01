@@ -1,8 +1,7 @@
 package org.evomaster.core.output.formatter
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.formatter.MismatchedFormatException
-import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -75,17 +74,9 @@ class OutputFormatterTest {
     @Test
     fun testEscapes4(){
         assertTrue(OutputFormatter.getFormatters()?.size == 1)
-        val testGene = StringGene("QuoteGene", "Test For the quotes ${'"'}escape")
+        val testGene = StringGene("QuoteGene", "Test For the quotes${'"'}escape")
 
-        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
-    }
-
-    @Test
-    fun testEscapes5(){
-        assertTrue(OutputFormatter.getFormatters()?.size == 1)
-        val testGene = StringGene("QuoteGene", "Test For the quotes ${"D\\\\\"C"}escape")
-
-        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = "json", targetFormat = OutputFormat.KOTLIN_JUNIT_5))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.KOTLIN_JUNIT_5))
     }
 
     @Test
@@ -96,6 +87,26 @@ class OutputFormatterTest {
             {"id":"19r\\l_"}
         """
         OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
+    @Test
+    fun testEscapes7(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+
+        val string = """
+           {"id":"Ot${'$'}Ag", "value":"Q"}
+        """
+        OutputFormatter.JSON_FORMATTER.getFormatted(string)
+    }
+
+    @Test
+    fun testEscapes8(){
+        assertTrue(OutputFormatter.getFormatters()?.size == 1)
+        val testGene = StringGene("DollarGene", "Test For the dollar${'$'}escape")
+
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.KOTLIN_JUNIT_5))
+        OutputFormatter.JSON_FORMATTER.getFormatted(testGene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = OutputFormat.JAVA_JUNIT_5))
+
     }
 
 }

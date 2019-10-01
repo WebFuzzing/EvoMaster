@@ -271,6 +271,9 @@ public abstract class RestTestBase {
 
         for (int i = 0; i < actions.size() && !stopped; i++) {
 
+            RestCallResult res = (RestCallResult) ind.getResults().get(i);
+            stopped = res.getStopping();
+
             if (!(actions.get(i) instanceof RestCallAction)) {
                 continue;
             }
@@ -288,8 +291,7 @@ public abstract class RestTestBase {
                 }
             }
 
-            RestCallResult res = (RestCallResult) ind.getResults().get(i);
-            stopped = res.getStopping();
+
 
             Integer statusCode = res.getStatusCode();
 
