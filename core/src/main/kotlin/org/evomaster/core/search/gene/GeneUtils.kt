@@ -31,6 +31,7 @@ object GeneUtils {
         URI,
         SQL,
         ASSERTION,
+        EXPECTATION,
         JSON,
         TEXT,
         XML,
@@ -168,6 +169,7 @@ object GeneUtils {
             EscapeMode.URI -> applyUriEscapes(string, format)
             EscapeMode.SQL -> applySqlEscapes(string, format)
             EscapeMode.ASSERTION -> applyAssertionEscapes(string, format)
+            EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
             EscapeMode.NONE -> string
@@ -188,7 +190,7 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-
+        return ret
     }
     fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
         val ret = when{
@@ -198,15 +200,6 @@ object GeneUtils {
         return ret
                 .replace("\\", """\\\\""")
                 .replace("\"", "\\\"")
-
-
-        return ret
-        /*if(format.isKotlin()){
-            return ret//.replace("\$", "\$")
-        }
-        else return ret
-
-         */
     }
 
     fun applyUriEscapes(string: String, format: OutputFormat):String{

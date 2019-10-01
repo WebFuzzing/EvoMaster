@@ -498,42 +498,12 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
-                Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> return NOT_COVERED_YET
-                else -> return NOT_COVERED_YET
-            }
-        }
-        /*
-        if (resContentsItem == null) {
-            return "nullValue()"
-        } else {
-            /*when (resContentsItem::class) {
-                Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
-        }
-        else{
-
-             */
-            when(resContentsItem::class) {
-                //Double::class -> return "NumberMatcher.numberMatches(${resContentsItem as Double})"
-                Double::class -> return "NumberMatcher.numbersMatch(" +
-                        "json_$name.getJsonObject(\"$ident\"), " +
-                        "${resContentsItem as Double})"
-                //String::class -> return "containsString(\"${(resContentsItem as String).replace("\"", "\\\"").replace("\n", "\\n")}\")"
-                String::class -> return "json_$name.getJsonObject(\"$ident\").toString()" +
-                        ".matches(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
-
-                //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
-                // The above solution should be refined.
-                Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> return NOT_COVERED_YET
-                else -> return NOT_COVERED_YET
             }
-        }*/
+        }
         /* BMR: the code above is due to a somewhat unfortunate problem:
         - Gson does parses all numbers as Double
         - Hamcrest has a hard time comparing double to int
@@ -550,18 +520,10 @@ class TestCaseWriter {
                 Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
                         " ${resContentsItem as Double})"
                 String::class -> return "stringsMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
-                        "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = "expectation", format = format)}\")"
-                 //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
-                // The above solution should be refined.
+                        "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = GeneUtils.EscapeMode.EXPECTATION, format = format)}\")"
                 else -> return NOT_COVERED_YET
             }
         }
-        /* BMR: the code above is due to a somewhat unfortunate problem:
-        - Gson parses all numbers as Double
-        - Hamcrest has a hard time comparing double to int
-        The solution is to use an additional content matcher that can be found in NumberMatcher. This can also
-        be used as a template for adding more matchers, should such a step be needed.
-        * */
     }
 
     private fun handleMapLines(index: Int, map: Map<*,*>, lines: Lines){
