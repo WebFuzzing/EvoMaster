@@ -67,7 +67,7 @@ class TestCaseWriter {
                 // BMR: test.test should have the used objects attached (if any).
                 //usedObjects = test.test.individual.usedObjects
                 if (config.enableCompleteObjects) {
-                    usedObjects = (test.test.individual as RestIndividual).usedObjects
+                    usedObjects = (test.test.individual as RestIndividual).usedObjects.copy()
                 }
 
                 if(configuration.expectationsActive){
@@ -547,10 +547,10 @@ class TestCaseWriter {
         }
         else{
             when(resContentsItem::class) {
-                Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"\'$fieldName\'\")," +
+                Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
                         " ${resContentsItem as Double})"
-                String::class -> return "stringsMatch(json_$objectName.getJsonObject(\"\'$fieldName\'\")," +
-                        "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = "assertions", format = format)}\")"
+                String::class -> return "stringsMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
+                        "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = "expectation", format = format)}\")"
                  //Note: checking a string can cause (has caused) problems due to unescaped quotation marks
                 // The above solution should be refined.
                 else -> return NOT_COVERED_YET
@@ -814,6 +814,9 @@ class TestCaseWriter {
             if (configuration.enableCompleteObjects == false) {
                 addExpectationsWithoutObjects(result, lines, name)
             }
+            else{
+                addExpectationsWithoutObjects(result, lines, name)
+            }
             lines.append(when {
                 format.isJava() -> ";"
                 else -> ""
@@ -835,6 +838,12 @@ class TestCaseWriter {
                                     "${resContents.size})"
                             lines.add(".that(expectationsMasterSwitch, ($printableTh))")
                             //TODO: individual objects in this collection also need handling
+                            resContents.forEachIndexed { index, result ->
+                                val fieldName = "get($index)"
+                                val printableElement = handleFieldValuesExpect(name, fieldName, result)
+                                if (printableElement != "null" && printableTh != NOT_COVERED_YET
+                                ) { lines.add(".that(expectationsMasterSwitch, $printableElement)") }
+                            }
 
                         }
                         '{' -> {

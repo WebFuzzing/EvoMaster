@@ -188,6 +188,18 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
+
+    }
+    fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+        val ret = when{
+            format.isKotlin() -> string.replace("\$", "\\\$")
+            else -> string
+        }
+        return ret
+                .replace("\\", """\\\\""")
+                .replace("\"", "\\\"")
+
+
         return ret
         /*if(format.isKotlin()){
             return ret//.replace("\$", "\$")
