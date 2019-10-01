@@ -10,12 +10,11 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
 import org.evomaster.core.search.gene.GeneUtils.getDelta
-import org.evomaster.core.search.gene.regex.RegexGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.util.stream.Collectors
+import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 
 
 class StringGene(
@@ -339,7 +338,7 @@ class StringGene(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: EscapeMode?, targetFormat: OutputFormat?): String {
 
         val specializationGene = getSpecializationGene()
 
@@ -348,42 +347,19 @@ class StringGene(
         }
 
         val rawValue = getValueAsRawString()
-        if (mode != null && mode.equals("xml")) {
+        if (mode != null && mode == EscapeMode.XML) {
             return StringEscapeUtils.escapeXml(rawValue)
         } else {
             when {
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
-                (targetFormat == null) -> return "\"${GeneUtils.applyEscapes(rawValue)}\""
+                (targetFormat == null) -> return "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
                 (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
-                else -> return "\"${GeneUtils.applyEscapes(rawValue, "text" ,targetFormat)}\""
+                else -> return "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT ,targetFormat)}\""
             }
 
         }
     }
-
-    /*
-    fun getValueAsPrintableString(mode: String?, targetFormat: OutputFormat?): String {
-        val rawValue = getValueAsRawString()
-        if (mode != null && mode.equals("xml")) {
-            return StringEscapeUtils.escapeXml(rawValue)
-        } else {
-            when {
-                (targetFormat == null) -> return "\"$rawValue\""
-                else -> return GeneUtils.applyEscapes(rawValue, "json", targetFormat)
-                /*
-                targetFormat.isKotlin() -> return "\"$rawValue\""
-                        .replace("\\", "\\\\")
-                        .replace("$", "\\$")
-                else -> return "\"$rawValue\""
-                        .replace("\\", "\\\\")
-                 */
-            }
-        }
-    }
-
-
-     */
 
     override fun getValueAsRawString(): String {
         val specializationGene = getSpecializationGene()

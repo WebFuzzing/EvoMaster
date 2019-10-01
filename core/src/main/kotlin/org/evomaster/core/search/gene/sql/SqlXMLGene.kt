@@ -2,6 +2,7 @@ package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -22,8 +23,8 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
         objectGene.standardMutation(randomness, apc, allGenes)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
-        val rawValue = objectGene.getValueAsPrintableString(previousGenes, ObjectGene.XML_MODE, targetFormat)
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
+        val rawValue = objectGene.getValueAsPrintableString(previousGenes, GeneUtils.EscapeMode.XML , targetFormat)
         when {
             // TODO: refactor with StringGene.getValueAsPrintableString(()
             (targetFormat == null) -> return "\"$rawValue\""

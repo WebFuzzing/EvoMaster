@@ -29,7 +29,7 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
         randomize(randomness, true, allGenes)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         throw IllegalStateException("CycleObjectGene has no value")
     }
 
