@@ -12,14 +12,15 @@ class RestCallResult : ActionResult {
     private constructor(other: ActionResult) : super(other)
 
     companion object {
-        val STATUS_CODE = "STATUS_CODE"
-        val BODY = "BODY"
-        val BODY_TYPE = "BODY_TYPE"
-        val TOO_LARGE_BODY = "TOO_LARGE_BODY"
-        val INFINITE_LOOP = "INFINITE_LOOP"
-        val ERROR_MESSAGE = "ERROR_MESSAGE"
-        val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
-        val TIMEDOUT = "TIMEDOUT"
+        const val STATUS_CODE = "STATUS_CODE"
+        const val BODY = "BODY"
+        const val BODY_TYPE = "BODY_TYPE"
+        const val TOO_LARGE_BODY = "TOO_LARGE_BODY"
+        const val INFINITE_LOOP = "INFINITE_LOOP"
+        const val ERROR_MESSAGE = "ERROR_MESSAGE"
+        const val HEURISTICS_FOR_CHAINED_LOCATION = "HEURISTICS_FOR_CHAINED_LOCATION"
+        const val TIMEDOUT = "TIMEDOUT"
+        const val LAST_STATEMENT_WHEN_500 = "LAST_STATEMENT_WHEN_500"
     }
 
 
@@ -106,4 +107,13 @@ class RestCallResult : ActionResult {
 
     fun setTimedout(timedout: Boolean) = addResultValue(TIMEDOUT, timedout.toString())
     fun getTimedout(): Boolean = getResultValue(TIMEDOUT)?.toBoolean() ?: false
+
+    fun setLastStatementWhen500(statement: String) {
+        if(getStatusCode() != 500){
+            throw IllegalArgumentException("Can set last statement only if status code is registered as 500. " +
+                    "Current is " + getStatusCode())
+        }
+        addResultValue(LAST_STATEMENT_WHEN_500, statement)
+    }
+    fun getLastStatementWhen500() : String? = getResultValue(LAST_STATEMENT_WHEN_500)
 }
