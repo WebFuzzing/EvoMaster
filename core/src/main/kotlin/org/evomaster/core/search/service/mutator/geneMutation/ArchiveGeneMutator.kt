@@ -35,6 +35,7 @@ class ArchiveMutator {
     companion object{
         const val WITHIN_NORMAL = 0.9
         private val log: Logger = LoggerFactory.getLogger(ArchiveMutator::class.java)
+        const val DEP_THRESHOLD = 0
     }
 
     fun withinNormal(prob : Double = WITHIN_NORMAL) : Boolean{
@@ -84,13 +85,32 @@ class ArchiveMutator {
         val genes = if (applyArchiveSelection()){
             selectGenesByArchive(collected, config.perOfCandidateGenesToMutate)
         } else
-            genesToMutate
+            return genesToMutate
 
         if (genes.isEmpty()){
             log.warn("Archive-based mutation should not produce empty genes to mutate")
             return genesToMutate
         }
-        return genes
+
+        return selectSortedGenes(genes, 1)
+    }
+
+    private fun selectSortedGenes(genesToMutate: List<Gene>, n : Int) : List<Gene>{
+        if (genesToMutate.size == n) return genesToMutate
+        if (genesToMutate.size < n) throw IllegalStateException("required number ($n) of selected genes is more than available genes (${genesToMutate.size}).")
+        //probability is [0.1, 0.9]
+        val selected = mutableListOf<Gene>()
+        var counter = 0
+        while (selected.size < n && counter / genesToMutate.size < 3){
+            val rank = counter%genesToMutate.size
+            val p = 0.1 + (0.9-0.1) * (genesToMutate.size - rank)/genesToMutate.size
+            if (randomness.nextDouble() < p)
+                selected.add(genesToMutate[rank])
+            counter++
+        }
+        if (selected.size == n) return selected
+
+        return genesToMutate.subList(0, n)
     }
 
     fun <T> selectGenesByArchive(genes: List<Pair<T, Impact>>, percentage : Double) : List<T>{
@@ -149,49 +169,6 @@ class ArchiveMutator {
         return genesToMutate
     }
 
-    private fun selectGenesAwayBad(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<*>): List<Gene>{
-
-        val genes =  genesToMutate.toList().map { g->
-            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
-        }
-
-        return ImpactUtils.selectGenesAwayBad(genes, config.perOfCandidateGenesToMutate)
-    }
-
-    private fun selectGenesApproachGood(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<*>): List<Gene>{
-
-        val genes =  genesToMutate.toList().map { g->
-            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
-        }
-
-        return ImpactUtils.selectApproachGood(genes, config.perOfCandidateGenesToMutate)
-    }
-
-//    private fun selectGenesFeedback(genesToMutate: List<Gene>, candidatesMap : Map<Gene, String>, evi: EvaluatedIndividual<*>): List<Gene>{
-//        val genes =  genesToMutate.toList().map { g->
-//            Pair(g, evi.getImpactOfGenes().getValue(candidatesMap.getValue(g)))
-//        }
-//
-//        return ImpactUtils.selectFeedback(genes, config.perOfCandidateGenesToMutate)
-//    }
-
-    private fun mutate(gene : IntegerGene){
-//        val value = mutate(
-//                gene,
-//                gene.value,
-//                gene.valueMutation,
-//                gene.min,
-//                gene.max,
-//                15,
-//                5
-//        )
-//        gene.value = value
-    }
-
-//    private fun mutate(gene : EnumGene<*>) {
-//        val index = mutate(gene, gene.index, gene.optionMutationUpdate, 0, gene.values.size, 2, 1)
-//        gene.index = index
-//    }
 
     private fun mutate(independence : GeneIndependenceInfo, current: Int, update: IntMutationUpdate, hardMinValue: Int, hardMaxValue: Int, slightStart : Int, slightEnd : Int) : Int{
         val preferSlight = approachSlightMutation(independence)
@@ -278,15 +255,15 @@ class ArchiveMutator {
         }
     }
 
-    /*
-        if Independence is higher, far away from approachSlightMutation
-        if Independence is lower, close to approachSlightMutation
-     */
     private fun approachSlightMutation(gene: StringGene) : Boolean{
         return when(config.archiveGeneMutation){
             EMConfig.ArchiveGeneMutation.SPECIFIED -> randomness.nextBoolean()
-            EMConfig.ArchiveGeneMutation.ADAPTIVE -> gene.dependencyInfo.resetTimes > 0 && withinNormal()
-            EMConfig.ArchiveGeneMutation.NONE -> throw IllegalArgumentException("bug!")
+            /*
+            if Independence is higher, far away from approachSlightMutation
+            if Independence is lower, close to approachSlightMutation
+            */
+            EMConfig.ArchiveGeneMutation.ADAPTIVE -> gene.dependencyInfo.resetTimes > DEP_THRESHOLD && withinNormal()
+            EMConfig.ArchiveGeneMutation.NONE -> throw IllegalStateException("bug!")
         }
     }
 
