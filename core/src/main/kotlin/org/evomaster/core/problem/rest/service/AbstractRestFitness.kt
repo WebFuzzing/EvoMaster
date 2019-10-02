@@ -214,8 +214,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 .filter { actions[it] is RestCallAction }
                 .filter { actionResults[it] is RestCallResult }
                 .forEach {
-                    val status = (actionResults[it] as RestCallResult)
-                            .getStatusCode() ?: -1
+                    val result = actionResults[it] as RestCallResult
+                    val status = result.getStatusCode() ?: -1
                     val name = actions[it].getName()
 
                     //objective for HTTP specific status code
@@ -252,10 +252,11 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                      */
                     if (status == 500) {
                         val statement = additionalInfoList[it].lastExecutedStatement
-                        val postfix = statement ?: "framework_code"
-                        val descriptiveId = idMapper.getFaultDescriptiveId("$postfix $name")
+                        val source = statement ?: "framework_code"
+                        val descriptiveId = idMapper.getFaultDescriptiveId("$source $name")
                         val bugId = idMapper.handleLocalTarget(descriptiveId)
                         fv.updateTarget(bugId, 1.0, it)
+                        result.setLastStatementWhen500(source)
                     }
                 }
     }

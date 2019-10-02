@@ -413,7 +413,13 @@ class TestCaseWriter {
     private fun handleResponse(lines: Lines, res: RestCallResult) {
         if (!res.failedCall()) {
             lines.add(".then()")
-            lines.add(".statusCode(${res.getStatusCode()})")
+
+            val code = res.getStatusCode()
+            lines.add(".statusCode($code)")
+            if(code == 500){
+                lines.append(" // " + res.getLastStatementWhen500())
+            }
+
 
             if (configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)

@@ -251,7 +251,7 @@ public abstract class RestTestBase {
         List<Integer> index = getIndexOfHttpCalls(ind.getIndividual(), verb);
         for (int i : index) {
             String statusCode = ind.getResults().get(i).getResultValue(
-                    RestCallResult.Companion.getSTATUS_CODE());
+                    RestCallResult.STATUS_CODE);
             if (statusCode.equals("" + expectedStatusCode)) {
                 return true;
             }

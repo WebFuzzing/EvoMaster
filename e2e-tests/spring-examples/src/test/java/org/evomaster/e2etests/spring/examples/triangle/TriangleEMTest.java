@@ -44,7 +44,7 @@ public class TriangleEMTest extends SpringTestBase {
                     //get number of distinct response values
                     List<TriangleClassification.Classification> responses = solution.getIndividuals().stream()
                             .flatMap(i -> i.getResults().stream())
-                            .map(r -> r.getResultValue(RestCallResult.Companion.getBODY()))
+                            .map(r -> r.getResultValue(RestCallResult.BODY))
                             .filter(s -> s != null)
                             .map(s -> {
                                 try {
