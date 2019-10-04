@@ -73,7 +73,7 @@ class NamingHelper {
         else return ""
     }
 
-    private var namingCriteria =  listOf(::criterion1_500, ::criterion3_sampling)
+    private var namingCriteria =  listOf(::criterion1_500)
     private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
 
 
