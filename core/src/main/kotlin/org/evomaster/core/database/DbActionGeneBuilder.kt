@@ -177,8 +177,8 @@ class DbActionGeneBuilder {
     private fun handleCharColumn(column: Column): Gene {
         //  TODO How to discover if it is a char or a char[] of 255 elements?
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
-            EnumGene(name = column.name, values = column.enumValuesAsStrings)
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
             StringGene(name = column.name, value = "f", minLength = 0, maxLength = 1)
         }
@@ -187,8 +187,8 @@ class DbActionGeneBuilder {
     private fun handleDoubleColumn(column: Column): Gene {
         // TODO How to discover if the source field is a float/Float field?
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
-            EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toDouble() })
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
         } else {
             DoubleGene(column.name)
         }
@@ -227,7 +227,7 @@ class DbActionGeneBuilder {
             if (column.enumValuesAsStrings.isEmpty()) {
                 throw IllegalArgumentException("the list of enumerated values cannot be empty")
             } else {
-                EnumGene(name = column.name, values = column.enumValuesAsStrings)
+                EnumGene(name = column.name, data = column.enumValuesAsStrings)
             }
         } else {
             if (column.similarToPatterns != null && column.similarToPatterns.isNotEmpty()) {
@@ -316,8 +316,8 @@ class DbActionGeneBuilder {
 
     private fun handleCLOBColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
-            EnumGene(name = column.name, values = column.enumValuesAsStrings)
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
 
         } else {
             StringGene(name = column.name, minLength = 0, maxLength = column.size)
@@ -326,8 +326,8 @@ class DbActionGeneBuilder {
 
     private fun handleBLOBColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
-            EnumGene(name = column.name, values = column.enumValuesAsStrings)
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings)
         } else {
             StringGene(name = column.name, minLength = 0, maxLength = 8)
         }
@@ -339,8 +339,8 @@ class DbActionGeneBuilder {
          * TODO How to discover if the source field is a float/Float field?
          */
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
-            EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toDouble() })
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toDouble() })
 
         } else {
             DoubleGene(column.name)
@@ -352,8 +352,8 @@ class DbActionGeneBuilder {
          * TODO: DECIMAL precision is lower than a float gene
          */
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
-            EnumGene(name = column.name, values = column.enumValuesAsStrings.map { it.toFloat() })
+            checkNotEmpty(column.enumValuesAsStrings)
+            EnumGene(name = column.name, data = column.enumValuesAsStrings.map { it.toFloat() })
         } else {
             FloatGene(column.name)
         }
@@ -361,7 +361,7 @@ class DbActionGeneBuilder {
 
     private fun handleBooleanColumn(column: Column): Gene {
         return if (column.enumValuesAsStrings != null) {
-            Companion.checkNotEmpty(column.enumValuesAsStrings)
+            checkNotEmpty(column.enumValuesAsStrings)
             EnumGene(column.name, column.enumValuesAsStrings.map { it.toBoolean() })
 
         } else {

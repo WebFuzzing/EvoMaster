@@ -4,17 +4,54 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
-
-class EnumGene<T>(
+/**
+ * Gene in which 1 out of N constant values is chosen.
+ *
+ * Not only the type in an enumeration must be sortable, but also
+ * must be immutable.
+ * This  is fine for String and numeric values.
+ */
+class EnumGene<T : Comparable<T>>(
         name: String,
-        val values: List<T>,
+        data: Collection<T>,
         var index: Int = 0
 ) : Gene(name) {
 
+    companion object {
+
+        /**
+         * WARNING: mutable static state. But as it is just a cache, it is not a problem.
+         * Furthermore, although the set is mutable, the lists inside are not (more specifically,
+         * they are read-only copies).
+         */
+         private val cache : MutableSet<List<*>> = mutableSetOf()
+    }
+
+    val values : List<T>
+
     init {
-        if (values.isEmpty()) {
+
+        if (data.isEmpty()) {
             throw IllegalArgumentException("Empty list of values")
         }
+
+        val list = data
+                .toSet() // we want no duplicate
+                .toList() // need ordering to specify index of selection, so Set would not do
+                .sorted() // sort, to make meaningful list comparisons
+                .map { if(it is String) it.intern() as T else it} //if strings, make sure to intern them
+
+        /*
+           we need to make sure that, if we are adding a list that has content equal to
+           an already present list in the cache, we only use this latter
+         */
+        values = if(cache.contains(list)){
+            cache.find { it == list }!! as List<T> // equality based on content, not reference
+        } else {
+            cache.add(list)
+            list
+        }
+
         if (index < 0 || index >= values.size) {
             throw IllegalArgumentException("Invalid index: $index")
         }
@@ -26,8 +63,7 @@ class EnumGene<T>(
 
     override fun copy(): Gene {
         //recall: "values" is immutable
-        val copy = EnumGene<T>(name, values, index)
-        return copy
+        return EnumGene(name, values, index)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
