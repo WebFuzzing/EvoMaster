@@ -13,11 +13,12 @@ class LongGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int =0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false
-): NumericGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+): NumericGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
 
     override fun copy(): LongGeneImpact {
-        return LongGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive)
+        return LongGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive)
     }
 
     override fun validate(gene: Gene): Boolean = gene is LongGene

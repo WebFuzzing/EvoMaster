@@ -13,9 +13,10 @@ abstract class GeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false
 
-):Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter){
+):Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter){
 
     /**
      * whether the impact of gene varies with respect to different position

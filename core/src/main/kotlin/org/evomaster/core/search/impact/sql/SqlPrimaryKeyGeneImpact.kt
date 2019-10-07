@@ -15,14 +15,15 @@ class SqlPrimaryKeyGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false,
         val geneImpact: GeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
 
     constructor(id : String, sqlPrimaryKeyGene: SqlPrimaryKeyGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlPrimaryKeyGene.gene, id))
 
     override fun copy(): SqlPrimaryKeyGeneImpact {
-        return SqlPrimaryKeyGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, geneImpact.copy() as GeneImpact)
+        return SqlPrimaryKeyGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, geneImpact.copy() as GeneImpact)
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlPrimaryKeyGene

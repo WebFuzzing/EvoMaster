@@ -20,13 +20,14 @@ class StringGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int =0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false,
         /**
          * impacts on its specific type
          * it might lead to an issue when the type of gene is dynamic, thus the type of the current might differ from the type of the previous
          */
         var specializationGeneImpact : List<Impact> = mutableListOf()
-): GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+): GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
 
     constructor(id: String, gene : StringGene)
             : this(
@@ -34,7 +35,7 @@ class StringGeneImpact (
             specializationGeneImpact = gene.specializationGenes.map { ImpactUtils.createGeneImpact(it, it.name) })
 
     override fun copy(): StringGeneImpact {
-        return StringGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, specializationGeneImpact.map { it.copy()})
+        return StringGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, specializationGeneImpact.map { it.copy()})
     }
 
     override fun validate(gene: Gene): Boolean = gene is StringGene

@@ -17,14 +17,15 @@ class SqlXmlGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false,
         val geneImpact: ObjectGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
 
     constructor(id : String, sqlXMLGene: SqlXMLGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlXMLGene.objectGene, id) as? ObjectGeneImpact?:throw IllegalStateException("geneImpact of SqlJSONImpact should be ObjectGeneImpact"))
 
     override fun copy(): SqlXmlGeneImpact {
-        return SqlXmlGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, geneImpact.copy())
+        return SqlXmlGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter,niCounter, positionSensitive, geneImpact.copy())
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {

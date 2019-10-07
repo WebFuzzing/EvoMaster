@@ -17,15 +17,16 @@ class SqlNullableImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false,
         val presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
         val geneImpact: GeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter,positionSensitive) {
 
     constructor(id : String, sqlnullGene: SqlNullable) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
 
     override fun copy(): SqlNullableImpact {
-        return SqlNullableImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, presentImpact.copy(), geneImpact.copy() as GeneImpact)
+        return SqlNullableImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, presentImpact.copy(), geneImpact.copy() as GeneImpact)
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {

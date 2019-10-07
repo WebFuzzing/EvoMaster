@@ -19,14 +19,15 @@ class SqlJsonGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false,
         val geneImpact: ObjectGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
 
     constructor(id : String, sqlJSONGene: SqlJSONGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlJSONGene.objectGene, id) as? ObjectGeneImpact?:throw IllegalStateException("geneImpact of SqlJSONImpact should be ObjectGeneImpact"))
 
     override fun copy(): SqlJsonGeneImpact {
-        return SqlJsonGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, geneImpact.copy())
+        return SqlJsonGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter,niCounter, positionSensitive, geneImpact.copy())
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {

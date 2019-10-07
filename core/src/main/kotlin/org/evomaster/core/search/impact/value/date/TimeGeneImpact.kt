@@ -17,10 +17,11 @@ class TimeGeneImpact(
         timesOfImpact : Int = 0,
         timesOfNoImpacts : Int = 0,
         counter : Int = 0,
+        niCounter : Int = 0,
         val hourGeneImpact: IntegerGeneImpact,
         val minuteGeneImpact: IntegerGeneImpact,
         val secondGeneImpact : IntegerGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter) {
 
     constructor(id: String, gene : TimeGene)
             : this(id,
@@ -30,7 +31,7 @@ class TimeGeneImpact(
     )
 
     override fun copy(): TimeGeneImpact {
-        return TimeGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, hourGeneImpact, minuteGeneImpact, secondGeneImpact)
+        return TimeGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter,niCounter, hourGeneImpact, minuteGeneImpact, secondGeneImpact)
     }
 
     override fun validate(gene: Gene): Boolean = gene is TimeGene

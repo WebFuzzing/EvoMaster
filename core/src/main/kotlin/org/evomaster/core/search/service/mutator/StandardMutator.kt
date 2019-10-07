@@ -50,12 +50,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      *      2. prefer to genes that has more impacts
      *      3. prefer to genes that has recent improvements
      */
-    override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>{
+    override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
         val selectedGene = if(randomness.nextBoolean(config.probOfArchiveMutation)){
-            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi)
+            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi, mutatedGenes)
         } else genesToMutate
 
         return selectGenesByDefault(selectedGene, individual)
@@ -113,7 +113,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
-        val selectGeneToMutate = selectGenesToMutate(copy, individual)
+        val selectGeneToMutate = selectGenesToMutate(copy, individual, mutatedGene)
 
         if(selectGeneToMutate.isEmpty())
             return copy

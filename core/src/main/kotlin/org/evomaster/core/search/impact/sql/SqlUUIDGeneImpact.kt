@@ -17,10 +17,11 @@ class SqlUUIDGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int = 0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false,
         val mostSigBitsImpact: LongGeneImpact,
         val leastSigBitsImpact : LongGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter,positionSensitive) {
 
     constructor(id : String, sqlUUIDGene: SqlUUIDGene) : this(
             id,
@@ -29,7 +30,7 @@ class SqlUUIDGeneImpact (
     )
 
     override fun copy(): SqlUUIDGeneImpact {
-        return SqlUUIDGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive, mostSigBitsImpact.copy(), leastSigBitsImpact.copy())
+        return SqlUUIDGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, mostSigBitsImpact.copy(), leastSigBitsImpact.copy())
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {

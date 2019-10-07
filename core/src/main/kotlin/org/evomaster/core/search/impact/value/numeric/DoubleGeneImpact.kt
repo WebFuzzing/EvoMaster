@@ -13,11 +13,12 @@ class DoubleGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int =0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false
-): NumericGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive) {
+): NumericGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
 
     override fun copy(): DoubleGeneImpact {
-        return DoubleGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive)
+        return DoubleGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive)
     }
 
     override fun validate(gene: Gene): Boolean = gene is DoubleGene

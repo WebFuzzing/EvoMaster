@@ -3,6 +3,7 @@ package org.evomaster.core.search.service.mutator
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.impact.ImpactMutationSelection
 import org.evomaster.core.search.impact.ImpactUtils
 
 /**
@@ -24,6 +25,8 @@ open class MutatedGeneSpecification (
         val mutatedPosition : MutableList<Int> = mutableListOf(),
         val mutatedDbActionPosition : MutableList<Int> = mutableListOf()
 ){
+    var geneSelectionStrategy : ImpactMutationSelection = ImpactMutationSelection.NONE
+
     var mutatedIndividual: Individual? = null
         private set
 
@@ -58,6 +61,7 @@ open class MutatedGeneSpecification (
         spec.mutatedPosition.addAll(mutatedPosition.toMutableList())
         spec.mutatedPosition.addAll(mutatedDbActionPosition.toMutableList())
         spec.setMutatedIndividual(current.individual)
+        spec.geneSelectionStrategy = geneSelectionStrategy
         return spec
     }
 }

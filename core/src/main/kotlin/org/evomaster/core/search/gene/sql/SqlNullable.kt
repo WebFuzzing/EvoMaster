@@ -118,7 +118,11 @@ class SqlNullable(name: String,
                 log.warn("mutated ({}) should be SqlNullable", mutated::class.java.simpleName)
                 return
             }
-            gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+            if (original.isPresent == mutated.isPresent && mutated.isPresent)
+                gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+            /**
+             * may handle Boolean Mutation in the future
+             */
         }
     }
 

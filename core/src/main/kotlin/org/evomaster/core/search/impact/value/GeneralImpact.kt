@@ -11,10 +11,11 @@ class GeneralImpact (
         timesToManipulate : Int = 0,
         timesOfImpact : Int = 0,
         timesOfNoImpacts : Int = 0,
-        counter : Int = 0
-) : Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter) {
+        counter : Int = 0,
+        niCounter : Int = 0
+) : Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter) {
 
     override fun copy(): GeneralImpact {
-        return GeneralImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter)
+        return GeneralImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter)
     }
 }

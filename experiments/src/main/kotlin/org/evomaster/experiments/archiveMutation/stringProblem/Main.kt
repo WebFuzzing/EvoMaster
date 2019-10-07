@@ -29,8 +29,8 @@ class Main {
 
     companion object{
 
-        private val targets = listOf(4)
-        private val runs = 30
+        private val targets = listOf(5)
+        private val runs = 10
         private val budgets = listOf(3000)
         private val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
         private val adaptiveGeneSelections = EMConfig.AdaptiveSelection.values().toList().sorted()
@@ -41,7 +41,7 @@ class Main {
 
         @JvmStatic
         fun main(args: Array<String>) {
-            val folder = if (args.size == 1) args.first() else "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced_adaptive_selection/"
+            val folder = if (args.size == 1) args.first() else "/Users/mazh001/Documents/GitHub/postdoc_hk/2019/03-archive-based-mutation-mio/arc_exp_results_dynamic_advanced_adaptive_selection_f/"
             adaptiveSelection(folder)
             //default(arrayOf(folder))
         }
@@ -49,8 +49,8 @@ class Main {
          * exp for impact selection
          */
         private fun adaptiveSelection(baseFolder: String){
-            val problems = listOf(ArchiveProblemType.PAR_IND_STABLE, ArchiveProblemType.PAR_DEP_DYNAMIC)
-            val rateOfImpacts = listOf(0.2, 0.5, 0.8, 1.0) //0.2, 0.5, 0.8, 1.0
+            val problems = listOf(ArchiveProblemType.PAR_IND_STABLE,ArchiveProblemType.PAR_DEP_DYNAMIC)
+            val rateOfImpacts = listOf(0.25, 0.5, 0.75, 1.0) //0.2, 0.5, 0.8, 1.0
             val configs = produceConfigs(
                     impactSelection = impactSelection,
                     probOfArchiveMutations = probOfArchiveMutations,
@@ -71,9 +71,10 @@ class Main {
                 budgets.forEach { budget->
                     rateOfImpacts.forEach { rp->
                         problems.forEach { pt->
-                            val header = "--------${pt.name}($rp): $n targets, $runs runs, $budget fitness evaluations-------"
-                            Files.write(path, "$header${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
-                            println(header)
+                            val contentOfHeader = listOf(pt.name, rp, n, budget)
+                            //val header = "--------${pt.name}($rp): $n targets, $runs runs, $budget fitness evaluations-------"
+                            //Files.write(path, "$header${System.lineSeparator()}".toByteArray(), StandardOpenOption.APPEND)
+                            //println(header)
                             configs.forEach { config->
                                 println(config.getName())
                                 var total = 0
@@ -97,8 +98,9 @@ class Main {
                                     //println(solution.overall.coveredTargets())
                                     total += solution.overall.coveredTargets()
                                 }
-                                val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
-                                Files.write(path, row.toByteArray(), StandardOpenOption.APPEND)
+                                //val row = "${config.getName()},${format(total/runs.toDouble())}${System.lineSeparator()}"
+                                val contentOfRow = contentOfHeader.plus(config.getProperties()).plus(format(total/runs.toDouble())).joinToString(",")
+                                Files.write(path, ("$contentOfRow${System.lineSeparator()}").toByteArray(), StandardOpenOption.APPEND)
                             }
                         }
                     }
@@ -216,7 +218,7 @@ class Main {
 
             //val config = injector.getInstance(EMConfig::class.java)
 
-            //val statistics = injector.getInstance(Statistics::class.java)
+            val statistics = injector.getInstance(Statistics::class.java)
 
             val manager = injector.getInstance(LifecycleManager::class.java)
             manager.start()
@@ -392,6 +394,8 @@ class Main {
                 val adaptiveGeneSelection : EMConfig.AdaptiveSelection
         ){
             fun getName() = "$probOfArchiveMutation-$adaptiveGeneSelection[$method]-$archiveGeneMutation"
+
+            fun getProperties() = mutableListOf(probOfArchiveMutation, adaptiveGeneSelection,method,archiveGeneMutation)
         }
     }
 }

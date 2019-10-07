@@ -154,7 +154,11 @@ class OptionalGene(name: String,
                 log.warn("mutated ({}) should be DisruptiveGene", mutated::class.java.simpleName)
                 return
             }
-            gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+            if (original.isActive == mutated.isActive && mutated.isActive)
+                gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+            /**
+             * may handle Boolean Mutation in the future
+             */
         }
     }
 }

@@ -12,5 +12,6 @@ abstract class NumericGeneImpact (
         timesOfImpact: Int = 0,
         timesOfNoImpacts: Int =0,
         counter: Int = 0,
+        niCounter : Int = 0,
         positionSensitive: Boolean = false
-): GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, positionSensitive)
+): GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter,niCounter, positionSensitive)

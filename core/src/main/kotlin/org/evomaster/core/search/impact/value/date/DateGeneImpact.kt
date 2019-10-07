@@ -17,10 +17,11 @@ class DateGeneImpact (
         timesOfImpact : Int = 0,
         timesOfNoImpacts : Int = 0,
         counter : Int = 0,
+        niCounter : Int = 0,
         val yearGeneImpact: IntegerGeneImpact,
         val monthGeneImpact: IntegerGeneImpact,
         val dayGeneImpact : IntegerGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter) {
+) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter ,niCounter) {
 
     constructor(id: String, gene : DateGene)
             : this(id,
@@ -30,7 +31,7 @@ class DateGeneImpact (
     )
 
     override fun copy(): DateGeneImpact {
-        return DateGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, yearGeneImpact, monthGeneImpact, dayGeneImpact)
+        return DateGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter,yearGeneImpact, monthGeneImpact, dayGeneImpact)
     }
 
     override fun validate(gene: Gene): Boolean = gene is DateGene

@@ -58,7 +58,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are selected to mutate
      */
-    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>) : List<Gene>
+    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>
 
     /**
      * @return whether do a structure mutation
@@ -93,7 +93,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             structureMutator.addInitializingActions(current, mutatedGenes)
 
             if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
-                current.updateDbActionGenes(current.individual)
+                current.updateDbActionGenes(current.individual, mutatedGenes.addedInitializationGenes)
             }
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
