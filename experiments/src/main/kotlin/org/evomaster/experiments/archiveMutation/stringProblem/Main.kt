@@ -9,7 +9,7 @@ import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.MioAlgorithm
-import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.mutator.geneMutation.CharPool
 import org.evomaster.experiments.archiveMutation.ArchiveProblemType
@@ -32,8 +32,7 @@ class Main {
         private val targets = listOf(5)
         private val runs = 10
         private val budgets = listOf(3000)
-        private val impactSelection = ImpactMutationSelection.values().filter { it != ImpactMutationSelection.NONE }.sorted()
-        private val adaptiveGeneSelections = EMConfig.AdaptiveSelection.values().toList().sorted()
+        private val impactSelection = GeneMutationSelectionMethod.values().filter { it != GeneMutationSelectionMethod.NONE }.sorted()
         private val archiveGeneMutation = EMConfig.ArchiveGeneMutation.values().toList().sorted()
         private val probOfArchiveMutations = listOf(0.25, 0.5, 0.75, 1.0)
         private val focusSearch = arrayOf(false)
@@ -55,7 +54,6 @@ class Main {
                     impactSelection = impactSelection,
                     probOfArchiveMutations = probOfArchiveMutations,
                     archiveGeneMutation = archiveGeneMutation,
-                    adaptiveGeneSelections = adaptiveGeneSelections,
                     includeNone = true,
                     baseLineWithMutation = true,
                     focusSearch = focusSearch
@@ -125,8 +123,7 @@ class Main {
                     true,
                     focusSearch,
                     problems = problems,
-                    archiveGeneMutation = archiveGeneMutation,
-                    adaptiveGeneSelections = adaptiveGeneSelections)
+                    archiveGeneMutation = archiveGeneMutation)
         }
 
         private fun allSetting(
@@ -134,13 +131,12 @@ class Main {
                 targets : List<Int>,
                 runs :Int,
                 budgets : List<Int>,
-                impactSelection : List<ImpactMutationSelection>,
+                impactSelection : List<GeneMutationSelectionMethod>,
                 probOfArchiveMutations : List<Double>,
                 includeNone : Boolean = true,
                 focusSearch : Array<Boolean>,
                 problems: List<ArchiveProblemType>,
-                archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>,
-                adaptiveGeneSelections : List<EMConfig.AdaptiveSelection>){
+                archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>){
 
             if (!Files.exists(Paths.get(baseFolder))) Files.createDirectories(Paths.get(baseFolder))
             val path = Paths.get("${baseFolder}summary.txt")
@@ -151,7 +147,6 @@ class Main {
                     impactSelection = impactSelection,
                     probOfArchiveMutations = probOfArchiveMutations,
                     archiveGeneMutation = archiveGeneMutation,
-                    adaptiveGeneSelections = adaptiveGeneSelections,
                     includeNone = includeNone,
                     focusSearch = focusSearch
             )
@@ -245,8 +240,7 @@ class Main {
                 disableStructureMutationDuringFocusSearch = config.disableStructureMutationDuringFocusSearch,
                 probOfArchiveMutation = config.probOfArchiveMutation,
                 method = config.method,
-                archiveGeneMutation = config.archiveGeneMutation,
-                adaptiveGeneSelection = config.adaptiveGeneSelection
+                archiveGeneMutation = config.archiveGeneMutation
 
         )
 
@@ -259,9 +253,8 @@ class Main {
                 baseFolder : String,
                 disableStructureMutationDuringFocusSearch : Boolean,
                 probOfArchiveMutation : Double = 1.0,
-                method : ImpactMutationSelection = ImpactMutationSelection.NONE,
-                archiveGeneMutation : EMConfig.ArchiveGeneMutation,
-                adaptiveGeneSelection : EMConfig.AdaptiveSelection
+                method : GeneMutationSelectionMethod = GeneMutationSelectionMethod.NONE,
+                archiveGeneMutation : EMConfig.ArchiveGeneMutation
         ) = arrayOf(
                 "--stoppingCriterion",
                 "FITNESS_EVALUATIONS",
@@ -295,8 +288,6 @@ class Main {
                 archiveGeneMutation.toString(),
                 "--disableStructureMutationDuringFocusSearch",
                 disableStructureMutationDuringFocusSearch.toString(),
-                "--adaptiveGeneSelection",
-                adaptiveGeneSelection.toString(),
                 "--statisticsColumnId",
                 "$n-${problem.name}",
                 "--heuristicsForSQL",
@@ -308,22 +299,20 @@ class Main {
 
         )
 
-        fun produceConfigs(impactSelection : List<ImpactMutationSelection>,
+        fun produceConfigs(impactSelection : List<GeneMutationSelectionMethod>,
                            probOfArchiveMutations : List<Double>,
                            includeNone : Boolean = true,
                            baseLineWithMutation : Boolean = true,
                            focusSearch : Array<Boolean>,
-                           archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>,
-                           adaptiveGeneSelections : List<EMConfig.AdaptiveSelection>) : List<ExpConfig>{
+                           archiveGeneMutation : List<EMConfig.ArchiveGeneMutation>) : List<ExpConfig>{
             val configs = mutableListOf<ExpConfig>()
 
             if (includeNone){
                 configs.add(
                         ExpConfig(
                                 probOfArchiveMutation = 0.0,
-                                method = ImpactMutationSelection.NONE,
+                                method = GeneMutationSelectionMethod.NONE,
                                 disableStructureMutationDuringFocusSearch = false,
-                                adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
                                 archiveGeneMutation = EMConfig.ArchiveGeneMutation.NONE
                         )
                 )
@@ -332,9 +321,8 @@ class Main {
                    configs.add(
                            ExpConfig(
                                    probOfArchiveMutation = 1.0,
-                                   method = ImpactMutationSelection.NONE,
+                                   method = GeneMutationSelectionMethod.NONE,
                                    disableStructureMutationDuringFocusSearch = false,
-                                   adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
                                    archiveGeneMutation = EMConfig.ArchiveGeneMutation.SPECIFIED
                            )
                    )
@@ -342,9 +330,8 @@ class Main {
                    configs.add(
                            ExpConfig(
                                    probOfArchiveMutation = 1.0,
-                                   method = ImpactMutationSelection.NONE,
+                                   method = GeneMutationSelectionMethod.NONE,
                                    disableStructureMutationDuringFocusSearch = false,
-                                   adaptiveGeneSelection = EMConfig.AdaptiveSelection.FIXED_SELECTION,
                                    archiveGeneMutation = EMConfig.ArchiveGeneMutation.ADAPTIVE
                            )
                    )
@@ -353,31 +340,14 @@ class Main {
 
             focusSearch.forEach { fs->
                 probOfArchiveMutations.forEach { p->
-                    adaptiveGeneSelections.forEach {aSelection->
-                        when(aSelection){
-                            EMConfig.AdaptiveSelection.FIXED_SELECTION -> {
-                                impactSelection.forEach {selection->
-                                    archiveGeneMutation.forEach {gMutation->
-                                        configs.add(ExpConfig(
-                                                probOfArchiveMutation = p,
-                                                method = selection,
-                                                disableStructureMutationDuringFocusSearch = fs,
-                                                adaptiveGeneSelection = aSelection,
-                                                archiveGeneMutation = gMutation
-                                        ))
-                                    }
-                                }
-                            }else->{
-                            archiveGeneMutation.forEach {gMutation->
-                                configs.add(ExpConfig(
-                                        probOfArchiveMutation = p,
-                                        method = ImpactMutationSelection.NONE,
-                                        disableStructureMutationDuringFocusSearch = fs,
-                                        adaptiveGeneSelection = aSelection,
-                                        archiveGeneMutation = gMutation
-                                ))
-                            }
-                         }
+                    impactSelection.forEach {selection->
+                        archiveGeneMutation.forEach {gMutation->
+                            configs.add(ExpConfig(
+                                    probOfArchiveMutation = p,
+                                    method = selection,
+                                    disableStructureMutationDuringFocusSearch = fs,
+                                    archiveGeneMutation = gMutation
+                            ))
                         }
                     }
                 }
@@ -387,15 +357,14 @@ class Main {
         }
 
         data class ExpConfig(
-                val probOfArchiveMutation : Double ,
-                val method : ImpactMutationSelection ,
+                val probOfArchiveMutation : Double,
+                val method : GeneMutationSelectionMethod,
                 val disableStructureMutationDuringFocusSearch : Boolean,
-                val archiveGeneMutation : EMConfig.ArchiveGeneMutation,
-                val adaptiveGeneSelection : EMConfig.AdaptiveSelection
+                val archiveGeneMutation : EMConfig.ArchiveGeneMutation
         ){
-            fun getName() = "$probOfArchiveMutation-$adaptiveGeneSelection[$method]-$archiveGeneMutation"
+            fun getName() = "$probOfArchiveMutation-$method-$archiveGeneMutation"
 
-            fun getProperties() = mutableListOf(probOfArchiveMutation, adaptiveGeneSelection,method,archiveGeneMutation)
+            fun getProperties() = mutableListOf(probOfArchiveMutation,method,archiveGeneMutation)
         }
     }
 }

@@ -4,7 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -55,7 +55,7 @@ class SqlPrimaryKeyGene(name: String,
         gene.standardMutation(randomness, apc, allGenes)
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: ImpactMutationSelection, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return

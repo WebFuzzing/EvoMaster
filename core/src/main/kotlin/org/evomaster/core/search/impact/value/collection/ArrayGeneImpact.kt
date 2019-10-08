@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.ArrayGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.MapGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
@@ -39,4 +40,8 @@ class ArrayGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is ArrayGene<*>
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf("$id-sizeImpact" to sizeImpact)
+    }
 }

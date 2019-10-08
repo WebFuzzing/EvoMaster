@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.date
 import org.evomaster.core.search.gene.DateGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
@@ -54,4 +55,11 @@ class DateGeneImpact (
             dayGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
     }
 
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-yearGeneImpact" to yearGeneImpact,
+                "$id-monthGeneImpact" to monthGeneImpact,
+                "$id-dayGeneImpact" to dayGeneImpact
+        )
+    }
 }

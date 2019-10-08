@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.sql
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlXMLGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
@@ -49,4 +50,10 @@ class SqlXmlGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlXMLGene
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-geneImpact" to geneImpact
+        ).plus(geneImpact.flatViewInnerImpact())
+    }
 }

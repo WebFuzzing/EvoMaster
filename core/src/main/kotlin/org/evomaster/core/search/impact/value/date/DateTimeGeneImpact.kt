@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.date
 import org.evomaster.core.search.gene.DateTimeGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 
@@ -54,6 +55,10 @@ class DateTimeGeneImpact (
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).time, current = gc.current.time)
             timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
         }
+    }
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf("$id-dateGeneImpact" to dateGeneImpact).plus(dateGeneImpact.flatViewInnerImpact()).plus(mapOf("$id-timeGeneImpact" to timeGeneImpact)).plus(timeGeneImpact.flatViewInnerImpact())
     }
 
 }

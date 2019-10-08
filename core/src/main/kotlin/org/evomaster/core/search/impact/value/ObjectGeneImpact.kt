@@ -56,4 +56,14 @@ class ObjectGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is ObjectGene
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        val map = mutableMapOf<String, Impact>()
+        fields.forEach { (t, u) ->
+            map.putIfAbsent("$id-$t", u)
+            if (u is GeneImpact && u.flatViewInnerImpact().isNotEmpty())
+                map.putAll(u.flatViewInnerImpact())
+        }
+        return map
+    }
 }

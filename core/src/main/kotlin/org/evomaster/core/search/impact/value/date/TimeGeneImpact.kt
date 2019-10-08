@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.date
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.TimeGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
@@ -55,5 +56,13 @@ class TimeGeneImpact(
             minuteGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
         if (gc.previous == null || !gc.current.second.containsSameValueAs((gc.previous as TimeGene).second))
             secondGeneImpact.countImpactAndPerformance(hasImpact, noImprovement)
+    }
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-hourGeneImpact" to hourGeneImpact,
+                "$id-minuteGeneImpact" to minuteGeneImpact,
+                "$id-secondGeneImpact" to secondGeneImpact
+        )
     }
 }

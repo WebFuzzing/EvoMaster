@@ -11,6 +11,7 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import java.lang.Integer.min
 
@@ -37,6 +38,9 @@ class Archive<T> where T : Individual {
 
     @Inject
     private lateinit var tracker : ArchiveMutationTrackService
+
+    @Inject
+    private lateinit var archiveMutator: ArchiveMutator
 
     /**
      * a track of archive can be presented as a list of added EvaluatedIndividual
@@ -143,9 +147,15 @@ class Archive<T> where T : Individual {
             If possible avoid sampling tests that did timeout
          */
         val chosen = if (!notTimedout.isEmpty()) {
-            randomness.choose(notTimedout)
+            if (archiveMutator.enableArchiveSelection())
+                archiveMutator.selectIndividual(notTimedout)
+            else
+                randomness.choose(notTimedout)
         } else {
-            randomness.choose(candidates)
+            if (archiveMutator.enableArchiveSelection())
+                archiveMutator.selectIndividual(candidates)
+            else
+                randomness.choose(candidates)
         }
 
         return chosen.copy(tracker.getCopyFilterForEvalInd(chosen))

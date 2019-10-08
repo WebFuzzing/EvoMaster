@@ -477,7 +477,7 @@ class StringGene(
             randomness: Randomness,
             allGenes: List<Gene>,
             apc: AdaptiveParameterControl,
-            selection: ImpactMutationSelection,
+            selection: GeneMutationSelectionMethod,
             geneImpact: GeneImpact?,
             geneReference : String,
             archiveMutator: ArchiveMutator,

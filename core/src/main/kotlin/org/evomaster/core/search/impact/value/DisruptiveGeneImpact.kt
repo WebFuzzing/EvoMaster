@@ -4,6 +4,7 @@ import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
@@ -47,5 +48,11 @@ class DisruptiveGeneImpact (
                 current = gc.current.gene
         )
         geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+    }
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-geneImpact" to geneImpact
+        ).plus(geneImpact.flatViewInnerImpact())
     }
 }

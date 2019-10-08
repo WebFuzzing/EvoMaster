@@ -5,7 +5,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.Impact
-import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -121,7 +121,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             randomness: Randomness,
             allGenes: List<Gene>,
             apc: AdaptiveParameterControl,
-            selection: ImpactMutationSelection,
+            selection: GeneMutationSelectionMethod,
             impact: GeneImpact?,
             geneReference : String,
             archiveMutator: ArchiveMutator,

@@ -6,7 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -274,8 +274,8 @@ class EMConfig {
         }
 
         //archive-based mutation
-        if(geneSelectionMethod != ImpactMutationSelection.NONE && algorithm != Algorithm.MIO){
-            throw IllegalArgumentException("ImpactMutationSelection is only applicable with MIO algorithm (but current is $algorithm)")
+        if(geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO){
+            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
         if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
@@ -734,18 +734,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var geneSelectionMethod = ImpactMutationSelection.NONE
-
-    @Experimental
-    @Cfg("Specify whether to enable impact gene selection strategy adaptively")
-    var adaptiveGeneSelection = AdaptiveSelection.FIXED_SELECTION
-
-    enum class AdaptiveSelection{
-        FIXED_SELECTION,
-        RANDOM
-//        ,
-//        GUIDED
-    }
+    var geneSelectionMethod = GeneMutationSelectionMethod.NONE
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")
@@ -756,6 +745,14 @@ class EMConfig {
         SPECIFIED,
         ADAPTIVE
     }
+
+    @Experimental
+    @Cfg("Specify whether to export derived impacts among genes")
+    var exportImpacts = false
+
+    @Experimental
+    @Cfg("Specify a file that saves derived genes")
+    var impactFile = "impact.csv"
 
     @Experimental
     @Cfg("Specify whether to disable structure mutation during focus search")

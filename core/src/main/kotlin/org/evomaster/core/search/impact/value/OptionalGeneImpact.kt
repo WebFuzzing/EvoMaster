@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
@@ -53,4 +54,10 @@ class OptionalGeneImpact (
 
 
     override fun validate(gene: Gene): Boolean = gene is OptionalGene
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-activeImpact" to activeImpact
+        ).plus(activeImpact.flatViewInnerImpact()).plus("$id-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+    }
 }

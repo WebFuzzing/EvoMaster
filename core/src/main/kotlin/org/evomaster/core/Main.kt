@@ -29,6 +29,7 @@ import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import java.lang.reflect.InvocationTargetException
 
 
@@ -144,6 +145,8 @@ class Main {
             writeOverallProcessData(injector)
 
             writeDependencies(injector)
+
+            writeImpacts(injector, solution)
 
             writeStatistics(injector, solution)
 
@@ -354,6 +357,7 @@ class Main {
 
         /**
          * save possible dependencies among resources (e.g., a resource might be related to other resource) derived during search
+         * info is designed for experiment analysis
          */
         private fun writeDependencies(injector: Injector) {
 
@@ -365,6 +369,22 @@ class Main {
 
             val dm = injector.getInstance(ResourceDepManageService::class.java)
             dm.exportDependencies()
+        }
+
+        /**
+         * save derived impacts of genes of actions.
+         * info is designed for experiment analysis
+         */
+        private fun writeImpacts(injector: Injector, solution: Solution<*>) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.exportImpacts) {
+                return
+            }
+
+            val am = injector.getInstance(ArchiveMutator::class.java)
+            am.exportImpacts(solution)
         }
     }
 }

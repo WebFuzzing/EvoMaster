@@ -10,11 +10,10 @@ import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.gene.ObjectGene;
 import org.evomaster.core.search.impact.GeneImpact;
 import org.evomaster.core.search.impact.Impact;
-import org.evomaster.core.search.impact.ImpactMutationSelection;
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod;
 import org.evomaster.core.search.impact.ImpactUtils;
 import org.evomaster.core.search.impact.value.ObjectGeneImpact;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.glassfish.jersey.message.filtering.spi.ObjectGraph;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -32,20 +31,20 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
     @Test
     public void testAWAY_NOIMPACT() throws Throwable {
-        testRunEM(ImpactMutationSelection.AWAY_NOIMPACT);
+        testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
     @Test
     public void testAPPROACH_IMPACT_N() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_IMPACT_N);
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_N);
     }
 
     @Test
     public void testAPPROACH_IMPACT_I() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_IMPACT_I);
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_I);
     }
 
-    public void testRunEM(ImpactMutationSelection method) throws Throwable {
+    public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "",
@@ -63,8 +62,10 @@ public class ObjectImpactEMTest extends SpringTestBase {
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
 
-//                    args.add("--archiveGeneMutation");
-//                    args.add("SPECIFIED");
+                    args.add("--exportImpacts");
+                    args.add("true");
+                    args.add("--impactFile");
+                    args.add("target/impactInfo/TestobjImpacts_"+method.toString()+".csv");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

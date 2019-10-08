@@ -7,7 +7,7 @@ package org.evomaster.core.search.impact
  * @property timesOfImpact presents how many times the change of the element (i.e., Gene, structure of individual) impacts the [Archive]
  * @property timesOfNoImpacts presents how many times the change of the element (i.e., Gene, structure of individual) did not impact the [Archive]
  * @property counter continuous times of no impact
- * @property niCounter continuous times of worse results
+ * @property niCounter continuous times of results which does not contribute to an improvement
  */
 abstract class Impact (
         val id : String,
@@ -21,8 +21,6 @@ abstract class Impact (
     abstract fun copy() : Impact
 
     fun countImpactAndPerformance(hasImpact:Boolean, noImprovement : Boolean){
-//        if (!noImprovement && !hasImpact)
-//            throw IllegalArgumentException("if isBetter is ${!noImprovement}, hasImpact must be true, but $hasImpact")
 
         timesToManipulate +=1
         if (hasImpact) {
@@ -44,4 +42,12 @@ abstract class Impact (
     private fun resetCounter(){
         counter = 0
     }
+
+    open fun maxTimesOfNoImpact() : Int = 10
+
+
+    companion object{
+        fun toCSVHeader() : List<String> = listOf("id", "degree", "timesToManipulate", "timesOfImpact","timesOfNoImpacts","counter","niCounter")
+    }
+    fun toCSVCell() : List<String> = listOf(id, degree.toString(), timesToManipulate.toString(), timesOfImpact.toString(), timesOfNoImpacts.toString(),counter.toString(), niCounter.toString())
 }

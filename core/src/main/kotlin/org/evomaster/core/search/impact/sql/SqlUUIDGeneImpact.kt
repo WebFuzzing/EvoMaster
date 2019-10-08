@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.sql
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlUUIDGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.LongGeneImpact
@@ -52,4 +53,11 @@ class SqlUUIDGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlUUIDGene
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-mostSigBitsImpact" to mostSigBitsImpact,
+                "$id-leastSigBitsImpact" to leastSigBitsImpact
+        )
+    }
 }

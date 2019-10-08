@@ -16,7 +16,7 @@ abstract class GeneImpact (
         niCounter : Int = 0,
         positionSensitive: Boolean = false
 
-):Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter){
+):Impact(id = id, degree = degree, timesToManipulate = timesToManipulate, timesOfImpact= timesOfImpact, timesOfNoImpacts = timesOfNoImpacts, counter = counter, niCounter = niCounter){
 
     /**
      * whether the impact of gene varies with respect to different position
@@ -34,4 +34,7 @@ abstract class GeneImpact (
     open fun countImpactWithMutatedGeneWithContext(gc : MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean){
         countImpactAndPerformance(hasImpact, noImprovement)
     }
+
+    open fun flatViewInnerImpact(): Map<String, Impact> = mutableMapOf()
+
 }

@@ -8,7 +8,7 @@ import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.GeneImpact;
-import org.evomaster.core.search.impact.ImpactMutationSelection;
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod;
 import org.evomaster.core.search.impact.ImpactUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,20 +25,25 @@ public class ImpactEMTest extends SpringTestBase {
 
     @Test
     public void testAWAY_NOIMPACT() throws Throwable {
-        testRunEM(ImpactMutationSelection.AWAY_NOIMPACT);
+        testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
     @Test
     public void testAPPROACH_IMPACT_N() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_IMPACT_N);
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_N);
     }
 
     @Test
     public void testAPPROACH_IMPACT_I() throws Throwable {
-        testRunEM(ImpactMutationSelection.APPROACH_IMPACT_I);
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_I);
     }
 
-    public void testRunEM(ImpactMutationSelection method) throws Throwable {
+//    @Test
+//    public void testFeedBack() throws Throwable {
+//        testRunEM(GeneMutationSelectionMethod.FEED_DIRECT_IMPACT);
+//    }
+
+    public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
                 "",
@@ -55,6 +60,11 @@ public class ImpactEMTest extends SpringTestBase {
 
                     args.add("--enableTrackEvaluatedIndividual");
                     args.add("true");
+
+                    args.add("--exportImpacts");
+                    args.add("true");
+                    args.add("--impactFile");
+                    args.add("target/impactInfo/TestSimpleGeneImpacts_"+method.toString()+".csv");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

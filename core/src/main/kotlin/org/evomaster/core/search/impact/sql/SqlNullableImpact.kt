@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.sql
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlNullable
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
@@ -55,4 +56,10 @@ class SqlNullableImpact (
 
 
     override fun validate(gene: Gene): Boolean = gene is SqlNullable
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-presentImpact" to presentImpact
+        ).plus(presentImpact.flatViewInnerImpact()).plus("$id-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+    }
 }

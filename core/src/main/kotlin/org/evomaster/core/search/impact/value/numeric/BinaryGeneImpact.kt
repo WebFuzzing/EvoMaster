@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.numeric
 import org.evomaster.core.search.gene.BooleanGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.GeneralImpact
 
@@ -38,4 +39,10 @@ class BinaryGeneImpact (
         }else
             _false.countImpactAndPerformance(hasImpact, noImprovement)
     }
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf("$id-false" to _false, "$id-true" to _true)
+    }
+
+    override fun maxTimesOfNoImpact(): Int = 3
 }

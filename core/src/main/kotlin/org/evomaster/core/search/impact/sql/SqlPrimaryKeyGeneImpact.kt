@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.sql
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
 
 /**
@@ -27,4 +28,10 @@ class SqlPrimaryKeyGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlPrimaryKeyGene
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf(
+                "$id-geneImpact" to geneImpact
+        ).plus(geneImpact.flatViewInnerImpact())
+    }
 }

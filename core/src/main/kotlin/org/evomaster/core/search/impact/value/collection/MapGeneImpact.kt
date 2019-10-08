@@ -3,6 +3,7 @@ package org.evomaster.core.search.impact.value.collection
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.MapGene
 import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.MutatedGeneWithContext
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
@@ -38,4 +39,8 @@ class MapGeneImpact (
     }
 
     override fun validate(gene: Gene): Boolean = gene is MapGene<*>
+
+    override fun flatViewInnerImpact(): Map<String, Impact> {
+        return mutableMapOf("$id-sizeImpact" to sizeImpact)
+    }
 }

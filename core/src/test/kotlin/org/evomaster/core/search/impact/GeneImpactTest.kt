@@ -132,6 +132,7 @@ class GeneImpactTest {
                 assertEquals(0, timesOfNoImpacts)
             }
         }
+        assert(impact.flatViewInnerImpact().size == 3)
     }
 
     @Test
@@ -193,6 +194,7 @@ class GeneImpactTest {
         val id = ImpactUtils.generateGeneId(objGene)
         val impact = ImpactUtils.createGeneImpact(objGene, id)
 
+
         //check whether all gene impacts are created correctly
         impact.apply {
             assert(this is ObjectGeneImpact)
@@ -214,6 +216,9 @@ class GeneImpactTest {
 
             assert(fields.getValue(f7.name) is MapGeneImpact)
         }
+
+        // 7 fields plus 2 fields of ObjectGene plus 3 values of EnumGene plus 1 size impact of MapGene
+        assertEquals(7 + 2 + 3 + 1, impact.flatViewInnerImpact().size)
 
         val tracking0 = objGene.copy()
         f2.value = f2.value + 1

@@ -4,7 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.ImpactMutationSelection
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 
@@ -80,7 +80,7 @@ abstract class Gene(var name: String) {
     open fun archiveMutation(randomness: Randomness,
                              allGenes: List<Gene>,
                              apc: AdaptiveParameterControl,
-                             selection : ImpactMutationSelection,
+                             selection : GeneMutationSelectionMethod,
                              impact: GeneImpact?,
                              geneReference : String,
                              archiveMutator: ArchiveMutator,
