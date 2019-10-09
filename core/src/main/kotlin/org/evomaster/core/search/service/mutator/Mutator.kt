@@ -44,7 +44,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.
      * @return a mutated copy
      */
-    abstract fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification? = null): T
+    abstract fun mutate(individual: EvaluatedIndividual<T>, targets: Set<Int> = setOf(), mutatedGenes: MutatedGeneSpecification? = null): T
 
     /**
      * @param individual an individual to mutate
@@ -56,9 +56,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     /**
      * @param individual an individual to mutate
      * @param evi a reference of the individual to mutate
+     * @param targets to cover with this mutation
      * @return a list of genes that are selected to mutate
      */
-    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>
+    abstract fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int> = setOf(), mutatedGenes: MutatedGeneSpecification?) : List<Gene>
 
     /**
      * @return whether do a structure mutation
@@ -97,7 +98,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             }
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedInd = mutate(current, mutatedGenes)
+            val mutatedInd = mutate(current, targets, mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}

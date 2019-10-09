@@ -44,13 +44,13 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         }
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness,apc, allGenes)
             return
         }
 
-        gene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is DisruptiveGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi)
+        gene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is DisruptiveGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi,targets )
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

@@ -80,11 +80,12 @@ abstract class Gene(var name: String) {
     open fun archiveMutation(randomness: Randomness,
                              allGenes: List<Gene>,
                              apc: AdaptiveParameterControl,
-                             selection : GeneMutationSelectionMethod,
+                             selection: GeneMutationSelectionMethod,
                              impact: GeneImpact?,
-                             geneReference : String,
+                             geneReference: String,
                              archiveMutator: ArchiveMutator,
-                             evi: EvaluatedIndividual<*>){
+                             evi: EvaluatedIndividual<*>,
+                             targets: Set<Int>){
         standardMutation(randomness, apc, allGenes)
 //        if (!archiveMutator.enableArchiveMutation()){
 //            standardMutation(randomness,apc, allGenes)

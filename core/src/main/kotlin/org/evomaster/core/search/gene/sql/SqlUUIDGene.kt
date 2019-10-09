@@ -78,7 +78,7 @@ class SqlUUIDGene(
                     .plus(leastSigBits.flatView(excludePredicate))
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
@@ -91,13 +91,13 @@ class SqlUUIDGene(
                     Pair(leastSigBits, impact.leastSigBitsImpact),
                     Pair(leastSigBits , impact.mostSigBitsImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2)
+            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
         }else
             listOf(leastSigBits, leastSigBits)
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(leastSigBits, leastSigBits))
         val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
 
     }
 

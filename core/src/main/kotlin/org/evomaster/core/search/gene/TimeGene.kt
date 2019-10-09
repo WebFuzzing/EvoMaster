@@ -63,7 +63,7 @@ class TimeGene(
         gene.standardMutation(randomness, apc, allGenes)
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
@@ -77,12 +77,12 @@ class TimeGene(
                     Pair(minute , impact.minuteGeneImpact),
                     Pair(second, impact.secondGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/3)
+            archiveMutator.selectGenesByArchive(genes, 1.0/3, targets)
         }else listOf(hour, minute, second)
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(hour, minute, second))
         val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

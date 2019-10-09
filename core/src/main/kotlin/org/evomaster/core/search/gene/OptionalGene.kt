@@ -76,7 +76,7 @@ class OptionalGene(name: String,
         }
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if(!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
@@ -85,7 +85,9 @@ class OptionalGene(name: String,
         val preferActive = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is OptionalGeneImpact) true
         else {
             !impact.activeImpact.run {
-                this.timesToManipulate > 5 && this._false.timesOfImpact > this._true.timesOfImpact * 1.5
+                this.timesToManipulate > 5
+                        &&
+                        (this._false.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this._true.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
             }
         }
 
@@ -119,7 +121,7 @@ class OptionalGene(name: String,
                 return
             }
         }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi)
+        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
 
     }
 

@@ -68,13 +68,13 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
             listOf(this).plus(objectGene.flatView(excludePredicate))
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if(!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
         }
 
-        objectGene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is SqlJsonGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi)
+        objectGene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is SqlJsonGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

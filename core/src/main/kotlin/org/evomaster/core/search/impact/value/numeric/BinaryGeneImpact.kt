@@ -11,33 +11,51 @@ import org.evomaster.core.search.impact.value.GeneralImpact
  * created by manzh on 2019-09-09
  */
 class BinaryGeneImpact (
-        id: String,
+        id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
-        niCounter : Int = 0,
-        positionSensitive: Boolean = false,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val _false : GeneralImpact = GeneralImpact("false"),
         val _true : GeneralImpact = GeneralImpact("true")
-): GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
+) : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement
+) {
 
     override fun copy(): BinaryGeneImpact {
-        return BinaryGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, _false.copy(), _true.copy())
+        return BinaryGeneImpact(id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
+                _false = _false.copy(),
+                _true = _true.copy())
     }
 
     override fun validate(gene: Gene): Boolean = gene is BooleanGene
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
-        countImpactAndPerformance(hasImpact, noImprovement)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
         if (gc.current !is BooleanGene)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be BooleanGene")
 
         if (gc.current.value){
-            _true.countImpactAndPerformance(hasImpact, noImprovement)
+            _true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
         }else
-            _false.countImpactAndPerformance(hasImpact, noImprovement)
+            _false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {

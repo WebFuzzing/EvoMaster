@@ -4,7 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
-import org.evomaster.core.search.impact.value.collection.MapGeneImpact
+import org.evomaster.core.search.impact.value.collection.ArrayGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -98,7 +98,8 @@ class ArrayGene<T>(
             impact: GeneImpact?,
             geneReference: String,
             archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>
+            evi: EvaluatedIndividual<*>,
+            targets: Set<Int>
     ) {
 
         if (!archiveMutator.enableArchiveMutation()){
@@ -109,12 +110,18 @@ class ArrayGene<T>(
         var add = elements.isEmpty()
         var delete = elements.size == maxSize
 
-        val fmodifySize = if (add || delete) false
-        else if (archiveMutator.applyArchiveSelection() && impact != null && impact is MapGeneImpact && impact.sizeImpact.niCounter < 2){
-            randomness.nextBoolean(0.3)
-        }else {
-            randomness.nextBoolean(MODIFY_SIZE)
-        }
+        val fmodifySize =
+                if (add || delete) false
+                else if (archiveMutator.applyArchiveSelection()
+                        && impact != null
+                        && impact is ArrayGeneImpact
+                        && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+                ){
+                    randomness.nextBoolean(0.3)
+                }else {
+                    randomness.nextBoolean(MODIFY_SIZE)
+                }
+
         if (fmodifySize){
             val p = randomness.nextBoolean()
             add = add || p
@@ -135,7 +142,7 @@ class ArrayGene<T>(
             }
             else -> {
                 val gene = randomness.choose(elements)
-                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi)
+                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
             }
         }
     }

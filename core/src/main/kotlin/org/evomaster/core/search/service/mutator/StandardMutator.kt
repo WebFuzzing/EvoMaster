@@ -1,7 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
-import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -50,12 +49,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
      *      2. prefer to genes that has more impacts
      *      3. prefer to genes that has recent improvements
      */
-    override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
+    override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
         val selectedGene = if(randomness.nextBoolean(config.probOfArchiveMutation)){
-            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi, mutatedGenes)
+            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes)
         } else genesToMutate
 
         return selectGenesByDefault(selectedGene, individual)
@@ -97,7 +96,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return genesToSelect
     }
 
-    private fun innerMutate(individual: EvaluatedIndividual<T>, mutatedGene: MutatedGeneSpecification?) : T{
+    private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
 
         val individualToMutate = individual.individual
 
@@ -113,7 +112,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
-        val selectGeneToMutate = selectGenesToMutate(copy, individual, mutatedGene)
+        val selectGeneToMutate = selectGenesToMutate(copy, individual, targets, mutatedGene)
 
         if(selectGeneToMutate.isEmpty())
             return copy
@@ -131,7 +130,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             if (config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()){
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 val impact = individual.getImpactOfGenes()[id]
-                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual)
+                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual,targets )
             }else
                 gene.standardMutation(randomness, apc, allGenes)
         }
@@ -139,10 +138,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return copy
     }
 
-    override fun mutate(individual: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?): T {
+    override fun mutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): T {
 
         // First mutate the individual
-        val mutatedIndividual = innerMutate(individual, mutatedGenes)
+        val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
         postActionAfterMutation(mutatedIndividual)
 

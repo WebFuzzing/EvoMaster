@@ -54,7 +54,7 @@ class EnumGene<T>(
         index = next
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if (!archiveMutator.applyArchiveSelection() || values.size == 2 || impact == null || impact !is EnumGeneImpact){
             standardMutation(randomness, apc, allGenes)
             return
@@ -64,7 +64,7 @@ class EnumGene<T>(
             Pair(it, impact.values[it])
         }
 
-        val selects = archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1))
+        val selects = archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), targets)
         index = randomness.choose(selects)
 
     }

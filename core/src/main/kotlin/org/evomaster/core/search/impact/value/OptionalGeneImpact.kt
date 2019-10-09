@@ -12,44 +12,75 @@ import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
  * created by manzh on 2019-09-09
  */
 class OptionalGeneImpact (
-        id: String,
+        id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
-        niCounter : Int = 0,
-        positionSensitive: Boolean = false,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val activeImpact : BinaryGeneImpact = BinaryGeneImpact("isActive"),
         val geneImpact: GeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter,positionSensitive) {
+)  : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement
+) {
 
     constructor(id : String, optionalGene: OptionalGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(optionalGene.gene, id))
 
     override fun copy(): OptionalGeneImpact {
-        return OptionalGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, activeImpact.copy(), geneImpact.copy() as GeneImpact)
+        return OptionalGeneImpact(
+                id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
+                activeImpact = activeImpact.copy(),
+                geneImpact = geneImpact.copy() as GeneImpact)
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
-        countImpactAndPerformance(hasImpact, noImprovement)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
 
         if (gc.current !is OptionalGene)
             throw IllegalStateException("gc.current(${gc.current::class.java.simpleName}) should be OptionalGene")
-        if (gc.current.isActive)
-            activeImpact._true.countImpactAndPerformance(hasImpact, noImprovement)
-        else
-            activeImpact._false.countImpactAndPerformance(hasImpact, noImprovement)
 
-        if (gc.previous == null && hasImpact) return
 
         if (gc.previous != null && gc.previous !is OptionalGene)
             throw IllegalStateException("gc.pervious (${gc.previous::class.java.simpleName}) should be OptionalGene")
 
-        val mutatedGeneWithContext = MutatedGeneWithContext(
-                previous = if (gc.previous==null) null else (gc.previous as OptionalGene).gene,
-                current = gc.current.gene
-        )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+        if (gc.previous == null || (gc.previous as OptionalGene).isActive != gc.current.isActive){
+            if (gc.current.isActive)
+                activeImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            else
+                activeImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+
+            if (gc.previous != null){
+                activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+                return
+            }
+        }
+
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
+
+        if (gc.current.isActive){
+            val mutatedGeneWithContext = MutatedGeneWithContext(
+                    previous = if (gc.previous==null) null else (gc.previous as OptionalGene).gene,
+                    current = gc.current.gene
+            )
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        }
+
     }
 
 

@@ -479,9 +479,10 @@ class StringGene(
             apc: AdaptiveParameterControl,
             selection: GeneMutationSelectionMethod,
             geneImpact: GeneImpact?,
-            geneReference : String,
+            geneReference: String,
             archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>
+            evi: EvaluatedIndividual<*>,
+            targets: Set<Int>
     ) {
         val specializationGene = getSpecializationGene()
 

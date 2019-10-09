@@ -28,10 +28,10 @@ public class ImpactEMTest extends SpringTestBase {
         testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
-    @Test
-    public void testAPPROACH_IMPACT_N() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_N);
-    }
+//    @Test
+//    public void testAPPROACH_IMPACT_N() throws Throwable {
+//        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_N);
+//    }
 
     @Test
     public void testAPPROACH_IMPACT_I() throws Throwable {
@@ -103,7 +103,7 @@ public class ImpactEMTest extends SpringTestBase {
             if (keyId != id){
                 last = last &&
                         // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
-                        (noimpactGene.getTimesOfImpact() <= ind.getImpactOfGenes().get(keyId).getTimesOfImpact()
+                        (noimpactGene.getTimesOfImpact().values().stream().max(Integer::compare).get() <= ind.getImpactOfGenes().get(keyId).getTimesOfImpact().values().stream().max(Integer::compare).get()
                                 || noimpactGene.getTimesOfNoImpacts() >= ind.getImpactOfGenes().get(keyId).getTimesOfNoImpacts())
                         //&&
                         // ideally getTimesToManipulate might be less than any others

@@ -123,9 +123,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             apc: AdaptiveParameterControl,
             selection: GeneMutationSelectionMethod,
             impact: GeneImpact?,
-            geneReference : String,
+            geneReference: String,
             archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>) {
+            evi: EvaluatedIndividual<*>,
+            targets: Set<Int>) {
 
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
@@ -140,12 +141,12 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
         var genes : List<Pair<Gene, Impact>>? = null
         val selects =  if (impact != null && impact is ObjectGeneImpact && archiveMutator.applyArchiveSelection()){
             genes = canFields.map { Pair(it, impact.fields.getValue(it.name)) }
-            archiveMutator.selectGenesByArchive(genes, 1.0/canFields.size)
+            archiveMutator.selectGenesByArchive(genes, 1.0/canFields.size, targets)
         }else canFields
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else canFields)
         val selectedImpact = genes?.first { it.first == selected }?.second as? GeneImpact
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

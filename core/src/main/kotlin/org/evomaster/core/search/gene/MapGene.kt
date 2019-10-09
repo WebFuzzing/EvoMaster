@@ -112,12 +112,16 @@ class MapGene<T>(
         else listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         var add = elements.isEmpty()
         var delete = (elements.size == maxSize)
 
         val fmodifySize = if (add || delete) false
-        else if (archiveMutator.applyArchiveSelection() && impact != null && impact is MapGeneImpact && impact.sizeImpact.niCounter < 2){
+        else if (archiveMutator.applyArchiveSelection()
+                && impact != null
+                && impact is MapGeneImpact
+                && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+        ){
             randomness.nextBoolean(0.3)
         }else {
             randomness.nextBoolean(MODIFY_SIZE)
@@ -145,7 +149,7 @@ class MapGene<T>(
             }
             else -> {
                 val gene = randomness.choose(elements)
-                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi)
+                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
             }
         }
     }

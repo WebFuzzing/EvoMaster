@@ -236,10 +236,12 @@ class FitnessValue(
     fun isDifferent(
             other: FitnessValue,
             targetSubset: Set<Int>,
-            strategy: EMConfig.SecondaryObjectiveStrategy)
-            : Boolean {
+            improved : MutableSet<Int>,
+            different : MutableSet<Int>,
+            strategy: EMConfig.SecondaryObjectiveStrategy,
+            bloatControlForSecondaryObjective: Boolean) : Boolean {
 
-
+        var atLeastOneDifferent = false
         for (k in targetSubset) {
 
             val v = this.targets[k]?.distance ?: 0.0
@@ -248,20 +250,31 @@ class FitnessValue(
                 continue
 
             if (v != z) {
-                return true
+                different.add(k)
+                atLeastOneDifferent = true
+                if (v > z) improved.add(k)
+                continue
             }
 
             val extra = compareExtraToMinimize(k, other, strategy)
 
-            //FIXME this is inconsistent with what used in Archive. Should be
-            //refactored, avoiding copy&paste
-            //This requires Andrea to check. it seems it does not matter whether [bloatControlForSecondaryObjective] is enabled
             if (this.size != other.size || extra != 0) {
-                return true
+                different.add(k)
+                atLeastOneDifferent = true
+
+                if(bloatControlForSecondaryObjective){
+                    if (this.size < other.size || (this.size == other.size && extra > 0)) {
+                        improved.add(k)
+                    }
+                } else {
+                    if (extra > 0 ||
+                            (extra == 0 && this.size < other.size)) {
+                        improved.add(k)
+                    }
+                }
             }
         }
-
-        return false
+        return atLeastOneDifferent
     }
 
     fun averageExtraDistancesToMinimize(actionIndex: Int): Double{

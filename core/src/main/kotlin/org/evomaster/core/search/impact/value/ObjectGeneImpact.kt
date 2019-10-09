@@ -13,31 +13,49 @@ import org.evomaster.core.search.impact.MutatedGeneWithContext
 class ObjectGeneImpact (
         id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
-        niCounter : Int = 0,
-        positionSensitive: Boolean = false,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val fields : MutableMap<String, Impact> = mutableMapOf()
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive){
+) : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement
+) {
 
     constructor(id: String, objectGene: ObjectGene) : this (id, fields = objectGene.fields.map { Pair(it.name, ImpactUtils.createGeneImpact(it, it.name)) }.toMap().toMutableMap())
 
     override fun copy(): ObjectGeneImpact {
-        return ObjectGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, fields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
+        return ObjectGeneImpact(id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact,
+                noImpactFromImpact = noImpactFromImpact,
+                noImprovement = noImprovement,
+                fields = fields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
-        countImpactAndPerformance(hasImpact, noImprovement)
-        if (gc.previous == null && hasImpact) return
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is ObjectGene)
             throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
         if (gc.previous == null){
             gc.current.fields.forEach {
                 val fImpact = fields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
                 val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  it, action = "none", position = -1)
-                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
             }
             return
         }
@@ -50,7 +68,7 @@ class ObjectGeneImpact (
         }.filter { !it.second }.map { it.first }.forEach { g->
             val fImpact = fields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1)
-            fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+            fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
         }
 
     }

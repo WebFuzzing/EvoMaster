@@ -57,7 +57,6 @@ class ImpactUtils {
             }
         }
 
-
         private const val SEPARATOR_ACTION_TO_GENE = "::"
         private const val SEPARATOR_GENE = ";"
         private const val SEPARATOR_GENE_WITH_TYPE = ">"
@@ -157,7 +156,5 @@ class ImpactUtils {
                 else -> gene.name
             }
         }
-
-
     }
 }

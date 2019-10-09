@@ -48,12 +48,12 @@ class Base64StringGene(
         }
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
         }
-        data.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi)
+        data.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {

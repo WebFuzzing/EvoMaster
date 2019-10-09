@@ -59,7 +59,7 @@ open class DateTimeGene(
         gene.standardMutation(randomness, apc, allGenes)
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
@@ -71,12 +71,12 @@ open class DateTimeGene(
                     Pair(date, impact.dateGeneImpact),
                     Pair(time , impact.timeGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2)
+            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
         }else listOf(date, time)
 
         val selected = randomness.choose(selects)
         val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

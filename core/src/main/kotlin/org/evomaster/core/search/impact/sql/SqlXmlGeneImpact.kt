@@ -12,28 +12,46 @@ import org.evomaster.core.search.impact.value.ObjectGeneImpact
  * created by manzh on 2019-09-29
  */
 class SqlXmlGeneImpact (
-        id: String,
+        id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
-        niCounter : Int = 0,
-        positionSensitive: Boolean = false,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val geneImpact: ObjectGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
+) : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement
+) {
 
     constructor(id : String, sqlXMLGene: SqlXMLGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlXMLGene.objectGene, id) as? ObjectGeneImpact?:throw IllegalStateException("geneImpact of SqlJSONImpact should be ObjectGeneImpact"))
 
     override fun copy(): SqlXmlGeneImpact {
-        return SqlXmlGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter,niCounter, positionSensitive, geneImpact.copy())
+        return SqlXmlGeneImpact(
+                id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact,
+                noImpactFromImpact = noImpactFromImpact,
+                noImprovement = noImprovement,
+                geneImpact = geneImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
 
-        countImpactAndPerformance(hasImpact, noImprovement)
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
 
-        if (gc.previous == null && hasImpact) return
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
 
         if (gc.current  !is SqlXMLGene )
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlXMLGene")
@@ -46,7 +64,8 @@ class SqlXmlGeneImpact (
                 previous = if (gc.previous==null) null else (gc.previous as SqlXMLGene).objectGene,
                 current = gc.current.objectGene
         )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlXMLGene

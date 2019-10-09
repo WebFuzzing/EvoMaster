@@ -11,31 +11,49 @@ import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
  * created by manzh on 2019-09-09
  */
 class MapGeneImpact (
-        id: String,
+        id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
-        niCounter : Int = 0,
-        positionSensitive: Boolean = false,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
+)  : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement
+) {
 
     override fun copy(): MapGeneImpact {
-        return MapGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive, sizeImpact.copy())
+        return MapGeneImpact(
+                id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact,
+                noImpactFromImpact = noImpactFromImpact,
+                noImprovement = noImprovement,
+                sizeImpact = sizeImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
-        countImpactAndPerformance(hasImpact, noImprovement)
-        if (gc.previous == null && hasImpact) return
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
         if(gc.current !is MapGene<*>)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be ArrayGene")
         if (gc.previous != null && gc.previous !is MapGene<*>)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be ArrayGene")
 
         if (gc.previous != null || (gc.previous as MapGene<*>).elements.size != gc.current.elements.size)
-            sizeImpact.countImpactAndPerformance(hasImpact, noImprovement)
+            sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
 
     override fun validate(gene: Gene): Boolean = gene is MapGene<*>

@@ -325,16 +325,20 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         val previous = if(inTrack) getTracking()!!.last() else this
         val next = if(inTrack) this else getUndoTracking()!!.last()
 
-        /*
-         it might be a problem if covered targets become worse.
-         */
-        val isAnyChange = updateReachedTargets(fitness) || next.fitness.isDifferent(previous.fitness, notCoveredTargets, strategy)
-       // val isBetter = updateReachedTargets(fitness) || next.fitness.subsumes(previous.fitness, notCoveredTargets, strategy, bloatControl)
-        compareWithLatest(next, previous, isAnyChange, mutatedGenes, !inTrack)
+        val improvedTargets = mutableSetOf<Int>()
+        val impactTargets = mutableSetOf<Int>()
+
+        updateReachedTargets(fitness).apply {
+            improvedTargets.addAll(this)
+            impactTargets.addAll(this)
+        }
+
+        next.fitness.isDifferent(previous.fitness, notCoveredTargets, improved = improvedTargets, different = impactTargets, strategy = strategy, bloatControlForSecondaryObjective = bloatControl)
+        compareWithLatest(next, previous, improvedTargets, impactTargets, mutatedGenes, !inTrack)
     }
 
 
-    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, isAnyChange : Boolean, mutatedGenes: MutatedGeneSpecification, noImprovement : Boolean){
+    private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, improvedTargets : Set<Int>, impactTargets: Set<Int>, mutatedGenes: MutatedGeneSpecification, noImprovement : Boolean){
         /**
          * genes of individual might be added with additionalInfoList
          */
@@ -345,7 +349,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             /*
              TODO if required position/sequence sensitive analysis
              */
-            getImpactsOfStructure().countImpact(next, isAnyChange, sizeChanged, noImprovement)
+            getImpactsOfStructure().countImpact(next, sizeChanged, impactTargets = impactTargets, improvedTargets = improvedTargets)
 
             /*
              TODO MAN: shall we update impacts of genes regarding deletion of genes?
@@ -359,7 +363,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         NOTE THAT if applying 1/n, a number of mutated genes may be more than 1 (e.g., n = 2).
         This might have side effects to impact analysis, so we only collect no impact info and ignore to collect impacts info.
          */
-        if (mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && isAnyChange) {
+        if (mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && impactTargets.isNotEmpty()) {
             return
         }
 
@@ -369,7 +373,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             val impact = getImpactOfGenes().getValue(t)
 
             u.forEach { gc ->
-                impact.countImpactWithMutatedGeneWithContext(gc, hasImpact = isAnyChange, noImprovement = noImprovement)
+                impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = impactTargets, improvedTargets = improvedTargets)
             }
         }
 
@@ -378,7 +382,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             val impact = getImpactOfGenes().getValue(t)
 
             u.forEach { gc ->
-                impact.countImpactWithMutatedGeneWithContext(gc, hasImpact = isAnyChange, noImprovement = noImprovement)
+                impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = impactTargets, improvedTargets = improvedTargets)
             }
         }
     }
@@ -400,20 +404,22 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      * update fitness archived by [this]
      * return whether [fitness] archive new targets or improve distance
      */
-    private fun updateReachedTargets(fitness: FitnessValue) : Boolean{
-        var isAnyOverallImprovement = false
+    private fun updateReachedTargets(fitness: FitnessValue) : List<Int>{
+        val difference = mutableListOf<Int>()
         fitness.getViewOfData().forEach { (t, u) ->
             var previous = getReachedTarget()[t]
             if(previous == null){
-                isAnyOverallImprovement = true
+                difference.add(t)
                 previous = 0.0
                 getReachedTarget()[t] = previous
+            }else{
+                if(u.distance > previous){
+                    difference.add(t)
+                    getReachedTarget()[t] = u.distance
+                }
             }
-            isAnyOverallImprovement = isAnyOverallImprovement || u.distance > previous
-            if(u.distance > previous)
-                getReachedTarget()[t] = u.distance
         }
-        return isAnyOverallImprovement
+        return difference
     }
 
     override fun getTracking(): List<EvaluatedIndividual<T>>? {

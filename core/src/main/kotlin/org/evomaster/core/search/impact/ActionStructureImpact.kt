@@ -7,15 +7,25 @@ import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
  * created by manzh on 2019-09-03
  */
 class ActionStructureImpact (
-        id: String,
+        id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size"),
         val structures : MutableMap<String, Double> = mutableMapOf()
-): Impact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter){
+): Impact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement){
 
     companion object{
         const val ACTION_SEPARATOR = ";"
@@ -34,9 +44,9 @@ class ActionStructureImpact (
     }
 
 
-    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, hasImpacts : Boolean, sizeChanged : Boolean, isWorse : Boolean){
-        countImpactAndPerformance(hasImpacts, isWorse)
-        if (sizeChanged) sizeImpact.countImpactAndPerformance(hasImpacts, isWorse)
+    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, sizeChanged : Boolean, impactTargets : Set<Int>, improvedTargets : Set<Int>){
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+        if (sizeChanged) sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
         updateStructure(evaluatedIndividual)
     }
 
@@ -52,6 +62,16 @@ class ActionStructureImpact (
     }
 
     override fun copy() : ActionStructureImpact{
-        return ActionStructureImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, sizeImpact.copy(), structures.map { Pair(it.key, it.value) }.toMap().toMutableMap())
+        return ActionStructureImpact(
+                id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact,
+                noImpactFromImpact = noImpactFromImpact,
+                noImprovement = noImprovement,
+                sizeImpact = sizeImpact.copy(),
+                structures = structures.map { Pair(it.key, it.value) }.toMap().toMutableMap())
     }
 }

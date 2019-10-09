@@ -1,9 +1,7 @@
 package org.evomaster.core.search.impact.sql
 
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlJSONGene
-import org.evomaster.core.search.gene.sql.SqlXMLGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
@@ -14,35 +12,52 @@ import org.evomaster.core.search.impact.value.ObjectGeneImpact
  * created by manzh on 2019-09-29
  */
 class SqlJsonGeneImpact (
-        id: String,
+        id : String,
         degree: Double = 0.0,
-        timesToManipulate: Int = 0,
-        timesOfImpact: Int = 0,
-        timesOfNoImpacts: Int = 0,
-        counter: Int = 0,
-        niCounter : Int = 0,
-        positionSensitive: Boolean = false,
+        timesToManipulate : Int = 0,
+        timesOfNoImpacts : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val geneImpact: ObjectGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter, positionSensitive) {
+) : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement) {
 
     constructor(id : String, sqlJSONGene: SqlJSONGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlJSONGene.objectGene, id) as? ObjectGeneImpact?:throw IllegalStateException("geneImpact of SqlJSONImpact should be ObjectGeneImpact"))
 
     override fun copy(): SqlJsonGeneImpact {
-        return SqlJsonGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter,niCounter, positionSensitive, geneImpact.copy())
+        return SqlJsonGeneImpact(
+                id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact,
+                noImpactFromImpact = noImpactFromImpact,
+                noImprovement = noImprovement,
+                geneImpact = geneImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
-        countImpactAndPerformance(hasImpact, noImprovement)
+    override fun countImpactWithMutatedGeneWithContext(gc : MutatedGeneWithContext, impactTargets : Set<Int>, improvedTargets: Set<Int>){
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
 
         if (gc.current !is SqlJSONGene)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlJSONGene")
-        if (gc.previous == null && hasImpact) return
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.previous == null){
             val mutatedGeneWithContext = MutatedGeneWithContext(
                     previous = null,
                     current = gc.current.objectGene
             )
-            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
             return
         }
         if ( gc.previous !is SqlJSONGene){
@@ -53,7 +68,7 @@ class SqlJsonGeneImpact (
                 previous = gc.previous.objectGene,
                 current = gc.current.objectGene
         )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, hasImpact, noImprovement)
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
     override fun validate(gene: Gene): Boolean = gene is SqlJSONGene
 

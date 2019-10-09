@@ -15,14 +15,24 @@ class DateGeneImpact (
         id : String,
         degree: Double = 0.0,
         timesToManipulate : Int = 0,
-        timesOfImpact : Int = 0,
         timesOfNoImpacts : Int = 0,
-        counter : Int = 0,
-        niCounter : Int = 0,
+        conTimesOfNoImpacts : Int = 0,
+        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
         val yearGeneImpact: IntegerGeneImpact,
         val monthGeneImpact: IntegerGeneImpact,
         val dayGeneImpact : IntegerGeneImpact
-) : GeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter ,niCounter) {
+)  : GeneImpact(
+        id = id,
+        degree = degree,
+        timesToManipulate = timesToManipulate,
+        timesOfNoImpacts = timesOfNoImpacts,
+        conTimesOfNoImpacts = conTimesOfNoImpacts,
+        timesOfImpact= timesOfImpact,
+        noImpactFromImpact = noImpactFromImpact,
+        noImprovement = noImprovement
+) {
 
     constructor(id: String, gene : DateGene)
             : this(id,
@@ -32,27 +42,37 @@ class DateGeneImpact (
     )
 
     override fun copy(): DateGeneImpact {
-        return DateGeneImpact(id, degree, timesToManipulate, timesOfImpact, timesOfNoImpacts, counter, niCounter,yearGeneImpact, monthGeneImpact, dayGeneImpact)
+        return DateGeneImpact(
+                id = id,
+                degree = degree,
+                timesToManipulate = timesToManipulate,
+                timesOfNoImpacts = timesOfNoImpacts,
+                conTimesOfNoImpacts = conTimesOfNoImpacts,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
+                yearGeneImpact = yearGeneImpact.copy(),
+                monthGeneImpact = monthGeneImpact.copy(),
+                dayGeneImpact = dayGeneImpact.copy())
     }
 
     override fun validate(gene: Gene): Boolean = gene is DateGene
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, hasImpact: Boolean, noImprovement: Boolean) {
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
 
-        countImpactAndPerformance(hasImpact, noImprovement)
-
-        if (gc.previous == null && hasImpact) return
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is DateGene)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be DateGene")
         if (gc.previous !=null && gc.previous !is DateGene)
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be DateGene")
 
         if (gc.previous == null || !gc.current.year.containsSameValueAs((gc.previous as DateGene).year))
-            yearGeneImpact.countImpactAndPerformance(hasImpact, noImprovement  = noImprovement)
+            yearGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
         if (gc.previous == null || !gc.current.month.containsSameValueAs((gc.previous as DateGene).month))
-            monthGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
+            monthGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
         if (gc.previous == null || !gc.current.day.containsSameValueAs((gc.previous as DateGene).day))
-            dayGeneImpact.countImpactAndPerformance(hasImpact, noImprovement = noImprovement)
+            dayGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {

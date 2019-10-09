@@ -60,7 +60,7 @@ class DateGene(
 
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>) {
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
 
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
@@ -75,13 +75,13 @@ class DateGene(
                     Pair(month , impact.monthGeneImpact),
                     Pair(day , impact.dayGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/3)
+            archiveMutator.selectGenesByArchive(genes = genes, percentage = 1.0/3, targets = targets)
         }else
             listOf(year, month, day)
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(year, month, day))
         val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference,archiveMutator, evi)
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
