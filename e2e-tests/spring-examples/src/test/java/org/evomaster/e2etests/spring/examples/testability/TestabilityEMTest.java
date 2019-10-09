@@ -42,6 +42,6 @@ public class TestabilityEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
                 },
-                5);
+                10);
     }
 }
