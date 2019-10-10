@@ -38,21 +38,22 @@ class MapGeneImpact (
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
                 sizeImpact = sizeImpact.copy())
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
         countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if(gc.current !is MapGene<*>)
-            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be ArrayGene")
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be MapGene")
         if (gc.previous != null && gc.previous !is MapGene<*>)
-            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be ArrayGene")
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be MapGene")
 
-        if (gc.previous != null || (gc.previous as MapGene<*>).elements.size != gc.current.elements.size)
+        if (gc.previous != null && (gc.previous as MapGene<*>).elements.size != gc.current.elements.size)
             sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
 

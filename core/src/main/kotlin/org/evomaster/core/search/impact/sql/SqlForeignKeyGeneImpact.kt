@@ -33,9 +33,10 @@ class SqlForeignKeyGeneImpact (
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement)
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap()
+        )
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlForeignKeyGene

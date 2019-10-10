@@ -84,4 +84,6 @@ abstract class Impact (
             noImpactFromImpact.map { "${it.key}->${it.value}" }.joinToString(";"),
             noImprovement.map { "${it.key}->${it.value}" }.joinToString(";")
     )
+
+    fun getMaxImpact() : Int = timesOfImpact.values.max()?:0
 }

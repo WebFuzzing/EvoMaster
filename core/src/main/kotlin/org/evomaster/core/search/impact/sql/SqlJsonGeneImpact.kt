@@ -40,9 +40,9 @@ class SqlJsonGeneImpact (
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
                 geneImpact = geneImpact.copy())
     }
 

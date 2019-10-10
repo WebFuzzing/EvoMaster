@@ -101,10 +101,12 @@ public class ImpactEMTest extends SpringTestBase {
         GeneImpact noimpactGene = ind.getImpactOfGenes().get(id);
         for (String keyId : ind.getImpactOfGenes().keySet()){
             if (keyId != id){
+                GeneImpact other = ind.getImpactOfGenes().get(keyId);
+
                 last = last &&
                         // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
-                        (noimpactGene.getTimesOfImpact().values().stream().max(Integer::compare).get() <= ind.getImpactOfGenes().get(keyId).getTimesOfImpact().values().stream().max(Integer::compare).get()
-                                || noimpactGene.getTimesOfNoImpacts() >= ind.getImpactOfGenes().get(keyId).getTimesOfNoImpacts())
+                        (noimpactGene.getMaxImpact() <= other.getMaxImpact()
+                                || noimpactGene.getTimesOfNoImpacts() >= other.getTimesOfNoImpacts())
                         //&&
                         // ideally getTimesToManipulate might be less than any others
                         //(noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate())

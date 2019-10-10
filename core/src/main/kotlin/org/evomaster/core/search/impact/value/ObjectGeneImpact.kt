@@ -39,9 +39,9 @@ class ObjectGeneImpact (
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
                 fields = fields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
     }
 

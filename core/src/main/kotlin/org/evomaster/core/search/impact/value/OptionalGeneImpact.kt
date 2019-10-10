@@ -55,18 +55,17 @@ class OptionalGeneImpact (
         if (gc.current !is OptionalGene)
             throw IllegalStateException("gc.current(${gc.current::class.java.simpleName}) should be OptionalGene")
 
-
         if (gc.previous != null && gc.previous !is OptionalGene)
             throw IllegalStateException("gc.pervious (${gc.previous::class.java.simpleName}) should be OptionalGene")
 
         if (gc.previous == null || (gc.previous as OptionalGene).isActive != gc.current.isActive){
+            activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
             if (gc.current.isActive)
                 activeImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
             else
                 activeImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
 
             if (gc.previous != null){
-                activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
                 return
             }
         }

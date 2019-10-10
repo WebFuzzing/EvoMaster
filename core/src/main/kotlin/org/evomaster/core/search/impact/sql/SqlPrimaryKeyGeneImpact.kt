@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.Impact
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.MutatedGeneWithContext
 
 /**
  * created by manzh on 2019-09-29
@@ -39,9 +40,9 @@ class SqlPrimaryKeyGeneImpact (
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap().toMutableMap(),
                 geneImpact = geneImpact.copy() as GeneImpact)
     }
 
@@ -51,5 +52,23 @@ class SqlPrimaryKeyGeneImpact (
         return mutableMapOf(
                 "$id-geneImpact" to geneImpact
         ).plus(geneImpact.flatViewInnerImpact())
+    }
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
+        if (gc.current  !is SqlPrimaryKeyGene){
+            throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlPrimaryKeyGene")
+        }
+        if (gc.previous != null && gc.previous !is SqlPrimaryKeyGene){
+            throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlPrimaryKeyGene")
+        }
+
+        val mutatedGeneWithContext = MutatedGeneWithContext(
+                previous = if (gc.previous==null) null else (gc.previous as SqlPrimaryKeyGene).gene,
+                current = gc.current.gene
+        )
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
 }

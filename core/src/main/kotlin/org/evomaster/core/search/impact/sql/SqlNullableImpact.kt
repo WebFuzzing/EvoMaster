@@ -42,9 +42,10 @@ class SqlNullableImpact (
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement,
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
+                presentImpact = presentImpact.copy(),
                 geneImpact = geneImpact.copy() as GeneImpact)
     }
 
@@ -54,22 +55,32 @@ class SqlNullableImpact (
         if (gc.current  !is SqlNullable){
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
         }
-        if (gc.current.isPresent)
-            presentImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
-        else
-            presentImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
-
-        if (gc.previous == null && impactTargets.isNotEmpty()) return
-
         if (gc.previous != null && gc.previous !is SqlNullable){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
         }
 
-        val mutatedGeneWithContext = MutatedGeneWithContext(
-                previous = if (gc.previous == null) null else (gc.previous as SqlNullable).gene,
-                current = gc.current.gene
-        )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        if (gc.previous == null || (gc.previous as SqlNullable).isPresent != gc.current.isPresent){
+            presentImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+
+            if (gc.current.isPresent)
+                presentImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            else
+                presentImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+
+            if (gc.previous != null) {
+                return
+            }
+        }
+
+        if (gc.previous == null && impactTargets.isNotEmpty()) return
+
+        if (gc.current.isPresent){
+            val mutatedGeneWithContext = MutatedGeneWithContext(
+                    previous = if (gc.previous == null) null else (gc.previous as SqlNullable).gene,
+                    current = gc.current.gene
+            )
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        }
     }
 
     override fun validate(gene: Gene): Boolean = gene is SqlNullable

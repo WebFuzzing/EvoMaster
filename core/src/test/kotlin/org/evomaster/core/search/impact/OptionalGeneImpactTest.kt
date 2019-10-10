@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test
 class OptionalGeneImpactTest : GeneImpactTest() {
     override fun getGene(): Gene {
         val gene = IntegerGene("gene", 0)
-        return OptionalGene("o", isActive = true, gene = gene)
+        return OptionalGene("o", isActive = false, gene = gene)
     }
 
     override fun checkImpactType(impact: GeneImpact) {
@@ -34,18 +34,27 @@ class OptionalGeneImpactTest : GeneImpactTest() {
 
     @Test
     fun testActiveAndGene(){
-        // true -> false
+
         val gene = getGene()
         val impact = initImpact(gene)
 
+        // false -> true
         val pair = template(gene, impact, listOf(ImpactOptions.ONLY_IMPACT), 1)
 
         impact as OptionalGeneImpact
         assertImpact(impact.activeImpact, (pair.second as OptionalGeneImpact).activeImpact, ImpactOptions.ONLY_IMPACT)
-        assertImpact(impact.activeImpact._false, (pair.second as OptionalGeneImpact).activeImpact._false, ImpactOptions.ONLY_IMPACT)
-        assertImpact(impact.activeImpact._true, (pair.second as OptionalGeneImpact).activeImpact._true, ImpactOptions.NONE)
+        assertImpact(impact.activeImpact._false, (pair.second as OptionalGeneImpact).activeImpact._false, ImpactOptions.NONE)
+        assertImpact(impact.activeImpact._true, (pair.second as OptionalGeneImpact).activeImpact._true, ImpactOptions.ONLY_IMPACT)
 
         assertImpact(impact.geneImpact, (pair.second as OptionalGeneImpact).geneImpact, ImpactOptions.NONE)
 
+        // mutate inside gene of optional gene.
+        val pairG = template(pair.first, pair.second, listOf(ImpactOptions.IMPACT_IMPROVEMENT), 0)
+
+        assertImpact((pair.second as OptionalGeneImpact).activeImpact, (pairG.second as OptionalGeneImpact).activeImpact, ImpactOptions.NONE)
+        assertImpact((pair.second as OptionalGeneImpact).activeImpact._false, (pairG.second as OptionalGeneImpact).activeImpact._false, ImpactOptions.NONE)
+        assertImpact((pair.second as OptionalGeneImpact).activeImpact._true, (pairG.second as OptionalGeneImpact).activeImpact._true, ImpactOptions.NONE)
+
+        assertImpact((pair.second as OptionalGeneImpact).geneImpact, (pairG.second as OptionalGeneImpact).geneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
     }
 }

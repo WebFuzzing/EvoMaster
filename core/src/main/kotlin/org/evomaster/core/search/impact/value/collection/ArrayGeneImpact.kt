@@ -32,25 +32,28 @@ class ArrayGeneImpact (
 ) {
 
     override fun copy(): ArrayGeneImpact {
-        return ArrayGeneImpact(id = id,
+        return ArrayGeneImpact(
+                id = id,
                 degree = degree,
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
                 conTimesOfNoImpacts = conTimesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement, sizeImpact = sizeImpact.copy())
+                timesOfImpact= timesOfImpact.toMutableMap(),
+                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
+                noImprovement = noImprovement.toMutableMap(),
+                sizeImpact = sizeImpact.copy())
     }
 
     override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
         countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is ArrayGene<*>)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be ArrayGene")
         if ((gc.previous != null && gc.previous !is ArrayGene<*>))
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be ArrayGene")
 
-        if (gc.previous == null || (gc.previous as ArrayGene<*>).elements.size != gc.current.elements.size)
+        if (gc.previous != null && (gc.previous as ArrayGene<*>).elements.size != gc.current.elements.size)
             sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
     }
 
