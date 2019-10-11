@@ -36,8 +36,20 @@ class JavaRestPostMethod(val specification: ServiceClazz) : JavaMethod(), Spring
         //set property regarding dto
         content.add("$created.${specification.entity.idProperty.nameSetterName()}($entityId);")
 
+        val withImpact = specification.entity.defaultProperties.any { it.impactful && it.branches > 1 }
+        if (withImpact)
+            content.add(initBranchesMessage())
+
+        //only set value if the property is impactful
         (0 until specification.entity.defaultProperties.size).forEach { i->
-            content.add("$created.${specification.entity.defaultProperties[i].nameSetterName()}($dtoVar.${specification.dto.defaultProperties[i].name});")
+            val property = specification.entity.defaultProperties[i]
+            if (property.impactful){
+                val variableName = "$dtoVar.${property.name}"
+                content.add("$created.${property.nameSetterName()}($variableName);")
+                if (property.branches > 1){
+                    content.add(defaultBranches(type = property.type, index =  i, numOfBranches = property.branches, variableName = variableName))
+                }
+            }
         }
 
         //check if the specified reference exists, if reference exists, then set it to the created
@@ -63,7 +75,7 @@ class JavaRestPostMethod(val specification: ServiceClazz) : JavaMethod(), Spring
         //TODO regarding hide reference
 
         content.add(repositorySave(specification.entityRepository.name, created))
-        content.add(returnStatus())
+        if (!withImpact) content.add(returnStatus()) else content.add(returnStatus(msg = getBranchMsg()))
         return content
     }
 

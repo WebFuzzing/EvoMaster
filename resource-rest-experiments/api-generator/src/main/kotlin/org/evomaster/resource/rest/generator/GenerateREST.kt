@@ -1,19 +1,16 @@
 package org.evomaster.resource.rest.generator
 
-import org.evomaster.resource.rest.generator.model.ResourceGraph
-import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.implementation.java.AppliedJavaType
 import org.evomaster.resource.rest.generator.implementation.java.app.JavaApp
 import org.evomaster.resource.rest.generator.implementation.java.dto.JavaDto
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntity
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntityRepository
 import org.evomaster.resource.rest.generator.implementation.java.service.JavaResourceAPI
-import org.evomaster.resource.rest.generator.model.AppClazz
-import org.evomaster.resource.rest.generator.model.EdgeMultiplicitySpecification
-import org.evomaster.resource.rest.generator.model.ResGenSpecification
+import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.pom.CSPOModel
 import org.evomaster.resource.rest.generator.template.ClassTemplate
 import org.evomaster.resource.rest.generator.template.RegisterType
+import kotlin.random.Random
 
 /**
  * created by manzh on 2019-08-16
@@ -90,7 +87,11 @@ class GenerateREST(val config: GenConfig) {
                    resNode = node,
                    rootPackage = config.csProjectPackage,
                    outputFolder = config.getCsOutputFolder(),
-                   restMethods = config.restMethods
+                   restMethods = config.restMethods,
+                   defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
+                           PropertySpecification("name", CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
+                           PropertySpecification("value", CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = false)
+                   )else generateProperties(config)
            ))
         }
 
@@ -98,17 +99,32 @@ class GenerateREST(val config: GenConfig) {
             u.initDependence(resourceCluster)
         }
     }
+
+    private fun generateProperties(config: GenConfig) : List<PropertySpecification>{
+        val types = config.propertiesTypes
+        val pros = mutableListOf<PropertySpecification>()
+        if (config.numOfExtraProperties > 0){
+            var counterImpact = 0
+            (0 until config.numOfExtraProperties).forEach { i->
+                val impactful = counterImpact < config.numOfImpactProperties
+                pros.add(PropertySpecification("pro$i", types[Random.nextInt(0, types.size)].name, isId = false, autoGen = false, allowNull = !impactful, impactful = impactful, branches = if (impactful)config.branchesForImpact else 0))
+                counterImpact+=1
+            }
+        }
+        return pros
+    }
+
 }
 
 fun main(args : Array<String>){
     val config = GenConfig()
 
-    config.outputFolder = "e2e-tests/spring-examples/"
-    config.outputType = GenConfig.OutputType.SOURCE
-    config.csProjectPackage = "com.foo.rest.examples.spring.resource"
-    config.numOfNodes = 3
-    config.numOfOneToOne = 1
-    config.restMethods = listOf(RestMethod.POST, RestMethod.GET_ID)
+//    config.outputFolder = "e2e-tests/spring-examples/"
+//    config.outputType = GenConfig.OutputType.SOURCE
+//    config.csProjectPackage = "com.foo.rest.examples.spring.resource"
+//    config.numOfNodes = 3
+//    config.numOfOneToOne = 1
+//    config.restMethods = listOf(RestMethod.POST, RestMethod.GET_ID)
 
     GenerateREST(config).run()
 }

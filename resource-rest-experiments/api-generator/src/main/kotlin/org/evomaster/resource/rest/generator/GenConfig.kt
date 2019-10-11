@@ -1,5 +1,6 @@
 package org.evomaster.resource.rest.generator
 
+import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.model.RestMethod
 
 /**
@@ -63,6 +64,14 @@ class GenConfig {
     var numOfTwoToTwo = 0
 
     var numOfManyToMany = 0
+
+    var numOfExtraProperties = 4
+
+    var numOfImpactProperties = 2
+
+    var propertiesTypes = listOf(CommonTypes.INT)//CommonTypes.values()
+
+    var branchesForImpact = 4
 
     fun getCsOutputFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.srcFolder}"
     fun getCsResourceFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.resource}"

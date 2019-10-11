@@ -63,8 +63,8 @@ interface SpringRestAPI {
 
     fun repositoryDeleteById(repository: String, entityVar : String): String = "$repository.deleteById($entityVar);"
 
-
     fun returnWithContent(variable : String) = "return ResponseEntity.ok($variable);"
 
-    fun returnStatus(code : Int = 201) = "return ResponseEntity.status($code).build();"
+    fun returnStatus(code : Int = 201, msg : String? = null) = "return ResponseEntity.status($code)${if (msg == null) ".build()" else ".body($msg)"};"
+
 }

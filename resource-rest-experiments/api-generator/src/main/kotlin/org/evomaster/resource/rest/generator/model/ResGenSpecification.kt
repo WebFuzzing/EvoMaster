@@ -11,11 +11,8 @@ class ResGenSpecification(
         val rootPackage : String,
         val outputFolder : String,
         val restMethods : List<RestMethod>,
-        val idProperty : PropertySpecification = PropertySpecification("id", CommonTypes.OBJ_LONG.name, isId = true, autoGen = false, allowNull = false),
-        val defaultProperties : List<PropertySpecification> = mutableListOf(
-                PropertySpecification("name", CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false),
-                PropertySpecification("value", CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false)
-        ),
+        val idProperty : PropertySpecification = PropertySpecification("id", CommonTypes.OBJ_LONG.name, isId = true, autoGen = false, allowNull = false, impactful = true),
+        val defaultProperties : List<PropertySpecification> = listOf(),
         val plusProperties: Boolean = true
 ){
     val name : String = resNode.name
@@ -63,7 +60,8 @@ class ResGenSpecification(
                             type = idProperty.type,
                             isId = false,
                             autoGen = false,
-                            allowNull = false
+                            allowNull = false,
+                            impactful = true
                     )
                 },
                 ownOthers = ownOthers.map {res ->
@@ -72,7 +70,8 @@ class ResGenSpecification(
                             type = idProperty.type,
                             isId = false,
                             autoGen = false,
-                            allowNull = false
+                            allowNull = false,
+                            impactful = true
                     )
                 },
                 rootPackage = nameDtoPackage(),
@@ -148,7 +147,8 @@ class ResGenSpecification(
                         type = nameRepositoryClass(),
                         isId = false,
                         autoGen = false,
-                        allowNull = false),
+                        allowNull = false,
+                        impactful = true),
                 dto = getDto(),
                 entity = getEntity(),
                 obviousReferEntityRepositories = obviousReferToOthers.map {r->
@@ -157,7 +157,8 @@ class ResGenSpecification(
                             type = r.nameRepositoryClass(),
                             isId = false,
                             autoGen = false,
-                            allowNull = false
+                            allowNull = false,
+                            impactful = true
                     ))
                 }.toMap(),
                 hideReferEntityRepositories = hideReferToOthers.map {r->
@@ -166,7 +167,8 @@ class ResGenSpecification(
                             type = r.nameRepositoryClass(),
                             isId = false,
                             autoGen = false,
-                            allowNull = false
+                            allowNull = false,
+                            impactful = true
                     ))
                 }.toMap(),
                 restMethods = restMethods,
