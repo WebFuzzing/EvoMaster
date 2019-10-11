@@ -46,8 +46,8 @@ class SqlJsonGeneImpact (
                 geneImpact = geneImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc : MutatedGeneWithContext, impactTargets : Set<Int>, improvedTargets: Set<Int>){
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean){
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.current !is SqlJSONGene)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlJSONGene")
@@ -57,7 +57,7 @@ class SqlJsonGeneImpact (
                     previous = null,
                     current = gc.current.objectGene
             )
-            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             return
         }
         if ( gc.previous !is SqlJSONGene){
@@ -68,7 +68,7 @@ class SqlJsonGeneImpact (
                 previous = gc.previous.objectGene,
                 current = gc.current.objectGene
         )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
     override fun validate(gene: Gene): Boolean = gene is SqlJSONGene
 

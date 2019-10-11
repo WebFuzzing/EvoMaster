@@ -1,10 +1,8 @@
 package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.*
-import org.evomaster.core.search.impact.value.GeneralImpact
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -362,10 +360,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         /*
         NOTE THAT if applying 1/n, a number of mutated genes may be more than 1 (e.g., n = 2).
         This might have side effects to impact analysis, so we only collect no impact info and ignore to collect impacts info.
+        But times of manipulation should be updated.
          */
-        if (mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && impactTargets.isNotEmpty()) {
-            return
-        }
+        val onlyManipulation = mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && impactTargets.isNotEmpty()
 
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 
@@ -373,7 +370,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             val impact = getImpactOfGenes().getValue(t)
 
             u.forEach { gc ->
-                impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = impactTargets, improvedTargets = improvedTargets)
+                impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             }
         }
 
@@ -382,7 +379,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             val impact = getImpactOfGenes().getValue(t)
 
             u.forEach { gc ->
-                impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = impactTargets, improvedTargets = improvedTargets)
+                impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             }
         }
     }

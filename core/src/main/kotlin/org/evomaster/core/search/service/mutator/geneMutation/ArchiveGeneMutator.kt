@@ -115,9 +115,12 @@ class ArchiveMutator {
             throw IllegalArgumentException("the decided method should be a fixed method")
         mutatedGenes?.geneSelectionStrategy = method
         val selects = when(method){
-            GeneMutationSelectionMethod.AWAY_NOIMPACT -> selectGenesAwayNoimpact(genes, percentage = percentage, prioritizeNoVisit = true)
-            //GeneMutationSelectionMethod.APPROACH_IMPACT_N -> selectApproachImpactWithN(genes, percentage = percentage, prioritizeNoVisit = true)
-            GeneMutationSelectionMethod.APPROACH_IMPACT_I -> selectApproachImpact(genes, percentage = percentage, targets = targets, prioritizeNoVisit = true)
+            GeneMutationSelectionMethod.AWAY_NOIMPACT -> selectGenesAwayNoimpact(genes, percentage = percentage, targets = targets, prioritizeNoVisit = true)
+            GeneMutationSelectionMethod.APPROACH_IMPACT -> selectApproachImpact(genes, percentage = percentage, targets = targets, prioritizeNoVisit = true)
+            GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> selectApproachLatestImpact(genes, percentage = percentage, targets = targets, prioritizeNoVisit = true)
+            GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> selectApproachLatestImprovement(genes, percentage = percentage, targets = targets, prioritizeNoVisit = true)
+            GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> balanceImpactAndNoImpact(genes, percentage = percentage, targets = targets, prioritizeNoVisit = true)
+
             //GeneMutationSelectionMethod.FEED_DIRECT_IMPACT -> ImpactUtils.selectFeedDirect(genes, percentage = percentage, prioritizeNoVisit = true)
             else -> {
                 genes.map { it.first }
@@ -159,32 +162,55 @@ class ArchiveMutator {
         return genes.filter { it.second.timesToManipulate == 0 }.map { it.first }
     }
 
-    private fun <T> selectGenesAwayNoimpact(genes : List<Pair<T, Impact>>, percentage : Double, prioritizeNoVisit : Boolean = true) : List<T>{
+    private fun <T> selectGenesAwayNoimpact(genes : List<Pair<T, Impact>>, percentage : Double,targets: Set<Int>, prioritizeNoVisit : Boolean = true) : List<T>{
         if (genes.size == 1) return listOf(genes.first().first)
-        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return listOf(it.first()) }
+        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
         val size = decideSize(genes.size, percentage)
-        return genes.sortedBy { it.second.timesOfNoImpacts }.subList(0, genes.size - size).map { it.first }
+        return sortGenes(genes, targets, arrayOf(true, false, false, false)).subList(0, genes.size - size)
     }
 
     private fun <T>selectApproachImpact(genes : List<Pair<T, Impact>>, percentage : Double, targets: Set<Int>, prioritizeNoVisit : Boolean = true) : List<T>{
-        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return listOf(it.first()) }
+        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
         val size = decideSize(genes.size, percentage)
-        return sortGenes(genes, targets).subList(0, size)
+        return sortGenes(genes, targets, arrayOf(false, true, false, false)).subList(0, size)
     }
 
 
-    private fun <T> sortGenes(genes : List<Pair<T, Impact>>, targets : Set<Int>) : List<T>{
+    private fun <T>selectApproachLatestImpact(genes : List<Pair<T, Impact>>, percentage : Double, targets: Set<Int>, prioritizeNoVisit : Boolean = true) : List<T>{
+        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+        val size = decideSize(genes.size, percentage)
+        return sortGenes(genes, targets, arrayOf(false, true, true, false)).subList(0, size)
+    }
 
-        //higher number is prior
-        val impacts = genes.sortedByDescending { it.second.timesOfImpact.filter { e-> targets.contains(e.key) }.map { e-> e.value }.max()?:0 }
+    private fun <T>selectApproachLatestImprovement(genes : List<Pair<T, Impact>>, percentage : Double, targets: Set<Int>, prioritizeNoVisit : Boolean = true) : List<T>{
+        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+        val size = decideSize(genes.size, percentage)
+        return sortGenes(genes, targets, arrayOf(false, true, false, true)).subList(0, size)
+    }
 
-        //lower number is prior, i.e., prioritize to mutate genes which have latest impacts
-        val noImpactsFromImpact = genes.sortedBy { it.second.noImpactFromImpact.filter { e-> targets.contains(e.key) }.map { e-> e.value }.min()?: Int.MAX_VALUE}
 
-        //lower number is prior, i.e., prioritize to mutate genes which achieved latest improvement
-        val noImprovement = genes.sortedBy { it.second.noImprovement.filter { e-> targets.contains(e.key) }.map { e-> e.value }.min()?: Int.MAX_VALUE}
+    private fun <T> balanceImpactAndNoImpact(genes : List<Pair<T, Impact>>, percentage : Double, targets: Set<Int>, prioritizeNoVisit : Boolean = true) : List<T>{
+        if (prioritizeNoVisit) prioritizeNoVisit(genes).let { if (it.isNotEmpty()) return it }
+        val size = decideSize(genes.size, percentage)
+        return sortGenes(genes, targets, arrayOf(true, true, false, false)).subList(0, size)
+    }
 
-        return genes.sortedBy { g-> impacts.indexOf(g) + noImpactsFromImpact.indexOf(g) + noImprovement.indexOf(g) }.map{ it.first }
+    private fun <T> sortGenes(genes : List<Pair<T, Impact>>, targets : Set<Int>, args : Array<Boolean>) : List<T>{
+        //lower number of no impact is prior
+        val noImpacts  = if (args[0]) genes.sortedBy { it.second.timesOfNoImpacts } else null
+
+        //higher number of impact is prior
+        val impacts = if (args[1]) genes.sortedByDescending { it.second.timesOfImpact.filter { e-> targets.contains(e.key) }.map { e-> e.value }.max()?:0 } else null
+
+        //lower number of no impact is prior, i.e., prioritize to mutate genes which have latest impacts
+        val noImpactsFromImpact = if (args[2]) genes.sortedBy { it.second.noImpactFromImpact.filter { e-> targets.contains(e.key) }.map { e-> e.value }.min()?: Int.MAX_VALUE} else null
+
+        //lower number of no improvement is prior, i.e., prioritize to mutate genes which achieved latest improvement
+        val noImprovement = if (args[3]) genes.sortedBy { it.second.noImprovement.filter { e-> targets.contains(e.key) }.map { e-> e.value }.min()?: Int.MAX_VALUE} else null
+
+        return genes.sortedBy { g->
+            (noImpacts?.indexOf(g)?: 0) + (impacts?.indexOf(g)?: 0) + (noImpactsFromImpact?.indexOf(g)?: 0) + (noImprovement?.indexOf(g)?: 0)
+        }.map{ it.first }
     }
 
     private fun decideSize(list : Int, percentage : Double) = (list * percentage).run {
@@ -411,19 +437,6 @@ class ArchiveMutator {
         else min..max).toList()
 
         return if (withinNormal()) cand[cand.size/2] else randomness.choose(cand)
-    }
-
-    private fun findClosest(current: Int, validates : List<Int>, randomness: Randomness) : Int{
-        val sorted = validates.plus(current).toHashSet().sorted()
-        val index = sorted.indexOf(current)
-        if (index == 0)
-            return sorted[1]
-        if (index == sorted.size - 1)
-            return sorted[index - 1]
-        if (randomness.nextBoolean())
-            return sorted[index-1]
-        return sorted[index+1]
-
     }
 
     /**

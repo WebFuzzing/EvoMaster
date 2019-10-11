@@ -55,8 +55,8 @@ class StringGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is StringGene
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         //FIXME regarding specializationGeneImpact
     }
 }

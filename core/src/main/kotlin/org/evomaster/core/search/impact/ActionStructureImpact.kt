@@ -44,9 +44,9 @@ class ActionStructureImpact (
     }
 
 
-    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, sizeChanged : Boolean, impactTargets : Set<Int>, improvedTargets : Set<Int>){
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
-        if (sizeChanged) sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, sizeChanged : Boolean, impactTargets : Set<Int>, improvedTargets : Set<Int>, onlyManipulation : Boolean = false){
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        if (sizeChanged) sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         updateStructure(evaluatedIndividual)
     }
 

@@ -55,8 +55,8 @@ class DateTimeGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is DateTimeGene
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
@@ -68,11 +68,11 @@ class DateTimeGeneImpact (
 
         if (gc.previous == null || !gc.current.date.containsSameValueAs((gc.previous as DateTimeGene).date)){
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).date, current = gc.current.date)
-            dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+            dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
         if (gc.previous == null || !gc.current.time.containsSameValueAs((gc.previous as DateTimeGene).time)){
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).time, current = gc.current.time)
-            timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+            timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }
 

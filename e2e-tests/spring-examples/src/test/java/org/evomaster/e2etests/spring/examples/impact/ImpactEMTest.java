@@ -24,24 +24,29 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ImpactEMTest extends SpringTestBase {
 
     @Test
-    public void testAWAY_NOIMPACT() throws Throwable {
+    public void testAwayNoImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
-//    @Test
-//    public void testAPPROACH_IMPACT_N() throws Throwable {
-//        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_N);
-//    }
-
     @Test
-    public void testAPPROACH_IMPACT_I() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_I);
+    public void testImpact() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
     }
 
-//    @Test
-//    public void testFeedBack() throws Throwable {
-//        testRunEM(GeneMutationSelectionMethod.FEED_DIRECT_IMPACT);
-//    }
+    @Test
+    public void testLatestImpact() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT);
+    }
+
+    @Test
+    public void testLatestImprovement() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT);
+    }
+
+    @Test
+    public void testBalance() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT);
+    }
 
     public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
 
@@ -53,7 +58,7 @@ public class ImpactEMTest extends SpringTestBase {
                 (args) -> {
 
                     args.add("--probOfArchiveMutation");
-                    args.add("1.0");
+                    args.add("0.75");
 
                     args.add("--geneSelectionMethod");
                     args.add(method.toString());

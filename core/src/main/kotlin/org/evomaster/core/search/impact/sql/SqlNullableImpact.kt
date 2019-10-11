@@ -49,8 +49,8 @@ class SqlNullableImpact (
                 geneImpact = geneImpact.copy() as GeneImpact)
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.current  !is SqlNullable){
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
@@ -60,12 +60,12 @@ class SqlNullableImpact (
         }
 
         if (gc.previous == null || (gc.previous as SqlNullable).isPresent != gc.current.isPresent){
-            presentImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            presentImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.current.isPresent)
-                presentImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+                presentImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             else
-                presentImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+                presentImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.previous != null) {
                 return
@@ -79,7 +79,7 @@ class SqlNullableImpact (
                     previous = if (gc.previous == null) null else (gc.previous as SqlNullable).gene,
                     current = gc.current.gene
             )
-            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }
 

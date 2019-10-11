@@ -47,9 +47,9 @@ class SqlXmlGeneImpact (
                 geneImpact = geneImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
 
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
@@ -64,7 +64,7 @@ class SqlXmlGeneImpact (
                 previous = if (gc.previous==null) null else (gc.previous as SqlXMLGene).objectGene,
                 current = gc.current.objectGene
         )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
     }
 

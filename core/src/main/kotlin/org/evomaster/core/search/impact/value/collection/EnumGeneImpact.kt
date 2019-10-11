@@ -46,13 +46,13 @@ class EnumGeneImpact (
         )
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.current !is EnumGene<*>)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be EnumGene")
 
-        values[gc.current.index].countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+        values[gc.current.index].countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 
     override fun validate(gene: Gene): Boolean = gene is EnumGene<*>

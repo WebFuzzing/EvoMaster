@@ -47,15 +47,15 @@ class BinaryGeneImpact (
 
     override fun validate(gene: Gene): Boolean = gene is BooleanGene
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         if (gc.current !is BooleanGene)
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be BooleanGene")
 
         if (gc.current.value){
-            _true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            _true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }else
-            _false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            _false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {

@@ -36,12 +36,12 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
 //    @Test
 //    public void testAPPROACH_IMPACT_N() throws Throwable {
-//        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_N);
+//        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
 //    }
 
     @Test
     public void testAPPROACH_IMPACT_I() throws Throwable {
-        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT_I);
+        testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT);
     }
 
     public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {

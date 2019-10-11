@@ -45,9 +45,9 @@ class ObjectGeneImpact (
                 fields = fields.map { Pair(it.key, it.value.copy()) }.toMap().toMutableMap())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
 
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is ObjectGene)
             throw IllegalArgumentException("gc.current ${gc.current::class.java.simpleName} should be ObjectGene")
@@ -55,7 +55,7 @@ class ObjectGeneImpact (
             gc.current.fields.forEach {
                 val fImpact = fields.getValue(it.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
                 val mutatedGeneWithContext = MutatedGeneWithContext(previous = null, current =  it, action = "none", position = -1)
-                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+                fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             }
             return
         }
@@ -68,7 +68,7 @@ class ObjectGeneImpact (
         }.filter { !it.second }.map { it.first }.forEach { g->
             val fImpact = fields.getValue(g.first.name) as? GeneImpact?:throw IllegalArgumentException("impact should be gene impact")
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = g.second, current =  g.first, action = "none", position = -1)
-            fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+            fImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
 
     }

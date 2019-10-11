@@ -49,8 +49,8 @@ class OptionalGeneImpact (
                 geneImpact = geneImpact.copy() as GeneImpact)
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.current !is OptionalGene)
             throw IllegalStateException("gc.current(${gc.current::class.java.simpleName}) should be OptionalGene")
@@ -59,11 +59,11 @@ class OptionalGeneImpact (
             throw IllegalStateException("gc.pervious (${gc.previous::class.java.simpleName}) should be OptionalGene")
 
         if (gc.previous == null || (gc.previous as OptionalGene).isActive != gc.current.isActive){
-            activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             if (gc.current.isActive)
-                activeImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+                activeImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             else
-                activeImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+                activeImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.previous != null){
                 return
@@ -77,7 +77,7 @@ class OptionalGeneImpact (
                     previous = if (gc.previous==null) null else (gc.previous as OptionalGene).gene,
                     current = gc.current.gene
             )
-            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
 
     }

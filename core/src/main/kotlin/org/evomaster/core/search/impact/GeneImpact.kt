@@ -28,8 +28,8 @@ abstract class GeneImpact (
 
     abstract fun validate(gene : Gene) : Boolean
 
-    open fun countImpactWithMutatedGeneWithContext(gc : MutatedGeneWithContext, impactTargets : Set<Int>, improvedTargets: Set<Int>){
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    open fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean){
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 
     open fun flatViewInnerImpact(): Map<String, Impact> = mutableMapOf()

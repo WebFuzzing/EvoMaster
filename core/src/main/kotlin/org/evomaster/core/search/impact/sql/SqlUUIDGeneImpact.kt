@@ -53,8 +53,8 @@ class SqlUUIDGeneImpact (
                 leastSigBitsImpact = leastSigBitsImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.previous != null && gc.previous !is SqlUUIDGene){
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be SqlNullable")
@@ -64,10 +64,10 @@ class SqlUUIDGeneImpact (
         }
 
         if (gc.previous == null || !gc.current.mostSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).mostSigBits)){
-            mostSigBitsImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            mostSigBitsImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
         if (gc.previous == null || !gc.current.leastSigBits.containsSameValueAs((gc.previous as SqlUUIDGene).leastSigBits)){
-            leastSigBitsImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            leastSigBitsImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }
 

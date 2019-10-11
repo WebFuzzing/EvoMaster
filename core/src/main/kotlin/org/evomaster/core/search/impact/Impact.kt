@@ -22,9 +22,10 @@ abstract class Impact (
 ){
     abstract fun copy() : Impact
 
-    fun countImpactAndPerformance(impactTargets : Set<Int>, improvedTargets : Set<Int>){
+    fun countImpactAndPerformance(impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean){
 
         timesToManipulate += 1
+        if (onlyManipulation) return
         val hasImpact = impactTargets.isNotEmpty()
         if (hasImpact) {
             conTimesOfNoImpacts = 0

@@ -54,8 +54,8 @@ class SqlPrimaryKeyGeneImpact (
         ).plus(geneImpact.flatViewInnerImpact())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current  !is SqlPrimaryKeyGene){
@@ -69,6 +69,6 @@ class SqlPrimaryKeyGeneImpact (
                 previous = if (gc.previous==null) null else (gc.previous as SqlPrimaryKeyGene).gene,
                 current = gc.current.gene
         )
-        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets)
+        geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 }

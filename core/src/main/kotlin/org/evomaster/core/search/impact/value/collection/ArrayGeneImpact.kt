@@ -44,8 +44,8 @@ class ArrayGeneImpact (
                 sizeImpact = sizeImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
         if (gc.current !is ArrayGene<*>)
@@ -54,7 +54,7 @@ class ArrayGeneImpact (
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be ArrayGene")
 
         if (gc.previous != null && (gc.previous as ArrayGene<*>).elements.size != gc.current.elements.size)
-            sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 
     override fun validate(gene: Gene): Boolean = gene is ArrayGene<*>

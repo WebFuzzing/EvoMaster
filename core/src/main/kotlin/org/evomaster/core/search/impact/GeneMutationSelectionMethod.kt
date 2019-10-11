@@ -15,11 +15,15 @@ enum class GeneMutationSelectionMethod(val archive: Boolean = true, val adaptive
     /**
      * select a percentage (specified in [EMConfig.perOfCandidateGenesToMutate]) of genes which have lower degree of no impacts
      */
-    //APPROACH_IMPACT_N,
+    APPROACH_IMPACT,
     /**
      * select a percentage (specified in [EMConfig.perOfCandidateGenesToMutate]) of genes which have higher impacts
      */
-    APPROACH_IMPACT_I,
+    APPROACH_LATEST_IMPACT,
+
+    APPROACH_LATEST_IMPROVEMENT,
+
+    BALANCE_IMPACT_NOIMPACT,
 
     //FEED_DIRECT_IMPACT,
 

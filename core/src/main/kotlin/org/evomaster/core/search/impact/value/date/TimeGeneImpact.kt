@@ -59,8 +59,8 @@ class TimeGeneImpact(
     override fun validate(gene: Gene): Boolean = gene is TimeGene
 
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
@@ -71,11 +71,11 @@ class TimeGeneImpact(
             throw IllegalStateException("gc.previous (${gc.previous::class.java.simpleName}) should be TimeGene")
 
         if (gc.previous == null || !gc.current.hour.containsSameValueAs((gc.previous as TimeGene).hour))
-            hourGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            hourGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         if (gc.previous == null || !gc.current.minute.containsSameValueAs((gc.previous as TimeGene).minute))
-            minuteGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            minuteGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         if (gc.previous == null || !gc.current.second.containsSameValueAs((gc.previous as TimeGene).second))
-            secondGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets)
+            secondGeneImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
