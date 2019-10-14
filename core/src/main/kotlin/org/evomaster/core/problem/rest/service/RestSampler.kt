@@ -865,4 +865,20 @@ class RestSampler : Sampler<RestIndividual>(){
             }
         }
     }
+
+    /**
+     * When an individual has no objects attached (as is often the case) [addObjects] should create all relevant objects
+     * and add them to the attached [usedObjects].
+     * Note: I expect this will change, as I want the system to first check if a relevant object exists, and only then
+     * create a new one if needed.
+     *
+     */
+
+    fun addObjects(individual: RestIndividual){
+        val actions = individual.seeActions().filterIsInstance<RestCallAction>()
+        actions.forEach { action ->
+            addObjectsForAction(action, individual)
+        }
+    }
+
 }
