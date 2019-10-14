@@ -31,6 +31,7 @@ class GenConfig {
         BOTH
     }
 
+    var groupId = "org.evomaster"
     var projectName = "auto-rest-example"
     var csName = "cs"
     var emName = "em"
@@ -75,8 +76,9 @@ class GenConfig {
 
     fun getCsOutputFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.srcFolder}"
     fun getCsResourceFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.resource}"
-    private fun getRootFolder() = "${FormatUtil.formatFolder(outputFolder)}${if (outputContent == OutputContent.BOTH) "$projectName" else ""}"
-    fun getCsRootFolder() = "${FormatUtil.formatFolder(getRootFolder())}${if (outputType != OutputType.SOURCE) csName else ""}"
-    fun getEmOutputFolder() = "${FormatUtil.formatFolder(getRootFolder())}$emName/$srcFolder/${language.srcFolder}"
+    fun getProjectFolder() = "${FormatUtil.formatFolder(outputFolder)}${if (outputContent == OutputContent.BOTH) "$projectName" else ""}"
+    fun getCsRootFolder() = "${FormatUtil.formatFolder(getProjectFolder())}${if (outputType != OutputType.SOURCE) csName else ""}"
+    fun getEmRootFolder() = "${FormatUtil.formatFolder(getProjectFolder())}${if (outputType != OutputType.SOURCE) emName else ""}"
+    fun getEmOutputFolder() = "${FormatUtil.formatFolder(getProjectFolder())}$emName/$srcFolder/${language.srcFolder}"
 
 }

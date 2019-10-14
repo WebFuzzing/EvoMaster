@@ -16,4 +16,6 @@ interface DeclarationScript : ScriptTemplate {
     fun generateSetterStatement(varName : String) : String
 
     fun getTags() : List<String>
+
+
 }

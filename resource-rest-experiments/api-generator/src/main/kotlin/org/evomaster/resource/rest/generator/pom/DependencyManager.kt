@@ -55,6 +55,7 @@ object DependencyManager{
 
     val P6SPY = ArtifactTemplate("p6spy", "p6spy", "p6spy.version")
 
+    val EVOMASTER_CORE = ArtifactTemplate("org.evomaster", "evomaster-core", "evomaster.version")
     val EVOMASTER_CLIENT_JAVA_CONTROLLER = ArtifactTemplate("org.evomaster", "evomaster-client-java-controller", "evomaster.version")
     val EVOMASTER_CLIENT_JAVA_INSTRUMENTATION = ArtifactTemplate("org.evomaster", "evomaster-client-java-instrumentation", "evomaster.version")
 

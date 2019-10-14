@@ -11,6 +11,8 @@ interface ScriptTemplate {
 
     fun isStatic() : Boolean = false
 
+    fun isFinal() : Boolean = false
+
     fun generate(types : RegisterType) : String
 
 }

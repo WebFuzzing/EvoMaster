@@ -79,4 +79,8 @@ interface JavaTemplate {
     fun branchesMessage(pros : String, branchIndicator : String) = "${branchMsgVariable()}.append(\"$pros=\" + $branchIndicator+\";\");"
 
     fun getBranchMsg() = "${branchMsgVariable()}.toString()"
+
+    fun getFinal() = "final"
+
+    fun getStatic() = "static"
 }

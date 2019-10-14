@@ -10,7 +10,7 @@ class AppliedJavaType : ConstantTypeScript {
 
     private val map = CommonTypes.values().map {
         when(it){
-            CommonTypes.BOOLEAN -> Pair(it, "bool")
+            CommonTypes.BOOLEAN -> Pair(it, "boolean")
             CommonTypes.STRING -> Pair(it, "String")
             CommonTypes.OBJ_BOOLEAN -> Pair(it, "Boolean")
             CommonTypes.OBJ_DOUBLE -> Pair(it, "Double")
@@ -28,7 +28,18 @@ class AppliedJavaType : ConstantTypeScript {
             "ResponseEntity" to "ResponseEntity",
             "Docket" to "Docket",
             "ApiInfo" to "ApiInfo",
-            "String[]" to "String[]"
+            "String[]" to "String[]",
+            "Class<?>" to "Class<?>",
+            "ConfigurableApplicationContext" to "ConfigurableApplicationContext",
+            "int" to "int",
+            "Connection" to "Connection",
+            "ProblemInfo" to "ProblemInfo",
+            "List<AuthenticationDto>" to "List<AuthenticationDto>",
+            "SutInfoDto.OutputFormat" to  "SutInfoDto.OutputFormat",
+            "InstrumentedSutStarter" to "InstrumentedSutStarter",
+            "SutController" to "SutController",
+            "RemoteController" to "RemoteController"
+
     )
 
     override fun getGenericTypes(list: List<String>): Map<String, String> {
