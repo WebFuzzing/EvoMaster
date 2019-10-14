@@ -1,6 +1,6 @@
-package org.evomaster.e2etests.spring.examples.taintMulti;
+package org.evomaster.e2etests.spring.examples.testability;
 
-import com.foo.rest.examples.spring.taintMulti.TaintMultiController;
+import com.foo.rest.examples.spring.testability.TestabilityController;
 import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
@@ -13,21 +13,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by arcuri82 on 06-Sep-19.
  */
-public class TaintMultiEMTest extends SpringTestBase {
+public class TestabilityEMTest extends SpringTestBase {
 
     @BeforeAll
     public static void initClass() throws Exception {
 
-        SpringTestBase.initClass(new TaintMultiController());
+        SpringTestBase.initClass(new TestabilityController());
     }
 
     @Test
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "TaintMultiEM",
-                "org.bar.TaintMultiEM",
-                5000,
+                "TestabilityEM",
+                "org.bar.TestabilityEM",
+                30_000,
+                true,
                 (args) -> {
 
                     args.add("--baseTaintAnalysisProbability");
@@ -37,8 +38,10 @@ public class TaintMultiEMTest extends SpringTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintMulti/separated/{x}/{date}", "separated");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/taintMulti/together/{x}-{date}", "together");
-                });
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
+                },
+                10);
     }
 }

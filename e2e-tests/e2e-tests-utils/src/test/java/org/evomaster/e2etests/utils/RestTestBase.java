@@ -74,9 +74,10 @@ public abstract class RestTestBase {
             String outputFolderName,
             String fullClassName,
             int iterations,
+            boolean createTests,
             Consumer<List<String>> lambda) throws Throwable{
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, true, lambda);
+        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests, lambda, 3);
     }
 
     protected void runTestHandlingFlaky(
@@ -84,13 +85,14 @@ public abstract class RestTestBase {
             String fullClassName,
             int iterations,
             boolean createTests,
-            Consumer<List<String>> lambda) throws Throwable{
+            Consumer<List<String>> lambda,
+            int timeoutMinutes) throws Throwable{
 
         /*
             Years have passed, still JUnit 5 does not handle global test timeouts :(
             https://github.com/junit-team/junit5/issues/80
          */
-        assertTimeoutPreemptively(Duration.ofMinutes(3), () -> {
+        assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
             ClassName className = new ClassName(fullClassName);
             clearGeneratedFiles(outputFolderName, className);
 
@@ -108,17 +110,21 @@ public abstract class RestTestBase {
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, iterations, true, lambda);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, iterations, true, lambda, 3);
     }
+
+
+
 
     protected void runTestHandlingFlakyAndCompilation(
             String outputFolderName,
             String fullClassName,
             int iterations,
             boolean createTests,
-            Consumer<List<String>> lambda) throws Throwable {
+            Consumer<List<String>> lambda,
+            int timeoutMinutes) throws Throwable {
 
-        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda);
+        runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests,lambda, timeoutMinutes);
 
         if (createTests){
             assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {

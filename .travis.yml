@@ -2,7 +2,7 @@ language: java
 sudo: false
 
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 # As the build will download JAR files from Maven Central, optimize their storage,
 # so they do not get re-downloaded each time
@@ -18,4 +18,4 @@ services:
   - docker
 
 
-script: mvn clean verify --fae
+script: travis_wait 50 mvn clean verify --fae
