@@ -58,6 +58,8 @@ class RestSampler : Sampler<RestIndividual>(){
 
     private val usedObjects: UsedObjects = UsedObjects()
 
+    private lateinit var swagger: Swagger
+
     @PostConstruct
     private fun initialize() {
 
@@ -81,7 +83,7 @@ class RestSampler : Sampler<RestIndividual>(){
         val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
                 ?: throw IllegalStateException("Missing information about the Swagger URL")
 
-        val swagger = getSwagger(swaggerURL)
+        swagger = getSwagger(swaggerURL)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
@@ -879,6 +881,10 @@ class RestSampler : Sampler<RestIndividual>(){
         actions.forEach { action ->
             addObjectsForAction(action, individual)
         }
+    }
+
+    fun getSwagger(): Swagger{
+        return swagger
     }
 
 }

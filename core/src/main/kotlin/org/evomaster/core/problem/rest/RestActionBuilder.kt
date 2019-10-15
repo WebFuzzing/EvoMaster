@@ -14,6 +14,7 @@ import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.Exception
+import java.sql.Ref
 import java.util.concurrent.atomic.AtomicInteger
 
 
@@ -63,6 +64,32 @@ class RestActionBuilder {
                             val produces = o.value.produces ?: listOf()
 
                             val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params, produces = produces)
+
+
+                            /*This section collects information regarding the types of data that are
+                            used in the response of an action (if such data references are provided in the
+                            swagger definition
+                            */
+                            val responses = o.value.responses.filter{ it.value.responseSchema != null}
+
+                            if(responses.isNotEmpty()){
+                                responses.filter { it.value.responseSchema is RefModel }.forEach { (k, v) ->
+                                    action.addRef((v.responseSchema as RefModel).simpleRef)
+                                }
+                            }
+
+                            /*
+                            This section collects information on types required for the body parameters.
+                            val bodyParams = o.value.parameters.filterIsInstance<BodyParameter>()
+
+                            if (bodyParams.isNotEmpty()) {
+                                bodyParams.forEach {
+                                    if ((it as BodyParameter).schema is RefModel){
+                                        action.addRef((it.schema as RefModel).simpleRef)
+                                    }
+                                }
+                            }
+                            */
 
                             if(doParseDescription) {
                                 var info = o.value.description
