@@ -471,7 +471,10 @@ class TestCaseWriter {
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
         lines.add(".assertThat()")
 
-        if (res.getBodyType() == null) lines.add(".contentType(\"\")")
+        if (res.getBodyType() == null) {
+            lines.add(".contentType(\"\")")
+            lines.add(".body(isEmptyOrNullString())")
+        }
         else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
@@ -481,7 +484,7 @@ class TestCaseWriter {
 
         if (res.getBodyType() != null) {
             val type = res.getBodyType()!!
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().contains("+json")) {
                 when (bodyString?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
@@ -527,12 +530,38 @@ class TestCaseWriter {
                     }
                 }
             }
+            else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)){
+                lines.add(".body(containsString(\"${bodyString}\"))")
+            }
         }
         //handleExpectations(res, lines, true)
     }
 
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
-        resContents.keys
+        val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
+
+        flatContent.keys
+                .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
+                .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
+                .forEach {
+                    val stringKey = it.joinToString(separator = ".")
+                    val actualValue = flatContent[it]
+                    if(actualValue!=null){
+                        val printableTh = handleFieldValues(actualValue)
+                        if (printableTh != "null"
+                                && printableTh != NOT_COVERED_YET
+                                && !printableTh.contains("logged")
+                        ) {
+                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            if(stringKey != "id") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            else{
+                                if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
+                            }
+                        }
+                    }
+                }
+
+
                 /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
                 * Even relatively minor timing changes (one second either way) could cause tests to fail
                 * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
@@ -540,7 +569,7 @@ class TestCaseWriter {
                 * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
                 *
                 * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
-                */
+              resContents.keys
                 .filter{ !(it as String).contains("timestamp")}
                 .forEach {
                     val actualValue = resContents[it]
@@ -557,7 +586,7 @@ class TestCaseWriter {
                             }
                         }
                     }
-                }
+                }*/
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
@@ -699,8 +728,9 @@ class TestCaseWriter {
     private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines) {
         if (result.getBodyType() != null) {
             // if there is a body, add expectations based on the body type. Right now only application/json is supported
-            when (result.getBodyType().toString()) {
-                "application/json" -> {
+            //when (result.getBodyType().toString()) {
+            when {
+                result.getBodyType()!!.isCompatible(MediaType.APPLICATION_JSON_TYPE) -> {
                     when (result.getBody()?.first()) {
                         '[' -> {
                             // This would be run if the JSON contains an array of objects
@@ -730,29 +760,25 @@ class TestCaseWriter {
         }
     }
 
-    /**
-     * [applyEscapes] currently sets up the string for printing.
-     * This includes escaping special chars for java and kotlin.
-     * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
-     * the symbol signifies an object reference (which would likely cause the assertion to fail).
-     * TODO: Tests are needed to make sure this does not break.
-     */
+    fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any>{
+        val returnMap = mutableMapOf<MutableList<*>, Any>()
+        if (v is Map<*,*>){
+            v.forEach { key, value ->
+                if (value == null){
+                    return@forEach
+                }
+                else{
+                    val innerkey = k.plus(key) as MutableList
+                    val innerMap = flattenForAssert(innerkey, value)
+                    returnMap.putAll(innerMap)
+                }
 
-    /*
+            }
+        }
+        else{
+            returnMap[k] = v
+        }
+        return returnMap
+    }
 
-
-    private fun applyEscapes(string: String): String {
-        val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
-        val ret = string.split("@")[0] //first split off any reference that might differ between runs
-                .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
-                .replace("""\\""", """\\\\""")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-
-
-
-        if (format.isKotlin()) return ret.replace("\$", "\\\$")
-        else return ret
-    }*/
 }
