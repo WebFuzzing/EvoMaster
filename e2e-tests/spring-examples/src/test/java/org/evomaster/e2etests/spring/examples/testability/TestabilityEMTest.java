@@ -6,6 +6,7 @@ import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by arcuri82 on 06-Sep-19.
  */
+@Disabled("Too flaky, and getting too expensive to increase budget. Should check-out again once improved mutation strategies")
 public class TestabilityEMTest extends SpringTestBase {
 
     @BeforeAll
