@@ -737,9 +737,8 @@ class EMConfig {
         FEED_BACK
     }
 
-    @Experimental
-    @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")
-    var baseTaintAnalysisProbability = 0.0
+    @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
+    var baseTaintAnalysisProbability = 0.9
 
 
     @Experimental
