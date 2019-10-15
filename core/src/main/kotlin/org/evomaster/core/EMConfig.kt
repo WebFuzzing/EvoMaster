@@ -318,7 +318,7 @@ class EMConfig {
                     val returnType = it.returnType.javaType as Class<*>
                     when {
                         java.lang.Boolean.TYPE.isAssignableFrom(returnType) -> it.getter.call(this) as Boolean
-                        it.annotations.find { it is Probability } != null -> (it.getter.call(this) as Double) > 0
+                        it.annotations.find {p ->  p is Probability && p.activating} != null -> (it.getter.call(this) as Double) > 0
                         else -> false
                     }
                 }
@@ -369,7 +369,15 @@ class EMConfig {
      */
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
-    annotation class Probability
+    annotation class Probability(
+            /**
+             * Specify if this probability would activate a functionality if greater than 0.
+             * If not, it might still not be used, depending on other configurations.
+             * This is mainly needed when dealing with @Experimental probabilities that must
+             * be put to 0 if they would activate a new feature that is still unstable
+             */
+            val activating : Boolean = true
+    )
 
 
 
@@ -442,7 +450,7 @@ class EMConfig {
     var probOfRandomSampling = 0.5
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
-    @PercentageAsProbability
+    @PercentageAsProbability(true)
     var focusedSearchActivationTime = 0.5
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
@@ -709,7 +717,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions")
-    @Probability
+    @Probability(false)
     var probOfSelectFromDatabase = 0.1
 
     @Experimental
@@ -718,22 +726,22 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
-    @Probability
+    @Probability(false)
     var S1iR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply S1dR when resource sampling strategy is 'Customized'")
-    @Probability
+    @Probability(false)
     var S1dR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply S2dR when resource sampling strategy is 'Customized'")
-    @Probability
+    @Probability(false)
     var S2dR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply SMdR when resource sampling strategy is 'Customized'")
-    @Probability
+    @Probability(false)
     var SMdR : Double = 0.25
 
     @Experimental
@@ -743,7 +751,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability
+    @PercentageAsProbability(false)
     var perOfCandidateGenesToMutate = 0.1
 
     @Experimental
