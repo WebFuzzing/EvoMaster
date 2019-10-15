@@ -104,6 +104,12 @@ class TestCaseWriter {
         return lines
     }
 
+    private fun appendSemicolon(lines: Lines) {
+        if (format.isJava()) {
+            lines.append(";")
+        }
+    }
+
     private fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
@@ -149,22 +155,13 @@ class TestCaseWriter {
                     }
                 }
 
-        lines.add(".dtos()" +
-                when {
-                    format.isJava() -> ";"
-                    format.isKotlin() -> ""
-                    else -> ""
-                })
+        lines.add(".dtos()")
+        appendSemicolon(lines)
 
         lines.deindent()
 
-        var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
-        when {
-            format.isJava() -> execInsertionsLine += ";"
-            format.isKotlin() -> {
-            }
-        }
-        lines.add(execInsertionsLine)
+        lines.add("controller.execInsertionsIntoDatabase(insertions)")
+        appendSemicolon(lines)
     }
 
     private fun getPrintableValue(g: Gene): String {
@@ -356,7 +353,7 @@ class TestCaseWriter {
                 counter++
             }
         } else {
-            lines.append(";")
+            appendSemicolon(lines)
             lines.deindent(2)
         }
     }
@@ -388,18 +385,22 @@ class TestCaseWriter {
 
         } else {
 
-            lines.append("$baseUrlOfSut + ")
+            if(format.isJava()) {
+                lines.append("$baseUrlOfSut + \"")
+            } else {
+                lines.append("\"\${$baseUrlOfSut}")
+            }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
+                lines.append("${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
                 //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)
                 val elements = call.path.resolveOnlyQuery(call.parameters)
 
-                lines.append("\"$path?\" + ")
+                lines.append("$path?\" + ")
 
                 lines.indented {
                     (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ") }
@@ -689,10 +690,7 @@ class TestCaseWriter {
             if (configuration.enableCompleteObjects == false) {
                 addExpectationsWithoutObjects(result, lines)
             }
-            lines.append(when {
-                format.isJava() -> ";"
-                else -> ""
-            })
+            appendSemicolon(lines)
         }
     }
 
