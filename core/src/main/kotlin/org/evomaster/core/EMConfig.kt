@@ -9,6 +9,7 @@ import org.evomaster.core.output.OutputFormat
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
+typealias PercentageAsProbability = EMConfig.Probability
 
 /**
  * Class used to hold all the main configuration properties
@@ -371,6 +372,7 @@ class EMConfig {
     annotation class Probability
 
 
+
     /**
      * This annotation is used to represent properties controlling
      * features that are still work in progress.
@@ -440,7 +442,7 @@ class EMConfig {
     var probOfRandomSampling = 0.5
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
-    @Min(0.0) @Max(1.0)
+    @PercentageAsProbability
     var focusedSearchActivationTime = 0.5
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
@@ -741,7 +743,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
-    @Probability
+    @PercentageAsProbability
     var perOfCandidateGenesToMutate = 0.1
 
     @Experimental

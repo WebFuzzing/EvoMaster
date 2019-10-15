@@ -3,6 +3,8 @@ package org.evomaster.core
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 internal class EMConfigTest{
 
@@ -110,10 +112,9 @@ internal class EMConfigTest{
         assertEquals("", opt.value(options))
     }
 
-    @Test
-    fun testProbability(){
-
-        val name = "probOfRandomSampling"
+    @ParameterizedTest
+    @ValueSource(strings = ["probOfRandomSampling", "perOfCandidateGenesToMutate", "focusedSearchActivationTime"])
+    fun testProbability(name: String){
 
         val parser = EMConfig.getOptionParser()
         val opt = parser.recognizedOptions()[name] ?:
