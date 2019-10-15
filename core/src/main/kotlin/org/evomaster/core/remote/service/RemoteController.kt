@@ -9,9 +9,9 @@ import org.evomaster.client.java.controller.api.dto.database.operations.QueryRes
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.logging.LoggingUtil
-import org.evomaster.core.problem.rest.service.RestFitness
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
+import org.glassfish.jersey.client.ClientConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import javax.annotation.PostConstruct
@@ -198,7 +198,7 @@ class RemoteController() : DatabaseExecutor {
 
     fun checkConnection() {
 
-        try {
+        val response = try {
             getWebTarget()
                     .path(ControllerConstants.CONTROLLER_INFO)
                     .request(MediaType.APPLICATION_JSON_TYPE)
@@ -206,6 +206,8 @@ class RemoteController() : DatabaseExecutor {
         } catch (e: Exception) {
             throw NoRemoteConnectionException(port, host)
         }
+
+        response.close()
     }
 
     fun startANewSearch(): Boolean {
