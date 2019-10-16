@@ -3,7 +3,10 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
- * created by manzh on 2019-09-27
+ * used to collect gene independency degree
+ * @property mutatedtimes mutation times of a gene
+ * @property resetTimes times to reset an valid mutation boundary.
+ * @property degreeOfIndependence a degree of gene independency that may be derived based on [mutatedtimes] and [resetTimes]
  */
 class GeneIndependenceInfo(
         var degreeOfIndependence : Double = 0.0,

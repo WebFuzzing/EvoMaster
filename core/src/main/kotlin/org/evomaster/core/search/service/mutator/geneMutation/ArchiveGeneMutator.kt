@@ -84,12 +84,6 @@ class ArchiveMutator {
             return genes
         }
 
-        /**
-         * decide genes to mutate
-         * 1. num
-         * 2. select 'num' with probability based on its impact rank
-         */
-
         return selectNSorted(genes, 1)
     }
 
