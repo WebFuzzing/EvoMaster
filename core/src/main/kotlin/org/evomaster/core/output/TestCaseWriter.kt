@@ -533,7 +533,14 @@ class TestCaseWriter {
                         // Currently, it converts the contents to String.
                         // TODO: if the contents are not a valid form of that type, expectations should be developed to handle the case
                         //val resContents = Gson().fromJson("\"" + res.getBody() + "\"", String::class.java)
-                        lines.add(".body(containsString(\"${bodyString}\"))")
+                        //lines.add(".body(containsString(\"${bodyString}\"))")
+                        if(bodyString.isNullOrBlank()){
+                            lines.add(".body(isEmptyOrNullString())")
+                        }else {
+                            lines.add(".body(containsString(\"${
+                            GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                            }\"))")
+                        }
                     }
                 }
             }
