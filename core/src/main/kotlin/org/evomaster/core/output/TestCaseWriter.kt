@@ -552,8 +552,9 @@ class TestCaseWriter {
 
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
         if (resContents.isEmpty()){
+            // If this executes, the result contains an empty collection.
             lines.add(".body(\"size()\", numberMatches(0))")
-            lines.add(".body(containsString(\"{}\"))") // If this executes, the result contains an empty collection.
+            //lines.add(".body(containsString(\"{}\"))")
             if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
