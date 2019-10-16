@@ -511,7 +511,9 @@ class TestCaseWriter {
                         }
                         else{
                             // the object is empty
-                            lines.add(".body(\"isEmpty()\", is(true))")
+                            if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
+                            else lines.add(".body(\"isEmpty()\", is(true))")
+                            //lines.add(".body(\"isEmpty()\", is(true))")
                         }
                     }
                     '{' -> {
@@ -552,7 +554,8 @@ class TestCaseWriter {
         if (resContents.isEmpty()){
             lines.add(".body(\"size()\", numberMatches(0))")
             lines.add(".body(containsString(\"{}\"))") // If this executes, the result contains an empty collection.
-            lines.add(".body(\"isEmpty()\", is(true))")
+            if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
+            else lines.add(".body(\"isEmpty()\", is(true))")
         }
 
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
