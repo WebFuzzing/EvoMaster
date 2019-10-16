@@ -87,7 +87,6 @@ abstract class GeneImpactTest {
                     assertEquals(previous.timesToManipulate + 1, timesToManipulate)
 
                     assertEquals(previous.timesOfNoImpacts + 1, timesOfNoImpacts)
-                    assertEquals(previous.conTimesOfNoImpacts + 1, conTimesOfNoImpacts)
                     fakeImpactTargets.forEach { t->
                         val expectedImpact = previous.timesOfImpact[t]?:0
                         assertEquals(expectedImpact, timesOfImpact[t]?:0)
@@ -104,7 +103,6 @@ abstract class GeneImpactTest {
                     assertEquals(previous.timesToManipulate + 1, timesToManipulate)
 
                     assertEquals(previous.timesOfNoImpacts, timesOfNoImpacts)
-                    assertEquals(0, conTimesOfNoImpacts)
 
                     fakeImpactTargets.forEach { t->
                         assertNotNull(timesOfImpact[t])
@@ -126,7 +124,6 @@ abstract class GeneImpactTest {
                     assertEquals(previous.timesToManipulate + 1, timesToManipulate)
 
                     assertEquals(previous.timesOfNoImpacts, timesOfNoImpacts)
-                    assertEquals(0, conTimesOfNoImpacts)
 
                     fakeImpactTargets.forEach { t->
                         assertNotNull(timesOfImpact[t])
@@ -154,7 +151,6 @@ abstract class GeneImpactTest {
                     assertEquals(previous.timesToManipulate, timesToManipulate)
 
                     assertEquals(previous.timesOfNoImpacts, timesOfNoImpacts)
-                    assertEquals(previous.conTimesOfNoImpacts, conTimesOfNoImpacts)
 
                     assert(previous.timesOfImpact == timesOfImpact)
                     assert(previous.noImpactFromImpact == noImpactFromImpact)

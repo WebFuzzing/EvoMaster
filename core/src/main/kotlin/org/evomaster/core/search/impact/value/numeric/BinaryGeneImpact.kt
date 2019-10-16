@@ -15,7 +15,6 @@ class BinaryGeneImpact (
         degree: Double = 0.0,
         timesToManipulate : Int = 0,
         timesOfNoImpacts : Int = 0,
-        conTimesOfNoImpacts : Int = 0,
         timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImprovement : MutableMap<Int, Int> = mutableMapOf(),
@@ -26,7 +25,6 @@ class BinaryGeneImpact (
         degree = degree,
         timesToManipulate = timesToManipulate,
         timesOfNoImpacts = timesOfNoImpacts,
-        conTimesOfNoImpacts = conTimesOfNoImpacts,
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement
@@ -37,7 +35,6 @@ class BinaryGeneImpact (
                 degree = degree,
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
-                conTimesOfNoImpacts = conTimesOfNoImpacts,
                 timesOfImpact= timesOfImpact.toMutableMap(),
                 noImpactFromImpact = noImpactFromImpact.toMutableMap(),
                 noImprovement = noImprovement.toMutableMap(),

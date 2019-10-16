@@ -11,7 +11,6 @@ class DoubleGeneImpact (
         degree: Double = 0.0,
         timesToManipulate : Int = 0,
         timesOfNoImpacts : Int = 0,
-        conTimesOfNoImpacts : Int = 0,
         timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImprovement : MutableMap<Int, Int> = mutableMapOf()
@@ -20,18 +19,17 @@ class DoubleGeneImpact (
         degree = degree,
         timesToManipulate = timesToManipulate,
         timesOfNoImpacts = timesOfNoImpacts,
-        conTimesOfNoImpacts = conTimesOfNoImpacts,
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement
 ) {
 
     override fun copy(): DoubleGeneImpact {
-        return DoubleGeneImpact(id = id,
+        return DoubleGeneImpact(
+                id = id,
                 degree = degree,
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
-                conTimesOfNoImpacts = conTimesOfNoImpacts,
                 timesOfImpact= timesOfImpact.toMutableMap(),
                 noImpactFromImpact = noImpactFromImpact.toMutableMap(),
                 noImprovement = noImprovement.toMutableMap())

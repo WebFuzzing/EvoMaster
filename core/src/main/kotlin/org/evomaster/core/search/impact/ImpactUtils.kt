@@ -156,5 +156,24 @@ class ImpactUtils {
                 else -> gene.name
             }
         }
+
+        fun getImpactDistribution(impacts : List<Impact>, property: ImpactProperty, targets : Set<Int>) : ImpactPropertyDistribution{
+            val specified = impacts.filter {
+                when(property){
+                    ImpactProperty.TIMES_NO_IMPACT -> it.timesOfNoImpacts > 0
+                    ImpactProperty.TIMES_IMPACT ->  it.timesOfImpact.any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
+                    ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> it.noImpactFromImpact.any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0 }
+                    ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> it.noImprovement.any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
+                }
+            }.size
+            return when{
+                specified == 0 -> ImpactPropertyDistribution.NONE
+                specified == impacts.size -> ImpactPropertyDistribution.ALL
+                specified < impacts.size * 0.3 -> ImpactPropertyDistribution.FEW
+                specified > impacts.size * 0.7 -> ImpactPropertyDistribution.MOST
+                else -> ImpactPropertyDistribution.EQUAL
+            }
+        }
+
     }
 }

@@ -728,9 +728,18 @@ class EMConfig {
     var probOfArchiveMutation = 0.0
 
     @Experimental
-    @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
+    @Cfg("Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
     @Min(0.0) @Max(1.0)
-    var perOfCandidateGenesToMutate = 0.1
+    var startPerOfCandidateGenesToMutate = 0.9
+
+    @Experimental
+    @Cfg("Specify a percentage (after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
+    @Min(0.0) @Max(1.0)
+    var endPerOfCandidateGenesToMutate = 0.1
+
+    @Experimental
+    @Cfg("Specify whether to decide a top percent of genes to mutate adaptively")
+    var adaptivePerOfCandidateGenesToMutate = false
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")

@@ -37,27 +37,29 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
-        return individual.seeGenes(filterMutate).filter { it.isMutable() }.run {
-            val notReached = this.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}
-            if (notReached.isEmpty()) this else notReached
+        val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
+        if (!archiveMutator.enableArchiveMutation())
+            return mutable
+        mutable.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}.let {
+            if (it.isNotEmpty()) return it
         }
+        return mutable
     }
 
     /**
-     * Select genes to mutate based on Archive, there are several options:
-     *      1. avoid to mutate genes that has less impacts
-     *      2. prefer to genes that has more impacts
-     *      3. prefer to genes that has recent improvements
+     * with a probability, select genes to mutate based on Archive
      */
     override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        val selectedGene = if(randomness.nextBoolean(config.probOfArchiveMutation)){
-            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes)
-        } else genesToMutate
+        if(archiveMutator.applyArchiveSelection()){
+            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes).let {
+                if (it.isNotEmpty()) return it
+            }
+        }
 
-        return selectGenesByDefault(selectedGene, individual)
+        return selectGenesByDefault(genesToMutate, individual)
     }
 
     private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{

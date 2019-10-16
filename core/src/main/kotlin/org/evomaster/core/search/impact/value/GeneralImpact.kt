@@ -19,7 +19,6 @@ class GeneralImpact (
         degree = degree,
         timesToManipulate = timesToManipulate,
         timesOfNoImpacts = timesOfNoImpacts,
-        conTimesOfNoImpacts = conTimesOfNoImpacts,
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement
@@ -31,7 +30,6 @@ class GeneralImpact (
                 degree = degree,
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
-                conTimesOfNoImpacts = conTimesOfNoImpacts,
                 timesOfImpact= timesOfImpact.toMutableMap(),
                 noImpactFromImpact = noImpactFromImpact.toMutableMap(),
                 noImprovement = noImprovement.toMutableMap())

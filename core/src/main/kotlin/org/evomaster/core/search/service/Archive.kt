@@ -147,14 +147,14 @@ class Archive<T> where T : Individual {
             If possible avoid sampling tests that did timeout
          */
         val chosen = if (!notTimedout.isEmpty()) {
-            if (archiveMutator.enableArchiveSelection())
-                archiveMutator.selectIndividual(notTimedout)
-            else
+//            if (archiveMutator.enableArchiveSelection())
+//                archiveMutator.selectIndividual(notTimedout)
+//            else
                 randomness.choose(notTimedout)
         } else {
-            if (archiveMutator.enableArchiveSelection())
-                archiveMutator.selectIndividual(candidates)
-            else
+//            if (archiveMutator.enableArchiveSelection())
+//                archiveMutator.selectIndividual(candidates)
+//            else
                 randomness.choose(candidates)
         }
 

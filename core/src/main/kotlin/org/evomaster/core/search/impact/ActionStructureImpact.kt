@@ -11,7 +11,6 @@ class ActionStructureImpact (
         degree: Double = 0.0,
         timesToManipulate : Int = 0,
         timesOfNoImpacts : Int = 0,
-        conTimesOfNoImpacts : Int = 0,
         timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImprovement : MutableMap<Int, Int> = mutableMapOf(),
@@ -22,7 +21,6 @@ class ActionStructureImpact (
         degree = degree,
         timesToManipulate = timesToManipulate,
         timesOfNoImpacts = timesOfNoImpacts,
-        conTimesOfNoImpacts = conTimesOfNoImpacts,
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement){
@@ -67,7 +65,6 @@ class ActionStructureImpact (
                 degree = degree,
                 timesToManipulate = timesToManipulate,
                 timesOfNoImpacts = timesOfNoImpacts,
-                conTimesOfNoImpacts = conTimesOfNoImpacts,
                 timesOfImpact= timesOfImpact,
                 noImpactFromImpact = noImpactFromImpact,
                 noImprovement = noImprovement,

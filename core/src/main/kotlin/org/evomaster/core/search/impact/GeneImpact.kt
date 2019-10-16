@@ -11,7 +11,6 @@ abstract class GeneImpact (
         degree: Double,
         timesToManipulate : Int = 0,
         timesOfNoImpacts : Int = 0,
-        conTimesOfNoImpacts : Int = 0,
         timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImprovement : MutableMap<Int, Int> = mutableMapOf()
@@ -20,7 +19,6 @@ abstract class GeneImpact (
         degree = degree,
         timesToManipulate = timesToManipulate,
         timesOfNoImpacts = timesOfNoImpacts,
-        conTimesOfNoImpacts = conTimesOfNoImpacts,
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement
