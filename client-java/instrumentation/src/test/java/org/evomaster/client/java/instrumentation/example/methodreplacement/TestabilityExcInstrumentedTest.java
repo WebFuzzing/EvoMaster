@@ -511,7 +511,7 @@ public class TestabilityExcInstrumentedTest {
     public void testUnknownPatternDateFormatParse() throws Exception {
         TestabilityExc te = getInstance();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMDD HH:SS");
+        SimpleDateFormat sdf = new SimpleDateFormat("YYYYMMdd HH:mm");
         assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "07/"));
 
         assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
@@ -528,7 +528,7 @@ public class TestabilityExcInstrumentedTest {
     public void testDateFormatParse() throws Exception {
         TestabilityExc te = getInstance();
 
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYY-MM-DD HH:SS");
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm");
         assertThrows(Exception.class, () -> te.dateFormatParse(sdf, "1234-aa-aa"));
 
         assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.METHOD_REPLACEMENT));

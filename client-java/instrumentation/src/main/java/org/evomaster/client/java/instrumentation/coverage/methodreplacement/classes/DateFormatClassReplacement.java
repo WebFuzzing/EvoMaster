@@ -17,8 +17,8 @@ import java.util.Objects;
 
 public class DateFormatClassReplacement implements MethodReplacementClass {
 
-    public static final String YYYY_MM_DD = "YYYY-MM-DD";
-    public static final String YYYY_MM_DD_HH_SS = "YYYY-MM-DD HH:SS";
+    public static final String YYYY_MM_DD = "yyyy-MM-dd";
+    public static final String YYYY_MM_DD_HH_MM = "yyyy-MM-dd HH:mm";
 
     @Override
     public Class<?> getTargetClass() {
@@ -34,8 +34,8 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
                 case YYYY_MM_DD:
                     specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD, pattern);
                     break;
-                case YYYY_MM_DD_HH_SS:
-                    specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD_HH_SS, pattern);
+                case YYYY_MM_DD_HH_MM:
+                    specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_YYYY_MM_DD_HH_MM, pattern);
                     break;
                 default:
                     specializationInfo = new StringSpecializationInfo(StringSpecialization.DATE_FORMAT_PATTERN, pattern);
@@ -58,7 +58,7 @@ public class DateFormatClassReplacement implements MethodReplacementClass {
                 case YYYY_MM_DD:
                     h = DateTimeParsingUtils.getHeuristicToISOLocalDateParsing(input);
                     break;
-                case YYYY_MM_DD_HH_SS:
+                case YYYY_MM_DD_HH_MM:
                     h = DateTimeParsingUtils.getHeuristicToDateTimeParsing(input);
                     break;
                 default:

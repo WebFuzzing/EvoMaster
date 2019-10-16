@@ -24,9 +24,9 @@ public enum StringSpecialization implements Serializable {
     DATE_YYYY_MM_DD,
 
     /**
-     * String used as a Date in YYYY_MM_DD_HH_SS format
+     * String used as a Date in YYYY_MM_DD_HH_MM format
      */
-    DATE_YYYY_MM_DD_HH_SS,
+    DATE_YYYY_MM_DD_HH_MM,
 
 
     /**

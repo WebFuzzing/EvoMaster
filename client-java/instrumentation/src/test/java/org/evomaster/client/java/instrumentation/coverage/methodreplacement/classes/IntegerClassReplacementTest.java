@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.junit.jupiter.api.Test;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
@@ -13,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class IntegerClassReplacementTest {
 
     @Test
-    public void testParseValid(){
+    public void testParseValid() {
         assertEquals(1d, parseIntHeuristic("1"));
         assertEquals(1d, parseIntHeuristic("10"));
         assertEquals(1d, parseIntHeuristic("123"));
@@ -23,12 +24,12 @@ public class IntegerClassReplacementTest {
     }
 
     @Test
-    public void testParseNull(){
+    public void testParseNull() {
         assertEquals(H_REACHED_BUT_NULL, parseIntHeuristic(null));
     }
 
     @Test
-    public void testParseEmpty(){
+    public void testParseEmpty() {
 
         double hnull = parseIntHeuristic(null);
         double hempty = parseIntHeuristic("");
@@ -39,16 +40,16 @@ public class IntegerClassReplacementTest {
     }
 
     @Test
-    public void testParseInvalid(){
+    public void testParseInvalid() {
 
-        double ha  = parseIntHeuristic("a");
+        double ha = parseIntHeuristic("a");
 
         assertTrue(ha > 0);
         assertTrue(ha < 1);
     }
 
     @Test
-    public void testParseLongerInvalid(){
+    public void testParseLongerInvalid() {
 
         double h0 = parseIntHeuristic("a");
         double h1 = parseIntHeuristic("a1");
@@ -61,12 +62,20 @@ public class IntegerClassReplacementTest {
     }
 
     @Test
-    public void testParseTooLong(){
+    public void testParseTooLong() {
 
         double h0 = parseIntHeuristic("a");
         double h1 = parseIntHeuristic("a111111111111111111");
 
         assertTrue(h1 < 1);
         assertTrue(h0 > h1);
+    }
+
+    @Test
+    public void testParseClassReplacement() {
+        String input = Long.valueOf(Long.MAX_VALUE).toString();
+        assertThrows(NumberFormatException.class, () -> {
+            IntegerClassReplacement.parseInt(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        });
     }
 }
