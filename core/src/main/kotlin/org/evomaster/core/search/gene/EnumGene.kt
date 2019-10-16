@@ -20,8 +20,7 @@ import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 class EnumGene<T : Comparable<T>>(
         name: String,
         data: Collection<T>,
-        var index: Int = 0,
-        val optionMutationUpdate : IntMutationUpdate = IntMutationUpdate(0, values.size -1)
+        var index: Int = 0
 ) : Gene(name) {
 
     companion object {
@@ -70,7 +69,7 @@ class EnumGene<T : Comparable<T>>(
 
     override fun copy(): Gene {
         //recall: "values" is immutable
-        return EnumGene<T>(name, values, index, optionMutationUpdate.copy())
+        return EnumGene<T>(name, values, index)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -133,7 +132,8 @@ class EnumGene<T : Comparable<T>>(
         return this.index == other.index
     }
 
+    //TODO when archive-based mutation is enabled
     override fun reachOptimal(): Boolean {
-        return optionMutationUpdate.reached || values.size == 1
+        return values.size == 1
     }
 }

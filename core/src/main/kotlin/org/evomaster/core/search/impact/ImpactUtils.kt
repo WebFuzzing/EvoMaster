@@ -5,10 +5,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.*
 import org.evomaster.core.search.impact.sql.*
-import org.evomaster.core.search.impact.value.DisruptiveGeneImpact
-import org.evomaster.core.search.impact.value.ObjectGeneImpact
-import org.evomaster.core.search.impact.value.OptionalGeneImpact
-import org.evomaster.core.search.impact.value.StringGeneImpact
+import org.evomaster.core.search.impact.value.*
 import org.evomaster.core.search.impact.value.collection.ArrayGeneImpact
 import org.evomaster.core.search.impact.value.collection.MapGeneImpact
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
@@ -52,7 +49,8 @@ class ImpactUtils {
                 is SqlPrimaryKeyGene -> SqlPrimaryKeyGeneImpact(id, gene)
                 is SqlForeignKeyGene -> SqlForeignKeyGeneImpact(id)
                 else ->{
-                    throw IllegalStateException("do not support to generate impacts for ${gene::class.java.simpleName}")
+                    //TODO for RegexGene
+                    GeneImpact(id)
                 }
             }
         }

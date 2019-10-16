@@ -144,7 +144,7 @@ class Archive<T> where T : Individual {
             randomness.choose(candidates)
         }
 
-        return chosen.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
+        return chosen.copy(tracker.getCopyFilterForEvalInd(chosen))
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
@@ -404,6 +404,7 @@ class Archive<T> where T : Individual {
         }
         processMonitor.record(added, anyBetter, ei)
 
+        ei.hasImprovement = anyBetter
         return added
     }
 

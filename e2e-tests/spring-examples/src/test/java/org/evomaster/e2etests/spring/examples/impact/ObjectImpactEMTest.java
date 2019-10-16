@@ -30,18 +30,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ObjectImpactEMTest extends SpringTestBase {
 
     @Test
-    public void testAWAY_NOIMPACT() throws Throwable {
+    public void testAwayNoImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
-//    @Test
-//    public void testAPPROACH_IMPACT_N() throws Throwable {
-//        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
-//    }
+    @Test
+    public void testImpact() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
+    }
 
     @Test
-    public void testAPPROACH_IMPACT_I() throws Throwable {
+    public void testLatestImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT);
+    }
+
+    @Test
+    public void testLatestImprovement() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT);
+    }
+
+    @Test
+    public void testBalance() throws Throwable {
+        testRunEM(GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT);
     }
 
     public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
@@ -77,7 +87,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
                     assertTrue(impactInfoCollected);
 
-                });
+                }, 3);
     }
 
     private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){

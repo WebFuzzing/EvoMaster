@@ -81,7 +81,7 @@ public class ImpactEMTest extends SpringTestBase {
 
                     assertTrue(impactInfoCollected);
 
-                });
+                }, 3);
     }
 
     private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){
