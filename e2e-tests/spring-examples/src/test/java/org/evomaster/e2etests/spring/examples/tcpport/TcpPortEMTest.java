@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.examples.tcpport;
 
-import com.foo.rest.examples.spring.positiveinteger.PostDto;
 import com.foo.rest.examples.spring.tcpport.TcpPortController;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -29,6 +28,19 @@ public class TcpPortEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        /*
+            Make sure that, by default, EvoMaster re-use TCP connections, instead
+            of creating new ones at HTTP request.
+
+            Unfortunately, by default Tomcat will close a connection every 100 calls,
+            EVEN IF the client send a Keep-Alive.
+            To make this test pass, we actually had to modify the maxKeepAliveRequests
+            in Tomcat via the configuration class TomcatCustomizer.
+            Unfortunately, maxKeepAliveRequests is not modifiable from application.yml:
+            https://docs.spring.io/spring-boot/docs/current/reference/html/common-application-properties.html
+            although several other server.tomcat.* settings can
+         */
+
         runTestHandlingFlaky(
                 "TcpPortEM",
                 "org.bar.TcpPortEM",
@@ -43,7 +55,6 @@ public class TcpPortEMTest extends SpringTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/tcpPort", null);
                 });
 
-
         RestAssured.enableLoggingOfRequestAndResponseIfValidationFails();
 
         given().contentType(ContentType.JSON)
@@ -52,6 +63,5 @@ public class TcpPortEMTest extends SpringTestBase {
                 .then()
                 .statusCode(200)
                 .body("size()", is(2)); // 1 from search, and 1 here from RestAssured
-
     }
 }
