@@ -165,8 +165,9 @@ class Main {
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
                 info("Covered targets: ${solution.overall.coveredTargets()}")
                 info("Potential faults: ${faults.size}")
-                faults.sorted()
-                        .forEach{ info(inRed("Fault: ${IdMapper.faultInfo(it)}"))}
+
+                // Can add back for debugging. Anyway, would be in the generated tests
+                //faults.sorted().forEach{ info(inRed("Fault: ${IdMapper.faultInfo(it)}"))}
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
                         config.maxTimeInSeconds == config.defaultMaxTimeInSeconds) {

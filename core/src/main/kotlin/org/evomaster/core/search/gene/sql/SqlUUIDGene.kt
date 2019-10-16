@@ -3,6 +3,7 @@ package org.evomaster.core.search.gene.sql
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.LongGene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
@@ -45,7 +46,7 @@ class SqlUUIDGene(
         gene.standardMutation(randomness, apc, allGenes)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return "\"${getValueAsRawString()}\""
     }
 

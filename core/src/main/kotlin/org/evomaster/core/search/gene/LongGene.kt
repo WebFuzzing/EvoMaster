@@ -50,7 +50,8 @@ class LongGene(
         standardMutation(randomness, apc, allGenes)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return value.toString()
     }
 
@@ -67,4 +68,5 @@ class LongGene(
         }
         return this.value == other.value
     }
+
 }

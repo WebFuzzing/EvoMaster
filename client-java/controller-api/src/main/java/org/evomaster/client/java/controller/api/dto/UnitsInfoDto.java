@@ -1,5 +1,8 @@
 package org.evomaster.client.java.controller.api.dto;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Information about the "units" in the SUT.
  * In case of OO languages like Java and Kotlin, those will be "classes"
@@ -9,9 +12,9 @@ package org.evomaster.client.java.controller.api.dto;
 public class UnitsInfoDto {
 
     /**
-     * Then number of units (eg classes) in the SUT
+     * Then name of all the units (eg classes) in the SUT
      */
-    public int numberOfUnits;
+    public Set<String> unitNames = new HashSet<>();
 
     /**
      * The total number of lines/statements/instructions in all

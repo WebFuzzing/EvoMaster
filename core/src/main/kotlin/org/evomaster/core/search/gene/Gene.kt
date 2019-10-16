@@ -115,7 +115,7 @@ abstract class Gene(var name: String) {
      */
     abstract fun getValueAsPrintableString(
             previousGenes: List<Gene> = listOf(),
-            mode: String? = null,
+            mode: GeneUtils.EscapeMode? = null,
             targetFormat: OutputFormat? = null
     ) : String
 

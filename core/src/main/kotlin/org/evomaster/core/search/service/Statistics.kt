@@ -179,7 +179,7 @@ class Statistics : SearchListener {
             add(Pair("numberOfReplacedMethodsInSut", "" + (unitsInfo?.numberOfReplacedMethodsInSut ?: 0)))
             add(Pair("numberOfReplacedMethodsInThirdParty", "" + (unitsInfo?.numberOfReplacedMethodsInThirdParty ?: 0)))
             add(Pair("numberOfTrackedMethods", "" + (unitsInfo?.numberOfTrackedMethods ?: 0)))
-            add(Pair("numberOfUnits", "" + (unitsInfo?.numberOfUnits ?: 0)))
+            add(Pair("numberOfUnits", "" + (unitsInfo?.unitNames?.size ?: 0)))
 
             add(Pair("coveredLines", "" + solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)))
             add(Pair("coveredBranches", "" + solution.overall.coveredTargets(ObjectiveNaming.BRANCH, idMapper)))

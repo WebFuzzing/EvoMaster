@@ -3,6 +3,8 @@ package org.evomaster.core
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 internal class EMConfigTest{
 
@@ -39,7 +41,7 @@ internal class EMConfigTest{
                 throw Exception("Cannot find option")
 
         val x = "42"
-        val options = parser.parse("--"+controllerPortOption, x)
+        val options = parser.parse("--$controllerPortOption", x)
 
         assertEquals(x, opt.value(options))
 
@@ -108,5 +110,29 @@ internal class EMConfigTest{
 
         val options = parser.parse()
         assertEquals("", opt.value(options))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["probOfRandomSampling", "perOfCandidateGenesToMutate", "focusedSearchActivationTime"])
+    fun testProbability(name: String){
+
+        val parser = EMConfig.getOptionParser()
+        val opt = parser.recognizedOptions()[name] ?:
+            throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val k = config.probOfRandomSampling
+        assertTrue(k>=0 && k<=1)
+
+        val p = "0.3"
+        var options = parser.parse("--$name", p)
+        assertEquals(p, opt.value(options))
+
+        config.updateProperties(options) // should be no problem, as valid p
+
+        val wrong = "1.2"
+        options = parser.parse("--$name", wrong)
+
+        assertThrows(Exception::class.java, {config.updateProperties(options)}) // invalid p
     }
 }

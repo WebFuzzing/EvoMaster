@@ -104,6 +104,12 @@ class TestCaseWriter {
         return lines
     }
 
+    private fun appendSemicolon(lines: Lines) {
+        if (format.isJava()) {
+            lines.append(";")
+        }
+    }
+
     private fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
 
         if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
@@ -149,22 +155,13 @@ class TestCaseWriter {
                     }
                 }
 
-        lines.add(".dtos()" +
-                when {
-                    format.isJava() -> ";"
-                    format.isKotlin() -> ""
-                    else -> ""
-                })
+        lines.add(".dtos()")
+        appendSemicolon(lines)
 
         lines.deindent()
 
-        var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
-        when {
-            format.isJava() -> execInsertionsLine += ";"
-            format.isKotlin() -> {
-            }
-        }
-        lines.add(execInsertionsLine)
+        lines.add("controller.execInsertionsIntoDatabase(insertions)")
+        appendSemicolon(lines)
     }
 
     private fun getPrintableValue(g: Gene): String {
@@ -174,6 +171,8 @@ class TestCaseWriter {
 
         } else {
             return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = format))
+            //TODO this is an atypical treatment of escapes. Should we run all escapes through the same procedure?
+            // or is this special enough to be justified?
         }
     }
 
@@ -354,7 +353,7 @@ class TestCaseWriter {
                 counter++
             }
         } else {
-            lines.append(";")
+            appendSemicolon(lines)
             lines.deindent(2)
         }
     }
@@ -386,22 +385,26 @@ class TestCaseWriter {
 
         } else {
 
-            lines.append("$baseUrlOfSut + ")
+            if(format.isJava()) {
+                lines.append("$baseUrlOfSut + \"")
+            } else {
+                lines.append("\"\${$baseUrlOfSut}")
+            }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${GeneUtils.applyEscapes(uri, mode = "uris", format = format)}\"")
+                lines.append("${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
                 //lines.append("\"$uri\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)
                 val elements = call.path.resolveOnlyQuery(call.parameters)
 
-                lines.append("\"$path?\" + ")
+                lines.append("$path?\" + ")
 
                 lines.indented {
-                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = "queries", format = format)}&\" + ") }
-                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = "queries", format = format)}\"")
+                    (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ") }
+                    lines.add("\"${GeneUtils.applyEscapes(elements.last(), mode = GeneUtils.EscapeMode.SQL, format = format)}\"")
                 }
             }
         }
@@ -411,7 +414,13 @@ class TestCaseWriter {
     private fun handleResponse(lines: Lines, res: RestCallResult) {
         if (!res.failedCall()) {
             lines.add(".then()")
-            lines.add(".statusCode(${res.getStatusCode()})")
+
+            val code = res.getStatusCode()
+            lines.add(".statusCode($code)")
+            if(code == 500){
+                lines.append(" // " + res.getLastStatementWhen500())
+            }
+
 
             if (configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
@@ -427,7 +436,7 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = "assertions")}\")"
+                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -572,26 +581,16 @@ class TestCaseWriter {
             if (bodyParam.isJson()) {
 
                 val body = if (readable) {
-                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format))
+                    OutputFormatter.JSON_FORMATTER.getFormatted(bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format))
                 } else {
-                    bodyParam.gene.getValueAsPrintableString(mode = "json", targetFormat = format)
+                    bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.JSON, targetFormat = format)
                 }
 
                 //needed as JSON uses ""
                 val bodyLines = body.split("\n").map { s ->
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
                     //"\"" + s.trim().replace("\"", "\\\"") + "\""
-                    "\"" + GeneUtils.applyEscapes(s.trim(), "json", format).replace("\\\\u", "\\u") + "\""
-                    /*
-                     The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
-                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
-                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
-
-                     As far as I understand, the addition of an \ in the \unicode should not really happen.
-                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
-                     they are not.
-                     */
-
+                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
                 }
 
                 if (bodyLines.size == 1) {
@@ -610,7 +609,7 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString("xml")
                 lines.add(".body(\"$body\")")
             } */ else if (bodyParam.isTextPlain()) {
-                val body = bodyParam.gene.getValueAsPrintableString(mode = "text", targetFormat = format)
+                val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     lines.add(".body($body)")
                 }
@@ -691,10 +690,7 @@ class TestCaseWriter {
             if (configuration.enableCompleteObjects == false) {
                 addExpectationsWithoutObjects(result, lines)
             }
-            lines.append(when {
-                format.isJava() -> ";"
-                else -> ""
-            })
+            appendSemicolon(lines)
         }
     }
 
@@ -713,7 +709,7 @@ class TestCaseWriter {
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
                             (resContents as Map<*, *>).keys.forEach {
-                                val printableTh = handleFieldValues(resContents[it]!!)
+                                val printableTh = handleFieldValues(resContents[it])
                                 if (printableTh != "null"
                                         && printableTh != NOT_COVERED_YET
                                 ) {
@@ -724,7 +720,7 @@ class TestCaseWriter {
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             //lines.add(".body(isEmptyOrNullString())")
-                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = "assertions", format = format)}\"))")
+                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                         }
                     }
                 }

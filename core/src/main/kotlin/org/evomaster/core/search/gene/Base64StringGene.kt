@@ -56,7 +56,7 @@ class Base64StringGene(
         data.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return Base64.getEncoder().encodeToString(data.value.toByteArray())
     }
 

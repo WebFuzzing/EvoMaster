@@ -18,6 +18,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
+import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 
 
 class StringGene(
@@ -380,7 +381,7 @@ class StringGene(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: EscapeMode?, targetFormat: OutputFormat?): String {
 
         val specializationGene = getSpecializationGene()
 
@@ -389,42 +390,19 @@ class StringGene(
         }
 
         val rawValue = getValueAsRawString()
-        if (mode != null && mode.equals("xml")) {
+        if (mode != null && mode == EscapeMode.XML) {
             return StringEscapeUtils.escapeXml(rawValue)
         } else {
             when {
                 // TODO this code should be refactored with other getValueAsPrintableString() methods
-                (targetFormat == null) -> return "\"${GeneUtils.applyEscapes(rawValue)}\""
+                (targetFormat == null) -> return "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
                 (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
-                else -> return "\"${GeneUtils.applyEscapes(rawValue, "text" ,targetFormat)}\""
+                else -> return "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT ,targetFormat)}\""
             }
 
         }
     }
-
-    /*
-    fun getValueAsPrintableString(mode: String?, targetFormat: OutputFormat?): String {
-        val rawValue = getValueAsRawString()
-        if (mode != null && mode.equals("xml")) {
-            return StringEscapeUtils.escapeXml(rawValue)
-        } else {
-            when {
-                (targetFormat == null) -> return "\"$rawValue\""
-                else -> return GeneUtils.applyEscapes(rawValue, "json", targetFormat)
-                /*
-                targetFormat.isKotlin() -> return "\"$rawValue\""
-                        .replace("\\", "\\\\")
-                        .replace("$", "\\$")
-                else -> return "\"$rawValue\""
-                        .replace("\\", "\\\\")
-                 */
-            }
-        }
-    }
-
-
-     */
 
     override fun getValueAsRawString(): String {
         val specializationGene = getSpecializationGene()

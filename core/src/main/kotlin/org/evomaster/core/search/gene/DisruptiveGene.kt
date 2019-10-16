@@ -53,7 +53,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         gene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is DisruptiveGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi,targets )
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 

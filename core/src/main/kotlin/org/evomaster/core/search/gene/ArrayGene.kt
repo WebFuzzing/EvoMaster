@@ -174,7 +174,7 @@ class ArrayGene<T>(
         }
     }
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return "[" +
                 elements.map { g -> g.getValueAsPrintableString(previousGenes, mode, targetFormat) }.joinToString(", ") +
                 "]"
@@ -185,6 +185,4 @@ class ArrayGene<T>(
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
-
-
 }

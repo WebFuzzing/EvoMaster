@@ -40,10 +40,31 @@ internal class StringGeneTest{
         //Check that it does not contain unescaped character (of the relevant type)
         assertTrue(!testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains(" \$"))
         // Check that the non-kotlin version does not contain the escaped character
-        assertTrue(!testGene.getValueAsPrintableString().contains("\\$"))
+        assertTrue(!testGene.getValueAsPrintableString().contains("\\\\\$"))
 
         assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains('$'))
         assertTrue(!testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains("\\$"))
         assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains(" \$"))
+    }
+
+    @Test
+    fun quotesTest(){
+        val quotesTest = '"'
+        val testGene = StringGene("QuotesGene", "Test for the Quotes ${quotesTest}escape")
+
+        //println("Dollar => ${testGene.getValueAsPrintableString()}")
+        //println("Dollar => ${testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5)}")
+
+        // Check that it contains the character
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains('"'))
+        // Check that the character is escaped
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains("\""))
+        //Check that it does not contain unescaped character (of the relevant type)
+        assertTrue(!testGene.getValueAsPrintableString(targetFormat = OutputFormat.KOTLIN_JUNIT_5).contains(" \""))
+        // Check that the non-kotlin version does not contain the escaped character
+        assertTrue(!testGene.getValueAsPrintableString().contains("\\\\\""))
+
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains('"'))
+        assertTrue(testGene.getValueAsPrintableString(targetFormat = OutputFormat.JAVA_JUNIT_5).contains("\""))
     }
 }

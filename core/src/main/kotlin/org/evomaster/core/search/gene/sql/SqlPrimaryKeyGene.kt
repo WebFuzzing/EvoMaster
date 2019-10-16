@@ -6,6 +6,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.sql.SqlPrimaryKeyGeneImpact
+import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -96,7 +97,7 @@ class SqlPrimaryKeyGene(name: String,
     }
 
 
-    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: String?, targetFormat: OutputFormat?): String {
+    override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return gene.getValueAsPrintableString(previousGenes, mode, targetFormat)
     }
 
