@@ -509,6 +509,10 @@ class TestCaseWriter {
                                 }
                             }
                         }
+                        else{
+                            // the object is empty
+                            lines.add(".body(\"isEmpty()\", is(true))")
+                        }
                     }
                     '{' -> {
                         // JSON contains an object
@@ -532,15 +536,27 @@ class TestCaseWriter {
                 }
             }
             else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)){
-                lines.add(".body(containsString(\"${bodyString}\"))")
+                if(bodyString.isNullOrBlank()){
+                    lines.add(".body(isEmptyOrNullString())")
+                }else {
+                    lines.add(".body(containsString(\"${
+                    GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                    }\"))")
+                }
             }
         }
         //handleExpectations(res, lines, true)
     }
 
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
-        val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
+        if (resContents.isEmpty()){
+            lines.add(".body(\"size()\", numberMatches(0))")
+            lines.add(".body(containsString(\"{}\"))") // If this executes, the result contains an empty collection.
+            lines.add(".body(\"isEmpty()\", is(true))")
+        }
 
+        val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
+        lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
         flatContent.keys
                 .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
                 .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
