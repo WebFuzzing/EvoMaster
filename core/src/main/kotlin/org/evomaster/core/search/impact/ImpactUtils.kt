@@ -17,7 +17,9 @@ import org.evomaster.core.search.impact.value.numeric.*
 /**
  * created by manzh on 2019-09-09
  *
- * this utility can be used to 1) create new impact 2) generate id for
+ * this utility can be used to e.g.,
+ * 1) create new impact
+ * 2) generate gene id for linking with its impact
  */
 class ImpactUtils {
 
