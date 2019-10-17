@@ -30,5 +30,5 @@ enum class GeneMutationSelectionMethod(val archive: Boolean = true, val adaptive
     /**
      * randomly apply one of fixed archive-based gene selection method ([archive] is true and [adaptive] is false)
      */
-    ALL_FIXED_RAND(true)
+    ALL_FIXED_RAND(adaptive = true)
 }
