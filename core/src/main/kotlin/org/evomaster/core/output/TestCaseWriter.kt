@@ -32,6 +32,7 @@ class TestCaseWriter {
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
+    private lateinit var expectationsHandler: ExpectationsHandler
 
     companion object{
         val NOT_COVERED_YET = "NotCoveredYet"
@@ -46,7 +47,8 @@ class TestCaseWriter {
         //TODO: refactor remove once changes merged
         configuration = config
         this.format = config.outputFormat
-
+        this.expectationsHandler = ExpectationsHandler()
+        expectationsHandler.setFormat(this.format)
 
         counter = 0
 
@@ -71,17 +73,7 @@ class TestCaseWriter {
                 }
 
                 if(configuration.expectationsActive){
-                    lines.addEmpty()
-                    when{
-                        format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
-                        format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-
-                    }
-                    lines.indented {
-                        lines.add(".expect(expectationsMasterSwitch)")
-                        if (format.isJava()) lines.append(";")
-                    }
-
+                    expectationsHandler.addDeclarations(lines)
                 }
 
 
@@ -789,8 +781,8 @@ class TestCaseWriter {
     private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines, name: String) {
         if (result.getBodyType() != null) {
             // if there is a body, add expectations based on the body type. Right now only application/json is supported
-            when (result.getBodyType().toString()) {
-                "application/json" -> {
+            when {
+                result.getBodyType()!!.isCompatible(MediaType.APPLICATION_JSON_TYPE) -> {
                     when (result.getBody()?.first()) {
                         '[' -> {
                             // This would be run if the JSON contains an array of objects
@@ -801,10 +793,11 @@ class TestCaseWriter {
                             lines.add(".that(expectationsMasterSwitch, ($printableTh))")
                             //TODO: individual objects in this collection also need handling
                             resContents.forEachIndexed { index, result ->
-                                val fieldName = "get($index)"
-                                val printableElement = handleFieldValuesExpect(name, fieldName, result)
-                                if (printableElement != "null" && printableTh != NOT_COVERED_YET
-                                ) { lines.add(".that(expectationsMasterSwitch, $printableElement)") }
+                                    val fieldName = "get($index)"
+                                    val printableElement = handleFieldValuesExpect(name, fieldName, result)
+                                    if (printableElement != "null" && printableTh != NOT_COVERED_YET) {
+                                        lines.add(".that(expectationsMasterSwitch, $printableElement)")
+                                    }
                             }
 
                         }
@@ -812,27 +805,28 @@ class TestCaseWriter {
                             // This would be run if the JSON contains a single object
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
-                            (resContents as Map<*, *>).keys.forEach {
-                                val printableTh = handleFieldValuesExpect(name, it.toString(), resContents[it])
-                                if (printableTh != "null"
-                                        && printableTh != NOT_COVERED_YET
-                                ) {
-                                    /*lines.add(".that(expectationsMasterSwitch, (" +
-                                            "\"${it}\" == " +
-                                            "\"${resContents[it]}\"))")
-
-                                     */
-
-                                    lines.add(".that(expectationsMasterSwitch, $printableTh)")
+                            (resContents as Map<*, *>).keys
+                                    .filter { !it.toString().contains("timestamp") }
+                                    .forEach {
+                                    val printableTh = handleFieldValuesExpect(name, it.toString(), resContents[it])
+                                    if (printableTh != "null"
+                                         && printableTh != NOT_COVERED_YET
+                                    ) {
+                                        lines.add(".that(expectationsMasterSwitch, $printableTh)")
+                                    }
                                 }
-                            }
                         }
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
                             //lines.add(".body(isEmptyOrNullString())")
                             if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                            else lines.add(".body(isEmptyOrNullString())")
                         }
                     }
+                }
+                result.getBodyType()!!.isCompatible(MediaType.TEXT_PLAIN_TYPE) -> {
+                    if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                    else lines.add(".body(isEmptyOrNullString())")
                 }
             }
         }
