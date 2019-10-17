@@ -24,6 +24,10 @@ public class DbBaseEMTest extends DbBaseTestBase {
                     args.add("--generateSqlDataWithSearch");
                     args.add("false");
 
+                    //FIXME: need to study and fix the side effects of Taint here
+                    args.add("--baseTaintAnalysisProbability");
+                    args.add("0.0");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

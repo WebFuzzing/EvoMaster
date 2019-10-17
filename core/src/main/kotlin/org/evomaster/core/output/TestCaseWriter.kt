@@ -67,7 +67,6 @@ class TestCaseWriter {
 
             if (test.test.individual is RestIndividual) {
                 // BMR: test.test should have the used objects attached (if any).
-                //usedObjects = test.test.individual.usedObjects
                 if (config.enableCompleteObjects) {
                     usedObjects = (test.test.individual as RestIndividual).usedObjects.copy()
                 }
@@ -112,6 +111,12 @@ class TestCaseWriter {
         lines.add("}")
 
         return lines
+    }
+
+    private fun appendSemicolon(lines: Lines) {
+        if (format.isJava()) {
+            lines.append(";")
+        }
     }
 
     private fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
@@ -159,22 +164,13 @@ class TestCaseWriter {
                     }
                 }
 
-        lines.add(".dtos()" +
-                when {
-                    format.isJava() -> ";"
-                    format.isKotlin() -> ""
-                    else -> ""
-                })
+        lines.add(".dtos()")
+        appendSemicolon(lines)
 
         lines.deindent()
 
-        var execInsertionsLine = "controller.execInsertionsIntoDatabase(insertions)"
-        when {
-            format.isJava() -> execInsertionsLine += ";"
-            format.isKotlin() -> {
-            }
-        }
-        lines.add(execInsertionsLine)
+        lines.add("controller.execInsertionsIntoDatabase(insertions)")
+        appendSemicolon(lines)
     }
 
     private fun getPrintableValue(g: Gene): String {
@@ -385,7 +381,7 @@ class TestCaseWriter {
                 counter++
             }
         } else {
-            lines.append(";")
+            appendSemicolon(lines)
             lines.deindent(2)
         }
     }
@@ -438,23 +434,25 @@ class TestCaseWriter {
         val verb = call.verb.name.toLowerCase()
         lines.add(".$verb(")
         if (call.locationId != null) {
-            //lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${applyEscapes(call.resolvedPath())}\")")
             lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
 
         } else {
 
-            lines.append("$baseUrlOfSut + ")
+            if(format.isJava()) {
+                lines.append("$baseUrlOfSut + \"")
+            } else {
+                lines.append("\"\${$baseUrlOfSut}")
+            }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
                 val uri = call.path.resolve(call.parameters)
-                lines.append("\"${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
-                //lines.append("\"$uri\"")
+                lines.append("${GeneUtils.applyEscapes(uri, mode = GeneUtils.EscapeMode.URI, format = format)}\"")
             } else {
                 //several query parameters. lets have them one per line
                 val path = call.path.resolveOnlyPath(call.parameters)
                 val elements = call.path.resolveOnlyQuery(call.parameters)
 
-                lines.append("\"$path?\" + ")
+                lines.append("$path?\" + ")
 
                 lines.indented {
                     (0 until elements.lastIndex).forEach { i -> lines.add("\"${GeneUtils.applyEscapes(elements[i], mode = GeneUtils.EscapeMode.SQL, format = format)}&\" + ") }
@@ -497,7 +495,7 @@ class TestCaseWriter {
             }
         }
         /* BMR: the code above is due to a somewhat unfortunate problem:
-        - Gson does parses all numbers as Double
+        - Gson parses all numbers as Double
         - Hamcrest has a hard time comparing double to int
         This is (admittedly) a horrible hack, but it should address the issue until a more elegant solution can be found.
         */
@@ -525,13 +523,6 @@ class TestCaseWriter {
                     && printableTh != NOT_COVERED_YET
                     && !printableTh.contains("logged")
             ) {
-                //lines.add(".body(\"find{it.$it == \\\"${map[it]}\\\"}.$it\", $printableTh)") //tried a find
-                //lines.add(".body(\"sort{it.toString()}.$it[$index]\", $printableTh)")
-                //lines.add(".body(\"$it[$index]\", $printableTh)") //just index
-                //lines.add(".body(\"sort{it.toString()}[$index].$it\" , $printableTh)") //sort and index
-                //reinstated above due to the problem of non-deterministic ordering of retrieved collections
-                // (eg. ScoutAPI - users)
-                //lines.add(".body(\"get($index).$it\" , $printableTh)")
                 lines.add(".body(\"$it\", hasItem($printableTh))")
             }
         }
@@ -540,7 +531,10 @@ class TestCaseWriter {
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
         lines.add(".assertThat()")
 
-        if (res.getBodyType() == null) lines.add(".contentType(\"\")")
+        if (res.getBodyType() == null) {
+            lines.add(".contentType(\"\")")
+            lines.add(".body(isEmptyOrNullString())")
+        }
         else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
@@ -550,13 +544,12 @@ class TestCaseWriter {
 
         if (res.getBodyType() != null) {
             val type = res.getBodyType()!!
-            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+            if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
                 when (bodyString?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
-                        //resContents.sortBy { it.toString() }
                         //assertions on contents
                         if(resContents.size > 0){
                             resContents.forEachIndexed { test_index, value ->
@@ -574,6 +567,11 @@ class TestCaseWriter {
                                 }
                             }
                         }
+                        else{
+                            // the object is empty
+                            if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
+                            else lines.add(".body(\"isEmpty()\", is(true))")
+                        }
                     }
                     '{' -> {
                         // JSON contains an object
@@ -581,27 +579,64 @@ class TestCaseWriter {
                         addObjectAssertions(resContents, lines)
 
                     }
-                    //'"' -> {
-                    // This branch will be called if the JSON is a String
-                    // Currently, it only supports very basic string matching
-                    //   val resContents = Gson().fromJson(res.getBody(), String::class.java)
-                    //   lines.add(".body(containsString(\"${resContents}\"))")
-                    //}
                     else -> {
                         // This branch will be called if the JSON is null (or has a basic type)
                         // Currently, it converts the contents to String.
-                        // TODO: if the contents are not a valid form of that type, expectations should be developed to handle the case
-                        //val resContents = Gson().fromJson("\"" + res.getBody() + "\"", String::class.java)
-                        lines.add(".body(containsString(\"${bodyString}\"))")
+                        if(bodyString.isNullOrBlank()){
+                            lines.add(".body(isEmptyOrNullString())")
+                        }else {
+                            lines.add(".body(containsString(\"${
+                            GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                            }\"))")
+                        }
                     }
                 }
             }
+            else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)){
+                if(bodyString.isNullOrBlank()){
+                    lines.add(".body(isEmptyOrNullString())")
+                }else {
+                    lines.add(".body(containsString(\"${
+                    GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                    }\"))")
+                }
+            }
         }
-        //handleExpectations(res, lines, true)
     }
 
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
-        resContents.keys
+        if (resContents.isEmpty()){
+            // If this executes, the result contains an empty collection.
+            lines.add(".body(\"size()\", numberMatches(0))")
+            //lines.add(".body(containsString(\"{}\"))")
+            if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
+            else lines.add(".body(\"isEmpty()\", is(true))")
+        }
+
+        val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
+        lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
+        flatContent.keys
+                .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
+                .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
+                .forEach {
+                    val stringKey = it.joinToString(separator = ".")
+                    val actualValue = flatContent[it]
+                    if(actualValue!=null){
+                        val printableTh = handleFieldValues(actualValue)
+                        if (printableTh != "null"
+                                && printableTh != NOT_COVERED_YET
+                                && !printableTh.contains("logged")
+                        ) {
+                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            if(stringKey != "id") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            else{
+                                if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
+                            }
+                        }
+                    }
+                }
+
+
                 /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
                 * Even relatively minor timing changes (one second either way) could cause tests to fail
                 * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
@@ -610,23 +645,6 @@ class TestCaseWriter {
                 *
                 * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
                 */
-                .filter{ !(it as String).contains("timestamp")}
-                .forEach {
-                    val actualValue = resContents[it]
-                    if (actualValue != null) {
-                        val printableTh = handleFieldValues(actualValue)
-                        if (printableTh != "null"
-                                && printableTh != NOT_COVERED_YET
-                                && !printableTh.contains("logged")
-                        ) {
-                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            if(it != "id") lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            else{
-                                if(!chained && previousChained) lines.add(".body(\"\'${it}\'\", numberMatches($previousId))")
-                            }
-                        }
-                    }
-                }
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
@@ -656,19 +674,7 @@ class TestCaseWriter {
 
                 //needed as JSON uses ""
                 val bodyLines = body.split("\n").map { s ->
-                    //"\"" + s.trim().replace("\"", "\\\"") + "\""
-                    //"\"" + s.trim().replace("\"", "\\\"") + "\""
-                    "\"" + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
-                    /*
-                     The \u denote unicode characters. For some reason, escaping the \\ leads to these being invalid.
-                     Since they are valid in the back end (and they should, arguably, be possible), this leads to inconsistent behaviour.
-                     This fix is a hack. It may be that some \u chars are not valid. E.g. \uAndSomeRubbish.
-
-                     As far as I understand, the addition of an \ in the \unicode should not really happen.
-                     They should be their own chars, and the .replace("\\", """\\""" should be fine, but for some reason
-                     they are not.
-                     */
-
+                     "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
                 }
 
                 if (bodyLines.size == 1) {
@@ -737,7 +743,6 @@ class TestCaseWriter {
             return ".accept(\"*/*\")"
         }
 
-        //if (call.produces.contains(res.getBodyType().toString())) return ".accept(${res.getBodyType().toString()})"
         val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
 
         if (accepted.size == 1)
@@ -763,18 +768,13 @@ class TestCaseWriter {
         lines.add("expectationHandler")
         lines.indented {
             lines.add(".expect()")
-            //lines.add(".that(activeExpectations, true)")
-            //lines.add(".that(activeExpectations, false)")
             if (configuration.enableCompleteObjects == false) {
                 addExpectationsWithoutObjects(result, lines, name)
             }
             else{
                 addExpectationsWithoutObjects(result, lines, name)
             }
-            lines.append(when {
-                format.isJava() -> ";"
-                else -> ""
-            })
+            appendSemicolon(lines)
         }
     }
 
@@ -818,7 +818,6 @@ class TestCaseWriter {
                         }
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
-                            //lines.add(".body(isEmptyOrNullString())")
                             if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                             else lines.add(".body(isEmptyOrNullString())")
                         }
@@ -831,4 +830,34 @@ class TestCaseWriter {
             }
         }
     }
+
+    /**
+     * The purpose of the [flattenForAssert] method is to prepare an object for assertion generation.
+     * Objects in Responses may be somewhat complex in structure. The goal is to make a map that contains all the
+     * leaves of the object, along with the path of keys to get to them.
+     *
+     * For example, .body("page.size", numberMatches(20.0)) -> in the payload, access the page field, the size field,
+     * and assert that the value there is 20.
+     */
+    private fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any>{
+        val returnMap = mutableMapOf<MutableList<*>, Any>()
+        if (v is Map<*,*>){
+            v.forEach { key, value ->
+                if (value == null){
+                    return@forEach
+                }
+                else{
+                    val innerkey = k.plus(key) as MutableList
+                    val innerMap = flattenForAssert(innerkey, value)
+                    returnMap.putAll(innerMap)
+                }
+
+            }
+        }
+        else{
+            returnMap[k] = v
+        }
+        return returnMap
+    }
+
 }

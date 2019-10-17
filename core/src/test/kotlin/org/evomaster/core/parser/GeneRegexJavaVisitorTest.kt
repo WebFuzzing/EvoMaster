@@ -52,6 +52,6 @@ class GeneRegexJavaVisitorTest : GeneRegexEcma262VisitorTest() {
     @Test
     fun testIssueWithControlCharactersInIgnoreCase(){
         val s = "a[](){}\\\"^$.b"
-        checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.toUpperCase(), s.toLowerCase()), 50)
+        checkCanSample(RegexUtils.ignoreCaseRegex(s), listOf(s.toUpperCase(), s.toLowerCase()), 200)
     }
 }

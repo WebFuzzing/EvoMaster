@@ -123,7 +123,7 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
 
     /**
-     * Since a Matcher instance has no way of
+     * Since a MatTestabilityExcInstrumentedTestcher instance has no way of
      * accessing the original text for the matching,
      * we need to access the private fields
      *

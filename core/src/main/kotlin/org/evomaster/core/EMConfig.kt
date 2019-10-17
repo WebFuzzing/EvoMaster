@@ -9,6 +9,7 @@ import org.evomaster.core.output.OutputFormat
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
+typealias PercentageAsProbability = EMConfig.Probability
 
 /**
  * Class used to hold all the main configuration properties
@@ -225,6 +226,15 @@ class EMConfig {
                             " parameter '${m.name}' with value $parameterValue")
                 }
             }
+
+            m.annotations.find { it is Probability }?.also {
+                it as Probability
+                val p = parameterValue.toDouble()
+                if( p < 0 || p > 1){
+                    throw IllegalArgumentException("Failed to handle probability constraint for" +
+                            " parameter '${m.name}' with value $parameterValue. The value must be in [0,1].")
+                }
+            }
         }
 
         when(stoppingCriterion){
@@ -306,10 +316,10 @@ class EMConfig {
                 .filter { it.annotations.find { it is Experimental } != null }
                 .filter {
                     val returnType = it.returnType.javaType as Class<*>
-                    if(java.lang.Boolean.TYPE.isAssignableFrom(returnType)){
-                        it.getter.call(this) as Boolean
-                    } else {
-                        false
+                    when {
+                        java.lang.Boolean.TYPE.isAssignableFrom(returnType) -> it.getter.call(this) as Boolean
+                        it.annotations.find {p ->  p is Probability && p.activating} != null -> (it.getter.call(this) as Double) > 0
+                        else -> false
                     }
                 }
                 .map { it.name }
@@ -352,6 +362,24 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Max(val max: Double)
+
+
+    /**
+     * A double value between 0 and 1
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Probability(
+            /**
+             * Specify if this probability would activate a functionality if greater than 0.
+             * If not, it might still not be used, depending on other configurations.
+             * This is mainly needed when dealing with @Experimental probabilities that must
+             * be put to 0 if they would activate a new feature that is still unstable
+             */
+            val activating : Boolean = true
+    )
+
+
 
     /**
      * This annotation is used to represent properties controlling
@@ -418,11 +446,11 @@ class EMConfig {
     var archiveTargetLimit = 10
 
     @Cfg("Probability of sampling a new individual at random")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var probOfRandomSampling = 0.5
 
     @Cfg("The percentage of passed search before starting a more focused, less exploratory one")
-    @Min(0.0) @Max(1.0)
+    @PercentageAsProbability(true)
     var focusedSearchActivationTime = 0.5
 
     @Cfg("Number of applied mutations on sampled individuals, at the start of the search")
@@ -506,7 +534,7 @@ class EMConfig {
     var bloatControlForSecondaryObjective = false
 
     @Cfg("Probability of applying a mutation that can change the structure of a test")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var structureMutationProbability = 0.5
 
 
@@ -536,7 +564,7 @@ class EMConfig {
     var maxSearchSuiteSize = 50
 
     @Cfg("Probability of applying crossover operation (if any is used in the search algorithm)")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var xoverProbability = 0.7
 
     @Cfg("Number of elements to consider in a Tournament Selection (if any is used in the search algorithm)")
@@ -544,7 +572,7 @@ class EMConfig {
     var tournamentSize = 10
 
     @Cfg("When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var probOfSmartSampling = 0.5
 
     @Cfg("Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test")
@@ -665,7 +693,7 @@ class EMConfig {
     @Cfg("Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. " +
             "Note that the option is available to be enabled only if resource-based smart sampling is enable. " +
             "This option has an effect on sampling multiple resources and mutating a structure of an individual.")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var probOfEnablingResourceDependencyHeuristics = 0.0
 
     @Experimental
@@ -678,7 +706,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a probability to apply SQL actions for preparing resources for REST Action")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var probOfApplySQLActionToCreateResources = 0.0
 
     @Experimental
@@ -689,7 +717,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions")
-    @Min(0.0) @Max(1.0)
+    @Probability(false)
     var probOfSelectFromDatabase = 0.1
 
     @Experimental
@@ -698,32 +726,32 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
-    @Min(0.0)@Max(1.0)
+    @Probability(false)
     var S1iR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply S1dR when resource sampling strategy is 'Customized'")
-    @Min(0.0)@Max(1.0)
+    @Probability(false)
     var S1dR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply S2dR when resource sampling strategy is 'Customized'")
-    @Min(0.0)@Max(1.0)
+    @Probability(false)
     var S2dR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply SMdR when resource sampling strategy is 'Customized'")
-    @Min(0.0)@Max(1.0)
+    @Probability(false)
     var SMdR : Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
-    @Min(0.0) @Max(1.0)
+    @Probability
     var probOfArchiveMutation = 0.0
 
     @Experimental
     @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
-    @Min(0.0) @Max(1.0)
+    @PercentageAsProbability(false)
     var perOfCandidateGenesToMutate = 0.1
 
     @Experimental
@@ -737,9 +765,8 @@ class EMConfig {
         FEED_BACK
     }
 
-    @Experimental
-    @Cfg("Probability to use base taint-analysis inputs to determine how inputs are used in the SUT")
-    var baseTaintAnalysisProbability = 0.0
+    @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
+    var baseTaintAnalysisProbability = 0.9
 
 
     @Experimental
