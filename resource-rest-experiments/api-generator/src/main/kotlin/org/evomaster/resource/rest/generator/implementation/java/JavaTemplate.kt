@@ -63,7 +63,7 @@ interface JavaTemplate {
                         b == numOfBranches - 1 -> content.append("else ")
                         else -> content.append("else if ($condition) ")
                     }
-                    content.append("$local = $b;")
+                    content.append("{${System.lineSeparator()}$local = $b;${System.lineSeparator()}}")
                 }
                 content.append(branchesMessage(variableName, local))
                 content.toString()

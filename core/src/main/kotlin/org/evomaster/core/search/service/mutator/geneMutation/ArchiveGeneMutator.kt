@@ -69,12 +69,6 @@ class ArchiveMutator {
             Pair(g, evi.getImpactOfGenes(id)!!)
         }
 
-        val noVisit = prioritizeNoVisit(collected)
-        if (noVisit.isNotEmpty()){
-            val num = randomness.nextInt(1, max(1, noVisit.size / 3))
-            return randomness.choose(noVisit, num)
-        }
-
         val percentage = apc.getExploratoryValue(start = config.startPerOfCandidateGenesToMutate, end = config.endPerOfCandidateGenesToMutate)
 
         val genes = selectGenesByArchive(collected, percentage, targets, mutatedGenes)
@@ -115,6 +109,12 @@ class ArchiveMutator {
      * the applied selection method can be recorded in [mutatedGenes] if it is not null
      */
     fun <T> selectGenesByArchive(genes: List<Pair<T, Impact>>, percentage : Double, targets : Set<Int>,mutatedGenes: MutatedGeneSpecification? = null) : List<T>{
+        val noVisit = prioritizeNoVisit(genes)
+        if (noVisit.isNotEmpty()){
+            val num = randomness.nextInt(1, max(1, noVisit.size / 3))
+            return randomness.choose(noVisit, num)
+        }
+
         val method = decideArchiveGeneSelectionMethod(genes.map { it.second })
         if (method.adaptive)
             throw IllegalArgumentException("the decided method should be a fixed method")

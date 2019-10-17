@@ -38,9 +38,9 @@ class GenConfig {
 
     var srcFolder = "src/main"
 
-    var csProjectPackage = "org.evomaster.resource.rest.artificial.cs"
+    var csProjectPackage = "com.mz.resource.rest.artificial.cs"
 
-    var emProjectPackage = "org.evomaster.resource.rest.artificial.em.controller"
+    var emProjectPackage = "com.mz.resource.rest.artificial.em.controller"
 
     var language = Format.JAVA_SPRING_SWAGGER
 

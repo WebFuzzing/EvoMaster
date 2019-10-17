@@ -23,13 +23,13 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
                 impactful = false
         )
 
-        val application = PropertySpecification(
-                name = "applicationClass",
-                type =  "Class<?>",
-                isId = false,
-                autoGen = false,
-                impactful = false
-        )
+//        val application = PropertySpecification(
+//                name = "applicationClass",
+//                type =  "Class<?>",
+//                isId = false,
+//                autoGen = false,
+//                impactful = false
+//        )
 
 
         val connection = PropertySpecification(
@@ -40,14 +40,16 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
                 impactful = false
         )
 
+        val port = PropertySpecification(
+                name = "controllerPort",
+                type =  "int",
+                isId = false,
+                defaultValue = "40100")
+
         val declarations = listOf(
                 CTXDeclaration(ctx),
-                ApplicationDeclaration(application),
-                StaticDeclaration(PropertySpecification(
-                        name = "controllerPort",
-                        type =  "int",
-                        isId = false,
-                        defaultValue = "40100")),
+                //ApplicationDeclaration(application),
+                StaticDeclaration(port),
                 SimpleDeclaration(connection),
                 StaticDeclaration(PropertySpecification(
                         name = "embeddedStarter",
@@ -78,15 +80,14 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
 
         return listOf(
                 """
-                ${formatBoundary(getBoundary())} ${getName()} ${GeneralSymbol.LEFT_PARENTHESIS}${declarations[2].generateAsVarOfConstructor(types)}${GeneralSymbol.RIGHT_PARENTHESIS} ${GeneralSymbol.LEFT_BRACE}
-                    this($appClazz.class, ${declarations[2].generateDefaultVarName()});
+                ${formatBoundary(getBoundary())} ${getName()} ${GeneralSymbol.LEFT_PARENTHESIS}${GeneralSymbol.RIGHT_PARENTHESIS} ${GeneralSymbol.LEFT_BRACE}
+                    this(${port.defaultValue});
                 ${GeneralSymbol.RIGHT_BRACE}
                 """.trimIndent()
                 ,
                 """
-                    ${formatBoundary(getBoundary())} ${getName()} ${GeneralSymbol.LEFT_PARENTHESIS} ${declarations.subList(1, 3).map { it.generateAsVarOfConstructor(types) }.joinToString(",")} ${GeneralSymbol.RIGHT_PARENTHESIS}${GeneralSymbol.LEFT_BRACE}
-                    this.${application.name} = ${declarations[1].generateDefaultVarName()};
-                    setControllerPort(${declarations[2].generateDefaultVarName()});
+                    ${formatBoundary(getBoundary())} ${getName()} ${GeneralSymbol.LEFT_PARENTHESIS} ${declarations[1].generateAsVarOfConstructor(types)} ${GeneralSymbol.RIGHT_PARENTHESIS}${GeneralSymbol.LEFT_BRACE}
+                    setControllerPort(${declarations[1].generateDefaultVarName()});
                     ${GeneralSymbol.RIGHT_BRACE}
                 """.trimIndent())
     }
@@ -114,7 +115,7 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
             "java.sql.SQLException",
             "java.util.*",
 
-            "org.evomaster.resource.rest.artificial.cs.*"
+            "$sutPackagePrefix*"
     )
 
     override fun getMethods(): List<MethodScript> {
@@ -128,7 +129,7 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
                 IsSutRunning(),
                 GetDatabaseDriverName(),
                 GetConnection(),
-                StartSut(),
+                StartSut(appClazz),
                 StopSut(),
                 ResetStateOfSut()
         )
