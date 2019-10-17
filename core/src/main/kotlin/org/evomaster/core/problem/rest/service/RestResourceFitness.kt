@@ -110,7 +110,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         /*
          update dependency regarding executed dto
          */
-        if(config.extractSqlExecutionInfo)
+        if(config.extractSqlExecutionInfo && config.probOfEnablingResourceDependencyHeuristics > 0.0)
             dm.updateResourceTables(individual, dto)
 
         dto.targets.forEach { t ->
