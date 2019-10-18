@@ -143,15 +143,43 @@
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
             <version>${nlp.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>edu.stanford.nlp</groupId>
             <artifactId>stanford-corenlp</artifactId>
             <version>${nlp.version}</version>
             <classifier>models</classifier>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>
+
+
+    <profiles>
+        <profile>
+            <!--
+                by default, nlp related jars are not included in the build
+                for resource-dependency mio experiment, the libraries can be included by
+
+                    mvn clean install -Presourceexp -DskipTests
+              -->
+            <id>resourceexp</id>
+            <dependencies>
+                <dependency>
+                    <groupId>edu.stanford.nlp</groupId>
+                    <artifactId>stanford-corenlp</artifactId>
+                    <version>${nlp.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>edu.stanford.nlp</groupId>
+                    <artifactId>stanford-corenlp</artifactId>
+                    <version>${nlp.version}</version>
+                    <classifier>models</classifier>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>
