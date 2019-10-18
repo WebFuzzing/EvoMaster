@@ -633,7 +633,8 @@ class EMConfig {
     var enableTrackEvaluatedIndividual = false
 
     @Experimental
-    @Cfg("Specify a maxLength of tracking")
+    @Cfg("Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. " +
+            "Note that the value should be specified with a non-negative number or -1 (for tracking all history)")
     @Min(-1.0)
     var maxLengthOfTraces = 10
 

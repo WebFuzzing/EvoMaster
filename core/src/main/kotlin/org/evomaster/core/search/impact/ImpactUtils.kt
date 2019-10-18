@@ -13,6 +13,7 @@ import org.evomaster.core.search.impact.value.date.DateGeneImpact
 import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
+import org.evomaster.core.Lazy
 
 /**
  * created by manzh on 2019-09-09
@@ -99,7 +100,10 @@ class ImpactUtils {
                 }
             }
 
-            assert(mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size)
+
+            Lazy.assert{
+                mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size
+            }
             return mutatedGenesWithContext
         }
 
@@ -115,7 +119,7 @@ class ImpactUtils {
                 }
             }
 
-            assert(mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size)
+            Lazy.assert{mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size}
             return mutatedGenesWithContext
         }
 
@@ -136,12 +140,12 @@ class ImpactUtils {
 
             val names = id.split(SEPARATOR_ACTION_TO_GENE)
 
-            assert(names.size == 2)
+            Lazy.assert{names.size == 2}
             return actions.filter { it.getName() == names[0] }.flatMap { it.seeGenes() }.filter { it.name == names[1] }.toMutableList()
         }
 
         fun isAnyChange(geneA : Gene, geneB : Gene) : Boolean{
-            assert(geneA::class.java.simpleName == geneB::class.java.simpleName)
+            Lazy.assert{geneA::class.java.simpleName == geneB::class.java.simpleName}
             return geneA.getValueAsRawString() == geneB.getValueAsRawString()
         }
 

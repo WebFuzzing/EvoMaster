@@ -46,8 +46,8 @@ class SqlNullImpactTest : GeneImpactTest() {
 
         impact as SqlNullableImpact
         assertImpact(impact.presentImpact, (pair.second as SqlNullableImpact).presentImpact, ImpactOptions.ONLY_IMPACT)
-        assertImpact(impact.presentImpact._false, (pair.second as SqlNullableImpact).presentImpact._false, ImpactOptions.NONE)
-        assertImpact(impact.presentImpact._true, (pair.second as SqlNullableImpact).presentImpact._true, ImpactOptions.ONLY_IMPACT)
+        assertImpact(impact.presentImpact.falseValue, (pair.second as SqlNullableImpact).presentImpact.falseValue, ImpactOptions.NONE)
+        assertImpact(impact.presentImpact.trueValue, (pair.second as SqlNullableImpact).presentImpact.trueValue, ImpactOptions.ONLY_IMPACT)
 
         assertImpact(impact.geneImpact, (pair.second as SqlNullableImpact).geneImpact, ImpactOptions.NONE)
 
@@ -55,8 +55,8 @@ class SqlNullImpactTest : GeneImpactTest() {
         val pairG = template(pair.first, pair.second, listOf(ImpactOptions.IMPACT_IMPROVEMENT), 0)
 
         assertImpact((pair.second as SqlNullableImpact).presentImpact, (pairG.second as SqlNullableImpact).presentImpact, ImpactOptions.NONE)
-        assertImpact((pair.second as SqlNullableImpact).presentImpact._false, (pairG.second as SqlNullableImpact).presentImpact._false, ImpactOptions.NONE)
-        assertImpact((pair.second as SqlNullableImpact).presentImpact._true, (pairG.second as SqlNullableImpact).presentImpact._true, ImpactOptions.NONE)
+        assertImpact((pair.second as SqlNullableImpact).presentImpact.falseValue, (pairG.second as SqlNullableImpact).presentImpact.falseValue, ImpactOptions.NONE)
+        assertImpact((pair.second as SqlNullableImpact).presentImpact.trueValue, (pairG.second as SqlNullableImpact).presentImpact.trueValue, ImpactOptions.NONE)
 
         assertImpact((pair.second as SqlNullableImpact).geneImpact, (pairG.second as SqlNullableImpact).geneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
     }

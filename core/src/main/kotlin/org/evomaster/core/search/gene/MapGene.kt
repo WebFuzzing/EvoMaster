@@ -132,7 +132,7 @@ class MapGene<T>(
             delete = delete || !p
         }
 
-        if (add && add == delete)
+        if (add && (add == delete))
             log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
 
         when{

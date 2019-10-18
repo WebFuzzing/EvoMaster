@@ -7,7 +7,7 @@ abstract class MutationBoundaryUpdate<T> (var preferMin : T, var preferMax : T, 
 
     abstract fun copy() : MutationBoundaryUpdate<T>
 
-    fun setCounter(improved : Boolean){
+    fun updateCounter(improved : Boolean){
         if (improved) counter = 0
         else counter++
     }
@@ -24,7 +24,7 @@ class IntMutationUpdate(preferMin: Int, preferMax: Int, counter: Int = 0, reache
 
     override fun updateBoundary(previous: Int, current: Int, doesCurrentBetter: Boolean) {
         val value = (previous + current) / 2.0
-        setCounter(doesCurrentBetter)
+        updateCounter(doesCurrentBetter)
         if ( (doesCurrentBetter && current > previous) || (!doesCurrentBetter && current < previous)){
             preferMin = if (value > value.toInt()) value.toInt()+1 else value.toInt()
         }else
@@ -37,7 +37,7 @@ class DoubleMutationUpdate(preferMin: Double, preferMax: Double, counter: Int = 
 
     override fun updateBoundary(previous: Double, current: Double, doesCurrentBetter: Boolean) {
         val value = (previous + current) / 2.0
-        setCounter(doesCurrentBetter)
+        updateCounter(doesCurrentBetter)
         if ( (doesCurrentBetter && current > previous) || (!doesCurrentBetter && current < previous)){
             preferMin = value
         }else

@@ -58,9 +58,9 @@ class OptionalGeneImpact (
         if (gc.previous == null || (gc.previous as OptionalGene).isActive != gc.current.isActive){
             activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             if (gc.current.isActive)
-                activeImpact._true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                activeImpact.trueValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             else
-                activeImpact._false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                activeImpact.falseValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.previous != null){
                 return

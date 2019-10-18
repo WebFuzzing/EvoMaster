@@ -283,24 +283,24 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
     }
 
-    fun <T:Individual> updateDbActionGenes(_individual: T, genes: List<Gene>){
+    fun <T:Individual> updateDbActionGenes(ind: T, genes: List<Gene>){
         genes.filter { it.isMutable() }.forEach {
-            val id = ImpactUtils.generateGeneId(_individual, it)
+            val id = ImpactUtils.generateGeneId(ind, it)
             impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(it, id))
         }
     }
 
-    private fun updateActionGenes(_individual: T){
-        if (_individual.seeActions().isNotEmpty()){
-            _individual.seeActions().forEach { a->
+    private fun updateActionGenes(ind: T){
+        if (ind.seeActions().isNotEmpty()){
+            ind.seeActions().forEach { a->
                 a.seeGenes().filter { it.isMutable() }.forEach { g->
                     val id = ImpactUtils.generateGeneId(a, g)
                     impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(g, id))
                 }
             }
         }else{
-            _individual.seeGenes().filter { it.isMutable() }.forEach { g->
-                val id = ImpactUtils.generateGeneId(_individual, g)
+            ind.seeGenes().filter { it.isMutable() }.forEach { g->
+                val id = ImpactUtils.generateGeneId(ind, g)
                 impactsOfGenes!!.putIfAbsent(id, ImpactUtils.createGeneImpact(g, id))
             }
         }

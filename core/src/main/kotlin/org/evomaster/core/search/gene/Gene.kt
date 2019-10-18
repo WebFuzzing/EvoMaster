@@ -68,6 +68,8 @@ abstract class Gene(var name: String) {
     /**
      * Apply a archived-based mutation to the current gene.
      *
+     * NOTE THAT if this method is not overridden, just default to standard mutation
+     *
      *   @param randomness the source of non-determinism
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
@@ -87,14 +89,6 @@ abstract class Gene(var name: String) {
                              evi: EvaluatedIndividual<*>,
                              targets: Set<Int>){
         standardMutation(randomness, apc, allGenes)
-//        if (!archiveMutator.enableArchiveMutation()){
-//            standardMutation(randomness,apc, allGenes)
-//        }else{
-//            if (archiveMutator.doesSupport(this))
-//                archiveMutator.mutate(this)
-//            else
-//                TODO("ArchiveGeneMutation for ${this::class.java.simpleName} was NOT IMPLEMENT")
-//        }
     }
 
     /**
@@ -150,10 +144,15 @@ abstract class Gene(var name: String) {
     abstract fun containsSameValueAs(other: Gene): Boolean
 
     /**
-     * indicates if the gene reaches its optimal value.
+     * indicates if it is likely that the gene reaches its optimal value, i.e., all possible values have been evaluated during search in the context of its individual.
+     * For instance, an enum has four items. If all values evaluated used during search, its 'Optimal' may be identified. But there may exist dependency among the genes
+     * in an individual, 'Optimal' can be reset.
      */
     open fun reachOptimal() = false
 
+    /**
+     * based on evaluated results, update a preferred boundary for the gene
+     */
     open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){
         //do nothing
     }

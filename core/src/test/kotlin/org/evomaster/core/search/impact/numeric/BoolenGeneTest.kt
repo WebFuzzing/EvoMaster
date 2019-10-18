@@ -33,7 +33,7 @@ class BoolenGeneTest : GeneImpactTest() {
         val gene = BooleanGene("b",  value= true)
         val impact = initImpact(gene)
         val updatedImpact = template( gene, impact, listOf(ImpactOptions.NO_IMPACT)).second
-        assertImpact((impact as BinaryGeneImpact)._false, (updatedImpact as BinaryGeneImpact)._false, ImpactOptions.NO_IMPACT)
+        assertImpact((impact as BinaryGeneImpact).falseValue, (updatedImpact as BinaryGeneImpact).falseValue, ImpactOptions.NO_IMPACT)
     }
 
     @Test
@@ -41,7 +41,7 @@ class BoolenGeneTest : GeneImpactTest() {
         val gene = BooleanGene("b",  value= false)
         val impact = initImpact(gene)
         val updatedImpact = template( gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT)).second
-        assertImpact((impact as BinaryGeneImpact)._true, (updatedImpact as BinaryGeneImpact)._true, ImpactOptions.IMPACT_IMPROVEMENT)
+        assertImpact((impact as BinaryGeneImpact).trueValue, (updatedImpact as BinaryGeneImpact).trueValue, ImpactOptions.IMPACT_IMPROVEMENT)
     }
 
     @Test
@@ -49,9 +49,9 @@ class BoolenGeneTest : GeneImpactTest() {
         val gene = BooleanGene("b",  value= false)
         val impact = initImpact(gene)
         val pair = template( gene, impact, listOf(ImpactOptions.IMPACT_IMPROVEMENT))
-        assertImpact((impact as BinaryGeneImpact)._true, (pair.second as BinaryGeneImpact)._true, ImpactOptions.IMPACT_IMPROVEMENT)
+        assertImpact((impact as BinaryGeneImpact).trueValue, (pair.second as BinaryGeneImpact).trueValue, ImpactOptions.IMPACT_IMPROVEMENT)
 
         val upair = template(pair.first, pair.second, listOf(ImpactOptions.NO_IMPACT))
-        assertImpact((pair.second as BinaryGeneImpact)._false, (upair.second as BinaryGeneImpact)._false, ImpactOptions.NO_IMPACT)
+        assertImpact((pair.second as BinaryGeneImpact).falseValue, (upair.second as BinaryGeneImpact).falseValue, ImpactOptions.NO_IMPACT)
     }
 }

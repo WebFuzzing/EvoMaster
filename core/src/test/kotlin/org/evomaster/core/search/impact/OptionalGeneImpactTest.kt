@@ -43,8 +43,8 @@ class OptionalGeneImpactTest : GeneImpactTest() {
 
         impact as OptionalGeneImpact
         assertImpact(impact.activeImpact, (pair.second as OptionalGeneImpact).activeImpact, ImpactOptions.ONLY_IMPACT)
-        assertImpact(impact.activeImpact._false, (pair.second as OptionalGeneImpact).activeImpact._false, ImpactOptions.NONE)
-        assertImpact(impact.activeImpact._true, (pair.second as OptionalGeneImpact).activeImpact._true, ImpactOptions.ONLY_IMPACT)
+        assertImpact(impact.activeImpact.falseValue, (pair.second as OptionalGeneImpact).activeImpact.falseValue, ImpactOptions.NONE)
+        assertImpact(impact.activeImpact.trueValue, (pair.second as OptionalGeneImpact).activeImpact.trueValue, ImpactOptions.ONLY_IMPACT)
 
         assertImpact(impact.geneImpact, (pair.second as OptionalGeneImpact).geneImpact, ImpactOptions.NONE)
 
@@ -52,8 +52,8 @@ class OptionalGeneImpactTest : GeneImpactTest() {
         val pairG = template(pair.first, pair.second, listOf(ImpactOptions.IMPACT_IMPROVEMENT), 0)
 
         assertImpact((pair.second as OptionalGeneImpact).activeImpact, (pairG.second as OptionalGeneImpact).activeImpact, ImpactOptions.NONE)
-        assertImpact((pair.second as OptionalGeneImpact).activeImpact._false, (pairG.second as OptionalGeneImpact).activeImpact._false, ImpactOptions.NONE)
-        assertImpact((pair.second as OptionalGeneImpact).activeImpact._true, (pairG.second as OptionalGeneImpact).activeImpact._true, ImpactOptions.NONE)
+        assertImpact((pair.second as OptionalGeneImpact).activeImpact.falseValue, (pairG.second as OptionalGeneImpact).activeImpact.falseValue, ImpactOptions.NONE)
+        assertImpact((pair.second as OptionalGeneImpact).activeImpact.trueValue, (pairG.second as OptionalGeneImpact).activeImpact.trueValue, ImpactOptions.NONE)
 
         assertImpact((pair.second as OptionalGeneImpact).geneImpact, (pairG.second as OptionalGeneImpact).geneImpact, ImpactOptions.IMPACT_IMPROVEMENT)
     }

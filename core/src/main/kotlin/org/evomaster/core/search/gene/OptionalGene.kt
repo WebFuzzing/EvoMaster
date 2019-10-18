@@ -88,7 +88,7 @@ class OptionalGene(name: String,
             !impact.activeImpact.run {
                 this.timesToManipulate > 5
                         &&
-                        (this._false.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this._true.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+                        (this.falseValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
             }
         }
 

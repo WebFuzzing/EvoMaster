@@ -521,7 +521,7 @@ class StringGene(
 
         if (this != mutated){
             dependencyInfo.mutatedtimes +=1
-            if (this.mutatedIndex == -2){
+            if (this.mutatedIndex == NEVER_ARCHIVE_MUTATION){
                 initCharMutation()
             }
             this.mutatedIndex = mutated.mutatedIndex

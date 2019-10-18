@@ -18,8 +18,8 @@ class BinaryGeneImpact (
         timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
         noImprovement : MutableMap<Int, Int> = mutableMapOf(),
-        val _false : GeneralImpact = GeneralImpact("false"),
-        val _true : GeneralImpact = GeneralImpact("true")
+        val falseValue : GeneralImpact = GeneralImpact("false"),
+        val trueValue : GeneralImpact = GeneralImpact("true")
 ) : GeneImpact(
         id = id,
         degree = degree,
@@ -38,8 +38,8 @@ class BinaryGeneImpact (
                 timesOfImpact= timesOfImpact.toMutableMap(),
                 noImpactFromImpact = noImpactFromImpact.toMutableMap(),
                 noImprovement = noImprovement.toMutableMap(),
-                _false = _false.copy(),
-                _true = _true.copy())
+                falseValue = falseValue.copy(),
+                trueValue = trueValue.copy())
     }
 
     override fun validate(gene: Gene): Boolean = gene is BooleanGene
@@ -50,13 +50,13 @@ class BinaryGeneImpact (
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be BooleanGene")
 
         if (gc.current.value){
-            _true.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            trueValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }else
-            _false.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            falseValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf("$id-false" to _false, "$id-true" to _true)
+        return mutableMapOf("$id-false" to falseValue, "$id-true" to trueValue)
     }
 
     override fun maxTimesOfNoImpact(): Int = 3
