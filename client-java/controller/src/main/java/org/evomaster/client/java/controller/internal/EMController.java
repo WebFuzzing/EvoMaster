@@ -14,11 +14,14 @@ import org.evomaster.client.java.instrumentation.TargetInfo;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
 import org.evomaster.client.java.utils.SimpleLogger;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.sql.Connection;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
 
 /**
@@ -35,14 +38,52 @@ public class EMController {
     private final SutController sutController;
     private String baseUrlOfSUT;
 
+    /**
+     * Keep track of all host:port clients connect so far.
+     * This is the mainly done for debugging, to check that we are using
+     * a single TCP connection, instead of creating new ones at each request.
+     *
+     * However, we want to check it only during testing
+     */
+    private static final Set<String> connectedClientsSoFar = new CopyOnWriteArraySet<>();
+
+
     public EMController(SutController sutController) {
         this.sutController = Objects.requireNonNull(sutController);
     }
 
+    private boolean trackRequestSource(HttpServletRequest request){
+        String source = request.getRemoteAddr() + ":" + request.getRemotePort();
+        connectedClientsSoFar.add(source);
+        return true;
+    }
+
+    /**
+     * Only used for debugging/testing
+     */
+    public static Set<String> getConnectedClientsSoFar() {
+        return connectedClientsSoFar;
+    }
+
+    /**
+     * Only used debugging/testing
+     */
+    public static void resetConnectedClientsSoFar(){
+        connectedClientsSoFar.clear();
+    }
 
     @Path(ControllerConstants.INFO_SUT_PATH)
     @GET
-    public Response getSutInfo() {
+    public Response getSutInfo(@Context HttpServletRequest httpServletRequest) {
+
+        String connectionHeader = httpServletRequest.getHeader("Connection");
+        if( connectionHeader == null
+                || !connectionHeader.equalsIgnoreCase("keep-alive")){
+            return Response.status(400).entity(WrappedResponseDto
+                    .withError("Requests should always contain a 'Connection: keep-alive'")).build();
+        }
+
+        assert trackRequestSource(httpServletRequest);
 
         SutInfoDto dto = new SutInfoDto();
         dto.isSutRunning = sutController.isSutRunning();
@@ -81,7 +122,9 @@ public class EMController {
 
     @Path(ControllerConstants.CONTROLLER_INFO)
     @GET
-    public Response getControllerInfoDto() {
+    public Response getControllerInfoDto(@Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
 
         ControllerInfoDto dto = new ControllerInfoDto();
         dto.fullName = sutController.getClass().getName();
@@ -92,7 +135,10 @@ public class EMController {
 
     @Path(ControllerConstants.NEW_SEARCH)
     @POST
-    public Response newSearch() {
+    public Response newSearch(@Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
         sutController.newSearch();
 
         return Response.status(201).entity(WrappedResponseDto.withNoData()).build();
@@ -102,7 +148,9 @@ public class EMController {
     @Path(ControllerConstants.RUN_SUT_PATH)
     @PUT
     @Consumes(Formats.JSON_V1)
-    public Response runSut(SutRunDto dto) {
+    public Response runSut(SutRunDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
 
         try {
             if (dto.run == null) {
@@ -190,7 +238,10 @@ public class EMController {
     public Response getTestResults(
             @QueryParam("ids")
             @DefaultValue("")
-                    String idList) {
+                    String idList,
+            @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
 
         try {
             TestResultsDto dto = new TestResultsDto();
@@ -278,7 +329,9 @@ public class EMController {
     @Path(ControllerConstants.NEW_ACTION)
     @Consumes(MediaType.APPLICATION_JSON)
     @PUT
-    public Response newAction(ActionDto dto) {
+    public Response newAction(ActionDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
 
         sutController.newAction(dto);
 
@@ -289,7 +342,9 @@ public class EMController {
     @Path(ControllerConstants.DATABASE_COMMAND)
     @Consumes(Formats.JSON_V1)
     @POST
-    public Response executeDatabaseCommand(DatabaseCommandDto dto) {
+    public Response executeDatabaseCommand(DatabaseCommandDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
 
         try {
             Connection connection = sutController.getConnection();
