@@ -32,17 +32,20 @@ abstract class TraceableElement(
      * @param trackOperator presents an operatorTag to refine the TraceElement
      * @return an TraceableElement that is going to be refined by [trackOperator], and its history is [tracking] of [this] plus [this]
      */
-    open fun next(trackOperator: TrackOperator) : TraceableElement? = null
+    open fun next(trackOperator: TrackOperator, maxLength : Int = -1) : TraceableElement? = null
 
     /**
      * @param trackOperator presents an operatorTag to refine the TraceElement
      * @param next is an evolved/refined element based on [this],
      *           e.g., EvaluatedIndividual is always created from fitness function based on individual, which does not rely on previous Evaluated individual
+     * @param copyFilter indicates how to create new element
      * @return an newly created TraceableElement regarding [next], and its history is [tracking] of [this] plus [this]
      */
-    open fun next(trackOperator: TrackOperator, next : TraceableElement) : TraceableElement? = null
+    open fun next(trackOperator: TrackOperator, next : TraceableElement, copyFilter: TraceableElementCopyFilter, maxLength : Int = -1) : TraceableElement? = null
 
-    abstract fun copy(withTrack : Boolean) : TraceableElement
+    open fun copy(options: TraceableElementCopyFilter) : TraceableElement{
+        TODO("NOT IMPLEMENT")
+    }
 
     open fun getUndoTracking() : MutableList<out TraceableElement>? = undoTracking
 

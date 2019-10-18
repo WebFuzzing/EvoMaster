@@ -273,7 +273,7 @@ class RestResourceStructureMutator : StructureMutator() {
     /**
      * for ResourceRestIndividual, dbaction(s) has been distributed to each resource call [ResourceRestCalls]
      */
-    override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
         //do noting
     }
 

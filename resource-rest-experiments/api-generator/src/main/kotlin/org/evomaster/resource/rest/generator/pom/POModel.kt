@@ -58,6 +58,8 @@ class EMPOModel(groupId: String, artifactId: String, version: String = "0.0.1", 
         model.artifactId = artifactId
         model.version = version
         model.packaging = "jar"
+        model.modelVersion = "4.0.0"
+        model.dependencies.add(DependencyManager.EVOMASTER_CORE.getDependency())
         model.dependencies.add(DependencyManager.EVOMASTER_CLIENT_JAVA_CONTROLLER.getDependency())
         model.dependencies.add(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.getDependency())
         model.dependencies.add(DependencyManager.IO_REST_ASSURED.getDependency())
@@ -65,7 +67,7 @@ class EMPOModel(groupId: String, artifactId: String, version: String = "0.0.1", 
         model.dependencies.add(DependencyManager.JUNIT.getDependency())
         model.dependencies.add(ArtifactTemplate(artifactId = csPOModel.artifactId, groupId = csPOModel.groupId).getDependency(version=csPOModel.version))
         model.build = Build()
-        model.build.plugins.add(DependencyManager.MAVEN_PLUGINS_COMPILER.getPlugin(configuration = mutableMapOf("score" to "1.8", "target" to "1.8")))
+        model.build.plugins.add(DependencyManager.MAVEN_PLUGINS_COMPILER.getPlugin(configuration = mutableMapOf("source" to "1.8", "target" to "1.8")))
 
         return model
     }

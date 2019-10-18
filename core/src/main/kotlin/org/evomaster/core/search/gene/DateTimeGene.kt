@@ -1,8 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Using RFC3339
@@ -21,6 +28,10 @@ open class DateTimeGene(
         ISO_LOCAL_DATE_TIME_FORMAT,
         // YYYY-MM-DD HH:SS:MM
         DEFAULT_DATE_TIME
+    }
+
+    companion object{
+        val log : Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
     }
 
     override fun copy(): Gene = DateTimeGene(
@@ -46,6 +57,45 @@ open class DateTimeGene(
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
         val gene = randomness.choose(listOf(date, time))
         gene.standardMutation(randomness, apc, allGenes)
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+        if (!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
+        var genes : List<Pair<Gene, GeneImpact>>? = null
+        val selects = if(impact != null && impact is DateTimeGeneImpact && archiveMutator.applyArchiveSelection()){
+            genes = listOf(
+                    Pair(date, impact.dateGeneImpact),
+                    Pair(time , impact.timeGeneImpact)
+            )
+            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
+        }else listOf(date, time)
+
+        val selected = randomness.choose(selects)
+        val selectedImpact = genes?.first { it.first == selected }?.second
+        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is DateTimeGene){
+                log.warn("original ({}) should be DateTimeGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is DateTimeGene){
+                log.warn("mutated ({}) should be DateTimeGene", mutated::class.java.simpleName)
+                return
+            }
+
+            if (!mutated.date.containsSameValueAs(original.date)){
+                date.archiveMutationUpdate(original.date, mutated.date, doesCurrentBetter, archiveMutator)
+            }
+            if (!mutated.time.containsSameValueAs(original.time))
+                time.archiveMutationUpdate(original.time, mutated.time, doesCurrentBetter, archiveMutator)
+        }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

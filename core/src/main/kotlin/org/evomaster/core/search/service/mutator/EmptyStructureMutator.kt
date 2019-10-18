@@ -8,7 +8,7 @@ import org.evomaster.core.search.gene.Gene
 class EmptyStructureMutator : StructureMutator() {
 
 
-    override fun addInitializingActions(individual: EvaluatedIndividual<*>) {
+    override fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?) {
         //DO nothing
     }
 

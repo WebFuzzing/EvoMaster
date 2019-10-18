@@ -1,8 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 /**
  * Gene in which 1 out of N constant values is chosen.
@@ -63,7 +69,7 @@ class EnumGene<T : Comparable<T>>(
 
     override fun copy(): Gene {
         //recall: "values" is immutable
-        return EnumGene(name, values, index)
+        return EnumGene<T>(name, values, index)
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
@@ -81,6 +87,21 @@ class EnumGene<T : Comparable<T>>(
 
         val next = (index+1) % values.size
         index = next
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+        if (!archiveMutator.applyArchiveSelection() || values.size == 2 || impact == null || impact !is EnumGeneImpact){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
+        val candidates = (0 until values.size).filter { index != it }.map {
+            Pair(it, impact.values[it])
+        }
+
+        val selects = archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), targets)
+        index = randomness.choose(selects)
+
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -111,4 +132,8 @@ class EnumGene<T : Comparable<T>>(
         return this.index == other.index
     }
 
+    //TODO when archive-based mutation is enabled
+    override fun reachOptimal(): Boolean {
+        return values.size == 1
+    }
 }

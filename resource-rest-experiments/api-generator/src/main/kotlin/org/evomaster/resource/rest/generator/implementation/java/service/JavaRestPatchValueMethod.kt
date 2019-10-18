@@ -13,21 +13,20 @@ import org.evomaster.resource.rest.generator.template.Boundary
  */
 class JavaRestPatchValueMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
 
-    private val value = "value"
+    private val values = specification.entity.defaultProperties.map{it.name}
     private val idVar = "${specification.resourceOnPath}Id"
-    private val valueVar = "${specification.resourceOnPath}$value"
+    private val valueVars = values.map { "${specification.resourceOnPath}$it" }
 
     override fun getParams(): Map<String, String> {
-        val type = CommonTypes.INT.toString()
         return mapOf(
-                idVar to specification.dto.idProperty.type,
-                valueVar to type)
+                idVar to specification.dto.idProperty.type).plus(valueVars.mapIndexed { index, d-> d to specification.entity.defaultProperties[index].type })
     }
 
     override fun getParamTag(): Map<String, String> {
         return mapOf(
-                idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)),
-                valueVar to SpringAnnotation.REQUEST_PARAM.getText(mapOf("name" to valueVar))
+                idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)))
+                .plus(valueVars
+                        .map {valueVar-> valueVar to SpringAnnotation.REQUEST_PARAM.getText(mapOf("name" to valueVar)) }
                 )
     }
 
@@ -41,15 +40,32 @@ class JavaRestPatchValueMethod(val specification: ServiceClazz) : JavaMethod(), 
                 specification.entity.name
         ))
 
-        val entityValue = specification.entity.defaultProperties.find {
-            it.name == value
-        }?: throw IllegalArgumentException("cannot find this property $value in entity")
+        val withImpact = specification.entity.defaultProperties.any { it.impactful && it.branches > 1 }
+        if (withImpact)
+            content.add(initBranchesMessage())
 
+        values.forEachIndexed { index, value ->
 
-        content.add("$created.${entityValue.nameSetterName()}($valueVar);")
+            val entityValue = specification.entity.defaultProperties.find {
+                it.name == value
+            }?: throw IllegalArgumentException("cannot find this property $value in entity")
+            if(entityValue.impactful){
+                content.add("$created.${entityValue.nameSetterName()}(${valueVars[index]});")
+                if (entityValue.branches > 1)
+                    content.add(
+                            defaultBranches(
+                                    type = entityValue.type,
+                                    index = index,
+                                    variableName =  valueVars[index],
+                                    numOfBranches = entityValue.branches
+                            )
+
+                    )
+            }
+        }
 
         content.add(repositorySave(specification.entityRepository.name, created))
-        content.add(returnStatus(200))
+        if (!withImpact) content.add(returnStatus(200)) else content.add(returnStatus(200, msg = getBranchMsg()))
         return content
     }
 

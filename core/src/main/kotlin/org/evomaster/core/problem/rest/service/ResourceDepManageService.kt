@@ -167,7 +167,7 @@ class ResourceDepManageService {
         if (updated.isNotEmpty() && matchedWithVerb) {
             val derivedTables = rToTable.getTablesInDerivedMap()
 
-            updated.forEach { t, u ->
+            updated.forEach { (t, u) ->
                 if (derivedTables.any { it.equals(t, ignoreCase = true) }) {
                     if (action.parameters.isNotEmpty() && u.isNotEmpty() && u.none { it == "*" }) {
                         action.parameters.forEach { p ->

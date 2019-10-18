@@ -1,8 +1,15 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.value.collection.ArrayGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class ArrayGene<T>(
@@ -18,6 +25,12 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
+    }
+
+    companion object{
+        val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
+
+        private const val MODIFY_SIZE = 0.1
     }
 
     override fun copy(): Gene {
@@ -65,15 +78,99 @@ class ArrayGene<T>(
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(0.1))){
+        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
             gene.randomize(randomness, false)
             elements.add(gene)
-        } else if(elements.size > 0 && randomness.nextBoolean(0.1)){
+        } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
             elements.removeAt(randomness.nextInt(elements.size))
         } else {
             val gene = randomness.choose(elements)
             gene.standardMutation(randomness, apc, allGenes)
+        }
+    }
+
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: GeneMutationSelectionMethod,
+            impact: GeneImpact?,
+            geneReference: String,
+            archiveMutator: ArchiveMutator,
+            evi: EvaluatedIndividual<*>,
+            targets: Set<Int>
+    ) {
+
+        if (!archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
+        var add = elements.isEmpty()
+        var delete = elements.size == maxSize
+
+        val fmodifySize =
+                if (add || delete) false
+                else if (archiveMutator.applyArchiveSelection()
+                        && impact != null
+                        && impact is ArrayGeneImpact
+                        && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+                ){
+                    randomness.nextBoolean(0.3)
+                }else {
+                    randomness.nextBoolean(MODIFY_SIZE)
+                }
+
+        if (fmodifySize){
+            val p = randomness.nextBoolean()
+            add = add || p
+            delete = delete || !p
+        }
+
+        if (add && add == delete)
+            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
+
+        when{
+            add ->{
+                val gene = template.copy() as T
+                gene.randomize(randomness, false)
+                elements.add(gene)
+            }
+            delete ->{
+                elements.removeAt(randomness.nextInt(elements.size))
+            }
+            else -> {
+                val gene = randomness.choose(elements)
+                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
+            }
+        }
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is ArrayGene<*>){
+                log.warn("original ({}) should be ArrayGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is ArrayGene<*>){
+                log.warn("mutated ({}) should be ArrayGene", mutated::class.java.simpleName)
+                return
+            }
+            if (original.elements.size != mutated.elements.size) return
+            val mutatedElements = mutated.elements.filterIndexed { index, gene ->
+                !gene.containsSameValueAs(original.elements[index])
+            }
+            if (mutatedElements.size > 1){
+                log.warn("size of mutated elements is more than 1, i.e.,{}", mutatedElements.size)
+                return
+            }
+            val index = mutated.elements.indexOf(mutatedElements.first())
+            if (index > elements.size - 1){
+                log.warn("cannot find element at index {}", index)
+                return
+            }
+            elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], doesCurrentBetter, archiveMutator)
         }
     }
 

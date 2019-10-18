@@ -1,14 +1,24 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.sql.SqlXmlGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fields = listOf())) : Gene(name) {
 
+    companion object{
+        private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
+    }
 
     override fun copy(): Gene = SqlXMLGene(
             name,
@@ -58,6 +68,32 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(objectGene.flatView(excludePredicate))
+    }
+
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+        if( !archiveMutator.enableArchiveMutation()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+        objectGene.archiveMutation(randomness, allGenes, apc, selection, if( impact == null || impact !is SqlXmlGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (archiveMutator.enableArchiveGeneMutation()){
+            if (original !is SqlXMLGene){
+                log.warn("original ({}) should be SqlXMLGene", original::class.java.simpleName)
+                return
+            }
+            if (mutated !is SqlXMLGene){
+                log.warn("mutated ({}) should be SqlXMLGene", mutated::class.java.simpleName)
+                return
+            }
+            objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, doesCurrentBetter, archiveMutator)
+        }
+    }
+
+    override fun reachOptimal(): Boolean {
+        return objectGene.reachOptimal()
     }
 
 }

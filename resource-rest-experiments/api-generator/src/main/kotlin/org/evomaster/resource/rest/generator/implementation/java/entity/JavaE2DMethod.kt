@@ -8,6 +8,8 @@ import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-16
+ *
+ * convert entity to dto
  */
 class JavaE2DMethod(val specification: EntityClazz) : JavaMethod() {
 
