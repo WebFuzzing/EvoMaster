@@ -17,7 +17,17 @@ class SearchStatusUpdater : SearchListener{
     @Inject
     private lateinit var config: EMConfig
 
-    private var passed = -1
+    @Inject
+    private lateinit var archive: Archive<*>
+
+
+    private var passed = "-1"
+
+    private var lastUpdateMS = 0L
+
+    private var lastCoverageComputation = 0
+
+    private var coverage = 0
 
     private var extra = ""
 
@@ -46,7 +56,9 @@ class SearchStatusUpdater : SearchListener{
     }
 
     override fun newActionEvaluated() {
-        val current = (time.percentageUsedBudget() * 100).toInt()
+
+        val percentageInt = (time.percentageUsedBudget() * 100).toInt()
+        val current = String.format("%.3f", time.percentageUsedBudget() * 100)
 
         if(first){
             println()
@@ -56,15 +68,25 @@ class SearchStatusUpdater : SearchListener{
             first = false
         }
 
-        if(current != passed){
+        val delta = System.currentTimeMillis() - lastUpdateMS
+
+        //writing on console is I/O, which is expensive. So, can't do it too often
+        if(current != passed && delta > 500){
+            lastUpdateMS += delta
             passed = current
+
+            if(percentageInt - lastCoverageComputation > 0){
+                lastCoverageComputation = percentageInt
+                //this is not too expensive, but still computation. so we do it only at each 1%
+                coverage = archive.numberOfCoveredTargets()
+            }
 
             if(config.e_u1f984){
                 upLineAndErase()
             }
 
             upLineAndErase()
-            println("$consumedMessage $passed%")
+            println("$consumedMessage $passed%, covered targets: $coverage")
 
             if(config.e_u1f984){
                 updateExtra()
