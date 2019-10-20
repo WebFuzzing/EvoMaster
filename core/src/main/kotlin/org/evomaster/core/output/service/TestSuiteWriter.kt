@@ -241,6 +241,7 @@ class TestSuiteWriter {
 
         lines.block {
             if(! config.blackBox) {
+                addStatement("$controller.setupForGeneratedTest()", lines)
                 addStatement("baseUrlOfSut = $controller.startSut()", lines)
                 addStatement("assertNotNull(baseUrlOfSut)", lines)
             }

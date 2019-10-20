@@ -47,7 +47,10 @@ public abstract class ExternalSutController extends SutController {
      */
     private volatile StringBuffer errorBuffer;
 
-
+    @Override
+    public final void setupForGeneratedTest(){
+        //TODO how to handle P6Spy here??? We don't want the spy.log files
+    }
 
     public void setInstrumentation(boolean instrumentation) {
         this.instrumentation = instrumentation;
