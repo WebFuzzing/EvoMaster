@@ -13,6 +13,12 @@ import java.util.List;
 public interface SutHandler {
 
     /**
+     * There might be different settings based on when the SUT is run during the
+     * search of EvoMaster, and when it is later started in the generated tests.
+     */
+    default void setupForGeneratedTest(){}
+
+    /**
      * Start a new instance of the SUT.
      * <br>
      * This method must be blocking until the SUT is initialized.

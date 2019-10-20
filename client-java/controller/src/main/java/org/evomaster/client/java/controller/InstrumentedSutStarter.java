@@ -36,7 +36,6 @@ public class InstrumentedSutStarter {
             String driver = sutController.getDatabaseDriverName();
             if(driver!=null && ! driver.isEmpty()){
                 InstrumentingAgent.initP6Spy(driver);
-                return;
             }
 
         } else if(sutController instanceof ExternalSutController){

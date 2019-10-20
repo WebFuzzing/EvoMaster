@@ -5,6 +5,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
@@ -238,6 +239,30 @@ public abstract class SutController implements SutHandler {
         }
 
         return schemaDto;
+    }
+
+
+    /**
+     * Either there is no connection, or, if there is, then it must have P6Spy configured.
+     * But this might not apply to all kind controllers
+     */
+    public final boolean verifySqlConnection(){
+
+        Connection connection = getConnection();
+        if(connection == null
+                //check does not make sense for External
+                || !(this instanceof EmbeddedSutController)){
+            return true;
+        }
+
+        /*
+            bit hacky/brittle, but seems there is no easy way to check if a connection is
+            using P6Spy.
+            However, the name of driver's package would appear when doing a toString on it
+         */
+        String info = connection.toString();
+
+        return info.contains("p6spy");
     }
 
 

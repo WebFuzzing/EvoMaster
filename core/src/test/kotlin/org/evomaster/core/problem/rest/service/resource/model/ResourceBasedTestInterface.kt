@@ -88,7 +88,7 @@ interface ResourceBasedTestInterface {
 
     fun setupWithoutDatabaseAndDependency()
 
-    @Test
+    //FIXME @Test
     fun testInitializedResourceClusterAndApplicableSampleMethods(){
         setupWithoutDatabaseAndDependency()
 
@@ -103,7 +103,7 @@ interface ResourceBasedTestInterface {
 
     fun setupWithDatabaseAndNameAnalysis()
 
-    @Test
+    //FIXME @Test
     fun testWithDatabaseAndNameAnalysis(){
         setupWithDatabaseAndNameAnalysis()
 
@@ -113,7 +113,7 @@ interface ResourceBasedTestInterface {
 
     fun setupWithDatabaseAndDependencyAndNameAnalysis()
 
-    @Test
+    //FIXME @Test
     fun testWithDependencyAndNameAnalysis(){
         setupWithDatabaseAndDependencyAndNameAnalysis()
 
