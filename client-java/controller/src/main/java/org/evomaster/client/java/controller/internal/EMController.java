@@ -44,6 +44,15 @@ public class EMController {
     @GET
     public Response getSutInfo() {
 
+        if(! sutController.verifySqlConnection()){
+            String msg = "SQL drivers are misconfigured. You must use a 'p6spy' wrapper when you " +
+                    "run the SUT. For example, a database connection URL like 'jdbc:h2:mem:testdb' " +
+                    "should be changed into 'jdbc:p6spy:h2:mem:testdb'. " +
+                    "See documentation on how to configure P6Spy.";
+            SimpleLogger.error(msg);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        }
+
         SutInfoDto dto = new SutInfoDto();
         dto.isSutRunning = sutController.isSutRunning();
         dto.baseUrlOfSUT = baseUrlOfSUT;

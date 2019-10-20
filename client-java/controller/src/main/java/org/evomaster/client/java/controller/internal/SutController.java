@@ -242,6 +242,27 @@ public abstract class SutController implements SutHandler {
 
 
     /**
+     * Either there is no connection, or, if there is, then it must have P6Spy configured
+     */
+    public final boolean verifySqlConnection(){
+
+        Connection connection = getConnection();
+        if(connection == null){
+            return true;
+        }
+
+        /*
+            bit hacky/brittle, but seems there is no easy way to check if a connection is
+            using P6Spy.
+            However, the name of driver's package would appear when doing a toString on it
+         */
+        String info = connection.toString();
+
+        return info.contains("p6spy");
+    }
+
+
+    /**
      * Re-initialize all internal data to enable a completely new search phase
      * which should be independent from previous ones
      */
