@@ -14,6 +14,7 @@ import org.evomaster.core.remote.SutProblemException
 import org.glassfish.jersey.client.ClientConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.BindException
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
@@ -47,7 +48,7 @@ class RemoteController() : DatabaseExecutor {
     @Inject
     private lateinit var config: EMConfig
 
-    private val client: Client = ClientBuilder.newClient()
+    private var client: Client = ClientBuilder.newClient()
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
@@ -77,6 +78,30 @@ class RemoteController() : DatabaseExecutor {
         return client.target("http://$host:$port" + ControllerConstants.BASE_PATH)
     }
 
+    private fun makeHttpCall(lambda:  () -> Response) : Response{
+
+        return  try{
+            lambda.invoke()
+        } catch (e: ProcessingException){
+            if(e.cause is BindException
+                    && e.cause!!.message?.contains("Address already in use", ignoreCase = true) == true){
+                /*
+                    This could happen if for any reason we run out of ephemeral ports.
+                    In such a case, we wait X seconds, and try again, as OS might have released ports
+                    meanwhile.
+                    And while we are at it, let's release any hanging network resource
+                 */
+                client.close() //make sure to release any resource
+                client = ClientBuilder.newClient()
+
+                val seconds = 30
+                log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection")
+                Thread.sleep(seconds * 1000L)
+                lambda.invoke()
+            }
+            throw e
+        }
+    }
 
     fun close() {
         client.close()
@@ -135,10 +160,12 @@ class RemoteController() : DatabaseExecutor {
 
     fun getSutInfo(): SutInfoDto? {
 
-        val response = getWebTarget()
-                .path(ControllerConstants.INFO_SUT_PATH)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get()
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.INFO_SUT_PATH)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get()
+        }
 
         val dto = getDto(response, object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
 
@@ -152,10 +179,12 @@ class RemoteController() : DatabaseExecutor {
 
     fun getControllerInfo(): ControllerInfoDto? {
 
-        val response = getWebTarget()
-                .path(ControllerConstants.CONTROLLER_INFO)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get()
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.CONTROLLER_INFO)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get()
+        }
 
         val dto = getDto(response, object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
 
@@ -169,10 +198,12 @@ class RemoteController() : DatabaseExecutor {
     private fun changeState(run: Boolean, reset: Boolean): Boolean {
 
         val response = try {
-            getWebTarget()
-                    .path(ControllerConstants.RUN_SUT_PATH)
-                    .request()
-                    .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo)))
+            makeHttpCall {
+                getWebTarget()
+                        .path(ControllerConstants.RUN_SUT_PATH)
+                        .request()
+                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo)))
+            }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
             return false
@@ -212,10 +243,12 @@ class RemoteController() : DatabaseExecutor {
 
     fun startANewSearch(): Boolean {
 
-        val response = getWebTarget()
-                .path(ControllerConstants.NEW_SEARCH)
-                .request()
-                .post(Entity.entity("{\"newSearch\"=true}", MediaType.APPLICATION_JSON_TYPE))
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_SEARCH)
+                    .request()
+                    .post(Entity.entity("{\"newSearch\"=true}", MediaType.APPLICATION_JSON_TYPE))
+        }
 
         return checkResponse(response, "Failed to inform SUT of new search")
     }
@@ -241,20 +274,24 @@ class RemoteController() : DatabaseExecutor {
 
     fun registerNewAction(actionDto: ActionDto) : Boolean{
 
-        val response = getWebTarget()
-                .path(ControllerConstants.NEW_ACTION)
-                .request()
-                .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.NEW_ACTION)
+                    .request()
+                    .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
+        }
 
         return checkResponse(response, "Failed to register new action")
     }
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
-        val response = getWebTarget()
-                .path(ControllerConstants.DATABASE_COMMAND)
-                .request()
-                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.DATABASE_COMMAND)
+                    .request()
+                    .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
 
         if (!wasSuccess(response)) {
             LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
@@ -300,10 +337,12 @@ class RemoteController() : DatabaseExecutor {
 
     private fun <T> executeDatabaseCommandAndGetResults(dto: DatabaseCommandDto, type: GenericType<WrappedResponseDto<T>>): T? {
 
-        val response = getWebTarget()
-                .path(ControllerConstants.DATABASE_COMMAND)
-                .request()
-                .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.DATABASE_COMMAND)
+                    .request()
+                    .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
+        }
 
         val dto = getDto(response, type)
 
