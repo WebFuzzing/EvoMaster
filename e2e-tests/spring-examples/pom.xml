@@ -115,6 +115,21 @@
             <artifactId>junit-jupiter-params</artifactId>
         </dependency>
 
+        <!--for token parser-->
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>edu.stanford.nlp</groupId>
+            <artifactId>stanford-corenlp</artifactId>
+            <version>${nlp.version}</version>
+            <classifier>models</classifier>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
