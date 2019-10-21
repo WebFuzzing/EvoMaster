@@ -116,6 +116,11 @@ class FitnessValue(
         return targets.values.map { h -> h.distance }.sum()
     }
 
+    fun computeFitnessScore(targetIds : List<Int>): Double {
+
+        return targets.filterKeys { targetIds.contains(it)}.values.map { h -> h.distance }.sum()
+    }
+
     fun coveredTargets(): Int {
 
         return targets.values.filter { t -> t.distance == MAX_VALUE }.count()
@@ -217,6 +222,59 @@ class FitnessValue(
         }
 
         return atLeastOneBetter
+    }
+
+    /**
+     * Check if current does differ from [other] regarding [targetSubset].
+     *
+     * Recall: during the search, we might not calculate all targets, eg once they
+     * are covered.
+     *
+     * @param other, the one we compare to
+     * @param targetSubset, only calculate subsumption on these testing targets
+     */
+    fun isDifferent(
+            other: FitnessValue,
+            targetSubset: Set<Int>,
+            improved : MutableSet<Int>,
+            different : MutableSet<Int>,
+            strategy: EMConfig.SecondaryObjectiveStrategy,
+            bloatControlForSecondaryObjective: Boolean) : Boolean {
+
+        var atLeastOneDifferent = false
+        for (k in targetSubset) {
+
+            val v = this.targets[k]?.distance ?: 0.0
+            val z = other.targets[k]?.distance ?: 0.0
+            if (v == 0.0 && v == z)
+                continue
+
+            if (v != z) {
+                different.add(k)
+                atLeastOneDifferent = true
+                if (v > z) improved.add(k)
+                continue
+            }
+
+            val extra = compareExtraToMinimize(k, other, strategy)
+
+            if (this.size != other.size || extra != 0) {
+                different.add(k)
+                atLeastOneDifferent = true
+
+                if(bloatControlForSecondaryObjective){
+                    if (this.size < other.size || (this.size == other.size && extra > 0)) {
+                        improved.add(k)
+                    }
+                } else {
+                    if (extra > 0 ||
+                            (extra == 0 && this.size < other.size)) {
+                        improved.add(k)
+                    }
+                }
+            }
+        }
+        return atLeastOneDifferent
     }
 
     fun averageExtraDistancesToMinimize(actionIndex: Int): Double{

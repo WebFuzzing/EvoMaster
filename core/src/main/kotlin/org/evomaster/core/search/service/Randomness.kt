@@ -18,6 +18,7 @@ class Randomness {
         updateSeed(configuration.seed)
     }
 
+    private val wordChars = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY".map { it.toInt() }.sorted()
     /**
      * A negative value means the current CPU time clock is used instead
      */
@@ -102,6 +103,24 @@ class Randomness {
         val characters =
                 "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
         return characters[random.nextInt(characters.length)]
+    }
+
+    fun wordCharPool() = wordChars
+
+    fun validNextWordChars(min: Int, max: Int) : List<Int>{
+        return wordChars.filter { it in min..max }
+    }
+
+    fun nextChar(min : Int = Char.MIN_VALUE.toInt(), max : Int = Char.MAX_VALUE.toInt()) : Char{
+        if (min < Char.MIN_VALUE.toInt())
+            throw IllegalArgumentException("$min is less than MIN_VALUE of Char")
+        if (max > Char.MAX_VALUE.toInt())
+            throw IllegalArgumentException("$max is more than MAX_VALUE of Char")
+        if (min > max)
+            throw IllegalArgumentException("$min should be less than $max")
+        if (min == max)
+            return min.toChar()
+        return choose((min..max).toList()).toChar()
     }
 
     fun nextChar(start: Char, endInclusive: Char) : Char{

@@ -113,7 +113,7 @@ internal class EMConfigTest{
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["probOfRandomSampling", "perOfCandidateGenesToMutate", "focusedSearchActivationTime"])
+    @ValueSource(strings = ["probOfRandomSampling", "startPerOfCandidateGenesToMutate", "focusedSearchActivationTime"])
     fun testProbability(name: String){
 
         val parser = EMConfig.getOptionParser()

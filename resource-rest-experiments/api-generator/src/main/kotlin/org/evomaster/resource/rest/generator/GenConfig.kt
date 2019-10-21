@@ -1,5 +1,6 @@
 package org.evomaster.resource.rest.generator
 
+import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.model.RestMethod
 
 /**
@@ -30,15 +31,16 @@ class GenConfig {
         BOTH
     }
 
+    var groupId = "org.evomaster"
     var projectName = "auto-rest-example"
     var csName = "cs"
     var emName = "em"
 
     var srcFolder = "src/main"
 
-    var csProjectPackage = "org.evomaster.resource.rest.artificial.cs"
+    var csProjectPackage = "com.mz.resource.rest.artificial.cs"
 
-    var emProjectPackage = "org.evomaster.resource.rest.artificial.em.controller"
+    var emProjectPackage = "com.mz.resource.rest.artificial.em.controller"
 
     var language = Format.JAVA_SPRING_SWAGGER
 
@@ -64,10 +66,19 @@ class GenConfig {
 
     var numOfManyToMany = 0
 
+    var numOfExtraProperties = 4
+
+    var numOfImpactProperties = 2
+
+    var propertiesTypes = listOf(CommonTypes.INT)//CommonTypes.values()
+
+    var branchesForImpact = 4
+
     fun getCsOutputFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.srcFolder}"
     fun getCsResourceFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.resource}"
-    private fun getRootFolder() = "${FormatUtil.formatFolder(outputFolder)}${if (outputContent == OutputContent.BOTH) "$projectName" else ""}"
-    fun getCsRootFolder() = "${FormatUtil.formatFolder(getRootFolder())}${if (outputType != OutputType.SOURCE) csName else ""}"
-    fun getEmOutputFolder() = "${FormatUtil.formatFolder(getRootFolder())}$emName/$srcFolder/${language.srcFolder}"
+    fun getProjectFolder() = "${FormatUtil.formatFolder(outputFolder)}${if (outputContent == OutputContent.BOTH) "$projectName" else ""}"
+    fun getCsRootFolder() = "${FormatUtil.formatFolder(getProjectFolder())}${if (outputType != OutputType.SOURCE) csName else ""}"
+    fun getEmRootFolder() = "${FormatUtil.formatFolder(getProjectFolder())}${if (outputType != OutputType.SOURCE) emName else ""}"
+    fun getEmOutputFolder() = "${FormatUtil.formatFolder(getProjectFolder())}$emName/$srcFolder/${language.srcFolder}"
 
 }

@@ -11,7 +11,8 @@ import org.evomaster.resource.rest.generator.template.Boundary
 class JavaDeclarationDto (specification: PropertySpecification): JavaDeclaration(specification) {
     override fun getTags(): List<String> {
         val tags = mutableListOf<String>()
-        if (this.specification.isId || !this.specification.allowNull) tags.add(SwaggerAnnotation.API_MODEL_PROPERTY.getText(mapOf("required" to "true")))
+        //if (this.specification.isId || !this.specification.allowNull)
+        tags.add(SwaggerAnnotation.API_MODEL_PROPERTY.getText(mapOf("required" to specification.impactful.toString())))
 
         return tags.toList()
     }

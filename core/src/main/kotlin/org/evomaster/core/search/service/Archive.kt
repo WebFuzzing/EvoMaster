@@ -11,6 +11,8 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.evomaster.core.search.tracer.ArchiveMutationTrackService
+
 import java.lang.Integer.min
 
 
@@ -34,7 +36,8 @@ class Archive<T> where T : Individual {
     @Inject
     private lateinit var processMonitor: SearchProcessMonitor
 
-
+    @Inject
+    private lateinit var tracker : ArchiveMutationTrackService
     /**
      * Key -> id of the target
      *
@@ -141,7 +144,7 @@ class Archive<T> where T : Individual {
             randomness.choose(candidates)
         }
 
-        return chosen.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
+        return chosen.copy(tracker.getCopyFilterForEvalInd(chosen))
     }
 
     private fun chooseTarget(toChooseFrom: Set<Int>): Int {
@@ -217,6 +220,16 @@ class Archive<T> where T : Individual {
                 .sorted()
     }
 
+    /**
+     * Useful for debugging
+     */
+    fun reachedTargetHeuristics(): List<String> {
+
+        return populations.entries
+                .map { e -> "key ${e.key} -> best heuristics=${e.value.map { it.fitness.computeFitnessScore() }.max()}" }
+                .sorted()
+    }
+
     fun numberOfCoveredTargets(): Int {
         return populations.keys.stream().filter { isCovered(it) }.count().toInt()
     }
@@ -263,7 +276,7 @@ class Archive<T> where T : Individual {
      */
     fun addIfNeeded(ei: EvaluatedIndividual<T>): Boolean {
 
-        val copy = ei.copy(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
+        val copy = ei.copy(tracker.getCopyFilterForEvalInd(ei))
         var added = false
         var anyBetter = false
 
@@ -391,6 +404,7 @@ class Archive<T> where T : Individual {
         }
         processMonitor.record(added, anyBetter, ei)
 
+        ei.hasImprovement = anyBetter
         return added
     }
 
@@ -444,12 +458,4 @@ class Archive<T> where T : Individual {
     fun getSnapshotOfSamplingCounter() : Map<Int, Int>{
         return samplingCounter
     }
-
-    enum class ArchiveUpdateCondition(value : Int){
-        NOT_FULL_POPULATION(0),
-        SHORTER_SOLUTION(1),
-        NEW_TARGETS(2),
-        FITNESS_IMPROVED(3),
-    }
-
 }

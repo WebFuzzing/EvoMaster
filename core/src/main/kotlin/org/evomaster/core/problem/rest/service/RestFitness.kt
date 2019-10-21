@@ -110,7 +110,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             TaintAnalysis.doTaintAnalysis(individual, dto.additionalInfoList, randomness)
         }
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
     }
 
     private fun registerNewAction(action: RestAction, index: Int){

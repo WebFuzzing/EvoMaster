@@ -37,6 +37,6 @@ abstract class StructureMutator : TrackOperator {
      * But once such init actions are added, the behavior of the test
      * might change.
      */
-    abstract fun addInitializingActions(individual: EvaluatedIndividual<*>)
+    abstract fun addInitializingActions(individual: EvaluatedIndividual<*>, mutatedGenes: MutatedGeneSpecification?)
 
 }

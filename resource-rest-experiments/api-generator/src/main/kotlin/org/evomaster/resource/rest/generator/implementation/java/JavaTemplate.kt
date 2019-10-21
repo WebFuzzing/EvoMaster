@@ -1,9 +1,9 @@
 package org.evomaster.resource.rest.generator.implementation.java
 
+import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.template.Boundary
 import org.evomaster.resource.rest.generator.template.ClassType
 import org.evomaster.resource.rest.generator.template.GeneralSymbol
-import java.lang.IllegalArgumentException
 
 /**
  * created by manzh on 2019-08-14
@@ -48,4 +48,39 @@ interface JavaTemplate {
 
     fun formatMethodInvocation(obj : String?, methodName: String, params : List<String>) = "${if (obj.isNullOrBlank())"" else "$obj."}$methodName(${params.joinToString(GeneralSymbol.COMMA)})"
 
+    fun defaultBranches(type: String, index: Int, variableName : String, numOfBranches : Int) : String{
+        if (numOfBranches < 2) throw IllegalArgumentException("numOfBranches should be more than 1, but $numOfBranches")
+        val commonType = CommonTypes.values().find { it.name == type }?:return ""
+        val local = "response$index"
+        return when(commonType){
+            CommonTypes.INT -> {
+                val content = StringBuilder("int $local = -1;")
+                val distance = (Int.MAX_VALUE / numOfBranches) * 2;
+                (0 until numOfBranches).forEach { b->
+                    val condition = "$variableName < Integer.MIN_VALUE + $distance * ${b+1}"
+                    when{
+                        b == 0 -> content.append("if($condition) ")
+                        b == numOfBranches - 1 -> content.append("else ")
+                        else -> content.append("else if ($condition) ")
+                    }
+                    content.append("{${System.lineSeparator()}$local = $b;${System.lineSeparator()}}")
+                }
+                content.append(branchesMessage(variableName, local))
+                content.toString()
+            }
+            else -> ""
+        }
+    }
+
+    fun branchMsgVariable() = "branchesMsg"
+
+    fun initBranchesMessage () : String = "StringBuilder ${branchMsgVariable()} = new StringBuilder();"
+
+    fun branchesMessage(pros : String, branchIndicator : String) = "${branchMsgVariable()}.append(\"$pros=\" + $branchIndicator+\";\");"
+
+    fun getBranchMsg() = "${branchMsgVariable()}.toString()"
+
+    fun getFinal() = "final"
+
+    fun getStatic() = "static"
 }

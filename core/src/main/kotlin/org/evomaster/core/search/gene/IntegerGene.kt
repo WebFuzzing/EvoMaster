@@ -1,9 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.impact.GeneImpact
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 
 class IntegerGene(
@@ -12,12 +17,12 @@ class IntegerGene(
         /** Inclusive */
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
-        val max: Int = Int.MAX_VALUE
+        val max: Int = Int.MAX_VALUE,
+        val valueMutation :IntMutationUpdate = IntMutationUpdate(min, max)
 ) : NumberGene<Int>(name, value) {
 
-
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max)
+        return IntegerGene(name, value, min, max, valueMutation.copy())
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -88,10 +93,17 @@ class IntegerGene(
             res < min -> min
             else -> res.toInt()
         }
+    }
 
+    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+        standardMutation(randomness, apc, allGenes)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         return value.toString()
+    }
+
+    override fun reachOptimal(): Boolean {
+        return valueMutation.reached
     }
 }

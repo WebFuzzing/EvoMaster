@@ -6,6 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -283,8 +284,8 @@ class EMConfig {
         }
 
         //archive-based mutation
-        if(geneSelectionMethod != ArchiveGeneSelectionMethod.NONE && algorithm != Algorithm.MIO){
-            throw IllegalArgumentException("ArchiveGeneSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
+        if(geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO){
+            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
         if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
@@ -583,7 +584,7 @@ class EMConfig {
     var heuristicsForSQL = true
 
     @Cfg("Enable extracting SQL execution info")
-    var extractSqlExecutionInfo = heuristicsForSQL
+    var extractSqlExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution")
@@ -631,6 +632,11 @@ class EMConfig {
             "Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual")
     var enableTrackEvaluatedIndividual = false
 
+    @Experimental
+    @Cfg("Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. " +
+            "Note that the value should be specified with a non-negative number or -1 (for tracking all history)")
+    @Min(-1.0)
+    var maxLengthOfTraces = 10
 
     @Cfg("Enable custom naming and sorting criteria")
     var customNaming = true
@@ -750,20 +756,44 @@ class EMConfig {
     var probOfArchiveMutation = 0.0
 
     @Experimental
-    @Cfg("Specify a percentage which is used by archived-based gene selection method (e.g., APPROACH_GOOD) for selecting top percent of genes as potential candidates to mutate")
+    @Cfg("Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
     @PercentageAsProbability(false)
-    var perOfCandidateGenesToMutate = 0.1
+    var startPerOfCandidateGenesToMutate = 0.9
+
+    @Experimental
+    @Cfg("Specify a percentage (after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
+    @PercentageAsProbability(false)
+    var endPerOfCandidateGenesToMutate = 0.1
+
+    @Experimental
+    @Cfg("Specify whether to decide a top percent of genes to mutate adaptively")
+    var adaptivePerOfCandidateGenesToMutate = false
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var geneSelectionMethod = ArchiveGeneSelectionMethod.NONE
+    var geneSelectionMethod = GeneMutationSelectionMethod.NONE
 
-    enum class ArchiveGeneSelectionMethod {
+    @Experimental
+    @Cfg("Whether to enable archive-based gene mutation")
+    var archiveGeneMutation = ArchiveGeneMutation.NONE
+
+    enum class ArchiveGeneMutation{
         NONE,
-        AWAY_BAD,
-        APPROACH_GOOD,
-        FEED_BACK
+        SPECIFIED,
+        ADAPTIVE
     }
+
+    @Experimental
+    @Cfg("Specify whether to export derived impacts among genes")
+    var exportImpacts = false
+
+    @Experimental
+    @Cfg("Specify a file that saves derived genes")
+    var impactFile = "impact.csv"
+
+    @Experimental
+    @Cfg("Specify whether to disable structure mutation during focus search")
+    var disableStructureMutationDuringFocusSearch = false
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     var baseTaintAnalysisProbability = 0.9

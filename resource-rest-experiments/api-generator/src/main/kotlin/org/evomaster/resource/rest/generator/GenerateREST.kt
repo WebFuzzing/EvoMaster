@@ -1,19 +1,19 @@
 package org.evomaster.resource.rest.generator
 
-import org.evomaster.resource.rest.generator.model.ResourceGraph
-import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.implementation.java.AppliedJavaType
 import org.evomaster.resource.rest.generator.implementation.java.app.JavaApp
 import org.evomaster.resource.rest.generator.implementation.java.dto.JavaDto
+import org.evomaster.resource.rest.generator.implementation.java.em.JavaEMController
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntity
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntityRepository
 import org.evomaster.resource.rest.generator.implementation.java.service.JavaResourceAPI
-import org.evomaster.resource.rest.generator.model.AppClazz
-import org.evomaster.resource.rest.generator.model.EdgeMultiplicitySpecification
-import org.evomaster.resource.rest.generator.model.ResGenSpecification
+import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.pom.CSPOModel
+import org.evomaster.resource.rest.generator.pom.EMPOModel
+import org.evomaster.resource.rest.generator.pom.PackagedPOModel
 import org.evomaster.resource.rest.generator.template.ClassTemplate
 import org.evomaster.resource.rest.generator.template.RegisterType
+import kotlin.random.Random
 
 /**
  * created by manzh on 2019-08-16
@@ -24,7 +24,22 @@ class GenerateREST(val config: GenConfig) {
 
     fun run(){
         init()
-        generateAndSaveCS()
+        generatePOM()
+        val type = registerType()
+        when(config.outputContent){
+            GenConfig.OutputContent.CS ->{
+                generateAndSaveCS(type)
+            }
+            GenConfig.OutputContent.EM ->{
+                generateAndSaveEM("ResApp",type)
+            }
+            else ->{
+                val cs = generateAndSaveCS(type)
+                generateAndSaveEM(cs.name, type)
+            }
+
+        }
+
     }
 
     private fun init(){
@@ -44,17 +59,43 @@ class GenerateREST(val config: GenConfig) {
         createResources(graph)
     }
 
-    private fun generateAndSaveCS(){
-        val type = registerType()
-        generateAndSaveCS(JavaApp(AppClazz(
+    private fun generateAndSaveCS(type: RegisterType) : AppClazz{
+        val cs = AppClazz(
                 rootPackage = config.csProjectPackage,
                 outputFolder = config.getCsOutputFolder()
-            )
-        ), type)
+        )
+        generateAndSaveCS(JavaApp(cs), type)
         resourceCluster.values.forEach { generateAndSaveCS(it, type) }
+        return cs
+    }
 
-        if (config.outputType != GenConfig.OutputType.SOURCE)
-            CSPOModel(config.csName, config.csName, output = config.getCsRootFolder()).save()
+    private fun generateAndSaveEM(appClazz: String, type: RegisterType){
+        generateAndSaveCS(JavaEMController(AppClazz(
+                name = "EmbeddedEvoMasterController",
+                rootPackage = config.emProjectPackage,
+                outputFolder = config.getEmOutputFolder()),
+                sutPackagePrefix = "${config.csProjectPackage}.",
+                appClazz = appClazz
+        ), type)
+    }
+
+
+    private fun generatePOM(){
+        when(config.outputType){
+            GenConfig.OutputType.MAVEN_PROJECT ->{
+                val parent = PackagedPOModel(modules = mutableListOf(config.csName, config.emName),groupId = config.groupId, artifactId = config.projectName, output = config.getProjectFolder())
+                parent.save()
+                val cs = CSPOModel(groupId = config.groupId, artifactId = config.csName, output = config.getCsRootFolder(), parent = parent)
+                cs.save()
+                EMPOModel(groupId = config.groupId, artifactId = config.emName, output = config.getEmRootFolder(), csPOModel = cs, parent = parent).save()
+            }
+            GenConfig.OutputType.MAVEN_MODULE ->{
+                CSPOModel(config.groupId, config.csName, output = config.getCsRootFolder()).save()
+            }
+            else ->{
+                //do nothing
+            }
+        }
     }
 
     private fun registerType() : RegisterType {
@@ -90,7 +131,11 @@ class GenerateREST(val config: GenConfig) {
                    resNode = node,
                    rootPackage = config.csProjectPackage,
                    outputFolder = config.getCsOutputFolder(),
-                   restMethods = config.restMethods
+                   restMethods = config.restMethods,
+                   defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
+                           PropertySpecification("name", CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
+                           PropertySpecification("value", CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = true)
+                   )else generateProperties(config)
            ))
         }
 
@@ -98,18 +143,36 @@ class GenerateREST(val config: GenConfig) {
             u.initDependence(resourceCluster)
         }
     }
+
+    private fun generateProperties(config: GenConfig) : List<PropertySpecification>{
+        val types = config.propertiesTypes
+        val pros = mutableListOf<PropertySpecification>()
+        if (config.numOfExtraProperties > 0){
+            var counterImpact = 0
+            (0 until config.numOfExtraProperties).forEach { i->
+                val impactful = counterImpact < config.numOfImpactProperties
+                pros.add(PropertySpecification("${if(impactful) "im" else "no"}Prop$i", types[Random.nextInt(0, types.size)].name, isId = false, autoGen = false, allowNull = !impactful, impactful = impactful, branches = if (impactful)config.branchesForImpact else 0))
+                counterImpact+=1
+            }
+        }
+        return pros
+    }
+
 }
 
 fun main(args : Array<String>){
     val config = GenConfig()
 
-    config.outputFolder = "e2e-tests/spring-examples/"
-    config.outputType = GenConfig.OutputType.SOURCE
-    config.csProjectPackage = "com.foo.rest.examples.spring.resource"
-    config.numOfNodes = 3
-    config.numOfOneToOne = 1
-    config.restMethods = listOf(RestMethod.POST, RestMethod.GET_ID)
+//    config.outputFolder = "e2e-tests/spring-examples/"
+//    config.outputType = GenConfig.OutputType.SOURCE
+//    config.csProjectPackage = "com.foo.rest.examples.spring.impacts"
+//    config.numOfNodes = 3
+//    config.numOfOneToOne = 1
+//    config.restMethods = listOf(RestMethod.POST, RestMethod.GET_ID)
 
+    config.outputType = GenConfig.OutputType.MAVEN_PROJECT
+    config.outputContent = GenConfig.OutputContent.BOTH
+    config.projectName = "auto-impact-rest-cs"
     GenerateREST(config).run()
 }
 

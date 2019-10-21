@@ -65,4 +65,9 @@ class AdaptiveParameterControl {
         return start + (scale * delta)
     }
 
+    /**
+     * whether the search reaches the phase of 'focus search'
+     */
+    fun doesFocusSearch() : Boolean = time.percentageUsedBudget() >= config.focusedSearchActivationTime
+
 }

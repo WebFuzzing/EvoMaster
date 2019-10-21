@@ -7,13 +7,16 @@ import org.evomaster.resource.rest.generator.FormatUtil
  */
 open class PropertySpecification(
         val name: String,
-        val type : String,
-        val isId : Boolean,
-        val autoGen : Boolean = false,
-        val allowNull : Boolean = true,
+        val type: String,
+        val isId: Boolean,
+        val autoGen: Boolean = false,
+        val allowNull: Boolean = true,
         val multiplicity: RelationMultiplicity = RelationMultiplicity.NONE,
-        val defaultValue : String? = null
+        val defaultValue: String? = null,
+        val impactful: Boolean = true,
+        val branches: Int = 0
 ){
+
     /**
      * used in constructor
      */
@@ -21,7 +24,7 @@ open class PropertySpecification(
 
     fun copy(name : String? = null) : PropertySpecification {
         return PropertySpecification(name
-                ?: this.name, this.type, this.isId, this.autoGen, this.allowNull, this.multiplicity, this.defaultValue)
+                ?: this.name, this.type, this.isId, this.autoGen, this.allowNull, this.multiplicity, this.defaultValue, this.impactful, this.branches)
     }
 
     fun nameGetterName() = "get${FormatUtil.upperFirst(name)}"
@@ -37,5 +40,7 @@ class ResNodeTypedPropertySpecification(
         autoGen : Boolean = false,
         allowNull : Boolean = true,
         multiplicity: RelationMultiplicity = RelationMultiplicity.NONE,
-        defaultValue : String? = null
-) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue)
+        defaultValue : String? = null,
+        impactful: Boolean = true,
+        branches: Int = 0
+) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches )

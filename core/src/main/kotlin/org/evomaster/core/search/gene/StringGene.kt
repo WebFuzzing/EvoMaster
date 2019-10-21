@@ -9,11 +9,15 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 
 
@@ -30,7 +34,20 @@ class StringGene(
          * For example, in a URL Path variable, we do not want have "/", as otherwise
          * it would create 2 distinct paths
          */
-        val invalidChars: List<Char> = listOf()
+        val invalidChars: List<Char> = listOf(),
+
+        /**
+         * collect info of mutation on its chars of [value]
+         */
+        val charsMutation : MutableList<IntMutationUpdate> = mutableListOf(),
+        /**
+         * collect info of mutation on its length of [value]
+         */
+        val lengthMutation : IntMutationUpdate = IntMutationUpdate(minLength, maxLength),
+        /**
+         * collect info regarding whether [this] gene is related to others
+         */
+        val dependencyInfo :GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)
 
 ) : Gene(name) {
 
@@ -44,6 +61,9 @@ class StringGene(
             only used to create unique names
          */
         private var counter: Int = 0
+
+        private const val NEVER_ARCHIVE_MUTATION = -2
+        private const val CHAR_MUTATION_INITIALIZED = -1
     }
 
     /*
@@ -69,14 +89,37 @@ class StringGene(
     var selectionUpdatedSinceLastMutation = false
 
 
+    /**
+     * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
+     * when [mutatedIndex] = -1, it means that charsMutation of [this] is initialized
+     */
+    var mutatedIndex : Int = NEVER_ARCHIVE_MUTATION
+
+    /**
+     * degree of dependency of this [gene]
+     */
+//    var degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL
+//    private set
+//
+//    var mutatedtimes = 0
+//    private set
+//
+//    var resetTimes = 0
+//    private set
+
+    fun charMutationInitialized(){
+        mutatedIndex = CHAR_MUTATION_INITIALIZED
+    }
+
     override fun copy(): Gene {
-        return StringGene(name, value, minLength, maxLength, invalidChars)
+        return StringGene(name, value, minLength, maxLength, invalidChars, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy())
                 .also {
                     it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
                     it.selectedSpecialization = this.selectedSpecialization
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
+                    it.mutatedIndex = this.mutatedIndex
                 }
     }
 
@@ -407,5 +450,179 @@ class StringGene(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
+    }
+    override fun archiveMutation(
+            randomness: Randomness,
+            allGenes: List<Gene>,
+            apc: AdaptiveParameterControl,
+            selection: GeneMutationSelectionMethod,
+            geneImpact: GeneImpact?,
+            geneReference: String,
+            archiveMutator: ArchiveMutator,
+            evi: EvaluatedIndividual<*>,
+            targets: Set<Int>
+    ) {
+        val specializationGene = getSpecializationGene()
+
+        if (specializationGene == null && specializationGenes.isNotEmpty()) {
+            selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
+            selectionUpdatedSinceLastMutation = false
+            return
+
+        } else if (specializationGene != null) {
+            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
+                /*
+                    selection of most recent added gene, but only with a given
+                    probability, albeit high.
+                    point is, switching is not always going to be beneficial
+                 */
+                selectedSpecialization = specializationGenes.lastIndex
+            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
+                //choose another specialization, but with low probability
+                selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
+            } else{
+                //just mutate current selection
+                specializationGene.standardMutation(randomness, apc, allGenes)
+            }
+            selectionUpdatedSinceLastMutation = false
+            return
+        }
+
+        if (!TaintInputName.isTaintInput(value)
+                && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
+
+            value = TaintInputName.getTaintName(counter++)
+            return
+        }
+
+        if (archiveMutator.enableArchiveGeneMutation()){
+            dependencyInfo.mutatedtimes +=1
+            archiveMutator.mutate(this)
+            if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+                log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
+            }
+            if (charsMutation.size != value.length){
+                log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
+            }
+        }else{
+            standardMutation(randomness, apc, allGenes)
+        }
+    }
+
+    override fun reachOptimal() : Boolean{
+       return lengthMutation.reached && (charsMutation.all { it.reached  }  || charsMutation.isEmpty())
+    }
+
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        if (!archiveMutator.enableArchiveGeneMutation()) return
+
+        original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
+        mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
+
+        if (this != mutated){
+            dependencyInfo.mutatedtimes +=1
+            if (this.mutatedIndex == NEVER_ARCHIVE_MUTATION){
+                initCharMutation()
+            }
+            this.mutatedIndex = mutated.mutatedIndex
+        }
+        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+            log.warn("archiveMutationUpdate: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
+        }
+
+        val previous = original.value
+        val current = mutated.value
+
+        if (previous.length != current.length){
+            if (this != mutated){
+                this.lengthMutation.reached = mutated.lengthMutation.reached
+            }
+            lengthUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
+        }else{
+            charUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
+        }
+    }
+    private fun charUpdate(previous:String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        val charUpdate = charsMutation[mutatedIndex]
+        if (this != mutated){
+            charUpdate.reached =
+                mutated.charsMutation[mutatedIndex] .reached
+        }
+
+        val pchar = previous[mutatedIndex].toInt()
+        val cchar = current[mutatedIndex].toInt()
+
+        /*
+            1) current char is not in min..max, but current is better -> reset
+            2) cmutation is optimal, but current is better -> reset
+         */
+        val reset = doesCurrentBetter && (
+                cchar !in charUpdate.preferMin..charUpdate.preferMax ||
+                        charUpdate.reached
+                )
+
+        if (reset){
+            charUpdate.preferMax = Char.MAX_VALUE.toInt()
+            charUpdate.preferMin = Char.MIN_VALUE.toInt()
+            charUpdate.reached = false
+            dependencyInfo.resetTimes +=1
+            if(dependencyInfo.resetTimes >=2) dependencyInfo.degreeOfIndependence = 0.8
+            return
+        }
+        charUpdate.updateBoundary(pchar, cchar,doesCurrentBetter)
+
+        val exclude = value[mutatedIndex].toInt()
+        val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(exclude).toSet()
+
+        if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList() )){
+            charUpdate.reached = true
+        }
+    }
+
+    private fun lengthUpdate(previous:String, current: String, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+        //update charsMutation regarding value
+        val added = value.length - charsMutation.size
+        if (added != 0){
+            if (added > 0){
+                (0 until added).forEach { _->
+                    charsMutation.add(archiveMutator.createCharMutationUpdate())
+                }
+            }else{
+                (0 until -added).forEach { _ ->
+                    charsMutation.removeAt(value.length)
+                }
+            }
+        }
+
+        if (value.length != charsMutation.size){
+            throw IllegalArgumentException("invalid!")
+        }
+        /*
+            1) current.length is not in min..max, but current is better -> reset
+            2) lengthMutation is optimal, but current is better -> reset
+         */
+        val reset = doesCurrentBetter && (
+                current.length !in lengthMutation.preferMin..lengthMutation.preferMax ||
+                        lengthMutation.reached
+                )
+
+        if (reset){
+            lengthMutation.preferMin = minLength
+            lengthMutation.preferMax = maxLength
+            lengthMutation.reached = false
+            dependencyInfo.resetTimes +=1
+            if(dependencyInfo.resetTimes >=2) dependencyInfo.degreeOfIndependence = 0.8
+            return
+        }
+        lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
+
+        if(0 == archiveMutator.validateCandidates(lengthMutation.preferMin, lengthMutation.preferMax, exclude = setOf(previous.length, current.length, value.length).toList())){
+            lengthMutation.reached = true
+        }
+    }
+
+    private fun initCharMutation(){
+        charsMutation.clear()
+        charsMutation.addAll((0 until value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
     }
 }

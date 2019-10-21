@@ -26,7 +26,7 @@ abstract class JavaDeclaration (val specification : PropertySpecification) : Dec
             content.append("@$it")
             content.append(System.lineSeparator())
         }
-        content.append("${formatBoundary(getBoundary())} ${types.getType(getType())} ${getName()} ${if (getDefaultValue().isNullOrBlank()) "" else "= ${getDefaultValue()}"} ${statementEnd()}")
+        content.append("${formatBoundary(getBoundary())} ${if(isFinal()) "${getFinal()} " else ""}${if(isStatic()) "${getStatic()} " else ""}${types.getType(getType())} ${getName()} ${if (getDefaultValue().isNullOrBlank()) "" else "= ${getDefaultValue()}"} ${statementEnd()}")
         return content.toString()
     }
 }
