@@ -1,5 +1,9 @@
 package org.evomaster.core.problem.rest.service.resource
 
+/**
+ * check
+ * https://trello.com/c/txcQZoRI/200-issue-with-proxyprintresourcebasedtest
+ */
 class ProxyPrintResourceBasedTest : ResourceTestBase() {
 
     override fun getSchemaLocation() = "/sql_schema/proxyprint.sql"
