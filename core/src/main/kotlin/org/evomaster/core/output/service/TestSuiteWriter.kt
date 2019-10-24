@@ -170,6 +170,7 @@ class TestSuiteWriter {
             //addImport("org.hamcrest.core.AnyOf.anyOf", lines, true)
             addImport("io.restassured.config.JsonConfig", lines)
             addImport("io.restassured.path.json.config.JsonPathConfig", lines)
+            addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
             addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
         }
 
@@ -249,7 +250,12 @@ class TestSuiteWriter {
             addStatement("RestAssured.urlEncodingEnabled = false", lines)
 
             if (config.enableBasicAssertions){
-                addStatement("RestAssured.config = RestAssured.config().jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))", lines)
+                lines.add("RestAssured.config = RestAssured.config()")
+                lines.indented {
+                    lines.add(".jsonConfig(JsonConfig.jsonConfig().numberReturnType(JsonPathConfig.NumberReturnType.DOUBLE))")
+                    lines.add(".redirect(redirectConfig().followRedirects(false))")
+                }
+                appendSemicolon(lines)
             }
         }
     }
