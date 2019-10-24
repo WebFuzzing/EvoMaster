@@ -33,6 +33,7 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
 
 
@@ -269,7 +270,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      */
     protected fun handleRestCall(a: RestCallAction,
                                actionResults: MutableList<ActionResult>,
-                               chainState: MutableMap<String, String>)
+                               chainState: MutableMap<String, String>,
+                               cookies:  Map<String, List<NewCookie>>)
             : Boolean {
 
         var baseUrl = if(!config.blackBox || config.bbExperiments){
@@ -329,6 +331,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     builder.header(it.name, it.gene.getValueAsRawString())
                 }
 
+        if(a.auth.cookieLogin != null){
+            val list = cookies[a.auth.cookieLogin!!.username]
+            if(list==null || list.isEmpty()){
+                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
+            } else {
+                list.forEach{
+                    builder.cookie(it.toCookie())
+                }
+            }
+        }
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -488,5 +500,55 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     private fun locationName(id: String): String {
         return "location_$id"
+    }
+
+    /**
+     * If any action needs auth based on cookies, do a "login" before
+     * running the actions, and collect the cookies from the server.
+     *
+     * @return a map from username to auth cookie for those users
+     */
+    protected fun getCookies(ind: RestIndividual) : Map<String, List<NewCookie>>{
+
+        val cookieLogins = ind.seeActions()
+                .filterIsInstance<RestCallAction>()
+                .filter { it.auth.cookieLogin != null }
+                .map { it.auth.cookieLogin!! }
+                .distinctBy { it.username }
+
+        val map : MutableMap<String, List<NewCookie>> = HashMap()
+
+        for(cl in cookieLogins){
+
+            val mediaType = when(cl.contentType){
+                ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
+                ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
+            }
+
+            val response = try {
+                client.target(cl.loginEndpointUrl)
+                        .request()
+                        //TODO could consider other cases besides POST
+                        .buildPost(Entity.entity(cl.payload(), mediaType))
+                        .invoke()
+            } catch (e: Exception){
+                log.warn("Failed to login for ${cl.username}/${cl.password}: $e")
+                continue
+            }
+
+            if(response.statusInfo.family != Response.Status.Family.SUCCESSFUL){
+                log.warn("Login request failed with status ${response.status}")
+                continue
+            }
+
+            if(response.cookies.isEmpty()){
+                log.warn("Cookie-based login request did not give back any new cookie")
+                continue
+            }
+
+            map[cl.username] = response.cookies.values.toList()
+        }
+
+        return map
     }
 }

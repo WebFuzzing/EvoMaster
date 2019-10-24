@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller;
 
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
+import org.evomaster.client.java.controller.api.dto.CookieLoginDto;
 import org.evomaster.client.java.controller.api.dto.HeaderDto;
 
 import java.nio.charset.Charset;
@@ -42,6 +43,24 @@ public class AuthUtils {
 
         AuthenticationDto dto = new AuthenticationDto(dtoName);
         dto.headers.add(new HeaderDto("Authorization", authorizationValue));
+
+        return dto;
+    }
+
+
+    public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
+
+        CookieLoginDto cookie = new CookieLoginDto();
+        cookie.httpVerb = CookieLoginDto.HttpVerb.POST;
+        cookie.contentType = CookieLoginDto.ContentType.X_WWW_FORM_URLENCODED;
+        cookie.usernameField = "username";
+        cookie.passwordField = "password";
+        cookie.loginEndpointUrl = "/login";
+        cookie.username = username;
+        cookie.password = password;
+
+        AuthenticationDto dto = new AuthenticationDto(dtoName);
+        dto.cookieLogin = cookie;
 
         return dto;
     }
