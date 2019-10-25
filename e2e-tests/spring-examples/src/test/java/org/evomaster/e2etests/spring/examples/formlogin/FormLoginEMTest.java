@@ -24,7 +24,7 @@ public class FormLoginEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "FormLoginEM",
                 "org.bar.FormLoginEM",
-                200,
+                100,
                 (args) -> {
 
                     Solution<RestIndividual> solution = initAndRun(args);

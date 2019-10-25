@@ -516,11 +516,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      */
     protected fun getCookies(ind: RestIndividual) : Map<String, List<NewCookie>>{
 
-        val cookieLogins = ind.seeActions()
-                .filterIsInstance<RestCallAction>()
-                .filter { it.auth.cookieLogin != null }
-                .map { it.auth.cookieLogin!! }
-                .distinctBy { it.username }
+        val cookieLogins = ind.getCookieLoginAuth()
 
         val map : MutableMap<String, List<NewCookie>> = HashMap()
 

@@ -278,4 +278,15 @@ class RestIndividual (
                     if(it < position) validateSwap(it, position) else if(it > position) validateSwap(position, it) else false
                 }
     }
+
+    /**
+     *  Return the distinct auth info on cookie-based login in all actions
+     *  of this individual
+     */
+    fun getCookieLoginAuth() =  this.seeActions()
+            .filterIsInstance<RestCallAction>()
+            .filter { it.auth.cookieLogin != null }
+            .map { it.auth.cookieLogin!! }
+            .distinctBy { it.username }
+
 }

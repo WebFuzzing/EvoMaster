@@ -6,6 +6,8 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Map;
+
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.core.IsNot.not;
 import static org.hamcrest.core.StringContains.containsString;
@@ -98,6 +100,36 @@ public class FormLoginManualTest  extends SpringTestBase {
                 .statusCode(200);
 
         given().cookie(cookieName, cookie)
+                .get("/api/formlogin/forAdmins")
+                .then()
+                .statusCode(403);
+    }
+
+
+    private Map<String,String> formLogin(String username, String password){
+
+        return given().formParam("username", username)
+                .formParam("password", password)
+                .post("/login")
+                .then().extract().cookies();
+    }
+
+    @Test
+    public void testUserExtractedCookie(){
+
+        Map<String,String> cookies = formLogin("foo", "123456");
+
+        given().cookies(cookies)
+                .get("/api/formlogin/openToAll")
+                .then()
+                .statusCode(200);
+
+        given().cookies(cookies)
+                .get("/api/formlogin/forUsers")
+                .then()
+                .statusCode(200);
+
+        given().cookies(cookies)
                 .get("/api/formlogin/forAdmins")
                 .then()
                 .statusCode(403);
