@@ -164,6 +164,8 @@ class TestSuiteWriter {
         addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
         addImport(InsertionDto::class.qualifiedName!!, lines)
         addImport("java.util.List", lines)
+        addImport("java.util.Map", lines)
+
         // TODO: BMR - this is temporarily added as WiP. Should we have a more targeted import (i.e. not import everything?)
         if(config.enableBasicAssertions){
             addImport("org.hamcrest.Matchers.*", lines, true)
