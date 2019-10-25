@@ -264,6 +264,20 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     }
 
 
+    private fun getBaseUrl() : String {
+        var baseUrl = if(!config.blackBox || config.bbExperiments){
+            infoDto.baseUrlOfSUT
+        } else {
+            config.bbTargetUrl!!
+        }
+
+        if (baseUrl.endsWith("/")) {
+            baseUrl = baseUrl.substring(0, baseUrl.length - 1)
+        }
+
+        return baseUrl
+    }
+
     /**
      * @return whether the call was OK. Eg, in some cases, we might want to stop
      * the test at this action, and do not continue
@@ -274,15 +288,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                                cookies:  Map<String, List<NewCookie>>)
             : Boolean {
 
-        var baseUrl = if(!config.blackBox || config.bbExperiments){
-            infoDto.baseUrlOfSUT
-        } else {
-            config.bbTargetUrl!!
-        }
-
-        if (baseUrl.endsWith("/")) {
-            baseUrl = baseUrl.substring(0, baseUrl.length - 1)
-        }
+        val baseUrl = getBaseUrl()
 
         val path = a.resolvedPath()
 
@@ -518,6 +524,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         val map : MutableMap<String, List<NewCookie>> = HashMap()
 
+        val baseUrl = getBaseUrl()
+
         for(cl in cookieLogins){
 
             val mediaType = when(cl.contentType){
@@ -526,7 +534,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             }
 
             val response = try {
-                client.target(cl.loginEndpointUrl)
+                client.target(baseUrl + cl.loginEndpointUrl)
                         .request()
                         //TODO could consider other cases besides POST
                         .buildPost(Entity.entity(cl.payload(), mediaType))
@@ -537,8 +545,25 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             }
 
             if(response.statusInfo.family != Response.Status.Family.SUCCESSFUL){
-                log.warn("Login request failed with status ${response.status}")
-                continue
+
+                /*
+                    if it is a 3xx, we need to look at Location header to determine
+                    if a success or failure.
+                    TODO: could explicitly ask for this info in the auth DTO.
+                    However, as 3xx makes little sense in a REST API, maybe not so
+                    important right now, although had this issue with some APIs using
+                    default settings in Spring Security
+                */
+                if(response.statusInfo.family == Response.Status.Family.REDIRECTION){
+                    val location = response.getHeaderString("location")
+                    if(location != null && (location.contains("error", true) || location.contains("login", true))){
+                        log.warn("Login request failed with ${response.status} redirection toward $location")
+                        continue
+                    }
+                } else {
+                    log.warn("Login request failed with status ${response.status}")
+                    continue
+                }
             }
 
             if(response.cookies.isEmpty()){
