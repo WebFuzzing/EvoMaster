@@ -58,6 +58,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 .property(ClientProperties.READ_TIMEOUT, 10_000)
                 //workaround bug in Jersey client
                 .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+                .property(ClientProperties.FOLLOW_REDIRECTS, false)
         ClientBuilder.newClient(configuration)
     }.invoke()
 
