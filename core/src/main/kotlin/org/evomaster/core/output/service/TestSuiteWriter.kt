@@ -68,13 +68,32 @@ class TestSuiteWriter {
 
             beforeAfterMethods(controllerName, lines)
 
-            val tests = testSuiteOrganizer.sortTests(solution, config.customNaming)
+            //catch any sorting problems (see NPE is SortingHelper on Trello)
+            val tests = try{
+                testSuiteOrganizer.sortTests(solution, config.customNaming)
+            }
+            catch (ex: Exception){
+                var counter = 0
+                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            }
 
             for (test in tests) {
                 lines.addEmpty(2)
 
-                val testLines = TestCaseWriter()
-                        .convertToCompilableTestCode(config, test, baseUrlOfSut)
+                // catch writing problems on an individual test case basis
+                val testLines = try {
+                    TestCaseWriter()
+                            .convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+                }
+                catch (ex: Exception){
+                    Lines().apply {
+                        this.add("// There was an exception ${ex.message}")
+                        this.add("// At ${ex.stackTrace}")
+                        this.add("// That prevented the test from being written")
+
+                    }
+                }
                 lines.add(testLines)
             }
         }
