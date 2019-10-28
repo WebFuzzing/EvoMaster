@@ -821,15 +821,20 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
-    var coveredTargetFile = "coveredTargets.csv"
+    var coveredTargetFile = "coveredTargets.txt"
 
     @Experimental
     @Cfg("Specify a format to organize the covered targets by the search")
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
 
     enum class SortCoveredTargetBy{
-        //CLAZZ,
+        /**
+         * sorted by ids of targets alphabetically
+         */
         NAME,
+        /**
+         * grouped by tests and sorted by index of tests
+         */
         TEST
     }
 }

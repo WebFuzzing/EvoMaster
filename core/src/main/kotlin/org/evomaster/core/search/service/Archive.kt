@@ -460,6 +460,9 @@ class Archive<T> where T : Individual {
         return samplingCounter
     }
 
+    /**
+     * @return a list of pairs which is composed of target id (first) and corresponding tests (second)
+     */
     fun exportCoveredTargetsAsPair(solution: Solution<*>) : List<Pair<String, List<Int>>>{
 
         return populations.keys

@@ -19,9 +19,8 @@ class Statistics : SearchListener {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Statistics::class.java)
 
-        private const val DES_TAGERT = "description"
-        private const val TEST_INDEXT = "indexOfTests"
-        private const val CALZZ = "className"
+        private const val DESCRIPTION_TAGERT = "description"
+        private const val TEST_INDEX = "indexOfTests"
     }
 
     @Inject
@@ -272,12 +271,16 @@ class Statistics : SearchListener {
         val content = mutableListOf<String>()
         when(format){
             EMConfig.SortCoveredTargetBy.NAME ->{
-                content.add(DES_TAGERT)
+                content.add(DESCRIPTION_TAGERT)
                 content.addAll(info.map { it.first }.sorted())
             }
             EMConfig.SortCoveredTargetBy.TEST ->{
-                content.add(listOf(TEST_INDEXT, DES_TAGERT).joinToString(separator))
+                content.add(listOf(TEST_INDEX, DESCRIPTION_TAGERT).joinToString(separator))
                 info.flatMap { it.second }.sorted().forEach {test->
+                    /*
+                        currently, only index of tests are outputted.
+                        if there exists names of tests, we might refer to them.
+                     */
                     content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
                 }
             }
