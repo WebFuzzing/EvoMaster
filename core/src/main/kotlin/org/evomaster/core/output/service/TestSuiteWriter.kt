@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import io.swagger.models.Swagger
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -23,20 +24,28 @@ class TestSuiteWriter {
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
+    private lateinit var swagger: Swagger
+
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "expectationsMasterSwitch"
+        private const val responseStructureOracle = "responseStructureOracle"
+    }
+
+    fun setSwagger(sw: Swagger){
+        swagger = sw
     }
 
     fun writeTests(
             solution: Solution<*>,
-            controllerName: String?
+            controllerName: String?,
+            swagger: Swagger? = null
     ) {
 
         val name = TestSuiteFileName(config.testSuiteFileName)
 
-        val content = convertToCompilableTestCode(solution, name, controllerName)
+        val content = convertToCompilableTestCode(solution, name, controllerName, swagger)
         saveToDisk(content, config, name)
 
         /*if (config.expectationsActive || config.enableBasicAssertions){
@@ -55,7 +64,8 @@ class TestSuiteWriter {
     private fun convertToCompilableTestCode(
             solution: Solution<*>,
             testSuiteFileName: TestSuiteFileName,
-            controllerName: String?
+            controllerName: String?,
+            swagger: Swagger?
             )
             : String {
 
@@ -179,6 +189,7 @@ class TestSuiteWriter {
             addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
             addImport("io.restassured.response.ValidatableResponse", lines)
             addImport("io.restassured.path.json.JsonPath", lines)
+            addImport("java.util.Arrays", lines)
 
         }
         //addImport("static org.hamcrest.core.Is.is", lines, format)
@@ -210,7 +221,9 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
-                lines.add("private static boolean expectationsMasterSwitch = false;")
+                lines.add("private static boolean $expectationsMasterSwitch = false;")
+                //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
+                lines.add("private static boolean $responseStructureOracle = false;")
             }
 
         } else if(config.outputFormat.isKotlin()) {
@@ -223,6 +236,7 @@ class TestSuiteWriter {
 
             if(config.expectationsActive){
                 lines.add("private val $expectationsMasterSwitch = false")
+                lines.add("private val $responseStructureOracle = false")
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default

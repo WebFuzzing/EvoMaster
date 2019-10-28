@@ -312,7 +312,8 @@ class TestCaseWriter {
 
 
         if(configuration.expectationsActive){
-            handleGenericFirstLine(call, lines, res, name)
+            val header = getAcceptHeader(call, res)
+            expectationsHandler.handleGenericFirstLine(call, lines, res, name, header)
         }
         else {
             handleFirstLine(call, lines, res)
@@ -330,7 +331,8 @@ class TestCaseWriter {
 
         //finally, handle the last line(s)
         if(configuration.expectationsActive){
-            handleGenericLastLine(call, res, lines)
+            expectationsHandler.handleGenericLastLine(call, res, lines, counter)
+            counter++
         }
         else {
             handleLastLine(call, res, lines)
@@ -339,8 +341,8 @@ class TestCaseWriter {
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
         if(configuration.expectationsActive){
-            handleExpectationSpecificLines(call, lines, res, name)
-            handleExpectations(res, lines, true, name)
+            expectationsHandler.handleExpectationSpecificLines(call, lines, res, name)
+            expectationsHandler.handleExpectations(res, lines, true, name)
         }
         //TODO: BMR expectations from partial oracles here?
 
@@ -384,32 +386,6 @@ class TestCaseWriter {
             appendSemicolon(lines)
             lines.deindent(2)
         }
-    }
-
-    private fun handleGenericFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
-        lines.addEmpty()
-        when {
-            format.isKotlin() -> lines.append("val $name: ValidatableResponse = ")
-            format.isJava() -> lines.append("ValidatableResponse $name = ")
-        }
-        lines.append("given()" + getAcceptHeader(call, res))
-    }
-
-    private fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines){
-        if(format.isJava()) {lines.append(";")}
-        lines.deindent(2)
-        counter++
-    }
-
-    private fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
-        lines.addEmpty()
-        when{
-            format.isKotlin() -> lines.add("val json_$name: JsonPath = ")
-            format.isJava() -> lines.add("JsonPath json_$name = $name")
-        }
-
-        lines.append(".extract().response().jsonPath()")
-        if(format.isJava()) {lines.append(";")}
     }
 
     private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult) {
@@ -501,21 +477,6 @@ class TestCaseWriter {
         */
     }
 
-    private fun handleFieldValuesExpect(objectName: String, fieldName: String, resContentsItem: Any?): String{
-        if (resContentsItem == null) {
-            return NOT_COVERED_YET
-        }
-        else{
-            when(resContentsItem::class) {
-                Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
-                        " ${resContentsItem as Double})"
-                String::class -> return "stringsMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
-                        "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = GeneUtils.EscapeMode.EXPECTATION, format = format)}\")"
-                else -> return NOT_COVERED_YET
-            }
-        }
-    }
-
     private fun handleMapLines(index: Int, map: Map<*,*>, lines: Lines){
         map.keys.forEach{
             val printableTh = handleFieldValues(map[it])
@@ -533,7 +494,8 @@ class TestCaseWriter {
 
         if (res.getBodyType() == null) {
             lines.add(".contentType(\"\")")
-            lines.add(".body(isEmptyOrNullString())")
+            if(res.getBody().isNullOrBlank() && res.getStatusCode()!=400) lines.add(".body(isEmptyOrNullString())")
+
         }
         else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
@@ -752,84 +714,7 @@ class TestCaseWriter {
             return ".accept(\"*/*\")"
     }
 
-    private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean, name: String) {
 
-        /*
-        TODO: This is a WiP to show the basic idea of the expectations:
-        An exception is thrown ONLY if the expectations are set to active.
-        If inactive, the condition will still be processed (with a goal to later adding to summaries or
-        other information processing/handling that might be needed), but it does not cause
-        the test case to fail regardless of truth value.
-
-        The example below aims to show this behaviour and provide a reminder.
-        As it is still work in progress, expect quite significant changes to this.
-        */
-
-        lines.add("expectationHandler")
-        lines.indented {
-            lines.add(".expect()")
-            if (configuration.enableCompleteObjects == false) {
-                addExpectationsWithoutObjects(result, lines, name)
-            }
-            else{
-                addExpectationsWithoutObjects(result, lines, name)
-            }
-            appendSemicolon(lines)
-        }
-    }
-
-    private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines, name: String) {
-        if (result.getBodyType() != null) {
-            // if there is a body, add expectations based on the body type. Right now only application/json is supported
-            when {
-                result.getBodyType()!!.isCompatible(MediaType.APPLICATION_JSON_TYPE) -> {
-                    when (result.getBody()?.first()) {
-                        '[' -> {
-                            // This would be run if the JSON contains an array of objects
-                            val resContents = Gson().fromJson(result.getBody(), ArrayList::class.java)
-                            val printableTh = "numbersMatch(" +
-                                    "json_$name.getJsonObject(\"size\"), " +
-                                    "${resContents.size})"
-                            lines.add(".that(expectationsMasterSwitch, ($printableTh))")
-                            //TODO: individual objects in this collection also need handling
-                            resContents.forEachIndexed { index, result ->
-                                    val fieldName = "get($index)"
-                                    val printableElement = handleFieldValuesExpect(name, fieldName, result)
-                                    if (printableElement != "null" && printableTh != NOT_COVERED_YET) {
-                                        lines.add(".that(expectationsMasterSwitch, $printableElement)")
-                                    }
-                            }
-
-                        }
-                        '{' -> {
-                            // This would be run if the JSON contains a single object
-                            val resContents = Gson().fromJson(result.getBody(), Object::class.java)
-
-                            (resContents as Map<*, *>).keys
-                                    .filter { !it.toString().contains("timestamp") }
-                                    .forEach {
-                                    val printableTh = handleFieldValuesExpect(name, it.toString(), resContents[it])
-                                    if (printableTh != "null"
-                                         && printableTh != NOT_COVERED_YET
-                                    ) {
-                                        lines.add(".that(expectationsMasterSwitch, $printableTh)")
-                                    }
-                                }
-                        }
-                        else -> {
-                            // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
-                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
-                            else lines.add(".body(isEmptyOrNullString())")
-                        }
-                    }
-                }
-                result.getBodyType()!!.isCompatible(MediaType.TEXT_PLAIN_TYPE) -> {
-                    if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
-                    else lines.add(".body(isEmptyOrNullString())")
-                }
-            }
-        }
-    }
 
     /**
      * The purpose of the [flattenForAssert] method is to prepare an object for assertion generation.
