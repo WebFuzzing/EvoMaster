@@ -150,6 +150,8 @@ class Main {
 
             writeStatistics(injector, solution)
 
+            writeCoveredTargets(injector, solution)
+
             writeTests(injector, solution, controllerInfo)
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -386,6 +388,22 @@ class Main {
 
             val am = injector.getInstance(ArchiveMutator::class.java)
             am.exportImpacts(solution)
+        }
+
+        /**
+         * save covered target info
+         * info is designed for experiment analysis
+         */
+        private fun writeCoveredTargets(injector: Injector, solution: Solution<*>) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.exportCoveredTarget) {
+                return
+            }
+
+            val statistics = injector.getInstance(Statistics::class.java)
+            statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
     }
 }

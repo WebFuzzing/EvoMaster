@@ -18,6 +18,10 @@ class Statistics : SearchListener {
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(Statistics::class.java)
+
+        private const val DES_TAGERT = "description"
+        private const val TEST_INDEXT = "indexOfTests"
+        private const val CALZZ = "className"
     }
 
     @Inject
@@ -256,4 +260,29 @@ class Statistics : SearchListener {
                             .count()
                 }
     }
+
+    fun writeCoveredTargets(solution: Solution<*>, format : EMConfig.SortCoveredTargetBy){
+        val path = Paths.get(config.coveredTargetFile)
+        if (path.parent != null) Files.createDirectories(path.parent)
+        if (Files.exists(path))
+            log.info("The existing file on ${config.coveredTargetFile} is going to be replaced")
+        val info = archive.exportCoveredTargetsAsPair(solution)
+        val separator = "," // for csv format
+
+        val content = mutableListOf<String>()
+        when(format){
+            EMConfig.SortCoveredTargetBy.NAME ->{
+                content.add(DES_TAGERT)
+                content.addAll(info.map { it.first }.sorted())
+            }
+            EMConfig.SortCoveredTargetBy.TEST ->{
+                content.add(listOf(TEST_INDEXT, DES_TAGERT).joinToString(separator))
+                info.flatMap { it.second }.sorted().forEach {test->
+                    content.addAll(info.filter { it.second.contains(test) }.map { c-> c.first }.sorted().map { listOf(test, it).joinToString(separator) })
+                }
+            }
+        }
+        Files.write(path, content)
+    }
+
 }
