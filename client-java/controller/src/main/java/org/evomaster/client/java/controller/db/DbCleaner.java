@@ -14,40 +14,6 @@ import java.util.stream.Collectors;
  */
 public class DbCleaner {
 
-    public static void clearDatabase_Derby(Connection connection, String schemaName) {
-
-        /*
-            Code from
-            https://stackoverflow.com/questions/171727/delete-all-tables-in-derby-db
-         */
-
-        String sql = "SELECT " +
-                "'ALTER TABLE '||S.SCHEMANAME||'.'||T.TABLENAME||' DROP CONSTRAINT '||C.CONSTRAINTNAME||';' " +
-                "FROM " +
-                "    SYS.SYSCONSTRAINTS C, " +
-                "    SYS.SYSSCHEMAS S, " +
-                "    SYS.SYSTABLES T " +
-                "WHERE " +
-                "    C.SCHEMAID = S.SCHEMAID " +
-                "AND " +
-                "    C.TABLEID = T.TABLEID " +
-                "AND " +
-                "S.SCHEMANAME = '" + schemaName + "' " +
-                "UNION " +
-                "SELECT 'DROP TABLE ' || schemaname ||'.' || tablename || ';' " +
-                "FROM SYS.SYSTABLES " +
-                "INNER JOIN SYS.SYSSCHEMAS ON SYS.SYSTABLES.SCHEMAID = SYS.SYSSCHEMAS.SCHEMAID " +
-                "where schemaname='" + schemaName + "'";
-
-        try {
-            Statement s = connection.createStatement();
-            s.execute(sql);
-            s.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     public static void clearDatabase_H2(Connection connection) {
         clearDatabase_H2(connection, null);
     }

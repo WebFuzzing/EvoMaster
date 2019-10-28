@@ -13,6 +13,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
+import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.PathParam
 import org.evomaster.core.remote.SutProblemException
@@ -157,7 +158,13 @@ class RestSampler : Sampler<RestIndividual>(){
                 headers.add(AuthenticationHeader(name, value))
             }
 
-            val auth = AuthenticationInfo(i.name.trim(), headers)
+            val cookieLogin = if(i.cookieLogin != null){
+                CookieLogin.fromDto(i.cookieLogin)
+            } else {
+                null
+            }
+
+            val auth = AuthenticationInfo(i.name.trim(), headers, cookieLogin)
 
             authentications.add(auth)
         }

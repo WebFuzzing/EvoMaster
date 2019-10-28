@@ -143,7 +143,7 @@ public class SqlScriptRunner {
                 }
             }
 
-            if (command != null) {
+            if (command != null && command.length() > 0) {
                 list.add(command.toString());
             }
 
