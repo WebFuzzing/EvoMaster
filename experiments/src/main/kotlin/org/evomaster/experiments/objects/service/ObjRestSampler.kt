@@ -134,7 +134,7 @@ class ObjRestSampler : Sampler<ObjIndividual>() {
                 headers.add(AuthenticationHeader(name, value))
             }
 
-            val auth = AuthenticationInfo(i.name.trim(), headers)
+            val auth = AuthenticationInfo(i.name.trim(), headers, null)
 
             authentications.add(auth)
         }
