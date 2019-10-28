@@ -23,10 +23,17 @@ public class SqlScriptRunnerCached {
     private static final SqlScriptRunner runner = new SqlScriptRunner();
 
 
-    /**
-     *  Execute the SQL commands in the given resource file.
-     *  The data is cached, so following requests do not need to re-read the same files.
-     */
+    public static void runScriptFromResourceFile(Connection connection, String... paths) {
+
+        for(String p : paths){
+            runScriptFromResourceFile(connection, p);
+        }
+    }
+
+        /**
+         *  Execute the SQL commands in the given resource file.
+         *  The data is cached, so following requests do not need to re-read the same files.
+         */
     public static void runScriptFromResourceFile(Connection connection, String resourcePath) {
 
         List<String> sql = cache.get(resourcePath);
