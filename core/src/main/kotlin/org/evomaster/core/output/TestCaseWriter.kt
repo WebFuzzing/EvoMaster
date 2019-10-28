@@ -1,6 +1,7 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
+import io.swagger.models.Swagger
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -33,6 +34,7 @@ class TestCaseWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
     private lateinit var expectationsHandler: ExpectationsHandler
+    private lateinit var swagger: Swagger
 
     companion object{
         val NOT_COVERED_YET = "NotCoveredYet"
@@ -743,6 +745,10 @@ class TestCaseWriter {
             returnMap[k] = v
         }
         return returnMap
+    }
+
+    fun setSwagger(sw: Swagger){
+        swagger = sw
     }
 
 }

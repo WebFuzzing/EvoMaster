@@ -39,13 +39,12 @@ class TestSuiteWriter {
 
     fun writeTests(
             solution: Solution<*>,
-            controllerName: String?,
-            swagger: Swagger? = null
+            controllerName: String?
     ) {
 
         val name = TestSuiteFileName(config.testSuiteFileName)
 
-        val content = convertToCompilableTestCode(solution, name, controllerName, swagger)
+        val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
 
         /*if (config.expectationsActive || config.enableBasicAssertions){
@@ -64,8 +63,7 @@ class TestSuiteWriter {
     private fun convertToCompilableTestCode(
             solution: Solution<*>,
             testSuiteFileName: TestSuiteFileName,
-            controllerName: String?,
-            swagger: Swagger?
+            controllerName: String?
             )
             : String {
 
@@ -79,11 +77,13 @@ class TestSuiteWriter {
             beforeAfterMethods(controllerName, lines)
 
             val tests = testSuiteOrganizer.sortTests(solution, config.customNaming)
+            val testCaseWriter = TestCaseWriter()
+            testCaseWriter.setSwagger(swagger)
 
             for (test in tests) {
                 lines.addEmpty(2)
 
-                val testLines = TestCaseWriter()
+                val testLines = testCaseWriter
                         .convertToCompilableTestCode(config, test, baseUrlOfSut)
                 lines.add(testLines)
             }

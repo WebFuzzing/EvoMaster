@@ -320,10 +320,10 @@ class Main {
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
 
+            writer.setSwagger(swagger)
             writer.writeTests(
                     solution,
-                    controllerInfoDto?.fullName,
-                    swagger
+                    controllerInfoDto?.fullName
             )
         }
 
