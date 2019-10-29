@@ -833,8 +833,13 @@ class EMConfig {
          */
         NAME,
         /**
-         * grouped by tests and sorted by index of tests
+         * grouped by tests and sorted by index of tests.
+         * it may help to analyze the individuals regarding different strategies.
          */
         TEST
+        /**
+         * there might be other options, e.g., based on class,
+         * but we need to follow rules to encode and decode regarding id.
+         */
     }
 }
