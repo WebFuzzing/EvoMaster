@@ -74,7 +74,7 @@ class RestActionBuilder {
 
                             if(responses.isNotEmpty()){
                                 responses.filter { it.value.responseSchema is RefModel }.forEach { (k, v) ->
-                                    action.addRef((v.responseSchema as RefModel).simpleRef)
+                                    action.addRef(k, (v.responseSchema as RefModel).simpleRef)
                                 }
                             }
 

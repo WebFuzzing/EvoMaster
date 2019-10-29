@@ -218,7 +218,7 @@ class ObjectGenerator {
     }
 
     fun addResponseObjects(action: RestCallAction, individual: RestIndividual){
-        val refs = action.responseRefs
+        val refs = action.responseRefs.values
         refs.forEach{
             val respObject = swagger.definitions.get(it)
 

@@ -143,7 +143,7 @@ class ExpectationsWriter {
                     }
                 }
                 result.getBodyType()!!.isCompatible(MediaType.TEXT_PLAIN_TYPE) -> {
-                    if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, stringsMatch(json_$name.toString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                    if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, stringsMatch($name.extract().response().asString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                         //lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                     else lines.add(".that($expectationsMasterSwitch, json_$name.toString().isEmpty())")
                         //lines.add(".body(isEmptyOrNullString())")

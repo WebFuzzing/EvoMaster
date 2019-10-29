@@ -42,7 +42,7 @@ class RestCallAction(
          */
         var locationId: String? = null,
         var produces: List<String> = listOf(),
-        val responseRefs : MutableSet<String> = mutableSetOf()
+        val responseRefs : MutableMap<String, String> = mutableMapOf()
 ) : RestAction {
 
     /**
@@ -181,8 +181,8 @@ class RestCallAction(
     fun clearRefs(){
         responseRefs.clear()
     }
-    fun addRef(ref: String){
-        responseRefs.add(ref)
+    fun addRef(key: String, ref: String){
+        responseRefs[key] = ref
     }
 
 }

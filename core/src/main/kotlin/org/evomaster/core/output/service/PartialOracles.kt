@@ -21,7 +21,10 @@ class PartialOracles {
         objectGenerator = objGen
     }
     fun responseStructure(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
-        if (res.failedCall()) return
+        if (res.failedCall()
+                || res.getStatusCode() == 500) {
+            return
+        }
         val oracleName = "responseStructureOracle"
         val bodyString = res.getBody()
         when (bodyString?.first()) {
@@ -33,10 +36,12 @@ class PartialOracles {
                 // TODO: Handle individual objects
                 val responseObject = Gson().fromJson(bodyString, Map::class.java)
                 call.responseRefs.forEach{
-                    val referenceObject = objectGenerator.getNamedReference(it)
+                    if (res.getStatusCode().toString() != it.key) return@forEach
+                    val referenceObject = objectGenerator.getNamedReference(it.value)
                     //Expect that the response has all the compulsory (i.e. non-optional) fields
                     // responseObject.keys.containsAll(referenceObject.fields.filterNot{ it is OptionalGene }.map { it.name })
                     //.that(expectationsMasterSwitch, json_call_0.getMap("").keySet().containsAll(Arrays.asList("id", "uri", "name")))
+
                     val referenceKeys = referenceObject.fields
                             .filterNot { it is OptionalGene }
                             .map { "\"${it.name}\"" }
