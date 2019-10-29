@@ -1,18 +1,30 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
+import io.swagger.models.Swagger
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.gene.GeneUtils
 import javax.ws.rs.core.MediaType
 
-class ExpectationsHandler {
+class ExpectationsWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private val expectationsMasterSwitch = "expectationsMasterSwitch"
     private val responseStructureOracle = "responseStructureOracle"
+    private lateinit var swagger: Swagger
+    private lateinit var partialOracles: PartialOracles
 
     fun setFormat(format: OutputFormat){
         this.format = format
+    }
+
+    fun setSwagger(swagger: Swagger){
+        this.swagger = swagger
+    }
+
+    fun setPartialOracles(partialOracles: PartialOracles){
+        this.partialOracles = partialOracles
     }
 
     fun addDeclarations(lines: Lines){
@@ -54,7 +66,7 @@ class ExpectationsHandler {
         if(format.isJava()) {lines.append(";")}
     }
 
-    fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean, name: String) {
+    fun handleExpectations(call: RestCallAction, lines: Lines, result: RestCallResult, active: Boolean, name: String) {
 
         /*
         TODO: This is a WiP to show the basic idea of the expectations:
@@ -71,16 +83,7 @@ class ExpectationsHandler {
         lines.indented {
             lines.add(".expect()")
             addExpectationsWithoutObjects(result, lines, name)
-            /*
-            if (configuration.enableCompleteObjects == false) {
-                addExpectationsWithoutObjects(result, lines, name)
-            }
-            else{
-                addExpectationsWithoutObjects(result, lines, name)
-            }
-
-             */
-            //appendSemicolon(lines)
+            partialOracles.responseStructure(call, lines, result, name)
             if (format.isJava()) { lines.append(";")}
         }
     }
@@ -102,7 +105,10 @@ class ExpectationsHandler {
                             resContents.forEachIndexed { index, result ->
                                 val fieldName = "get($index)"
                                 val printableElement = handleFieldValuesExpect(name, fieldName, result)
-                                if (printableElement != "null" && printableElement != TestCaseWriter.NOT_COVERED_YET) {
+                                if (printableElement != "null"
+                                        && printableElement != TestCaseWriter.NOT_COVERED_YET
+                                        && !printableTh.contains("logged")
+                                ) {
                                     lines.add(".that($expectationsMasterSwitch, $printableElement)")
                                 }
                             }
@@ -118,6 +124,8 @@ class ExpectationsHandler {
                                         val printableTh = handleFieldValuesExpect(name, it.toString(), resContents[it])
                                         if (printableTh != "null"
                                                 && printableTh != TestCaseWriter.NOT_COVERED_YET
+                                                && !printableTh.contains("logged") //again, unpleasant, but IDs logged as part of the error message are a problem
+                                            //TODO: find a more elegant way to deal with IDs, object refs, timestamps, etc.
                                         ) {
                                             lines.add(".that($expectationsMasterSwitch, $printableTh)")
                                         }
@@ -125,7 +133,9 @@ class ExpectationsHandler {
                         }
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
-                            if(result.getBody() != null)  lines.add(".that($expectationsMasterSwitch, stringsMatch(json_$name.toString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                            if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, stringsMatch($name.extract().response().asString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                                //lines.add(".that($expectationsMasterSwitch, json_$name.jsonParser.json == null)")
+                                //lines.add(".that($expectationsMasterSwitch, stringsMatch(json_$name.toString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                                 //lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                             else lines.add(".that($expectationsMasterSwitch, json_$name.toString().isEmpty())")
                             //else lines.add(".body(isEmptyOrNullString())")

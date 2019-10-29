@@ -39,7 +39,7 @@ class PartialOracles {
                     //.that(expectationsMasterSwitch, json_call_0.getMap("").keySet().containsAll(Arrays.asList("id", "uri", "name")))
                     val referenceKeys = referenceObject.fields
                             .filterNot { it is OptionalGene }
-                            .map { "\"it.name\"" }
+                            .map { "\"${it.name}\"" }
                             .joinToString(separator = ", ")
 
                     lines.add(".that($oracleName, json_$name.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
@@ -49,7 +49,7 @@ class PartialOracles {
                     //referenceObject.fields.filter{ it is OptionalGene}.map { it.name }.containsAll(responseObject.keys)
                     val referenceOptionalKeys = referenceObject.fields
                             .filter { it is OptionalGene }
-                            .map { "\"it.name\"" }
+                            .map { "\"${it.name}\"" }
                             .joinToString(separator = ", ")
                     lines.add(".that($oracleName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap(\"\").keySet()))")
                 }

@@ -21,12 +21,16 @@ class ObjectGenerator {
     private lateinit var swagger: Swagger
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
-    @PostConstruct
-    fun initialize(sw: Swagger? = null) {
-        if (sw != null) swagger = sw
+    fun initialize() {
+        if (swagger != null) {
+            modelCluster.clear()
+            RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
+        }
+    }
 
-        modelCluster.clear()
-        RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
+    fun setSwagger(sw: Swagger){
+        swagger = sw
+        this.initialize()
     }
 
     /*

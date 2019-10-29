@@ -7,6 +7,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
+import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -33,7 +35,7 @@ class TestCaseWriter {
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
-    private lateinit var expectationsHandler: ExpectationsHandler
+    private lateinit var expectationsWriter: ExpectationsWriter
     private lateinit var swagger: Swagger
 
     companion object{
@@ -49,8 +51,17 @@ class TestCaseWriter {
         //TODO: refactor remove once changes merged
         configuration = config
         this.format = config.outputFormat
-        this.expectationsHandler = ExpectationsHandler()
-        expectationsHandler.setFormat(this.format)
+        this.expectationsWriter = ExpectationsWriter()
+        expectationsWriter.setFormat(this.format)
+
+        val objGenerator = ObjectGenerator()
+        objGenerator.setSwagger(swagger)
+
+        val partialOracles = PartialOracles()
+        partialOracles.setGenerator(objGenerator)
+
+        expectationsWriter.setPartialOracles(partialOracles)
+        expectationsWriter.setSwagger(swagger)
 
         counter = 0
 
@@ -74,7 +85,7 @@ class TestCaseWriter {
                 }
 
                 if(configuration.expectationsActive){
-                    expectationsHandler.addDeclarations(lines)
+                    expectationsWriter.addDeclarations(lines)
                 }
 
 
@@ -315,7 +326,7 @@ class TestCaseWriter {
 
         if(configuration.expectationsActive){
             val header = getAcceptHeader(call, res)
-            expectationsHandler.handleGenericFirstLine(call, lines, res, name, header)
+            expectationsWriter.handleGenericFirstLine(call, lines, res, name, header)
         }
         else {
             handleFirstLine(call, lines, res)
@@ -333,7 +344,7 @@ class TestCaseWriter {
 
         //finally, handle the last line(s)
         if(configuration.expectationsActive){
-            expectationsHandler.handleGenericLastLine(call, res, lines, counter)
+            expectationsWriter.handleGenericLastLine(call, res, lines, counter)
             counter++
         }
         else {
@@ -343,8 +354,9 @@ class TestCaseWriter {
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
         if(configuration.expectationsActive){
-            expectationsHandler.handleExpectationSpecificLines(call, lines, res, name)
-            expectationsHandler.handleExpectations(res, lines, true, name)
+            expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
+            //expectationsHandler.handleExpectations(res, lines, true, name)
+            expectationsWriter.handleExpectations(call, lines, res, true, name)
         }
         //TODO: BMR expectations from partial oracles here?
 
