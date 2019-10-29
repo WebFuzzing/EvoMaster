@@ -2,7 +2,9 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
+import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.*
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
@@ -74,6 +76,7 @@ class TestSuiteWriter {
             }
             catch (ex: Exception){
                 var counter = 0
+                LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("[WARNING] ") + AnsiColor.inYellow("A failure has occurred with the test sorting. Reverting to default settings. "))
                 solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
             }
 
@@ -88,10 +91,10 @@ class TestSuiteWriter {
                 }
                 catch (ex: Exception){
                     Lines().apply {
-                        this.add("// There was an exception ${ex.message}")
-                        this.add("// At ${ex.stackTrace}")
-                        this.add("// That prevented the test from being written")
-
+                        LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("[WARNING] ")
+                                + AnsiColor.inYellow("A failure has occurred in writing test ${test.name}. ")
+                                + AnsiColor.inYellow("Exception: ${ex.localizedMessage} ")
+                                + AnsiColor.inYellow("At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "))
                     }
                 }
                 lines.add(testLines)
