@@ -55,13 +55,20 @@ class TestCaseWriter {
         expectationsWriter.setFormat(this.format)
 
         val objGenerator = ObjectGenerator()
-        objGenerator.setSwagger(swagger)
-
         val partialOracles = PartialOracles()
-        partialOracles.setGenerator(objGenerator)
 
-        expectationsWriter.setPartialOracles(partialOracles)
-        expectationsWriter.setSwagger(swagger)
+        if(config.expectationsActive
+                && ::swagger.isInitialized){
+            objGenerator.setSwagger(swagger)
+            partialOracles.setGenerator(objGenerator)
+
+            expectationsWriter.setPartialOracles(partialOracles)
+            expectationsWriter.setSwagger(swagger)
+        }
+
+
+
+
 
         counter = 0
 
