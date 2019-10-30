@@ -33,6 +33,7 @@ import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
 import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
 
 
@@ -263,15 +264,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     }
 
 
-    /**
-     * @return whether the call was OK. Eg, in some cases, we might want to stop
-     * the test at this action, and do not continue
-     */
-    protected fun handleRestCall(a: RestCallAction,
-                               actionResults: MutableList<ActionResult>,
-                               chainState: MutableMap<String, String>)
-            : Boolean {
-
+    private fun getBaseUrl() : String {
         var baseUrl = if(!config.blackBox || config.bbExperiments){
             infoDto.baseUrlOfSUT
         } else {
@@ -281,6 +274,21 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         if (baseUrl.endsWith("/")) {
             baseUrl = baseUrl.substring(0, baseUrl.length - 1)
         }
+
+        return baseUrl
+    }
+
+    /**
+     * @return whether the call was OK. Eg, in some cases, we might want to stop
+     * the test at this action, and do not continue
+     */
+    protected fun handleRestCall(a: RestCallAction,
+                               actionResults: MutableList<ActionResult>,
+                               chainState: MutableMap<String, String>,
+                               cookies:  Map<String, List<NewCookie>>)
+            : Boolean {
+
+        val baseUrl = getBaseUrl()
 
         val path = a.resolvedPath()
 
@@ -329,6 +337,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     builder.header(it.name, it.gene.getValueAsRawString())
                 }
 
+        if(a.auth.cookieLogin != null){
+            val list = cookies[a.auth.cookieLogin!!.username]
+            if(list==null || list.isEmpty()){
+                log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
+            } else {
+                list.forEach{
+                    builder.cookie(it.toCookie())
+                }
+            }
+        }
 
         /*
             TODO: need to handle "accept" of returned resource
@@ -488,5 +506,70 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     private fun locationName(id: String): String {
         return "location_$id"
+    }
+
+    /**
+     * If any action needs auth based on cookies, do a "login" before
+     * running the actions, and collect the cookies from the server.
+     *
+     * @return a map from username to auth cookie for those users
+     */
+    protected fun getCookies(ind: RestIndividual) : Map<String, List<NewCookie>>{
+
+        val cookieLogins = ind.getCookieLoginAuth()
+
+        val map : MutableMap<String, List<NewCookie>> = HashMap()
+
+        val baseUrl = getBaseUrl()
+
+        for(cl in cookieLogins){
+
+            val mediaType = when(cl.contentType){
+                ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
+                ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
+            }
+
+            val response = try {
+                client.target(baseUrl + cl.loginEndpointUrl)
+                        .request()
+                        //TODO could consider other cases besides POST
+                        .buildPost(Entity.entity(cl.payload(), mediaType))
+                        .invoke()
+            } catch (e: Exception){
+                log.warn("Failed to login for ${cl.username}/${cl.password}: $e")
+                continue
+            }
+
+            if(response.statusInfo.family != Response.Status.Family.SUCCESSFUL){
+
+                /*
+                    if it is a 3xx, we need to look at Location header to determine
+                    if a success or failure.
+                    TODO: could explicitly ask for this info in the auth DTO.
+                    However, as 3xx makes little sense in a REST API, maybe not so
+                    important right now, although had this issue with some APIs using
+                    default settings in Spring Security
+                */
+                if(response.statusInfo.family == Response.Status.Family.REDIRECTION){
+                    val location = response.getHeaderString("location")
+                    if(location != null && (location.contains("error", true) || location.contains("login", true))){
+                        log.warn("Login request failed with ${response.status} redirection toward $location")
+                        continue
+                    }
+                } else {
+                    log.warn("Login request failed with status ${response.status}")
+                    continue
+                }
+            }
+
+            if(response.cookies.isEmpty()){
+                log.warn("Cookie-based login request did not give back any new cookie")
+                continue
+            }
+
+            map[cl.username] = response.cookies.values.toList()
+        }
+
+        return map
     }
 }

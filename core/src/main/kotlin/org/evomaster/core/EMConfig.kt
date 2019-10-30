@@ -814,4 +814,32 @@ class EMConfig {
     @Experimental
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
+
+    @Experimental
+    @Cfg("Specify whether to export covered targets info")
+    var exportCoveredTarget = false
+
+    @Experimental
+    @Cfg("Specify a file which saves covered targets info regarding generated test suite")
+    var coveredTargetFile = "coveredTargets.txt"
+
+    @Experimental
+    @Cfg("Specify a format to organize the covered targets by the search")
+    var coveredTargetSortedBy = SortCoveredTargetBy.NAME
+
+    enum class SortCoveredTargetBy{
+        /**
+         * sorted by ids of targets alphabetically
+         */
+        NAME,
+        /**
+         * grouped by tests and sorted by index of tests.
+         * it may help to analyze the individuals regarding different strategies.
+         */
+        TEST
+        /**
+         * there might be other options, e.g., based on class,
+         * but we need to follow rules to encode and decode regarding id.
+         */
+    }
 }

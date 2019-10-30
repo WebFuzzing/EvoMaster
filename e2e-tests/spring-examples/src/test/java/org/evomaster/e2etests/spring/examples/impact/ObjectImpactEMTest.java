@@ -17,12 +17,14 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * created by manzh on 2019-09-12
@@ -77,9 +79,40 @@ public class ObjectImpactEMTest extends SpringTestBase {
                     args.add("--impactFile");
                     args.add("target/impactInfo/TestobjImpacts_"+method.toString()+".csv");
 
+                    args.add("--exportCoveredTarget");
+                    args.add("true");
+                    args.add("--coveredTargetFile");
+                    String path = "target/coveredTargets/testobjImpacts_CoveredTargetsBy"+method.toString()+".csv";
+                    args.add(path);
+                    args.add("--coveredTargetSortedBy");
+                    args.add("TEST");
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assertTrue(Files.exists(Paths.get(path)));
+
+                    try {
+                        Set tests = new HashSet<String>();
+                        Set targets = new HashSet<String>();
+                        /*
+                          skip header
+                         */
+                        Files.readAllLines(Paths.get(path)).stream().skip(1).forEach(
+                                s -> {
+                                    String[] line = s.split(",");
+                                    assertEquals(2, line.length);
+                                    tests.add(line[0]);
+                                    targets.add(line[1]);
+                                }
+                        );
+                        assertEquals(solution.getIndividuals().size(), tests.size());
+                        assertEquals(solution.getOverall().coveredTargets(), targets.size());
+
+                    }catch (IOException e){
+                        fail("cannot read the file on "+path);
+                    }
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
                             s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noImpactIntField", s)
