@@ -313,7 +313,7 @@ class RestActionBuilder {
                     && model.additionalProperties.type == "object") {
                 val ap = model.additionalProperties
                 return createMapGene(
-                        name + "_map",
+                        name, // + "_map", BMR: here's hoping nothing crashes
                         ap.type,
                         ap.format,
                         swagger,
@@ -331,7 +331,7 @@ class RestActionBuilder {
                 try to add some fields to it
              */
             return createMapGene(
-                    name + "_map",
+                    name, // + "_map", BMR: here's hoping nothing crashes
                     "string",
                     null,
                     swagger,
@@ -349,7 +349,7 @@ class RestActionBuilder {
         ): Gene {
 
             val template = getGene(
-                    name + "_map",
+                    name , // + "_map", BMR: here's hoping nothing crashes
                     type,
                     format,
                     null,
@@ -519,7 +519,7 @@ class RestActionBuilder {
                     if (property is MapProperty) {
                         val ap = property.additionalProperties
                         return createMapGene(
-                                name + "_map",
+                                name, // + "_map", BMR: here's hoping nothing crashes + "_map",
                                 ap.type,
                                 ap.format,
                                 swagger,

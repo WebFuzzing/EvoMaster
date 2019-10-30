@@ -34,7 +34,7 @@ class PartialOracles {
             }
             '{' -> {
                 // TODO: Handle individual objects
-                val responseObject = Gson().fromJson(bodyString, Map::class.java)
+                //val responseObject = Gson().fromJson(bodyString, Map::class.java)
                 call.responseRefs.forEach{
                     if (res.getStatusCode().toString() != it.key) return@forEach
                     val referenceObject = objectGenerator.getNamedReference(it.value)

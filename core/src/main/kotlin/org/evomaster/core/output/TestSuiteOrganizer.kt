@@ -24,10 +24,10 @@ class TestSuiteOrganizer {
     private val sortingHelper = SortingHelper()
     private val namingHelper = NamingHelper()
 
-    private val defaultSorting = listOf(0, 1, 2)
+    private val defaultSorting = listOf(0, 1)
 
     fun sortTests(solution: Solution<*>, customNaming: Boolean = false): List<TestCase> {
-        sortingHelper.selectCriteriaByIndex(defaultSorting)
+        //sortingHelper.selectCriteriaByIndex(defaultSorting)
         //TODO here in the future we will have something a bit smarter
         return sortingHelper.sort(solution, namingHelper, customNaming)
     }

@@ -61,14 +61,9 @@ class TestCaseWriter {
                 && ::swagger.isInitialized){
             objGenerator.setSwagger(swagger)
             partialOracles.setGenerator(objGenerator)
-
-            expectationsWriter.setPartialOracles(partialOracles)
             expectationsWriter.setSwagger(swagger)
+            expectationsWriter.setPartialOracles(partialOracles)
         }
-
-
-
-
 
         counter = 0
 
@@ -599,7 +594,7 @@ class TestCaseWriter {
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
         lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
         flatContent.keys
-                .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
+                .filter{ !it.contains("timestamp")  && !it.toString().contains("cache")} //needed since timestamps will change between runs
                 .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
                 .forEach {
                     val stringKey = it.joinToString(separator = ".")

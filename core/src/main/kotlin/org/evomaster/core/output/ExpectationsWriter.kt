@@ -119,7 +119,7 @@ class ExpectationsWriter {
                             val resContents = Gson().fromJson(result.getBody(), Object::class.java)
 
                             (resContents as Map<*, *>).keys
-                                    .filter { !it.toString().contains("timestamp") }
+                                    .filter { !it.toString().contains("timestamp") && !it.toString().contains("cache") }
                                     .forEach {
                                         val printableTh = handleFieldValuesExpect(name, it.toString(), resContents[it])
                                         if (printableTh != "null"
@@ -133,7 +133,7 @@ class ExpectationsWriter {
                         }
                         else -> {
                             // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
-                            if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, stringsMatch($name.extract().response().asString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                            if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, subStringsMatch($name.extract().response().asString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                                 //lines.add(".that($expectationsMasterSwitch, json_$name.jsonParser.json == null)")
                                 //lines.add(".that($expectationsMasterSwitch, stringsMatch(json_$name.toString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                                 //lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
@@ -143,7 +143,7 @@ class ExpectationsWriter {
                     }
                 }
                 result.getBodyType()!!.isCompatible(MediaType.TEXT_PLAIN_TYPE) -> {
-                    if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, stringsMatch($name.extract().response().asString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
+                    if(result.getBody() != null) lines.add(".that($expectationsMasterSwitch, subStringsMatch($name.extract().response().asString(), \"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                         //lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
                     else lines.add(".that($expectationsMasterSwitch, json_$name.toString().isEmpty())")
                         //lines.add(".body(isEmptyOrNullString())")
@@ -160,7 +160,7 @@ class ExpectationsWriter {
             when(resContentsItem::class) {
                 Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
                         " ${resContentsItem as Double})"
-                String::class -> return "stringsMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
+                String::class -> return "subStringsMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
                         "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = GeneUtils.EscapeMode.EXPECTATION, format = format)}\")"
                 else -> return TestCaseWriter.NOT_COVERED_YET
             }

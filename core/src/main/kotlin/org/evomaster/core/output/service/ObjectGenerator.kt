@@ -30,7 +30,10 @@ class ObjectGenerator {
 
     fun setSwagger(sw: Swagger){
         swagger = sw
-        this.initialize()
+        if (swagger != null) {
+            modelCluster.clear()
+            RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
+        }
     }
 
     /*

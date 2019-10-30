@@ -183,6 +183,7 @@ class TestSuiteWriter {
             addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
             addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
             addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
+            addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
         }
 
         if(config.expectationsActive) {
