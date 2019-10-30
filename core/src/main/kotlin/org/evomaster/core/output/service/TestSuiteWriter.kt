@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
+import org.evomaster.core.problem.rest.BlackBoxUtils
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
 import java.nio.file.Files
@@ -231,7 +232,7 @@ class TestSuiteWriter {
                 lines.add("private static final SutHandler $controller = new $controllerName();")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
-                lines.add("private static String $baseUrlOfSut = \"${config.bbTargetUrl}\";")
+                lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
 
             if(config.expectationsActive){
@@ -243,7 +244,7 @@ class TestSuiteWriter {
                 lines.add("private val $controller : SutHandler = $controllerName()")
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
-                lines.add("private val $baseUrlOfSut = \"${config.bbTargetUrl}\"")
+                lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\"")
             }
 
             if(config.expectationsActive){
