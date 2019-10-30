@@ -2,15 +2,15 @@ package org.evomaster.core.output.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
-import org.evomaster.core.AnsiColor
 import org.evomaster.core.EMConfig
-import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.*
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZonedDateTime
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -29,6 +29,7 @@ class TestSuiteWriter {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val activeExpectations = "activeExpectations"
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
     fun writeTests(
@@ -76,7 +77,7 @@ class TestSuiteWriter {
             }
             catch (ex: Exception){
                 var counter = 0
-                LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("[WARNING] ") + AnsiColor.inYellow("A failure has occurred with the test sorting. Reverting to default settings. "))
+                log.warn("A failure has occurred with the test sorting. Reverting to default settings.")
                 solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
             }
 
@@ -91,10 +92,9 @@ class TestSuiteWriter {
                 }
                 catch (ex: Exception){
                     Lines().apply {
-                        LoggingUtil.getInfoLogger().warn(AnsiColor.inYellow("[WARNING] ")
-                                + AnsiColor.inYellow("A failure has occurred in writing test ${test.name}. ")
-                                + AnsiColor.inYellow("Exception: ${ex.localizedMessage} ")
-                                + AnsiColor.inYellow("At ${ex.stackTrace.joinToString(separator = " \n -> ")}. "))
+                        log.warn("A failure has occurred in writing test ${test.name}. \n "
+                                + "Exception: ${ex.localizedMessage} \n"
+                                + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
                     }
                 }
                 lines.add(testLines)
