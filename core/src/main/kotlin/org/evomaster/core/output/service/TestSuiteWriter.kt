@@ -77,7 +77,9 @@ class TestSuiteWriter {
             }
             catch (ex: Exception){
                 var counter = 0
-                log.warn("A failure has occurred with the test sorting. Reverting to default settings.")
+                log.warn("A failure has occurred with the test sorting. Reverting to default settings. \n"
+                        + "Exception: ${ex.localizedMessage} \n"
+                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
                 solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
             }
 
