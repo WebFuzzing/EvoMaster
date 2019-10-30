@@ -88,11 +88,14 @@ public class ColumnTableAnalyzer {
 
     /**
      * Given a SELECT, check what it returns is based on (columns and tables).
-     * Something like "select x from Foo" would give info on "Foo->{x}".
+     * Something like "select x from Foo" would give info on "Foo-&gt;{x}".
      * However, at times, what is returned is not directly the content of a column, but
      * rather some computations on it.
      * For example, in "select avg(x) from Foo", we would still be just interested in
-     * the info that the data in "Foo->{x}" was used to compute the result.
+     * the info that the data in "Foo-&gt;{x}" was used to compute the result.
+     *
+     * @param select SQL select command
+     * @return a map from table_names to column_names
      */
     public static Map<String, Set<String>> getSelectReadDataFields(String select){
 

@@ -60,6 +60,8 @@ public class EMController {
 
     /**
      * Only used for debugging/testing
+     *
+     * @return host:port of all clients connected so far
      */
     public static Set<String> getConnectedClientsSoFar() {
         return connectedClientsSoFar;

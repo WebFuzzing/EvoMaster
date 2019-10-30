@@ -23,7 +23,10 @@ public class QueryResult {
     private final List<DataRow> rows = new ArrayList<>();
 
     /**
-     * Constructor only needed for testing
+     * WARNING: Constructor only needed for testing
+     *
+     * @param columnNames name of columns
+     * @param tableName name of table the columns belongs to
      */
     public QueryResult(List<String> columnNames, String tableName) {
         Objects.requireNonNull(columnNames);
