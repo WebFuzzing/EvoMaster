@@ -74,8 +74,8 @@ public class SelectTransformer {
      * in the count, but the actual involved fields, so we want to
      * transform it into "select *" by removing the count() operation.
      *
-     * @param select
-     * @return
+     * @param select SQL command to transform
+     * @return a transformed SQL select
      */
     public static String removeOperations(String select){
 

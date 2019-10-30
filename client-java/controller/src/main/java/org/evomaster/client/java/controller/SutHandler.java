@@ -41,6 +41,8 @@ public interface SutHandler {
 
     /**
      * Execute the given data insertions into the database (if any)
+     *
+     * @param insertions DTOs for each insertion to execute
      */
     void execInsertionsIntoDatabase(List<InsertionDto> insertions);
 }

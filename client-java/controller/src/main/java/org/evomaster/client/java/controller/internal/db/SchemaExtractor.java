@@ -208,14 +208,17 @@ public class SchemaExtractor {
      * Adds a unique constraint to the corresponding ColumnDTO for the selected table.column pair.
      * Requires the ColumnDTO to be contained in the TableDTO.
      * If the column DTO is not contained, a IllegalArgumentException is thrown.
+     *
+     * @param tableDto the DTO of the table
+     * @param columnName the name of the column to add the unique constraint on
      **/
-    public static void addUniqueConstraintToColumn(String tableName, TableDto tableDto, String columnName) {
+    public static void addUniqueConstraintToColumn(TableDto tableDto, String columnName) {
 
         ColumnDto columnDto = tableDto.columns.stream()
                 .filter(c -> c.name.equals(columnName)).findAny().orElse(null);
 
         if (columnDto == null) {
-            throw new IllegalArgumentException("Missing column DTO for column:" + tableName + "." + columnName);
+            throw new IllegalArgumentException("Missing column DTO for column:" + tableDto.name + "." + columnName);
         }
 
         columnDto.unique = true;
@@ -248,7 +251,7 @@ public class SchemaExtractor {
             } else if (constraint instanceof DbTableUniqueConstraint) {
                 DbTableUniqueConstraint tableUniqueConstraint = (DbTableUniqueConstraint) constraint;
                 for (String columnName : tableUniqueConstraint.getUniqueColumnNames()) {
-                    addUniqueConstraintToColumn(tableName, tableDto, columnName);
+                    addUniqueConstraintToColumn(tableDto, columnName);
                 }
             } else {
                 throw new RuntimeException("Unknown constraint type " + constraint.getClass().getName());
@@ -338,7 +341,7 @@ public class SchemaExtractor {
      * automatically generated values in primary keys that are
      * referenced by columns in other tables
      *
-     * @param schema
+     * @param schema a DTO with the database information
      */
     private static void addForeignKeyToAutoIncrement(DbSchemaDto schema) {
         for (TableDto tableDto : schema.tables) {
@@ -351,7 +354,7 @@ public class SchemaExtractor {
     }
 
     /**
-     * Returns a table DTO for a particular table name
+     * @return  a table DTO for a particular table name
      */
     private static TableDto getTable(DbSchemaDto schema, String tableName) {
         TableDto tableDto = schema.tables.stream()
@@ -372,6 +375,8 @@ public class SchemaExtractor {
      * Checks if the given table/column is a foreign key to an autoincrement column.
      * This is done to be able to compute foreignKeyToAutoIncrement boolean.
      * Otherwise, we could just read that boolean.
+     *
+     * @return true if the given table/column is a foreign key to an autoincrement column.
      */
     private static boolean isFKToAutoIncrementColumn(DbSchemaDto schema, TableDto tableDto, String columnName) {
 

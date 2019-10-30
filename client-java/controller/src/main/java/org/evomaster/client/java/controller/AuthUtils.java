@@ -27,7 +27,7 @@ public class AuthUtils {
      * @param dtoName a name used to identify this dto. Mainly needed for debugging
      * @param userId    the id of a user
      * @param password  password for that user
-     * @return
+     * @return a DTO
      */
     public static AuthenticationDto getForBasic(String dtoName, String userId, String password){
 
@@ -43,7 +43,7 @@ public class AuthUtils {
      * DTO representing the use of authentication via the "Authorization" header
      * @param dtoName a name used to identify this dto. Mainly needed for debugging
      * @param authorizationValue    the content of  the "Authorization" header
-     * @return
+     * @return a DTO
      */
     public static AuthenticationDto getForAuthorizationHeader(String dtoName, String authorizationValue){
 
@@ -64,7 +64,7 @@ public class AuthUtils {
      * @param dtoName a name used to identify this dto. Mainly needed for debugging
      * @param username    the id of a user
      * @param password  password for that user
-     * @return
+     * @return a DTO
      */
     public static AuthenticationDto getForDefaultSpringFormLogin(String dtoName, String username, String password){
 
