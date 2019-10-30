@@ -93,11 +93,10 @@ class TestSuiteWriter {
 
                 }
                 catch (ex: Exception){
-                    Lines().apply {
-                        log.warn("A failure has occurred in writing test ${test.name}. \n "
-                                + "Exception: ${ex.localizedMessage} \n"
-                                + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
-                    }
+                    log.warn("A failure has occurred in writing test ${test.name}. \n "
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+                    Lines()
                 }
                 lines.add(testLines)
             }
