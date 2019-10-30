@@ -9,6 +9,8 @@ import org.evomaster.core.search.service.SearchTimeController
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZonedDateTime
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 /**
@@ -27,6 +29,7 @@ class TestSuiteWriter {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val activeExpectations = "activeExpectations"
+        private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
     fun writeTests(
@@ -68,13 +71,33 @@ class TestSuiteWriter {
 
             beforeAfterMethods(controllerName, lines)
 
-            val tests = testSuiteOrganizer.sortTests(solution, config.customNaming)
+            //catch any sorting problems (see NPE is SortingHelper on Trello)
+            val tests = try{
+                testSuiteOrganizer.sortTests(solution, config.customNaming)
+            }
+            catch (ex: Exception){
+                var counter = 0
+                log.warn("A failure has occurred with the test sorting. Reverting to default settings. \n"
+                        + "Exception: ${ex.localizedMessage} \n"
+                        + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+                solution.individuals.map { ind -> TestCase(ind, "test_${counter++}") }
+            }
 
             for (test in tests) {
                 lines.addEmpty(2)
 
-                val testLines = TestCaseWriter()
-                        .convertToCompilableTestCode(config, test, baseUrlOfSut)
+                // catch writing problems on an individual test case basis
+                val testLines = try {
+                    TestCaseWriter()
+                            .convertToCompilableTestCode(config, test, baseUrlOfSut)
+
+                }
+                catch (ex: Exception){
+                    log.warn("A failure has occurred in writing test ${test.name}. \n "
+                            + "Exception: ${ex.localizedMessage} \n"
+                            + "At ${ex.stackTrace.joinToString(separator = " \n -> ")}. ")
+                    Lines()
+                }
                 lines.add(testLines)
             }
         }
