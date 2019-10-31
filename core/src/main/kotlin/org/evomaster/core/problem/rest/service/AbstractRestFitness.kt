@@ -268,7 +268,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         var baseUrl = if(!config.blackBox || config.bbExperiments){
             infoDto.baseUrlOfSUT
         } else {
-            config.bbTargetUrl!!
+            BlackBoxUtils.restUrl(config)
         }
 
         if (baseUrl.endsWith("/")) {
