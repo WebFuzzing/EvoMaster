@@ -74,6 +74,8 @@ class TestSuiteWriter {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
+        val testCaseWriter = TestCaseWriter()
+        testCaseWriter.setSwagger(swagger)
 
         header(solution, testSuiteFileName, lines)
 
@@ -81,8 +83,6 @@ class TestSuiteWriter {
 
             beforeAfterMethods(controllerName, lines)
 
-            val testCaseWriter = TestCaseWriter()
-            testCaseWriter.setSwagger(swagger)
             //catch any sorting problems (see NPE is SortingHelper on Trello)
             val tests = try{
                 testSuiteOrganizer.sortTests(solution, config.customNaming)
@@ -100,7 +100,7 @@ class TestSuiteWriter {
 
                 // catch writing problems on an individual test case basis
                 val testLines = try {
-                    TestCaseWriter()
+                    testCaseWriter
                             .convertToCompilableTestCode(config, test, baseUrlOfSut)
 
                 }

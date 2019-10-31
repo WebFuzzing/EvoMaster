@@ -820,5 +820,4 @@ class TestCaseWriter {
     fun setSwagger(sw: Swagger){
         swagger = sw
     }
-
 }
