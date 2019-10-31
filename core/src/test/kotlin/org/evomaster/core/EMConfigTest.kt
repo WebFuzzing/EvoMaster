@@ -135,4 +135,33 @@ internal class EMConfigTest{
 
         assertThrows(Exception::class.java, {config.updateProperties(options)}) // invalid p
     }
+
+
+    @ParameterizedTest
+    @ValueSource(strings = ["bbSwaggerUrl", "bbTargetUrl"])
+    fun testUrl(name: String){
+
+        val parser = EMConfig.getOptionParser()
+        val opt = parser.recognizedOptions()[name] ?:
+            throw Exception("Cannot find option")
+        val config = EMConfig()
+
+        val ok = "http://localhost:8080"
+        var options = parser.parse("--$name", ok)
+        assertEquals(ok, opt.value(options))
+        config.updateProperties(options) // no exception
+
+        val noPort = "http://localhost"
+        options = parser.parse("--$name", noPort)
+        assertEquals(noPort, opt.value(options))
+        config.updateProperties(options) // no exception
+
+        val wrong = "foobar"
+        options = parser.parse("--$name", wrong)
+        assertThrows(Exception::class.java, {config.updateProperties(options)})
+
+        val noProtocol = "localhost:8080"
+        options = parser.parse("--$name", noProtocol)
+        assertThrows(Exception::class.java, {config.updateProperties(options)})
+    }
 }
