@@ -158,9 +158,9 @@ class ExpectationsWriter {
         }
         else{
             when(resContentsItem::class) {
-                Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
+                Double::class -> return "numbersMatch(json_$objectName.getJsonObject(\"\'$fieldName\'\")," +
                         " ${resContentsItem as Double})"
-                String::class -> return "subStringsMatch(json_$objectName.getJsonObject(\"$fieldName\")," +
+                String::class -> return "subStringsMatch(json_$objectName.getJsonObject(\"\'$fieldName\'\")," +
                         "\"${GeneUtils.applyEscapes((resContentsItem as String), mode = GeneUtils.EscapeMode.EXPECTATION, format = format)}\")"
                 else -> return TestCaseWriter.NOT_COVERED_YET
             }
