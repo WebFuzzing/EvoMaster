@@ -2,7 +2,10 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
-import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
+import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
+import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -10,6 +13,7 @@ import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
@@ -25,13 +29,12 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.ProtocolException
-import java.net.SocketTimeoutException
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
 import javax.ws.rs.client.ClientBuilder
 import javax.ws.rs.client.Entity
+import javax.ws.rs.client.Invocation
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.NewCookie
 import javax.ws.rs.core.Response
@@ -52,16 +55,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
+    private val clientConfiguration = ClientConfig()
+            .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
+            .property(ClientProperties.READ_TIMEOUT, 10_000)
+            //workaround bug in Jersey client
+            .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
+            .property(ClientProperties.FOLLOW_REDIRECTS, false)
 
-    private val client: Client = {
-        val configuration = ClientConfig()
-                .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
-                .property(ClientProperties.READ_TIMEOUT, 10_000)
-                //workaround bug in Jersey client
-                .property(HttpUrlConnectorProvider.SET_METHOD_WORKAROUND, true)
-                .property(ClientProperties.FOLLOW_REDIRECTS, false)
-        ClientBuilder.newClient(configuration)
-    }.invoke()
+
+    private var client: Client = ClientBuilder.newClient(clientConfiguration)
+
 
     private lateinit var infoDto: SutInfoDto
 
@@ -71,7 +74,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         log.debug("Initializing {}", AbstractRestFitness::class.simpleName)
 
-        if(! config.blackBox || config.bbExperiments) {
+        if (!config.blackBox || config.bbExperiments) {
             rc.checkConnection()
 
             val started = rc.startSUT()
@@ -89,7 +92,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     override fun reinitialize(): Boolean {
 
         try {
-            if(! config.blackBox) {
+            if (!config.blackBox) {
                 rc.stopSUT()
             }
             initialize()
@@ -132,7 +135,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             if (!fv.getViewOfAggregatedFailedWhere().isEmpty()) {
                 searchTimeController.newIndividualsWithSqlFailedWhere()
             }
-        }else if(configuration.extractSqlExecutionInfo){
+        } else if (configuration.extractSqlExecutionInfo) {
 
             for (i in 0 until dto.extraHeuristics.size) {
                 val extra = dto.extraHeuristics[i]
@@ -157,7 +160,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 there are less Info than declared actions.
                 But the other way round should not really happen
              */
-           log.warn("Length mismatch between ${individual.seeActions().size} actions and ${additionalInfoList.size} info data")
+            log.warn("Length mismatch between ${individual.seeActions().size} actions and ${additionalInfoList.size} info data")
             return
         }
 
@@ -193,7 +196,6 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     }
         }
     }
-
 
 
     /**
@@ -264,8 +266,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     }
 
 
-    private fun getBaseUrl() : String {
-        var baseUrl = if(!config.blackBox || config.bbExperiments){
+    private fun getBaseUrl(): String {
+        var baseUrl = if (!config.blackBox || config.bbExperiments) {
             infoDto.baseUrlOfSUT
         } else {
             BlackBoxUtils.restUrl(config)
@@ -283,11 +285,113 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      * the test at this action, and do not continue
      */
     protected fun handleRestCall(a: RestCallAction,
-                               actionResults: MutableList<ActionResult>,
-                               chainState: MutableMap<String, String>,
-                               cookies:  Map<String, List<NewCookie>>)
+                                 actionResults: MutableList<ActionResult>,
+                                 chainState: MutableMap<String, String>,
+                                 cookies: Map<String, List<NewCookie>>)
             : Boolean {
 
+        val rcr = RestCallResult()
+        actionResults.add(rcr)
+
+        val response = try {
+            createInvocation(a, chainState, cookies).invoke()
+        } catch (e: ProcessingException) {
+
+            /*
+                this could have happened for example if call ends up in an infinite redirection loop.
+                However, as we no longer follow 3xx automatically, it should not happen anymore
+             */
+            when {
+                TcpUtils.isTooManyRedirections(e) -> {
+                    rcr.setInfiniteLoop(true)
+                    rcr.setErrorMessage(e.cause!!.message!!)
+                    return false
+                }
+                TcpUtils.isTimeout(e) -> {
+                    /*
+                        This is very tricky. In theory it shouldn't happen that a REST call
+                        does timeout (eg 10 seconds). But it might happen due to glitch,
+                        or if very slow hardware. If it is a glitch, we do not want to
+                        kill whole EM process, as might not happen again. If it is a
+                        constant, we want to avoid using such test if possible, as it
+                        would kill performance.
+                        In any case, a generated test should never check assertions on time,
+                        eg expect that a is SocketTimeoutException thrown. Not only because
+                        maybe it was just a glitch, but also because the test might be run
+                        on different machines (remote CI vs local development PC) with
+                        different performance (and so the test would become flaky)
+                     */
+                    rcr.setTimedout(true)
+                    statistics.reportTimeout()
+                    return false
+                }
+                TcpUtils.isOutOfEphemeralPorts(e) -> {
+                    /*
+                        This could happen if for any reason we run out of ephemeral ports.
+                        In such a case, we wait X seconds, and try again, as OS might have released ports
+                        meanwhile.
+                        And while we are at it, let's release any hanging network resource
+                     */
+                    client.close() //make sure to release any resource
+                    client = ClientBuilder.newClient()
+
+                    val seconds = 30
+                    log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection")
+                    Thread.sleep(seconds * 1000L)
+
+                    createInvocation(a, chainState, cookies).invoke()
+
+                }
+                else -> throw e
+            }
+        }
+
+        rcr.setStatusCode(response.status)
+
+        try {
+            if (response.hasEntity()) {
+                if (response.mediaType != null) {
+                    rcr.setBodyType(response.mediaType)
+                }
+                /*
+                    FIXME should read as byte[]
+                 */
+                val body = response.readEntity(String::class.java)
+
+                if (body.length < configuration.maxResponseByteSize) {
+                    rcr.setBody(body)
+                } else {
+                    log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
+                            " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                            " in the configurations.")
+                    rcr.setTooLargeBody(true)
+                }
+            }
+        } catch (e: Exception) {
+
+            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+                rcr.setTimedout(true)
+                statistics.reportTimeout()
+                return false
+            } else {
+                log.warn("Failed to parse HTTP response: ${e.message}")
+            }
+        }
+
+
+
+        if (response.status == 401 && a.auth !is NoAuth) {
+            //this would likely be a misconfiguration in the SUT controller
+            log.warn("Got 401 although having auth for '${a.auth.name}'")
+        }
+
+
+        if (!handleSaveLocation(a, response, rcr, chainState)) return false
+
+        return true
+    }
+
+    private fun createInvocation(a: RestCallAction, chainState: MutableMap<String, String>, cookies: Map<String, List<NewCookie>>): Invocation {
         val baseUrl = getBaseUrl()
 
         val path = a.resolvedPath()
@@ -337,12 +441,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     builder.header(it.name, it.gene.getValueAsRawString())
                 }
 
-        if(a.auth.cookieLogin != null){
+        if (a.auth.cookieLogin != null) {
             val list = cookies[a.auth.cookieLogin!!.username]
-            if(list==null || list.isEmpty()){
+            if (list == null || list.isEmpty()) {
                 log.warn("No cookies for ${a.auth.cookieLogin!!.username}")
             } else {
-                list.forEach{
+                list.forEach {
                     builder.cookie(it.toCookie())
                 }
             }
@@ -389,83 +493,13 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
         }
-
-        val rcr = RestCallResult()
-        actionResults.add(rcr)
-
-        val response = try {
-            invocation.invoke()
-        } catch (e: ProcessingException) {
-
-            //this can happen for example if call ends up in an infinite redirection loop
-            if ((e.cause?.message?.contains("redirected too many") == true) && e.cause is ProtocolException) {
-                rcr.setInfiniteLoop(true)
-                rcr.setErrorMessage(e.cause!!.message!!)
-                return false
-            } else if (e.cause is SocketTimeoutException) {
-                /*
-                    This is very tricky. In theory it shouldn't happen that a REST call
-                    does timeout (eg 10 seconds). But it might happen due to glitch,
-                    or if very slow hardware. If it is a glitch, we do not want to
-                    kill whole EM process, as might not happen again. If it is a
-                    constant, we want to avoid using such test if possible, as it
-                    would kill performance.
-                    In any case, a generated test should never check assertions on time,
-                    eg expect that a is SocketTimeoutException thrown. Not only because
-                    maybe it was just a glitch, but also because the test might be run
-                    on different machines (remote CI vs local development PC) with
-                    different performance (and so the test would become flaky)
-                 */
-                rcr.setTimedout(true)
-                statistics.reportTimeout()
-                return false
-            } else {
-                throw e
-            }
-        }
-
-        rcr.setStatusCode(response.status)
-
-        if (response.hasEntity()) {
-            if (response.mediaType != null) {
-                rcr.setBodyType(response.mediaType)
-            }
-            try {
-                /*
-                    FIXME should read as byte[]
-                 */
-                val body = response.readEntity(String::class.java)
-
-                if (body.length < configuration.maxResponseByteSize) {
-                    rcr.setBody(body)
-                } else {
-                    log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
-                            " If that was expected, increase the 'maxResponseByteSize' threshold" +
-                            " in the configurations.")
-                    rcr.setTooLargeBody(true)
-                }
-
-            } catch (e: Exception) {
-                log.warn("Failed to parse HTTP response: ${e.message}")
-            }
-
-        }
-
-        if (response.status == 401 && a.auth !is NoAuth) {
-            //this would likely be a misconfiguration in the SUT controller
-            log.warn("Got 401 although having auth for '${a.auth.name}'")
-        }
-
-
-        if (!handleSaveLocation(a, response, rcr, chainState)) return false
-
-        return true
+        return invocation
     }
 
     private fun handleSaveLocation(a: RestCallAction, response: Response, rcr: RestCallResult, chainState: MutableMap<String, String>): Boolean {
         if (a.saveLocation) {
 
-            if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
+            if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
                 /*
                     If this failed, and following actions require the "location" header
                     of this call, there is no point whatsoever to continue evaluating
@@ -514,17 +548,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      *
      * @return a map from username to auth cookie for those users
      */
-    protected fun getCookies(ind: RestIndividual) : Map<String, List<NewCookie>>{
+    protected fun getCookies(ind: RestIndividual): Map<String, List<NewCookie>> {
 
         val cookieLogins = ind.getCookieLoginAuth()
 
-        val map : MutableMap<String, List<NewCookie>> = HashMap()
+        val map: MutableMap<String, List<NewCookie>> = HashMap()
 
         val baseUrl = getBaseUrl()
 
-        for(cl in cookieLogins){
+        for (cl in cookieLogins) {
 
-            val mediaType = when(cl.contentType){
+            val mediaType = when (cl.contentType) {
                 ContentType.X_WWW_FORM_URLENCODED -> MediaType.APPLICATION_FORM_URLENCODED_TYPE
                 ContentType.JSON -> MediaType.APPLICATION_JSON_TYPE
             }
@@ -535,12 +569,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         //TODO could consider other cases besides POST
                         .buildPost(Entity.entity(cl.payload(), mediaType))
                         .invoke()
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 log.warn("Failed to login for ${cl.username}/${cl.password}: $e")
                 continue
             }
 
-            if(response.statusInfo.family != Response.Status.Family.SUCCESSFUL){
+            if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL) {
 
                 /*
                     if it is a 3xx, we need to look at Location header to determine
@@ -550,9 +584,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     important right now, although had this issue with some APIs using
                     default settings in Spring Security
                 */
-                if(response.statusInfo.family == Response.Status.Family.REDIRECTION){
+                if (response.statusInfo.family == Response.Status.Family.REDIRECTION) {
                     val location = response.getHeaderString("location")
-                    if(location != null && (location.contains("error", true) || location.contains("login", true))){
+                    if (location != null && (location.contains("error", true) || location.contains("login", true))) {
                         log.warn("Login request failed with ${response.status} redirection toward $location")
                         continue
                     }
@@ -562,7 +596,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 }
             }
 
-            if(response.cookies.isEmpty()){
+            if (response.cookies.isEmpty()) {
                 log.warn("Cookie-based login request did not give back any new cookie")
                 continue
             }
