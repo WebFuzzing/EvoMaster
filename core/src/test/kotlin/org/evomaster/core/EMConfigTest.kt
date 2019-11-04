@@ -164,4 +164,75 @@ internal class EMConfigTest{
         options = parser.parse("--$name", noProtocol)
         assertThrows(Exception::class.java, {config.updateProperties(options)})
     }
+
+
+    @ParameterizedTest
+    @ValueSource(strings = [""," ","1","42","-42s","1 42s","42s1m","1m 42s"])
+    fun testTimeRegexWrong(value: String){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["maxTime"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--maxTime", value)
+        assertThrows(Exception::class.java, {config.updateProperties(options)})
+    }
+
+    @Test
+    fun testTimeRegexJustSeconds(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["maxTime"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--maxTime", "42s")
+        config.updateProperties(options)
+
+        val seconds = config.timeLimitInSeconds()
+        assertEquals(42, seconds)
+    }
+
+    @Test
+    fun testTimeRegexJustMinutes(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["maxTime"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--maxTime", "3m")
+        config.updateProperties(options)
+
+        val seconds = config.timeLimitInSeconds()
+        assertEquals(180, seconds)
+    }
+
+    @Test
+    fun testTimeRegexJustHours(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["maxTime"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--maxTime", "2h")
+        config.updateProperties(options)
+
+        val seconds = config.timeLimitInSeconds()
+        assertEquals(2 * 60 * 60, seconds)
+    }
+
+    @Test
+    fun testTimeRegex(){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["maxTime"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--maxTime", " 1h10m120s  ")
+        config.updateProperties(options)
+
+        val seconds = config.timeLimitInSeconds()
+        assertEquals( (60 * 60) + 600 + 120, seconds)
+    }
+
+
 }
