@@ -438,7 +438,7 @@ def addJobBody(port, sut_name, seed, config, weight):
         timeout = int(math.ceil(1.1 * weight * MINUTES_PER_RUN * 60))
         errorMsg = "ERROR: timeout for " + sut_name
         command = "timeout " +str(timeout) + "  " + command \
-                  + " || ([ $? -eq 124 ] && echo " + errorMsg + ")"
+                  + " || ([ $? -eq 124 ] && echo " + errorMsg + " >> " + em_log + " 2>&1" + ")"
 
     script.write(command + " \n\n")
 

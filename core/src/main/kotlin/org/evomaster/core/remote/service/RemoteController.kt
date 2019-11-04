@@ -11,6 +11,7 @@ import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
+import org.evomaster.core.remote.TcpUtils
 import org.glassfish.jersey.client.ClientConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -83,8 +84,7 @@ class RemoteController() : DatabaseExecutor {
         return  try{
             lambda.invoke()
         } catch (e: ProcessingException){
-            if(e.cause is BindException
-                    && e.cause!!.message?.contains("Address already in use", ignoreCase = true) == true){
+            if(TcpUtils.isOutOfEphemeralPorts(e)){
                 /*
                     This could happen if for any reason we run out of ephemeral ports.
                     In such a case, we wait X seconds, and try again, as OS might have released ports
