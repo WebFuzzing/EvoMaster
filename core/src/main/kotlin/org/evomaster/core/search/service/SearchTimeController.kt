@@ -103,7 +103,7 @@ class SearchTimeController {
 
             EMConfig.StoppingCriterion.TIME ->
                 (System.currentTimeMillis() - startTime).toDouble() /
-                        (configuration.maxTimeInSeconds.toDouble() * 1000.0)
+                        (configuration.timeLimitInSeconds().toDouble() * 1000.0)
 
             else ->
                 throw IllegalStateException("Not supported stopping criterion")

@@ -114,9 +114,10 @@ class EMConfig {
             val max = (m.annotations.find { it is Max } as? Max)?.max
             val probability = m.annotations.find { it is Probability }
             val url = m.annotations.find { it is Url }
+            val regex = (m.annotations.find { it is Regex } as? Regex)?.regex
 
             var constraints = ""
-            if (min != null || max != null || probability!=null || url!=null) {
+            if (min != null || max != null || probability!=null || url!=null || regex!=null) {
                 constraints += " [Constraints: "
                 if (min != null) {
                     constraints += "min=$min"
@@ -130,6 +131,9 @@ class EMConfig {
                 }
                 if(url != null){
                     constraints += "URL"
+                }
+                if(regex != null){
+                    constraints += "regex $regex"
                 }
                 constraints += "]."
             }
@@ -263,8 +267,9 @@ class EMConfig {
             StoppingCriterion.TIME -> if(maxActionEvaluations != defaultMaxActionEvaluations){
                 throw IllegalArgumentException("Changing number of max actions, but stopping criterion is time")
             }
-            StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds){
-                throw IllegalArgumentException("Changing number of max seconds, but stopping criterion is based on fitness evaluations")
+            StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds ||
+                    maxTime != defaultMaxTime){
+                throw IllegalArgumentException("Changing max time, but stopping criterion is based on fitness evaluations")
             }
         }
 
@@ -386,6 +391,11 @@ class EMConfig {
     @MustBeDocumented
     annotation class Url
 
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Regex(val regex: String)
+
+
     /**
      * A double value between 0 and 1
      */
@@ -505,7 +515,7 @@ class EMConfig {
     var maxActionEvaluations = defaultMaxActionEvaluations
 
 
-    val defaultMaxTimeInSeconds = 60
+    val defaultMaxTimeInSeconds = 0
 
     @Cfg("Maximum number of seconds allowed for the search." +
             " The more time is allowed, the better results one can expect." +
@@ -513,6 +523,19 @@ class EMConfig {
             " Only applicable depending on the stopping criterion.")
     @Min(1.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
+
+
+    val defaultMaxTime = "60s"
+
+    @Cfg("Maximum amount of time allowed for the search. "+
+            " The more time is allowed, the better results one can expect." +
+            " But then of course the test generation will take longer." +
+            " Only applicable depending on the stopping criterion." +
+            " The time is expressed with a string where hours(h), minutes(m) and" +
+            " seconds(s) can be specified, e.g., '1h 10m 120s' and '72m' are both valid" +
+            " and equivalent.")
+    @Regex("(?=[^ ]+)( *)(\\d+h)?( *)(\\d+m)?( *)(\\d+s)?( *)")
+    var maxTime = defaultMaxTime
 
 
     @Cfg("Whether or not writing statistics of the search process. " +
@@ -862,4 +885,30 @@ class EMConfig {
          * but we need to follow rules to encode and decode regarding id.
          */
     }
+
+
+    fun timeLimitInSeconds() : Int{
+        if( maxTimeInSeconds > 0){
+            return maxTimeInSeconds
+        }
+
+        val h = maxTime.indexOf('h')
+        val m = maxTime.indexOf('m')
+        val s = maxTime.indexOf('s')
+
+        val hours = if(h >= 0){
+            maxTime.subSequence(0, h).toString().toInt()
+        } else 0
+
+        val minutes = if(m >=0 ){
+            maxTime.subSequence( if(h>=0) h+1 else 0, m).toString().toInt()
+        } else 0
+
+        val seconds = if(s >=0){
+            maxTime.subSequence( if(m>=0) m+1 else (if(h>=0) h+1 else 0), s).toString().toInt()
+        } else 0
+
+        return (h * 60 * 60) + (m * 60) + s
+    }
+
 }
