@@ -31,7 +31,7 @@ public class EscapeManualTest extends EscapeTestBase {
         Swagger swagger = new SwaggerParser().parse(swaggerJson);
 
         assertEquals("/", swagger.getBasePath());
-        assertEquals(4, swagger.getPaths().size());
+        assertEquals(5, swagger.getPaths().size());
     }
 
     @Test
@@ -78,6 +78,16 @@ public class EscapeManualTest extends EscapeTestBase {
                 .assertThat()
                 .contentType("application/json")
                 .body(containsString("0"));
+
+        given().accept("*/*")
+                .contentType("text/plain")
+                .body("\"\"")
+                .post(baseUrlOfSut + "/api/escape/emptyBody")
+                .then()
+                .statusCode(200)
+                .assertThat()
+                .contentType("application/json")
+                .body(containsString("1"));
     }
 
     @Test
@@ -88,14 +98,29 @@ public class EscapeManualTest extends EscapeTestBase {
 
         given().accept("*/*")
                 .contentType("application/json")
-                .body("{" +
-                        "\"response\": \"iI\\\\\"," +
-                        "\"valid\": \"true\"" +
-                        "}")
-                .post(baseUrlOfSut + "/api/jsonBody")
+                .body(dto)
+                .post(baseUrlOfSut + "/api/escape/jsonBody")
                 .then()
+                .statusCode(200)
                 .assertThat()
+                .contentType("application/json")
                 .body(containsString("2"));
+
+
+    }
+
+    @Test
+    public void testTrickyJson(){
+        String s = "DontMindMe";
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/escape/trickyJson/" + s)
+                .then()
+                .statusCode(200)
+                .assertThat()
+                .contentType("application/json")
+                .body("'Content'", containsString(s))
+                .body("'Tricky-dash'", containsString("You decide"))
+                .body("'Tricky.dot'", containsString("you're pushing it"));
 
     }
 

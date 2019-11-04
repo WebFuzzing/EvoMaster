@@ -228,7 +228,7 @@ class TestSuiteWriter {
     private fun staticVariables(controllerName: String?, lines: Lines){
 
         if(config.outputFormat.isJava()) {
-            if(! config.blackBox) {
+            if(! config.blackBox || config.bbExperiments) {
                 lines.add("private static final SutHandler $controller = new $controllerName();")
                 lines.add("private static String $baseUrlOfSut;")
             } else {
@@ -240,7 +240,7 @@ class TestSuiteWriter {
             }
 
         } else if(config.outputFormat.isKotlin()) {
-            if(! config.blackBox) {
+            if(! config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName()")
                 lines.add("private lateinit var $baseUrlOfSut: String")
             } else {
