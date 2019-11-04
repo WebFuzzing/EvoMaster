@@ -139,23 +139,22 @@ else:
     print("ERROR: target folder already exists")
     exit(1)
 
-### We might want to have different settings based on whether we are running the
+### We need different settings based on whether we are running the
 ### scripts on cluster or locally.
 if CLUSTER:
 
     # To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
     # generate a dist.zip file that you can upload on cluster.
     # Note: the values after the SUT names is multiplicative factor for how long
-    # experiments should be run. For example, all SUTs have similar runtime, but
-    # proxyprint is roughly twice as slow.
+    # experiments should be run.
     # Depending on what experiments you are running, might want to de-select some
-    # of the SUTs (eg, by comment them out)
+    # of the SUTs (eg, by commenting them out)
 
     SUTS = [
         ("features-service", 1),
-        ("scout-api", 1),
+        ("scout-api", 2),
         ("proxyprint", 2),
-        ("rest-ncs", 1),
+        ("rest-ncs", 2),
         ("rest-scs", 1),
         ("rest-news", 1),
         ("catwatch", 1)
