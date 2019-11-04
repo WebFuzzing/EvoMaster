@@ -283,7 +283,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if(config.blackBox){
+            if(config.blackBox && !config.bbExperiments){
                 return null
             }
 
