@@ -3,6 +3,7 @@ package com.foo.rest.examples.spring.escapes;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping(path = "/api/escape")
@@ -62,16 +63,50 @@ public class EscapeRest {
             return 1;
     }
 
+    @PostMapping(value = "jsonBody",
+            consumes = "application/json")
+    public int jsonBody( @RequestBody EscapeResponseDto dto){
+        if (dto.valid) {
+            return 2;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+
+    @RequestMapping(
+            value = "/trickyJson/{s}",
+            method = RequestMethod.GET,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public HashMap trickyJson(
+            @PathVariable("s") String s
+    ){
+        HashMap dto = new HashMap<String, String>();
+        dto.put("Content", s);
+        dto.put("Tricky-dash", "You decide");
+        dto.put("Tricky.dot", "you're pushing it");
+
+        return dto;
+    }
+
+
+
+    /*
+
     @PostMapping(
             value = "/api/jsonBody",
             consumes = {"application/merge-patch+json", "application/json"})
     public int jsonBody( @RequestBody EscapeResponseDto dto){
-        return 2;
+        if (dto.valid) {
+            return 2;
+        }
+        else
+        {
+            return 0;
+        }
     }
-
-    /*
-
-
 
     @RequestMapping(
             value = "/containsSlash/{s}",
