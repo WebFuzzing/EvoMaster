@@ -551,7 +551,7 @@ class TestCaseWriter {
                     && printableTh != NOT_COVERED_YET
                     && !printableTh.contains("logged")
             ) {
-                lines.add(".body(\"$it\", hasItem($printableTh))")
+                lines.add(".body(\"\'$it\'\", hasItem($printableTh))")
             }
         }
     }

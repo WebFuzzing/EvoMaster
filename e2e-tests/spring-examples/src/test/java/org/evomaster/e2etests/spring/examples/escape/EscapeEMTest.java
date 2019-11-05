@@ -31,6 +31,10 @@ public class EscapeEMTest extends EscapeTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/escape/containsQuote/{s}", "true");
                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "api/escape/emptyBody", "1");
 
+                    // a quick assertion on the dash and dot json problem
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "api/escape/trickyJson/{s}", "You decide");
+
+
                 });
     }
 }

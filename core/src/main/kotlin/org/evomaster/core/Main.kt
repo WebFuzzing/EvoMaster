@@ -169,8 +169,8 @@ class Main {
                 //faults.sorted().forEach{ info(inRed("Fault: ${IdMapper.faultInfo(it)}"))}
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
-                        config.maxTimeInSeconds == config.defaultMaxTimeInSeconds) {
-                    info(inGreen("To obtain better results, use the '--maxTimeInSeconds' option" +
+                        config.maxTime == config.defaultMaxTime) {
+                    info(inGreen("To obtain better results, use the '--maxTime' option" +
                             " to run the search for longer"))
                 }
             }
