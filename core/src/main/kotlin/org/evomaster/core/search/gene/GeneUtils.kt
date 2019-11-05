@@ -193,13 +193,14 @@ object GeneUtils {
         return ret
     }
     fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
-        val ret = when{
-            format.isKotlin() -> string.replace("\$", "\\\$")
-            else -> string
-        }
-        return ret
-                .replace("\\", """\\\\""")
+        val ret = string.replace("\\", """\\\\""")
                 .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+
+        when{
+            format.isKotlin() -> return ret.replace("\$", "\\\$")
+            else -> return ret
+        }
     }
 
     fun applyUriEscapes(string: String, format: OutputFormat):String{
@@ -232,7 +233,7 @@ object GeneUtils {
         val timeRegEx = "[0-2]?[0-9]:[0-5][0-9]".toRegex()
         ret = string.split("@")[0] //first split off any reference that might differ between runs
                 .split(timeRegEx)[0] //split off anything after specific timestamps that might differ
-                .replace("\\", """\\""")
+                .replace("\\", """\\\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")

@@ -258,53 +258,6 @@ class RestSampler : Sampler<RestIndividual>(){
      */
     private fun randomizeActionGenes(action: Action, probabilistic: Boolean = false) {
         action.seeGenes().forEach { it.randomize(randomness, false) }
-        /*if(!config.enableCompleteObjects) {
-            action.seeGenes().forEach { it.randomize(randomness, false) }
-        }
-        else {
-            action.seeGenes().forEach { g ->
-                /*Obtain the object proposed for mutation. Can be:
-                1. Complete object - the entire object is used and needs to be mutated.
-                2. Just the gene g (wrapped in an ObjectGene) - an object match could not be found, g is mutated as such.
-                3. The object, plus a 2 string pair - model name, gene name. This identifies an object that needs to be mutated
-                and which of its genes will be used.
-                */
-
-                val innerGene = when (g::class){
-                    OptionalGene::class -> (g as OptionalGene).gene
-                    DisruptiveGene::class -> (g as DisruptiveGene<*>).gene
-                    else -> g
-                }
-
-                val (proposed, field) = proposeObject(innerGene)
-
-                when(field.second) {
-                    UsedObjects.GeneSpecialCases.NOT_FOUND -> {
-                        if (g.isMutable()) g.randomize(randomness, probabilistic)
-                    }
-                    UsedObjects.GeneSpecialCases.COMPLETE_OBJECT -> {
-
-                        if (innerGene.isMutable()) innerGene.randomize(randomness, true)
-
-                        usedObjects.assign(Pair((action as RestCallAction), g), innerGene, field)
-                        usedObjects.selectbody(action, innerGene)
-                    }
-                    else -> {
-                        proposed.randomize(randomness, probabilistic)
-                        if (innerGene.isMutable()) innerGene.randomize(randomness, true)
-                        val proposedGene = findSelectedGene(field)
-
-                        proposedGene.copyValueFrom(innerGene)
-                        usedObjects.assign(Pair((action as RestCallAction), g), proposed, field)
-                        usedObjects.selectbody(action, proposed)
-                    }
-                }
-
-            }
-        }
-
-         */
-
     }
 
     /**

@@ -56,8 +56,10 @@ class TestSuiteWriterTest{
 
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
-        val swagger = injector.getInstance(RestSampler::class.java).getSwagger()
-        writer.setSwagger(swagger)
+
+        //val sampler = injector.getInstance(RestSampler::class.java)
+        //val swagger = sampler.getSwagger()
+        //writer.setSwagger(swagger)
 
         //write the test suite
         writer.writeTests(solution, FakeController::class.qualifiedName!!)

@@ -76,7 +76,7 @@ class TestSuiteWriter {
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
         val testCaseWriter = TestCaseWriter()
-        testCaseWriter.setSwagger(swagger)
+        if(::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
 
         header(solution, testSuiteFileName, lines)
 
