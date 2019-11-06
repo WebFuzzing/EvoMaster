@@ -648,7 +648,7 @@ class TestCaseWriter {
                 .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
                 .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
                 .forEach {
-                    val stringKey = it.joinToString(separator = ".")
+                    val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
                     if(actualValue!=null){
                         val printableTh = handleFieldValues(actualValue)
@@ -657,9 +657,9 @@ class TestCaseWriter {
                                 && !printableTh.contains("logged")
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            if(stringKey != "id") lines.add(".body(\"\'${stringKey}\'\", ${printableTh})")
+                            if(stringKey != "id") lines.add(".body(\"${stringKey}\", ${printableTh})")
                             else{
-                                if(!chained && previousChained) lines.add(".body(\"\'${stringKey}\'\", numberMatches($previousId))")
+                                if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
                             }
                         }
                     }
