@@ -657,7 +657,7 @@ class TestCaseWriter {
                                 && !printableTh.contains("logged")
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            if(stringKey != "id") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            if(stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
                             else{
                                 if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
                             }
