@@ -274,3 +274,8 @@ Current usage:
 - `Issues/bugs`: reported bugs which are not trivial to fix. For developers, better to report them
   here than GitHub issue page.
 - `Backlog-*`: different backlogs, divided by topic.
+
+
+### MAKING A NEW RELEASE
+Only the project manager should make a new release, as it requires a password.
+Instructions can be found [here](./release.md).
