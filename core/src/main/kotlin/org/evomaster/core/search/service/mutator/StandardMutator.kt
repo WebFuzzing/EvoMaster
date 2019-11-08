@@ -53,13 +53,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        if(archiveMutator.applyArchiveSelection()){
-            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes).let {
-                if (it.isNotEmpty()) return it
-            }
-        }
+        val genes = if(archiveMutator.applyArchiveSelection()){
+            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes)
+        }else genesToMutate
 
-        return selectGenesByDefault(genesToMutate, individual)
+        return selectGenesByDefault(genes, individual)
     }
 
     private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{
@@ -145,7 +143,50 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         // First mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
+        val before = mutatedIndividual.seeInitializingActions().size
+
         postActionAfterMutation(mutatedIndividual)
+
+        val after = mutatedIndividual.seeInitializingActions().size
+
+
+        /*
+            postAction might change mutated genes
+         */
+        if (mutatedGenes != null){
+
+            val removed = mutableListOf<Gene>()
+            val added = mutableListOf<Gene>()
+
+            if (before != after){
+                mutatedGenes.mutatedDbActionPosition.forEachIndexed { index, i ->
+                    if (i >= after)
+                        removed.add(mutatedGenes.mutatedDbGenes[index])
+                }
+                mutatedGenes.mutatedDbGenes.removeAll(removed)
+                mutatedGenes.mutatedDbActionPosition.removeAll { it >= after }
+                removed.clear()
+
+                mutatedGenes.addedInitializationGenes.clear()
+
+                //TODO
+                mutatedGenes.addedInitializationGenes.addAll(mutatedIndividual.seeInitializingActions().flatMap { it.seeGenes() })
+            }
+            mutatedGenes.mutatedDbGenes.forEachIndexed { index, gene ->
+                if (!mutatedIndividual.seeGenes().contains(gene)){
+                    if (mutatedIndividual.seeInitializingActions().size <= mutatedGenes.mutatedDbActionPosition[index]){
+                        throw IllegalArgumentException("incorrectly collected index of InitializingActions or a structure of InitializingActions is changed")
+                    }
+                    val found = mutatedIndividual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[index]].seeGenes().find { it.getVariableName() == gene.getVariableName() }
+                    if (found != null){
+                        removed.add(gene)
+                        added.add(found)
+                    }
+                }
+            }
+            mutatedGenes.mutatedDbGenes.removeAll(removed)
+            mutatedGenes.mutatedDbGenes.addAll(added)
+        }
 
         return mutatedIndividual
     }

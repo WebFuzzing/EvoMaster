@@ -232,49 +232,63 @@ class FitnessValue(
      *
      * @param other, the one we compare to
      * @param targetSubset, only calculate subsumption on these testing targets
+     * @param improved indicates which targets are improved compared with [other]
+     * @param different indicates which targets are different with [other]
      */
     fun isDifferent(
             other: FitnessValue,
             targetSubset: Set<Int>,
             improved : MutableSet<Int>,
             different : MutableSet<Int>,
+            withExtra : Boolean = false,
             strategy: EMConfig.SecondaryObjectiveStrategy,
-            bloatControlForSecondaryObjective: Boolean) : Boolean {
+            bloatControlForSecondaryObjective: Boolean)  {
 
-        var atLeastOneDifferent = false
         for (k in targetSubset) {
 
-            val v = this.targets[k]?.distance ?: 0.0
-            val z = other.targets[k]?.distance ?: 0.0
+            /**
+             * we set distance -1.0 instead of 0.0 to avoid a side-effect of no impacts caused by randomly chosen target sets for fitness
+             */
+            val v = this.targets[k]?.distance ?: -1.0
+            val z = other.targets[k]?.distance ?: -1.0
+
+            /**
+             * if the target is not covered by both v and z,
+             * we ignore this impact info of target in this comparision.
+             */
+            if (v == -1.0 || z == -1.0)
+                continue
+
             if (v == 0.0 && v == z)
                 continue
 
             if (v != z) {
                 different.add(k)
-                atLeastOneDifferent = true
-                if (v > z) improved.add(k)
+                if (v > z)
+                    improved.add(k)
                 continue
             }
 
-            val extra = compareExtraToMinimize(k, other, strategy)
+            if (withExtra){
+                val extra = compareExtraToMinimize(k, other, strategy)
 
-            if (this.size != other.size || extra != 0) {
-                different.add(k)
-                atLeastOneDifferent = true
+                if (this.size != other.size || extra != 0) {
+                    different.add(k)
 
-                if(bloatControlForSecondaryObjective){
-                    if (this.size < other.size || (this.size == other.size && extra > 0)) {
-                        improved.add(k)
-                    }
-                } else {
-                    if (extra > 0 ||
-                            (extra == 0 && this.size < other.size)) {
-                        improved.add(k)
+                    if(bloatControlForSecondaryObjective){
+                        if (this.size < other.size || (this.size == other.size && extra > 0)) {
+                            improved.add(k)
+                        }
+                    } else {
+                        if (extra > 0 ||
+                                (extra == 0 && this.size < other.size)) {
+                            improved.add(k)
+                        }
                     }
                 }
             }
+
         }
-        return atLeastOneDifferent
     }
 
     fun averageExtraDistancesToMinimize(actionIndex: Int): Double{

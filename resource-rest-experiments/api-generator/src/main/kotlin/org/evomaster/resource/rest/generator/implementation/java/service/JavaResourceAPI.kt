@@ -29,6 +29,7 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
         specification.restMethods.forEach { r->
             when(r){
                 RestMethod.POST -> JavaRestPostMethod(this.specification).apply { methods.add(this) }
+                RestMethod.POST_VALUE-> JavaRestPostValueMethod(this.specification).apply { methods.add(this) }
                 RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification).apply { methods.add(this) }
                 RestMethod.DELETE -> JavaRestDeleteMethod(this.specification).apply { methods.add(this) }
                 RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification).apply { methods.add(this) }

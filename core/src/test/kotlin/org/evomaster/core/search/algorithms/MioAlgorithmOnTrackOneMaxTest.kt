@@ -16,7 +16,6 @@ import org.evomaster.core.search.service.mutator.StandardMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.junit.jupiter.api.Assertions.*
-import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
 class MioAlgorithmOnTrackOneMaxTest {
@@ -186,7 +185,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
         assert(tracker.exists(EvaluatedIndividual.ONLY_INDIVIDUAL))
-        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT))
+        assert(tracker.exists(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT))
 
         val solution = mio.search()
 

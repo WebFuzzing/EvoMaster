@@ -77,7 +77,7 @@ class TimeGene(
                     Pair(minute , impact.minuteGeneImpact),
                     Pair(second, impact.secondGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/3, targets)
+            archiveMutator.selectGenesByArchive(genes, targets= targets)
         }else listOf(hour, minute, second)
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(hour, minute, second))

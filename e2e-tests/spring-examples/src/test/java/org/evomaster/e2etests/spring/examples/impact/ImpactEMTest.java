@@ -111,7 +111,7 @@ public class ImpactEMTest extends SpringTestBase {
                 last = last &&
                         // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
                         (noimpactGene.getMaxImpact() <= other.getMaxImpact()
-                                || noimpactGene.getTimesOfNoImpacts() >= other.getTimesOfNoImpacts())
+                                || noimpactGene.getTimesOfNoImpact() >= other.getTimesOfNoImpact())
                         //&&
                         // ideally getTimesToManipulate might be less than any others
                         //(noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate())

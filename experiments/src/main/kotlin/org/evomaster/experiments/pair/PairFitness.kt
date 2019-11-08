@@ -13,7 +13,7 @@ class PairFitness : FitnessFunction<PairIndividual>() {
     lateinit var ppd: PairProblemDefinition
 
 
-    override fun doCalculateCoverage(individual: PairIndividual): EvaluatedIndividual<PairIndividual>? {
+    override fun doCalculateCoverage(individual: PairIndividual, targetIds: Set<Int>): EvaluatedIndividual<PairIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())
 

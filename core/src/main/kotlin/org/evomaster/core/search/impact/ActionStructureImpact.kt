@@ -6,24 +6,28 @@ import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 /**
  * created by manzh on 2019-09-03
  */
-class ActionStructureImpact (
-        id : String,
-        degree: Double = 0.0,
-        timesToManipulate : Int = 0,
-        timesOfNoImpacts : Int = 0,
-        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
-        val sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size"),
-        val structures : MutableMap<String, Double> = mutableMapOf()
-): Impact(
-        id = id,
-        degree = degree,
-        timesToManipulate = timesToManipulate,
-        timesOfNoImpacts = timesOfNoImpacts,
-        timesOfImpact= timesOfImpact,
-        noImpactFromImpact = noImpactFromImpact,
-        noImprovement = noImprovement){
+class ActionStructureImpact  (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
+                              val sizeImpact : IntegerGeneImpact,
+                              val structures : MutableMap<String, Double>
+) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+
+    constructor(
+            id : String,
+            degree: Double = 0.0,
+            timesToManipulate : Int = 0,
+            timesOfNoImpacts : Int = 0,
+            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size"),
+            structures : MutableMap<String, Double> = mutableMapOf()
+    ) : this(
+            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
+            SpecificImpactInfo(noImpactFromImpact, noImprovement),
+            sizeImpact, structures
+    )
+
 
     companion object{
         const val ACTION_SEPARATOR = ";"
@@ -42,9 +46,9 @@ class ActionStructureImpact (
     }
 
 
-    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, sizeChanged : Boolean, impactTargets : Set<Int>, improvedTargets : Set<Int>, onlyManipulation : Boolean = false){
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
-        if (sizeChanged) sizeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+    fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, sizeChanged : Boolean, noImpactTargets: Set<Int>, impactTargets : Set<Int>, improvedTargets : Set<Int>, onlyManipulation : Boolean = false){
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+        if (sizeChanged) sizeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         updateStructure(evaluatedIndividual)
     }
 
@@ -61,14 +65,17 @@ class ActionStructureImpact (
 
     override fun copy() : ActionStructureImpact{
         return ActionStructureImpact(
-                id = id,
-                degree = degree,
-                timesToManipulate = timesToManipulate,
-                timesOfNoImpacts = timesOfNoImpacts,
-                timesOfImpact= timesOfImpact,
-                noImpactFromImpact = noImpactFromImpact,
-                noImprovement = noImprovement,
+                shared.copy(),
+                specific.copy(),
                 sizeImpact = sizeImpact.copy(),
+                structures = structures.map { Pair(it.key, it.value) }.toMap().toMutableMap())
+    }
+
+    override fun clone(): ActionStructureImpact {
+        return ActionStructureImpact(
+                shared.clone(),
+                specific.clone(),
+                sizeImpact = sizeImpact.clone(),
                 structures = structures.map { Pair(it.key, it.value) }.toMap().toMutableMap())
     }
 }

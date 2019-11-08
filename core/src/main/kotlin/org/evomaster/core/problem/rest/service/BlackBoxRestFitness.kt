@@ -19,7 +19,7 @@ class BlackBoxRestFitness : RestFitness() {
 
 
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targetIds : Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())
 

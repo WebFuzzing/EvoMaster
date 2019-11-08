@@ -5,6 +5,7 @@ package org.evomaster.resource.rest.generator.model
  */
 enum class RestMethod {
     POST,
+    POST_VALUE,
     PUT,
     GET_ID,
     GET_ALL,

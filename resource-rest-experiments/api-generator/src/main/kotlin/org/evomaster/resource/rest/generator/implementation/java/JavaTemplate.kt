@@ -57,11 +57,15 @@ interface JavaTemplate {
                 val content = StringBuilder("int $local = -1;")
                 val distance = (Int.MAX_VALUE / numOfBranches) * 2;
                 (0 until numOfBranches).forEach { b->
-                    val condition = "$variableName < Integer.MIN_VALUE + $distance * ${b+1}"
+                    val condition = "$variableName < Integer.MIN_VALUE + $distance * ${b+1}L"
                     when{
                         b == 0 -> content.append("if($condition) ")
-                        b == numOfBranches - 1 -> content.append("else ")
-                        else -> content.append("else if ($condition) ")
+                        //b == numOfBranches - 1 -> content.append("else ")
+                        else -> {
+                            //content.append("else if ($condition) ")
+                            val withlowerBound = "$condition && $variableName >= Integer.MIN_VALUE + $distance * ${b}L"
+                            content.append("if ($withlowerBound) ")
+                        }
                     }
                     content.append("{${System.lineSeparator()}$local = $b;${System.lineSeparator()}}")
                 }

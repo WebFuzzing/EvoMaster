@@ -69,9 +69,15 @@ object DependencyManager{
 
     val MAVEN_PLUGINS_SHADE = ArtifactTemplate("org.apache.maven.plugins", "maven-shade-plugin", "maven.shade.version")
 
+    val JUNIT_JUPITER_PARAMS = ArtifactTemplate("org.junit.jupiter", "junit-jupiter-params", "junit.jupiter.version")
+
+    val JUNIT_JUPITER_ENGINE = ArtifactTemplate("org.junit.jupiter", "junit-jupiter-engine", "junit.jupiter.version")
+
+    val JUNIT_JUPITER_PLATFORM = ArtifactTemplate("org.junit.platform", "junit-platform-launcher", "junit.platform.version")
+
 }
 
-class ArtifactTemplate(val groupId : String, val artifactId : String, val versionKey : String = "") {
+class ArtifactTemplate(val groupId : String, val artifactId : String, val versionKey : String = "", val scope: String = Scope.ALL.name) {
 
     fun getPluginExecution(phase : String = "", id :String = "", goals : MutableList<String> = mutableListOf(), configuration : MutableMap<String, String> = mutableMapOf()) : PluginExecution{
         return PluginExecution().also {
@@ -114,4 +120,10 @@ class ArtifactTemplate(val groupId : String, val artifactId : String, val versio
         }
         return dep
     }
+}
+
+enum class Scope(name : String){
+    ALL(""),
+    TEST("test"),
+    PROVIDED ("provided")
 }

@@ -21,7 +21,8 @@ class ArchiveMutationTrackService : TrackService(){
         }
 
         if (config.enableTrackEvaluatedIndividual && config.probOfArchiveMutation > 0.0){
-            initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT)
+            initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT)
+            initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT)
         }
     }
 
@@ -32,19 +33,23 @@ class ArchiveMutationTrackService : TrackService(){
     }
 
 
-    fun getCopyFilterForEvalInd(chosen: EvaluatedIndividual<*>) : TraceableElementCopyFilter {
+    fun getCopyFilterForEvalInd(chosen: EvaluatedIndividual<*>, deepCopyForImpacts : Boolean = false) : TraceableElementCopyFilter {
         return if (config.enableTrackEvaluatedIndividual && config.probOfArchiveMutation > 0.0){
-            if (!exists(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT)){
-                throw IllegalStateException("WITH_TRACK_WITH_IMPACT should be registered.")
-                //initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT)
+            if (deepCopyForImpacts){
+                if (!exists(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT)){
+                    throw IllegalStateException("WITH_TRACK_WITH_CLONE_IMPACT should be registered.")
+                }
+                getTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT, chosen)
             }
-            getTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_IMPACT, chosen)
+            if (!exists(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT)){
+                throw IllegalStateException("WITH_TRACK_WITH_CLONE_IMPACT should be registered.")
+            }
+            getTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT, chosen)
         }else if (config.enableTrackEvaluatedIndividual)
             TraceableElementCopyFilter.WITH_TRACK
         else if (config.enableTrackIndividual) {
             if (!exists(EvaluatedIndividual.ONLY_INDIVIDUAL)){
                 throw IllegalStateException("ONLY_INDIVIDUAL should be registered.")
-                //initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL)
             }
             getTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL, chosen)
         }

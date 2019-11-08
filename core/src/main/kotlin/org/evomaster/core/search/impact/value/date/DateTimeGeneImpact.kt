@@ -2,34 +2,32 @@ package org.evomaster.core.search.impact.value.date
 
 import org.evomaster.core.search.gene.DateTimeGene
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.Impact
-import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.impact.MutatedGeneWithContext
+import org.evomaster.core.search.impact.*
 
 /**
  * created by manzh on 2019-09-16
  */
 
-class DateTimeGeneImpact (
-        id : String,
-        degree: Double = 0.0,
-        timesToManipulate : Int = 0,
-        timesOfNoImpacts : Int = 0,
-        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
-        val dateGeneImpact: DateGeneImpact,
-        val timeGeneImpact: TimeGeneImpact
-)  : GeneImpact(
-        id = id,
-        degree = degree,
-        timesToManipulate = timesToManipulate,
-        timesOfNoImpacts = timesOfNoImpacts,
-        timesOfImpact= timesOfImpact,
-        noImpactFromImpact = noImpactFromImpact,
-        noImprovement = noImprovement
-) {
+class DateTimeGeneImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
+                         val dateGeneImpact: DateGeneImpact,
+                         val timeGeneImpact: TimeGeneImpact
+) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+
+    constructor(
+            id : String,
+            degree: Double = 0.0,
+            timesToManipulate : Int = 0,
+            timesOfNoImpacts : Int = 0,
+            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            dateGeneImpact: DateGeneImpact,
+            timeGeneImpact: TimeGeneImpact
+    ) : this(
+            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
+            SpecificImpactInfo(noImpactFromImpact, noImprovement),
+            dateGeneImpact, timeGeneImpact)
 
     constructor(id: String, gene : DateTimeGene)
             : this(id,
@@ -39,21 +37,21 @@ class DateTimeGeneImpact (
 
     override fun copy(): DateTimeGeneImpact {
         return DateTimeGeneImpact(
-                id = id,
-                degree = degree,
-                timesToManipulate = timesToManipulate,
-                timesOfNoImpacts = timesOfNoImpacts,
-                timesOfImpact= timesOfImpact.toMutableMap(),
-                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
-                noImprovement = noImprovement.toMutableMap(),
+                shared.copy(),
+                specific.copy(),
                 dateGeneImpact = dateGeneImpact.copy(),
                 timeGeneImpact = timeGeneImpact.copy())
+    }
+    override fun clone(): DateTimeGeneImpact {
+        return DateTimeGeneImpact(
+                shared.clone(), specific.clone(), dateGeneImpact = dateGeneImpact.clone(), timeGeneImpact = timeGeneImpact.clone()
+        )
     }
 
     override fun validate(gene: Gene): Boolean = gene is DateTimeGene
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.previous == null && impactTargets.isNotEmpty()) return
 
@@ -65,16 +63,16 @@ class DateTimeGeneImpact (
 
         if (gc.previous == null || !gc.current.date.containsSameValueAs((gc.previous as DateTimeGene).date)){
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).date, current = gc.current.date)
-            dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            dateGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets=noImpactTargets,impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
         if (gc.previous == null || !gc.current.time.containsSameValueAs((gc.previous as DateTimeGene).time)){
             val mutatedGeneWithContext = MutatedGeneWithContext(previous = if (gc.previous==null) null else (gc.previous as DateTimeGene).time, current = gc.current.time)
-            timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            timeGeneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets =noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
-        return mutableMapOf("$id-dateGeneImpact" to dateGeneImpact).plus(dateGeneImpact.flatViewInnerImpact()).plus(mapOf("$id-timeGeneImpact" to timeGeneImpact)).plus(timeGeneImpact.flatViewInnerImpact())
+        return mutableMapOf("${getId()}-dateGeneImpact" to dateGeneImpact).plus(dateGeneImpact.flatViewInnerImpact()).plus(mapOf("${getId()}-timeGeneImpact" to timeGeneImpact)).plus(timeGeneImpact.flatViewInnerImpact())
     }
 
 }

@@ -75,7 +75,7 @@ class DateGene(
                     Pair(month , impact.monthGeneImpact),
                     Pair(day , impact.dayGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes = genes, percentage = 1.0/3, targets = targets)
+            archiveMutator.selectGenesByArchive(genes = genes,targets = targets)
         }else
             listOf(year, month, day)
 

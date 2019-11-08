@@ -92,7 +92,7 @@ class SqlUUIDGene(
                     Pair(leastSigBits, impact.leastSigBitsImpact),
                     Pair(leastSigBits , impact.mostSigBitsImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
+            archiveMutator.selectGenesByArchive(genes, targets =  targets)
         }else
             listOf(leastSigBits, leastSigBits)
 

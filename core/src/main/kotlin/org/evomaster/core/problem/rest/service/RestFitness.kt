@@ -31,7 +31,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     @Inject
     private lateinit var sampler: RestSampler
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targetIds : Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -72,11 +72,11 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             2) might not be possible to have a too long URL
          */
         //TODO prioritized list
-        val ids = randomness.choose(
-                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
-                100).toSet()
+//        val ids = randomness.choose(
+//                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
+//                100).toSet()
 
-        val dto = rc.getTestResults(ids)
+        val dto = rc.getTestResults(targetIds)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null
@@ -125,6 +125,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
                     .map { it.getSpecializationGene()!!.getValueAsRawString()}
         })
     }
+
 
 
 

@@ -10,27 +10,38 @@ import org.junit.jupiter.api.Test
  */
 abstract class GeneImpactTest {
 
-    private val fakeImpactTargets = setOf(1, 2)
+    private val allTargets = setOf(1,2,3)
+    private val fakeImpactTargets = setOf(1,2)
     private val fakeImprovedTarget = setOf(1)
+
+    fun getNoImpactTarget(impacts: Set<Int>) = allTargets.filter { impacts.contains(it) }.toSet()
 
     @Test
     fun testWithoutImpact(){
-        template(getGene(), initImpact(), listOf(ImpactOptions.NO_IMPACT))
+        arrayOf(false, true).forEach {
+            template(getGene(), initImpact(), listOf(ImpactOptions.NO_IMPACT), doesDeepCopy = it)
+        }
     }
 
     @Test
     fun testWithImpact(){
-        template(getGene(), initImpact(), listOf(ImpactOptions.ONLY_IMPACT))
+        arrayOf(false, true).forEach {
+            template(getGene(), initImpact(), listOf(ImpactOptions.ONLY_IMPACT), doesDeepCopy = it)
+        }
     }
 
     @Test
     fun testWithImpactImprovement(){
-        template(getGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT))
+        arrayOf(false, true).forEach {
+            template(getGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT), doesDeepCopy = it)
+        }
     }
 
     @Test
     fun test(){
-        template(getGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.ONLY_IMPACT, ImpactOptions.NO_IMPACT))
+        arrayOf(false, true).forEach {
+            template(getGene(), initImpact(), listOf(ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.IMPACT_IMPROVEMENT, ImpactOptions.ONLY_IMPACT, ImpactOptions.NO_IMPACT), doesDeepCopy = it)
+        }
     }
 
     abstract fun getGene() : Gene
@@ -45,18 +56,18 @@ abstract class GeneImpactTest {
     /**
      * @param mutationTag indicates how the gene is mutated
      */
-    fun template(original: Gene, originalImpact: Impact, sequence: List<ImpactOptions>, mutationTag: Int = 0) : Pair<Gene, Impact>{
+    fun template(original: Gene, originalImpact: Impact, sequence: List<ImpactOptions>, mutationTag: Int = 0, doesDeepCopy : Boolean = false) : Pair<Gene, Impact>{
         var gene = original
         var impact = originalImpact
 
         sequence.forEach { option->
-            val mutated = gene.copy()
+            val mutated =  gene.copy()
             val gc = simulateMutation(gene, mutated, mutationTag)
 
-            val updateImpact = impact.copy() as GeneImpact
+            val updateImpact = (if (doesDeepCopy) impact.copy() else impact.clone()) as GeneImpact
             countImpact(updateImpact, gc, option)
 
-            assertImpact(impact, updateImpact, option)
+            assertImpact(impact, updateImpact, option, doesDeepCopy)
 
             gene = mutated
             impact = updateImpact
@@ -74,87 +85,108 @@ abstract class GeneImpactTest {
 
     fun countImpact(impact: GeneImpact, gc : MutatedGeneWithContext, option : ImpactOptions){
         when(option){
-            ImpactOptions.NO_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, setOf(), setOf(), false)
-            ImpactOptions.ONLY_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = fakeImpactTargets, improvedTargets = setOf(), onlyManipulation = false)
-            ImpactOptions.IMPACT_IMPROVEMENT-> impact.countImpactWithMutatedGeneWithContext(gc, impactTargets = fakeImpactTargets, improvedTargets = fakeImprovedTarget, onlyManipulation = false)
+            ImpactOptions.NO_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(setOf()), impactTargets = setOf(), improvedTargets =  setOf(), onlyManipulation = false)
+            ImpactOptions.ONLY_IMPACT -> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = setOf(), onlyManipulation = false)
+            ImpactOptions.IMPACT_IMPROVEMENT-> impact.countImpactWithMutatedGeneWithContext(gc, noImpactTargets = getNoImpactTarget(fakeImpactTargets), impactTargets = fakeImpactTargets, improvedTargets = fakeImprovedTarget, onlyManipulation = false)
         }
     }
 
-    fun assertImpact(previous: Impact, impact: Impact, option: ImpactOptions){
+    fun assertImpact(previous: Impact, impact: Impact, option: ImpactOptions, doesDeepCopy: Boolean = false){
         impact.apply {
             when(option){
                 ImpactOptions.NO_IMPACT->{
-                    assertEquals(previous.timesToManipulate + 1, timesToManipulate)
+                    //shared
+                    if (doesDeepCopy){
+                        assertEquals(previous.getTimesToManipulate() + 1, getTimesToManipulate())
+                        assertEquals(previous.getTimesOfNoImpact() + 1, getTimesOfNoImpact())
+                    }else{
+                        assertEquals(previous.getTimesToManipulate(), getTimesToManipulate())
+                        assertEquals(previous.getTimesOfNoImpact(), getTimesOfNoImpact())
+                    }
 
-                    assertEquals(previous.timesOfNoImpacts + 1, timesOfNoImpacts)
                     fakeImpactTargets.forEach { t->
-                        val expectedImpact = previous.timesOfImpact[t]?:0
-                        assertEquals(expectedImpact, timesOfImpact[t]?:0)
+                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0
+                        assertEquals(expectedImpact, getTimesOfImpacts()[t]?:0)
 
-                        val expectedNoImpact = (previous.noImpactFromImpact[t]?:-1) + 1
-                        assertEquals(expectedNoImpact , noImpactFromImpact[t]?:0)
 
-                        val expected = (previous.noImprovement[t]?:-1) + 1
-                        assertEquals(expected, noImprovement[t]?:0)
+                        val expectedNoImpact = (previous.getNoImpactsFromImpactCounter()[t]?:-1) + 1
+                        assertEquals(expectedNoImpact , getNoImpactsFromImpactCounter()[t]?:0)
+
+                        val expected = (previous.getNoImprovementCounter()[t]?:-1) + 1
+                        assertEquals(expected, getNoImprovementCounter()[t]?:0)
                     }
                 }
 
                 ImpactOptions.ONLY_IMPACT->{
-                    assertEquals(previous.timesToManipulate + 1, timesToManipulate)
+                    if (doesDeepCopy)
+                        assertEquals(previous.getTimesToManipulate() + 1, getTimesToManipulate())
+                    else
+                        assertEquals(previous.getTimesToManipulate(), getTimesToManipulate())
 
-                    assertEquals(previous.timesOfNoImpacts, timesOfNoImpacts)
+                    assertEquals(previous.getTimesOfNoImpact(), getTimesOfNoImpact())
 
                     fakeImpactTargets.forEach { t->
-                        assertNotNull(timesOfImpact[t])
-                        val expectedImpact = previous.timesOfImpact[t]?:0
-                        assertEquals(expectedImpact + 1, timesOfImpact[t])
+                        assertNotNull(getTimesOfImpacts()[t])
+                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0
+                        if (doesDeepCopy)
+                             assertEquals(expectedImpact + 1, getTimesOfImpacts()[t])
+                        else
+                            assertEquals(expectedImpact, getTimesOfImpacts()[t])
 
-                        assertNotNull(noImpactFromImpact[t])
-                        assertEquals(0, noImpactFromImpact[t])
 
-                        assertNotNull(noImprovement[t])
-                        val expected = previous.noImprovement[t]?:0
-                        assertEquals(expected + 1, noImprovement[t])
+                        assertNotNull(getNoImpactsFromImpactCounter()[t])
+                        assertEquals(0, getNoImpactsFromImpactCounter()[t])
+
+                        assertNotNull(getNoImprovementCounter()[t])
+                        val expected = previous.getNoImprovementCounter()[t]?:0
+                        assertEquals(expected + 1, getNoImprovementCounter()[t])
                     }
 
 
                 }
 
                 ImpactOptions.IMPACT_IMPROVEMENT->{
-                    assertEquals(previous.timesToManipulate + 1, timesToManipulate)
+                    if (doesDeepCopy)
+                        assertEquals(previous.getTimesToManipulate() + 1, getTimesToManipulate())
+                    else
+                        assertEquals(previous.getTimesToManipulate(), getTimesToManipulate())
 
-                    assertEquals(previous.timesOfNoImpacts, timesOfNoImpacts)
+                    assertEquals(previous.getTimesOfNoImpact(), getTimesOfNoImpact())
 
                     fakeImpactTargets.forEach { t->
-                        assertNotNull(timesOfImpact[t])
-                        val expectedImpact = previous.timesOfImpact[t]?:0
-                        assertEquals(expectedImpact + 1, timesOfImpact[t])
-                        assertNotNull(noImpactFromImpact[t])
-                        assertEquals(0, noImpactFromImpact[t])
+                        assertNotNull(getTimesOfImpacts()[t])
+                        val expectedImpact = previous.getTimesOfImpacts()[t]?:0
+                        if (doesDeepCopy)
+                            assertEquals(expectedImpact + 1, getTimesOfImpacts()[t])
+                        else
+                            assertEquals(expectedImpact, getTimesOfImpacts()[t])
+
+                        assertNotNull(getNoImpactsFromImpactCounter()[t])
+                        assertEquals(0, getNoImpactsFromImpactCounter()[t])
 
                         if (!fakeImprovedTarget.contains(t)){
-                            assertNotNull(noImprovement[t])
-                            val expected = previous.noImprovement[t]?:0
-                            assertEquals(expected + 1, noImprovement[t])
+                            assertNotNull(getNoImprovementCounter()[t])
+                            val expected = previous.getNoImprovementCounter()[t]?:0
+                            assertEquals(expected + 1, getNoImprovementCounter()[t])
                         }
 
                     }
 
                     fakeImprovedTarget.forEach { t->
-                        assertNotNull(noImprovement[t])
-                        assertEquals(0, noImprovement[t])
+                        assertNotNull(getNoImprovementCounter()[t])
+                        assertEquals(0, getNoImprovementCounter()[t])
                     }
 
                 }
 
                 ImpactOptions.NONE->{
-                    assertEquals(previous.timesToManipulate, timesToManipulate)
+                    assertEquals(previous.getTimesToManipulate(), getTimesToManipulate())
 
-                    assertEquals(previous.timesOfNoImpacts, timesOfNoImpacts)
+                    assertEquals(previous.getTimesOfNoImpact(), getTimesOfNoImpact())
 
-                    assert(previous.timesOfImpact == timesOfImpact)
-                    assert(previous.noImpactFromImpact == noImpactFromImpact)
-                    assert(previous.noImprovement == noImprovement)
+                    assert(previous.getTimesOfImpacts() == getTimesOfImpacts())
+                    assert(previous.getNoImpactsFromImpactCounter() == getNoImpactsFromImpactCounter())
+                    assert(previous.getNoImprovementCounter() == getNoImprovementCounter())
                 }
             }
         }

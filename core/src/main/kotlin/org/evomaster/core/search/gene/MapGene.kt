@@ -120,7 +120,7 @@ class MapGene<T>(
         else if (archiveMutator.applyArchiveSelection()
                 && impact != null
                 && impact is MapGeneImpact
-                && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+                && impact.sizeImpact.getNoImprovementCounter().any { it.value < 2 } //if there is recent improvement by manipulating size
         ){
             randomness.nextBoolean(0.3)
         }else {

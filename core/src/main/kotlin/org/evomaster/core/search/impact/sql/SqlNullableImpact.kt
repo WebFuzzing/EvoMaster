@@ -2,52 +2,50 @@ package org.evomaster.core.search.impact.sql
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.sql.SqlNullable
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.Impact
-import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.impact.MutatedGeneWithContext
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
 
 /**
  * created by manzh on 2019-09-29
  */
-class SqlNullableImpact (
-        id : String,
-        degree: Double = 0.0,
-        timesToManipulate : Int = 0,
-        timesOfNoImpacts : Int = 0,
-        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
-        val presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
-        val geneImpact: GeneImpact
-) : GeneImpact(
-        id = id,
-        degree = degree,
-        timesToManipulate = timesToManipulate,
-        timesOfNoImpacts = timesOfNoImpacts,
-        timesOfImpact= timesOfImpact,
-        noImpactFromImpact = noImpactFromImpact,
-        noImprovement = noImprovement
-) {
+class SqlNullableImpact(sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
+                        val presentImpact : BinaryGeneImpact,
+                        val geneImpact: GeneImpact) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+    constructor(
+            id : String,
+            degree: Double = 0.0,
+            timesToManipulate : Int = 0,
+            timesOfNoImpacts : Int = 0,
+            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            presentImpact : BinaryGeneImpact = BinaryGeneImpact("isPresent"),
+            geneImpact: GeneImpact
+    ) : this(
+            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
+            SpecificImpactInfo(noImpactFromImpact, noImprovement),
+            presentImpact,
+            geneImpact)
 
     constructor(id : String, sqlnullGene: SqlNullable) : this(id, geneImpact = ImpactUtils.createGeneImpact(sqlnullGene.gene, id))
 
     override fun copy(): SqlNullableImpact {
         return SqlNullableImpact(
-                id = id,
-                degree = degree,
-                timesToManipulate = timesToManipulate,
-                timesOfNoImpacts = timesOfNoImpacts,
-                timesOfImpact= timesOfImpact.toMutableMap(),
-                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
-                noImprovement = noImprovement.toMutableMap(),
+                shared.copy(),
+                specific.copy(),
                 presentImpact = presentImpact.copy(),
-                geneImpact = geneImpact.copy() as GeneImpact)
+                geneImpact = geneImpact.copy())
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+    override fun clone(): SqlNullableImpact {
+        return SqlNullableImpact(
+                shared.clone(),specific.clone(), presentImpact.clone(), geneImpact.clone()
+        )
+    }
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext,noImpactTargets : Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.current  !is SqlNullable){
             throw IllegalStateException("gc.current (${gc.current::class.java.simpleName}) should be SqlNullable")
@@ -57,12 +55,12 @@ class SqlNullableImpact (
         }
 
         if (gc.previous == null || (gc.previous as SqlNullable).isPresent != gc.current.isPresent){
-            presentImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            presentImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.current.isPresent)
-                presentImpact.trueValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                presentImpact.trueValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             else
-                presentImpact.falseValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                presentImpact.falseValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.previous != null) {
                 return
@@ -76,7 +74,7 @@ class SqlNullableImpact (
                     previous = if (gc.previous == null) null else (gc.previous as SqlNullable).gene,
                     current = gc.current.gene
             )
-            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets= noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
     }
 
@@ -84,7 +82,7 @@ class SqlNullableImpact (
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf(
-                "$id-presentImpact" to presentImpact
-        ).plus(presentImpact.flatViewInnerImpact()).plus("$id-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+                "${getId()}-presentImpact" to presentImpact
+        ).plus(presentImpact.flatViewInnerImpact()).plus("${getId()}-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
     }
 }

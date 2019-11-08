@@ -166,13 +166,16 @@ fun main(args : Array<String>){
 //    config.outputFolder = "e2e-tests/spring-examples/"
 //    config.outputType = GenConfig.OutputType.SOURCE
 //    config.csProjectPackage = "com.foo.rest.examples.spring.impacts"
-//    config.numOfNodes = 3
+    config.numOfNodes = 50
+    config.numOfImpactProperties = 2
+    config.numOfExtraProperties = 8
 //    config.numOfOneToOne = 1
-//    config.restMethods = listOf(RestMethod.POST, RestMethod.GET_ID)
-
+    config.restMethods = listOf(RestMethod.POST_VALUE, RestMethod.GET_ALL, RestMethod.GET_ID)
+    config.branchesForImpact = 10
     config.outputType = GenConfig.OutputType.MAVEN_PROJECT
     config.outputContent = GenConfig.OutputContent.BOTH
-    config.projectName = "auto-impact-rest-cs"
+    config.projectName = "auto-impact-rest-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
     GenerateREST(config).run()
 }
+
 

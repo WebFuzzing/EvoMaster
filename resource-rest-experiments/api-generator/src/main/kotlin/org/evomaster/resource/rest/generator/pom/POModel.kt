@@ -65,6 +65,10 @@ class EMPOModel(groupId: String, artifactId: String, version: String = "0.0.1", 
         model.dependencies.add(DependencyManager.IO_REST_ASSURED.getDependency())
         model.dependencies.add(DependencyManager.HAMCREST.getDependency())
         model.dependencies.add(DependencyManager.JUNIT.getDependency())
+        model.dependencies.add(DependencyManager.JUNIT_JUPITER_ENGINE.getDependency())
+        model.dependencies.add(DependencyManager.JUNIT_JUPITER_PARAMS.getDependency())
+        model.dependencies.add(DependencyManager.JUNIT_JUPITER_PLATFORM.getDependency())
+
         model.dependencies.add(ArtifactTemplate(artifactId = csPOModel.artifactId, groupId = csPOModel.groupId).getDependency(version=csPOModel.version))
         model.build = Build()
         model.build.plugins.add(DependencyManager.MAVEN_PLUGINS_COMPILER.getPlugin(configuration = mutableMapOf("source" to "1.8", "target" to "1.8")))
@@ -77,6 +81,7 @@ class PackagedPOModel(val modules : MutableList<String>, groupId: String, artifa
     : POModel(groupId= groupId, artifactId= artifactId, version = version, output=output){
     override fun getPOModel(): Model {
         val model = Model()
+        model.modelVersion = "4.0.0"
         model.groupId = groupId
         model.artifactId = artifactId
         model.version = version

@@ -25,6 +25,12 @@ open class MutatedGeneSpecification (
         val mutatedPosition : MutableList<Int> = mutableListOf(),
         val mutatedDbActionPosition : MutableList<Int> = mutableListOf()
 ){
+
+    /*
+    shall we include 'removed'?
+     */
+    fun allGenes() = if (addedInitializationGenes.isEmpty()) mutatedDbGenes.plus(mutatedDbGenes) else mutatedGenes
+
     var geneSelectionStrategy : GeneMutationSelectionMethod = GeneMutationSelectionMethod.NONE
 
     var mutatedIndividual: Individual? = null
@@ -64,4 +70,7 @@ open class MutatedGeneSpecification (
         spec.geneSelectionStrategy = geneSelectionStrategy
         return spec
     }
+
+    // add, remove, swap
+    fun didStructureMutation() = addedGenes.isNotEmpty() || removedGene.isNotEmpty() || (mutatedGenes.isEmpty() && mutatedPosition.isNotEmpty())
 }

@@ -14,6 +14,8 @@ import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
 import org.evomaster.core.Lazy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * created by manzh on 2019-09-09
@@ -25,6 +27,8 @@ import org.evomaster.core.Lazy
 class ImpactUtils {
 
     companion object{
+
+        private val log: Logger = LoggerFactory.getLogger(ImpactUtils::class.java)
 
         fun createGeneImpact(gene : Gene, id : String) : GeneImpact{
             return when(gene){
@@ -65,8 +69,10 @@ class ImpactUtils {
         fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}"
 
         fun <T : Individual> generateGeneId(individual: T, gene: Gene) : String{
-            if (!individual.seeGenes().contains(gene))
-                throw IllegalArgumentException("cannot find this gene in this individual")
+            if (!individual.seeGenes().contains(gene)){
+                log.warn("cannot find this gene ${gene.name} ($gene) in this individual")
+                return generateGeneId(gene)
+            }
             individual.seeInitializingActions().find { da->
                 da.seeGenes().contains(gene)
             }?.let {
@@ -164,10 +170,11 @@ class ImpactUtils {
         fun getImpactDistribution(impacts : List<Impact>, property: ImpactProperty, targets : Set<Int>) : ImpactPropertyDistribution{
             val specified = impacts.filter {
                 when(property){
-                    ImpactProperty.TIMES_NO_IMPACT -> it.timesOfNoImpacts > 0
-                    ImpactProperty.TIMES_IMPACT ->  it.timesOfImpact.any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
-                    ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> it.noImpactFromImpact.any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0 }
-                    ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> it.noImprovement.any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
+                    ImpactProperty.TIMES_NO_IMPACT -> it.getTimesOfNoImpact() > 0
+                    ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> it.getTimesOfNoImpactWithTargets().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
+                    ImpactProperty.TIMES_IMPACT ->  it.getTimesOfImpacts().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
+                    ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT -> it.getNoImpactsFromImpactCounter().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0 }
+                    ImpactProperty.TIMES_CONS_NO_IMPROVEMENT -> it.getNoImprovementCounter().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
                 }
             }.size
             return when{

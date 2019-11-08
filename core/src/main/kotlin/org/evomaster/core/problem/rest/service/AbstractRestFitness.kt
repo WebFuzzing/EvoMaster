@@ -17,8 +17,10 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
+import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.search.service.SearchTimeController
 import org.glassfish.jersey.client.ClientConfig
 import org.glassfish.jersey.client.ClientProperties
@@ -488,5 +490,14 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     private fun locationName(id: String): String {
         return "location_$id"
+    }
+
+    override fun defaultTargetForCoverageCalculation(): Set<Int> {
+        /*
+           We cannot request all non-covered targets, because:
+           1) performance hit
+           2) might not be possible to have a too long URL
+        */
+        return randomness.choose(archive.notCoveredTargets().filter { !IdMapper.isLocal(it) }, 100).toSet()
     }
 }

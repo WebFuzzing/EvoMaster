@@ -99,7 +99,7 @@ class EnumGene<T : Comparable<T>>(
             Pair(it, impact.values[it])
         }
 
-        val selects = archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), targets)
+        val selects = archiveMutator.selectGenesByArchive(candidates, targets =  targets)
         index = randomness.choose(selects)
 
     }

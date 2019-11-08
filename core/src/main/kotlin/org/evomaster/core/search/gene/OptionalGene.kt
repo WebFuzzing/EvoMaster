@@ -87,9 +87,9 @@ class OptionalGene(name: String,
         else {
             !impact.activeImpact.run {
                 //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-                this.timesToManipulate > 5
+                this.getTimesToManipulate() > 5
                         &&
-                        (this.falseValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+                        (this.falseValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
             }
         }
 

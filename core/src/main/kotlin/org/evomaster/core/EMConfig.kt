@@ -761,13 +761,27 @@ class EMConfig {
     var startPerOfCandidateGenesToMutate = 0.9
 
     @Experimental
-    @Cfg("Specify a percentage (after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
+    @Cfg("Specify a percentage fter starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
     @PercentageAsProbability(false)
-    var endPerOfCandidateGenesToMutate = 0.1
+    var endPerOfCandidateGenesToMutate = 0.5
 
     @Experimental
-    @Cfg("Specify whether to decide a top percent of genes to mutate adaptively")
-    var adaptivePerOfCandidateGenesToMutate = false
+    @Cfg("Specify whether to prioritize targets to be evaluated regarding impacts")
+    var enablePrioritizeTargetsByImpact = false
+
+    @Experimental
+    @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
+    var impactGeneSelection = ImpactGeneSelection.PROBABILITY
+
+    @Experimental
+    @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
+    var prioritizeNotVisit = false
+
+    enum class ImpactGeneSelection{
+        PROBABILITY,
+        SUBSET_PROBABILITY,
+        ADAPTIVE_SUBSET_PROBABILITY
+    }
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")

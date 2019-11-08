@@ -71,7 +71,7 @@ open class DateTimeGene(
                     Pair(date, impact.dateGeneImpact),
                     Pair(time , impact.timeGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
+            archiveMutator.selectGenesByArchive(genes = genes, mutationSizeN = 2, targets = targets)
         }else listOf(date, time)
 
         val selected = randomness.choose(selects)

@@ -2,52 +2,58 @@ package org.evomaster.core.search.impact.value
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.Impact
-import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.impact.MutatedGeneWithContext
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.impact.value.numeric.BinaryGeneImpact
 
 /**
  * created by manzh on 2019-09-09
  */
-class OptionalGeneImpact (
-        id : String,
-        degree: Double = 0.0,
-        timesToManipulate : Int = 0,
-        timesOfNoImpacts : Int = 0,
-        timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
-        noImprovement : MutableMap<Int, Int> = mutableMapOf(),
-        val activeImpact : BinaryGeneImpact = BinaryGeneImpact("isActive"),
+class OptionalGeneImpact  (
+        sharedImpactInfo: SharedImpactInfo,
+        specificImpactInfo: SpecificImpactInfo,
+        val activeImpact : BinaryGeneImpact,
         val geneImpact: GeneImpact
-)  : GeneImpact(
-        id = id,
-        degree = degree,
-        timesToManipulate = timesToManipulate,
-        timesOfNoImpacts = timesOfNoImpacts,
-        timesOfImpact= timesOfImpact,
-        noImpactFromImpact = noImpactFromImpact,
-        noImprovement = noImprovement
-) {
+) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+
+    constructor(
+            id : String,
+            degree: Double = 0.0,
+            timesToManipulate : Int = 0,
+            timesOfNoImpacts : Int = 0,
+            timesOfNoImpactWithTargets : MutableMap<Int, Int> = mutableMapOf(),
+            timesOfImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImpactFromImpact : MutableMap<Int, Int> = mutableMapOf(),
+            noImprovement : MutableMap<Int, Int> = mutableMapOf(),
+            activeImpact : BinaryGeneImpact = BinaryGeneImpact("isActive"),
+            geneImpact: GeneImpact
+
+    ) : this(
+            SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact),
+            SpecificImpactInfo(noImpactFromImpact, noImprovement),
+            activeImpact,
+            geneImpact
+    )
 
     constructor(id : String, optionalGene: OptionalGene) : this(id, geneImpact = ImpactUtils.createGeneImpact(optionalGene.gene, id))
 
     override fun copy(): OptionalGeneImpact {
         return OptionalGeneImpact(
-                id = id,
-                degree = degree,
-                timesToManipulate = timesToManipulate,
-                timesOfNoImpacts = timesOfNoImpacts,
-                timesOfImpact= timesOfImpact.toMutableMap(),
-                noImpactFromImpact = noImpactFromImpact.toMutableMap(),
-                noImprovement = noImprovement.toMutableMap(),
+                shared.copy(),
+                specific.copy(),
                 activeImpact = activeImpact.copy(),
                 geneImpact = geneImpact.copy() as GeneImpact)
     }
 
-    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
-        countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+    override fun clone(): OptionalGeneImpact {
+        return OptionalGeneImpact(
+                shared.clone(),
+                specific.clone(),
+                activeImpact = activeImpact.clone(),
+                geneImpact = geneImpact.clone())
+    }
+
+    override fun countImpactWithMutatedGeneWithContext(gc: MutatedGeneWithContext, noImpactTargets: Set<Int>, impactTargets: Set<Int>, improvedTargets: Set<Int>, onlyManipulation: Boolean) {
+        countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
         if (gc.current !is OptionalGene)
             throw IllegalStateException("gc.current(${gc.current::class.java.simpleName}) should be OptionalGene")
@@ -56,11 +62,11 @@ class OptionalGeneImpact (
             throw IllegalStateException("gc.pervious (${gc.previous::class.java.simpleName}) should be OptionalGene")
 
         if (gc.previous == null || (gc.previous as OptionalGene).isActive != gc.current.isActive){
-            activeImpact.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            activeImpact.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             if (gc.current.isActive)
-                activeImpact.trueValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                activeImpact.trueValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
             else
-                activeImpact.falseValue.countImpactAndPerformance(impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+                activeImpact.falseValue.countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
 
             if (gc.previous != null){
                 return
@@ -74,7 +80,7 @@ class OptionalGeneImpact (
                     previous = if (gc.previous==null) null else (gc.previous as OptionalGene).gene,
                     current = gc.current.gene
             )
-            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
+            geneImpact.countImpactWithMutatedGeneWithContext(mutatedGeneWithContext, noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)
         }
 
     }
@@ -84,7 +90,7 @@ class OptionalGeneImpact (
 
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf(
-                "$id-activeImpact" to activeImpact
-        ).plus(activeImpact.flatViewInnerImpact()).plus("$id-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
+                "${getId()}-activeImpact" to activeImpact
+        ).plus(activeImpact.flatViewInnerImpact()).plus("${getId()}-geneImpact" to geneImpact).plus(geneImpact.flatViewInnerImpact())
     }
 }
