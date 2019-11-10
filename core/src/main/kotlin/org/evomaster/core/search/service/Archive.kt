@@ -14,6 +14,7 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
 import java.lang.Integer.min
+import java.lang.StringBuilder
 
 
 class Archive<T> where T : Individual {
@@ -457,5 +458,18 @@ class Archive<T> where T : Individual {
      */
     fun getSnapshotOfSamplingCounter() : Map<Int, Int>{
         return samplingCounter
+    }
+
+    /**
+     * @return a list of pairs which is composed of target id (first) and corresponding tests (second)
+     */
+    fun exportCoveredTargetsAsPair(solution: Solution<*>) : List<Pair<String, List<Int>>>{
+
+        return populations.keys
+                .asSequence()
+                .filter { isCovered(it) }
+                .map { t->
+                    Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
+                }.toList()
     }
 }

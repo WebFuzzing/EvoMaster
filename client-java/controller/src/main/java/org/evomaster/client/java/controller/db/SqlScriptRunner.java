@@ -143,7 +143,7 @@ public class SqlScriptRunner {
                 }
             }
 
-            if (command != null) {
+            if (command != null && command.length() > 0) {
                 list.add(command.toString());
             }
 
@@ -159,6 +159,9 @@ public class SqlScriptRunner {
      * Execute the different SQL insertions.
      * Those can refer to each other via foreign keys, even in the case
      * of auto-generated ids
+     *
+     * @param conn a JDBC connection to the database
+     * @param insertions the SQL insertions to execute
      *
      * @return a map from InsertionDto id to id of auto-generated primary
      * keys in the database (if any was generated).
@@ -262,7 +265,7 @@ public class SqlScriptRunner {
         return sql.toString();
     }
 
-    /**
+    /*
      * In SQL, strings need '' instead of ""         Set<ColumnDto> primaryKeys = getPrimaryKeys(schema, tableName);
      * for (ColumnDto primaryKey : primaryKeys) {
      * primaryKey.
@@ -284,9 +287,11 @@ public class SqlScriptRunner {
     }
 
     /**
+     * @param conn a JDBC connection to the database
+     * @param command the SQL insertion to execute
+     *
      * @return a single id for the new row, if any was automatically generated, {@code null} otherwise.
      *         In other words, return the value of auto-generated primary key, if any was created.
-     * @throws SQLException
      */
     public static Long execInsert(Connection conn, String command) throws SQLException {
 

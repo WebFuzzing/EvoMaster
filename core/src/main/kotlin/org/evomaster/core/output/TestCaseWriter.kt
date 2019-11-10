@@ -6,13 +6,12 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
-import org.evomaster.core.problem.rest.RestCallAction
-import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.UsedObjects
+import org.evomaster.core.problem.rest.*
+import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
@@ -90,6 +89,7 @@ class TestCaseWriter {
                         }
             }
 
+            handleGettingCookies(test.test, lines, baseUrlOfSut)
 
             test.test.evaluatedActions().forEach { a ->
                 when (a.action) {
@@ -101,6 +101,52 @@ class TestCaseWriter {
         lines.add("}")
 
         return lines
+    }
+
+    private fun cookiesName(info: CookieLogin) : String = "cookies_${info.username}"
+
+
+    private fun handleGettingCookies(ind: EvaluatedIndividual<*>,
+                                     lines: Lines,
+                                     baseUrlOfSut: String){
+
+        val cookiesInfo = (ind.individual as RestIndividual).getCookieLoginAuth()
+
+        if(cookiesInfo.isNotEmpty()){
+            lines.addEmpty()
+        }
+
+        for(k in cookiesInfo){
+
+            when {
+                format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
+                format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
+            }
+
+            lines.append("given()")
+            lines.indented {
+
+                if(k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
+                    lines.add(".formParam(\"${k.usernameField}\", \"${k.username}\")")
+                    lines.add(".formParam(\"${k.passwordField}\", \"${k.password}\")")
+                } else {
+                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
+                }
+
+                lines.add(".post(")
+                if(format.isJava()) {
+                    lines.append("$baseUrlOfSut + \"")
+                } else {
+                    lines.append("\"\${$baseUrlOfSut}")
+                }
+                lines.append("${k.loginEndpointUrl}\")")
+
+                lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
+                appendSemicolon(lines)
+
+                lines.addEmpty()
+            }
+        }
     }
 
     private fun appendSemicolon(lines: Lines) {
@@ -454,7 +500,7 @@ class TestCaseWriter {
                     && printableTh != NOT_COVERED_YET
                     && !printableTh.contains("logged")
             ) {
-                lines.add(".body(\"$it\", hasItem($printableTh))")
+                lines.add(".body(\"\'$it\'\", hasItem($printableTh))")
             }
         }
     }
@@ -559,9 +605,9 @@ class TestCaseWriter {
                                 && !printableTh.contains("logged")
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            if(stringKey != "id") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            if(stringKey != "id") lines.add(".body(\"\'${stringKey}\'\", ${printableTh})")
                             else{
-                                if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
+                                if(!chained && previousChained) lines.add(".body(\"\'${stringKey}\'\", numberMatches($previousId))")
                             }
                         }
                     }
@@ -659,6 +705,11 @@ class TestCaseWriter {
                 .forEach {
                     lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                 }
+
+        val cookieLogin = call.auth.cookieLogin
+        if(cookieLogin != null){
+            lines.add(".cookies(${cookiesName(cookieLogin)})")
+        }
     }
 
     private fun getAcceptHeader(call: RestCallAction, res: RestCallResult): String {

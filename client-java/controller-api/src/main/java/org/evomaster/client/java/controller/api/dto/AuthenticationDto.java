@@ -20,6 +20,11 @@ public class AuthenticationDto {
      */
     public List<HeaderDto> headers = new ArrayList<>();
 
+    /**
+     * If the login is based on cookies, need to provide info on
+     * how to get such a cookie
+     */
+    public CookieLoginDto cookieLogin;
 
     public AuthenticationDto() {
     }

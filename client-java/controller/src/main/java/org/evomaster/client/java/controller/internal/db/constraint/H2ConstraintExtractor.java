@@ -30,8 +30,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * http://www.h2database.com/html/systemtables.html#information_schema
      *
      * @param connectionToH2 a connection to a H2 database
-     * @param schemaDto      a DTO schema with retrieved information from the JBDC metada
-     * @throws Exception
+     * @param schemaDto      a DTO schema with retrieved information from the JBDC metadata
+     * @throws SQLException  if the connection to the H2 database fails
      */
     public List<DbTableConstraint> extract(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
@@ -48,7 +48,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
     /**
      * Logs that a constraint could not be handled by the extractor.
      *
-     * @param constraintType
+     * @param constraintType the type of SQL constraint
      */
     private static void cannotHandle(String constraintType) {
         SimpleLogger.uniqueWarn("WARNING, EvoMaster cannot extract H2 constraints with type '" + constraintType);
@@ -62,8 +62,8 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * Foreign keys are handled separately in the JDBC metadata
      *
      * @param connectionToH2 a connection to a H2 database
-     * @param schemaDto
-     * @throws SQLException if the connection to the H2 database fails,
+     * @param schemaDto DTO with database schema information
+     * @throws SQLException if the connection to the H2 database fails
      */
     private List<DbTableConstraint> extractTableConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {
 
@@ -122,7 +122,7 @@ public class H2ConstraintExtractor extends TableConstraintExtractor {
      * Unique constraints and Foreign keys are handled separately in the JDBC metadata
      *
      * @param connectionToH2 a connection to a H2 database
-     * @param schemaDto
+     * @param schemaDto DTO with database schema information
      * @throws SQLException if the connection to the database fails
      */
     private List<DbTableConstraint> extractColumnConstraints(Connection connectionToH2, DbSchemaDto schemaDto) throws SQLException {

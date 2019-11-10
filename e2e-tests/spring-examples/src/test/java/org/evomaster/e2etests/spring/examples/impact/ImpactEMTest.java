@@ -14,9 +14,13 @@ import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Arrays;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 
 /**
  * created by manzh on 2019-09-12
@@ -71,9 +75,24 @@ public class ImpactEMTest extends SpringTestBase {
                     args.add("--impactFile");
                     args.add("target/impactInfo/TestSimpleGeneImpacts_"+method.toString()+".csv");
 
+                    args.add("--exportCoveredTarget");
+                    args.add("true");
+                    args.add("--coveredTargetFile");
+
+                    String path = "target/coveredTargets/testImpacts_CoveredTargetsBy"+method.toString()+".csv";
+                    args.add(path);
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assertTrue(Files.exists(Paths.get(path)));
+
+                    try {
+                        assertEquals(solution.getOverall().coveredTargets() + 1, Files.readAllLines(Paths.get(path)).size());
+                    }catch (IOException e){
+                        fail("cannot read the file on "+path);
+                    }
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
                             s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noimpactIntField", s)

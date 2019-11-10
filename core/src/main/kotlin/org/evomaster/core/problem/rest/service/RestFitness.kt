@@ -35,6 +35,8 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         rc.resetSUT()
 
+        val cookies = getCookies(individual)
+
         doInitializingActions(individual)
 
         individual.enforceCoherence()
@@ -56,7 +58,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             var ok = false
 
             if (a is RestCallAction) {
-                ok = handleRestCall(a, actionResults, chainState)
+                ok = handleRestCall(a, actionResults, chainState, cookies)
             } else {
                 throw IllegalStateException("Cannot handle: ${a.javaClass}")
             }

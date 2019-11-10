@@ -63,6 +63,8 @@ public abstract class SutController implements SutHandler {
      * port and host.
      * <br>
      * This method is blocking until the server is initialized.
+     *
+     * @return true if there was no problem in starting the controller
      */
     public final boolean startTheControllerServer() {
 
@@ -155,7 +157,7 @@ public abstract class SutController implements SutHandler {
     /**
      * Calculate heuristics based on intercepted SQL commands
      *
-     * @param sql
+     * @param sql command as a string
      */
     public final void handleSql(String sql) {
         Objects.requireNonNull(sql);
@@ -218,8 +220,9 @@ public abstract class SutController implements SutHandler {
     /**
      * Extra information about the SQL Database Schema, if any is present.
      * Note: this is extracted by querying the database itself.
-     * So it must be up and running.
+     * So the database must be up and running.
      *
+     * @return a DTO with the schema information
      * @see SutController#getConnection
      */
     public final DbSchemaDto getSqlDatabaseSchema() {
@@ -245,6 +248,8 @@ public abstract class SutController implements SutHandler {
     /**
      * Either there is no connection, or, if there is, then it must have P6Spy configured.
      * But this might not apply to all kind controllers
+     *
+     * @return false if the verification failed
      */
     public final boolean verifySqlConnection(){
 
@@ -288,6 +293,8 @@ public abstract class SutController implements SutHandler {
      * As some heuristics are based on which action (eg HTTP call, or click of button)
      * in the test sequence is executed, and their order, we need to keep track of which
      * action does cover what.
+     *
+     * @param dto the DTO with the information about the action (eg its index in the test)
      */
     public final void newAction(ActionDto dto) {
 
@@ -310,14 +317,14 @@ public abstract class SutController implements SutHandler {
     /**
      * Check if bytecode instrumentation is on.
      *
-     * @return
+     * @return true if the instrumentation is on
      */
     public abstract boolean isInstrumentationActivated();
 
     /**
      * Check if the system under test (SUT) is running and fully initialized
      *
-     * @return
+     * @return true if the SUT is running
      */
     public abstract boolean isSutRunning();
 
@@ -330,15 +337,13 @@ public abstract class SutController implements SutHandler {
      * would be instrumented as well, which could have a severe
      * impact on performance
      *
-     * @return
+     * @return a String representing the packages to cover
      */
     public abstract String getPackagePrefixesToCover();
 
     /**
-     * Provide a list of valid authentication credentials, or {@code null} if
-     * none is necessary
-     *
-     * @return
+     * @return a list of valid authentication credentials, or {@code null} if
+     *      * none is necessary
      */
     public abstract List<AuthenticationDto> getInfoForAuthentication();
 
@@ -362,7 +367,7 @@ public abstract class SutController implements SutHandler {
     public abstract List<TargetInfo> getTargetInfos(Collection<Integer> ids);
 
     /**
-     * Get additional info for each action in the test.
+     * @return additional info for each action in the test.
      * The list is ordered based on the action index.
      */
     public abstract List<AdditionalInfo> getAdditionalInfoList();
@@ -376,7 +381,7 @@ public abstract class SutController implements SutHandler {
     public abstract ProblemInfo getProblemInfo();
 
     /**
-     * Specify the format in which the test cases should be generated
+     * @return the format in which the test cases should be generated
      */
     public abstract SutInfoDto.OutputFormat getPreferredOutputFormat();
 

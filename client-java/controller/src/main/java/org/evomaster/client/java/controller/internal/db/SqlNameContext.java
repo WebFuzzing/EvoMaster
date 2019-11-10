@@ -49,6 +49,8 @@ public class SqlNameContext {
     /**
      * WARNING: should only be used in tests, to avoid each time having
      * to provide a schema for the test data
+     *
+     * @param statement to create context for
      */
     public SqlNameContext(Statement statement) {
         schema = null;
@@ -69,7 +71,8 @@ public class SqlNameContext {
      */
 
     /**
-     * Determine the name of the table that this column belongs to
+     * @param column a column object
+     * @return the name of the table that this column belongs to
      */
     public String getTableName(Column column) {
 

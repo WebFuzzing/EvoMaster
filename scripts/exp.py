@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
+####
+# WARNING: by default, on saga.sigma2.no, might be that python refers to the ancient 2.7 version.
+# You might need to add something like:
+#
+# module load  Python/3.7.4-GCCcore-8.3.0
+#
+# at the end of your .bash_profile in your home folder.
+#
+# Note: this script was first designed for Abel, but now Saga replaced it.
+# Some of the comments/fixes might be no longer required.
+###
 
 
 ### Python script used to generate Bash scripts to run on a cluster or locally.
@@ -19,13 +31,13 @@
 ### Other useful commands on the cluster:
 # scancel --user=<your_username>      ->  to cancel all of your jobs (in case you realized there were problems)
 # squeue -u <your_username>           ->  check your running jobs. to count them, you can pipe it to "| wc -l"
-# cost -p                             ->  check how much resources (ie CPU time) we can still use
+# cost -u <your_username>             ->  check how much resources (ie CPU time) we can still use
 
 ### For interactive session:
 # qlogin --account=nn9476k
 
 ### More info:
-# http://www.uio.no/english/services/it/research/hpc/abel/help/user-guide/queue-system.html
+# https://documentation.sigma2.no/quick/saga.html
 #
 # Max 400 submitted jobs per user at any time.
 
@@ -68,7 +80,11 @@ import statistics
 import math
 import sys
 
-EXP_ID = "sql_ext"
+
+
+EXP_ID = "evomaster"
+
+
 
 if len(sys.argv) != 9:
     print(
@@ -123,47 +139,68 @@ else:
     print("ERROR: target folder already exists")
     exit(1)
 
-### We might want to have different settings based on whether we are running the
+### We need different settings based on whether we are running the
 ### scripts on cluster or locally.
 if CLUSTER:
 
     # To ge the SUTs, you need in EMB to run the script "scripts/dist.py" to
     # generate a dist.zip file that you can upload on cluster.
     # Note: the values after the SUT names is multiplicative factor for how long
-    # experiments should be run. For example, all SUTs have similar runtime, but
-    # proxyprint is roughly twice as slow.
+    # experiments should be run.
     # Depending on what experiments you are running, might want to de-select some
-    # of the SUTs (eg, by comment them out)
+    # of the SUTs (eg, by commenting them out)
 
     SUTS = [
-            ("features-service", 1),
-            ("scout-api", 1),
-            ("proxyprint", 2),
-            # ("rest-ncs", 1), #no db
-            # ("rest-scs", 1), #no db
-            ("rest-news", 1),
-            ("catwatch", 1)
-            ]
+        ("features-service", 1),
+        ("scout-api", 2),
+        ("proxyprint", 2),
+        ("rest-ncs", 2),
+        ("rest-scs", 1),
+        ("rest-news", 1),
+        ("catwatch", 1)
+    ]
 
     HOME = os.environ['HOME']
+    EVOMASTER_DIR = HOME
+    CASESTUDY_DIR = HOME + "/dist"
+    LOGS_DIR = os.environ['USERWORK']
 
-    # How to run EvoMaster
-    EVOMASTER = "java  -Xms2G -Xmx4G  -jar evomaster.jar"
-    EVOMASTER_DIR = HOME + "/tools"
-    CASESTUDY_DIR = HOME + "/casestudies/dist"
-    LOGS_DIR = HOME + "/nobackup"
 
 ## Local configurations
 else:
-    SUTS = [("ind0", 1)]
+    # These SUTs requires Docker
+    SUTS = [
+        ("ind0", 1),
+        ("ocvn-rest", 1)
+    ]
 
     # You will need to define environment variables on your OS
+    EVOMASTER_DIR = os.environ.get("EVOMASTER_DIR", "")
+    EMB_DIR = os.environ.get('EMB_DIR',"")
 
-    EVOMASTER = os.environ['EVOMASTER']
-    # CASESTUDY_DIR = os.environ['EMB_DIR']
-    CASESTUDY_DIR = "."
+    if EVOMASTER_DIR == "":
+        raise Exception("You must specify a EVOMASTER_DIR env variable specifying where evomaster.jar can be found")
+
+    if EMB_DIR == "":
+        raise Exception("You must specify a EMB_DIR env variable specifying the '/dist' folder from where EMB repository was cloned")
+
+    CASESTUDY_DIR = EMB_DIR
+
+    if not os.path.exists(CASESTUDY_DIR):
+        raise Exception(CASESTUDY_DIR + " does not exist. Did you run script/dist.py?")
+
+    ind0_package = os.environ.get("SUT_PACKAGE_IND0", "")
+    if ind0_package == "":
+        raise Exception("You cannot run experiments on IND0 without specify target package to cover with SUT_PACKAGE_IND0 env variable")
+
     LOGS_DIR = BASE_DIR
 
+
+# How to run EvoMaster
+EVOMASTER = "java  -Xms2G -Xmx4G  -jar evomaster.jar"
+AGENT = "evomaster-agent.jar"
+EM_POSTFIX = "-evomaster-runner.jar"
+SUT_POSTFIX = "-sut.jar"
 
 if NJOBS < len(SUTS):
     print("ERROR: you need at least one job per SUT, and those are " + str(len(SUTS)))
@@ -180,6 +217,7 @@ TEST_DIR = BASE_DIR + "/tests"
 os.makedirs(TEST_DIR)
 
 ALL_LOGS = LOGS_DIR + "/logs"
+#We might end up generating gigas of log files. So, at each new experiments, we delete previous logs
 shutil.rmtree(ALL_LOGS, ignore_errors=True)
 LOG_DIR = ALL_LOGS + "/" + EXP_ID
 os.makedirs(LOG_DIR)
@@ -192,12 +230,20 @@ CPUS = 3
 
 TIMEOUT_SUT_START_MINUTES = 20
 
+
 if not CLUSTER:
     REPORT_DIR = str(pathlib.PurePath(REPORT_DIR).as_posix())
     SCRIPT_DIR = str(pathlib.PurePath(SCRIPT_DIR).as_posix())
     TEST_DIR = str(pathlib.PurePath(TEST_DIR).as_posix())
     LOG_DIR = str(pathlib.PurePath(LOG_DIR).as_posix())
 
+    #Due to Windows limitations (ie crappy FS), we need to copy JARs over
+    for sut in SUTS:
+        sut_name = sut[0]
+        shutil.copy(os.path.join(CASESTUDY_DIR, sut_name + EM_POSTFIX), BASE_DIR)
+        shutil.copy(os.path.join(CASESTUDY_DIR, sut_name + SUT_POSTFIX), BASE_DIR)
+    shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
+    shutil.copy(os.path.join(EVOMASTER_DIR, "evomaster.jar"), BASE_DIR)
 
 
 def createRunallScript():
@@ -206,9 +252,9 @@ def createRunallScript():
 
     script.write("#!/bin/bash \n\n")
 
-    script.write("DIR=`dirname \"$0\"` \n\n")
+    script.write("cd \"$(dirname \"$0\")\"\n\n")
 
-    script.write("for s in `ls $DIR/scripts/*.sh`; do\n")
+    script.write("for s in `ls scripts/*.sh`; do\n")
     script.write("   echo Going to start $s\n")
     if CLUSTER:
         script.write("   sbatch $s\n")
@@ -255,19 +301,15 @@ def createJobHead(port, sut_name, timeoutMinutes):
     controllerPort = str(port)
     sutPort = str(port + 1)
 
-    EM_POSTFIX = "-evomaster-runner.jar"
-    SUT_POSTFIX = "-sut.jar"
+    em_runner = sut_name + EM_POSTFIX
+    em_sut = sut_name + SUT_POSTFIX
 
     if CLUSTER:
-        em_runner = sut_name + EM_POSTFIX
-        em_sut = sut_name + SUT_POSTFIX
-        agent = "evomaster-agent.jar"
-
         sut_em_path = os.path.join(CASESTUDY_DIR, em_runner)
         sut_jar_path = os.path.join(CASESTUDY_DIR, em_sut)
-        agent_path = os.path.join(CASESTUDY_DIR, agent)
+        agent_path = os.path.join(CASESTUDY_DIR, AGENT)
 
-        script.write("\nmodule load java/jdk1.8.0_112\n\n")
+        script.write("\nmodule load Java/1.8.0_212\n\n")
         script.write("cd $SCRATCH \n")
         script.write("cp " + EVOMASTER_DIR + "/evomaster.jar . \n")
         script.write("cp " + sut_em_path + " . \n")
@@ -275,10 +317,6 @@ def createJobHead(port, sut_name, timeoutMinutes):
         script.write("cp " + agent_path + " . \n")
         script.write("\n")
 
-    else:
-        em_runner = CASESTUDY_DIR + "/" + sut_name + EM_POSTFIX
-        em_sut = CASESTUDY_DIR + "/" + sut_name + SUT_POSTFIX
-        agent = CASESTUDY_DIR + "/evomaster-agent.jar"
 
     script.write("\n")
 
@@ -287,7 +325,7 @@ def createJobHead(port, sut_name, timeoutMinutes):
     params = " " + controllerPort + " " + sutPort + " " + em_sut + " " + str(timeoutStart)
 
     # JVM properties
-    jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+agent
+    jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
 
     command = "java " + jvm + " -jar " + em_runner + " " + params + " > " + sut_log + " 2>&1 &"
 
@@ -399,7 +437,7 @@ def addJobBody(port, sut_name, seed, config, weight):
         timeout = int(math.ceil(1.1 * weight * MINUTES_PER_RUN * 60))
         errorMsg = "ERROR: timeout for " + sut_name
         command = "timeout " +str(timeout) + "  " + command \
-                  + " || ([ $? -eq 124 ] && echo " + errorMsg + ")"
+                  + " || ([ $? -eq 124 ] && echo " + errorMsg + " >> " + em_log + " 2>&1" + ")"
 
     script.write(command + " \n\n")
 
@@ -433,20 +471,20 @@ def createJobs():
 
             for config in CONFIGS:
 
-                    if state.counter == 0:
-                        code = createOneJob(state, sut_name, seed, weight, config)
+                if state.counter == 0:
+                    code = createOneJob(state, sut_name, seed, weight, config)
 
-                    elif (state.counter + weight) < state.perJob \
-                            or not state.hasSpareJobs() or \
-                            (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / weight):
-                        code += addJobBody(state.port, sut_name, seed, config, weight)
-                        state.updateBudget(weight)
+                elif (state.counter + weight) < state.perJob \
+                        or not state.hasSpareJobs() or \
+                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / weight):
+                    code += addJobBody(state.port, sut_name, seed, config, weight)
+                    state.updateBudget(weight)
 
-                    else:
-                        writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
-                        state.resetTmpForNewRun()
-                        code = createOneJob(state, sut_name, seed, weight, config)
-                    completedForSut += 1
+                else:
+                    writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
+                    state.resetTmpForNewRun()
+                    code = createOneJob(state, sut_name, seed, weight, config)
+                completedForSut += 1
 
         if state.opened:
             writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
@@ -464,84 +502,47 @@ def createJobs():
 ### Custom
 ### Following will need to be changed based on what kind of experiments
 ### we want to run.
-### Here, we have an example in which a Configuration is defined by 6 parameters
-### we want to experiment with.
 ############################################################################
 
 
 class Config:
-    def __init__(self, heuristic, direct, maxSqlInitActionsPerMissingData, geneMutationStrategy, secondaryStrategy, bloatControlForSecondaryObjective):
-        self.heuristic = heuristic
-        self.direct = direct
-        self.geneMutationStrategy = geneMutationStrategy
-        self.maxSqlInitActionsPerMissingData = maxSqlInitActionsPerMissingData
-        self.secondaryStrategy = secondaryStrategy
-        self.bloatControlForSecondaryObjective = bloatControlForSecondaryObjective
+    def __init__(self, blackBox, algorithm):
+        self.blackBox = blackBox
+        self.bbExperiments = blackBox
+        self.algorithm = algorithm
+
 
 
 def customParameters(seed, config):
 
     params = ""
 
-    label = str(config.heuristic) + "_" + str(config.direct)
+    label = str(config.blackBox)
 
     ### Custom for these experiments
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-    params += " --heuristicsForSQL=" + str(config.heuristic)
-    params += " --generateSqlDataWithSearch=" + str(config.direct)
-    params += " --geneMutationStrategy=" + str(config.geneMutationStrategy)
-    params += " --maxSqlInitActionsPerMissingData=" + str(config.maxSqlInitActionsPerMissingData)
-    params += " --secondaryObjectiveStrategy=" + str(config.secondaryStrategy)
-    params += " --bloatControlForSecondaryObjective=" + str(config.bloatControlForSecondaryObjective)
+    params += " --blackBox=" + str(config.blackBox)
+    params += " --bbExperiments=" + str(config.blackBox)
+    params += " --algorithm=" + str(config.algorithm)
 
     return params
 
 
 def getConfigs():
-    N1 = "ONE_OVER_N"
-    Nb = "ONE_OVER_N_BIASED_SQL"
-
-    Savg = "AVG_DISTANCE"
-    San = "AVG_DISTANCE_SAME_N_ACTIONS"
-    Smin = "BEST_MIN"
-
-    GENE_STRATEGIES = [N1, Nb]
-    SECONDARY_STRATEGIES = [Savg, San, Smin]
-    Ns = [1,3,5]
-
-    Bs = [True, False]
 
     # array of configuration objects. We will run experiments for each of
     # these configurations
     CONFIGS = []
 
-    if CLUSTER:
-        CONFIGS.append(Config(False, False, 1, N1, Savg, False))
-
-        for s in SECONDARY_STRATEGIES:
-            for b in Bs:
-                CONFIGS.append(Config(True, False, 1, N1, s, b))
-
-        for g in GENE_STRATEGIES:
-            for n in Ns:
-                CONFIGS.append(Config(True, True, n, g, San, False))
-
-#         for s in SECONDARY_STRATEGIES:
-#             for g in GENE_STRATEGIES:
-#                 for n in Ns:
-#                     for b in Bs:
-#                         CONFIGS.append(Config(True, True, n, g, s, b))
-
-        # CONFIGS.append(Config(True, False, 1, N1, Smin, True))
-        # CONFIGS.append(Config(True, True, 1, Nb, Smin, True))
-
-    else:
-        CONFIGS.append(Config(False, False, 1, N1, Savg, False))
-        CONFIGS.append(Config(True, True, 1, Nb, Smin, True))
+    CONFIGS.append(Config(True, "RANDOM"))
+    CONFIGS.append(Config(False, "MIO"))
 
     return CONFIGS
 
 
+############################################################################
+#### END of custom configurations
+############################################################################
 
 
 

@@ -7,6 +7,9 @@ import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import java.net.MalformedURLException
+import java.net.URL
+import java.util.regex.Pattern
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -103,16 +106,19 @@ class EMConfig {
             val text = cfg.description.trim().run {
                 when {
                     isBlank() -> "No description."
-                    !endsWith(".") -> this + "."
+                    !endsWith(".") -> "$this."
                     else -> this
                 }
             }
 
             val min = (m.annotations.find { it is Min } as? Min)?.min
             val max = (m.annotations.find { it is Max } as? Max)?.max
+            val probability = m.annotations.find { it is Probability }
+            val url = m.annotations.find { it is Url }
+            val regex = (m.annotations.find { it is Regex } as? Regex)?.regex
 
             var constraints = ""
-            if (min != null || max != null) {
+            if (min != null || max != null || probability!=null || url!=null || regex!=null) {
                 constraints += " [Constraints: "
                 if (min != null) {
                     constraints += "min=$min"
@@ -120,6 +126,15 @@ class EMConfig {
                 if (max != null) {
                     if (min != null) constraints += ", "
                     constraints += "max=$max"
+                }
+                if(probability != null){
+                    constraints += "probability 0.0-1.0"
+                }
+                if(url != null){
+                    constraints += "URL"
+                }
+                if(regex != null){
+                    constraints += "regex $regex"
                 }
                 constraints += "]."
             }
@@ -236,14 +251,34 @@ class EMConfig {
                             " parameter '${m.name}' with value $parameterValue. The value must be in [0,1].")
                 }
             }
+
+            m.annotations.find { it is Url }?.also {
+                if(! parameterValue.isNullOrBlank()){
+                    try {
+                        URL(parameterValue)
+                    }catch (e: MalformedURLException){
+                        throw IllegalArgumentException("Parameter '${m.name}' with value $parameterValue is" +
+                                " not a valid URL: ${e.message}")
+                    }
+                }
+            }
+
+            m.annotations.find { it is Regex }?.also {
+                it as Regex
+                if(! parameterValue.matches(kotlin.text.Regex(it.regex))){
+                    throw IllegalArgumentException("Parameter '${m.name}' with value $parameterValue is" +
+                            " not matching the regex: ${it.regex}")
+                }
+            }
         }
 
         when(stoppingCriterion){
             StoppingCriterion.TIME -> if(maxActionEvaluations != defaultMaxActionEvaluations){
                 throw IllegalArgumentException("Changing number of max actions, but stopping criterion is time")
             }
-            StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds){
-                throw IllegalArgumentException("Changing number of max seconds, but stopping criterion is based on fitness evaluations")
+            StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds ||
+                    maxTime != defaultMaxTime){
+                throw IllegalArgumentException("Changing max time, but stopping criterion is based on fitness evaluations")
             }
         }
 
@@ -293,9 +328,6 @@ class EMConfig {
         }
 
         if(blackBox && ! bbExperiments){
-            if(bbTargetUrl.isNullOrBlank()){
-                throw IllegalArgumentException("In black-box mode, you need to set the bbTargetUrl option")
-            }
             if(problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()){
                 throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
             }
@@ -363,6 +395,14 @@ class EMConfig {
     @Target(AnnotationTarget.PROPERTY)
     @MustBeDocumented
     annotation class Max(val max: Double)
+
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Url
+
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Regex(val regex: String)
 
 
     /**
@@ -484,14 +524,28 @@ class EMConfig {
     var maxActionEvaluations = defaultMaxActionEvaluations
 
 
-    val defaultMaxTimeInSeconds = 60
+    val defaultMaxTimeInSeconds = 0
 
     @Cfg("Maximum number of seconds allowed for the search." +
             " The more time is allowed, the better results one can expect." +
             " But then of course the test generation will take longer." +
-            " Only applicable depending on the stopping criterion.")
-    @Min(1.0)
+            " Only applicable depending on the stopping criterion." +
+            " If this value is 0, the setting 'maxTime' will be used instead.")
+    @Min(0.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
+
+
+    val defaultMaxTime = "60s"
+
+    @Cfg("Maximum amount of time allowed for the search. "+
+            " The more time is allowed, the better results one can expect." +
+            " But then of course the test generation will take longer." +
+            " Only applicable depending on the stopping criterion." +
+            " The time is expressed with a string where hours(h), minutes(m) and" +
+            " seconds(s) can be specified, e.g., '1h10m120s' and '72m' are both valid" +
+            " and equivalent.")
+    @Regex("( *)((?=([^ ]+))(\\d+h)?(\\d+m)?(\\d+s)?)( *)")
+    var maxTime = defaultMaxTime
 
 
     @Cfg("Whether or not writing statistics of the search process. " +
@@ -813,19 +867,72 @@ class EMConfig {
     var baseTaintAnalysisProbability = 0.9
 
 
-    @Experimental
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
     var blackBox = false
 
-    @Experimental
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached")
+    @Url
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
+            "If this is missing, the URL will be inferred from Swagger.")
     var bbTargetUrl: String = ""
 
-    @Experimental
+    @Url
     @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can downloaded from")
     var bbSwaggerUrl: String = ""
 
-    @Experimental
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
+
+    @Experimental
+    @Cfg("Specify whether to export covered targets info")
+    var exportCoveredTarget = false
+
+    @Experimental
+    @Cfg("Specify a file which saves covered targets info regarding generated test suite")
+    var coveredTargetFile = "coveredTargets.txt"
+
+    @Experimental
+    @Cfg("Specify a format to organize the covered targets by the search")
+    var coveredTargetSortedBy = SortCoveredTargetBy.NAME
+
+    enum class SortCoveredTargetBy{
+        /**
+         * sorted by ids of targets alphabetically
+         */
+        NAME,
+        /**
+         * grouped by tests and sorted by index of tests.
+         * it may help to analyze the individuals regarding different strategies.
+         */
+        TEST
+        /**
+         * there might be other options, e.g., based on class,
+         * but we need to follow rules to encode and decode regarding id.
+         */
+    }
+
+
+    fun timeLimitInSeconds() : Int{
+        if( maxTimeInSeconds > 0){
+            return maxTimeInSeconds
+        }
+
+        val h = maxTime.indexOf('h')
+        val m = maxTime.indexOf('m')
+        val s = maxTime.indexOf('s')
+
+        val hours = if(h >= 0){
+            maxTime.subSequence(0, h).toString().trim().toInt()
+        } else 0
+
+        val minutes = if(m >=0 ){
+            maxTime.subSequence( if(h>=0) h+1 else 0, m).toString().trim().toInt()
+        } else 0
+
+        val seconds = if(s >=0){
+            maxTime.subSequence( if(m>=0) m+1 else (if(h>=0) h+1 else 0), s).toString().trim().toInt()
+        } else 0
+
+        return (hours * 60 * 60) + (minutes * 60) + seconds
+    }
+
 }

@@ -90,10 +90,8 @@ public abstract class ExternalSutController extends SutController {
     public abstract String getLogMessageOfInitializedServer();
 
     /**
-     * How long (in seconds) we should wait at most to check if SUT is ready
+     * @return how long (in seconds) we should wait at most to check if SUT is ready
      * and initialized (this related to the getLogMessageOfInitializedServer() method)
-     *
-     * @return
      */
     public abstract long getMaxAwaitForInitializationInSeconds();
 

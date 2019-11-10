@@ -7,7 +7,7 @@ public interface SequenceDsl {
      *
      * @param tableName the target table in the DB
      * @param id an id for this insertion. Can be null.
-     * @return
+     * @return a statement in which it can be specified the values to add
      */
     StatementDsl insertInto(String tableName, Long id);
 
@@ -15,7 +15,7 @@ public interface SequenceDsl {
      * An insertion operation on the SQL Database (DB)
      *
      * @param tableName the target table in the DB
-     * @return
+     * @return a statement in which it can be specified the values to add
      */
     default StatementDsl insertInto(String tableName){
         return insertInto(tableName, null);

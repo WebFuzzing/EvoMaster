@@ -1,0 +1,128 @@
+# Release Procedure
+
+Here it is described the list of steps on how to make a new release for `EvoMaster`.
+However, a new release of `EvoMaster` should be done only by the project manager.
+
+In the following, with `???` we refer to secrets (e.g., passwords).
+
+## Pre-requisites
+
+In your local `~/.m2` Maven repository, you need to create a `settings.xml` file with the following:
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0" 
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+<servers>
+<server>
+      <id>ossrh</id>
+      <username>???</username>
+      <password>???</password>
+    </server>
+</servers>
+</settings>
+```
+
+The username and password are linked to the account that own the domain `evomaster.org`.
+
+You need to have installed `GPG` on your machine (used to sign files).
+Create a public-private keyset with:
+```
+gpg --gen-key
+```
+
+You can list the generated key with:
+```
+gpg --list-secret
+```
+
+Upload the public key with:
+```
+gpg --keyserver hkp://hkps.pool.sks-keyservers.net:80 --send-keys  ???
+```
+
+
+## Maven Central Release
+
+The Java client needs to be deployed on Maven Central. 
+First, you need to set a new version number for the new release.
+We use semantic versioning `x.y.z`: `x` for major releases, `y` for minor releases, and 
+`z` for patches.
+Note: as long as we are on `x=0`, we do not guarantee backward compatibility on new `0.y.z` releases.
+
+Given a current snapshot version `0.3.1-SNAPSHOT`, a new release could be `0.4.0`, i.e.,
+increase minor version `y` by 1, and reset patch version `z` to 0.
+
+To change the version on all `pom.xml` files at once, from project root folder run:
+```
+mvn versions:set -DnewVersion=x.y.z
+```
+
+where `x.y.z` should be substituted with the actual version number, e.g., `0.4.0`.
+
+From project root  folder, execute:
+```
+mvn  -N -Pdeployment -DskipTests  deploy
+cd client-java
+mvn clean -Pdeployment -DskipTests  deploy
+```
+
+If everything went well, you should be able to see the deployed files at
+[https://oss.sonatype.org/](). 
+However, it might take some hours before those are in sync with Maven Central,
+which you can check at [https://search.maven.org/]().
+
+
+## GitHub Release
+
+Push the version changes in the `pom.xml` files on Git.
+Build the whole `EvoMaster` from project root folder with:
+```
+mvn clean package -DskipTests
+``` 
+
+Make sure to use `package` and __NOT__ `install`.
+From the [release](https://github.com/EMResearch/EvoMaster/releases) page
+on GitHub, create a new release.
+It needs to be tagged, with `v` prefix, e.g., `v0.4.0`.
+On GitHub, upload the `core/target/evomaster.jar` executable as part of the release 
+(there should be an option for _attaching binaries_).
+
+
+## SNAPSHOT Update
+
+Once `EvoMaster` is released on both Maven Central and GitHub, you need to prepare
+the next snapshot version, which will have the same version with `z+1` and suffix
+`-SNAPSHOT`, e.g, given `0.4.0`, the following snapshot version would 
+be `0.4.1-SNAPSHOT`.
+
+
+## EMB Release
+
+After completing the release of a new version of `EvoMaster`, you need to make a new
+release for [https://github.com/EMResearch/EMB]() as well.
+The two repositories __MUST__ have their version numbers aligned.
+
+You need to update all `pom.xml` files with the same:
+```
+mvn versions:set -DnewVersion=x.y.z
+```  
+
+However, there are some other places in which the version number needs to be updated as well:
+
+* in the `<evomaster-version>` variable in the root `pom.xml` project file.
+* in the `EVOMASTER_VERSION` variable in the `scripts/dist.py` script file.
+* in all the case study `pom.xml` files where the `evomaster-client-database-spy`
+dependency is used (until we automate this task with a script, you will need to search
+for those dependencies manually from your IDE).
+
+Once those changes are pushed, create a new [release](https://github.com/EMResearch/EMB/releases) 
+on GitHub.
+Tag it with the same version as `EvoMaster`, but no need to attach/upload any file.
+
+After this is done, update to a new SNAPSHOT version, by replacing __ALL__ the 
+occurrences of the release version in the project (e.g., all `pom.xml` and 
+`dist.py` files).  
+
+
+

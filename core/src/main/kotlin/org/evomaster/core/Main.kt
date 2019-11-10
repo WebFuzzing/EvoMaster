@@ -5,6 +5,7 @@ import com.google.inject.Key
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.client.java.controller.api.dto.ControllerInfoDto
+import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.AnsiColor.Companion.inBlue
 import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
@@ -150,6 +151,8 @@ class Main {
 
             writeStatistics(injector, solution)
 
+            writeCoveredTargets(injector, solution)
+
             writeTests(injector, solution, controllerInfo)
 
             val config = injector.getInstance(EMConfig::class.java)
@@ -163,15 +166,28 @@ class Main {
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
                 info("Passed time (seconds): ${stc.getElapsedSeconds()}")
-                info("Covered targets: ${solution.overall.coveredTargets()}")
-                info("Potential faults: ${faults.size}")
 
-                // Can add back for debugging. Anyway, would be in the generated tests
-                //faults.sorted().forEach{ info(inRed("Fault: ${IdMapper.faultInfo(it)}"))}
+                if(!config.blackBox || config.bbExperiments) {
+                    val rc = injector.getInstance(RemoteController::class.java)
+                    val unitsInfo = rc.getSutInfo()?.unitsInfoDto
+
+                    if(unitsInfo != null) {
+                        val units = unitsInfo.unitNames.size
+                        val totalLines = unitsInfo.numberOfLines
+                        val coveredLines = solution.overall.coveredTargets(ObjectiveNaming.LINE, idMapper)
+                        val percentage = String.format("%.0f", (coveredLines / totalLines.toDouble()) * 100)
+
+                        info("Covered targets (lines, branches, faults, etc.): ${solution.overall.coveredTargets()}")
+                        info("Potential faults: ${faults.size}")
+                        info("Bytecode line coverage: $percentage% ($coveredLines out of $totalLines in $units units/classes)")
+                    } else {
+                        warn("Failed to retrieve SUT info")
+                    }
+                }
 
                 if (config.stoppingCriterion == EMConfig.StoppingCriterion.TIME &&
-                        config.maxTimeInSeconds == config.defaultMaxTimeInSeconds) {
-                    info(inGreen("To obtain better results, use the '--maxTimeInSeconds' option" +
+                        config.maxTime == config.defaultMaxTime) {
+                    info(inGreen("To obtain better results, use the '--maxTime' option" +
                             " to run the search for longer"))
                 }
             }
@@ -281,7 +297,7 @@ class Main {
 
             val config = injector.getInstance(EMConfig::class.java)
 
-            if(config.blackBox){
+            if(config.blackBox && !config.bbExperiments){
                 return null
             }
 
@@ -386,6 +402,22 @@ class Main {
 
             val am = injector.getInstance(ArchiveMutator::class.java)
             am.exportImpacts(solution)
+        }
+
+        /**
+         * save covered target info
+         * info is designed for experiment analysis
+         */
+        private fun writeCoveredTargets(injector: Injector, solution: Solution<*>) {
+
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.exportCoveredTarget) {
+                return
+            }
+
+            val statistics = injector.getInstance(Statistics::class.java)
+            statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
     }
 }

@@ -42,6 +42,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
 
         //individual.enforceCoherence()
 
+        val cookies = getCookies(individual)
+
         val fv = FitnessValue(individual.size().toDouble())
 
         val actionResults: MutableList<ActionResult> = mutableListOf()
@@ -68,7 +70,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 var ok = false
 
                 if (a is RestCallAction) {
-                    ok = handleRestCall(a, actionResults, chainState)
+                    ok = handleRestCall(a, actionResults, chainState, cookies)
                     /*
                     update creation of resources regarding response status
                      */
