@@ -58,7 +58,7 @@ class ExpectationsWriter {
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
         when{
-            format.isKotlin() -> lines.add("val json_$name: JsonPath = ")
+            format.isKotlin() -> lines.add("val json_$name: JsonPath = $name")
             format.isJava() -> lines.add("JsonPath json_$name = $name")
         }
 
