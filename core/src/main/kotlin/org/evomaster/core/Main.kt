@@ -176,7 +176,7 @@ class Main {
 
                         info("Covered targets (lines, branches, faults, etc.): ${solution.overall.coveredTargets()}")
                         info("Potential faults: ${faults.size}")
-                        info("Line coverage: $percentage% ($coveredLines out of $totalLines in $units units/classes)")
+                        info("Bytecode line coverage: $percentage% ($coveredLines out of $totalLines in $units units/classes)")
                     } else {
                         warn("Failed to retrieve SUT info")
                     }

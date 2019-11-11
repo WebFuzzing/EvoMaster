@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import kotlin.system.measureTimeMillis
 
 
 abstract class FitnessFunction<T>  where T : Individual {
@@ -37,7 +38,13 @@ abstract class FitnessFunction<T>  where T : Individual {
      * @return [null] if there were problems in calculating the coverage
      */
     fun calculateCoverage(individual: T) : EvaluatedIndividual<T>?{
-        var ei = doCalculateCoverage(individual)
+
+        val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+
+        var ei = time.measureTimeMillis(
+                {time.reportExecutedIndividualTime(it, a)},
+                {doCalculateCoverage(individual)}
+        )
         processMonitor.eval = ei
 
         if(ei == null){
@@ -46,7 +53,10 @@ abstract class FitnessFunction<T>  where T : Individual {
                 it is not impossible that sometimes things fail
              */
             reinitialize()
-            ei = doCalculateCoverage(individual)
+            ei = time.measureTimeMillis(
+                    {time.reportExecutedIndividualTime(it, a)},
+                    {doCalculateCoverage(individual)}
+            )
 
             if(ei == null){
                 //give up, but record it
@@ -54,13 +64,15 @@ abstract class FitnessFunction<T>  where T : Individual {
             }
         }
 
-        val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+
 
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
 
         return ei
     }
+
+
 
     /**
      * @return [null] if there were problems in calculating the coverage
