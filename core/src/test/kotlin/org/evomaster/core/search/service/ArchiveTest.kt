@@ -2,7 +2,6 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Injector
 import com.google.inject.Key
-import com.google.inject.Module
 import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
@@ -20,6 +19,7 @@ class ArchiveTest{
     private lateinit var archive: Archive<OneMaxIndividual>
     private lateinit var ff : OneMaxFitness
     private lateinit var config: EMConfig
+    private lateinit var randomness: Randomness
 
     @BeforeEach
     fun init(){
@@ -33,6 +33,8 @@ class ArchiveTest{
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
+
+        randomness = injector.getInstance(Randomness::class.java)
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
     }
@@ -395,6 +397,55 @@ class ArchiveTest{
                 .distinct()
         assertEquals(1, scores.size)
         assertEquals(2.0, scores.first(), 0.001)
+    }
+
+    @Test
+    fun testCoveredTargets(){
+
+        val notCovered = listOf(0.0, 0.25, 0.5, 0.75)
+
+        (0 until 50).forEach { _ ->
+            val b = OneMaxIndividual(2)
+            b.setValue(0, randomness.choose(notCovered))
+            archive.addIfNeeded(ff.calculateCoverage(b)!!)
+            assertFalse(archive.isCovered(0))
+        }
+
+        val a = OneMaxIndividual(2)
+        a.setValue(0, 1.0)
+        archive.addIfNeeded(ff.calculateCoverage(a)!!)
+
+        assertTrue(archive.isCovered(0))
+
+        var sizes = (1..50).map { archive.sampleIndividual() }
+                .map{ind -> ind.individual.size()}
+                .distinct()
+
+        assertEquals(1, sizes.size)
+        assertEquals(2, sizes.first())
+
+        (0 until 50).forEach { _ ->
+            val b = OneMaxIndividual(2)
+            b.setValue(0, randomness.choose(notCovered))
+            archive.addIfNeeded(ff.calculateCoverage(b)!!)
+            //if a target is covered, it should be always covered afterwards
+            assertTrue(archive.isCovered(0))
+        }
+
+        //regarding a covered target, when a better individual appears, it should replace current individual
+        val better = OneMaxIndividual(1)
+        better.setValue(0, 1.0)
+        archive.addIfNeeded(ff.calculateCoverage(better)!!)
+
+        assertTrue(archive.isCovered(0))
+
+        sizes = (1..50).map { archive.sampleIndividual() }
+                .map{ind -> ind.individual.size()}
+                .distinct()
+
+        assertEquals(1, sizes.size)
+        assertEquals(1, sizes.first())
+
     }
 }
 
