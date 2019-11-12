@@ -13,6 +13,7 @@ import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 
 
 class ArchiveTest{
@@ -20,6 +21,7 @@ class ArchiveTest{
     private lateinit var archive: Archive<OneMaxIndividual>
     private lateinit var ff : OneMaxFitness
     private lateinit var config: EMConfig
+    private lateinit var randomness: Randomness
 
     @BeforeEach
     fun init(){
@@ -33,6 +35,8 @@ class ArchiveTest{
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
+
+        randomness = injector.getInstance(Randomness::class.java)
 
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
     }
@@ -396,5 +400,26 @@ class ArchiveTest{
         assertEquals(1, scores.size)
         assertEquals(2.0, scores.first(), 0.001)
     }
+
+    @Test
+    fun testCoveredTargets(){
+
+        val a = OneMaxIndividual(1)
+        a.setValue(0, 1.0)
+        archive.addIfNeeded(ff.calculateCoverage(a)!!)
+
+        assertTrue(archive.isCovered(0))
+
+        val list = listOf(0.0, 0.25, 0.5, 0.75, 1.0)
+
+        (0 until 100).forEach { _ ->
+            val b = OneMaxIndividual(1)
+            b.setValue(0, randomness.choose(list))
+            archive.addIfNeeded(ff.calculateCoverage(b)!!)
+            // if a target is covered, it should be always covered afterwards
+            assertTrue(archive.isCovered(0))
+        }
+    }
+
 }
 
