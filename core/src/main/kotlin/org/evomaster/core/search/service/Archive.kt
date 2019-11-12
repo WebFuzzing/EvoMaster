@@ -386,10 +386,10 @@ class Archive<T> where T : Individual {
 
             val limit = apc.getArchiveTargetLimit()
 
-            /**
+            /*
              individual can be added only if the target k is not covered.
              If a target is covered and a 'better'(e.g., shorter) individual appears,
-             it would be handled as replacement, see line 404
+             it would be handled as replacement.
              */
             if (!isCovered(k) && current.size < limit) {
                 //we have space in the buffer, regardless of fitness
