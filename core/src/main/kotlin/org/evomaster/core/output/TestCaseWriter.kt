@@ -64,6 +64,7 @@ class TestCaseWriter {
                 && ::swagger.isInitialized){
             objGenerator.setSwagger(swagger)
             partialOracles.setGenerator(objGenerator)
+            partialOracles.setFormat(format)
             expectationsWriter.setSwagger(swagger)
             expectationsWriter.setPartialOracles(partialOracles)
         }
@@ -396,7 +397,10 @@ class TestCaseWriter {
 
         //finally, handle the last line(s)
         if(configuration.expectationsActive){
-            expectationsWriter.handleGenericLastLine(call, res, lines, counter)
+            handleGenericLastLine(call, res, lines, counter)
+
+            previousChained = res.getHeuristicsForChainedLocation()
+            if(previousChained) previousId = "id_$counter"
             counter++
         }
         else {
@@ -819,5 +823,38 @@ class TestCaseWriter {
 
     fun setSwagger(sw: Swagger){
         swagger = sw
+    }
+
+    fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int){
+        if(format.isJava()) {lines.append(";")}
+        lines.deindent(2)
+
+        if (call.saveLocation && !res.stopping){
+
+            var extract: String = ""
+            val baseUri: String = if (call.locationId != null) {
+                locationVar(call.locationId!!)
+            } else {
+                call.path.resolveOnlyPath(call.parameters)
+            }
+            if (!res.getHeuristicsForChainedLocation()){
+                extract = "call_$counter.extract().header(\"location\")"
+                lines.add("${locationVar(call.path.lastElement())} = $extract")
+                appendSemicolon(lines)
+            }
+            else {
+                val extraTypeInfo = when {
+                    format.isKotlin() -> "<Object>"
+                    else -> ""
+                }
+                extract = "call_$counter.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                when {
+                    format.isJava() -> lines.add("String id_$counter = $extract")
+                    format.isKotlin() -> lines.add("val id_$counter: String = $extract")
+                }
+                lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter")
+                appendSemicolon(lines)
+            }
+        }
     }
 }

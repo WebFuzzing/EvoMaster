@@ -50,11 +50,6 @@ class ExpectationsWriter {
         lines.append("given()$header")
     }
 
-    fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int){
-        if(format.isJava()) {lines.append(";")}
-        lines.deindent(2)
-    }
-
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
         when{

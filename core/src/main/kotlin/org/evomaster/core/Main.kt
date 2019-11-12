@@ -138,7 +138,11 @@ class Main {
 
             val controllerInfo = checkState(injector)
 
+            val config = injector.getInstance(EMConfig::class.java)
+            val idMapper = injector.getInstance(IdMapper::class.java)
+
             val solution = run(injector)
+            val faults = solution.overall.potentialFoundFaults(idMapper)
 
             writeOverallProcessData(injector)
 
@@ -152,10 +156,7 @@ class Main {
 
             writeTests(injector, solution, controllerInfo)
 
-            val config = injector.getInstance(EMConfig::class.java)
-            val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val faults = solution.overall.potentialFoundFaults(idMapper)
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)

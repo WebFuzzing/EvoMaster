@@ -87,7 +87,7 @@ class PartialOracles {
 
                     when {
                         format.isJava() -> lines.add(".that($oracleName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap(\"\").keySet()))")
-                        format.isKotlin() -> lines.add(".that($oracleName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap<Any, Any>(\"\").keys))")
+                        format.isKotlin() -> lines.add(".that($oracleName, listOf<Any>($referenceOptionalKeys).containsAll(json_$name.getMap<Any, Any>(\"\").keys))")
                     }
 
                 }
