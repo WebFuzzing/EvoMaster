@@ -415,14 +415,19 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
                 }
 
-        /*
-            TODO: This only considers the first in the list of produced responses
-            This is fine for endpoints that only produce one type of response.
-            Could be a problem in future
-        */
-        val produces = a.produces.first()
 
-        val builder = client.target(fullUri).request(produces)
+        val builder = if(a.produces.isEmpty()){
+            log.debug("No 'produces' type defined for {}", path)
+            client.target(fullUri).request("*/*")
+
+        } else {
+            /*
+                TODO: This only considers the first in the list of produced responses
+                This is fine for endpoints that only produce one type of response.
+                Could be a problem in future
+            */
+            client.target(fullUri).request(a.produces.first())
+        }
 
         a.auth.headers.forEach {
             builder.header(it.name, it.value)

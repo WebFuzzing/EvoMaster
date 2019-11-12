@@ -110,4 +110,23 @@ internal class RestActionBuilderTest {
             assertEquals(3, parameters.size)
         }
     }
+
+
+    @Test
+    fun testApisGuru() {
+
+        val actions = loadAndAssertActions("/swagger/apisguru/apis.guru.json", 2)
+
+        actions.values
+                .filterIsInstance<RestCallAction>()
+                .forEach {
+                    assertEquals(2, it.produces.size)
+                    assertTrue(it.produces.any{ p -> p.contains("application/json")})
+                }
+    }
+
+    @Test
+    fun testGreenPeace() {
+        loadAndAssertActions("/swagger/apisguru/greenpeace.org.json", 6)
+    }
 }
