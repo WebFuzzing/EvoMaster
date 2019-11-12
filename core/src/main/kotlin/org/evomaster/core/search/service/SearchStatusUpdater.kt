@@ -39,8 +39,6 @@ class SearchStatusUpdater : SearchListener{
 
     private val r = String(byteArrayOf(0xF0.toByte(), 0x9F.toByte(), 0x8C.toByte(), 0x88.toByte()), utf8)
 
-    private val consumedMessage = "* Consumed search budget:"
-
     private var first = true
 
     /*
@@ -85,8 +83,14 @@ class SearchStatusUpdater : SearchListener{
                 upLineAndErase()
             }
 
+            val avgTimeAndSize = time.computeExecutedIndividualTimeStatistics()
+            val avgTime = String.format("%.1f", avgTimeAndSize.first)
+            val avgSize = String.format("%.1f",avgTimeAndSize.second)
+
             upLineAndErase()
-            println("$consumedMessage $passed%, covered targets: $coverage")
+            println("* Consumed search budget: $passed%;" +
+                    " covered targets: $coverage;" +
+                    " time per test: ${avgTime}ms ($avgSize actions)")
 
             if(config.e_u1f984){
                 updateExtra()

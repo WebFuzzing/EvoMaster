@@ -354,7 +354,7 @@ class Archive<T> where T : Individual {
             sortAndShrinkIfNeeded(current, k)
 
             /*
-                as the population are internally sorted by fitness, the indivdidual
+                as the population are internally sorted by fitness, the individual
                 at position [0] would be the worst
              */
             val currh = current[0].fitness.getHeuristic(k)
@@ -385,7 +385,13 @@ class Archive<T> where T : Individual {
             }
 
             val limit = apc.getArchiveTargetLimit()
-            if (current.size < limit) {
+
+            /*
+             individual can be added only if the target k is not covered.
+             If a target is covered and a 'better'(e.g., shorter) individual appears,
+             it would be handled as replacement.
+             */
+            if (!isCovered(k) && current.size < limit) {
                 //we have space in the buffer, regardless of fitness
                 current.add(copy)
                 added = true

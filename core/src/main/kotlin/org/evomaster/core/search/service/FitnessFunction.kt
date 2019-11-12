@@ -40,9 +40,14 @@ abstract class FitnessFunction<T>  where T : Individual {
      */
     fun calculateCoverage(individual: T, targetIds: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
 
+        val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+
         val ids = if (targetIds.isEmpty()) defaultTargetForCoverageCalculation() else targetIds
 
-        var ei = doCalculateCoverage(individual, ids)
+        var ei = time.measureTimeMillis(
+                {time.reportExecutedIndividualTime(it, a)},
+                {doCalculateCoverage(individual, ids)}
+        )
         processMonitor.eval = ei
 
         if(ei == null){
@@ -51,7 +56,10 @@ abstract class FitnessFunction<T>  where T : Individual {
                 it is not impossible that sometimes things fail
              */
             reinitialize()
-            ei = doCalculateCoverage(individual, ids)
+            ei = time.measureTimeMillis(
+                    {time.reportExecutedIndividualTime(it, a)},
+                    {doCalculateCoverage(individual, ids)}
+            )
 
             if(ei == null){
                 //give up, but record it
@@ -59,13 +67,15 @@ abstract class FitnessFunction<T>  where T : Individual {
             }
         }
 
-        val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
+
 
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
 
         return ei
     }
+
+
 
     /**
      * @return [null] if there were problems in calculating the coverage

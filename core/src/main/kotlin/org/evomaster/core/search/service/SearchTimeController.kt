@@ -2,6 +2,7 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import java.util.*
 
 /**
  * Class used to keep track of passing of time during the search.
@@ -31,6 +32,8 @@ class SearchTimeController {
 
     private var startTime = 0L
 
+    private val executedIndividualTime : Queue<Pair<Long,Int>> = ArrayDeque(100)
+
     private val listeners = mutableListOf<SearchListener>()
 
     fun startSearch(){
@@ -40,6 +43,39 @@ class SearchTimeController {
 
     fun addListener(listener: SearchListener){
         listeners.add(listener)
+    }
+
+    fun reportExecutedIndividualTime(ms: Long, nActions: Int){
+
+        executedIndividualTime.add(Pair(ms, nActions))
+        if(executedIndividualTime.size > 100){
+            executedIndividualTime.poll()
+        }
+    }
+
+    /**
+     * From https://proandroiddev.com/measuring-execution-times-in-kotlin-460a0285e5ea
+     */
+    inline fun <T> measureTimeMillis(loggingFunction: (Long) -> Unit,
+                                    function: () -> T): T {
+
+        val startTime = System.currentTimeMillis()
+        val result: T = function.invoke()
+        loggingFunction.invoke(System.currentTimeMillis() - startTime)
+
+        return result
+    }
+
+    fun computeExecutedIndividualTimeStatistics() : Pair<Double,Double>{
+
+        if(executedIndividualTime.isEmpty()){
+            return Pair(0.0, 0.0)
+        }
+
+        return Pair(
+                executedIndividualTime.map{it.first}.average(),
+                executedIndividualTime.map{it.second}.average()
+        )
     }
 
     fun newIndividualEvaluation() {

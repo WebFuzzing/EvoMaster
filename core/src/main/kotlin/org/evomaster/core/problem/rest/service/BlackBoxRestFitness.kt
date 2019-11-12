@@ -1,9 +1,11 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.inject.Inject
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -17,9 +19,21 @@ class BlackBoxRestFitness : RestFitness() {
         private val log: Logger = LoggerFactory.getLogger(BlackBoxRestFitness::class.java)
     }
 
+    @Inject(optional = true)
+    private lateinit var rc: RemoteController
 
 
     override fun doCalculateCoverage(individual: RestIndividual, targetIds : Set<Int>): EvaluatedIndividual<RestIndividual>? {
+
+        if(config.bbExperiments){
+            /*
+                If we have a controller, we MUST reset the SUT at each test execution.
+                This is to avoid memory leaks in the dat structures used by EM.
+                Eg, this was a huge problem for features-service with AdditionalInfo having a
+                memory leak
+             */
+            rc.resetSUT()
+        }
 
         val fv = FitnessValue(individual.size().toDouble())
 
