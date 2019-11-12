@@ -30,16 +30,17 @@ class TestSuiteWriterTest{
                 .withModules(BaseModule())
                 .build().createInjector()
 
-        val solution = Solution<RestIndividual>(
-                FitnessValue(0.0),
-                mutableListOf()
-                )
-
         val config = injector.getInstance(EMConfig::class.java)
         config.createTests = true
         config.outputFormat = OutputFormat.KOTLIN_JUNIT_5
         config.outputFolder = "$baseTargetFolder/empty_suite"
         config.testSuiteFileName = "Foo_testEmptySuite"
+
+        val solution = Solution<RestIndividual>(
+                mutableListOf(),
+                config.testSuiteFileName
+        )
+
 
         //make sure we delete any existing folder from previous test runs
         val srcFolder = File(config.outputFolder)

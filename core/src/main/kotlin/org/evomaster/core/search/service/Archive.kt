@@ -85,18 +85,15 @@ class Archive<T> where T : Individual {
             we want to avoiding it counting it several times.
          */
         val uniques = mutableSetOf<EvaluatedIndividual<T>>()
-        val overall = FitnessValue(0.0)
 
         populations.entries.forEach { e ->
             if (isCovered(e.key)) {
                 val ind = e.value[0]
                 uniques.add(ind)
-                overall.coverTarget(e.key)
-                overall.size += ind.individual.size()
             }
         }
 
-        return Solution(overall, uniques.toMutableList())
+        return Solution(uniques.toMutableList(), config.testSuiteFileName)
     }
 
 
