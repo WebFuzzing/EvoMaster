@@ -41,7 +41,7 @@ class RestCallAction(
          * path coming from a previous POST
          */
         var locationId: String? = null,
-        var produces: List<String> = listOf()
+        val produces: List<String> = listOf()
 ) : RestAction {
 
     /**
