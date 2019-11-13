@@ -48,7 +48,7 @@ class TestSuiteWriter {
             controllerName: String?
     ) {
 
-        val name = TestSuiteFileName(config.testSuiteFileName)
+        val name = TestSuiteFileName(solution.testSuiteName)
 
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)

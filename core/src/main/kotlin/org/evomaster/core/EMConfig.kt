@@ -471,6 +471,14 @@ class EMConfig {
     var testSuiteFileName = "EvoMasterTest"
 
 
+    enum class TestSuiteSplitType {
+        NONE
+    }
+
+    @Experimental
+    @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
+    var testSuiteSplitType = TestSuiteSplitType.NONE
+
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1

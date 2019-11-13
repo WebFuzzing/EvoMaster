@@ -11,6 +11,7 @@ import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
@@ -337,11 +338,11 @@ class Main {
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
 
+            val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             writer.setSwagger(swagger)
-            writer.writeTests(
-                    solution,
-                    controllerInfoDto?.fullName
-            )
+            solutions.forEach {
+                writer.writeTests(it, controllerInfoDto?.fullName)
+            }
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
