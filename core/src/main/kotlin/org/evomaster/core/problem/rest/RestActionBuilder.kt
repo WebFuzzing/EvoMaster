@@ -39,6 +39,8 @@ class RestActionBuilder {
                 throw SutProblemException("EvoMaster does not support Swagger version '$version'")
             }
 
+            val defaultProduces = swagger.produces
+
             val skipped = mutableListOf<String>()
 
             swagger.paths
@@ -61,7 +63,7 @@ class RestActionBuilder {
 
                             repairParams(params, restPath)
 
-                            val produces = o.value.produces ?: listOf()
+                            val produces = o.value.produces ?: defaultProduces ?: listOf()
 
                             val action = RestCallAction("$verb$restPath${idGenerator.incrementAndGet()}", verb, restPath, params, produces = produces)
 
