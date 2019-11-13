@@ -22,6 +22,16 @@ public class DateClassReplacementTest {
     }
 
     @Test
+    public void testNull() {
+        Date thisDate = new Date();
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        assertThrows(NullPointerException.class,
+                ()-> {
+                    DateClassReplacement.equals(null, thisDate, idTemplate);
+                });
+    }
+
+    @Test
     public void testEqualsDates() {
         Date thisDate = new Date();
 

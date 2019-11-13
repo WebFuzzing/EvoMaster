@@ -8,7 +8,6 @@ import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Collection;
@@ -109,6 +108,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(Collection caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean result = caller.isEmpty();
         if (idTemplate == null) {
