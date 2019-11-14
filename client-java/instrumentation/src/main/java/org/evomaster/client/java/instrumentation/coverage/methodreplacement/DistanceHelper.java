@@ -1,10 +1,18 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
+import java.util.Date;
+import java.util.Objects;
+
 public class DistanceHelper {
 
     public static final double H_REACHED_BUT_NULL = 0.05d;
 
     public static final double H_NOT_NULL = 0.1d;
+
+    public static final double H_REACHED_BUT_EMPTY = H_REACHED_BUT_NULL;
+
+    public static final double H_NOT_EMPTY = H_NOT_NULL;
+
 
     //2^16=65536, max distance for a char
     public static final int MAX_CHAR_DISTANCE = 65_536;
@@ -54,6 +62,7 @@ public class DistanceHelper {
      * @return
      */
     public static double getDistanceToEquality(long a, long b) {
+        // TODO: Some long values cannot be precisely represented as double values
         return getDistanceToEquality((double) a, (double) b);
     }
 
@@ -75,10 +84,16 @@ public class DistanceHelper {
             distance = a - b;
         }
         if (distance < 0 || !Double.isFinite(distance)) {
-            // overflow has occured
+            // overflow has occurred
             return Double.MAX_VALUE;
         } else {
             return distance;
         }
+    }
+
+    public static double getDistanceToEquality(Date a, Date b) {
+        Objects.requireNonNull(a);
+        Objects.requireNonNull(b);
+        return DistanceHelper.getDistanceToEquality(a.getTime(), b.getTime());
     }
 }
