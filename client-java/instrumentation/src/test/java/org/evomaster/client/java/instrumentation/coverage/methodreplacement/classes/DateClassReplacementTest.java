@@ -235,4 +235,63 @@ public class DateClassReplacementTest {
         assertFalse(sameDateValue);
     }
 
+    @Test
+    public void testAfterNull() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime = sdf.parse(date1 + " " + time1);
+
+        assertThrows(NullPointerException.class,
+                () -> {
+                    DateClassReplacement.after(dateTime, null, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+                }
+        );
+    }
+
+    @Test
+    public void testBeforeNull() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime = sdf.parse(date1 + " " + time1);
+
+        assertThrows(NullPointerException.class,
+                () -> {
+                    DateClassReplacement.before(dateTime, null, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+                }
+        );
+    }
+
+
+    @Test
+    public void testAfterEquals() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime = sdf.parse(date1 + " " + time1);
+
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean after0 = DateClassReplacement.after(dateTime, dateTime, idTemplate);
+        assertFalse(after0);
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > DistanceHelper.H_NOT_NULL);
+
+    }
+
 }

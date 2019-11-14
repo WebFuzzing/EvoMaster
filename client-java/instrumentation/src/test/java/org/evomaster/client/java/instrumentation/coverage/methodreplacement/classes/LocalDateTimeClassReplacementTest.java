@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.BeforeEach;
@@ -165,6 +166,40 @@ public class LocalDateTimeClassReplacementTest {
         double h2 = ExecutionTracer.getValue(targetId);
         assertEquals(1, h2);
     }
+
+    @Test
+    public void testEquals() {
+        LocalDateTime a = LocalDate.of(1978, 7, 31).atStartOfDay();
+        LocalDateTime b = LocalDate.of(1988, 7, 31).atStartOfDay();
+        LocalDateTime c = LocalDate.of(1998, 7, 31).atStartOfDay();
+
+
+        final String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean isEqual0 = LocalDateTimeClassReplacement.equals(a, null, prefix);
+        assertFalse(isEqual0);
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+
+        boolean isEqual1 = LocalDateTimeClassReplacement.equals(a, b, prefix);
+        assertFalse(isEqual1);
+
+        double h1 = ExecutionTracer.getValue(objectiveId);
+
+        assertTrue(h1 > h0);
+        assertTrue(h1 < 1);
+
+        boolean isEqual2 = LocalDateTimeClassReplacement.equals(a, a, prefix);
+        assertTrue(isEqual2);
+
+        double h2 = ExecutionTracer.getValue(objectiveId);
+        assertEquals(1, h2);
+    }
+
 
 
 }

@@ -7,10 +7,9 @@ import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement.parseLongHeuristic;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseLongHeuristic;
 
 public class LongClassReplacement implements MethodReplacementClass {
 

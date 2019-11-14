@@ -48,12 +48,12 @@ public class DateClassReplacement implements MethodReplacementClass {
         } else {
             Date anotherDate = (Date) anObject;
             if (caller.equals(anotherDate)) {
-                t = new Truthness(0d, 1d);
+                t = new Truthness(1d, 0d);
             } else {
                 double distance = DistanceHelper.getDistanceToEquality(caller, anotherDate);
                 final double base = DistanceHelper.H_NOT_NULL;
                 double h = base + ((1 - base) / (distance + 1));
-                t = new Truthness(h, 0d);
+                t = new Truthness(h, 1d);
             }
         }
 

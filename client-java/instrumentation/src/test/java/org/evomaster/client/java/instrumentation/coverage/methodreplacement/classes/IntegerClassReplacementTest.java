@@ -1,10 +1,12 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement.parseIntHeuristic;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseIntHeuristic;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +14,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Created by arcuri82 on 26-Jun-19.
  */
 public class IntegerClassReplacementTest {
+
+    @BeforeEach
+    public void setUp() {
+        ExecutionTracer.reset();
+    }
 
     @Test
     public void testParseValid() {
@@ -78,4 +85,5 @@ public class IntegerClassReplacementTest {
             IntegerClassReplacement.parseInt(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
         });
     }
+
 }
