@@ -8,6 +8,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import java.lang.reflect.Field;
+import java.util.Objects;
 import java.util.regex.Matcher;
 
 /**
@@ -71,11 +72,8 @@ public class MatcherClassReplacement implements MethodReplacementClass {
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean find(Matcher caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if (caller == null) {
-            // signal a NPE
-            caller.find();
-        }
         String input = getText(caller);
         String regex = caller.pattern().toString();
         int end;

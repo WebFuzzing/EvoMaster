@@ -4,10 +4,13 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Dist
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Date;
 import java.util.Objects;
 
 public class ObjectsClassReplacement implements MethodReplacementClass {
@@ -28,59 +31,79 @@ public class ObjectsClassReplacement implements MethodReplacementClass {
         if (result) {
             t = new Truthness(1d, 0d);
         } else {
-            if (left != null && right != null) {
-                t = computeDistance(left, right, idTemplate);
+            if (left == null || right == null) {
+                t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
             } else {
-                // can't apply known heuristics with null values
-                t = new Truthness(0d, 1d);
+                double base = DistanceHelper.H_NOT_NULL;
+                double distance = computeDistance(left, right, idTemplate);
+                double h = base + (1d - base) / (1d + distance);
+                t = new Truthness(h, 1d);
             }
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return result;
     }
 
-    private static Truthness computeDistance(Object left, Object right, String idTemplate) {
+    private static double computeDistance(Object left, Object right, String idTemplate) {
         Objects.requireNonNull(left);
         Objects.requireNonNull(right);
 
+        final double distance;
         if (left instanceof String && right instanceof String) {
-
             // TODO Add string specialization info for left and right
-            String caller = (String) left;
-            long distance = DistanceHelper.getLeftAlignmentDistance(caller, right.toString());
-            return new Truthness(1d / (1d + distance), 1d);
+            String a = (String) left;
+            String b = right.toString();
+            distance = (double) DistanceHelper.getLeftAlignmentDistance(a, b);
 
         } else if (left instanceof Integer && right instanceof Integer) {
-            int caller = (Integer) left;
-            int input = (Integer) right;
-            return TruthnessUtils.getEqualityTruthness(caller, input);
+            int a = (Integer) left;
+            int b = (Integer) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
 
         } else if (left instanceof Long && right instanceof Long) {
-
-            long caller = (Long) left;
-            long input = (Long) right;
-            return TruthnessUtils.getEqualityTruthness(caller, input);
+            long a = (Long) left;
+            long b = (Long) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
 
         } else if (left instanceof Float && right instanceof Float) {
-
-            float caller = (Float) left;
-            float input = (Float) right;
-            return TruthnessUtils.getEqualityTruthness(caller, input);
-
+            float a = (Float) left;
+            float b = (Float) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
 
         } else if (left instanceof Double && right instanceof Double) {
-            double caller = (Double) left;
-            double input = (Double) right;
-            return TruthnessUtils.getEqualityTruthness(caller, input);
+            double a = (Double) left;
+            double b = (Double) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
 
         } else if (left instanceof Character && right instanceof Character) {
+            Character a = (Character) left;
+            Character b = (Character) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
 
-            long distance = DistanceHelper.getLeftAlignmentDistance(left.toString(), right.toString());
-            return new Truthness(1d / (1d + distance), 1d);
+        } else if (left instanceof Date && right instanceof Date) {
+            Date a = (Date) left;
+            Date b = (Date) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
+
+        } else if (left instanceof LocalDate && right instanceof LocalDate) {
+            LocalDate a = (LocalDate) left;
+            LocalDate b = (LocalDate) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
+
+        } else if (left instanceof LocalTime && right instanceof LocalTime) {
+            LocalTime a = (LocalTime) left;
+            LocalTime b = (LocalTime) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
+
+        } else if (left instanceof LocalDateTime && right instanceof LocalDateTime) {
+            LocalDateTime a = (LocalDateTime) left;
+            LocalDateTime b = (LocalDateTime) right;
+            distance = DistanceHelper.getDistanceToEquality(a, b);
 
         } else {
-            // can't get any guidance when for other data types
-            return new Truthness(0d, 1d);
+            distance = Double.MAX_VALUE;
         }
+
+        return distance;
     }
 }

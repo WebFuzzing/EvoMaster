@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
 import java.util.Date;
@@ -74,6 +75,10 @@ public class DistanceHelper {
         return getDistanceToEquality((double) a, (double) b);
     }
 
+    public static double getDistanceToEquality(char a, char b) {
+        return getDistanceToEquality((double) a, (double) b);
+    }
+
     public static double getDistanceToEquality(double a, double b) {
         if (!Double.isFinite(a) || !Double.isFinite(b)) {
             // one of the values is not finite
@@ -114,5 +119,9 @@ public class DistanceHelper {
 
     private static long getEpochMilli(ChronoLocalDateTime<?> chronoLocalDateTime) {
         return chronoLocalDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+    }
+
+    public static double getDistanceToEquality(LocalTime a, LocalTime b) {
+        return getDistanceToEquality(a.toSecondOfDay(), b.toSecondOfDay());
     }
 }

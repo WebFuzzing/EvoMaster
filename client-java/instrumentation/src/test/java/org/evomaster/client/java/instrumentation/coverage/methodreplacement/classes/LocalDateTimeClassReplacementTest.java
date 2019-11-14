@@ -200,6 +200,25 @@ public class LocalDateTimeClassReplacementTest {
         assertEquals(1, h2);
     }
 
+    @Test
+    public void testIsEqualNull() {
+        LocalDateTime a = LocalDate.of(1978, 7, 31).atStartOfDay();
+
+
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        assertThrows(
+                NullPointerException.class,
+                ()-> {
+                    LocalDateTimeClassReplacement.isEqual(a, null, idTemplate);
+                }
+        );
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
 
 
 }

@@ -20,6 +20,24 @@ import java.util.Objects;
 
 public class LocalDateTimeClassReplacement implements MethodReplacementClass {
 
+    private static long getMillis(ChronoLocalDateTime<?> chronoLocalDateTime) {
+        return chronoLocalDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+    }
+
+    private static Truthness getIsBeforeTruthness(ChronoLocalDateTime<?> caller, ChronoLocalDateTime<?> when) {
+        Objects.requireNonNull(caller);
+        Objects.requireNonNull(when);
+
+        final long a = getMillis(caller);
+        final long b = getMillis(when);
+
+        /**
+         * We use the same gradient that HeuristicsForJumps.getForValueComparison()
+         * used for IF_ICMPLT, ie, a < b
+         */
+        return TruthnessUtils.getLessThanTruthness(a, b);
+    }
+
     @Override
     public Class<?> getTargetClass() {
         return LocalDateTime.class;
@@ -83,19 +101,7 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-    private static Truthness getIsBeforeTruthness(ChronoLocalDateTime<?> caller, ChronoLocalDateTime<?> when) {
-        Objects.requireNonNull(caller);
-        Objects.requireNonNull(when);
 
-        final long a = getMillis(caller);
-        final long b = getMillis(when);
-
-        /**
-         * We use the same gradient that HeuristicsForJumps.getForValueComparison()
-         * used for IF_ICMPLT, ie, a < b
-         */
-        return TruthnessUtils.getLessThanTruthness(a, b);
-    }
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isBefore(LocalDateTime caller, ChronoLocalDateTime<?> other, String idTemplate) {
@@ -159,8 +165,5 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         return caller.isEqual(other);
     }
 
-    private static long getMillis(ChronoLocalDateTime<?> chronoLocalDateTime) {
-        return chronoLocalDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
-    }
 
 }
