@@ -33,7 +33,6 @@ class TestCaseWriter {
     private var previousChained = false
     private var previousId = ""
     private var chained = false
-    //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
@@ -89,17 +88,13 @@ class TestCaseWriter {
                 if (config.enableCompleteObjects) {
                     usedObjects = (test.test.individual as RestIndividual).usedObjects.copy()
                 }
-
                 if(configuration.expectationsActive){
                     expectationsWriter.addDeclarations(lines)
                 }
-
-
                 if (!test.test.individual.dbInitialization.isEmpty()) {
                     handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
                 }
             }
-
 
             if (test.hasChainedLocations()) {
                 lines.addEmpty()
@@ -374,9 +369,6 @@ class TestCaseWriter {
         //first handle the first line
         val name = "call_$counter"
 
-        //
-
-
         if(configuration.expectationsActive){
             val header = getAcceptHeader(call, res)
             expectationsWriter.handleGenericFirstLine(call, lines, res, name, header)
@@ -388,11 +380,8 @@ class TestCaseWriter {
         lines.indent(2)
 
         handleHeaders(call, lines)
-
         handleBody(call, lines)
-
         handleVerb(baseUrlOfSut, call, lines)
-
         handleResponse(lines, res)
 
         //finally, handle the last line(s)
@@ -411,7 +400,6 @@ class TestCaseWriter {
         // Having them at the end of a test makes some sense...
         if(configuration.expectationsActive){
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
-            //expectationsHandler.handleExpectations(res, lines, true, name)
             expectationsWriter.handleExpectations(call, lines, res, true, name)
         }
         //TODO: BMR expectations from partial oracles here?
@@ -641,7 +629,6 @@ class TestCaseWriter {
         if (resContents.isEmpty()){
             // If this executes, the result contains an empty collection.
             lines.add(".body(\"size()\", numberMatches(0))")
-            //lines.add(".body(containsString(\"{}\"))")
             if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
@@ -722,10 +709,7 @@ class TestCaseWriter {
                     }
                 }
 
-            } /* else if(bodyParam.isXml()) {
-                val body = bodyParam.gene.getValueAsPrintableString("xml")
-                lines.add(".body(\"$body\")")
-            } */ else if (bodyParam.isTextPlain()) {
+            } else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     lines.add(".body($body)")
@@ -790,8 +774,6 @@ class TestCaseWriter {
             return ".accept(\"*/*\")"
     }
 
-
-
     /**
      * The purpose of the [flattenForAssert] method is to prepare an object for assertion generation.
      * Objects in Responses may be somewhat complex in structure. The goal is to make a map that contains all the
@@ -812,7 +794,6 @@ class TestCaseWriter {
                     val innerMap = flattenForAssert(innerkey, value)
                     returnMap.putAll(innerMap)
                 }
-
             }
         }
         else{
