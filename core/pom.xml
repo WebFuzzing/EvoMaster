@@ -152,6 +152,12 @@
             <classifier>models</classifier>
             <scope>provided</scope>
         </dependency>
+        <!-- Clustering attempt-->
+        <dependency>
+            <groupId>org.nield</groupId>
+            <artifactId>kotlin-statistics</artifactId>
+            <version>1.2.1</version>
+        </dependency>
 
     </dependencies>
 

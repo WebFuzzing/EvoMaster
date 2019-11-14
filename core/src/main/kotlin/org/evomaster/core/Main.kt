@@ -30,7 +30,7 @@ import org.evomaster.core.search.service.Statistics
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import java.lang.reflect.InvocationTargetException
-
+import org.evomaster.core.output.Clusterer
 
 /**
  * This will be the entry point of the tool when run from command line
@@ -157,7 +157,8 @@ class Main {
 
             writeTests(injector, solution, controllerInfo)
 
-
+            val clusterer = Clusterer()
+            clusterer.cluster()
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
