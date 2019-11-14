@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDateTime;
@@ -123,5 +124,91 @@ public class DistanceHelper {
 
     public static double getDistanceToEquality(LocalTime a, LocalTime b) {
         return getDistanceToEquality(a.toSecondOfDay(), b.toSecondOfDay());
+    }
+
+    public static double getDistance(Object left, Object right) {
+        Objects.requireNonNull(left);
+        Objects.requireNonNull(right);
+
+        final double distance;
+        if (left instanceof String && right instanceof String) {
+            // TODO Add string specialization info for left and right
+
+            // String
+            String a = (String) left;
+            String b = right.toString();
+            distance = (double) getLeftAlignmentDistance(a, b);
+
+        } else if (left instanceof Byte && right instanceof Byte) {
+            // Byte
+            Byte a = (Byte) left;
+            Byte b = (Byte) right;
+            distance = DistanceHelper.getDistanceToEquality(a.longValue(), b.longValue());
+
+        } else if (left instanceof Short && right instanceof Short) {
+            // Short
+            Short a = (Short) left;
+            Short b = (Short) right;
+            distance = DistanceHelper.getDistanceToEquality(a.longValue(), b.longValue());
+
+        } else if (left instanceof Integer && right instanceof Integer) {
+            // Integer
+            int a = (Integer) left;
+            int b = (Integer) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof Long && right instanceof Long) {
+            // Long
+            long a = (Long) left;
+            long b = (Long) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof Float && right instanceof Float) {
+            // Float
+            float a = (Float) left;
+            float b = (Float) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof Double && right instanceof Double) {
+            // Double
+            double a = (Double) left;
+            double b = (Double) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof Character && right instanceof Character) {
+            // Character
+            Character a = (Character) left;
+            Character b = (Character) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof Date && right instanceof Date) {
+            // Date
+            Date a = (Date) left;
+            Date b = (Date) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof LocalDate && right instanceof LocalDate) {
+            // LocalDate
+            LocalDate a = (LocalDate) left;
+            LocalDate b = (LocalDate) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof LocalTime && right instanceof LocalTime) {
+            // LocalTime
+            LocalTime a = (LocalTime) left;
+            LocalTime b = (LocalTime) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else if (left instanceof LocalDateTime && right instanceof LocalDateTime) {
+            // LocalDateTime
+            LocalDateTime a = (LocalDateTime) left;
+            LocalDateTime b = (LocalDateTime) right;
+            distance = getDistanceToEquality(a, b);
+
+        } else {
+            distance = Double.MAX_VALUE;
+        }
+
+        return distance;
     }
 }

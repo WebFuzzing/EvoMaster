@@ -128,7 +128,7 @@ public class CollectionClassReplacementTest {
         final String objectiveId = nonCoveredObjectives.iterator().next();
         final double heuristicValue0 = ExecutionTracer.getValue(objectiveId);
         assertNotEquals(0, heuristicValue0);
-        assertEquals(DistanceHelper.H_REACHED_BUT_EMPTY, heuristicValue0);
+        assertEquals(DistanceHelper.H_NOT_EMPTY, heuristicValue0);
     }
 
     @Test
@@ -256,7 +256,7 @@ public class CollectionClassReplacementTest {
         assertEquals(1, nonCoveredObjectives.size());
         final String objectiveId = nonCoveredObjectives.iterator().next();
         final double heuristicValue0 = ExecutionTracer.getValue(objectiveId);
-        assertEquals(DistanceHelper.H_REACHED_BUT_EMPTY, heuristicValue0);
+        assertEquals(DistanceHelper.H_NOT_EMPTY, heuristicValue0);
     }
 
 }
