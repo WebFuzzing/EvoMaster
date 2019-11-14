@@ -21,7 +21,7 @@ public class BooleanClassReplacement implements MethodReplacementClass {
     /**
      * The heuristic value is H_REACHED_BUT_NULL if the input string is null.
      * Otherwise, the leftAlignment distance to "true" is computed and added as
-     * H_NOT_NULL + (1-H_NOT_NULL)/(1+distance) where distance>=0.
+     * H_NOT_NULL + (1-H_NOT_NULL)/(1+distance) where distance is greater or equal to 0.
      * <p>
      * The closer the heuristic value is to 1, the closer it is to returning true.
      *
