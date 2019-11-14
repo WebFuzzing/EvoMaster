@@ -8,7 +8,6 @@ import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Collection;
@@ -61,7 +60,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
             t = new Truthness(1d, 0d);
         } else {
             if (c.isEmpty()) {
-                t = new Truthness(0d, 1d);
+                t = new Truthness(DistanceHelper.H_NOT_NULL, 1d);
             } else {
                 double max = 0d;
 
@@ -109,6 +108,7 @@ public class CollectionClassReplacement implements MethodReplacementClass {
      */
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isEmpty(Collection caller, String idTemplate) {
+        Objects.requireNonNull(caller);
 
         boolean result = caller.isEmpty();
         if (idTemplate == null) {

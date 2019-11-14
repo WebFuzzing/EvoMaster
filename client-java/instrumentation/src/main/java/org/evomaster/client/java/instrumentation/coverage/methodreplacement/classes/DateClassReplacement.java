@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
@@ -37,30 +38,28 @@ public class DateClassReplacement implements MethodReplacementClass {
             return caller.equals(anObject);
         }
 
-        final Truthness t = getEqualsTruthness(caller, anObject);
-        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
-        return caller.equals(anObject);
-    }
-
-    /**
-     * Returns the truthness value for an expression date.equals(date)
-     *
-     * @param caller
-     * @param anObject
-     * @return
-     */
-    private static Truthness getEqualsTruthness(Date caller, Object anObject) {
-        Objects.requireNonNull(caller);
-
         final Truthness t;
         if (anObject == null || !(anObject instanceof Date)) {
-            t = new Truthness(0d, 1d);
+            /*
+             * TODO: Not sure if arguments of wrong type should be given
+             *  the same value as null.
+             */
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
             final long a = caller.getTime();
             final long b = ((Date) anObject).getTime();
-            t = TruthnessUtils.getEqualityTruthness(a, b);
+            if (a == b) {
+                t = new Truthness(1d, 0d);
+            } else {
+                double distance = DistanceHelper.getDistanceToEquality(a, b);
+                final double base = DistanceHelper.H_NOT_NULL;
+                double h = base + ((1 - base) / (distance + 1));
+                t = new Truthness(h, 1d);
+            }
         }
-        return t;
+
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return caller.equals(anObject);
     }
 
     /**

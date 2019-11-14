@@ -7,7 +7,6 @@ import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
@@ -37,10 +36,11 @@ public class BooleanClassReplacement implements MethodReplacementClass {
             t = new Truthness(1, 0);
         } else {
             if (input == null) {
-                t = new Truthness(0, 1);
+                t = new Truthness(H_REACHED_BUT_NULL, 1);
             } else {
+                final double base = DistanceHelper.H_NOT_NULL;
                 long distance = DistanceHelper.getLeftAlignmentDistance(input.toLowerCase(), "true");
-                double h = 1d / (1d + distance);
+                double h = base + ((1d - base) / (1d + distance));
                 t = new Truthness(h, 1);
             }
         }
