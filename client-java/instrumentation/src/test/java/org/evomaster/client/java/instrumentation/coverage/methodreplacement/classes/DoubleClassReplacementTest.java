@@ -82,4 +82,11 @@ public class DoubleClassReplacementTest {
 
         assertTrue(h0 > DistanceHelper.H_NOT_NULL);
     }
+
+    @Test
+    public void testValueOf() {
+        String inputString = ".0";
+        double parsedDouble = DoubleClassReplacement.valueOf(inputString, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertEquals(0.0, parsedDouble);
+    }
 }

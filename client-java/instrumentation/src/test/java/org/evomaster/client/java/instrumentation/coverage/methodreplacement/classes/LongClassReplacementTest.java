@@ -77,4 +77,10 @@ public class LongClassReplacementTest {
         assertTrue(h0 > DistanceHelper.H_NOT_NULL);
     }
 
+    @Test
+    public void testValueOf() {
+        long longValue = LongClassReplacement.valueOf(Long.valueOf(Long.MAX_VALUE).toString(), ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertEquals(Long.MAX_VALUE, longValue);
+    }
+
 }

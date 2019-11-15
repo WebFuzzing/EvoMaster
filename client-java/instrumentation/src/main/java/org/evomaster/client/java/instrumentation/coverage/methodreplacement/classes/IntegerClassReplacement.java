@@ -20,6 +20,10 @@ public class IntegerClassReplacement implements MethodReplacementClass {
         return Integer.class;
     }
 
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static int valueOf(String input, String idTemplate) {
+        return parseInt(input,idTemplate);
+    }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
     public static int parseInt(String input, String idTemplate) {

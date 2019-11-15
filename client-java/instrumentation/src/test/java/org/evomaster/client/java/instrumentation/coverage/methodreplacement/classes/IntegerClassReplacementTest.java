@@ -114,4 +114,11 @@ public class IntegerClassReplacementTest {
     }
 
 
+    @Test
+    public void testValueOf() {
+        String input = Long.valueOf(Long.MAX_VALUE).toString();
+        assertThrows(NumberFormatException.class, () -> {
+            IntegerClassReplacement.valueOf(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        });
+    }
 }

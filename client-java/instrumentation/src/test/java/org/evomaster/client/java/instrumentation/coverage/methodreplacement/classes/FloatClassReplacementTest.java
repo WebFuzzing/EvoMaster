@@ -109,5 +109,12 @@ public class FloatClassReplacementTest {
         assertTrue(h0 > DistanceHelper.H_NOT_NULL);
     }
 
+    @Test
+    public void testValueOf() {
+        String floatString = "0.0";
+        float parsedFloat = FloatClassReplacement.valueOf(floatString, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        assertEquals(0.0, parsedFloat);
+    }
+
 
 }

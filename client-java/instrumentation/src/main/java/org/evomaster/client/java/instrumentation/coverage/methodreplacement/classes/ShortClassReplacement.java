@@ -71,5 +71,8 @@ public class ShortClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static short valueOf(String input, String idTemplate) {
+        return parseShort(input, idTemplate);
+    }
 }

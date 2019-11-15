@@ -72,4 +72,8 @@ public class LongClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static long valueOf(String input, String idTemplate) {
+        return parseLong(input, idTemplate);
+    }
 }

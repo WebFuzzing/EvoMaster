@@ -71,5 +71,8 @@ public class FloatClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
-
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static float valueOf(String input, String idTemplate) {
+        return parseFloat(input, idTemplate);
+    }
 }

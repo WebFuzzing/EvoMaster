@@ -80,4 +80,11 @@ public class ShortClassReplacementTest {
         boolean equals = ShortClassReplacement.equals((short) 2, (short) 2, prefix);
         assertTrue(equals);
     }
+
+    @Test
+    public void testValueOf() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        short shortValue = ShortClassReplacement.valueOf(String.valueOf(Short.MAX_VALUE), prefix);
+        assertEquals(Short.MAX_VALUE, shortValue);
+    }
 }

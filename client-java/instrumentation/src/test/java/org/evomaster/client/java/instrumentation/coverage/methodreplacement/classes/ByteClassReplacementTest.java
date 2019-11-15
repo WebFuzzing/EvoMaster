@@ -80,4 +80,11 @@ public class ByteClassReplacementTest {
         boolean equals = ByteClassReplacement.equals((byte) 2, (byte) 2, prefix);
         assertTrue(equals);
     }
+
+    @Test
+    public void testValueOf() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        short shortValue = ByteClassReplacement.valueOf(String.valueOf(Byte.MAX_VALUE), prefix);
+        assertEquals(Byte.MAX_VALUE, shortValue);
+    }
 }

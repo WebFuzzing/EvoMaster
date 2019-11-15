@@ -59,4 +59,9 @@ public class BooleanClassReplacement implements MethodReplacementClass {
         return res;
     }
 
+    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
+    public static boolean valueOf(String input, String idTemplate) {
+        return parseBoolean(input,idTemplate);
+    }
+
 }

@@ -72,4 +72,8 @@ public class DoubleClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static double valueOf(String input, String idTemplate) {
+        return parseDouble(input,idTemplate);
+    }
 }

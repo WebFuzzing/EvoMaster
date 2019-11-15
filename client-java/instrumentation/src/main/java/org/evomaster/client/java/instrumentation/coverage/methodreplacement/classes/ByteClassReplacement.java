@@ -71,5 +71,9 @@ public class ByteClassReplacement implements MethodReplacementClass {
         return caller.equals(anObject);
     }
 
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static byte valueOf(String input, String idTemplate) {
+        return parseByte(input, idTemplate);
+    }
 
 }

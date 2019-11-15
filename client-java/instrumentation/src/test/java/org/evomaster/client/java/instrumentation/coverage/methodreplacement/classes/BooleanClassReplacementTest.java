@@ -68,5 +68,10 @@ public class BooleanClassReplacementTest {
         assertEquals(DistanceHelper.H_REACHED_BUT_NULL, value);
     }
 
-
+    @Test
+    public void testValueOf() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean booleanValue = BooleanClassReplacement.valueOf("true", prefix);
+        assertTrue(booleanValue);
+    }
 }
