@@ -97,6 +97,16 @@ public class NumberParsingUtils {
         return base + ((1d - base) / (distance + 1));
     }
 
+    public static double parseByteHeuristic(String input) {
+        final int maxNumberOfDigits = Byte.valueOf(Byte.MIN_VALUE).toString().length();
+        return parseIntHeuristic(input, maxNumberOfDigits);
+    }
+
+    public static double parseShortHeuristic(String input) {
+        final int maxNumberOfDigits = Short.valueOf(Short.MIN_VALUE).toString().length();
+        return parseIntHeuristic(input, maxNumberOfDigits);
+    }
+
     public static double parseIntHeuristic(String input) {
         final int maxNumberOfDigits = Integer.valueOf(Integer.MIN_VALUE).toString().length();
         return parseIntHeuristic(input, maxNumberOfDigits);

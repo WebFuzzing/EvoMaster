@@ -58,4 +58,5 @@ public class BooleanClassReplacement implements MethodReplacementClass {
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return res;
     }
+
 }

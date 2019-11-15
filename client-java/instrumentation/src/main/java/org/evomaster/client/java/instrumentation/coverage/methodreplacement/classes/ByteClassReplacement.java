@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -12,41 +13,39 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.getParsingHeuristicValueForFloat;
-
-public class DoubleClassReplacement implements MethodReplacementClass {
+public class ByteClassReplacement implements MethodReplacementClass {
 
     @Override
     public Class<?> getTargetClass() {
-        return Double.class;
+        return Byte.class;
     }
 
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
-    public static double parseDouble(String input, String idTemplate) {
+    public static byte parseByte(String input, String idTemplate) {
 
         if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.DOUBLE, null));
+                    new StringSpecializationInfo(StringSpecialization.INTEGER, null));
         }
 
         if (idTemplate == null) {
-            return Double.parseDouble(input);
+            return Byte.parseByte(input);
         }
 
         try {
-            double res = Double.parseDouble(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            byte res = Byte.parseByte(input);
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1d, 0d));
             return res;
-        } catch (NumberFormatException | NullPointerException e) {
-            double h = getParsingHeuristicValueForFloat(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
+        } catch (RuntimeException e) {
+            double h = NumberParsingUtils.parseByteHeuristic(input);
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1d));
             throw e;
         }
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean equals(Double caller, Object anObject, String idTemplate) {
+    public static boolean equals(Byte caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
         if (idTemplate == null) {
@@ -54,15 +53,15 @@ public class DoubleClassReplacement implements MethodReplacementClass {
         }
 
         final Truthness t;
-        if (anObject == null || !(anObject instanceof Double)) {
+        if (anObject == null || !(anObject instanceof Byte)) {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            Double anotherDouble = (Double) anObject;
-            if (caller.equals(anotherDouble)) {
+            Byte anoterByte = (Byte) anObject;
+            if (caller.equals(anoterByte)) {
                 t = new Truthness(1d, 0d);
             } else {
                 final double base = DistanceHelper.H_NOT_NULL;
-                double distance = DistanceHelper.getDistanceToEquality(caller, anotherDouble);
+                double distance = DistanceHelper.getDistanceToEquality(caller, anoterByte);
                 double h = base + ((1 - base) / (distance + 1));
                 t = new Truthness(h, 1d);
             }
@@ -71,5 +70,6 @@ public class DoubleClassReplacement implements MethodReplacementClass {
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.equals(anObject);
     }
+
 
 }

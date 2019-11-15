@@ -1,13 +1,19 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FloatClassReplacementTest {
+
+    @BeforeEach
+    public void setUp() {
+        ExecutionTracer.reset();
+    }
 
     @Test
     public void testParseSuccess() {
@@ -75,6 +81,32 @@ public class FloatClassReplacementTest {
 
         assertEquals(Float.POSITIVE_INFINITY, parsedFloat);
         assertNotEquals(Double.POSITIVE_INFINITY, parsedDouble);
+    }
+
+    @Test
+    public void testEqualsNull() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals = FloatClassReplacement.equals(1f, null, prefix);
+        assertFalse(equals);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
+
+    @Test
+    public void testEqualsNotNull() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals = FloatClassReplacement.equals(1f, 2f, prefix);
+        assertFalse(equals);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertTrue(h0 > DistanceHelper.H_NOT_NULL);
     }
 
 

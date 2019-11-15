@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.BeforeEach;
@@ -85,5 +86,32 @@ public class IntegerClassReplacementTest {
             IntegerClassReplacement.parseInt(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
         });
     }
+
+    @Test
+    public void testEqualsNull() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals = IntegerClassReplacement.equals(1, null, prefix);
+        assertFalse(equals);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
+
+    @Test
+    public void testEqualsNotNull() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals = IntegerClassReplacement.equals(1, 2, prefix);
+        assertFalse(equals);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertTrue(h0 > DistanceHelper.H_NOT_NULL);
+    }
+
 
 }
