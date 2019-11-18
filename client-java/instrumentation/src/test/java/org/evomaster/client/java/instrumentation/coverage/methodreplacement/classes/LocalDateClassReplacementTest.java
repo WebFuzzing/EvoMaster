@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.BeforeEach;
@@ -165,5 +166,120 @@ public class LocalDateClassReplacementTest {
         assertEquals(1, h2);
     }
 
+
+    @Test
+    public void testNotEquals() {
+        LocalDate a = LocalDate.of(1978, 7, 31);
+        LocalDate b = LocalDate.of(1988, 7, 31);
+
+        final String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean isEqual0 = LocalDateClassReplacement.equals(a, b, prefix);
+        assertFalse(isEqual0);
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertTrue(h0 > 0);
+        assertTrue(h0 < 1);
+    }
+
+    @Test
+    public void testEqualsNull() {
+        LocalDate a = LocalDate.of(1978, 7, 31);
+
+        final String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean isEqual0 = LocalDateClassReplacement.equals(a, null, prefix);
+        assertFalse(isEqual0);
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+
+    }
+
+    @Test
+    public void testIsEqualsNull() {
+        LocalDate a = LocalDate.of(1978, 7, 31);
+
+        final String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        assertThrows(NullPointerException.class,
+                () -> {
+                    LocalDateClassReplacement.isEqual(a, null, prefix);
+                }
+        );
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+
+    }
+
+    @Test
+    public void testParseNull() {
+        LocalDate a = LocalDate.of(1978, 7, 31);
+
+        final String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        assertThrows(NullPointerException.class,
+                () -> {
+                    LocalDateClassReplacement.parse(null, prefix);
+                }
+        );
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(prefix).size());
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+
+    }
+
+    @Test
+    public void testEquals() {
+        LocalDate a = LocalDate.of(1978, 7, 31);
+        final String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean isEqual0 = LocalDateClassReplacement.equals(a, a, prefix);
+        assertTrue(isEqual0);
+    }
+
+    @Test
+    public void testIsBeforeNull() {
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        LocalDate a = LocalDate.of(2012, 6, 30);
+        assertThrows(NullPointerException.class,
+                () -> {
+                    LocalDateClassReplacement.isBefore(a, null, idTemplate);
+                });
+
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(idTemplate).size());
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
+
+    @Test
+    public void testIsAfterNull() {
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        LocalDate a = LocalDate.of(2012, 6, 30);
+        assertThrows(NullPointerException.class,
+                () -> {
+                    LocalDateClassReplacement.isAfter(a, null, idTemplate);
+                });
+
+        assertEquals(1, ExecutionTracer.getNonCoveredObjectives(idTemplate).size());
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
 
 }
