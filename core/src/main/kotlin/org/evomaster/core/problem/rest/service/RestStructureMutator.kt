@@ -218,7 +218,7 @@ class RestStructureMutator : StructureMutator() {
             //ind.seeActions().add(sampledAction)
             ind.addResourceCall(RestResourceCalls(actions = mutableListOf(sampledAction)))
 
-            if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
+            //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             return
         }
 
@@ -248,7 +248,7 @@ class RestStructureMutator : StructureMutator() {
             mutatedGenes?.addedGenes?.addAll(sampledAction.seeGenes())
             mutatedGenes?.mutatedPosition?.add(chosen)
 
-            if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
+            //if (config.enableCompleteObjects && (sampledAction is RestCallAction)) sampler.addObjectsForAction(sampledAction, ind)
             // BMR: Perhaps we could have a function for individual.addAction(action) which would cover both
             // adding the action and the associated objects and help encapsulate the individual more?
         }

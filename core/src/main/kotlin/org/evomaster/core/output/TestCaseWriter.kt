@@ -1,6 +1,7 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
+import io.swagger.models.Swagger
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -8,6 +9,12 @@ import org.evomaster.core.database.DbAction
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.CookieLogin
+import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.UsedObjects
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
@@ -26,11 +33,12 @@ class TestCaseWriter {
     private var previousChained = false
     private var previousId = ""
     private var chained = false
-    //private var relevantObjects: List<Gene> = listOf()
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
+    private lateinit var expectationsWriter: ExpectationsWriter
+    private lateinit var swagger: Swagger
 
     companion object{
         val NOT_COVERED_YET = "NotCoveredYet"
@@ -45,7 +53,20 @@ class TestCaseWriter {
         //TODO: refactor remove once changes merged
         configuration = config
         this.format = config.outputFormat
+        this.expectationsWriter = ExpectationsWriter()
+        expectationsWriter.setFormat(this.format)
 
+        val objGenerator = ObjectGenerator()
+        val partialOracles = PartialOracles()
+
+        if(config.expectationsActive
+                && ::swagger.isInitialized){
+            objGenerator.setSwagger(swagger)
+            partialOracles.setGenerator(objGenerator)
+            partialOracles.setFormat(format)
+            expectationsWriter.setSwagger(swagger)
+            expectationsWriter.setPartialOracles(partialOracles)
+        }
 
         counter = 0
 
@@ -65,11 +86,15 @@ class TestCaseWriter {
             if (test.test.individual is RestIndividual) {
                 // BMR: test.test should have the used objects attached (if any).
                 if (config.enableCompleteObjects) {
-                    usedObjects = (test.test.individual as RestIndividual).usedObjects
+                    usedObjects = (test.test.individual as RestIndividual).usedObjects.copy()
                 }
-                handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
+                if(configuration.expectationsActive){
+                    expectationsWriter.addDeclarations(lines)
+                }
+                if (!test.test.individual.dbInitialization.isEmpty()) {
+                    handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
+                }
             }
-
 
             if (test.hasChainedLocations()) {
                 lines.addEmpty()
@@ -342,25 +367,43 @@ class TestCaseWriter {
                                  baseUrlOfSut: String) {
 
         //first handle the first line
-        handleFirstLine(call, lines, res)
+        val name = "call_$counter"
+
+        if(configuration.expectationsActive){
+            val header = getAcceptHeader(call, res)
+            expectationsWriter.handleGenericFirstLine(call, lines, res, name, header)
+        }
+        else {
+            handleFirstLine(call, lines, res)
+        }
+
         lines.indent(2)
 
         handleHeaders(call, lines)
-
         handleBody(call, lines)
-
         handleVerb(baseUrlOfSut, call, lines)
-
         handleResponse(lines, res)
 
         //finally, handle the last line(s)
-        handleLastLine(call, res, lines)
+        if(configuration.expectationsActive){
+            handleGenericLastLine(call, res, lines, counter)
+
+            previousChained = res.getHeuristicsForChainedLocation()
+            if(previousChained) previousId = "id_$counter"
+            counter++
+        }
+        else {
+            handleLastLine(call, res, lines)
+        }
 
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
-        if (configuration.expectationsActive) {
-            handleExpectations(res, lines, true)
+        if(configuration.expectationsActive){
+            expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
+            expectationsWriter.handleExpectations(call, lines, res, true, name)
         }
+        //TODO: BMR expectations from partial oracles here?
+
 
 
     }
@@ -510,7 +553,8 @@ class TestCaseWriter {
 
         if (res.getBodyType() == null) {
             lines.add(".contentType(\"\")")
-            lines.add(".body(isEmptyOrNullString())")
+            if(res.getBody().isNullOrBlank() && res.getStatusCode()!=400) lines.add(".body(isEmptyOrNullString())")
+
         }
         else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
@@ -585,7 +629,6 @@ class TestCaseWriter {
         if (resContents.isEmpty()){
             // If this executes, the result contains an empty collection.
             lines.add(".body(\"size()\", numberMatches(0))")
-            //lines.add(".body(containsString(\"{}\"))")
             if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
@@ -596,7 +639,7 @@ class TestCaseWriter {
                 .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
                 .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
                 .forEach {
-                    val stringKey = it.joinToString(separator = ".")
+                    val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
                     if(actualValue!=null){
                         val printableTh = handleFieldValues(actualValue)
@@ -605,9 +648,9 @@ class TestCaseWriter {
                                 && !printableTh.contains("logged")
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            if(stringKey != "id") lines.add(".body(\"\'${stringKey}\'\", ${printableTh})")
+                            if(stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
                             else{
-                                if(!chained && previousChained) lines.add(".body(\"\'${stringKey}\'\", numberMatches($previousId))")
+                                if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
                             }
                         }
                     }
@@ -666,10 +709,7 @@ class TestCaseWriter {
                     }
                 }
 
-            } /* else if(bodyParam.isXml()) {
-                val body = bodyParam.gene.getValueAsPrintableString("xml")
-                lines.add(".body(\"$body\")")
-            } */ else if (bodyParam.isTextPlain()) {
+            } else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     lines.add(".body($body)")
@@ -734,62 +774,6 @@ class TestCaseWriter {
             return ".accept(\"*/*\")"
     }
 
-    private fun handleExpectations(result: RestCallResult, lines: Lines, active: Boolean) {
-
-        /*
-        TODO: This is a WiP to show the basic idea of the expectations:
-        An exception is thrown ONLY if the expectations are set to active.
-        If inactive, the condition will still be processed (with a goal to later adding to summaries or
-        other information processing/handling that might be needed), but it does not cause
-        the test case to fail regardless of truth value.
-
-        The example below aims to show this behaviour and provide a reminder.
-        As it is still work in progress, expect quite significant changes to this.
-        */
-
-        lines.add("expectationHandler()")
-        lines.indented {
-            lines.add(".expect()")
-            if (configuration.enableCompleteObjects == false) {
-                addExpectationsWithoutObjects(result, lines)
-            }
-            appendSemicolon(lines)
-        }
-    }
-
-    private fun addExpectationsWithoutObjects(result: RestCallResult, lines: Lines) {
-        if (result.getBodyType() != null) {
-            // if there is a body, add expectations based on the body type. Right now only application/json is supported
-            when {
-                result.getBodyType()!!.isCompatible(MediaType.APPLICATION_JSON_TYPE) -> {
-                    when (result.getBody()?.first()) {
-                        '[' -> {
-                            // This would be run if the JSON contains an array of objects
-                            val resContents = Gson().fromJson(result.getBody(), ArrayList::class.java)
-                        }
-                        '{' -> {
-                            // This would be run if the JSON contains a single object
-                            val resContents = Gson().fromJson(result.getBody(), Object::class.java)
-
-                            (resContents as Map<*, *>).keys.forEach {
-                                val printableTh = handleFieldValues(resContents[it])
-                                if (printableTh != "null"
-                                        && printableTh != NOT_COVERED_YET
-                                ) {
-                                    lines.add(".that(activeExpectations, (\"${it}\" == \"${resContents[it]}\"))")
-                                }
-                            }
-                        }
-                        else -> {
-                            // this shouldn't be run if the JSON is okay. Panic! Update: could also be null. Pause, then panic!
-                            if(result.getBody() != null)  lines.add(".body(containsString(\"${GeneUtils.applyEscapes(result.getBody().toString(), mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\"))")
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     /**
      * The purpose of the [flattenForAssert] method is to prepare an object for assertion generation.
      * Objects in Responses may be somewhat complex in structure. The goal is to make a map that contains all the
@@ -810,7 +794,6 @@ class TestCaseWriter {
                     val innerMap = flattenForAssert(innerkey, value)
                     returnMap.putAll(innerMap)
                 }
-
             }
         }
         else{
@@ -819,4 +802,40 @@ class TestCaseWriter {
         return returnMap
     }
 
+    fun setSwagger(sw: Swagger){
+        swagger = sw
+    }
+
+    fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int){
+        if(format.isJava()) {lines.append(";")}
+        lines.deindent(2)
+
+        if (call.saveLocation && !res.stopping){
+
+            var extract: String = ""
+            val baseUri: String = if (call.locationId != null) {
+                locationVar(call.locationId!!)
+            } else {
+                call.path.resolveOnlyPath(call.parameters)
+            }
+            if (!res.getHeuristicsForChainedLocation()){
+                extract = "call_$counter.extract().header(\"location\")"
+                lines.add("${locationVar(call.path.lastElement())} = $extract")
+                appendSemicolon(lines)
+            }
+            else {
+                val extraTypeInfo = when {
+                    format.isKotlin() -> "<Object>"
+                    else -> ""
+                }
+                extract = "call_$counter.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+                when {
+                    format.isJava() -> lines.add("String id_$counter = $extract")
+                    format.isKotlin() -> lines.add("val id_$counter: String = $extract")
+                }
+                lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter")
+                appendSemicolon(lines)
+            }
+        }
+    }
 }
