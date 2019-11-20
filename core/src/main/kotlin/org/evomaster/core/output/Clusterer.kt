@@ -1,10 +1,19 @@
 package org.evomaster.core.output
 
+import com.google.gson.Gson
+import jsat.DataSet
+import jsat.SimpleDataSet
+import jsat.clustering.OPTICS
+import jsat.linear.distancemetrics.DistanceMetric
 import org.nield.kotlinstatistics.dbScanCluster
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import org.apache.commons.math3.ml.clustering.*
 import org.apache.commons.math3.ml.distance.DistanceMeasure
+import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.Solution
+import org.evomaster.core.search.gene.GeneUtils
 
 class Clusterer{
     fun cluster(){
@@ -90,40 +99,6 @@ class Clusterer{
         return cost[lhsLength]
     }
 
-    class LevDistance : DistanceMeasure{
-        override fun compute(p0: DoubleArray?, p1: DoubleArray?): Double {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-        fun compute(p0: String, p1: String): Double{
-            // Levenshtein as distance
-            val lhsLength = p0.length
-            val rhsLength = p1.length
-
-            var cost = IntArray(lhsLength + 1) { it }
-            var newCost = IntArray(lhsLength + 1) { 0 }
-
-            for (i in 1..rhsLength) {
-                newCost[0] = i
-
-                for (j in 1..lhsLength) {
-                    val editCost= if(p0[j - 1] == p1[i - 1]) 0 else 1
-
-                    val costReplace = cost[j - 1] + editCost
-                    val costInsert = cost[j] + 1
-                    val costDelete = newCost[j - 1] + 1
-
-                    newCost[j] = minOf(costInsert, costDelete, costReplace)
-                }
-
-                val swap = cost
-                cost = newCost
-                newCost = swap
-            }
-
-            return cost[lhsLength].toDouble()
-        }
-    }
-
     fun longestCommonSubsequence(a: String, b: String): String {
         if (a.length > b.length) return longestCommonSubsequence(b, a)
         var res = ""
@@ -141,5 +116,59 @@ class Clusterer{
     enum class Gender {
         MALE,
         FEMALE
+    }
+
+    fun changeOfOptics(solution: Solution<RestIndividual>){
+        val msgs: MutableList<String> = solution.individuals.filter { ind ->
+            ind.results.any { rez ->
+                (rez as RestCallResult).hasErrorCode()
+            }
+        }.flatMap {ind ->
+            ind.results.map { rez ->
+                //(rez as RestCallResult).getBody()
+                val rezContents = Gson().fromJson((rez as RestCallResult).getBody(), Map::class.java)?.get("message")
+                if(rezContents != null) rezContents as String
+                else ""
+            }
+        }.toMutableList<String>()
+
+        //val whatSet = SimpleDataSet(msgs)
+        //val clusters = optics.cluster(msgs)
+
+        println(GeneUtils.applyEscapes(msgs.joinToString(separator = "\", \"",
+                prefix = "{\"",
+                postfix = "\"}"), GeneUtils.EscapeMode.TEXT, OutputFormat.JAVA_JUNIT_5))
+
+    }
+}
+
+class LevDistance {
+    @Override
+    fun distance(p0: String, p1: String): Double {
+        val lhsLength = p0.length
+        val rhsLength = p1.length
+
+        var cost = IntArray(lhsLength + 1) { it }
+        var newCost = IntArray(lhsLength + 1) { 0 }
+
+        for (i in 1..rhsLength) {
+            newCost[0] = i
+
+            for (j in 1..lhsLength) {
+                val editCost= if(p0[j - 1] == p1[i - 1]) 0 else 1
+
+                val costReplace = cost[j - 1] + editCost
+                val costInsert = cost[j] + 1
+                val costDelete = newCost[j - 1] + 1
+
+                newCost[j] = minOf(costInsert, costDelete, costReplace)
+            }
+
+            val swap = cost
+            cost = newCost
+            newCost = swap
+        }
+
+        return cost[lhsLength].toDouble()
     }
 }
