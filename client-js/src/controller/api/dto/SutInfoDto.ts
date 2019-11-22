@@ -1,0 +1,66 @@
+import RestProblemDto from "./problem/RestProblemDto";
+import AuthenticationDto from "./AuthenticationDto";
+import UnitsInfoDto from "./UnitsInfoDto";
+
+
+/*
+    Note: this enum must be kept in sync with what declared in
+    org.evomaster.core.output.OutputFormat
+ */
+export enum OutputFormat {
+    JAVA_JUNIT_5,
+    JAVA_JUNIT_4,
+    KOTLIN_JUNIT_4,
+    KOTLIN_JUNIT_5,
+    // JS_JEST //TODO
+}
+
+
+export class SutInfoDto {
+
+    /**
+     * If the SUT is a RESTful API, here there will be the info
+     * on how to interact with it
+     */
+    restProblem: RestProblemDto;
+
+    /**
+     * Whether the SUT is running or not
+     */
+    isSutRunning: boolean;
+
+
+    /**
+     * When generating test cases for this SUT, specify the default
+     * preferred output format (eg JUnit 4 in Java)
+     */
+    defaultOutputFormat: OutputFormat;
+
+    /**
+     * The base URL of the running SUT (if any).
+     * E.g., "http://localhost:8080"
+     * It should only contain the protocol and the hostname/port
+     */
+    baseUrlOfSUT: string;
+
+    /**
+     * There is no way a testing system can guess passwords, even
+     * if given full access to the database storing them (ie, reversing
+     * hash values).
+     * As such, the SUT might need to provide a set of valid credentials
+     */
+    infoForAuthentication: Array<AuthenticationDto>;
+
+
+    /**
+     * If the application is using a SQL database, then we need to
+     * know its schema to be able to do operations on it.
+     */
+    //sqlSchemaDto: DbSchemaDto;
+
+
+    /**
+     * Information about the "units" in the SUT.
+     */
+    unitsInfoDto: UnitsInfoDto;
+}
