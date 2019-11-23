@@ -6,11 +6,11 @@ export default class HeaderDto {
     /**
      * The header name
      */
-    name: string;
+    public name: string;
 
     /**
      * The value of the header
      */
-    value: string;
+    public value: string;
 
 }

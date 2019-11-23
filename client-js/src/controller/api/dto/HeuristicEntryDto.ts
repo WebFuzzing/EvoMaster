@@ -23,23 +23,20 @@ export enum Objective {
     MAXIMIZE
 }
 
-
 export class HeuristicEntryDto {
 
+    public type: Type;
 
-    type: Type;
-
-    objective: Objective;
+    public objective: Objective;
 
     /**
      * An id representing this heuristics.
      * For example, for SQL, it could be a SQL command
      */
-    id: string;
-
+    public id: string;
 
     /**
      * The actual value of the heuristic
      */
-    value: number;
+    public value: number;
 }

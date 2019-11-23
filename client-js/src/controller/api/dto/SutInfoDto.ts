@@ -1,7 +1,6 @@
-import RestProblemDto from "./problem/RestProblemDto";
 import AuthenticationDto from "./AuthenticationDto";
+import RestProblemDto from "./problem/RestProblemDto";
 import UnitsInfoDto from "./UnitsInfoDto";
-
 
 /*
     Note: this enum must be kept in sync with what declared in
@@ -15,33 +14,31 @@ export enum OutputFormat {
     // JS_JEST //TODO
 }
 
-
 export class SutInfoDto {
 
     /**
      * If the SUT is a RESTful API, here there will be the info
      * on how to interact with it
      */
-    restProblem: RestProblemDto;
+    public restProblem: RestProblemDto;
 
     /**
      * Whether the SUT is running or not
      */
-    isSutRunning: boolean;
-
+    public isSutRunning: boolean;
 
     /**
      * When generating test cases for this SUT, specify the default
      * preferred output format (eg JUnit 4 in Java)
      */
-    defaultOutputFormat: OutputFormat;
+    public defaultOutputFormat: OutputFormat;
 
     /**
      * The base URL of the running SUT (if any).
      * E.g., "http://localhost:8080"
      * It should only contain the protocol and the hostname/port
      */
-    baseUrlOfSUT: string;
+    public baseUrlOfSUT: string;
 
     /**
      * There is no way a testing system can guess passwords, even
@@ -49,18 +46,16 @@ export class SutInfoDto {
      * hash values).
      * As such, the SUT might need to provide a set of valid credentials
      */
-    infoForAuthentication: Array<AuthenticationDto>;
-
+    public infoForAuthentication: AuthenticationDto[];
 
     /**
      * If the application is using a SQL database, then we need to
      * know its schema to be able to do operations on it.
      */
-    //sqlSchemaDto: DbSchemaDto;
-
+    // sqlSchemaDto: DbSchemaDto;
 
     /**
      * Information about the "units" in the SUT.
      */
-    unitsInfoDto: UnitsInfoDto;
+    public unitsInfoDto: UnitsInfoDto;
 }

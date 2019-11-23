@@ -10,4 +10,3 @@ export const NEW_SEARCH = "/newSearch";
 export const NEW_ACTION = "/newAction";
 export const EXTRA_HEURISTICS = "/extraHeuristics";
 export const DATABASE_COMMAND = "/databaseCommand";
-

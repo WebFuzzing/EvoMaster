@@ -1,8 +1,8 @@
 export default class StringSpecializationInfoDto {
 
-    stringSpecialization: string;
+    public stringSpecialization: string;
 
-    value: string;
+    public value: string;
 
-    type: string;
+    public type: string;
 }

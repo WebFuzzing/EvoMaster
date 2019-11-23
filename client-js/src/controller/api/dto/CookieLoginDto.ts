@@ -6,7 +6,6 @@ enum HttpVerb {
     GET, POST
 }
 
-
 /**
  * Information on how to do a login based on username/password,
  * from which we then get a cookie back
@@ -15,43 +14,40 @@ enum HttpVerb {
  */
 class CookieLoginDto {
 
-
     /**
      * The id of the user
      */
-    username: string;
+    public username: string;
 
     /**
      * The password of the user.
      * This must NOT be hashed.
      */
-    password: string;
+    public password: string;
 
     /**
      * The name of the field in the body payload containing the username
      */
-    usernameField: string;
+    public usernameField: string;
 
     /**
      * The name of the field in the body payload containing the password
      */
-    passwordField: string;
+    public passwordField: string;
 
     /**
      * The URL of the endpoint, e.g., "/login"
      */
-    loginEndpointUrl: string;
-
+    public loginEndpointUrl: string;
 
     /**
      * The HTTP verb used to send the data.
      * Usually a "POST".
      */
-    httpVerb: HttpVerb;
-
+    public httpVerb: HttpVerb;
 
     /**
      * The encoding type used to specify how the data is sent
      */
-    contentType: ContentType;
+    public contentType: ContentType;
 }

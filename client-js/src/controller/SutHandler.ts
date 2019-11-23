@@ -10,7 +10,7 @@ export default interface SutHandler {
      * There might be different settings based on when the SUT is run during the
      * search of EvoMaster, and when it is later started in the generated tests.
      */
-    //setupForGeneratedTest(): void;
+    // setupForGeneratedTest(): void;
 
     /**
      * Start a new instance of the SUT.
@@ -38,5 +38,5 @@ export default interface SutHandler {
      *
      * @param insertions DTOs for each insertion to execute
      */
-    //execInsertionsIntoDatabase(insertions: <InsertionDto>): void;
+    // execInsertionsIntoDatabase(insertions: <InsertionDto>): void;
 }

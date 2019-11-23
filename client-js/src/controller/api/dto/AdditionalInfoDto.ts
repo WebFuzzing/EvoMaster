@@ -1,4 +1,4 @@
-import StringSpecializationInfoDto from "./StringSpecializationInfoDto"
+import StringSpecializationInfoDto from "./StringSpecializationInfoDto";
 
 export default class AdditionalInfoDto {
 
@@ -9,8 +9,7 @@ export default class AdditionalInfoDto {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    queryParameters : Set<string>  = new Set<string>();
-
+    public queryParameters: Set<string>  = new Set<string>();
 
     /**
      * In REST APIs, it can happen that some HTTP headers do not
@@ -19,7 +18,7 @@ export default class AdditionalInfoDto {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    headers: Set<string> = new Set<string>();
+    public headers: Set<string> = new Set<string>();
 
     /**
      * Information for taint analysis.
@@ -29,13 +28,12 @@ export default class AdditionalInfoDto {
      * The associated list is its possible specializations (which usually
      * will be at most 1).
      */
-     stringSpecializations = new Map<string, Array<StringSpecializationInfoDto>>();
-
+     public stringSpecializations = new Map<string, StringSpecializationInfoDto[]>();
 
     /**
      * Keep track of the last executed statement done in the SUT.
      * But not in the third-party libraries, just the business logic of the SUT.
      * The statement is represented with a descriptive unique id, like the class name and line number.
      */
-     lastExecutedStatement: string;
+     public lastExecutedStatement: string;
 }

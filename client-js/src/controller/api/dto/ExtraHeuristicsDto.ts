@@ -1,6 +1,5 @@
 import {HeuristicEntryDto} from "./HeuristicEntryDto";
 
-
 /**
  * Represents possible extra heuristics related to the code
  * execution and that do apply to all the reached testing targets.
@@ -12,8 +11,8 @@ export default class ExtraHeuristicsDto {
     /**
      * List of extra heuristic values we want to optimize
      */
-     heuristics: Array<HeuristicEntryDto> = [];
+     public heuristics: HeuristicEntryDto[] = [];
 
-     //TODO
-    //databaseExecutionDto: ExecutionDto;
+     // TODO
+    // databaseExecutionDto: ExecutionDto;
 }

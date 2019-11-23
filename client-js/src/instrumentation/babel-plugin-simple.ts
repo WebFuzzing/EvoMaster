@@ -26,11 +26,11 @@ export default function simple(
             Program: {
                 enter(path) {
                     console.log("Before");
-                    t.addComment(path.node, 'leading', "BEFORE", true)
+                    t.addComment(path.node, "leading", "BEFORE", true);
                 },
-                exit(path: NodePath){
+                exit(path: NodePath) {
                     console.log("After");
-                    t.addComment(path.node, 'trailing', "AFTER", true)
+                    t.addComment(path.node, "trailing", "AFTER", true);
                 }
             }
         }

@@ -1,14 +1,12 @@
-import TargetInfoDto from "./TargetInfoDto"
 import AdditionalInfoDto from "./AdditionalInfoDto";
 import ExtraHeuristicsDto from "./ExtraHeuristicsDto";
-
+import TargetInfoDto from "./TargetInfoDto";
 
 export default class TestResultsDto {
 
-    targets: Array<TargetInfoDto> = [];
+    public targets: TargetInfoDto[] = [];
 
+    public additionalInfoList = new Array<AdditionalInfoDto>();
 
-    additionalInfoList = new Array<AdditionalInfoDto>();
-
-    extraHeuristics = new Array<ExtraHeuristicsDto>();
+    public extraHeuristics = new Array<ExtraHeuristicsDto>();
 }

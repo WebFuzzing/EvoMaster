@@ -8,33 +8,35 @@
  */
 export default class WrappedResponseDto<T> {
 
-    /**
-     * The actual payload we are sending and are "wrapping" here
-     */
-    data: T;
-
-    /**
-     * A message describing the error, if any.
-     * If this is not null, then "data" must be null.
-     */
-    error: string;
-
-
-    static withData<K>(data: K): WrappedResponseDto<K> {
+    public static withData<K>(data: K): WrappedResponseDto<K> {
         const dto = new WrappedResponseDto<K>();
         dto.data = data;
         return dto;
     }
 
-    static withError(error: string): WrappedResponseDto<any> {
+    public static withNoData(): WrappedResponseDto<void> {
+        return new WrappedResponseDto<void>();
+    }
 
-        if (!error || error.length == 0) {
+    public static withError(error: string): WrappedResponseDto<void> {
+
+        if (!error || error.length === 0) {
             throw new Error("Empty error message");
         }
 
-        const dto = new WrappedResponseDto();
+        const dto = new WrappedResponseDto<void>();
         dto.error = error;
         return dto;
     }
-}
 
+    /**
+     * The actual payload we are sending and are "wrapping" here
+     */
+    public data: T;
+
+    /**
+     * A message describing the error, if any.
+     * If this is not null, then "data" must be null.
+     */
+    public error: string;
+}
