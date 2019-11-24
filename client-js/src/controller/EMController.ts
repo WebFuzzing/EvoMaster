@@ -10,6 +10,7 @@ import TestResultsDto from "./api/dto/TestResultsDto";
 import WrappedResponseDto from "./api/dto/WrappedResponseDto";
 import SutController from "./SutController";
 import {AddressInfo} from "net";
+import * as http from "http";
 
 export default class EMController {
 
@@ -25,25 +26,50 @@ export default class EMController {
      */
     private actualPort: number;
 
+    private server: http.Server;
+
     constructor(sutController: SutController) {
         this.sutController = sutController;
 
         this.initExpress();
     }
 
-    startTheControllerServer(): boolean {
+    startTheControllerServer(): Promise<boolean> {
 
-        const server = this.app.listen(this.controllerPort, this.controllerHost, () => {
-            this.actualPort = (server.address() as AddressInfo).port;
+        return new Promise<boolean>( resolve => {
+            this.server = this.app.listen(this.controllerPort, this.controllerHost, () => {
+                this.actualPort = (this.server.address() as AddressInfo).port;
+                resolve(true);
+            });
+        });
+    }
+
+    stopTheControllerServer(): Promise<void>{
+
+        const sut = this.sutController.isSutRunning() ?
+            this.sutController.stopSut()
+            : Promise.resolve();
+
+        const controller = new Promise<void>( resolve => {
+            if(this.server){
+                this.server.close(() => resolve());
+            }
         });
 
-        return true;
+        return Promise.all([sut, controller]).then();
     }
 
     setPort(value: number){
        this.controllerPort = value;
     }
 
+    getActualPort(): number  {
+        return this.actualPort;
+    }
+
+    getBaseUrlOfSUT() : string {
+        return this.baseUrlOfSUT;
+    }
 
     private initExpress(): void {
 
@@ -104,7 +130,7 @@ export default class EMController {
             res.json(WrappedResponseDto.withNoData());
         });
 
-        this.app.put(c.BASE_PATH + c.RUN_SUT_PATH, (req, res) => {
+        this.app.put(c.BASE_PATH + c.RUN_SUT_PATH, async (req, res) => {
 
             if (!req.body) {
                 res.status(400);
@@ -129,7 +155,7 @@ export default class EMController {
 
                 // if on, we want to shut down the server
                 if (this.sutController.isSutRunning()) {
-                    this.sutController.stopSut();
+                    await this.sutController.stopSut();
                     this.baseUrlOfSUT = null;
                 }
 
@@ -139,7 +165,7 @@ export default class EMController {
                  */
 
                 if (!this.sutController.isSutRunning()) {
-                    this.baseUrlOfSUT = this.sutController.startSut();
+                    this.baseUrlOfSUT = await this.sutController.startSut();
                     if (this.baseUrlOfSUT == null) {
                         // there has been an internal failure in starting the SUT
                         res.status(500);
@@ -158,7 +184,7 @@ export default class EMController {
                 want to do it
                 */
                 if (dto.resetState != null && dto.resetState) {
-                    this.sutController.resetStateOfSUT();
+                    await this.sutController.resetStateOfSUT();
                     this.sutController.newTest();
                 }
 

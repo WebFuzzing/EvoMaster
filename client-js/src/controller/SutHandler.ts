@@ -19,19 +19,19 @@ export default interface SutHandler {
      *
      * @return the base URL of the running SUT, eg "http://localhost:8080"
      */
-    startSut(): string;
+    startSut(): Promise<string>;
 
     /**
      * Stop the SUT
      */
-    stopSut(): void;
+    stopSut(): Promise<void>;
 
     /**
      * Make sure the SUT is in a clean state (eg, reset data in database).
      * A possible (likely very inefficient) way to implement this would be to
      * call #stopSUT followed by #startSUT
      */
-    resetStateOfSUT(): void;
+    resetStateOfSUT(): Promise<void>;
 
     /**
      * Execute the given data insertions into the database (if any)

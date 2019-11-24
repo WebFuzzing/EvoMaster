@@ -10,11 +10,11 @@ export default abstract class SutController implements SutHandler {
 
     // ------- from SutHandler  ------------
 
-    public abstract resetStateOfSUT(): void;
+    public abstract async resetStateOfSUT(): Promise<void>;
 
-    public abstract startSut(): string;
+    public abstract async startSut(): Promise<string>;
 
-    public abstract stopSut(): void;
+    public abstract async stopSut(): Promise<void>;
 
     // ------- other abstract methods -------
 
