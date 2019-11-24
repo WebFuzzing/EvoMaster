@@ -91,9 +91,32 @@ test("Test start SUT", async () => {
 
 
 test("Test start/stop/reset SUT", async () => {
-    await startSut();
+
+    const url = await startSut();
+    initWithSomeBooks();
+
+    let response = await superagent.get(sutUrl + "/books");
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBe(5);
+
     await resetSut();
+
+    response = await superagent.get(sutUrl + "/books");
+    expect(response.status).toBe(200);
+    expect(response.body.length).toBe(0);
+
     await stopSut();
+
+    /*
+        WARNING: NodeJS server.close() does not close shit... it only prevents new connections
+        https://github.com/nodejs/node/issues/2642
+     */
+
+    /*
+    expect( async () => {
+        await superagent.get(sutUrl + "/books");}
+    ).toThrow();
+    */
 });
 
 
