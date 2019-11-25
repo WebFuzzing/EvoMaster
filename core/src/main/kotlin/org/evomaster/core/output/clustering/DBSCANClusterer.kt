@@ -7,7 +7,7 @@ class DBSCANClusterer<V> {
     private var minimumNumberOfClusterMembers: Int = 2
     private lateinit var metric: DistanceMetric<V>
     private lateinit var inputValues: List<V>
-    private var visitedPoints: HashSet<V> = setOf<V>() as HashSet<V>
+    private var visitedPoints: HashSet<V> = HashSet()
 
     constructor(values: Collection<V> , epsilon: Double = 1.0, minimumMembers: Int = 2, metric: DistanceMetric<V>){
         setEpsilon(epsilon)
@@ -37,7 +37,7 @@ class DBSCANClusterer<V> {
 
     private fun getNeighbours(inputValue: V): MutableList<V>{
         val neighbours: MutableList<V> = mutableListOf()
-        for (i in 0..inputValues.size){
+        for (i in 0..inputValues.size-1){
             val candidate = inputValues.get(i)
             if(metric.calculateDistance(inputValue, candidate) <= epsilon){
                 neighbours.add(candidate)
@@ -47,7 +47,7 @@ class DBSCANClusterer<V> {
     }
 
     private fun mergeRightToLeft(neighbours1: MutableList<V>, neighbours2: MutableList<V>): MutableList<V>{
-        for ( i in 0..neighbours2.size){
+        for ( i in 0..neighbours2.size-1){
             val temPt = neighbours2.get(i)
             if(!neighbours1.contains(temPt)) neighbours1.add(temPt)
         }
@@ -55,13 +55,13 @@ class DBSCANClusterer<V> {
     }
 
 
-    private fun performCLustering(neighbours1: List<V>, neighbours2: List<V>): MutableList<V>{
+    fun performCLustering(): MutableList<MutableList<V>>{
         if(!::inputValues.isInitialized) throw Exception("DBSCAN: List of inputs has not been initialized")
         if(inputValues.isEmpty()) throw Exception("DBSCAN: List of inputs is empty")
         if(inputValues.size < 2) throw Exception("DBSCAN: clustering less than 2 values is problematic")
         if(epsilon < 0.0) throw Exception("DBSCAN: Maximum distance cannot be less than 0 (though I don't know how you got here, because it shouldn't be possible)")
 
-        val resultList = mutableListOf<V>()
+        val resultList = mutableListOf<MutableList<V>>()
         visitedPoints.clear()
 
         var neighbours: MutableList<V> = mutableListOf()
@@ -90,7 +90,7 @@ class DBSCANClusterer<V> {
                         }
                         ind++
                     }
-                    resultList.addAll(neighbours)
+                    resultList.add(neighbours)
                 }
             }
             index++

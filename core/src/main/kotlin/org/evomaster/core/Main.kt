@@ -31,6 +31,9 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import java.lang.reflect.InvocationTargetException
 import org.evomaster.core.output.Clusterer
+import org.evomaster.core.output.clustering.DBSCANClusterer
+import org.evomaster.core.output.clustering.metrics.DistanceMetricAction
+import org.evomaster.core.problem.rest.RestCallResult
 
 /**
  * This will be the entry point of the tool when run from command line
@@ -157,8 +160,29 @@ class Main {
 
             writeTests(injector, solution, controllerInfo)
 
-            val clusterer = Clusterer()
-            clusterer.cluster()
+            //val clusterer = Clusterer()
+            //clusterer.cluster()
+
+
+            //TODO: BMR - this is just here to run and evaluate the clusterer. Will be refactored to
+            // account for more clustering options soon.
+
+            val soso1 = solution.individuals.filter{
+                it.evaluatedActions().any{ ac -> (ac.result as RestCallResult).getStatusCode() == 500  }
+            }
+
+            val cluterableActions = soso1.flatMap { it.evaluatedActions().map { ac -> (ac.result as RestCallResult) } }
+
+            val clu = DBSCANClusterer<RestCallResult>(
+                    values = cluterableActions,
+                    epsilon = 1.0,
+                    minimumMembers = 2,
+                    metric = DistanceMetricAction()
+            )
+
+            val clusters = clu.performCLustering()
+
+            // clustering appears okay
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
