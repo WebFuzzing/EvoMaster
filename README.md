@@ -127,11 +127,14 @@ start/stop the REST server by themselves:
 
 The ability of starting/resetting/stopping the tested application is critical for using the generated 
 tests in _Continuous Integration_ (e.g., Jenkins, Travis and CircleCI).
-However, it requires to write a [_Driver_](docs/write_driver.md) to tell _EvoMaster_ how to do 
+However, it requires to write a [_driver_](docs/write_driver.md) to tell _EvoMaster_ how to do 
 such start/reset/stop.
   
 
-TODO SQL
+A generated test is not only going to be a sequence of HTTP calls toward a running application.
+_EvoMaster_ can also set up the _environment_ of the application, like automatically adding all the
+needed data into a SQL database.
+At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.
 
 
 
@@ -165,20 +168,45 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   please provide links to it, as then it is much easier
   to reproduce the bugs.
   
-* If you are trying to use _EvoMaster_, but the instructions
+* *Documentation*: if you are trying to use _EvoMaster_, but the instructions
   in these notes are not enough to get you started, 
   then it means it is a "bug" in the documentation, which then would need
   to be clarified. 
   
 * *Feature Requests*: to improve _EvoMaster_,
-  we are very keen to receive
-  feature requests, although of course we cannot
-  guarantee when they are going to be implemented. 
+  we are very keen to receive feature requests, although of course we cannot
+  guarantee when they are going to be implemented, if implemented at all. 
+  As researchers, we want to know what are the problems that engineers in industry
+  do face, and that could be done to improve _EvoMaster_ to help them.
   
-* *Pull Requests*: we are very keen to receive PRs, as long as you agree
-  with the license of _EvoMaster_. However, before making a PR, should read
+  
+* *Pull Requests*: we are keen to receive PRs, as long as you agree
+  with the license of _EvoMaster_, and as long as you are allowed by your employer to contribute
+  to open-source projects. However, before making a PR, you should read
   the [notes for developers](docs/for_developers.md).  
+
+
+* *Industry Collaborations*: to evaluate the effectiveness of _EvoMaster_, we need case studies.
+  There are some open-source projects that can be used (e.g., which we selected and aggregated in the
+  [EMB repository](https://github.com/EMResearch/EMB)).
+  But open-source applications are not necessarily representative of software developed in industry.
+  Therefore, we "collaborate" with different companies (e.g., [Universitetsforlaget](https://www.universitetsforlaget.no/)),
+  to apply _EvoMaster_ on their systems.
+      
+  * *Benefits for us*: access to the source code of real, industrial systems (of course, under NDAs). 
+    It makes easier to publish academic papers, and to get funding from the research councils.  
+  * *Benefits for the industrial collaborators*: 
     
+    1. getting priority on new features and bug fixing.
+    2. "free" human resources (MSc/PhD students and researchers) that try to break your systems and
+        find faults in them.    
+    
+* *Academic Collaborations*: we are keen to hear from students and researchers that want to 
+  collaborate on topic in which _EvoMaster_ can be used on, or extended for.
+  For example, it is possible have visiting PhD students in our lab.
+  However, all communications about academic collaborations should not be done here on GitHub,
+  but rather by email, directly to Prof. A. Arcuri. 
+
 
 
 

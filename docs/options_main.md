@@ -10,6 +10,10 @@ Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be sp
 In other words, if you need to run the search for just `30` seconds, you can write `30s` instead of `0h0m30s`.
 **The more time is allowed, the better results one can expect**.
 But then of course the test generation will take longer.
+For how long should _EvoMaster_ be left run?
+The default 1 _minute_ is just for demonstration.
+__We recommend to run it between 1 and 24 hours__, depending on the size and complexity
+of the tested application.
 
 * `--outputFolder <String>`   
 The path directory of where the generated test classes 

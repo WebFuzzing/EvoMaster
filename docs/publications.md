@@ -2,7 +2,7 @@
 
 The development of _EvoMaster_ is rooted in academia.
 Here, you can find the PDFs of all the academic publications based on _EvoMaster_. 
-Furthermore, slides of presentations can be  found [here](docs/publications.md).
+Furthermore, slides of presentations can be  found [here](publications.md).
 These can be useful if you want to know more on how _EvoMaster_ works internally,
 e.g., details on the Many Independent Objective (MIO) algorithm.
 
