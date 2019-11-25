@@ -337,7 +337,6 @@ class Main {
 
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-
             val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             writer.setSwagger(swagger)
             solutions.forEach {

@@ -472,7 +472,8 @@ class EMConfig {
 
 
     enum class TestSuiteSplitType {
-        NONE
+        NONE,
+        CODE
     }
 
     @Experimental
