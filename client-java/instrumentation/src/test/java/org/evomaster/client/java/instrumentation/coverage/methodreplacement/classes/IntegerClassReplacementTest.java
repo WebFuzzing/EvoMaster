@@ -1,10 +1,13 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.H_REACHED_BUT_NULL;
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.IntegerClassReplacement.parseIntHeuristic;
+import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseIntHeuristic;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,6 +15,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Created by arcuri82 on 26-Jun-19.
  */
 public class IntegerClassReplacementTest {
+
+    @BeforeEach
+    public void setUp() {
+        ExecutionTracer.reset();
+    }
 
     @Test
     public void testParseValid() {
@@ -76,6 +84,41 @@ public class IntegerClassReplacementTest {
         String input = Long.valueOf(Long.MAX_VALUE).toString();
         assertThrows(NumberFormatException.class, () -> {
             IntegerClassReplacement.parseInt(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+        });
+    }
+
+    @Test
+    public void testEqualsNull() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals = IntegerClassReplacement.equals(1, null, prefix);
+        assertFalse(equals);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
+
+    @Test
+    public void testEqualsNotNull() {
+        String prefix = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals = IntegerClassReplacement.equals(1, 2, prefix);
+        assertFalse(equals);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(prefix)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+
+        assertTrue(h0 > DistanceHelper.H_NOT_NULL);
+    }
+
+
+    @Test
+    public void testValueOf() {
+        String input = Long.valueOf(Long.MAX_VALUE).toString();
+        assertThrows(NumberFormatException.class, () -> {
+            IntegerClassReplacement.valueOf(input, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
         });
     }
 }

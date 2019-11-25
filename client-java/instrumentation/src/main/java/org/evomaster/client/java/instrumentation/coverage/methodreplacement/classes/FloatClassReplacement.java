@@ -1,16 +1,17 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
-import org.evomaster.client.java.instrumentation.shared.TaintInputName;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper.*;
+import java.util.Objects;
 
 public class FloatClassReplacement implements MethodReplacementClass {
 
@@ -37,60 +38,41 @@ public class FloatClassReplacement implements MethodReplacementClass {
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
             return res;
         } catch (NumberFormatException | NullPointerException e) {
-            double h = parseFloatHeuristic(input);
+            double h = NumberParsingUtils.getParsingHeuristicValueForFloat(input);
             ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
             throw e;
         }
     }
 
-    /**
-     * Optimizes for Java regex pattern "['-']?[0-9]*['.']?[0-9]*"
-     * @param input
-     * @return
-     */
-    protected static double parseFloatHeuristic(String input) {
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean equals(Float caller, Object anObject, String idTemplate) {
+        Objects.requireNonNull(caller);
 
-        if (input == null) {
-            return H_REACHED_BUT_NULL;
+        if (idTemplate == null) {
+            return caller.equals(anObject);
         }
 
-        final double base = H_NOT_NULL;
-
-        if (input.length() == 0) {
-            return base;
-        }
-
-        long distance = 0;
-
-        if (input.length() == 1) {
-            //cannot be '-'
-            distance += distanceToDigit(input.charAt(0));
+        final Truthness t;
+        if (anObject == null || !(anObject instanceof Float)) {
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-
-            for (int i = 0; i < input.length(); i++) {
-
-                int digitsDist = distanceToDigit(input.charAt(i));
-                if (i == 0) {
-                    //first symbol could be a '-'
-                    distance += Math.min(digitsDist, distanceToChar(input.charAt(i), '-'));
-
-                } else {
-                    int firstIndexOfDot = input.substring(1).indexOf('.');
-                    if (firstIndexOfDot != -1) {
-                        // optimize for a '.'
-                        distance += Math.min(digitsDist, distanceToChar(input.charAt(i), '.'));
-                    } else if (i == firstIndexOfDot) {
-                        distance += 0;
-                    } else {
-                        distance += digitsDist;
-                    }
-                }
+            Float anotherFloat = (Float) anObject;
+            if (caller.equals(anotherFloat)) {
+                t = new Truthness(1d, 0d);
+            } else {
+                final double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, anotherFloat);
+                double h = base + ((1 - base) / (distance + 1));
+                t = new Truthness(h, 1d);
             }
-
         }
 
-        //recall h in [0,1] where the highest the distance the closer to 0
-        return base + ((1d - base) / (distance + 1));
+        ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
+        return caller.equals(anObject);
     }
 
+    @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
+    public static float valueOf(String input, String idTemplate) {
+        return parseFloat(input, idTemplate);
+    }
 }

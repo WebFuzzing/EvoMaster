@@ -1,10 +1,10 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
-import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization;
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo;
@@ -19,6 +19,16 @@ import java.util.Objects;
 
 
 public class LocalDateClassReplacement implements MethodReplacementClass {
+
+    private static LocalDateTime toLocalDateTime(LocalDate localDate) {
+        Objects.requireNonNull(localDate);
+        return localDate.atTime(LocalTime.MIDNIGHT);
+    }
+
+    private static ChronoLocalDateTime toChronoLocalDateTime(ChronoLocalDate chronoLocalDate) {
+        Objects.requireNonNull(chronoLocalDate);
+        return chronoLocalDate.atTime(LocalTime.MIDNIGHT);
+    }
 
     @Override
     public Class<?> getTargetClass() {
@@ -49,7 +59,6 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
     }
 
 
-
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean equals(LocalDate caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
@@ -60,11 +69,17 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
 
         final Truthness t;
         if (anObject == null || !(anObject instanceof LocalDate)) {
-            t = new Truthness(0d, 1d);
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            final long a = caller.toEpochDay();
-            final long b = ((LocalDate) anObject).toEpochDay();
-            t = TruthnessUtils.getEqualityTruthness(a, b);
+            LocalDate anotherLocalDate = (LocalDate) anObject;
+            if (caller.equals(anotherLocalDate)) {
+                t = new Truthness(1d, 0d);
+            } else {
+                final double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, anotherLocalDate);
+                double h = base + ((1 - base) / (distance + 1));
+                t = new Truthness(h, 1d);
+            }
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.equals(anObject);
@@ -78,16 +93,6 @@ public class LocalDateClassReplacement implements MethodReplacementClass {
                 when == null ? null : toChronoLocalDateTime(when),
                 idTemplate);
 
-    }
-
-    private static LocalDateTime toLocalDateTime(LocalDate localDate) {
-        Objects.requireNonNull(localDate);
-        return localDate.atTime(LocalTime.MIDNIGHT);
-    }
-
-    private static ChronoLocalDateTime toChronoLocalDateTime(ChronoLocalDate chronoLocalDate) {
-        Objects.requireNonNull(chronoLocalDate);
-        return chronoLocalDate.atTime(LocalTime.MIDNIGHT);
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)

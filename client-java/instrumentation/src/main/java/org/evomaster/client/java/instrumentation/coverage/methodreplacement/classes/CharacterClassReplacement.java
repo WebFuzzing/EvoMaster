@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
@@ -9,35 +10,40 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Objects;
 
-public class ObjectsClassReplacement implements MethodReplacementClass {
+public class CharacterClassReplacement implements MethodReplacementClass {
+
     @Override
     public Class<?> getTargetClass() {
-        return Objects.class;
+        return Character.class;
     }
 
-    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
-    public static boolean equals(Object left, Object right, String idTemplate) {
 
-        boolean result = Objects.equals(left, right);
+    @Replacement(type = ReplacementType.BOOLEAN)
+    public static boolean equals(Character caller, Object anObject, String idTemplate) {
+        Objects.requireNonNull(caller);
+
         if (idTemplate == null) {
-            return result;
+            return caller.equals(anObject);
         }
 
-        Truthness t;
-        if (result) {
-            t = new Truthness(1d, 0d);
+        final Truthness t;
+        if (anObject == null || !(anObject instanceof Character)) {
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            if (left == null || right == null) {
-                t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
+            Character anoterCharacter = (Character) anObject;
+            if (caller.equals(anoterCharacter)) {
+                t = new Truthness(1d, 0d);
             } else {
-                double base = DistanceHelper.H_NOT_NULL;
-                double distance = DistanceHelper.getDistance(left, right);
-                double h = base + (1d - base) / (1d + distance);
+                final double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, anoterCharacter);
+                double h = base + ((1 - base) / (distance + 1));
                 t = new Truthness(h, 1d);
             }
         }
+
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
-        return result;
+        return caller.equals(anObject);
     }
+
 
 }

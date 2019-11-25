@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DateTimeParsingUtils;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
@@ -18,6 +19,24 @@ import java.util.Objects;
 
 
 public class LocalDateTimeClassReplacement implements MethodReplacementClass {
+
+    private static long getMillis(ChronoLocalDateTime<?> chronoLocalDateTime) {
+        return chronoLocalDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
+    }
+
+    private static Truthness getIsBeforeTruthness(ChronoLocalDateTime<?> caller, ChronoLocalDateTime<?> when) {
+        Objects.requireNonNull(caller);
+        Objects.requireNonNull(when);
+
+        final long a = getMillis(caller);
+        final long b = getMillis(when);
+
+        /**
+         * We use the same gradient that HeuristicsForJumps.getForValueComparison()
+         * used for IF_ICMPLT, ie, a < b
+         */
+        return TruthnessUtils.getLessThanTruthness(a, b);
+    }
 
     @Override
     public Class<?> getTargetClass() {
@@ -66,43 +85,41 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
 
         final Truthness t;
         if (anObject == null || !(anObject instanceof LocalDateTime)) {
-            t = new Truthness(0d, 1d);
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            final long a = getMillis(caller);
-            final long b = getMillis((LocalDateTime) anObject);
-            t = TruthnessUtils.getEqualityTruthness(a, b);
+            LocalDateTime anotherLocalDateTime = (LocalDateTime) anObject;
+            if (caller.equals(anotherLocalDateTime)) {
+                t = new Truthness(1d, 0d);
+            } else {
+                double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, anotherLocalDateTime);
+                double h = base + (1 - base) / (1 + distance);
+                t = new Truthness(h, 1d);
+            }
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.equals(anObject);
     }
 
-    private static Truthness getIsBeforeTruthness(ChronoLocalDateTime<?> caller, ChronoLocalDateTime<?> when) {
-        Objects.requireNonNull(caller);
-        Objects.requireNonNull(when);
 
-        final long a = getMillis(caller);
-        final long b = getMillis(when);
-
-        /**
-         * We use the same gradient that HeuristicsForJumps.getForValueComparison()
-         * used for IF_ICMPLT, ie, a < b
-         */
-        return TruthnessUtils.getLessThanTruthness(a, b);
-    }
 
     @Replacement(type = ReplacementType.BOOLEAN)
     public static boolean isBefore(LocalDateTime caller, ChronoLocalDateTime<?> other, String idTemplate) {
         Objects.requireNonNull(caller);
 
         // might throw NPE if when is null
-        final boolean res = caller.isBefore(other);
         if (idTemplate == null) {
-            return res;
+            return caller.isBefore(other);
         }
 
-        final Truthness t = getIsBeforeTruthness(caller, other);
+        final Truthness t;
+        if (other == null) {
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
+        } else {
+            t = getIsBeforeTruthness(caller, other);
+        }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
-        return res;
+        return caller.isBefore(other);
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
@@ -110,14 +127,18 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         Objects.requireNonNull(caller);
 
         // might throw NPE if when is null
-        final boolean res = caller.isAfter(other);
         if (idTemplate == null) {
-            return res;
+            return caller.isAfter(other);
+        }
+        final Truthness t;
+        if (other == null) {
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
+        } else {
+            t = getIsBeforeTruthness(other, caller);
         }
 
-        final Truthness t = getIsBeforeTruthness(other, caller);
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
-        return res;
+        return caller.isAfter(other);
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
@@ -129,18 +150,20 @@ public class LocalDateTimeClassReplacement implements MethodReplacementClass {
         }
         final Truthness t;
         if (other == null) {
-            t = new Truthness(0d, 1d);
+            t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            final long a = getMillis(caller);
-            final long b = getMillis(other);
-            t = TruthnessUtils.getEqualityTruthness(a, b);
+            if (caller.isEqual(other)) {
+                t = new Truthness(1d, 0d);
+            } else {
+                double base = DistanceHelper.H_NOT_NULL;
+                double distance = DistanceHelper.getDistanceToEquality(caller, other);
+                double h = base + (1 - base) / (1 + distance);
+                t = new Truthness(h, 1d);
+            }
         }
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return caller.isEqual(other);
     }
 
-    private static long getMillis(ChronoLocalDateTime<?> chronoLocalDateTime) {
-        return chronoLocalDateTime.atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
-    }
 
 }

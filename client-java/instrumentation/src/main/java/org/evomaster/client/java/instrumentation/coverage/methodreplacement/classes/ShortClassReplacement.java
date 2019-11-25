@@ -3,6 +3,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
@@ -12,41 +13,39 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import java.util.Objects;
 
-import static org.evomaster.client.java.instrumentation.coverage.methodreplacement.NumberParsingUtils.parseLongHeuristic;
-
-public class LongClassReplacement implements MethodReplacementClass {
+public class ShortClassReplacement implements MethodReplacementClass {
 
     @Override
     public Class<?> getTargetClass() {
-        return Long.class;
+        return Short.class;
     }
 
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
-    public static long parseLong(String input, String idTemplate) {
+    public static short parseShort(String input, String idTemplate) {
 
         if (ExecutionTracer.isTaintInput(input)) {
             ExecutionTracer.addStringSpecialization(input,
-                    new StringSpecializationInfo(StringSpecialization.LONG, null));
+                    new StringSpecializationInfo(StringSpecialization.INTEGER, null));
         }
 
         if (idTemplate == null) {
-            return Long.parseLong(input);
+            return Short.parseShort(input);
         }
 
         try {
-            long res = Long.parseLong(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1, 0));
+            short res = Short.parseShort(input);
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(1d, 0d));
             return res;
         } catch (RuntimeException e) {
-            double h = parseLongHeuristic(input);
-            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1));
+            double h = NumberParsingUtils.parseShortHeuristic(input);
+            ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.EXCEPTION, new Truthness(h, 1d));
             throw e;
         }
     }
 
     @Replacement(type = ReplacementType.BOOLEAN)
-    public static boolean equals(Long caller, Object anObject, String idTemplate) {
+    public static boolean equals(Short caller, Object anObject, String idTemplate) {
         Objects.requireNonNull(caller);
 
         if (idTemplate == null) {
@@ -54,15 +53,15 @@ public class LongClassReplacement implements MethodReplacementClass {
         }
 
         final Truthness t;
-        if (anObject == null || !(anObject instanceof Long)) {
+        if (anObject == null || !(anObject instanceof Short)) {
             t = new Truthness(DistanceHelper.H_REACHED_BUT_NULL, 1d);
         } else {
-            Long anotherLong = (Long) anObject;
-            if (caller.equals(anotherLong)) {
+            Short anotherShort = (Short) anObject;
+            if (caller.equals(anotherShort)) {
                 t = new Truthness(1d, 0d);
             } else {
                 final double base = DistanceHelper.H_NOT_NULL;
-                double distance = DistanceHelper.getDistanceToEquality(caller, anotherLong);
+                double distance = DistanceHelper.getDistanceToEquality(caller, anotherShort);
                 double h = base + ((1 - base) / (distance + 1));
                 t = new Truthness(h, 1d);
             }
@@ -73,7 +72,7 @@ public class LongClassReplacement implements MethodReplacementClass {
     }
 
     @Replacement(type = ReplacementType.EXCEPTION, replacingStatic = true)
-    public static long valueOf(String input, String idTemplate) {
-        return parseLong(input, idTemplate);
+    public static short valueOf(String input, String idTemplate) {
+        return parseShort(input, idTemplate);
     }
 }

@@ -226,13 +226,8 @@ class TestSuiteWriter {
             addImport("java.util.Arrays", lines)
 
         }
-        //addImport("static org.hamcrest.core.Is.is", lines, format)
 
         lines.addEmpty(2)
-
-        /*if(config.enableBasicAssertions && config.outputFormat.isJava()){
-            addAdditionalNumberMatcher(lines)
-        }*/
 
         lines.addEmpty(2)
 

@@ -167,11 +167,11 @@ class Main {
             //TODO: BMR - this is just here to run and evaluate the clusterer. Will be refactored to
             // account for more clustering options soon.
 
-            val soso1 = solution.individuals.filter{
+            val sol1 = solution.individuals.filter{
                 it.evaluatedActions().any{ ac -> (ac.result as RestCallResult).getStatusCode() == 500  }
             }
 
-            val cluterableActions = soso1.flatMap { it.evaluatedActions().map { ac -> (ac.result as RestCallResult) } }
+            val cluterableActions = sol1.flatMap { it.evaluatedActions().map { ac -> (ac.result as RestCallResult) } }
 
             val clu = DBSCANClusterer<RestCallResult>(
                     values = cluterableActions,
