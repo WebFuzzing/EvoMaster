@@ -2,9 +2,6 @@ package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 
@@ -42,7 +39,7 @@ object TestSuiteSplitter {
             !s500.contains(it) &&
             it.evaluatedActions().all { ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if(code!=null) code/400 < 100
+                if(code!=null) code.rem(400) > 100
                 else false
             }
         }.toMutableList()
