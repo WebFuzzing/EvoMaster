@@ -628,13 +628,14 @@ class TestCaseWriter {
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
         if (resContents.isEmpty()){
             // If this executes, the result contains an empty collection.
-            lines.add(".body(\"size()\", numberMatches(0))")
+            //lines.add(".body(\"size()\", numberMatches(0))")
             if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
 
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
-        lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
+        // Removed size checks for objects.
+        //lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
         flatContent.keys
                 .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
                 .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
