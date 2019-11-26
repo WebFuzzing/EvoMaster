@@ -160,30 +160,6 @@ class Main {
 
             writeTests(injector, solution, controllerInfo)
 
-            //val clusterer = Clusterer()
-            //clusterer.cluster()
-
-
-            //TODO: BMR - this is just here to run and evaluate the clusterer. Will be refactored to
-            // account for more clustering options soon.
-
-            val sol1 = solution.individuals.filter{
-                it.evaluatedActions().any{ ac -> (ac.result as RestCallResult).getStatusCode() == 500  }
-            }
-
-            val cluterableActions = sol1.flatMap { it.evaluatedActions().map { ac -> (ac.result as RestCallResult) } }
-
-            val clu = DBSCANClusterer<RestCallResult>(
-                    values = cluterableActions,
-                    epsilon = 1.0,
-                    minimumMembers = 2,
-                    metric = DistanceMetricAction()
-            )
-
-            val clusters = clu.performCLustering()
-
-            // clustering appears okay
-
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")

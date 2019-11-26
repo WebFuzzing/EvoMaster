@@ -2,6 +2,7 @@ package org.evomaster.core.output.clustering.metrics
 
 import com.google.gson.Gson
 import org.evomaster.core.problem.rest.RestCallResult
+import kotlin.math.max
 
 
 class DistanceMetricAction : DistanceMetric<RestCallResult>() {
@@ -9,10 +10,14 @@ class DistanceMetricAction : DistanceMetric<RestCallResult>() {
         val message1 = Gson().fromJson(val1.getBody(), Map::class.java)?.get("message") ?: ""
         val message2 = Gson().fromJson(val2.getBody(), Map::class.java)?.get("message") ?: ""
 
-        return levenshtein(message1.toString(), message2.toString())
+        return LevDistance.distance(message1.toString(), message2.toString())
     }
 
-    private fun levenshtein(p0: String, p1: String): Double{
+
+}
+
+object LevDistance {
+    fun distance(p0: String, p1: String): Double{
         val lhsLength = p0.length
         val rhsLength = p1.length
 
@@ -37,6 +42,17 @@ class DistanceMetricAction : DistanceMetric<RestCallResult>() {
             newCost = swap
         }
 
-        return cost[lhsLength].toDouble()
+        return cost[lhsLength].toDouble()/ max(lhsLength, rhsLength)
+
+        /*
+        NOTE: I am hoping that, by making the distance more dependent on length
+        (e.g. as a percentage of difference instead of absolute)
+        it will be more robust in terms of analyzing different error messages.
+
+        This could lead to other problems in terms of error messages that have the same
+        proportion of difference, but are actually very different messages.
+
+        Until a more elegant solution can be found, I'll try to assess this idea.
+         */
     }
 }
