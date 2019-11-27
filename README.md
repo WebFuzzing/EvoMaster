@@ -94,7 +94,7 @@ In this automatically generated test, a new resource is first created with a _PO
 The _id_ of this newly generated resource is then extracted from the _POST_ response, and used in the URL
 of a following _GET_ request on a sub-resource.
 Such _GET_ request does break the backend, as it returns a __500__ HTTP status code.
-The last line executed in the backend is then printed as comment, to help debugging this fault.    
+The last line executed in the business logic of the backend is then printed as comment, to help debugging this fault.    
 
 
 The generated tests are self-contained, i.e., they 
@@ -194,7 +194,8 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   to apply _EvoMaster_ on their systems.
       
   * *Benefits for us*: access to the source code of real, industrial systems (of course, under NDAs). 
-    It makes easier to publish academic papers, and to get funding from the research councils.  
+    It makes easier to publish academic papers, and to get funding from the research councils
+    to improve _EvoMaster_ even further.  
   * *Benefits for the industrial collaborators*: 
     
     1. getting priority on new features and bug fixing.
@@ -202,8 +203,8 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
         find faults in them.    
     
 * *Academic Collaborations*: we are keen to hear from students and researchers that want to 
-  collaborate on topic in which _EvoMaster_ can be used on, or extended for.
-  For example, it is possible have visiting PhD students in our lab.
+  collaborate on topics in which _EvoMaster_ can be used on, or extended for.
+  For example, it is possible to have visiting PhD students in our lab.
   However, all communications about academic collaborations should not be done here on GitHub,
   but rather by email, directly to Prof. A. Arcuri. 
 
