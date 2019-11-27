@@ -582,6 +582,7 @@ class TestCaseWriter {
                                     if (printableTh != "null"
                                             && printableTh != NOT_COVERED_YET
                                             && !printableTh.contains("logged")
+                                            && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                                     ) {
                                         lines.add(".body(\"get($test_index)\", $printableTh)")
                                     }
@@ -618,7 +619,7 @@ class TestCaseWriter {
                     lines.add(".body(isEmptyOrNullString())")
                 }else {
                     lines.add(".body(containsString(\"${
-                    GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                    GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
                     }\"))")
                 }
             }
@@ -646,6 +647,7 @@ class TestCaseWriter {
                         if (printableTh != "null"
                                 && printableTh != NOT_COVERED_YET
                                 && !printableTh.contains("logged")
+                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
                             if(stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")

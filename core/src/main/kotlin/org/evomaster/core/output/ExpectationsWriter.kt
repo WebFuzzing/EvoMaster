@@ -103,6 +103,7 @@ class ExpectationsWriter {
                                 if (printableElement != "null"
                                         && printableElement != TestCaseWriter.NOT_COVERED_YET
                                         && !printableTh.contains("logged")
+                                        && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                                 ) {
                                     lines.add(".that($expectationsMasterSwitch, $printableElement)")
                                 }
@@ -120,7 +121,8 @@ class ExpectationsWriter {
                                         if (printableTh != "null"
                                                 && printableTh != TestCaseWriter.NOT_COVERED_YET
                                                 && !printableTh.contains("logged") //again, unpleasant, but IDs logged as part of the error message are a problem
-                                            //TODO: find a more elegant way to deal with IDs, object refs, timestamps, etc.
+                                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                                        //TODO: find a more elegant way to deal with IDs, object refs, timestamps, etc.
                                         ) {
                                             lines.add(".that($expectationsMasterSwitch, $printableTh)")
                                         }

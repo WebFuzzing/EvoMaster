@@ -340,7 +340,7 @@ class Main {
             val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             writer.setSwagger(swagger)
             solutions.forEach {
-                writer.writeTests(it, controllerInfoDto?.fullName)
+                if(it.individuals.isNotEmpty()) writer.writeTests(it, controllerInfoDto?.fullName)
             }
         }
 
