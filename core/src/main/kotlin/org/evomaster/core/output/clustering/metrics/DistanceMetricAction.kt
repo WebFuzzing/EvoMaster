@@ -5,18 +5,28 @@ import org.evomaster.core.problem.rest.RestCallResult
 import kotlin.math.max
 
 
+/**
+ *  Distance metric implementation for clustering strings.
+ *
+ *  The actual distance used is based on Levenshtein Distance, normalized by string length.
+ *
+ *  The intended use is to cluster error messages coming from REST APIs to enable similar
+ *  faults to be grouped together for easier debugging/analysis.
+ *
+ */
+
 class DistanceMetricAction : DistanceMetric<RestCallResult>() {
     override fun calculateDistance(val1: RestCallResult, val2: RestCallResult): Double {
         val message1 = Gson().fromJson(val1.getBody(), Map::class.java)?.get("message") ?: ""
         val message2 = Gson().fromJson(val2.getBody(), Map::class.java)?.get("message") ?: ""
 
-        return LevDistance.distance(message1.toString(), message2.toString())
+        return LevenshteinDistance.distance(message1.toString(), message2.toString())
     }
 
 
 }
 
-object LevDistance {
+object LevenshteinDistance {
     fun distance(p0: String, p1: String): Double{
         val lhsLength = p0.length
         val rhsLength = p1.length

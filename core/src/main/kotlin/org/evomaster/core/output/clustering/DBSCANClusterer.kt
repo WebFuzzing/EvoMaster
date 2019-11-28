@@ -2,6 +2,40 @@ package org.evomaster.core.output.clustering
 
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 
+/**
+ * Implementation of density-based clustering algorithm DBSCAN.
+ *
+ * Original Publication:
+ * Ester, Martin; Kriegel, Hans-Peter; Sander, J�rg; Xu, Xiaowei (1996).
+ * Simoudis, Evangelos; Han, Jiawei; Fayyad, Usama M., eds.
+ * A density-based algorithm for discovering clusters in large spatial
+ * databases with noise. Proceedings of the Second International Conference
+ * on Knowledge Discovery and Data Mining (KDD-96). AAAI Press. pp. 226-231
+ *
+ * Based on the implementation for java by Christopher Frantz (https://github.com/chrfrantz/DBSCAN).
+ *
+ * Usage:
+ * - Identify type of input values.
+ * - Implement appropriate metric for those inputs (extending [DistanceMetric] abstract class,
+ * see [DistanceMetricAction] and [LevenshteinDistance] as an example)
+ * - Instantiate (see [Clusterer] for example).
+ * - Invoke [performClustering]
+ *
+ * The parameters:
+ * [V] - the type of objects to be clustered.
+ * [minimumNumberOfClusterMembers] - DBSCAN filters out outliers, so it does not allow single
+ * element clusters. The default value for this is [minimumNumberOfClusterMembers = 2], since
+ * we want to have the possibility of small clusters, where appropriate.
+ * [metric] - the type of metric being used. Must extend the [DistanceMetric] abstract class.
+ * [inputValues] - the collection of objects to be clustered.
+ * [epsilon] - the density neighbourhood of an element. To cluster error messages, we use a
+ * normalized distance (see [DistanceMetricAction]). The default value is 0.5 - that is, if
+ * half of the error message is the same, the Actions will be clustered together. The idea is
+ * to allow messages that differ in the details (timestamps, object references, host and port,
+ * etc.) but are otherwise similar to cluster together.
+ *
+ */
+
 class DBSCANClusterer<V> {
     private var epsilon: Double = 1.0
     private var minimumNumberOfClusterMembers: Int = 2
@@ -9,7 +43,7 @@ class DBSCANClusterer<V> {
     private lateinit var inputValues: List<V>
     private var visitedPoints: HashSet<V> = HashSet()
 
-    constructor(values: Collection<V> , epsilon: Double = 1.0, minimumMembers: Int = 2, metric: DistanceMetric<V>){
+    constructor(values: Collection<V> , epsilon: Double = 0.5, minimumMembers: Int = 2, metric: DistanceMetric<V>){
         setEpsilon(epsilon)
         setMinimumNrOfMembers(members = minimumMembers)
         setInputValues(values)
