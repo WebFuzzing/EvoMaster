@@ -39,7 +39,7 @@ object TestSuiteSplitter {
             !s500.contains(it) &&
             it.evaluatedActions().all { ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if(code!=null) code.rem(400) > 100
+                if(code!=null) code < 400
                 else false
             }
         }.toMutableList()
