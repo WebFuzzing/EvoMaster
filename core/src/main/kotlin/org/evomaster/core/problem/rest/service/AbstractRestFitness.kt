@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -361,7 +362,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 if (body.length < configuration.maxResponseByteSize) {
                     rcr.setBody(body)
                 } else {
-                    log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
+                    LoggingUtil.uniqueWarn(log,
+                            "A very large response body was retrieved from the endpoint '${a.path}'." +
                             " If that was expected, increase the 'maxResponseByteSize' threshold" +
                             " in the configurations.")
                     rcr.setTooLargeBody(true)
