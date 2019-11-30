@@ -11,12 +11,10 @@ import org.evomaster.core.AnsiColor.Companion.inGreen
 import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.TestSuiteSplitter
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.BlackBoxRestModule
-import org.evomaster.core.problem.rest.service.ResourceDepManageService
-import org.evomaster.core.problem.rest.service.ResourceRestModule
-import org.evomaster.core.problem.rest.service.RestModule
+import org.evomaster.core.problem.rest.service.*
 import org.evomaster.core.problem.web.service.WebModule
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
@@ -141,7 +139,11 @@ class Main {
 
             val controllerInfo = checkState(injector)
 
+            val config = injector.getInstance(EMConfig::class.java)
+            val idMapper = injector.getInstance(IdMapper::class.java)
+
             val solution = run(injector)
+            val faults = solution.overall.potentialFoundFaults(idMapper)
 
             writeOverallProcessData(injector)
 
@@ -155,10 +157,7 @@ class Main {
 
             writeTests(injector, solution, controllerInfo)
 
-            val config = injector.getInstance(EMConfig::class.java)
-            val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val faults = solution.overall.potentialFoundFaults(idMapper)
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
@@ -334,13 +333,16 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
+            val swagger = injector.getInstance(RestSampler::class.java).getSwagger()
+
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
 
-            writer.writeTests(
-                    solution,
-                    controllerInfoDto?.fullName
-            )
+            val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
+            writer.setSwagger(swagger)
+            solutions.forEach {
+                writer.writeTests(it, controllerInfoDto?.fullName)
+            }
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {

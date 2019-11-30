@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.BeforeEach;
@@ -118,7 +119,7 @@ public class LocalTimeClassReplacementTest {
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId);
 
-        assertEquals(0, h0);
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
     }
 
     @Test
@@ -135,7 +136,7 @@ public class LocalTimeClassReplacementTest {
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId);
 
-        assertEquals(0, h0);
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
     }
 
     @Test

@@ -471,6 +471,14 @@ class EMConfig {
     var testSuiteFileName = "EvoMasterTest"
 
 
+    enum class TestSuiteSplitType {
+        NONE
+    }
+
+    @Experimental
+    @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
+    var testSuiteSplitType = TestSuiteSplitType.NONE
+
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1
@@ -703,7 +711,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Enable Expectation Generation. If enabled, expectations will be generated. " +
-            "A variable called activeExpectations is added to each test case, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
+            "A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail.")
     var expectationsActive = false
 
     @Cfg("Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. " +

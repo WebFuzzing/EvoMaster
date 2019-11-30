@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -30,16 +31,17 @@ class TestSuiteWriterTest{
                 .withModules(BaseModule())
                 .build().createInjector()
 
-        val solution = Solution<RestIndividual>(
-                FitnessValue(0.0),
-                mutableListOf()
-                )
-
         val config = injector.getInstance(EMConfig::class.java)
         config.createTests = true
         config.outputFormat = OutputFormat.KOTLIN_JUNIT_5
         config.outputFolder = "$baseTargetFolder/empty_suite"
         config.testSuiteFileName = "Foo_testEmptySuite"
+
+        val solution = Solution<RestIndividual>(
+                mutableListOf(),
+                config.testSuiteFileName
+        )
+
 
         //make sure we delete any existing folder from previous test runs
         val srcFolder = File(config.outputFolder)
@@ -55,6 +57,10 @@ class TestSuiteWriterTest{
 
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+        //val sampler = injector.getInstance(RestSampler::class.java)
+        //val swagger = sampler.getSwagger()
+        //writer.setSwagger(swagger)
 
         //write the test suite
         writer.writeTests(solution, FakeController::class.qualifiedName!!)
