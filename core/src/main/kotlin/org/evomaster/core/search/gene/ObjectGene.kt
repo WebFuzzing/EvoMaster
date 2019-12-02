@@ -128,7 +128,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType : St
             evi: EvaluatedIndividual<*>,
             targets: Set<Int>) {
 
-        if (!archiveMutator.enableArchiveMutation()){
+        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
             standardMutation(randomness, apc, allGenes)
             return
         }

@@ -9,7 +9,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import java.net.MalformedURLException
 import java.net.URL
-import java.util.regex.Pattern
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -603,7 +602,8 @@ class EMConfig {
 
     enum class GeneMutationStrategy{
         ONE_OVER_N,
-        ONE_OVER_N_BIASED_SQL
+        ONE_OVER_N_BIASED_SQL,
+        ONE_OVER_N_BIASED_SQL_WITH_SIZE
     }
 
     @Cfg("Strategy used to define the mutation probability")
@@ -823,7 +823,7 @@ class EMConfig {
     var startPerOfCandidateGenesToMutate = 0.9
 
     @Experimental
-    @Cfg("Specify a percentage fter starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
+    @Cfg("Specify a percentage after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
     @PercentageAsProbability(false)
     var endPerOfCandidateGenesToMutate = 0.5
 
@@ -846,8 +846,16 @@ class EMConfig {
     }
 
     @Experimental
+    @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
+    var sortedByCounter = false
+
+    @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
     var geneSelectionMethod = GeneMutationSelectionMethod.NONE
+
+    @Experimental
+    @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate inside a gene, e.g., ObjectGene")
+    var enableGeneSelectionMethodForGene = true
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")

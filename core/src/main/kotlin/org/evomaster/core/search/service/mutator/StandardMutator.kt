@@ -3,6 +3,7 @@ package org.evomaster.core.search.service.mutator
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
+import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL_WITH_SIZE
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
@@ -53,19 +54,20 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        val genes = if(archiveMutator.applyArchiveSelection()){
-            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes)
-        }else genesToMutate
+        if(archiveMutator.applyArchiveSelection()){
+            return archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes)
+        }
 
-        return selectGenesByDefault(genes, individual)
+        return selectGenesByDefault(genesToMutate, individual)
     }
 
     private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{
-        val filterN = when (config.geneMutationStrategy) {
-            ONE_OVER_N -> ALL
-            ONE_OVER_N_BIASED_SQL -> NO_SQL
+        val spaceSize = when (config.geneMutationStrategy) {
+            ONE_OVER_N -> individual.seeGenes(ALL).filter { it.isMutable() }.count()
+            ONE_OVER_N_BIASED_SQL ->  individual.seeGenes(NO_SQL).filter { it.isMutable() }.count()
+            ONE_OVER_N_BIASED_SQL_WITH_SIZE -> individual.seeGenes(NO_SQL).filter { it.isMutable() }.count() + individual.seeInitializingActions().size
         }
-        val n = Math.max(1, individual.seeGenes(filterN).filter { it.isMutable() }.count())
+        val n = Math.max(1, spaceSize)
         return selectGenesByOneDivNum(genesToMutate, n)
     }
 

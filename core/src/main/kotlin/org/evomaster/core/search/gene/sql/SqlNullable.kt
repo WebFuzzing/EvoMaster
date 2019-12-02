@@ -64,52 +64,71 @@ class SqlNullable(name: String,
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if(!archiveMutator.enableArchiveMutation()){
+        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
             standardMutation(randomness, apc, allGenes)
             return
         }
 
-        val preferPresent = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is SqlNullableImpact) true
-                    else {
-            //we only set 'present' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-            !impact.presentImpact.run {
-                this.getTimesToManipulate() > 5
-                        &&
-                        (this.falseValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
-            }
-        }
-
-        if (preferPresent){
-            if (!isPresent){
-                isPresent = true
-                presentMutationInfo.counter+=1
-                return
-            }
-            if (randomness.nextBoolean(ABSENT)){
-                isPresent = false
-                presentMutationInfo.counter+=1
-                return
-            }
+        if (!isPresent){
+            isPresent = true
         }else{
-            //if preferPresent is false, it is not necessary to mutate the gene
-            presentMutationInfo.reached = archiveMutator.withinNormal()
-            if (presentMutationInfo.reached){
-                presentMutationInfo.preferMin = 0
-                presentMutationInfo.preferMax = 0
-            }
-
-            if (isPresent){
-                isPresent = false
-                presentMutationInfo.counter+=1
-                return
-            }
             if (randomness.nextBoolean(ABSENT)){
-                isPresent = true
-                presentMutationInfo.counter+=1
-                return
+                isPresent = false
+            }else{
+                gene.archiveMutation(
+                        randomness,
+                        allGenes,
+                        apc,
+                        selection,
+                        if (impact == null || impact !is SqlNullableImpact) null else impact.geneImpact,
+                        geneReference,
+                        archiveMutator,
+                        evi,
+                        targets)
             }
         }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is SqlNullableImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
+
+//        val preferPresent = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is SqlNullableImpact) true
+//                    else {
+//            //we only set 'present' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
+//            !impact.presentImpact.run {
+//                this.getTimesToManipulate() > 5
+//                        &&
+//                        (this.falseValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+//            }
+//        }
+//
+//        if (preferPresent){
+//            if (!isPresent){
+//                isPresent = true
+//                presentMutationInfo.counter+=1
+//                return
+//            }
+//            if (randomness.nextBoolean(ABSENT)){
+//                isPresent = false
+//                presentMutationInfo.counter+=1
+//                return
+//            }
+//        }else{
+//            //if preferPresent is false, it is not necessary to mutate the gene
+//            presentMutationInfo.reached = archiveMutator.withinNormal()
+//            if (presentMutationInfo.reached){
+//                presentMutationInfo.preferMin = 0
+//                presentMutationInfo.preferMax = 0
+//            }
+//
+//            if (isPresent){
+//                isPresent = false
+//                presentMutationInfo.counter+=1
+//                return
+//            }
+//            if (randomness.nextBoolean(ABSENT)){
+//                isPresent = true
+//                presentMutationInfo.counter+=1
+//                return
+//            }
+//        }
+//        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is SqlNullableImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

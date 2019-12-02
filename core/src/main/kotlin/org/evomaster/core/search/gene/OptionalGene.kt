@@ -78,52 +78,62 @@ class OptionalGene(name: String,
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if(!archiveMutator.enableArchiveMutation()){
+        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
             standardMutation(randomness, apc, allGenes)
             return
         }
 
-        val preferActive = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is OptionalGeneImpact) true
-        else {
-            !impact.activeImpact.run {
-                //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-                this.getTimesToManipulate() > 5
-                        &&
-                        (this.falseValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
-            }
-        }
-
-        if (preferActive){
-            if (!isActive){
-                isActive = true
-                activeMutationInfo.counter+=1
-                return
-            }
-            if (randomness.nextBoolean(INACTIVE)){
-                isActive = false
-                activeMutationInfo.counter+=1
-                return
-            }
+        if (!isActive){
+            isActive = true
         }else{
-            //if preferPresent is false, it is not necessary to mutate the gene
-            activeMutationInfo.reached = archiveMutator.withinNormal()
-            if (activeMutationInfo.reached){
-                activeMutationInfo.preferMin = 0
-                activeMutationInfo.preferMax = 0
-            }
-
-            if (isActive){
-                isActive = false
-                activeMutationInfo.counter+=1
-                return
-            }
             if (randomness.nextBoolean(INACTIVE)){
-                isActive = true
-                activeMutationInfo.counter+=1
-                return
+                isActive = false
+            }else{
+                gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
             }
         }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
+
+//        val preferActive = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is OptionalGeneImpact) true
+//        else {
+//            !impact.activeImpact.run {
+//                //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
+//                this.getTimesToManipulate() > 5
+//                        &&
+//                        (this.falseValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.getTimesOfImpacts().filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+//            }
+//        }
+//
+//        if (preferActive){
+//            if (!isActive){
+//                isActive = true
+//                activeMutationInfo.counter+=1
+//                return
+//            }
+//            if (randomness.nextBoolean(INACTIVE)){
+//                isActive = false
+//                activeMutationInfo.counter+=1
+//                return
+//            }
+//        }else{
+//            //if preferPresent is false, it is not necessary to mutate the gene
+//            activeMutationInfo.reached = archiveMutator.withinNormal()
+//            if (activeMutationInfo.reached){
+//                activeMutationInfo.preferMin = 0
+//                activeMutationInfo.preferMax = 0
+//            }
+//
+//            if (isActive){
+//                isActive = false
+//                activeMutationInfo.counter+=1
+//                return
+//            }
+//            if (randomness.nextBoolean(INACTIVE)){
+//                isActive = true
+//                activeMutationInfo.counter+=1
+//                return
+//            }
+//        }
+//        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
 
     }
 

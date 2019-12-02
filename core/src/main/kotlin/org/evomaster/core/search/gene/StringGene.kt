@@ -462,6 +462,11 @@ class StringGene(
             evi: EvaluatedIndividual<*>,
             targets: Set<Int>
     ) {
+        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
+            standardMutation(randomness, apc, allGenes)
+            return
+        }
+
         val specializationGene = getSpecializationGene()
 
         if (specializationGene == null && specializationGenes.isNotEmpty()) {

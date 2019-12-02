@@ -9,24 +9,25 @@ package org.evomaster.core.search.impact
 enum class GeneMutationSelectionMethod(val archive: Boolean = true, val adaptive: Boolean = false) {
     NONE(archive = false),
     /**
-     * avoid a percentage (specified in [EMConfig.perOfCandidateGenesToMutate]) of genes which have lower degree of impacts
+     * penalty function
      */
     AWAY_NOIMPACT,
     /**
-     * select a percentage (specified in [EMConfig.perOfCandidateGenesToMutate]) of genes which have lower degree of no impacts
+     * reward function
      */
     APPROACH_IMPACT,
     /**
-     * select a percentage (specified in [EMConfig.perOfCandidateGenesToMutate]) of genes which have higher impacts
+     * reward function with a consideration of latest
      */
     APPROACH_LATEST_IMPACT,
-
+    /**
+     * reward function with a consideration of latest
+     */
     APPROACH_LATEST_IMPROVEMENT,
-
+    /**
+     * penalty and reward function
+     */
     BALANCE_IMPACT_NOIMPACT,
-
-    //FEED_DIRECT_IMPACT,
-
     /**
      * randomly apply one of fixed archive-based gene selection method ([archive] is true and [adaptive] is false)
      */

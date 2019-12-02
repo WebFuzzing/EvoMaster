@@ -71,7 +71,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if( !archiveMutator.enableArchiveMutation()){
+        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
             standardMutation(randomness, apc, allGenes)
             return
         }
@@ -79,6 +79,8 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+
+
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is SqlXMLGene){
                 log.warn("original ({}) should be SqlXMLGene", original::class.java.simpleName)

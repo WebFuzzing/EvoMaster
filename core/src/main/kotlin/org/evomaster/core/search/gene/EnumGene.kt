@@ -90,17 +90,18 @@ class EnumGene<T : Comparable<T>>(
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.applyArchiveSelection() || values.size == 2 || impact == null || impact !is EnumGeneImpact){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-
-        val candidates = (0 until values.size).filter { index != it }.map {
-            Pair(it, impact.values[it])
-        }
-
-        val selects = archiveMutator.selectGenesByArchive(candidates, targets =  targets)
-        index = randomness.choose(selects)
+        standardMutation(randomness, apc, allGenes)
+//        if (!archiveMutator.applyArchiveSelection() || values.size == 2 || impact == null || impact !is EnumGeneImpact){
+//            standardMutation(randomness, apc, allGenes)
+//            return
+//        }
+//
+//        val candidates = (0 until values.size).filter { index != it }.map {
+//            Pair(it, impact.values[it])
+//        }
+//
+//        val selects = archiveMutator.selectGenesByArchive(candidates, targets =  targets)
+//        index = randomness.choose(selects)
 
     }
 

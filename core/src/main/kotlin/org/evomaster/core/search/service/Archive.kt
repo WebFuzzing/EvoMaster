@@ -269,6 +269,14 @@ class Archive<T> where T : Individual {
                 .any { populations[it]?.isEmpty() ?: true }
     }
 
+    fun wouldReachNewTarget(ei: EvaluatedIndividual<T>, improved: MutableSet<Int>) {
+
+        improved.addAll(ei.fitness.getViewOfData()
+                .filter { it.value.distance > 0.0 }
+                .map { it.key }
+                .filter { populations[it]?.isEmpty() ?: true }.toSet())
+    }
+
     /**
      * @return true if the new individual was added to the archive
      */

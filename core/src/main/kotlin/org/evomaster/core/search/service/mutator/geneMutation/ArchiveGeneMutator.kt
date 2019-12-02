@@ -18,10 +18,8 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 /**
- *
  * Archive-based mutator which handle
  * - archive-based gene selection to mutate
  * - mutate the selected genes based on their performance (i.e., results of fitness evaluation)
@@ -73,30 +71,35 @@ class ArchiveMutator {
     }
 
     private fun mutationSpace(individual: Individual) : Int{
-        val filterN = when (config.geneMutationStrategy) {
-            EMConfig.GeneMutationStrategy.ONE_OVER_N -> Individual.GeneFilter.ALL
-            EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL -> Individual.GeneFilter.NO_SQL
+        val spaceSize = when (config.geneMutationStrategy) {
+            EMConfig.GeneMutationStrategy.ONE_OVER_N -> individual.seeGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }.count()
+            EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL ->  individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }.count()
+            EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL_WITH_SIZE -> individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }.count() + individual.seeInitializingActions().size
         }
-        return max(1+individual.seeInitializingActions().size, individual.seeGenes(filterN).filter { it.isMutable() }.count())
+        return max(2, spaceSize)
     }
 
-    private fun <T> selectWithSorted(candidates: List<T>, num : Int) : List<T>{
+    private fun <T> selectWithSorted(candidates: List<T>, mutationSpace : Int) : List<T>{
         if (candidates.size == 1) return candidates
         val total = candidates.size
-        val times = if (total < num) 1.0 else total/num.toDouble()
-        val totalWeight = 1.0 / total.run { this * (this + 1)/2.0}
+        val times = max(1.0, total/mutationSpace.toDouble())
+        val totalWeight = 1.0 / (total * (total + 1)/2.0)
 
         val selected = mutableListOf<T>()
         var counter = 0
-        while (selected.isEmpty() && counter < 3){
+        while (selected.isEmpty() && counter < 5){
             (0 until total).forEach { index ->
-                if (randomness.nextDouble() < totalWeight * (total - index) * times){
+                if (randomness.nextBoolean(totalWeight * (total - index) * times)){
                     selected.add(candidates[index])
                 }
             }
             counter++
         }
-        if (selected.isEmpty()) selectNSorted(candidates, 1) //selected.add(candidates.first())
+        if (selected.isEmpty()){
+            println("select one")
+            return selectNSorted(candidates, 1) //selected.add(candidates.first())
+        }
+
         return selected
     }
 
@@ -138,7 +141,8 @@ class ArchiveMutator {
         val selects = selectGenesByMethod(genes.filterNot { noVisit.contains(it.first) }, method, targets).toMutableList()
 
         val sorted = if (config.prioritizeNotVisit)
-            noVisit.plus(selects) else {
+            noVisit.plus(selects)
+        else {
             noVisit.forEach { p->
                 val index = randomness.nextInt(0, max(0, selects.size - 1))
                 selects.add(index, p)
@@ -151,6 +155,7 @@ class ArchiveMutator {
             EMConfig.ImpactGeneSelection.SUBSET_PROBABILITY -> apc.getExploratoryValue(start = config.startPerOfCandidateGenesToMutate, end = config.endPerOfCandidateGenesToMutate)
             EMConfig.ImpactGeneSelection.ADAPTIVE_SUBSET_PROBABILITY -> {
                 val prob = apc.getExploratoryValue(start = config.startPerOfCandidateGenesToMutate, end = config.endPerOfCandidateGenesToMutate)
+                //TODO modify it
                 expandPercentage(genes.map { it.second }, targets, method, prob)
             }
         }
@@ -237,29 +242,54 @@ class ArchiveMutator {
     }
 
     private fun <T> sortListByImpact(list : List<Pair<T, Impact>>, targets : Set<Int>, properties: Array<ImpactProperty>) : List<T>{
-        val sorted = properties.map {property->
-            when(property){
-                ImpactProperty.TIMES_IMPACT -> list.sortedByDescending {
-                    val value = it.second.getCounter(property, targets, By.MAX)
-                    if (value == -1)
-                        randomness.nextInt()
-                    else
-                        value
+        val sorted = if (config.sortedByCounter){
+            properties.map {property->
+                when(property){
+                    ImpactProperty.TIMES_IMPACT -> {
+                        list.map { Pair(it.first, getCounterByProperty(it.second, property, targets)) }.sortedByDescending { it.second }.map { it.first }
+                    }
+                    else -> {
+                        list.map { Pair(it.first, getCounterByProperty(it.second, property, targets)) }.sortedBy { it.second }.map { it.first }
+                    }
                 }
-                else -> list.sortedBy {
-                    val value = it.second.getCounter(property, targets, By.MIN)
-                    if (value == -1)
-                        randomness.nextInt()
-                    else
-                        value
+            }
+        }else{
+            properties.map {property->
+                when(property){
+                    ImpactProperty.TIMES_IMPACT -> {
+                        list.map { Pair(it.first, getDegreeByProperty(it.second, property, targets)) }.sortedByDescending { it.second }.map { it.first }
+                    }
+                    else -> {
+                        list.map { Pair(it.first, getDegreeByProperty(it.second, property, targets)) }.sortedBy { it.second }.map { it.first }
+                    }
                 }
             }
         }
 
-        return list.sortedBy { g->
+        return list.map { it.first }.sortedBy { g->
             sorted.map { it.indexOf(g) }.sum()
-        }.map { it.first }
+        }
     }
+
+    private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>) : Int{
+        val value = when(property){
+            ImpactProperty.TIMES_IMPACT -> impact.getCounter(property, targets, By.MAX)
+            else -> impact.getCounter(property, targets, By.MIN)
+        }
+        if (value < 0) return randomness.nextInt(0, impact.getTimesToManipulate())
+        return value
+    }
+
+
+    private fun getDegreeByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>) : Double{
+        val value = when(property){
+            ImpactProperty.TIMES_IMPACT -> impact.getDegree(property, targets, By.MAX)
+            else -> impact.getDegree(property, targets, By.MIN)
+        }
+        if (value < 0) return randomness.nextDouble()
+        return value
+    }
+
 
     private fun decideSize(list : Int, percentage : Double) = max(1, list * percentage.toInt())
 
@@ -566,6 +596,8 @@ class ArchiveMutator {
     fun applyArchiveSelection() = enableArchiveSelection()
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
+    fun disableArchiveSelectionForGene() = !config.enableGeneSelectionMethodForGene
+
     fun enableArchiveSelection() = config.geneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
@@ -579,7 +611,7 @@ class ArchiveMutator {
      */
     fun exportImpacts(solution: Solution<*>){
         val path = Paths.get(config.impactFile)
-        Files.createDirectories(path.parent)
+        if (path.parent != null) Files.createDirectories(path.parent)
 
         val content = mutableListOf<String>()
         content.add(mutableListOf("test","rootGene").plus(Impact.toCSVHeader()).joinToString(","))

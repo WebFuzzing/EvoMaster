@@ -194,6 +194,12 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     fun getNotRelatedNotCoveredTarget() : Set<Int> = impactInfo?.reachedTargets?.filter { it.value == 0.0 }?.keys?: setOf()
 
+    fun updateUndoTracking(evaluatedIndividual: EvaluatedIndividual<T>, maxLength: Int){
+        if (getUndoTracking()?.size?:0 == maxLength && maxLength > 0){
+            getUndoTracking()?.removeAt(0)
+        }
+        getUndoTracking()?.add(evaluatedIndividual)
+    }
 
     override fun next(trackOperator: TrackOperator, next: TraceableElement, copyFilter: TraceableElementCopyFilter, maxLength : Int): EvaluatedIndividual<T>? {
         if (next !is EvaluatedIndividual<*>) throw  IllegalArgumentException("the type of next is mismatched")
@@ -392,11 +398,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         This might have side effects to impact analysis, so we only collect no impact info and ignore to collect impacts info.
         But times of manipulation should be updated.
          */
-        val onlyManipulation = mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && impactTargets.isNotEmpty()
+        val onlyManipulation = false//((mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size) > 1) && impactTargets.isNotEmpty()
 
         val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
-
-
 
         mutatedGenesWithContext.forEach { (t, u) ->
             val impact = getImpactOfGenes().getValue(t)

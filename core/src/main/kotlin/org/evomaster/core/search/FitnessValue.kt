@@ -249,17 +249,14 @@ class FitnessValue(
             /**
              * we set distance -1.0 instead of 0.0 to avoid a side-effect of no impacts caused by randomly chosen target sets for fitness
              */
-            val v = this.targets[k]?.distance ?: -1.0
-            val z = other.targets[k]?.distance ?: -1.0
+            val v = this.targets[k]?.distance ?: 0.0
+            val z = other.targets[k]?.distance ?: 0.0
 
             /**
              * if the target is not covered by both v and z,
              * we ignore this impact info of target in this comparision.
              */
-            if (v == -1.0 || z == -1.0)
-                continue
-
-            if (v == 0.0 && v == z)
+            if (v == 0.0 || z == 0.0 || v == z)
                 continue
 
             if (v != z) {

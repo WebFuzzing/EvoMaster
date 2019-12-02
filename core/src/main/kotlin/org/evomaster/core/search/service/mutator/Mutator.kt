@@ -14,8 +14,6 @@ import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 import org.evomaster.core.search.tracer.TrackOperator
-import kotlin.math.max
-import kotlin.math.min
 
 abstract class Mutator<T> : TrackOperator where T : Individual {
 
@@ -111,9 +109,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         }.filter { evi.getImpactOfGenes().containsKey(it) }.map { evi.getImpactOfGenes()[it]!! }
 
         val p1 = impacts.flatMap { p->p.shared.timesOfImpact.keys }
-        val p2 = evi.getRelatedNotCoveredTarget().run { if (size < 50) this else this.filter { randomness.nextBoolean(0.8) } }
+        val p2 = setOf<Int>()//evi.getRelatedNotCoveredTarget().run { if (size < 50) this else this.filter { randomness.nextBoolean(0.8) } }
         val p3 = impacts.flatMap { p->p.shared.timesOfNoImpactWithTargets.keys }.filter { randomness.nextBoolean(0.9) }
-        val p4 = evi.getNotRelatedNotCoveredTarget().filter { randomness.nextBoolean(0.7) }
+        val p4 = setOf<Int>()//evi.getNotRelatedNotCoveredTarget().filter { randomness.nextBoolean(0.7) }
 
         val part1 = all.filter { p1.contains(it) || p2.contains(it) }.run {
             if (size > 80) randomness.choose(this, 80)
@@ -183,6 +181,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val impactTarget = mutableSetOf<Int>()
             val improvedTarget = mutableSetOf<Int>()
 
+            archive.wouldReachNewTarget(mutated, improvedTarget)
+            if (improvedTarget.isNotEmpty())
+                impactTarget.addAll(improvedTarget.toSet())
+
             mutated.fitness.isDifferent(
                     current.fitness,
                     targetSubset = targets,
@@ -214,7 +216,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             }
 
             if (!inArchive && archiveMutator.enableArchiveSelection()){
-                current.getUndoTracking()!!.add(mutated)
+                current.updateUndoTracking(mutated, config.maxLengthOfTraces)
                 current.updateImpactOfGenes(false, impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes,
                         notCoveredTargets = targets,
                         strategy = config.secondaryObjectiveStrategy,
