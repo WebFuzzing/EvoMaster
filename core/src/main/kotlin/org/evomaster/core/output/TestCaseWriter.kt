@@ -83,23 +83,25 @@ class TestCaseWriter {
 
         lines.indented {
 
-            if (test.test.individual is RestIndividual) {
+            val ind = test.test.individual
+
+            if (ind is RestIndividual) {
                 // BMR: test.test should have the used objects attached (if any).
                 if (config.enableCompleteObjects) {
-                    usedObjects = (test.test.individual as RestIndividual).usedObjects.copy()
+                    usedObjects = ind.usedObjects.copy()
                 }
                 if(configuration.expectationsActive){
                     expectationsWriter.addDeclarations(lines)
                 }
-                if (!test.test.individual.dbInitialization.isEmpty()) {
-                    handleDbInitialization(format, (test.test.individual as RestIndividual).dbInitialization, lines)
+                if (ind.dbInitialization.isNotEmpty()) {
+                    handleDbInitialization(format, ind.dbInitialization, lines)
                 }
             }
 
             if (test.hasChainedLocations()) {
                 lines.addEmpty()
 
-                test.test.evaluatedActions()
+                test.test.evaluatedActions().asSequence()
                         .map { it.action }
                         .filterIsInstance(RestCallAction::class.java)
                         .filter { it.locationId != null }
@@ -604,12 +606,14 @@ class TestCaseWriter {
                     else -> {
                         // This branch will be called if the JSON is null (or has a basic type)
                         // Currently, it converts the contents to String.
-                        if(bodyString.isNullOrBlank()){
-                            lines.add(".body(isEmptyOrNullString())")
-                        }else {
-                            lines.add(".body(containsString(\"${
-                            GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
-                            }\"))")
+                        when {
+                            res.getTooLargeBody() -> lines.add("/* very large body, which was not handled during the search */")
+
+                            bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
+
+                            else -> lines.add(".body(containsString(\"${
+                                        GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                                    }\"))")
                         }
                     }
                 }
