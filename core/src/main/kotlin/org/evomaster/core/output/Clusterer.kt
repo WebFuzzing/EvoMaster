@@ -27,7 +27,7 @@ object Clusterer {
         val sol1 = solution.individuals.filter{
             it.evaluatedActions().any{ ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if (code!=null) (code == 500 || code >= 400)
+                if (code!=null) (code == 500)
                 else false
             }
         }
@@ -50,37 +50,6 @@ object Clusterer {
 
         return clusters
     }
-
-    fun cluster(solution: Solution<RestIndividual>): MutableList<MutableList<RestCallResult>>{
-        val sol1 = solution.individuals.filter{
-            it.evaluatedActions().any{ ac ->
-                val code = (ac.result as RestCallResult).getStatusCode()
-                if (code!=null) (code == 500 || code >= 400)
-                else false
-            }
-        }
-
-        val cluterableActions = sol1.flatMap {
-            it.evaluatedActions().map { ac ->
-                (ac.result as RestCallResult) }
-        }
-
-        val clu = DBSCANClusterer<RestCallResult>(
-                values = cluterableActions,
-                epsilon = 1.0,
-                minimumMembers = 2,
-                metric = DistanceMetricAction()
-        )
-
-        val clusters = clu.performCLustering()
-
-        // clustering appears okay
-
-        return clusters
-    }
-
-
-
 }
 
 /*
@@ -241,6 +210,4 @@ class LevDistance {
         return cost[lhsLength].toDouble()
     }
 }
-
-
- */
+*/

@@ -1,6 +1,11 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.problem.rest.RestAction
+import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 
 
@@ -16,9 +21,48 @@ object TestSuiteSplitter {
      * the original [Solution]
      */
     fun split(solution: Solution<*>, type: EMConfig.TestSuiteSplitType) : List<Solution<*>>{
-
         return when(type){
             EMConfig.TestSuiteSplitType.NONE -> listOf(solution)
+            EMConfig.TestSuiteSplitType.CLUSTER -> splitByClusters(solution as Solution<RestIndividual>)
         }
+    }
+
+    fun splitByClusters(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
+        val errs = solution.individuals.filter {
+            it.evaluatedActions().any { ac ->
+                (ac.result as RestCallResult).getStatusCode() == 500
+            }
+        }.toMutableList()
+
+        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
+        val clusteredSolutions = mutableListOf<Solution<RestIndividual>>()
+
+        clusters.forEachIndexed { index, clu ->
+            val inds = solution.individuals.filter { ind ->
+                ind.evaluatedActions().any { ac ->
+                    clu.contains(ac.result as RestCallResult)
+                }
+            }.toMutableList()
+            clusteredSolutions.add(index, Solution(inds, "C_$index"))
+        }
+
+        //Could this be a quick check to see if any 500s were skipped?
+        val skipped = solution.individuals.filter { ind ->
+            ind.evaluatedActions().any { ac ->
+                (ac.result as RestCallResult).getStatusCode() == 500
+            }
+        }.filterNot { ind ->
+            ind.evaluatedActions().any { ac ->
+                clusters.any { it.contains(ac.result as RestCallResult) }
+            }
+
+        }
+        /*
+        In debugger I visualize it like this:
+        skipped.map {
+            it.evaluatedActions().map { "" + Gson().fromJson((it.result as RestCallResult).getBody(), Map::class.java)?.get("message") + it.result.getStatusCode() }
+        }
+        */
+        return clusteredSolutions
     }
 }
