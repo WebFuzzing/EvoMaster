@@ -25,13 +25,27 @@ object TestSuiteSplitter {
         }
     }
 
+    /**
+     * [splitByCode] splits the Solution into several subsets based on the HTTP codes found in the actions.
+     * The split is as follows:
+     * - all individuals that contain at least one action with a 500 code go into a separate file. A 500 code is likely
+     * to be indicative of a fault, and therefore goes into a separate set.
+     *
+     * - all individuals that contain 2xx and 3xx action only are deemed to be successful, and a "successful" subset
+     * is created for them. These are test cases that indicate no problem.
+     *
+     * - remaining test cases are set in a third subset. These are often test cases that don't contain outright bugs
+     * (i.e. 500 actions) but may include 4xx. User errors and input problems may be interesting, hence the separate file.
+     * Nevertheless, it is up to individual test engineers to look at these test cases in more depth and decide
+     * if any further action or investigation is required.
+     */
     fun <T:Individual> splitByCode(solution: Solution<T>): List<Solution<T>>{
-
-
         val s500 = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
                 (ac.result as RestCallResult).getStatusCode() == 500
-
+            // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
+            // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
+            // "remainder" subset - as they are neither errors, nor successful runs.
             }
         }.toMutableList()
 
