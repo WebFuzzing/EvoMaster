@@ -14,7 +14,8 @@ class ExpectationsWriter {
     private val responseStructureOracle = "responseStructureOracle"
     private lateinit var swagger: Swagger
     private lateinit var partialOracles: PartialOracles
-    private val portRegex = """\w+:\d{4,5}""".toRegex()
+    //private val portRegex = """\w+:\d{4,5}""".toRegex()
+    private val portRegex = """(\w+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})):\d{1,5}""".toRegex()
 
     fun setFormat(format: OutputFormat){
         this.format = format
