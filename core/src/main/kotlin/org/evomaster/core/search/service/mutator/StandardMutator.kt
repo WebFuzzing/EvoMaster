@@ -131,7 +131,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             if (config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()){
                 val id = ImpactUtils.generateGeneId(copy, gene)
-                val impact = individual.getImpactOfGenes()[id]
+                val impact = individual.getImpact(copy, gene)//individual.getImpactOfGenes()[id]
                 gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual,targets )
             }else
                 gene.standardMutation(randomness, apc, allGenes)

@@ -191,7 +191,7 @@ class MioAlgorithmOnTrackOneMaxTest {
 
         solution.individuals.forEach {  s->
             assertNull(s.individual.getTracking())
-            assertNotNull(s.getImpactOfGenes().isNotEmpty())
+            assertNotNull(s.anyImpactInfo())
         }
     }
 

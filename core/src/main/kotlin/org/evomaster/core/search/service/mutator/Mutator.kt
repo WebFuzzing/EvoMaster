@@ -102,11 +102,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             4) p4 - avoid targets which are not related to the individual with 0.7
          */
 
-        val impacts = mutatedGenes.allGenes().map {
-            if (mutatedGenes.mutatedIndividual!= null)
-                ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, it)
-            else ImpactUtils.generateGeneId(it)
-        }.filter { evi.getImpactOfGenes().containsKey(it) }.map { evi.getImpactOfGenes()[it]!! }
+        val impacts = evi.getImpacts(mutatedGenes)
 
         val p1 = impacts.flatMap { p->p.shared.timesOfImpact.keys }
         val p2 = setOf<Int>()//evi.getRelatedNotCoveredTarget().run { if (size < 50) this else this.filter { randomness.nextBoolean(0.8) } }
@@ -151,7 +147,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             structureMutator.addInitializingActions(current, mutatedGenes)
 
             if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
-                current.updateDbActionGenes(current.individual, mutatedGenes.addedInitializationGenes)
+                current.updateGeneDueToAddedInitializationGenes(
+                        individual = current.individual,
+                        genes = mutatedGenes.addedInitializationGenes
+                )
             }
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
@@ -176,26 +175,29 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     config.secondaryObjectiveStrategy,
                     config.bloatControlForSecondaryObjective)
 
-            //---------------
 
-            val impactTarget = mutableSetOf<Int>()
             val improvedTarget = mutableSetOf<Int>()
+            val impactTarget = mutableSetOf<Int>()
+            val newTarget = mutableSetOf<Int>()
 
-            archive.wouldReachNewTarget(mutated, improvedTarget)
-            if (improvedTarget.isNotEmpty())
-                impactTarget.addAll(improvedTarget.toSet())
+            archive.wouldReachNewTarget(mutated, newTarget)
+            impactTarget.addAll(newTarget)
+            improvedTarget.addAll(newTarget)
 
-            mutated.fitness.isDifferent(
-                    current.fitness,
-                    targetSubset = targets,
-                    improved = improvedTarget,
-                    different = impactTarget,
-                    withExtra = false,
-                    strategy = config.secondaryObjectiveStrategy,
-                    bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective
-            )
+            if (archiveMutator.enableArchiveMutation()){
+                if (improvedTarget.isNotEmpty())
+                    impactTarget.addAll(improvedTarget.toSet())
 
-            //---------------
+                mutated.fitness.isDifferent(
+                        current.fitness,
+                        targetSubset = targets,
+                        improved = improvedTarget,
+                        different = impactTarget,
+                        withExtra = false,
+                        strategy = config.secondaryObjectiveStrategy,
+                        bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective
+                )
+            }
 
             var inArchive = notWorse
             if (notWorse) {
@@ -206,10 +208,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
                 if(archiveMutator.enableArchiveSelection()){
                     trackedMutated.updateImpactOfGenes(true,
-                            impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes,
-                            notCoveredTargets = targets,
-                            strategy = config.secondaryObjectiveStrategy,
-                            bloatControl = config.bloatControlForSecondaryObjective)
+                            impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
                 }
                 inArchive = archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
@@ -217,16 +216,13 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             if (!inArchive && archiveMutator.enableArchiveSelection()){
                 current.updateUndoTracking(mutated, config.maxLengthOfTraces)
-                current.updateImpactOfGenes(false, impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes,
-                        notCoveredTargets = targets,
-                        strategy = config.secondaryObjectiveStrategy,
-                        bloatControl = config.bloatControlForSecondaryObjective)
+                current.updateImpactOfGenes(false, impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
             }
 
             // gene mutation evaluation
             if (archiveMutator.enableArchiveGeneMutation()){
-                /**
-                 * if len(mutatedGenes.mutatedGenes) + len(mutatedGenes.mutatedDbGenes) > 1, shall we evaluate this mutation?
+                /*
+                 if len(mutatedGenes.mutatedGenes) + len(mutatedGenes.mutatedDbGenes) > 1, shall we evaluate this mutation?
                  */
                 mutatedGenes.mutatedGenes.forEachIndexed { index, s->
                     val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)

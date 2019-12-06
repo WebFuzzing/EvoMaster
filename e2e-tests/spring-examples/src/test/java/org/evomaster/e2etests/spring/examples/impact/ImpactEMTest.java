@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -95,7 +96,7 @@ public class ImpactEMTest extends SpringTestBase {
                     }
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
-                            s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noimpactIntField", s)
+                            s -> s.anyImpactInfo() && checkNoImpact("noimpactIntField", s)
                     );
 
                     assertTrue(impactInfoCollected);
@@ -116,25 +117,25 @@ public class ImpactEMTest extends SpringTestBase {
 
     private boolean checkNoImpact(String geneName, EvaluatedIndividual<RestIndividual> ind){
 
-        if (ind.getImpactOfGenes().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
-
         String id = getGeneIdByName(geneName, ind);
 
         boolean last = true;
 
-        GeneImpact noimpactGene = ind.getImpactOfGenes().get(id);
-        for (String keyId : ind.getImpactOfGenes().keySet()){
-            if (keyId != id){
-                GeneImpact other = ind.getImpactOfGenes().get(keyId);
+        List<GeneImpact> noimpactGenes = ind.getGeneImpactById(id); //ind.getImpactOfGenes().get(id);
+        for (GeneImpact other : ind.flattenAllGeneImpact()){
+            if (other.getId() != id){
 
-                last = last &&
-                        // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
-                        (noimpactGene.getMaxImpact() <= other.getMaxImpact()
-                                || noimpactGene.getTimesOfNoImpact() >= other.getTimesOfNoImpact())
-                        //&&
-                        // ideally getTimesToManipulate might be less than any others
-                        //(noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate())
-                ;
+                for (GeneImpact noimpactGene : noimpactGenes ){
+                    last = last &&
+                            // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
+                            (noimpactGene.getMaxImpact() <= other.getMaxImpact()
+                                    || noimpactGene.getTimesOfNoImpact() >= other.getTimesOfNoImpact())
+                    //&&
+                    // ideally getTimesToManipulate might be less than any others
+                    //(noimpactGene.getTimesToManipulate() <= ind.getImpactOfGenes().get(keyId).getTimesToManipulate())
+                    ;
+                }
+
             }
         }
         return last;

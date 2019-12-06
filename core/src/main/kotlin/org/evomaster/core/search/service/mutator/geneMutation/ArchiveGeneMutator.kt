@@ -56,15 +56,17 @@ class ArchiveMutator {
      * Apply archive-based mutation to select [genes] from [individual] to mutate regarding their impacts saved in [evi],
      * the applied selection method can be recorded in [mutatedGenes] if it is not null
      */
-    fun selectGenesByArchive(genesToMutate : List<Gene>, individual: Individual, evi: EvaluatedIndividual<*>, targets : Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
+    fun selectGenesByArchive(
+            genesToMutate : List<Gene>,
+            individual: Individual,
+            evi: EvaluatedIndividual<*>,
+            targets : Set<Int>,
+            mutatedGenes: MutatedGeneSpecification?
+    ) : List<Gene>{
 
-        val candidatesMap = genesToMutate.map { it to ImpactUtils.generateGeneId(individual, it) }.toMap()
-
-        val collected =  genesToMutate.toList().map { g->
-            val id = candidatesMap[g]?:throw IllegalArgumentException("mismatched")
-            if(evi.getImpactOfGenes(id) == null)
-                throw IllegalArgumentException("cannot find geneImpact info with id $id")
-            Pair(g, evi.getImpactOfGenes(id)!!)
+        val collected =  genesToMutate.map { g->
+            val impact = evi.getImpact(individual, g) ?: throw IllegalArgumentException("mismatched gene and impact info during mutation")
+            Pair(g, impact)
         }
         val n = mutationSpace(individual)
         return selectGenesByArchive(collected, n, targets, mutatedGenes)
@@ -230,7 +232,7 @@ class ArchiveMutator {
      */
     fun <T : Individual> selectIndividual(individuals : List<EvaluatedIndividual<T>>) : EvaluatedIndividual<T>{
         if (randomness.nextBoolean(0.1)) return randomness.choose(individuals)
-        val impacts = individuals.filter { it.getImpactOfGenes().any { i->i.value.getTimesToManipulate() > 0 } }
+        val impacts = individuals.filter { it.anyImpactfulGene() }
         if (impacts.isNotEmpty()) return randomness.choose(impacts)
         return randomness.choose(individuals)
     }
@@ -614,14 +616,26 @@ class ArchiveMutator {
         if (path.parent != null) Files.createDirectories(path.parent)
 
         val content = mutableListOf<String>()
-        content.add(mutableListOf("test","rootGene").plus(Impact.toCSVHeader()).joinToString(","))
+        content.add(mutableListOf("test","actionIndex","rootGene").plus(Impact.toCSVHeader()).joinToString(","))
         solution.individuals.forEachIndexed { index, e->
-            e.getImpactOfGenes().forEach { (t, geneImpact) ->
-                content.add(mutableListOf(index.toString(), t).plus(geneImpact.toCSVCell()).joinToString(","))
-                geneImpact.flatViewInnerImpact().forEach{ (name, impact) ->
-                    content.add(mutableListOf(index.toString(), "$t-$name").plus(impact.toCSVCell()).joinToString(","))
+            e.getInitializationGeneImpact().forEachIndexed { aindex, mutableMap ->
+                mutableMap.forEach { t, geneImpact ->
+                    content.add(mutableListOf(index.toString(), "Initialization$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
+                    geneImpact.flatViewInnerImpact().forEach{ (name, impact) ->
+                        content.add(mutableListOf(index.toString(),"Initialization$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
+                    }
                 }
             }
+
+            e.getActionGeneImpact().forEachIndexed { aindex, mutableMap ->
+                mutableMap.forEach { t, geneImpact ->
+                    content.add(mutableListOf(index.toString(), "Action$aindex", t).plus(geneImpact.toCSVCell()).joinToString(","))
+                    geneImpact.flatViewInnerImpact().forEach{ (name, impact) ->
+                        content.add(mutableListOf(index.toString(),"Action$aindex", "$t-$name").plus(impact.toCSVCell()).joinToString(","))
+                    }
+                }
+            }
+
         }
         if (content.size > 1){
             Files.write(path, content)

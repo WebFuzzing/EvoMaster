@@ -13,8 +13,8 @@ import org.evomaster.core.search.impact.ImpactUtils
  * @property addedGenes records what genes are added using structure mutator
  * @property removedGene records what genes are removed using structure mutator
  * @property mutatedPosition records where mutated/added/removed genes are located. but regarding different individual,
- * the position may be parsed in different way. For instance, the position may indicate the position of resource calls,
- * not rest action.
+ *          the position may be parsed in different way. For instance, the position may indicate the position of resource calls,
+ *          not rest action.
  */
 open class MutatedGeneSpecification (
         val mutatedGenes : MutableList<Gene> = mutableListOf(),
@@ -25,11 +25,6 @@ open class MutatedGeneSpecification (
         val mutatedPosition : MutableList<Int> = mutableListOf(),
         val mutatedDbActionPosition : MutableList<Int> = mutableListOf()
 ){
-
-    /*
-    shall we include 'removed'?
-     */
-    fun allGenes() = if (addedInitializationGenes.isEmpty()) mutatedDbGenes.plus(mutatedDbGenes) else mutatedGenes
 
     var geneSelectionStrategy : GeneMutationSelectionMethod = GeneMutationSelectionMethod.NONE
 
@@ -73,4 +68,6 @@ open class MutatedGeneSpecification (
 
     // add, remove, swap
     fun didStructureMutation() = addedGenes.isNotEmpty() || removedGene.isNotEmpty() || (mutatedGenes.isEmpty() && mutatedPosition.isNotEmpty())
+
+    fun allManipulatedGenes() = mutatedDbGenes.plus(mutatedGenes).plus(addedGenes).plus(removedGene)
 }

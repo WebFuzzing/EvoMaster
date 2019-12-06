@@ -68,6 +68,11 @@ class ImpactUtils {
 
         fun generateGeneId(action: Action, gene : Gene) : String = "${action.getName()}$SEPARATOR_ACTION_TO_GENE${generateGeneId(gene)}"
 
+        fun extractActionName(geneId : String) : String?{
+            if (!geneId.contains(SEPARATOR_ACTION_TO_GENE)) return null
+            return geneId.split(SEPARATOR_ACTION_TO_GENE).first()
+        }
+
         fun <T : Individual> generateGeneId(individual: T, gene: Gene) : String{
             if (!individual.seeGenes().contains(gene)){
                 log.warn("cannot find this gene ${gene.name} ($gene) in this individual")
@@ -84,11 +89,21 @@ class ImpactUtils {
             return generateGeneId(gene)
         }
 
-        fun extractMutatedGeneWithContext(mutatedGenes : MutableList<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
+        /**
+         * extract info regarding a gene (on a action of an individual if it has) before mutated and the gene after mutated
+         *
+         * @param mutatedGenes genes were mutated
+         * @param individual a mutated individual with [mutatedGenes]
+         * @param previousIndividual mutating [previousIndividual] becomes [individual]
+         */
+        fun extractMutatedGeneWithContext(
+                mutatedGenes : MutableList<Gene>,
+                individual: Individual,
+                previousIndividual: Individual
+        ) : Map<String, MutableList<MutatedGeneWithContext>>{
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             if (individual.seeActions().isEmpty()){
-                //throw IllegalArgumentException("do not support to extract contexts of mutated genes for an individual which does not have any action, i.e., seeAction() is empty.")
                 individual.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
                     val id = generateGeneId(individual, g)
                     val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
@@ -113,7 +128,19 @@ class ImpactUtils {
             return mutatedGenesWithContext
         }
 
-        fun extractMutatedDbGeneWithContext(mutatedGenes : MutableList<Gene>, individual: Individual, previousIndividual: Individual) : Map<String, MutableList<MutatedGeneWithContext>>{
+        /**
+         * extract info regarding a gene (on an initialization action of an individual if it has) before mutated and the gene after mutated
+         *
+         * @param mutatedGenes genes were mutated
+         * @param individual a mutated individual with [mutatedGenes]
+         * @param previousIndividual mutating [previousIndividual] becomes [individual]
+         */
+        fun extractMutatedDbGeneWithContext(
+                mutatedGenes : MutableList<Gene>,
+                individual: Individual,
+                previousIndividual: Individual
+        ) : Map<String, MutableList<MutatedGeneWithContext>>{
+
             val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
 
             individual.seeInitializingActions().forEachIndexed { index, action ->
@@ -129,7 +156,7 @@ class ImpactUtils {
             return mutatedGenesWithContext
         }
 
-        fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
+        private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
             if (isDb && indexOfAction > individual.seeInitializingActions().size) return null
             val action = if (isDb) individual.seeInitializingActions()[indexOfAction] else individual.seeActions()[indexOfAction]
             if (action.getName() != actionName)
@@ -137,7 +164,7 @@ class ImpactUtils {
             return action.seeGenes().find { generateGeneId(action, it) == id }
         }
 
-        fun findGeneById(individual: Individual, id : String):Gene?{
+        private fun findGeneById(individual: Individual, id : String):Gene?{
             return individual.seeGenes().find { generateGeneId(individual, it) == id }
         }
 
