@@ -32,7 +32,7 @@ The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) format.
 The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
 
 
-A short [video](https://youtu.be/7zTLUlH-BNI) shows the use of _EvoMaster_ on one of the 
+A [short video](https://youtu.be/3mYxjgnhLEo) shows the use of _EvoMaster_ on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 
