@@ -294,6 +294,8 @@ class TestSuiteWriter {
                 addStatement("assertNotNull(baseUrlOfSut)", lines)
             }
 
+            addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
+            addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
             addStatement("RestAssured.urlEncodingEnabled = false", lines)
 
             if (config.enableBasicAssertions){
