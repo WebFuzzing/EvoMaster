@@ -121,7 +121,7 @@ public class ImpactEMTest extends SpringTestBase {
 
         boolean last = true;
 
-        List<GeneImpact> noimpactGenes = ind.getGeneImpactById(id); //ind.getImpactOfGenes().get(id);
+        List<GeneImpact> noimpactGenes = ind.getGeneImpact(id); //ind.getImpactOfGenes().get(id);
         for (GeneImpact other : ind.flattenAllGeneImpact()){
             if (other.getId() != id){
 

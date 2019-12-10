@@ -79,6 +79,19 @@ class ImpactsOfIndividual private constructor(
         return current[actionIndex].get(geneId, actionName)
     }
 
+    /**
+     * @return all genes whose name is [geneId]
+     */
+    fun getGeneImpact(geneId: String) : List<GeneImpact>{
+        val list = mutableListOf<GeneImpact>()
+
+        initializationGeneImpacts.plus(actionGeneImpacts).forEach {
+            if (it.geneImpacts.containsKey(geneId))
+                list.add(it.geneImpacts[geneId]!!)
+        }
+        return list
+    }
+
     fun syncBasedOnIndividual(individual: Individual, mutatedGene : MutatedGeneSpecification){
         //for initialization due to db action fixing
         val diff = individual.seeInitializingActions().size - initializationGeneImpacts.size

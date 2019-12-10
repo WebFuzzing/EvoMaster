@@ -577,4 +577,9 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         impactInfo?:throw IllegalArgumentException("impact info is null")
         return  impactInfo.getActionGeneImpact()
     }
+
+    fun getGeneImpact(geneId : String) : List<GeneImpact>{
+        impactInfo?:return listOf()
+        return impactInfo.getGeneImpact(geneId)
+    }
 }
