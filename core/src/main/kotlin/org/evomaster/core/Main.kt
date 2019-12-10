@@ -344,6 +344,10 @@ class Main {
             solutions.forEach {
                 writer.writeTests(it, controllerInfoDto?.fullName)
             }
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
+            executiveSummary.forEach {
+                writer.writeTests(it, controllerInfoDto?.fullName)
+            }
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
