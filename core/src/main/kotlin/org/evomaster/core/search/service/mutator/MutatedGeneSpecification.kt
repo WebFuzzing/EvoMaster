@@ -70,4 +70,6 @@ open class MutatedGeneSpecification (
     fun didStructureMutation() = addedGenes.isNotEmpty() || removedGene.isNotEmpty() || (mutatedGenes.isEmpty() && mutatedPosition.isNotEmpty())
 
     fun allManipulatedGenes() = mutatedDbGenes.plus(mutatedGenes).plus(addedGenes).plus(removedGene)
+
+    fun mutatedActionOrDb() = setOf(mutatedGenes.isEmpty(), mutatedDbGenes.isNotEmpty())
 }

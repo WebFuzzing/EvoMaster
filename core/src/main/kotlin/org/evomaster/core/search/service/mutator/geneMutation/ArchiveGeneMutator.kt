@@ -98,7 +98,6 @@ class ArchiveMutator {
             counter++
         }
         if (selected.isEmpty()){
-            println("select one")
             return selectNSorted(candidates, 1) //selected.add(candidates.first())
         }
 

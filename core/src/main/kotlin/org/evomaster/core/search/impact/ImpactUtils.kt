@@ -14,6 +14,7 @@ import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -96,7 +97,7 @@ class ImpactUtils {
          * @param individual a mutated individual with [mutatedGenes]
          * @param previousIndividual mutating [previousIndividual] becomes [individual]
          */
-        fun extractMutatedGeneWithContext(
+        private fun extractMutatedGeneWithContext(
                 mutatedGenes : MutableList<Gene>,
                 individual: Individual,
                 previousIndividual: Individual
@@ -128,33 +129,54 @@ class ImpactUtils {
             return mutatedGenesWithContext
         }
 
-        /**
-         * extract info regarding a gene (on an initialization action of an individual if it has) before mutated and the gene after mutated
-         *
-         * @param mutatedGenes genes were mutated
-         * @param individual a mutated individual with [mutatedGenes]
-         * @param previousIndividual mutating [previousIndividual] becomes [individual]
-         */
-        fun extractMutatedDbGeneWithContext(
-                mutatedGenes : MutableList<Gene>,
-                individual: Individual,
-                previousIndividual: Individual
-        ) : Map<String, MutableList<MutatedGeneWithContext>>{
-
-            val mutatedGenesWithContext = mutableMapOf<String, MutableList<MutatedGeneWithContext>>()
-
-            individual.seeInitializingActions().forEachIndexed { index, action ->
-                action.seeGenes().filter { mutatedGenes.contains(it) }.forEach { g->
-                    val id = generateGeneId(action, g)
-                    val contexts = mutatedGenesWithContext.getOrPut(id){ mutableListOf()}
-                    val previous = findGeneById(previousIndividual, id, action.getName(), index, true)
-                    contexts.add(MutatedGeneWithContext(g, action.getName(), index, previous))
+        fun extractMutatedGeneWithContext(mutatedGeneSpecification: MutatedGeneSpecification,
+                                          individual: Individual,
+                                          previousIndividual: Individual,
+                                          fromInitialization : Boolean) : MutableList<MutatedGeneWithContext>{
+            val actions = if (fromInitialization) individual.seeInitializingActions() else individual.seeActions()
+            val list = mutableListOf<MutatedGeneWithContext>()
+            if (actions.isNotEmpty()){
+                actions.forEach { a ->
+                    val index = actions.indexOf(a)
+                    val manipulated = if (fromInitialization) mutatedGeneSpecification.mutatedDbActionPosition.contains(index) else mutatedGeneSpecification.mutatedPosition.contains(index)
+                    if (manipulated){
+                        a.seeGenes().filter {
+                            if (fromInitialization)
+                                mutatedGeneSpecification.mutatedDbGenes.contains(it)
+                            else
+                                mutatedGeneSpecification.mutatedGenes.contains(it)
+                        }.forEach { mutatedg->
+                            val id = generateGeneId(a, mutatedg)
+                            val previous = findGeneById(
+                                    individual=previousIndividual,
+                                    id = id,
+                                    actionName = a.getName(),
+                                    indexOfAction = index,
+                                    isDb = fromInitialization
+                            )
+                            list.add(MutatedGeneWithContext(current = mutatedg, previous = previous, position = index, action = a.getName()))
+                        }
+                    }
                 }
+                Lazy.assert {
+                    list.size == if (fromInitialization) mutatedGeneSpecification.mutatedDbGenes.size else mutatedGeneSpecification.mutatedGenes.size
+                }
+                return list
             }
 
-            Lazy.assert{mutatedGenesWithContext.values.sumBy { it.size } == mutatedGenes.size}
-            return mutatedGenesWithContext
+            Lazy.assert { !fromInitialization }
+
+            individual.seeGenes().filter { mutatedGeneSpecification.mutatedGenes.contains(it) }.forEach { g->
+                val id = generateGeneId(individual, g)
+                val previous = findGeneById(previousIndividual, id)?: throw IllegalArgumentException("mismatched previous individual")
+                list.add(MutatedGeneWithContext(g, previous = previous))
+            }
+            Lazy.assert {
+                list.size == mutatedGeneSpecification.mutatedGenes.size
+            }
+            return list
         }
+
 
         private fun findGeneById(individual: Individual, id : String, actionName : String, indexOfAction : Int, isDb : Boolean):Gene?{
             if (isDb && indexOfAction > individual.seeInitializingActions().size) return null

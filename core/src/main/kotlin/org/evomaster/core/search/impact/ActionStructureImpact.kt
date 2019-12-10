@@ -1,6 +1,8 @@
 package org.evomaster.core.search.impact
 
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.FitnessValue
+import org.evomaster.core.search.Individual
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -45,6 +47,12 @@ class ActionStructureImpact  (sharedImpactInfo: SharedImpactInfo, specificImpact
         if ( fitness > impact ) structures[structureId] = fitness
     }
 
+    fun updateStructure(individual:Individual, fitnessValue: FitnessValue){
+        val structureId = individual.seeActions().joinToString(ACTION_SEPARATOR){it.getName()}
+        val impact = structures.getOrPut(structureId){ 0.0 }
+        val fitness = fitnessValue.computeFitnessScore()
+        if ( fitness > impact ) structures[structureId] = fitness
+    }
 
     fun countImpact(evaluatedIndividual : EvaluatedIndividual<*>, sizeChanged : Boolean, noImpactTargets: Set<Int>, impactTargets : Set<Int>, improvedTargets : Set<Int>, onlyManipulation : Boolean = false){
         countImpactAndPerformance(noImpactTargets = noImpactTargets, impactTargets = impactTargets, improvedTargets = improvedTargets, onlyManipulation = onlyManipulation)

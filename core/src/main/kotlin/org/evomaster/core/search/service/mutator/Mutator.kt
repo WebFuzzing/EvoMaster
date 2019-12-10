@@ -102,7 +102,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             4) p4 - avoid targets which are not related to the individual with 0.7
          */
 
-        val impacts = evi.getImpacts(mutatedGenes)
+        val impacts = evi.getImpactsRelatedTo(mutatedGenes)
 
         val p1 = impacts.flatMap { p->p.shared.timesOfImpact.keys }
         val p2 = setOf<Int>()//evi.getRelatedNotCoveredTarget().run { if (size < 50) this else this.filter { randomness.nextBoolean(0.8) } }
@@ -148,7 +148,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
                 current.updateGeneDueToAddedInitializationGenes(
-                        individual = current.individual,
                         genes = mutatedGenes.addedInitializationGenes
                 )
             }
@@ -205,6 +204,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent), config.maxLengthOfTraces)!!
                 }
                 else mutated
+
+                //if newly initialization actions were added (i.e., trackedCurrent does not include these), impacts should be updated accordingly
+                if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
+                    trackedMutated.updateGeneDueToAddedInitializationGenes(current)
+                }
 
                 if(archiveMutator.enableArchiveSelection()){
                     trackedMutated.updateImpactOfGenes(true,
