@@ -77,6 +77,10 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
+        when (errs.size){
+            0, 1 -> return mutableListOf()
+        }
+
         val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 

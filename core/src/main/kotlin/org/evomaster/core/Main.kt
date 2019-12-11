@@ -345,8 +345,10 @@ class Main {
                 writer.writeTests(it, controllerInfoDto?.fullName)
             }
             val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
-            executiveSummary.forEach {
-                writer.writeTests(it, controllerInfoDto?.fullName)
+            if(executiveSummary.isNotEmpty()) {
+                executiveSummary.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
             }
         }
 
