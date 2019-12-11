@@ -1,5 +1,19 @@
 # Publications
 
+The development of _EvoMaster_ is rooted in academia.
+Here, you can find the PDFs of all the academic publications based on _EvoMaster_. 
+Furthermore, slides of presentations can be  found [here](presentations.md).
+These can be useful if you want to know more on how _EvoMaster_ works internally,
+e.g., details on the Many Independent Objective (MIO) algorithm.
+
+
+### 2020
+
+* A. Arcuri, J.P. Galeotti.
+  *Testability Transformations For Existing APIs*.
+  IEEE Conference on Software Testing, Validation and Verification (ICST).
+  _To appear_.
+
 ### 2019
 
 * M. Zhang, B. Marculescu, A. Arcuri. 
@@ -15,6 +29,7 @@
 * A. Arcuri. *RESTful API Automated Test Case Generation with EvoMaster*.
      ACM Transactions on Software Engineering and Methodology (TOSEM).
      [[PDF](publications/2019_tosem.pdf)]   
+
 
 ### 2018
 
@@ -33,6 +48,7 @@
    Empirical Software Engineering (EMSE).
    [[PDF](publications/2018_emse.pdf)]                           
 
+
 ### 2017
 
 * A. Arcuri. *RESTful API Automated Test Case Generation*.
@@ -46,26 +62,3 @@
   [[PDF](publications/2017_ssbse.pdf)]  
   
   
-# Seminars/Presentations
-
-* 2019: *The Many Independent Objective (MIO) Algorithm for Test Suite Generation*.
-  Lecture given at ISTI-CNR, Italy.   
-  [[PDF](slides/2019_mio_pisa.pdf)]  
-
-* 2019: *Testing RESTful Web Services with EvoMaster*.
-  Lecture given at the 3rd International Genoa Software Engineering PhD School on
-  Automated Functional and Security Testing of Web and Mobile Application,
-  Italy.
-  [[PDF](slides/2019_evomaster_genova.pdf)]
-
-* 2019: *Using Evolutionary Algorithms to Test Software*.
-  Lecture given at Kristiania University College, Norway.
-  [[PDF](slides/2019_evolutionary_testing_kristiania.pdf)]
-
-* 2018: *EvoMaster: Evolutionary Multi-context Automated System Testing*. 
-  Seminar given at Mälardalen University, Sweden.
-  [[PDF](slides/2018_seminar_evomaster_mdh.pdf)]  
-
-* 2017: *EvoMaster: Evolutionary Multi-context Automated System Testing*. 
-  Seminar given at the University of Luxembourg, Luxembourg.
-  [[PDF](slides/2017_seminar_evomaster_lux.pdf)]  
