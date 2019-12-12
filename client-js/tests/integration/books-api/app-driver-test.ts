@@ -1,8 +1,8 @@
 import EMController from "../../../src/controller/EMController";
 import AppController from "./app-driver";
 
-import rep from "../../sut/books-api/repository";
 import superagent from "superagent";
+import rep from "../../sut/books-api/repository";
 
 import * as c from "../../../src/controller/api/ControllerConstants";
 import SutRunDto from "../../../src/controller/api/dto/SutRunDto";
@@ -18,11 +18,10 @@ function initWithSomeBooks() {
     rep.createNewBook("The Call of Cthulhu", "H. P. Lovecraft", 1928);
 }
 
-
 const controller = new EMController(new AppController());
 
-let controllerPort : number;
-let controllerUrl : string;
+let controllerPort: number;
+let controllerUrl: string;
 let sutUrl: string;
 
 beforeAll( async () => {
@@ -38,16 +37,12 @@ afterAll( async () => {
    await controller.stopTheControllerServer();
 });
 
-
 beforeEach(async () => {
     sutUrl = await startSut();
     initWithSomeBooks();
 });
 
-
-
-
-async function startSut() : Promise<string>{
+async function startSut(): Promise<string> {
 
     const dto = new SutRunDto();
     dto.run = true;
@@ -63,7 +58,7 @@ async function startSut() : Promise<string>{
     return Promise.resolve(url);
 }
 
-async function stopSut() : Promise<void>{
+async function stopSut(): Promise<void> {
 
     const dto = new SutRunDto();
     dto.run = false;
@@ -75,20 +70,17 @@ async function stopSut() : Promise<void>{
     expect(res.status).toBe(204);
 }
 
-async function resetSut() : Promise<void>{
+async function resetSut(): Promise<void> {
     await startSut();
 }
 
-
 // ---- Controller -----------
-
 
 test("Test start SUT", async () => {
 
     const url = await startSut();
     expect(url).toBeTruthy();
 });
-
 
 test("Test start/stop/reset SUT", async () => {
 
@@ -119,9 +111,7 @@ test("Test start/stop/reset SUT", async () => {
     */
 });
 
-
 // ---- SUT ------------------
-
 
 test("Test get all", async () => {
 
@@ -130,12 +120,11 @@ test("Test get all", async () => {
     expect(response.body.length).toBe(5);
 });
 
-
 test("Test not found book", async () => {
 
     const response = await superagent
         .get(sutUrl + "/books/-3")
-        .ok(res => res.status < 600);
+        .ok((res) => res.status < 600);
     expect(response.status).toBe(404);
 });
 

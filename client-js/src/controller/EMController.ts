@@ -1,5 +1,7 @@
 import bodyParser from "body-parser";
 import express from "express";
+import * as http from "http";
+import {AddressInfo} from "net";
 import * as c from "./api/ControllerConstants";
 import ActionDto from "./api/dto/ActionDto";
 import ControllerInfoDto from "./api/dto/ControllerInfoDto";
@@ -9,8 +11,6 @@ import SutRunDto from "./api/dto/SutRunDto";
 import TestResultsDto from "./api/dto/TestResultsDto";
 import WrappedResponseDto from "./api/dto/WrappedResponseDto";
 import SutController from "./SutController";
-import {AddressInfo} from "net";
-import * as http from "http";
 
 export default class EMController {
 
@@ -34,9 +34,9 @@ export default class EMController {
         this.initExpress();
     }
 
-    startTheControllerServer(): Promise<boolean> {
+    public startTheControllerServer(): Promise<boolean> {
 
-        return new Promise<boolean>( resolve => {
+        return new Promise<boolean>( (resolve) => {
             this.server = this.app.listen(this.controllerPort, this.controllerHost, () => {
                 this.actualPort = (this.server.address() as AddressInfo).port;
                 resolve(true);
@@ -44,14 +44,14 @@ export default class EMController {
         });
     }
 
-    stopTheControllerServer(): Promise<void>{
+    public stopTheControllerServer(): Promise<void> {
 
         const sut = this.sutController.isSutRunning() ?
             this.sutController.stopSut()
             : Promise.resolve();
 
-        const controller = new Promise<void>( resolve => {
-            if(this.server){
+        const controller = new Promise<void>( (resolve) => {
+            if (this.server) {
                 this.server.close(() => resolve());
             }
         });
@@ -59,15 +59,15 @@ export default class EMController {
         return Promise.all([sut, controller]).then();
     }
 
-    setPort(value: number){
+    public setPort(value: number) {
        this.controllerPort = value;
     }
 
-    getActualPort(): number  {
+    public getActualPort(): number  {
         return this.actualPort;
     }
 
-    getBaseUrlOfSUT() : string {
+    public getBaseUrlOfSUT(): string {
         return this.baseUrlOfSUT;
     }
 

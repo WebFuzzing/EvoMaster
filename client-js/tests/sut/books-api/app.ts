@@ -104,7 +104,6 @@ app.put("/books/:id", (req, res) => {
     res.send();
 });
 
-
 app.get("/swagger.json", (req, res) => {
 
     const swagger = {
@@ -114,7 +113,7 @@ app.get("/swagger.json", (req, res) => {
             version: "1.0",
             title: "API"
         },
-        //host: "localhost:8080",
+        // host: "localhost:8080",
         basePath: "/",
         tags: [{
             name: "BookApi",
@@ -123,129 +122,129 @@ app.get("/swagger.json", (req, res) => {
         paths: {
             "/books": {
                 get: {
-                    "tags": ["BookApi"],
-                    "summary": "Get all books",
-                    "operationId": "getBooks",
-                    "produces": ["application/json"],
-                    "responses": {
-                        "200": {
-                            "description": "OK",
-                            "schema": {
-                                "type": "array",
-                                "items": {"$ref": "#/definitions/BookDto"}
+                    tags: ["BookApi"],
+                    summary: "Get all books",
+                    operationId: "getBooks",
+                    produces: ["application/json"],
+                    responses: {
+                        200: {
+                            description: "OK",
+                            schema: {
+                                type: "array",
+                                items: {$ref: "#/definitions/BookDto"}
                             }}
                     },
-                    "parameters": [{
-                        "name": "since",
-                        "in": "query",
-                        "description": "Filter on year",
-                        "required": false,
-                        "type": "number"
+                    parameters: [{
+                        name: "since",
+                        in: "query",
+                        description: "Filter on year",
+                        required: false,
+                        type: "number"
                     }]
                 },
-                "post": {
-                    "tags": ["BookApi"],
-                    "summary": "Create book",
-                    "operationId": "createBook",
-                    "consumes": ["application/json"],
-                    "produces": ["application/json"],
-                    "parameters": [{
-                        "in": "body",
-                        "name": "dto",
-                        "description": "book payload",
-                        "required": true,
-                        "schema": {"$ref": "#/definitions/BookDto"}
+                post: {
+                    tags: ["BookApi"],
+                    summary: "Create book",
+                    operationId: "createBook",
+                    consumes: ["application/json"],
+                    produces: ["application/json"],
+                    parameters: [{
+                        in: "body",
+                        name: "dto",
+                        description: "book payload",
+                        required: true,
+                        schema: {$ref: "#/definitions/BookDto"}
                     }],
-                    "responses": {"201": {"description": "Created"}}
+                    responses: {201: {description: "Created"}}
                 }
             },
             "/books/{id}": {
-                "get": {
-                    "tags": ["BookApi"],
-                    "summary": "Get a single book specified by id",
-                    "operationId": "getBookById",
-                    "produces": ["application/json"],
-                    "parameters": [
+                get: {
+                    tags: ["BookApi"],
+                    summary: "Get a single book specified by id",
+                    operationId: "getBookById",
+                    produces: ["application/json"],
+                    parameters: [
                         {
-                            "name": "id",
-                            "in": "path",
-                            "description": "The id of the book",
-                            "required": false,
-                            "type": "string"
+                            name: "id",
+                            in: "path",
+                            description: "The id of the book",
+                            required: false,
+                            type: "string"
                         }
                     ],
-                    "responses": {
-                        "200": {
-                            "description": "OK",
-                            "schema": {"$ref": "#/definitions/BookDto"}
+                    responses: {
+                        200: {
+                            description: "OK",
+                            schema: {$ref: "#/definitions/BookDto"}
                         }
                     }
                 },
-                "put": {
-                    "tags": ["BookApi"],
-                    "summary": "Update an existing book",
-                    "operationId": "updateUsingPUT",
-                    "consumes": ["application/json"],
-                    "produces": ["application/json"],
-                    "parameters": [
+                put: {
+                    tags: ["BookApi"],
+                    summary: "Update an existing book",
+                    operationId: "updateUsingPUT",
+                    consumes: ["application/json"],
+                    produces: ["application/json"],
+                    parameters: [
                         {
-                            "in": "body",
-                            "name": "dto",
-                            "description": "The book that will replace the old one. Cannot change its id though.",
-                            "required": true,
-                            "schema": {"$ref": "#/definitions/BookDto"}
+                            in: "body",
+                            name: "dto",
+                            description: "The book that will replace the old one. Cannot change its id though.",
+                            required: true,
+                            schema: {$ref: "#/definitions/BookDto"}
                         },
                         {
-                            "name": "id",
-                            "in": "path",
-                            "description": "The id of the book",
-                            "required": true,
-                            "type": "string"
+                            name: "id",
+                            in: "path",
+                            description: "The id of the book",
+                            required: true,
+                            type: "string"
                         }
                     ],
-                    "responses": {
-                        "200": {"description": "OK",
-                                "schema": {
-                                    "type": "object"
+                    responses: {
+                        200: {description: "OK",
+                                schema: {
+                                    type: "object"
                                 }
                             }
                         }
                 },
-                "delete": {
-                    "tags": ["BookApi"],
-                    "summary": "Delete a book with the given id",
-                    "operationId": "deleteUsingDELETE",
-                    "produces": ["application/json"],
-                    "parameters": [
+                delete: {
+                    tags: ["BookApi"],
+                    summary: "Delete a book with the given id",
+                    operationId: "deleteUsingDELETE",
+                    produces: ["application/json"],
+                    parameters: [
                         {
-                            "name": "id",
-                            "in": "path",
-                            "description": "The id of the book",
-                            "required": true,
-                            "type": "string"
+                            name: "id",
+                            in: "path",
+                            description: "The id of the book",
+                            required: true,
+                            type: "string"
                         }
                     ],
-                    "responses": {
-                        "204": {
-                            "description": "OK",
-                            "schema": {
-                                "type": "object"
+                    responses: {
+                        204: {
+                            description: "OK",
+                            schema: {
+                                type: "object"
                             }
                         }
                     }
                 }
             }
         },
-        "definitions": {
-            "BookDto": {
-                "type": "object",
-                "properties": {
-                    "id": {"type": "string", "description": "TODO"},
-                    "title": {"type": "string", "description": "TODO"},
-                    "author": {"type": "string", "description": "TODO"},
-                    "year": {"type": "numberic", "description": "TODO"},
+        definitions: {
+            BookDto: {
+                type: "object",
+                properties: {
+                    id: {type: "string", description: "TODO"},
+                    title: {type: "string", description: "TODO"},
+                    author: {type: "string", description: "TODO"},
+                    year: {type: "numberic", description: "TODO"},
                 },
-                "title": "BookDto"
+                title: "BookDto"
             }
         }
     };
@@ -255,4 +254,3 @@ app.get("/swagger.json", (req, res) => {
 });
 
 export default app;
-
