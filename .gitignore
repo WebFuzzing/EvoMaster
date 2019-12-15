@@ -51,3 +51,6 @@ experiments/target/
 /client-js/yarn-error.log
 /client-js/coverage/
 /client-js/integration-tests/node_modules/
+/client-js/evomaster-client-js/coverage/
+/client-js/evomaster-client-js/node_modules/
+/client-js/evomaster-client-js/dist/
