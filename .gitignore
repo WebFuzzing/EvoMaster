@@ -50,3 +50,4 @@ experiments/target/
 /client-js/dist/
 /client-js/yarn-error.log
 /client-js/coverage/
+/client-js/integration-tests/node_modules/

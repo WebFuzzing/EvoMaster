@@ -2,9 +2,16 @@
   "name": "evomaster-client-js",
   "version": "0.4.1",
   "description": "Client library for EvoMaster for JavaScript",
+  "main": "index.js",
+  "directories": {
+    "dist": "./dist"
+  },
+  "files": [
+    "dist"
+  ],
   "repository": {},
   "author": "EvoMaster Team",
-  "license": "LGPL v3",
+  "license": "LGPL-3.0-only",
   "dependencies": {
     "express": "^4.17.1"
   },
@@ -35,7 +42,7 @@
     "testEnvironment": "node",
     "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
     "collectCoverageFrom": [
-      "src/**.(js|jsx|ts|tsx)"
+      "src/**/.*(js|jsx|ts|tsx)"
     ],
     "transform": {
       "^.+\\.(ts|tsx)?$": "ts-jest"

@@ -8,6 +8,7 @@
     "sourceMap": true,
     "outDir": "dist",
     "baseUrl": ".",
+    "declaration": true,
     "paths": {
       "*": [
         "node_modules/*"
@@ -15,7 +16,6 @@
     }
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "src/**/*"
   ]
 }

@@ -1,0 +1,34 @@
+{
+  "name": "evomaster-client-js-integration-tests",
+  "version": "0.4.1",
+  "description": "Integration tests for EvoMaster support for JavaScript",
+  "main": "index.js",
+  "repository": {},
+  "author": "EvoMaster Team",
+  "license": "LGPL-3.0-only",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.7.5",
+    "evomaster-client-js": "file:../evomaster-client-js",
+    "jest": "^24.9.0",
+    "superagent": "^5.1.1",
+    "supertest": "^4.0.2"
+  },
+  "scripts": {
+    "check": "babel src -d check",
+    "test": "jest --coverage"
+  },
+  "babel": {
+    "presets": []
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
+    "collectCoverageFrom": [
+      "src/**/.*(js|jsx|ts|tsx)"
+    ],
+    "transform": {}
+  }
+}
