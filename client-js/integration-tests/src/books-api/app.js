@@ -1,6 +1,6 @@
-import bodyParser from "body-parser";
-import express from "express";
-import repository from "./repository";
+const bodyParser  = require("body-parser");
+const express  = require("express");
+const repository  = require("./repository");
 
 const app = express();
 // to handle JSON payloads
@@ -253,4 +253,4 @@ app.get("/swagger.json", (req, res) => {
     res.json(swagger);
 });
 
-export default app;
+module.exports = app;

@@ -2,12 +2,10 @@
   "name": "evomaster-client-js",
   "version": "0.4.1",
   "description": "Client library for EvoMaster for JavaScript",
-  "main": "index.js",
-  "directories": {
-    "dist": "./dist"
-  },
+  "main": "dist/index.js",
   "files": [
-    "dist"
+    "dist",
+    "package.json"
   ],
   "repository": {},
   "author": "EvoMaster Team",

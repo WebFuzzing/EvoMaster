@@ -25,7 +25,7 @@ export default class AppController  extends SutController {
         const dto = new RestProblemDto();
         dto.swaggerJsonUrl = "http://localhost:" + this.port + "/swagger.json";
 
-        return undefined;
+        return dto;
     }
 
     public isSutRunning(): boolean {

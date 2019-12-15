@@ -1,2 +1,2 @@
 
-export default interface ProblemInfo {}
+export default class ProblemInfo {}

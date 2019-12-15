@@ -1,10 +1,11 @@
-import Book from "./book";
+const Book  = require("./book");
 
 class BookRepository {
 
-    books = new Map();
-
-    counter = 0;
+    constructor() {
+        this.books = new Map();
+        this.counter = 0;
+    }
 
     createNewBook(title, author, year) {
 
@@ -51,4 +52,4 @@ class BookRepository {
 
 }
 
-export default new BookRepository();
+module.exports = new BookRepository();

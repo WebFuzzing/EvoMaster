@@ -1,10 +1,5 @@
 
-export default class Book {
-
-    id;
-    title;
-    author;
-    year;
+class Book {
 
     constructor(id, title, author, year) {
         this.id = id;
@@ -13,3 +8,6 @@ export default class Book {
         this.year = year;
     }
 }
+
+
+module.exports = Book;
