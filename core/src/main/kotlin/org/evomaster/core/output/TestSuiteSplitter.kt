@@ -22,6 +22,15 @@ object TestSuiteSplitter {
      * the original [Solution]
      */
     fun split(solution: Solution<*>, type: EMConfig.TestSuiteSplitType) : List<Solution<*>>{
+
+        val errs = solution.individuals.filter {
+            it.evaluatedActions().any { ac ->
+                (ac.result as RestCallResult).getStatusCode() == 500
+            }
+        }.toMutableList()
+
+        if(errs.size <= 1) return listOf(solution)
+
         return when(type){
             EMConfig.TestSuiteSplitType.NONE -> listOf(solution)
             EMConfig.TestSuiteSplitType.CLUSTER -> listOf(sortByClusters(solution as Solution<RestIndividual>))
