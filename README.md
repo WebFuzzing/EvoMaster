@@ -36,12 +36,6 @@ A [short video](https://youtu.be/3mYxjgnhLEo) shows the use of _EvoMaster_ on on
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 
-_EvoMaster_ is currently (2018-2021) funded by a 7.8 million Norwegian Kroner grant 
-by the Research Council of Norway (RCN), as part of the 
-Frinatek project <i>Evolutionary Enterprise Testing</i>.  
-
-
-
 
 ### Examples
 
@@ -209,6 +203,16 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   but rather by email, directly to Prof. A. Arcuri. 
 
 
+
+
+### Funding
+
+_EvoMaster_ has been funded by: 
+* 2020-2026: a 2 million Euro grant by the European Research Council (ERC),
+as part of the ERC Consolidator project 
+<i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
+*  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN), 
+as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
 
 
 ### License

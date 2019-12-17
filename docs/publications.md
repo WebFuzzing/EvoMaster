@@ -7,6 +7,13 @@ These can be useful if you want to know more on how _EvoMaster_ works internally
 e.g., details on the Many Independent Objective (MIO) algorithm.
 
 
+### 2020
+
+* A. Arcuri, J.P. Galeotti.
+  *Testability Transformations For Existing APIs*.
+  IEEE Conference on Software Testing, Validation and Verification (ICST).
+  _To appear_.
+
 ### 2019
 
 * M. Zhang, B. Marculescu, A. Arcuri. 
