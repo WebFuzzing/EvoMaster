@@ -24,10 +24,23 @@ object TestSuiteSplitter {
     fun split(solution: Solution<*>, type: EMConfig.TestSuiteSplitType) : List<Solution<*>>{
         return when(type){
             EMConfig.TestSuiteSplitType.NONE -> listOf(solution)
-            EMConfig.TestSuiteSplitType.CLUSTER ->  executiveSummary(solution as Solution<RestIndividual>)
+            EMConfig.TestSuiteSplitType.CLUSTER -> listOf(sortByClusters(solution as Solution<RestIndividual>))
+            EMConfig.TestSuiteSplitType.SUMMARY -> executiveSummary(solution as Solution<RestIndividual>)
                 //splitByClusters(solution as Solution<RestIndividual>)
         }
     }
+
+    /**
+     * [splitByClusters] splits a given Solution object into a List of several Solution objects, each
+     * containing a cluster of (error - i.e. containing 500s) [EvaluatedIndividual<RestIndividual>]. Each such solution
+     * can be printed as a separate test file.
+     *
+     * NOTE: This is currently not in use, as having lots of small files may be a problem for the potential users,
+     * though it can be activated if a need/requirement for such information can be determined.
+     *
+     * Futhermore, if a particular type of fault is found to be of greater interest, this could be the starting point
+     * for getting all the additional test cases related to that fault (i.e. belonging to the same cluster).
+     */
 
     fun splitByClusters(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
         val errs = solution.individuals.filter {
@@ -38,16 +51,20 @@ object TestSuiteSplitter {
 
         val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
         val clusteredSolutions = mutableListOf<Solution<RestIndividual>>()
-        val summarySolutions = mutableListOf<Solution<RestIndividual>>()
+        val individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
                 ind.evaluatedActions().any { ac ->
                     clu.contains(ac.result as RestCallResult)
                 }
+            }.map {
+                it.assignToCluster(index)
             }.toMutableList()
             clusteredSolutions.add(index, Solution(inds, "C_$index"))
+            individuals.addAll(inds)
         }
+
 
         //Could this be a quick check to see if any 500s were skipped?
         /*
@@ -68,6 +85,42 @@ object TestSuiteSplitter {
         }
         */
         return clusteredSolutions
+    }
+
+    /**
+     * [sortByClusters] filters the error (i.e. containing 500s) [EvaluatedIndividual] and sorts them based on their
+     * membership in the various clusters. The idea is to provide a single [Solution] that contains all the error
+     * [EvaluatedIndividual], sorted by cluster.
+     *
+     * At the moment, the exact order of clusters is not particularly relevant, but may be useful for prioritization
+     * in some future iteration.
+     *
+     *
+     */
+
+    fun sortByClusters(solution: Solution<RestIndividual>) : Solution<RestIndividual>{
+        val errs = solution.individuals.filter {
+            it.evaluatedActions().any { ac ->
+                (ac.result as RestCallResult).getStatusCode() == 500
+            }
+        }.toMutableList()
+
+        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
+        val individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+        clusters.forEachIndexed { index, clu ->
+            val inds = solution.individuals.filter { ind ->
+                ind.evaluatedActions().any { ac ->
+                    clu.contains(ac.result as RestCallResult)
+                }
+            }.map {
+                it.assignToCluster(index)
+            }.toMutableList()
+            individuals.addAll(inds)
+        }
+
+        val sortedSolution = Solution(individuals, "Clustered")
+        return sortedSolution
     }
 
     fun executiveSummary(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{

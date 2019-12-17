@@ -344,9 +344,15 @@ class Main {
             solutions.forEach {
                 writer.writeTests(it, controllerInfoDto?.fullName)
             }
-            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
-            if(executiveSummary.isNotEmpty()) {
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
+            if(executiveSummary.isNotEmpty() && config.testSuiteSplitType == EMConfig.TestSuiteSplitType.SUMMARY) {
                 executiveSummary.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
+            }
+            val clusteredSolutions = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
+            if(clusteredSolutions.isNotEmpty() && config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER) {
+                clusteredSolutions.forEach {
                     writer.writeTests(it, controllerInfoDto?.fullName)
                 }
             }

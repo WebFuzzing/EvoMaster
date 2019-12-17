@@ -473,7 +473,8 @@ class EMConfig {
 
     enum class TestSuiteSplitType {
         NONE,
-        CLUSTER
+        CLUSTER,
+        SUMMARY
     }
 
     @Experimental
