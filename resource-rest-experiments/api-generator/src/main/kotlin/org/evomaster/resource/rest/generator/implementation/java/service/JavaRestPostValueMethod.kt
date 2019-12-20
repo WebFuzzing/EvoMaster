@@ -67,6 +67,25 @@ class JavaRestPostValueMethod(specification: ServiceClazz, method : RestMethod) 
             }
         }
 
+        //refer to related entity
+        if(referVars.isNotEmpty())
+            content.add(JavaUtils.getSingleComment("refer to related entity"))
+        (0 until specification.dto.referToOthers.size).forEach { index->
+            val entityProperty = specification.entity.referToOthers[index]
+
+            val found = "referVarTo${entityProperty.type}"
+            val refer = referVars[index].first
+
+            content.add(findEntityByIdAndAssigned(
+                    specification.obviousReferEntityRepositories.getValue(entityProperty.type).name,
+                    refer,
+                    found,
+                    entityProperty.type
+            ))
+
+            content.add("$created.${entityProperty.nameSetterName()}($found);")
+        }
+
         //created owned entity by dto
         val ownedId = specification.dto.ownOthers
         val ownedProperties = specification.dto.ownOthersProperties
@@ -100,25 +119,7 @@ class JavaRestPostValueMethod(specification: ServiceClazz, method : RestMethod) 
                 content.add("$created.${entityProperty.nameSetterName()}($found);")
             }
         }
-        //refer to related entity
-        if(referVars.isNotEmpty())
-            content.add(JavaUtils.getSingleComment("refer to related entity"))
-        (0 until specification.dto.referToOthers.size).forEach { index->
-            val entityProperty = specification.entity.referToOthers[index]
-            val dtoProperty = specification.dto.referToOthers[index]
 
-            val found = "referVarTo${entityProperty.type}"
-            val refer = referVars[index].first
-
-            content.add(findEntityByIdAndAssigned(
-                    specification.obviousReferEntityRepositories.getValue(entityProperty.type).name,
-                    refer,
-                    found,
-                    entityProperty.type
-            ))
-
-            content.add("$created.${entityProperty.nameSetterName()}($found);")
-        }
         content.add(JavaUtils.getSingleComment("save the entity"))
         content.add(repositorySave(specification.entityRepository.name, created))
         if (!withImpact) content.add(returnStatus(200)) else content.add(returnStatus(200, msg = getBranchMsg()))

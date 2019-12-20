@@ -1,6 +1,7 @@
 package org.evomaster.resource.rest.generator.model
 
 import org.evomaster.resource.rest.generator.FormatUtil
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 
 /**
  * created by manzh on 2019-08-19
@@ -13,7 +14,8 @@ class ResGenSpecification(
         val restMethods : List<RestMethod>,
         val idProperty : PropertySpecification = PropertySpecification("id", CommonTypes.OBJ_LONG.name, isId = true, autoGen = false, allowNull = false, impactful = true),
         val defaultProperties : List<PropertySpecification> = listOf(),
-        val plusProperties: Boolean = true
+        val plusProperties: Boolean = true,
+        val dependencyKind: ConditionalDependencyKind
 ){
     val name : String = resNode.name
     private val hideReferToOthers : MutableList<ResGenSpecification> = mutableListOf()
@@ -61,7 +63,8 @@ class ResGenSpecification(
                             isId = false,
                             autoGen = false,
                             allowNull = false,
-                            impactful = true
+                            impactful = true,
+                            dependency = dependencyKind
                     )
                 },
                 ownOthers = ownOthers.map {res ->
@@ -112,7 +115,8 @@ class ResGenSpecification(
                             isId = false,
                             autoGen = false,
                             allowNull = false,
-                            multiplicity = RelationMultiplicity.ONE_TO_ONE
+                            multiplicity = RelationMultiplicity.ONE_TO_ONE,
+                            dependency = dependencyKind
                     )
                 },
                 ownOthers = ownOthers.map {res ->

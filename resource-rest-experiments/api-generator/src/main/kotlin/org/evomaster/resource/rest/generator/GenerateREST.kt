@@ -2,6 +2,7 @@ package org.evomaster.resource.rest.generator
 
 import org.evomaster.resource.rest.generator.implementation.java.AppliedJavaType
 import org.evomaster.resource.rest.generator.implementation.java.app.JavaApp
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.implementation.java.dto.JavaDto
 import org.evomaster.resource.rest.generator.implementation.java.em.JavaEMController
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntity
@@ -132,9 +133,10 @@ class GenerateREST(val config: GenConfig) {
                    rootPackage = config.csProjectPackage,
                    outputFolder = config.getCsOutputFolder(),
                    restMethods = config.restMethods,
+                   dependencyKind = config.dependencyKind,
                    defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
                            PropertySpecification("name", CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
-                           PropertySpecification("value", CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = true)
+                           PropertySpecification("value", CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = true, dependency = config.dependencyKind)
                    )else generateProperties(config)
            ))
         }
@@ -154,6 +156,21 @@ class GenerateREST(val config: GenConfig) {
                 pros.add(PropertySpecification("${if(impactful) "im" else "no"}Prop$i", types[Random.nextInt(0, types.size)].name, isId = false, autoGen = false, allowNull = !impactful, impactful = impactful, branches = if (impactful)config.branchesForImpact else 0))
                 counterImpact+=1
             }
+        }
+        if (config.dependencyKind != ConditionalDependencyKind.EXISTENCE){
+            val p = pros.filter { it.impactful }.shuffled().first()
+            val index = pros.indexOf(p)
+            val np = PropertySpecification(
+                    name = p.name,
+                    type = p.type,
+                    isId = p.isId,
+                    autoGen = p.autoGen,
+                    allowNull = p.allowNull,
+                    impactful = p.impactful,
+                    branches = p.branches,
+                    dependency = config.dependencyKind
+            )
+            pros.set(index, np)
         }
         return pros
     }

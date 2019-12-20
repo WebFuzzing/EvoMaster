@@ -1,6 +1,7 @@
 package org.evomaster.resource.rest.generator.model
 
 import org.evomaster.resource.rest.generator.FormatUtil
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 
 /**
  * created by manzh on 2019-08-14
@@ -14,7 +15,8 @@ open class PropertySpecification(
         val multiplicity: RelationMultiplicity = RelationMultiplicity.NONE,
         val defaultValue: String? = null,
         val impactful: Boolean = true,
-        val branches: Int = 0
+        val branches: Int = 0,
+        val dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
 ){
 
     /**
@@ -42,8 +44,9 @@ class ResNodeTypedPropertySpecification(
         multiplicity: RelationMultiplicity = RelationMultiplicity.NONE,
         defaultValue : String? = null,
         impactful: Boolean = true,
-        branches: Int = 0
-) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches )
+        branches: Int = 0,
+        dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
+) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches, dependency)
 
 class ResServiceTypedPropertySpecification(
         name: String,
@@ -55,5 +58,6 @@ class ResServiceTypedPropertySpecification(
         multiplicity: RelationMultiplicity = RelationMultiplicity.NONE,
         defaultValue : String? = null,
         impactful: Boolean = true,
-        branches: Int = 0
-) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches )
+        branches: Int = 0,
+        dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
+) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches,dependency)

@@ -33,7 +33,7 @@ class ResExp{
         config.numOfManyToOne = (numOfEdge * 0.2 /3).roundToInt()
         config.numOfTwoToTwo = (numOfEdge * 0.1).roundToInt()
 
-        val total = config.numOfOneToOne + config.numOfOneToTwo * 2 + config.numOfTwoToOne *2 + config.numOfOneToMany * 3 + config.numOfManyToOne * 3 + config.numOfTwoToTwo
+        val total = config.numOfOneToOne + config.numOfOneToTwo * 2 + config.numOfTwoToOne *2 + config.numOfOneToMany * 3 + config.numOfManyToOne * 3 + config.numOfTwoToTwo * 4
         if(total > numOfEdge){
             val removal = total - numOfEdge
         }

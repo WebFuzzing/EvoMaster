@@ -45,26 +45,6 @@ class JavaRestPutMethod(specification: ServiceClazz, method : RestMethod) : Java
         if (withImpact)
             content.add(initBranchesMessage())
 
-        (0 until specification.entity.defaultProperties.size).forEachIndexed {index, i->
-            //content.add("$created.${specification.entity.defaultProperties[i].nameSetterName()}($dtoVar.${specification.dto.defaultProperties[i].name});")
-
-            val property = specification.entity.defaultProperties[i]
-            if (property.impactful){
-                val variableName = "$dtoVar.${specification.dto.defaultProperties[i].name}"
-                content.add("$created.${specification.entity.defaultProperties[i].nameSetterName()}($variableName);")
-                if (property.branches > 1){
-                    content.add(
-                            defaultBranches(
-                                    type = property.type,
-                                    index = index,
-                                    numOfBranches = property.branches,
-                                    variableName = variableName
-                            )
-                    )
-                }
-            }
-        }
-
         //check if the specified reference exists, if reference exists, then set it to the created
         val vars = "referVarTo"
         assert( specification.dto.referToOthers.size == specification.entity.referToOthers.size )
@@ -83,6 +63,24 @@ class JavaRestPutMethod(specification: ServiceClazz, method : RestMethod) : Java
             ))
 
             content.add("$created.${entityProperty.nameSetterName()}($found);")
+        }
+
+        (0 until specification.entity.defaultProperties.size).forEachIndexed {index, i->
+            val property = specification.entity.defaultProperties[i]
+            if (property.impactful){
+                val variableName = "$dtoVar.${specification.dto.defaultProperties[i].name}"
+                content.add("$created.${specification.entity.defaultProperties[i].nameSetterName()}($variableName);")
+                if (property.branches > 1){
+                    content.add(
+                            defaultBranches(
+                                    type = property.type,
+                                    index = index,
+                                    numOfBranches = property.branches,
+                                    variableName = variableName
+                            )
+                    )
+                }
+            }
         }
 
         //TODO regarding hide reference

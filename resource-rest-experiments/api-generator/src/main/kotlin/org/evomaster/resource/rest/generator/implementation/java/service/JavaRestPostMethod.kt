@@ -5,6 +5,7 @@ import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.JavaUtils
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.template.Boundary
 
@@ -30,6 +31,7 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
         //check if the id exists
         content.add(assertNonExistence(specification.entityRepository.name, entityId))
 
+
         //instance an entity
         val created = "node"
         content.add(formatInstanceClassAndAssigned(specification.entity.name, created, listOf()))
@@ -41,7 +43,28 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
         if (withImpact)
             content.add(initBranchesMessage())
 
-        //only set value if the property is impactful
+        //check if the specified reference exists, if reference exists, then set it to the created
+        if(specification.dto.referToOthers.isNotEmpty())
+            content.add(JavaUtils.getSingleComment("refer to related entity"))
+        assert( specification.dto.referToOthers.size == specification.entity.referToOthers.size )
+        (0 until specification.dto.referToOthers.size).forEach { index->
+            val entityProperty = specification.entity.referToOthers[index]
+            val dtoProperty = specification.dto.referToOthers[index]
+
+            val found = "referVarTo${entityProperty.type}"
+            val refer = "$dtoVar.${dtoProperty.name}"
+
+            content.add(findEntityByIdAndAssigned(
+                    specification.obviousReferEntityRepositories.getValue(entityProperty.type).name,
+                    refer,
+                    found,
+                    entityProperty.type
+            ))
+
+            content.add("$created.${entityProperty.nameSetterName()}($found);")
+        }
+
+        //only set value if the property is impactful, following code is affected by existence of referred resource
         (0 until specification.entity.defaultProperties.size).forEach { i->
             val property = specification.entity.defaultProperties[i]
             if (property.impactful){
@@ -52,6 +75,10 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
                 }
             }
         }
+        val additionalDep = specification.dto.referToOthers.any { it.dependency != ConditionalDependencyKind.EXISTENCE }
+        if(specification.dto.referToOthers.isNotEmpty())
+            content.add(JavaUtils.getSingleComment("additional codes for handling dependency "))
+
         
         //create owned nodes
         val ownedId = specification.dto.ownOthers
@@ -80,27 +107,6 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
                 ))
                 content.add("$created.${entityProperty.nameSetterName()}($found);")
             }
-        }
-
-        //check if the specified reference exists, if reference exists, then set it to the created
-        if(specification.dto.referToOthers.isNotEmpty())
-            content.add(JavaUtils.getSingleComment("refer to related entity"))
-        assert( specification.dto.referToOthers.size == specification.entity.referToOthers.size )
-        (0 until specification.dto.referToOthers.size).forEach { index->
-            val entityProperty = specification.entity.referToOthers[index]
-            val dtoProperty = specification.dto.referToOthers[index]
-
-            val found = "referVarTo${entityProperty.type}"
-            val refer = "$dtoVar.${dtoProperty.name}"
-
-            content.add(findEntityByIdAndAssigned(
-                    specification.obviousReferEntityRepositories.getValue(entityProperty.type).name,
-                    refer,
-                    found,
-                    entityProperty.type
-            ))
-
-            content.add("$created.${entityProperty.nameSetterName()}($found);")
         }
 
         //TODO regarding hide reference
