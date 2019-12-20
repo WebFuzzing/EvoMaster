@@ -2,6 +2,7 @@ package org.evomaster.resource.rest.generator
 
 import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.model.RestMethod
+import org.evomaster.resource.rest.generator.model.StrategyNameResource
 
 /**
  * created by manzh on 2019-08-14
@@ -48,7 +49,7 @@ class GenConfig {
         JAVA_SPRING_SWAGGER("java", "resources")
     }
 
-    var restMethods = listOf(RestMethod.POST, RestMethod.GET_ID, RestMethod.GET_ALL, RestMethod.PUT, RestMethod.DELETE, RestMethod.PATCH_VALUE, RestMethod.PATCH)
+    var restMethods = RestMethod.values().toList()//listOf(RestMethod.POST, RestMethod.GET_ID, RestMethod.GET_ALL, RestMethod.PUT, RestMethod.DELETE, RestMethod.PATCH_VALUE, RestMethod.PATCH)
 
     var numOfNodes = 10
 
@@ -66,13 +67,15 @@ class GenConfig {
 
     var numOfManyToMany = 0
 
-    var numOfExtraProperties = 4
+    var numOfExtraProperties = -1
 
     var numOfImpactProperties = 2
 
     var propertiesTypes = listOf(CommonTypes.INT)//CommonTypes.values()
 
     var branchesForImpact = 4
+
+    var nameStrategy : StrategyNameResource = StrategyNameResource.RAND
 
     fun getCsOutputFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.srcFolder}"
     fun getCsResourceFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.resource}"

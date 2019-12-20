@@ -4,13 +4,14 @@ import org.evomaster.resource.rest.generator.FormatUtil
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestPutMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
+class JavaRestPutMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
 
     private val dtoVar = FormatUtil.lowerFirst(specification.dto.name)
 
@@ -90,8 +91,6 @@ class JavaRestPutMethod(val specification: ServiceClazz) : JavaMethod(), SpringR
         if (!withImpact) content.add(returnStatus()) else content.add(returnStatus(msg = getBranchMsg()))
         return content
     }
-
-    override fun getName(): String  = "createOrUpdate${FormatUtil.upperFirst(specification.name)}"
 
     override fun getBoundary(): Boundary = Boundary.PUBLIC
 

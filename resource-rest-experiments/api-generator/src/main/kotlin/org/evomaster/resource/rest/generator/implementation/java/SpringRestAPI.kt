@@ -21,7 +21,6 @@ interface SpringRestAPI {
             """
                 if (! $repository.findById($idScript).isPresent())
                     return ResponseEntity.status($exceptionStatusCode).build();
-        
                 $targetType $target =  $repository.findById($idScript).get();
             """.trimIndent()
 

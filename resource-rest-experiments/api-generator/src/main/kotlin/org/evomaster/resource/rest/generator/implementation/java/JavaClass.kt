@@ -62,6 +62,7 @@ abstract class JavaClass<T> (val specification: T): ClassTemplate, JavaTemplate 
     override fun generatePackage(): String = formatPackage(getPackage())
 
     override fun formatScript(content: String): String {
+        //return content;
         return Formatter().formatSource(content)
     }
 

@@ -65,15 +65,30 @@ class ResGenSpecification(
                     )
                 },
                 ownOthers = ownOthers.map {res ->
-                    PropertySpecification(
+                    ResNodeTypedPropertySpecification(
                             name = res.nameOwnedResNodePropertyOnDto(),
                             type = idProperty.type,
+                            itsIdProperty = res.idProperty,
                             isId = false,
                             autoGen = false,
                             allowNull = false,
                             impactful = true
                     )
                 },
+                ownOthersProperties = ownOthers.map { res ->
+                    res.namePropertiesResNodePropertyOnDto().map { p ->
+                        ResNodeTypedPropertySpecification(
+                                name = p.first,
+                                type = p.second.first,
+                                itsIdProperty = p.second.second,
+                                isId = false,
+                                autoGen = false,
+                                allowNull = false,
+                                multiplicity = RelationMultiplicity.ONE_TO_ONE
+                        )
+                    }
+                },
+                ownOthersTypes = ownOthers.map { it.nameDtoClass() },
                 rootPackage = nameDtoPackage(),
                 outputFolder =  outputFolder,
                 idFromSuperClazz = !plusProperties
@@ -141,6 +156,7 @@ class ResGenSpecification(
         if (apiService != null) return apiService!!
         apiService = ServiceClazz(
                 name = nameRestAPIClass(),
+                resourceName = name,
                 resourceOnPath = nameResNodeOnPath(),
                 entityRepository = PropertySpecification(
                         name = nameRepositoryClassVar(),
@@ -165,6 +181,27 @@ class ResGenSpecification(
                     Pair(r.nameEntityClass(), PropertySpecification(
                             name = r.nameRepositoryClassVar(),
                             type = r.nameRepositoryClass(),
+                            isId = false,
+                            autoGen = false,
+                            allowNull = false,
+                            impactful = true
+                    ))
+                }.toMap(),
+                ownedEntityRepositories = ownOthers.map {r->
+                    Pair(r.nameEntityClass(), PropertySpecification(
+                            name = r.nameRepositoryClassVar(),
+                            type = r.nameRepositoryClass(),
+                            isId = false,
+                            autoGen = false,
+                            allowNull = false,
+                            impactful = true
+                    ))
+                }.toMap(),
+                ownedResourceService = ownOthers.map {r->
+                    Pair(r.nameDtoClass(), ResServiceTypedPropertySpecification(
+                            name = r.nameRestAPIClassVar(),
+                            type = r.nameRestAPIClass(),
+                            resourceName = r.name,
                             isId = false,
                             autoGen = false,
                             allowNull = false,
@@ -197,13 +234,19 @@ class ResGenSpecification(
 
     //for restAPI
     private fun nameRestAPIClass() = "${FormatUtil.upperFirst(name)}RestAPI"
+    private fun nameRestAPIClassVar() = "${FormatUtil.lowerFirst(name)}RestAPI"
+
     private fun nameResNodeOnPath() = "${FormatUtil.lowerFirst(name)}"
 
     private fun nameReferResNodePropertyOnDto() = "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
 
     private fun nameReferResNodePropertyOnEntity() = FormatUtil.lowerFirst(name)
 
-    private fun nameOwnedResNodePropertyOnDto() = "owned${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
+    private fun nameOwnedResNodePropertyOnDto() = "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
+
+    private fun namePropertiesResNodePropertyOnDto() = defaultProperties.map {p->
+        "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(p.name)}" to Pair(p.type, p)
+    }
 
     private fun nameOwnedResNodePropertyOnEntity() = "owned${FormatUtil.upperFirst(name)}"
 

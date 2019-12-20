@@ -4,13 +4,14 @@ import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaE2DMethod
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestGetByIdMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
+class JavaRestGetByIdMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
 
     private val idVar = "${specification.resourceOnPath}Id"
 
@@ -31,8 +32,6 @@ class JavaRestGetByIdMethod(val specification: ServiceClazz) : JavaMethod(), Spr
         content.add(returnWithContent(dto))
         return content
     }
-
-    override fun getName(): String  = "get${specification.entity.name}"
 
     override fun getReturn(): String? = "ResponseEntity<${specification.dto.name}>"
 

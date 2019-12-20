@@ -44,3 +44,16 @@ class ResNodeTypedPropertySpecification(
         impactful: Boolean = true,
         branches: Int = 0
 ) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches )
+
+class ResServiceTypedPropertySpecification(
+        name: String,
+        type: String,
+        val resourceName : String,
+        isId : Boolean,
+        autoGen : Boolean = false,
+        allowNull : Boolean = true,
+        multiplicity: RelationMultiplicity = RelationMultiplicity.NONE,
+        defaultValue : String? = null,
+        impactful: Boolean = true,
+        branches: Int = 0
+) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches )

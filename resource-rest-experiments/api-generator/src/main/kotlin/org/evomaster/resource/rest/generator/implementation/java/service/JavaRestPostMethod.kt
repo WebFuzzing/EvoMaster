@@ -2,15 +2,16 @@ package org.evomaster.resource.rest.generator.implementation.java.service
 
 import org.evomaster.resource.rest.generator.FormatUtil
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
+import org.evomaster.resource.rest.generator.implementation.java.JavaUtils
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
-import org.evomaster.resource.rest.generator.model.ServiceClazz
+import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestPostMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
+class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
 
     private val dtoVar = FormatUtil.lowerFirst(specification.dto.name)
 
@@ -51,15 +52,45 @@ class JavaRestPostMethod(val specification: ServiceClazz) : JavaMethod(), Spring
                 }
             }
         }
+        
+        //create owned nodes
+        val ownedId = specification.dto.ownOthers
+        val ownedProperties = specification.dto.ownOthersProperties
+        val ownedTypes = specification.dto.ownOthersTypes
+        if(ownedId.isNotEmpty()){
+            content.add(JavaUtils.getSingleComment("create owned entity"))
+            (0 until ownedId.size).forEach { index->
+                val createdDtoVar = "ownedDto$index" //dto
+                content.add(formatInstanceClassAndAssigned( ownedTypes[index], createdDtoVar, listOf()))
+                ownedProperties[index].plus(ownedId[index]).forEach { op->
+                    val opp = op as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
+                    content.add("$createdDtoVar.${opp.itsIdProperty.name}=$dtoVar.${op.name};")//check
+                }
+                val apiVar = specification.ownedResourceService[ownedTypes[index]] as? ResServiceTypedPropertySpecification?:throw IllegalArgumentException("cannot find service to create the owned entity")
+
+                content.add("${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar);")
+                val entityProperty = specification.entity.ownOthers[index]
+                val found = "ownedEntity${entityProperty.type}"
+                val id = "$dtoVar.${ownedId[index].name}"
+                content.add(findEntityByIdAndAssigned(
+                        specification.ownedEntityRepositories.getValue(entityProperty.type).name,
+                        id,
+                        found,
+                        entityProperty.type
+                ))
+                content.add("$created.${entityProperty.nameSetterName()}($found);")
+            }
+        }
 
         //check if the specified reference exists, if reference exists, then set it to the created
-        val vars = "referVarTo"
+        if(specification.dto.referToOthers.isNotEmpty())
+            content.add(JavaUtils.getSingleComment("refer to related entity"))
         assert( specification.dto.referToOthers.size == specification.entity.referToOthers.size )
         (0 until specification.dto.referToOthers.size).forEach { index->
             val entityProperty = specification.entity.referToOthers[index]
             val dtoProperty = specification.dto.referToOthers[index]
 
-            val found = "$vars${entityProperty.type}"
+            val found = "referVarTo${entityProperty.type}"
             val refer = "$dtoVar.${dtoProperty.name}"
 
             content.add(findEntityByIdAndAssigned(
@@ -73,13 +104,12 @@ class JavaRestPostMethod(val specification: ServiceClazz) : JavaMethod(), Spring
         }
 
         //TODO regarding hide reference
-
+        content.add(JavaUtils.getSingleComment("save the entity"))
         content.add(repositorySave(specification.entityRepository.name, created))
         if (!withImpact) content.add(returnStatus()) else content.add(returnStatus(msg = getBranchMsg()))
         return content
     }
 
-    override fun getName(): String  = "create${specification.entity.name}"
 
     override fun getBoundary(): Boundary = Boundary.PUBLIC
 

@@ -3,13 +3,14 @@ package org.evomaster.resource.rest.generator.implementation.java.service
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestDeleteMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
+class JavaRestDeleteMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
 
     private val idVar = "${specification.resourceOnPath}Id"
 
@@ -29,10 +30,8 @@ class JavaRestDeleteMethod(val specification: ServiceClazz) : JavaMethod(), Spri
         return content
     }
 
-    override fun getName(): String  = "delete${specification.entity.name}"
 
     override fun getReturn(): String? = "ResponseEntity"
-
 
     override fun getBoundary(): Boundary = Boundary.PUBLIC
 

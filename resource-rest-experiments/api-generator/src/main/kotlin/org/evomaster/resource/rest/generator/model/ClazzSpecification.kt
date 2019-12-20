@@ -36,10 +36,12 @@ class DtoClazz(
         val defaultProperties : List<PropertySpecification>,
         val referToOthers: List<PropertySpecification>,
         val ownOthers: List<PropertySpecification>,
+        val ownOthersProperties : List<List<PropertySpecification>> = listOf(),
+        val ownOthersTypes: List<String> = listOf(),
         rootPackage: String,
         outputFolder: String,
         val idFromSuperClazz : Boolean
-) : ClazzSpecification(name, defaultProperties.plus(referToOthers).plus(ownOthers).plus(idProperty), rootPackage, outputFolder)
+) : ClazzSpecification(name, defaultProperties.plus(referToOthers).plus(ownOthers).plus(ownOthersProperties.flatten()).plus(idProperty), rootPackage, outputFolder)
 
 class RepositoryClazz(
         name: String,
@@ -51,6 +53,7 @@ class RepositoryClazz(
 
 class ServiceClazz(
         name: String,
+        val resourceName: String,
         val entityRepository: PropertySpecification,
         val dto : DtoClazz,
         val entity : EntityClazz,
@@ -66,10 +69,30 @@ class ServiceClazz(
          * value is corresponding property specification
          */
         val hideReferEntityRepositories : Map<String, PropertySpecification>,
+
+        /**
+         * key is type of owned entity
+         * value is corresponding property specification
+         */
+        val ownedEntityRepositories : Map<String, PropertySpecification>,
+
+        /**
+         * key is type of owned dto
+         * value is corresponding property specification
+         */
+        val ownedResourceService : Map<String, PropertySpecification>,
+
         val restMethods : List<RestMethod>,
         rootPackage: String,
         outputFolder: String
-) : ClazzSpecification(name, obviousReferEntityRepositories.values.plus(entityRepository).plus(hideReferEntityRepositories.values), rootPackage, outputFolder)
+) : ClazzSpecification(
+        name,
+        obviousReferEntityRepositories.values
+                .plus(entityRepository)
+                .plus(hideReferEntityRepositories.values)
+                .plus(ownedEntityRepositories.values)
+                .plus(ownedResourceService.values),
+        rootPackage, outputFolder)
 
 class AppClazz(
         name: String = "ResApp",

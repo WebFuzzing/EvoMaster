@@ -5,13 +5,14 @@ import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestPatchValueMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
+class JavaRestPatchValueMethod(specification: ServiceClazz, method: RestMethod) : JavaRestMethod(specification, method) {
 
     private val values = specification.entity.defaultProperties.map{it.name}
     private val idVar = "${specification.resourceOnPath}Id"
@@ -68,8 +69,6 @@ class JavaRestPatchValueMethod(val specification: ServiceClazz) : JavaMethod(), 
         if (!withImpact) content.add(returnStatus(200)) else content.add(returnStatus(200, msg = getBranchMsg()))
         return content
     }
-
-    override fun getName(): String  = "update${FormatUtil.upperFirst(specification.name)}"
 
     override fun getBoundary(): Boundary = Boundary.PUBLIC
     override fun getReturn(): String? = "ResponseEntity"

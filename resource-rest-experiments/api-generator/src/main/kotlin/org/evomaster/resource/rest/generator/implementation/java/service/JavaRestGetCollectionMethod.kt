@@ -4,13 +4,14 @@ import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
 import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaE2DMethod
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestGetCollectionMethod(val specification: ServiceClazz) : JavaMethod(), SpringRestAPI {
+class JavaRestGetCollectionMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
 
 
     override fun getParams(): Map<String, String> = mapOf()
@@ -26,8 +27,6 @@ class JavaRestGetCollectionMethod(val specification: ServiceClazz) : JavaMethod(
         content.add(returnWithContent(allDtos))
         return content
     }
-
-    override fun getName(): String  = "getAll${specification.entity.name}"
 
     override fun getBoundary(): Boundary = Boundary.PUBLIC
 

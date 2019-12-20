@@ -28,14 +28,14 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
         val methods = mutableListOf<MethodScript>()
         specification.restMethods.forEach { r->
             when(r){
-                RestMethod.POST -> JavaRestPostMethod(this.specification).apply { methods.add(this) }
-                RestMethod.POST_VALUE-> JavaRestPostValueMethod(this.specification).apply { methods.add(this) }
-                RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification).apply { methods.add(this) }
-                RestMethod.DELETE -> JavaRestDeleteMethod(this.specification).apply { methods.add(this) }
-                RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification).apply { methods.add(this) }
-                RestMethod.PATCH -> JavaRestPatchMethod(this.specification).apply { methods.add(this) }
-                RestMethod.PATCH_VALUE -> JavaRestPatchValueMethod(this.specification).apply { methods.add(this) }
-                RestMethod.PUT -> JavaRestPutMethod(this.specification).apply { methods.add(this) }
+                RestMethod.POST -> JavaRestPostMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.POST_VALUE-> JavaRestPostValueMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.DELETE -> JavaRestDeleteMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.PATCH -> JavaRestPatchMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.PATCH_VALUE -> JavaRestPatchValueMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.PUT -> JavaRestPutMethod(this.specification, r).apply { methods.add(this) }
             }
         }
         return methods
@@ -44,12 +44,15 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
     override fun getDeclaration(): List<out DeclarationScript> {
         val repositories = mutableListOf<JavaDeclarationRepository>()
         repositories.add(JavaDeclarationRepository(specification.entityRepository))
-        specification.obviousReferEntityRepositories.map { p->
-            repositories.add(JavaDeclarationRepository(p.value))
-        }
-        specification.hideReferEntityRepositories.map { p->
-            repositories.add(JavaDeclarationRepository(p.value))
-        }
+        specification.obviousReferEntityRepositories
+                .plus(specification.hideReferEntityRepositories)
+                .plus(specification.ownedEntityRepositories)
+                .plus(specification.ownedResourceService)
+                .map { p->
+                    repositories.add(JavaDeclarationRepository(p.value))
+                }
+
+
         return repositories
     }
 

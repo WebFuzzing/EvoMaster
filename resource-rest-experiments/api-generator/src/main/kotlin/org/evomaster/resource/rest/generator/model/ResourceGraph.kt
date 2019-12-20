@@ -11,6 +11,7 @@ import java.awt.Color
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.imageio.ImageIO
+import kotlin.math.pow
 
 
 /**
@@ -19,15 +20,18 @@ import javax.imageio.ImageIO
 class ResourceGraph(
         val numOfNodes : Int,
         val multiplicity: List<EdgeMultiplicitySpecification>,
-        private val graphName : String = "resourceGraph"
+        private val graphName : String = "resourceGraph",
+        val strategyNameResource : StrategyNameResource = StrategyNameResource.RAND
 ) {
 
-
+    companion object{
+        const val MAX_LOOP = 3
+    }
     val nodes : MutableMap<String, ResNode> = mutableMapOf()
     val edges : MutableList<ResEdge> = mutableListOf()
 
     private val alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz"
-
+    private val upperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
     init {
         multiplicity.forEach { s ->
@@ -133,10 +137,28 @@ class ResourceGraph(
         return name
     }
 
-    private fun randomResourceName() = "R${random()}"
+    private fun randomResourceName() : String = when(strategyNameResource){
+        StrategyNameResource.RAND -> "${random()}"
+        StrategyNameResource.RAND_FIXED_LENGTH -> {
+            val len = 5
+            if(upperAlpha.length * alphaNumericString.length.toDouble().pow((len - 1).toDouble()) * 0.1 < numOfNodes) throw IllegalArgumentException("length is not enough")
+            "${random(len)}"
+        }
+    }
 
-    private fun random(length : Int = ((Math.random() * 5).toInt().plus(1))) : String = (0 until length).map { alphaNumericString[(alphaNumericString.length * Math.random()).toInt()] }.joinToString("")
 
+    private fun random(length : Int = ((Math.random() * 5).toInt().plus(1))) : String{
+        var name = ""
+        var counter = 0
+        while (name.isBlank() || nodes.containsKey(name) || counter < MAX_LOOP) {
+            name = (0 until length).map {
+                if (it == 0) (upperAlpha[(upperAlpha.length * Math.random()).toInt()])
+                else alphaNumericString[(alphaNumericString.length * Math.random()).toInt()]
+            }.joinToString("")
+            counter ++
+        }
+        return name
+    }
 
     fun getRootNodes() : Map<String, ResNode> = nodes.filter { it.value.incoming.isEmpty() }
 
@@ -188,4 +210,9 @@ class ResourceGraph(
 enum class GraphExportFormat{
     DOT,
     PNG
+}
+
+enum class StrategyNameResource{
+    RAND,
+    RAND_FIXED_LENGTH
 }
