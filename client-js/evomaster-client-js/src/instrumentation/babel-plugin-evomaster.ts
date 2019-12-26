@@ -15,7 +15,7 @@ export interface Babel {
     types: typeof BabelTypes;
 }
 
-export default function simple(
+export default function evomaster(
     babel: Babel,
 ): {visitor: Visitor<PluginOptions>} {
 
@@ -25,12 +25,10 @@ export default function simple(
         visitor: {
             Program: {
                 enter(path) {
-                    console.log("Before");
-                    t.addComment(path.node, "leading", "BEFORE", true);
+                    t.addComment(path.node, "leading", "File instrumented with EvoMaster", true);
                 },
                 exit(path: NodePath) {
-                    console.log("After");
-                    t.addComment(path.node, "trailing", "AFTER", true);
+                    //
                 }
             }
         }

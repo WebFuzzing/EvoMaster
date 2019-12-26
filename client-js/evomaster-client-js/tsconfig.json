@@ -3,6 +3,7 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "target": "es6",
+    "lib": ["es2016", "dom"],
     "noImplicitAny": true,
     "moduleResolution": "node",
     "sourceMap": true,

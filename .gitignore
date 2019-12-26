@@ -54,3 +54,4 @@ experiments/target/
 /client-js/evomaster-client-js/coverage/
 /client-js/evomaster-client-js/node_modules/
 /client-js/evomaster-client-js/dist/
+/client-js/integration-tests/check/
