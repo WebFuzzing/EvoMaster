@@ -1,8 +1,10 @@
 language: java
 sudo: false
 
+## We should try to support the main LTS (long-term-support) releases
 jdk:
   - openjdk8
+  - openjdk11
 
 # As the build will download JAR files from Maven Central, optimize their storage,
 # so they do not get re-downloaded each time
