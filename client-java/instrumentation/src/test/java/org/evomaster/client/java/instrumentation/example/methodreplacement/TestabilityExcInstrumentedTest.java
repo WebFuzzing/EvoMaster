@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.example.methodreplacement;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.TestabilityExcImp;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -395,7 +396,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0); //not reached
+        assertEquals(DistanceHelper.H_REACHED_BUT_EMPTY, h0); //not reached
         assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT));
     }
 
@@ -492,7 +493,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0); // null value provides no gradient to reach false branch
+        assertEquals(H_REACHED_BUT_NULL, h0); // null value provides no gradient to reach false branch
 
         te.objectEquals("Hello!", "Hell");
 
@@ -570,7 +571,7 @@ public class TestabilityExcInstrumentedTest {
                 .iterator().next();
 
         double h0 = ExecutionTracer.getValue(targetId);
-        assertEquals(0, h0);
+        assertEquals(H_REACHED_BUT_NULL, h0);
 
         te.parseBoolean("____");
         double h1 = ExecutionTracer.getValue(targetId);

@@ -21,7 +21,6 @@ import java.lang.reflect.Method;
 
 
 public class ExpectationHandler implements AggregateExpectation, IndividualExpectation {
-
     private boolean masterSwitch = false;
     /**
      *

@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes;
 
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,14 +23,30 @@ public class DateClassReplacementTest {
     }
 
     @Test
-    public void testNull() {
+    public void testNullReceiver() {
         Date thisDate = new Date();
         final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
         assertThrows(NullPointerException.class,
-                ()-> {
+                () -> {
                     DateClassReplacement.equals(null, thisDate, idTemplate);
                 });
     }
+
+
+    @Test
+    public void testWrongTypeArgument() {
+        Date thisDate = new Date();
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean booleanValue = DateClassReplacement.equals(thisDate, new Object(), idTemplate);
+        assertFalse(booleanValue);
+
+        String objectiveId = ExecutionTracer.getNonCoveredObjectives(idTemplate)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(objectiveId);
+        assertNotEquals(0, h0);
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
+
 
     @Test
     public void testEqualsDates() {
@@ -63,10 +80,34 @@ public class DateClassReplacementTest {
                 .iterator().next();
         double h0 = ExecutionTracer.getValue(targetId);
 
-        assertEquals(0, h0);
+        assertNotEquals(0, h0);
+        assertEquals(DistanceHelper.H_REACHED_BUT_NULL, h0);
+    }
 
+    @Test
+    public void testNotEquals() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+        String time2 = "11:15 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime1 = sdf.parse(date1 + " " + time1);
+        Date dateTime2 = sdf.parse(date1 + " " + time2);
+
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean equals0 = DateClassReplacement.equals(dateTime1, dateTime2, idTemplate);
+        assertFalse(equals0);
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > DistanceHelper.H_NOT_NULL);
 
     }
+
 
     @Test
     public void testDateDistance() throws ParseException {
@@ -192,6 +233,65 @@ public class DateClassReplacementTest {
 
         boolean sameDateValue = DateClassReplacement.after(dateObject1, dateObject1, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
         assertFalse(sameDateValue);
+    }
+
+    @Test
+    public void testAfterNull() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime = sdf.parse(date1 + " " + time1);
+
+        assertThrows(NullPointerException.class,
+                () -> {
+                    DateClassReplacement.after(dateTime, null, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+                }
+        );
+    }
+
+    @Test
+    public void testBeforeNull() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime = sdf.parse(date1 + " " + time1);
+
+        assertThrows(NullPointerException.class,
+                () -> {
+                    DateClassReplacement.before(dateTime, null, ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate");
+                }
+        );
+    }
+
+
+    @Test
+    public void testAfterEquals() throws ParseException {
+        String date1 = "07/15/2016";
+        String time1 = "11:00 AM";
+
+        String format = "MM/dd/yyyy hh:mm a";
+
+        SimpleDateFormat sdf = new SimpleDateFormat(format);
+
+        Date dateTime = sdf.parse(date1 + " " + time1);
+
+        final String idTemplate = ObjectiveNaming.METHOD_REPLACEMENT + "IdTemplate";
+        boolean after0 = DateClassReplacement.after(dateTime, dateTime, idTemplate);
+        assertFalse(after0);
+
+        String targetId = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.METHOD_REPLACEMENT)
+                .iterator().next();
+        double h0 = ExecutionTracer.getValue(targetId);
+        assertTrue(h0 > DistanceHelper.H_NOT_NULL);
+
     }
 
 }

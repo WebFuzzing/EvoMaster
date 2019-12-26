@@ -18,6 +18,17 @@ public class BooleanClassReplacement implements MethodReplacementClass {
         return Boolean.class;
     }
 
+    /**
+     * The heuristic value is H_REACHED_BUT_NULL if the input string is null.
+     * Otherwise, the leftAlignment distance to "true" is computed and added as
+     * H_NOT_NULL + (1-H_NOT_NULL)/(1+distance) where distance is greater or equal to 0.
+     * <p>
+     * The closer the heuristic value is to 1, the closer it is to returning true.
+     *
+     * @param input
+     * @param idTemplate
+     * @return
+     */
     @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
     public static boolean parseBoolean(String input, String idTemplate) {
 
@@ -47,4 +58,10 @@ public class BooleanClassReplacement implements MethodReplacementClass {
         ExecutionTracer.executedReplacedMethod(idTemplate, ReplacementType.BOOLEAN, t);
         return res;
     }
+
+    @Replacement(type = ReplacementType.BOOLEAN, replacingStatic = true)
+    public static boolean valueOf(String input, String idTemplate) {
+        return parseBoolean(input,idTemplate);
+    }
+
 }

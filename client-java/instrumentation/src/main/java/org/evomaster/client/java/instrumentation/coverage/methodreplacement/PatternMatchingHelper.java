@@ -36,13 +36,13 @@ public class PatternMatchingHelper {
         if (matches) {
             ExecutionTracer.executedReplacedMethod(idTemplate,
                     ReplacementType.BOOLEAN,
-                    new Truthness(1, 0));
+                    new Truthness(1d, 0d));
 
         } else {
             int distance = RegexDistanceUtils.getStandardDistance(input.toString(), regex);
             ExecutionTracer.executedReplacedMethod(idTemplate,
                     ReplacementType.BOOLEAN,
-                    new Truthness(1d / (1d + distance), 1));
+                    new Truthness(1d / (1d + distance), 1d));
         }
         return matches;
     }

@@ -20,7 +20,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
 class TestCaseWriterTest {
-
+    //TODO: BMR- changed the tests to not use expectationsActive. This may require updating.
     @Test
     fun testEmptyDbInitialization() {
 
@@ -29,6 +29,7 @@ class TestCaseWriterTest {
 
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -62,6 +63,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -128,6 +130,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -176,6 +179,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -221,6 +225,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -268,6 +273,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -322,6 +328,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -372,6 +379,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -423,6 +431,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -475,6 +484,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(dbInitialization)
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -524,6 +534,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTableAction0, insertIntoTableAction1, insertIntoTableAction2))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -584,6 +595,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insertIntoTable0, insertIntoTable1))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -646,6 +658,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert0, insert1, insert2))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -693,6 +706,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -737,6 +751,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -781,6 +796,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -826,6 +842,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -869,6 +886,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -912,6 +930,7 @@ class TestCaseWriterTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 

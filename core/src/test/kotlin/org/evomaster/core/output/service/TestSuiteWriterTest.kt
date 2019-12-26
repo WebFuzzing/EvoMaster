@@ -6,6 +6,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -56,6 +57,10 @@ class TestSuiteWriterTest{
 
 
         val writer = injector.getInstance(TestSuiteWriter::class.java)
+
+        //val sampler = injector.getInstance(RestSampler::class.java)
+        //val swagger = sampler.getSwagger()
+        //writer.setSwagger(swagger)
 
         //write the test suite
         writer.writeTests(solution, FakeController::class.qualifiedName!!)

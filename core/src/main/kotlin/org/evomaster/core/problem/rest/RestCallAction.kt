@@ -41,7 +41,8 @@ class RestCallAction(
          * path coming from a previous POST
          */
         var locationId: String? = null,
-        val produces: List<String> = listOf()
+        var produces: List<String> = listOf(),
+        val responseRefs : MutableMap<String, String> = mutableMapOf()
 ) : RestAction {
 
     /**
@@ -56,13 +57,14 @@ class RestCallAction(
      */
     val tokens : MutableMap<String, ActionRToken> = mutableMapOf()
 
+
     override fun shouldCountForFitnessEvaluations(): Boolean = true
 
     fun isLocationChained() = saveLocation || locationId?.isNotBlank() ?: false
 
     override fun copy(): Action {
         val p = parameters.asSequence().map(Param::copy).toMutableList()
-        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces)
+        return RestCallAction(id, verb, path, p, auth, saveLocation, locationId, produces, responseRefs)
     }
 
     override fun getName(): String {
@@ -176,4 +178,11 @@ class RestCallAction(
     }
 
     fun getDescription() : String? = description
+    fun clearRefs(){
+        responseRefs.clear()
+    }
+    fun addRef(key: String, ref: String){
+        responseRefs[key] = ref
+    }
+
 }

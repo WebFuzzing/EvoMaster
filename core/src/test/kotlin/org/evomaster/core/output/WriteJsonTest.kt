@@ -35,6 +35,7 @@ class WriteJsonTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -82,6 +83,7 @@ class WriteJsonTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -127,6 +129,7 @@ class WriteJsonTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
@@ -172,6 +175,7 @@ class WriteJsonTest {
         val (format, baseUrlOfSut, ei) = buildEvaluatedIndividual(mutableListOf(insert))
         val config = EMConfig()
         config.outputFormat = format
+        config.expectationsActive = false
 
         val test = TestCase(test = ei, name = "test")
 
