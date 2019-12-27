@@ -1,0 +1,128 @@
+# Command-Line Options
+
+_EvoMaster_ has several options that can be configured. 
+Those can be set on the command-line when _EvoMaster_ is started.
+
+There are 3 types of options:
+
+* __Important__: those are the main options that most users will need to set
+                and know about.
+
+* __Internal__: these are low-level tuning options, which most users do not need
+                to modify. These were mainly introduced when experimenting with 
+                different configuration to maximize the performance of _EvoMaster_.
+                
+* __Experimental__: these are work-in-progress options, for features still under development
+                    and testing.        
+         
+
+ The list of available options can also be displayed by using `--help`, e.g.:
+
+ `java -jar evomaster.jar --help`
+  
+  Options might also have *constraints*, e.g. a numeric value within a defined range,
+  or a string being an URL.
+  In some cases, strings might only be chosen within a specific set of possible values (i.e., an Enum).
+  If any constraint is not satisfied, _EvoMaster_ will fail with an error message.
+  
+## Important Command-Line Options
+
+|Options|Description|
+|---|---|
+| `--maxTime` &lt;String&gt;| Maximum amount of time allowed for the search.  The time is expressed with a string where hours (`h`), minutes (`m`) and seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid and equivalent. Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be specified.  In other words, if you need to run the search for just `30` seconds, you can write `30s`  instead of `0h0m30s`. **The more time is allowed, the better results one can expect**. But then of course the test generation will take longer. For how long should _EvoMaster_ be left run? The default 1 _minute_ is just for demonstration. __We recommend to run it between 1 and 24 hours__, depending on the size and complexity  of the tested application. *Constraints*: `regex (\s*)((?=([\S]+))(\d+h)?(\d+m)?(\d+s)?)(\s*)`. *Default value*: `60s`.|
+| `--outputFolder` &lt;String&gt;| The path directory of where the generated test classes should be saved to. *Default value*: `src/em`.|
+| `--testSuiteFileName` &lt;String&gt;| The name of generated file with the test cases, without file type extension. In JVM languages, if the name contains '.', folders will be created to represent the given package structure. *Default value*: `EvoMasterTest`.|
+| `--blackBox` &lt;Boolean&gt;| Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT. *Default value*: `false`.|
+| `--bbSwaggerUrl` &lt;String&gt;| When in black-box mode for REST APIs, specify where the Swagger schema can downloaded from. *Constraints*: `URL`. *Default value*: `""`.|
+| `--bbTargetUrl` &lt;String&gt;| When in black-box mode, specify the URL of where the SUT can be reached. If this is missing, the URL will be inferred from Swagger. *Constraints*: `URL`. *Default value*: `""`.|
+
+## Internal Command-Line Options
+
+|Options|Description|
+|---|---|
+| `--algorithm` &lt;Enum&gt;| The algorithm used to generate test cases. *Valid values*: `MIO, RANDOM, WTS, MOSA`. *Default value*: `MIO`.|
+| `--appendToStatisticsFile` &lt;Boolean&gt;| Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
+| `--archiveTargetLimit` &lt;Int&gt;| Limit of number of individuals per target to keep in the archive. *Constraints*: `min=1.0`. *Default value*: `10`.|
+| `--baseTaintAnalysisProbability` &lt;Double&gt;| Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT. *Default value*: `0.9`.|
+| `--bbExperiments` &lt;Boolean&gt;| Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment. *Default value*: `false`.|
+| `--bloatControlForSecondaryObjective` &lt;Boolean&gt;| Whether secondary objectives are less important than test bloat control. *Default value*: `false`.|
+| `--createTests` &lt;Boolean&gt;| Specify if test classes should be created as output of the tool. Usually, you would put it to 'false' only when debugging EvoMaster itself. *Default value*: `true`.|
+| `--customNaming` &lt;Boolean&gt;| Enable custom naming and sorting criteria. *Default value*: `true`.|
+| `--e_u1f984` &lt;Boolean&gt;| QWN0aXZhdGUgdGhlIFVuaWNvcm4gTW9kZQ==. *Default value*: `false`.|
+| `--enableBasicAssertions` &lt;Boolean&gt;| Generate basic assertions. Basic assertions (comparing the returned object to itself) are added to the code. NOTE: this should not cause any tests to fail. *Default value*: `true`.|
+| `--endNumberOfMutations` &lt;Int&gt;| Number of applied mutations on sampled individuals, by the end of the search. *Constraints*: `min=0.0`. *Default value*: `10`.|
+| `--expandRestIndividuals` &lt;Boolean&gt;| Enable to expand the genotype of REST individuals based on runtime information missing from Swagger. *Default value*: `true`.|
+| `--extraHeuristicsFile` &lt;String&gt;| Where the extra heuristics file (if any) is going to be written (in CSV format). *Default value*: `extra_heuristics.csv`.|
+| `--extractSqlExecutionInfo` &lt;Boolean&gt;| Enable extracting SQL execution info. *Default value*: `true`.|
+| `--feedbackDirectedSampling` &lt;Enum&gt;| Specify whether when we sample from archive we do look at the most promising targets for which we have had a recent improvement. *Valid values*: `NONE, LAST, FOCUSED_QUICKEST`. *Default value*: `LAST`.|
+| `--focusedSearchActivationTime` &lt;Double&gt;| The percentage of passed search before starting a more focused, less exploratory one. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+| `--geneMutationStrategy` &lt;Enum&gt;| Strategy used to define the mutation probability. *Valid values*: `ONE_OVER_N, ONE_OVER_N_BIASED_SQL`. *Default value*: `ONE_OVER_N_BIASED_SQL`.|
+| `--generateSqlDataWithSearch` &lt;Boolean&gt;| Enable EvoMaster to generate SQL data with direct accesses to the database. Use a search algorithm. *Default value*: `true`.|
+| `--heuristicsForSQL` &lt;Boolean&gt;| Tracking of SQL commands to improve test generation. *Default value*: `true`.|
+| `--maxActionEvaluations` &lt;Int&gt;| Maximum number of action evaluations for the search. A fitness evaluation can be composed of 1 or more actions, like for example REST calls or SQL setups. The more actions are allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. *Constraints*: `min=1.0`. *Default value*: `1000`.|
+| `--maxResponseByteSize` &lt;Int&gt;| Maximum size (in bytes) that EM handles response payloads in the HTTP responses. If larger than that, a response will not be stored internally in EM during the test generation. This is needed to avoid running out of memory. *Default value*: `1000000`.|
+| `--maxSearchSuiteSize` &lt;Int&gt;| Define the maximum number of tests in a suite in the search algorithms that evolve whole suites, e.g. WTS. *Constraints*: `min=1.0`. *Default value*: `50`.|
+| `--maxSqlInitActionsPerMissingData` &lt;Int&gt;| When generating SQL data, how many new rows (max) to generate for each specific SQL Select. *Constraints*: `min=1.0`. *Default value*: `5`.|
+| `--maxTestSize` &lt;Int&gt;| Max number of 'actions' (e.g., RESTful calls or SQL commands) that can be done in a single test. *Constraints*: `min=1.0`. *Default value*: `10`.|
+| `--maxTimeInSeconds` &lt;Int&gt;| Maximum number of seconds allowed for the search. The more time is allowed, the better results one can expect. But then of course the test generation will take longer. Only applicable depending on the stopping criterion. If this value is 0, the setting 'maxTime' will be used instead. *Constraints*: `min=0.0`. *Default value*: `0`.|
+| `--outputFormat` &lt;Enum&gt;| Specify in which format the tests should be outputted. *Valid values*: `DEFAULT, JAVA_JUNIT_5, JAVA_JUNIT_4, KOTLIN_JUNIT_4, KOTLIN_JUNIT_5`. *Default value*: `DEFAULT`.|
+| `--populationSize` &lt;Int&gt;| Define the population size in the search algorithms that use populations (e.g., Genetic Algorithms, but not MIO). *Constraints*: `min=1.0`. *Default value*: `30`.|
+| `--probOfRandomSampling` &lt;Double&gt;| Probability of sampling a new individual at random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+| `--probOfSmartSampling` &lt;Double&gt;| When sampling new test cases to evaluate, probability of using some smart strategy instead of plain random. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+| `--problemType` &lt;Enum&gt;| The type of SUT we want to generate tests for, e.g., a RESTful API. *Valid values*: `REST, WEB`. *Default value*: `REST`.|
+| `--secondaryObjectiveStrategy` &lt;Enum&gt;| Strategy used to handle the extra heuristics in the secondary objectives. *Valid values*: `AVG_DISTANCE, AVG_DISTANCE_SAME_N_ACTIONS, BEST_MIN`. *Default value*: `AVG_DISTANCE_SAME_N_ACTIONS`.|
+| `--seed` &lt;Long&gt;| The seed for the random generator used during the search. A negative value means the CPU clock time will be rather used as seed. *Default value*: `-1`.|
+| `--showProgress` &lt;Boolean&gt;| Whether to print how much search done so far. *Default value*: `true`.|
+| `--snapshotInterval` &lt;Double&gt;| If positive, check how often, in percentage % of the budget, to collect statistics snapshots. For example, every 5% of the time. *Constraints*: `max=50.0`. *Default value*: `-1.0`.|
+| `--snapshotStatisticsFile` &lt;String&gt;| Where the snapshot file (if any) is going to be written (in CSV format). *Default value*: `snapshot.csv`.|
+| `--startNumberOfMutations` &lt;Int&gt;| Number of applied mutations on sampled individuals, at the start of the search. *Constraints*: `min=0.0`. *Default value*: `1`.|
+| `--statisticsColumnId` &lt;String&gt;| An id that will be part as a column of the statistics file (if any is generated). *Default value*: `-`.|
+| `--statisticsFile` &lt;String&gt;| Where the statistics file (if any) is going to be written (in CSV format). *Default value*: `statistics.csv`.|
+| `--stoppingCriterion` &lt;Enum&gt;| Stopping criterion for the search. *Valid values*: `TIME, FITNESS_EVALUATIONS`. *Default value*: `TIME`.|
+| `--structureMutationProbability` &lt;Double&gt;| Probability of applying a mutation that can change the structure of a test. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+| `--sutControllerHost` &lt;String&gt;| Host name or IP address of where the SUT REST controller is listening on. *Default value*: `localhost`.|
+| `--sutControllerPort` &lt;Int&gt;| TCP port of where the SUT REST controller is listening on. *Constraints*: `min=0.0, max=65535.0`. *Default value*: `40100`.|
+| `--tournamentSize` &lt;Int&gt;| Number of elements to consider in a Tournament Selection (if any is used in the search algorithm). *Constraints*: `min=1.0`. *Default value*: `10`.|
+| `--useMethodReplacement` &lt;Boolean&gt;| Apply method replacement heuristics to smooth the search landscape. *Default value*: `true`.|
+| `--writeExtraHeuristicsFile` &lt;Boolean&gt;| Whether we should collect data on the extra heuristics. Only needed for experiments. *Default value*: `false`.|
+| `--writeStatistics` &lt;Boolean&gt;| Whether or not writing statistics of the search process. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
+| `--xoverProbability` &lt;Double&gt;| Probability of applying crossover operation (if any is used in the search algorithm). *Constraints*: `probability 0.0-1.0`. *Default value*: `0.7`.|
+
+## Experimental Command-Line Options
+
+|Options|Description|
+|---|---|
+| `--S1dR` &lt;Double&gt;| Specify a probability to apply S1dR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
+| `--S1iR` &lt;Double&gt;| Specify a probability to apply S1iR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
+| `--S2dR` &lt;Double&gt;| Specify a probability to apply S2dR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
+| `--SMdR` &lt;Double&gt;| Specify a probability to apply SMdR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
+| `--adaptivePerOfCandidateGenesToMutate` &lt;Boolean&gt;| Specify whether to decide a top percent of genes to mutate adaptively. *Default value*: `false`.|
+| `--archiveGeneMutation` &lt;Enum&gt;| Whether to enable archive-based gene mutation. *Valid values*: `NONE, SPECIFIED, ADAPTIVE`. *Default value*: `NONE`.|
+| `--coveredTargetFile` &lt;String&gt;| Specify a file which saves covered targets info regarding generated test suite. *Default value*: `coveredTargets.txt`.|
+| `--coveredTargetSortedBy` &lt;Enum&gt;| Specify a format to organize the covered targets by the search. *Valid values*: `NAME, TEST`. *Default value*: `NAME`.|
+| `--dependencyFile` &lt;String&gt;| Specify a file that saves derived dependencies. *Default value*: `dependencies.csv`.|
+| `--disableStructureMutationDuringFocusSearch` &lt;Boolean&gt;| Specify whether to disable structure mutation during focus search. *Default value*: `false`.|
+| `--doesApplyNameMatching` &lt;Boolean&gt;| Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table. *Default value*: `false`.|
+| `--enableCompleteObjects` &lt;Boolean&gt;| Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values. *Default value*: `false`.|
+| `--enableProcessMonitor` &lt;Boolean&gt;| Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
+| `--enableTrackEvaluatedIndividual` &lt;Boolean&gt;| Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual. *Default value*: `false`.|
+| `--enableTrackIndividual` &lt;Boolean&gt;| Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
+| `--endPerOfCandidateGenesToMutate` &lt;Double&gt;| Specify a percentage (after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
+| `--expectationsActive` &lt;Boolean&gt;| Enable Expectation Generation. If enabled, expectations will be generated. A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail. *Default value*: `false`.|
+| `--exportCoveredTarget` &lt;Boolean&gt;| Specify whether to export covered targets info. *Default value*: `false`.|
+| `--exportDependencies` &lt;Boolean&gt;| Specify whether to export derived dependencies among resources. *Default value*: `false`.|
+| `--exportImpacts` &lt;Boolean&gt;| Specify whether to export derived impacts among genes. *Default value*: `false`.|
+| `--geneSelectionMethod` &lt;Enum&gt;| Specify whether to enable archive-based selection for selecting genes to mutate. *Valid values*: `NONE, AWAY_NOIMPACT, APPROACH_IMPACT, APPROACH_LATEST_IMPACT, APPROACH_LATEST_IMPROVEMENT, BALANCE_IMPACT_NOIMPACT, ALL_FIXED_RAND`. *Default value*: `NONE`.|
+| `--generateSqlDataWithDSE` &lt;Boolean&gt;| Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
+| `--impactFile` &lt;String&gt;| Specify a file that saves derived genes. *Default value*: `impact.csv`.|
+| `--maxLengthOfTraces` &lt;Int&gt;| Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
+| `--minRowOfTable` &lt;Int&gt;| Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. In other word, if the number is less than the specified, insertion is always applied. *Constraints*: `min=0.0`. *Default value*: `10`.|
+| `--probOfApplySQLActionToCreateResources` &lt;Double&gt;| Specify a probability to apply SQL actions for preparing resources for REST Action. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+| `--probOfArchiveMutation` &lt;Double&gt;| Specify a probability to enable archive-based mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+| `--probOfEnablingResourceDependencyHeuristics` &lt;Double&gt;| Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. Note that the option is available to be enabled only if resource-based smart sampling is enable. This option has an effect on sampling multiple resources and mutating a structure of an individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
+| `--probOfSelectFromDatabase` &lt;Double&gt;| Specify a probability that enables selection (i.e., SELECT sql) of data from database instead of insertion (i.e., INSERT sql) for preparing resources for REST actions. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.1`.|
+| `--processFiles` &lt;String&gt;| Specify a folder to save results when a search monitor is enabled. *Default value*: `process_data`.|
+| `--processInterval` &lt;Int&gt;| Specify how often to save results when a search monitor is enabled. *Default value*: `100`.|
+| `--resourceSampleStrategy` &lt;Enum&gt;| Specify whether to enable resource-based strategy to sample an individual during search. Note that resource-based sampling is only applicable for REST problem with MIO algorithm. *Valid values*: `NONE, Customized, EqualProbability, Actions, TimeBudgets, Archive, ConArchive`. *Default value*: `NONE`.|
+| `--startPerOfCandidateGenesToMutate` &lt;Double&gt;| Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.9`.|
+| `--testSuiteSplitType` &lt;Enum&gt;| Instead of generating a single test file, it could be split in several files, according to different strategies. *Valid values*: `NONE`. *Default value*: `NONE`.|

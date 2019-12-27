@@ -87,7 +87,7 @@ class EMConfig {
                 val argTypeName = m.returnType.toString()
                         .run { substring(lastIndexOf('.') + 1) }
 
-                parser.accepts(m.name, getDescription(m))
+                parser.accepts(m.name, getDescription(m).toString())
                         .withRequiredArg()
                         .describedAs(argTypeName)
                         .defaultsTo(m.call(defaultInstance).toString())
@@ -98,7 +98,35 @@ class EMConfig {
             return parser
         }
 
-        private fun getDescription(m: KMutableProperty<*>): String {
+        class ConfigDescription(
+                val text: String,
+                val constraints: String,
+                val enumValues: String,
+                val experimental: Boolean
+        ){
+            override fun toString(): String {
+                var description = text
+                if(constraints.isNotBlank()){
+                    description += " [Constraints: $constraints]."
+                }
+                if(enumValues.isNotBlank()){
+                    description += " [Values: $enumValues]."
+                }
+
+                if(experimental){
+                    /*
+                    TODO: For some reasons, coloring is not working here.
+                    Could open an issue at:
+                    https://github.com/jopt-simple/jopt-simple
+                    */
+                    //description = AnsiColor.inRed("EXPERIMENTAL: $description")
+                    description = "EXPERIMENTAL: $description"
+                }
+                return description
+            }
+        }
+
+        fun getDescription(m: KMutableProperty<*>): ConfigDescription {
 
             val cfg = (m.annotations.find { it is Cfg } as? Cfg)
                     ?: throw IllegalArgumentException("Property ${m.name} is not annotated with @Cfg")
@@ -119,7 +147,6 @@ class EMConfig {
 
             var constraints = ""
             if (min != null || max != null || probability!=null || url!=null || regex!=null) {
-                constraints += " [Constraints: "
                 if (min != null) {
                     constraints += "min=$min"
                 }
@@ -136,7 +163,6 @@ class EMConfig {
                 if(regex != null){
                     constraints += "regex $regex"
                 }
-                constraints += "]."
             }
 
             var enumValues = ""
@@ -147,23 +173,16 @@ class EMConfig {
                 val elements = returnType.getDeclaredMethod("values")
                         .invoke(null) as Array<*>
 
-                enumValues = " [Values: " + elements.joinToString(", ") + "]"
+                enumValues = elements.joinToString(", ")
             }
 
             var description = "$text$constraints$enumValues"
 
             val experimental = (m.annotations.find { it is Experimental } as? Experimental)
-            if(experimental != null){
-                /*
-                    TODO: For some reasons, coloring is not working here.
-                    Could open an issue at:
-                    https://github.com/jopt-simple/jopt-simple
-                 */
-                //description = AnsiColor.inRed("EXPERIMENTAL: $description")
-                description = "EXPERIMENTAL: $description"
-            }
 
-            return description
+            val cd = ConfigDescription(text, constraints, enumValues, experimental != null)
+
+            return cd
         }
 
 
@@ -431,8 +450,34 @@ class EMConfig {
     @MustBeDocumented
     annotation class Experimental
 
+
+    /**
+     * This represent one of the main properties to set in EvoMaster.
+     * Those are the ones most likely going to be set by practitioners.
+     * Note: most of the other properties are mainly for experiments
+     */
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Important(
+            /**
+             * The lower value, the more importance.
+             * This only impact of options are sorted when displayed
+             */
+            val priority: Double
+    )
+
 //------------------------------------------------------------------------
 //--- properties
+
+    /*
+        WARNING
+        if any change is made here, the "options.md" MUST be recreated
+        with ConfigToMarkdown
+
+        You will also need to check if any special character you use in the
+        descriptions end-up in some screwed-up Markdown layout
+     */
+
 
     enum class Algorithm {
         MIO, RANDOM, WTS, MOSA
@@ -459,11 +504,14 @@ class EMConfig {
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true
 
+
+    @Important(2.0)
     @Cfg("The path directory of where the generated test classes should be saved to")
             //TODO check if can be created
     var outputFolder = "src/em"
 
 
+    @Important(2.0)
     @Cfg("The name of generated file with the test cases, without file type extension. " +
             "In JVM languages, if the name contains '.', folders will be created to represent " +
             "the given package structure")
@@ -545,15 +593,26 @@ class EMConfig {
 
     val defaultMaxTime = "60s"
 
+
+    @Important(1.0)
     @Cfg("Maximum amount of time allowed for the search. "+
-            " The more time is allowed, the better results one can expect." +
+            " The time is expressed with a string where hours (`h`), minutes (`m`) and" +
+            " seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid" +
+            " and equivalent." +
+            " Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be specified. " +
+            " In other words, if you need to run the search for just `30` seconds, you can write `30s` " +
+            " instead of `0h0m30s`." +
+            " **The more time is allowed, the better results one can expect**." +
             " But then of course the test generation will take longer." +
-            " Only applicable depending on the stopping criterion." +
-            " The time is expressed with a string where hours(h), minutes(m) and" +
-            " seconds(s) can be specified, e.g., '1h10m120s' and '72m' are both valid" +
-            " and equivalent.")
-    @Regex("( *)((?=([^ ]+))(\\d+h)?(\\d+m)?(\\d+s)?)( *)")
+            " For how long should _EvoMaster_ be left run?" +
+            " The default 1 _minute_ is just for demonstration." +
+            " __We recommend to run it between 1 and 24 hours__, depending on the size and complexity " +
+            " of the tested application."
+    )
+    @Regex("(\\s*)((?=([\\S]+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
     var maxTime = defaultMaxTime
+
+
 
 
     @Cfg("Whether or not writing statistics of the search process. " +
@@ -861,14 +920,17 @@ class EMConfig {
     var baseTaintAnalysisProbability = 0.9
 
 
+    @Important(3.0)
     @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
     var blackBox = false
 
+    @Important(3.5)
     @Url
     @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
             "If this is missing, the URL will be inferred from Swagger.")
     var bbTargetUrl: String = ""
 
+    @Important(3.2)
     @Url
     @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can downloaded from")
     var bbSwaggerUrl: String = ""

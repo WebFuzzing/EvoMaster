@@ -137,8 +137,7 @@ At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.
 
 * [Download EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
-* [Main console options](docs/options_main.md)
-    * [All console options](docs/options_all.md)
+* [Console options](docs/options.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
