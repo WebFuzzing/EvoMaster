@@ -145,7 +145,7 @@ object ConfigToMarkdown {
 
         val description = EMConfig.getDescription(opt)
 
-        buffer.append("| `--${opt.name}` &lt;$typeName&gt;| ")
+        buffer.append("|<nobr>`--${opt.name}` &lt;$typeName&gt;</nobr>| ")
         buffer.append(description.text.trim())
         if(!description.text.trim().endsWith(".")){
             buffer.append(".")
