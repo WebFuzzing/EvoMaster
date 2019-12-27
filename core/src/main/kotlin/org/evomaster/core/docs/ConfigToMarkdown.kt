@@ -68,6 +68,8 @@ object ConfigToMarkdown {
               In some cases, strings might only be chosen within a specific set of possible values (i.e., an Enum).
               If any constraint is not satisfied, _EvoMaster_ will fail with an error message.
               
+              When used, all options need to be prefixed with a `--`, e.g., `--maxTime`.
+              
         """.trimIndent()
 
         buffer.append(header)
@@ -162,7 +164,7 @@ object ConfigToMarkdown {
 //        buffer.append("<tr>")
 
 //        buffer.append("|<nobr>`--${opt.name}` &lt;$typeName&gt;</nobr>| ")
-        buffer.append("|`--${opt.name}`| ")
+        buffer.append("|`${opt.name}`| ")
 
 //        buffer.append("<td><nobr>`--${opt.name}` &lt;$typeName&gt;</nobr></td>")
 
