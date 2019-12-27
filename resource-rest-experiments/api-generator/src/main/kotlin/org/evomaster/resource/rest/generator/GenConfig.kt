@@ -1,5 +1,6 @@
 package org.evomaster.resource.rest.generator
 
+import org.evomaster.resource.rest.generator.GenerateREST.Companion.DEFAULT_PROPERTY_VALUE
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.model.RestMethod
@@ -79,6 +80,8 @@ class GenConfig {
     var nameStrategy : StrategyNameResource = StrategyNameResource.RAND
 
     var dependencyKind : ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
+
+    var dependencyProperty : String = DEFAULT_PROPERTY_VALUE
 
     fun getCsOutputFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.srcFolder}"
     fun getCsResourceFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.resource}"

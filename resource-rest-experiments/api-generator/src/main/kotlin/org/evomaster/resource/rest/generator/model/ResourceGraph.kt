@@ -141,7 +141,8 @@ class ResourceGraph(
         StrategyNameResource.RAND -> "${random()}"
         StrategyNameResource.RAND_FIXED_LENGTH -> {
             val len = 5
-            if(upperAlpha.length * alphaNumericString.length.toDouble().pow((len - 1).toDouble()) * 0.1 < numOfNodes) throw IllegalArgumentException("length is not enough")
+            if(upperAlpha.length * alphaNumericString.length.toDouble().pow((len - 1).toDouble()) * 0.1 < numOfNodes)
+                throw IllegalArgumentException("length is not enough")
             "${random(len)}"
         }
     }

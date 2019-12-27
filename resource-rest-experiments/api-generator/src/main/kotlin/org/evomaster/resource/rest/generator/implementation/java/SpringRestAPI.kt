@@ -11,6 +11,12 @@ interface SpringRestAPI {
                     return ResponseEntity.status($exceptionStatusCode).build();
             """.trimIndent()
 
+    fun assertCondition(condition : String, not : Boolean = false , exceptionStatusCode : Int= 400) =
+            """
+                if (${if (not) "!" else ""}($condition))
+                    return ResponseEntity.status($exceptionStatusCode).build();
+            """.trimIndent()
+
     fun assertExistence(repository : String, idScript : String, exceptionStatusCode : Int= 400) =
             """
                 if (!$repository.findById($idScript).isPresent())

@@ -1,6 +1,8 @@
 package org.evomaster.resource.rest.generator
 
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.model.RestMethod
+import org.evomaster.resource.rest.generator.model.StrategyNameResource
 import kotlin.math.roundToInt
 
 /**
@@ -54,11 +56,14 @@ fun main(args : Array<String>){
 
     /*val exp = ResExp()
     exp.setDependency(5, config, ResExp.DependencyType.SPARSE)*/
-    config.numOfTwoToTwo = 1
+    config.numOfOneToMany =1
+    config.numOfOneToOne = 1
 
-    config.branchesForImpact = 10
     config.outputType = GenConfig.OutputType.MAVEN_PROJECT
     config.outputContent = GenConfig.OutputContent.BOTH
-    config.projectName = "rest-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
+    config.dependencyKind = ConditionalDependencyKind.PROPERTY
+    config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
+
+    config.projectName = "rest-dep-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
     GenerateREST(config).run()
 }

@@ -9,25 +9,29 @@ import org.evomaster.resource.rest.generator.model.PropertySpecification
  * by default 'dependency among/between relationship' is treated as existences. for instance,
  * if A depends on B, B must be existence. In this class, we are going to implement the two kinds of
  * dependency that relies on the 'property' of resources.
+ *
  * One is based on a specified condition of a property, e.g., if A depends on B, 1) B must be existence
  *                  and 2) A.value < B.value
  * Another is based on a global status of the resource that depends on, e.g., If A depends on B, 1) B must
  *                  be existence, and 2) number of B < 5, or number of B < number of A
  *
  */
-abstract class ConditionalDependency {
+object ConditionalDependency {
 
-    private fun generateDependency(proAs :List<PropertySpecification>, proBs : List<PropertySpecification>) : String{
-        val type = proAs.first().type
 
-        if(CommonTypes.values().none { it.name.equals(type, ignoreCase = true)} && !proAs.plus(proBs).all { it.type == type})
+    fun generateDependency(type: String, proAs :List<String>, proBs : List<String>) : String{
+
+        if(CommonTypes.values().none { it.name.equals(type, ignoreCase = true)})
             throw IllegalArgumentException("a type of properties involved for dependency should be same based on current implementation")
+
+        if (type.equals(CommonTypes.INT.name, ignoreCase = true))
+            return handlingNumeric(proAs, proBs)
 
         // only support numeric at the moment (TODO String)
         if (type.toUpperCase() != CommonTypes.STRING.name)
             throw IllegalArgumentException("only support numeric at the moment, but $type")
 
-        return handlingNumeric(proAs.map { it.name }, proBs.map { it.name })
+        TODO("NOT IMPLEMENTED")
     }
 
     /**
@@ -40,8 +44,8 @@ abstract class ConditionalDependency {
         //1:N -> when all pBs satisfy some conditions, one resource is created
         if(npa == 1){
             val pa = pAs.first()
-            if (npb == 1)
-                return equalWith("$pa", pBs.first())
+            return if (npb == 1)
+                equalWith("$pa", pBs.first())
             else
                 oneToN(pa, pBs)
         }
@@ -79,14 +83,9 @@ abstract class ConditionalDependency {
         return "$mediumA < $medium && $avgA < $avg"
     }
 
-    private fun withinRange(x : String, a : String, b : String)="$x <= max($a, $b) && $x >= min($a, $b)}"
+    private fun withinRange(x : String, a : String, b : String)="$x <= Math.max($a, $b) && $x >= Math.min($a, $b)"
 
     private fun equalWith(a : String, b : String) = "$a == $b"
 
 }
 
-enum class ConditionalDependencyKind{
-    EXISTENCE,
-    PROPERTY,
-    GLOBAL
-}

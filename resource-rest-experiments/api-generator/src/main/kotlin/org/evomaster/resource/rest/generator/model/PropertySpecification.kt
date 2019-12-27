@@ -16,7 +16,8 @@ open class PropertySpecification(
         val defaultValue: String? = null,
         val impactful: Boolean = true,
         val branches: Int = 0,
-        val dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
+        val dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE,
+        val forDependency : Boolean = false
 ){
 
     /**
@@ -26,7 +27,7 @@ open class PropertySpecification(
 
     fun copy(name : String? = null) : PropertySpecification {
         return PropertySpecification(name
-                ?: this.name, this.type, this.isId, this.autoGen, this.allowNull, this.multiplicity, this.defaultValue, this.impactful, this.branches)
+                ?: this.name, this.type, this.isId, this.autoGen, this.allowNull, this.multiplicity, this.defaultValue, this.impactful, this.branches, this.dependency, this.forDependency)
     }
 
     fun nameGetterName() = "get${FormatUtil.upperFirst(name)}"
@@ -46,7 +47,7 @@ class ResNodeTypedPropertySpecification(
         impactful: Boolean = true,
         branches: Int = 0,
         dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
-) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches, dependency)
+) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches, dependency, false)
 
 class ResServiceTypedPropertySpecification(
         name: String,
@@ -60,4 +61,4 @@ class ResServiceTypedPropertySpecification(
         impactful: Boolean = true,
         branches: Int = 0,
         dependency: ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
-) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches,dependency)
+) : PropertySpecification(name, type, isId, autoGen, allowNull, multiplicity, defaultValue, impactful, branches,dependency, false)

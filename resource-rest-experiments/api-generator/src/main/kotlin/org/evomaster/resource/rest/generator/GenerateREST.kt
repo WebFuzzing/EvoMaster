@@ -8,6 +8,7 @@ import org.evomaster.resource.rest.generator.implementation.java.em.JavaEMContro
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntity
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntityRepository
 import org.evomaster.resource.rest.generator.implementation.java.service.JavaResourceAPI
+import org.evomaster.resource.rest.generator.implementation.java.utils.RestDepUtil
 import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.pom.CSPOModel
 import org.evomaster.resource.rest.generator.pom.EMPOModel
@@ -20,6 +21,11 @@ import kotlin.random.Random
  * created by manzh on 2019-08-16
  */
 class GenerateREST(val config: GenConfig) {
+
+    companion object{
+        const val DEFAULT_PROPERTY_NAME = "name"
+        const val DEFAULT_PROPERTY_VALUE = "value"
+    }
 
     private val resourceCluster = mutableMapOf<String, ResGenSpecification>()
 
@@ -54,7 +60,8 @@ class GenerateREST(val config: GenConfig) {
                         EdgeMultiplicitySpecification(config.numOfManyToOne, 3,1),
                         EdgeMultiplicitySpecification(config.numOfTwoToTwo, 2,2),
                         EdgeMultiplicitySpecification(config.numOfManyToMany, 3,3)
-                )
+                ),
+                strategyNameResource = config.nameStrategy
         )
         graph.save(config.getCsResourceFolder())
         createResources(graph)
@@ -67,6 +74,13 @@ class GenerateREST(val config: GenConfig) {
         )
         generateAndSaveCS(JavaApp(cs), type)
         resourceCluster.values.forEach { generateAndSaveCS(it, type) }
+        if (config.dependencyKind != ConditionalDependencyKind.EXISTENCE){
+            val utilClazz = ServiceUtilClazz(
+                    rootPackage = config.csProjectPackage,
+                    outputFolder = config.getCsOutputFolder()
+            )
+            generateAndSaveCS(RestDepUtil(utilClazz), type)
+        }
         return cs
     }
 
@@ -135,8 +149,8 @@ class GenerateREST(val config: GenConfig) {
                    restMethods = config.restMethods,
                    dependencyKind = config.dependencyKind,
                    defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
-                           PropertySpecification("name", CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
-                           PropertySpecification("value", CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = true, dependency = config.dependencyKind)
+                           PropertySpecification(DEFAULT_PROPERTY_NAME, CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
+                           PropertySpecification(DEFAULT_PROPERTY_VALUE, CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = true, dependency = config.dependencyKind, forDependency = true)
                    )else generateProperties(config)
            ))
         }
@@ -157,6 +171,7 @@ class GenerateREST(val config: GenConfig) {
                 counterImpact+=1
             }
         }
+        //FIXME
         if (config.dependencyKind != ConditionalDependencyKind.EXISTENCE){
             val p = pros.filter { it.impactful }.shuffled().first()
             val index = pros.indexOf(p)
@@ -191,7 +206,8 @@ fun main(args : Array<String>){
     config.branchesForImpact = 10
     config.outputType = GenConfig.OutputType.MAVEN_PROJECT
     config.outputContent = GenConfig.OutputContent.BOTH
-    config.projectName = "auto-impact-rest-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
+    config.dependencyKind = ConditionalDependencyKind.PROPERTY
+    config.projectName = "auto-dependency-rest-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
     GenerateREST(config).run()
 }
 

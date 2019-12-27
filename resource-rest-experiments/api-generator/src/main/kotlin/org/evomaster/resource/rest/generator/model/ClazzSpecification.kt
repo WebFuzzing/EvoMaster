@@ -99,3 +99,9 @@ class AppClazz(
         rootPackage: String,
         outputFolder: String
 ) : ClazzSpecification(name, listOf(), rootPackage, outputFolder )
+
+class ServiceUtilClazz(
+        name: String = "Util",
+        rootPackage: String,
+        outputFolder: String
+) : ClazzSpecification(name, listOf(), "$rootPackage.service", outputFolder )

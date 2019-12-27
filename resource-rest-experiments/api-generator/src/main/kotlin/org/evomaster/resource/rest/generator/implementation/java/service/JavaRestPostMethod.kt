@@ -1,10 +1,9 @@
 package org.evomaster.resource.rest.generator.implementation.java.service
 
 import org.evomaster.resource.rest.generator.FormatUtil
-import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.JavaUtils
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
-import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependency
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.template.Boundary
@@ -29,10 +28,11 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
 
         val entityId = "$dtoVar.${specification.dto.idProperty.name}"
         //check if the id exists
+        content.add(JavaUtils.getSingleComment("check whether an resource exists by id"))
         content.add(assertNonExistence(specification.entityRepository.name, entityId))
 
-
         //instance an entity
+        content.add(JavaUtils.getSingleComment("create the resources"))
         val created = "node"
         content.add(formatInstanceClassAndAssigned(specification.entity.name, created, listOf()))
 
@@ -40,10 +40,13 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
         content.add("$created.${specification.entity.idProperty.nameSetterName()}($entityId);")
 
         val withImpact = specification.entity.defaultProperties.any { it.impactful && it.branches > 1 }
-        if (withImpact)
+        if (withImpact){
+            content.add(JavaUtils.getSingleComment("impactful property"))
             content.add(initBranchesMessage())
+        }
 
         //check if the specified reference exists, if reference exists, then set it to the created
+        val referredEntity = mutableListOf<String>()
         if(specification.dto.referToOthers.isNotEmpty())
             content.add(JavaUtils.getSingleComment("refer to related entity"))
         assert( specification.dto.referToOthers.size == specification.entity.referToOthers.size )
@@ -53,6 +56,8 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
 
             val found = "referVarTo${entityProperty.type}"
             val refer = "$dtoVar.${dtoProperty.name}"
+
+            referredEntity.add(found)
 
             content.add(findEntityByIdAndAssigned(
                     specification.obviousReferEntityRepositories.getValue(entityProperty.type).name,
@@ -75,12 +80,9 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
                 }
             }
         }
-        val additionalDep = specification.dto.referToOthers.any { it.dependency != ConditionalDependencyKind.EXISTENCE }
-        if(specification.dto.referToOthers.isNotEmpty())
-            content.add(JavaUtils.getSingleComment("additional codes for handling dependency "))
 
-        
         //create owned nodes
+        val createdDtos = mutableListOf<String>()
         val ownedId = specification.dto.ownOthers
         val ownedProperties = specification.dto.ownOthersProperties
         val ownedTypes = specification.dto.ownOthersTypes
@@ -88,6 +90,7 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
             content.add(JavaUtils.getSingleComment("create owned entity"))
             (0 until ownedId.size).forEach { index->
                 val createdDtoVar = "ownedDto$index" //dto
+                createdDtos.add(createdDtoVar)
                 content.add(formatInstanceClassAndAssigned( ownedTypes[index], createdDtoVar, listOf()))
                 ownedProperties[index].plus(ownedId[index]).forEach { op->
                     val opp = op as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
@@ -106,6 +109,25 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
                         entityProperty.type
                 ))
                 content.add("$created.${entityProperty.nameSetterName()}($found);")
+            }
+        }
+
+        val additionalDep = specification.dto.referToOthers.find { it.dependency != ConditionalDependencyKind.EXISTENCE }?.dependency
+        if(additionalDep != null){
+            //all referred should be same
+            if (!specification.dto.referToOthers.all { it.dependency == additionalDep})
+                throw IllegalStateException("all referred resources should follow a same kind of dependency")
+            if(specification.dto.referToOthers.isNotEmpty())
+                content.add(JavaUtils.getSingleComment("additional codes for handling dependency "))
+            //TODO property name
+            val p = specification.dto.defaultProperties.find { it.forDependency }
+                    ?:specification.dto.ownOthersProperties
+                            .map { e -> e.find { it is ResNodeTypedPropertySpecification && it.itsIdProperty.forDependency } }.first()
+            if (p != null){
+                //entity requires getter, dto direct access
+                val probAs = if (createdDtos.isEmpty()) listOf("$created.${p.nameGetterName()}()") else createdDtos.map { "$it.${p.name}" }
+                val probBs = referredEntity.map { "$it.${p.nameGetterName()}()" }
+                content.add(assertCondition(ConditionalDependency.generateDependency(p.type, probAs, probBs), not = true))
             }
         }
 
