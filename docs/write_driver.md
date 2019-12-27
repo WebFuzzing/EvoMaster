@@ -72,6 +72,20 @@ At this point, once this driver is started (e.g., by right-clicking on it in
 an IDE to run it as a Java process),
 then you can use `evomaster.jar` to finally generate test cases.
 
+__WARNING__: Java 9 broke backward compatibility. 
+One painful change was that self-attachment of Java-Agents (needed for bytecode instrumentation)
+is now forbidden by default.
+When for example starting the driver with a JDK 9+ (e.g., JDK __11__), you need to add the VM option
+`-Djdk.attach.allowAttachSelf=true`, otherwise the process will crash.   
+For example, in IntelliJ IDEA:
+
+![](img/intellij_jdk11_jvm_options.png)
+
+Note: there is a hacky workaround for this "_feature_" 
+(i.e., as done in [ByteBuddy](https://github.com/raphw/byte-buddy/issues/295)),
+but it is not implemented yet. 
+
+
 
 ## SpringBoot Example
 
