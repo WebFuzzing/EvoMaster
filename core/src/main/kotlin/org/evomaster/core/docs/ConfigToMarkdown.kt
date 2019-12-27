@@ -122,12 +122,26 @@ object ConfigToMarkdown {
 
     private fun printOptionList(buffer: StringBuilder, list: List<KMutableProperty<*>>){
 
-        buffer.append("|Options|Description|\n")
+        /*
+            Markdown-style tables have all column widths messed up, see:
+
+            https://stackoverflow.com/questions/36121672/set-table-column-width-via-markdown
+
+            however, if we use HTML, then we need to change all the formattings, eg ** and `` :-(
+         */
+
+        val awfulHackButWhatElseCanWeDo = "<img width=2000/>"
+
+        buffer.append("|Options$awfulHackButWhatElseCanWeDo|Description|\n")
         buffer.append("|---|---|\n")
+
+//        buffer.append("<table><thead><tr><th>Options</th><th>Description</th></tr></thead><tbody>")
 
         for(opt in list){
             printOption(buffer, opt)
         }
+
+//        buffer.append("</tbody></table>")
     }
 
     private fun printOption(buffer: StringBuilder, opt: KMutableProperty<*>) {
@@ -145,7 +159,12 @@ object ConfigToMarkdown {
 
         val description = EMConfig.getDescription(opt)
 
+//        buffer.append("<tr>")
         buffer.append("|<nobr>`--${opt.name}` &lt;$typeName&gt;</nobr>| ")
+//        buffer.append("<td><nobr>`--${opt.name}` &lt;$typeName&gt;</nobr></td>")
+
+//        buffer.append("<td>")
+
         buffer.append(description.text.trim())
         if(!description.text.trim().endsWith(".")){
             buffer.append(".")
@@ -157,6 +176,8 @@ object ConfigToMarkdown {
             buffer.append(" *Valid values*: `${description.enumValues}`.")
         }
         buffer.append(" *Default value*: `$default`.")
+
+//        buffer.append("</td></tr>")
         buffer.append("|\n")
     }
 

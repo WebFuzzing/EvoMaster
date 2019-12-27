@@ -27,7 +27,7 @@ There are 3 types of options:
   
 ## Important Command-Line Options
 
-|Options|Description|
+|Options<img width=2000/>|Description|
 |---|---|
 |<nobr>`--maxTime` &lt;String&gt;</nobr>| Maximum amount of time allowed for the search.  The time is expressed with a string where hours (`h`), minutes (`m`) and seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid and equivalent. Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be specified.  In other words, if you need to run the search for just `30` seconds, you can write `30s`  instead of `0h0m30s`. **The more time is allowed, the better results one can expect**. But then of course the test generation will take longer. For how long should _EvoMaster_ be left run? The default 1 _minute_ is just for demonstration. __We recommend to run it between 1 and 24 hours__, depending on the size and complexity  of the tested application. *Constraints*: `regex (\s*)((?=([\S]+))(\d+h)?(\d+m)?(\d+s)?)(\s*)`. *Default value*: `60s`.|
 |<nobr>`--outputFolder` &lt;String&gt;</nobr>| The path directory of where the generated test classes should be saved to. *Default value*: `src/em`.|
@@ -38,7 +38,7 @@ There are 3 types of options:
 
 ## Internal Command-Line Options
 
-|Options|Description|
+|Options<img width=2000/>|Description|
 |---|---|
 |<nobr>`--algorithm` &lt;Enum&gt;</nobr>| The algorithm used to generate test cases. *Valid values*: `MIO, RANDOM, WTS, MOSA`. *Default value*: `MIO`.|
 |<nobr>`--appendToStatisticsFile` &lt;Boolean&gt;</nobr>| Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
@@ -90,7 +90,7 @@ There are 3 types of options:
 
 ## Experimental Command-Line Options
 
-|Options|Description|
+|Options<img width=2000/>|Description|
 |---|---|
 |<nobr>`--S1dR` &lt;Double&gt;</nobr>| Specify a probability to apply S1dR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
 |<nobr>`--S1iR` &lt;Double&gt;</nobr>| Specify a probability to apply S1iR when resource sampling strategy is 'Customized'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.25`.|
