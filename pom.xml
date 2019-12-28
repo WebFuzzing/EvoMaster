@@ -767,6 +767,12 @@
                     <groupId>org.eluder.coveralls</groupId>
                     <artifactId>coveralls-maven-plugin</artifactId>
                     <version>4.3.0</version>
+                    <configuration>
+                        <sourceDirectories>
+                            <param>src/main/java</param>
+                            <param>src/main/kotlin</param>
+                        </sourceDirectories>
+                    </configuration>
                 </plugin>
 
                 <!-- Used for parsers. Eg, to analyze regex -->
