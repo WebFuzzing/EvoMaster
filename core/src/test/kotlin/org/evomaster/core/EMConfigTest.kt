@@ -285,4 +285,26 @@ internal class EMConfigTest{
 //        config.updateProperties(options)
 //        assertEquals(name, config.testSuiteFileName)
     }
+
+
+    @ParameterizedTest
+    @ValueSource(strings =  ["pom.xml"])
+    fun testWrongPath(value : String){
+
+        /*
+            Interestingly, a name like
+            ?*!$%@
+            would fail in Windows, but it is OK in Mac...
+            Mac practically accepts anything:
+            https://superuser.com/questions/326103/what-are-invalid-characters-for-a-file-name-under-os-x
+         */
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["outputFolder"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--outputFolder", value)
+
+        assertThrows(Exception::class.java) {config.updateProperties(options)}
+    }
 }
