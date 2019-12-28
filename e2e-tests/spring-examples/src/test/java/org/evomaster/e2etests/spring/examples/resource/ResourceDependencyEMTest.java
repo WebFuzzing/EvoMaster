@@ -23,8 +23,8 @@ public class ResourceDependencyEMTest extends ResourceTestBase {
     public void testRunEM() throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "",
-                "",
+                "none",
+                "none",
                 1_000,
                 false,
                 (args) -> {
