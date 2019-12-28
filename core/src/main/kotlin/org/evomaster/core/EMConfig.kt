@@ -932,7 +932,7 @@ class EMConfig {
 
     @Important(3.2)
     @Url
-    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can downloaded from")
+    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from")
     var bbSwaggerUrl: String = ""
 
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")

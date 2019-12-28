@@ -35,7 +35,7 @@ There are 3 types of options:
 |`outputFolder`| __String__. The path directory of where the generated test classes should be saved to. *Default value*: `src/em`.|
 |`testSuiteFileName`| __String__. The name of generated file with the test cases, without file type extension. In JVM languages, if the name contains '.', folders will be created to represent the given package structure. *Default value*: `EvoMasterTest`.|
 |`blackBox`| __Boolean__. Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT. *Default value*: `false`.|
-|`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify where the Swagger schema can downloaded from. *Constraints*: `URL`. *Default value*: `""`.|
+|`bbSwaggerUrl`| __String__. When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from. *Constraints*: `URL`. *Default value*: `""`.|
 |`bbTargetUrl`| __String__. When in black-box mode, specify the URL of where the SUT can be reached. If this is missing, the URL will be inferred from Swagger. *Constraints*: `URL`. *Default value*: `""`.|
 
 ## Internal Command-Line Options
