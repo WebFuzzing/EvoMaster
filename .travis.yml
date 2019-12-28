@@ -20,4 +20,4 @@ services:
   - docker
 
 
-script: travis_wait 50 mvn clean verify --fae
+script: travis_wait 50 mvn clean verify --fae  coveralls:report

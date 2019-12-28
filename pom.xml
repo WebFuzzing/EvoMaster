@@ -760,8 +760,16 @@
                 </plugin>
 
                 <!--
-                    Used for parsers. Eg, to analyze regex
-                  -->
+                    To publish JaCoCo results to Coveralls.
+                    Should be run only on Travis
+                 -->
+                <plugin>
+                    <groupId>org.eluder.coveralls</groupId>
+                    <artifactId>coveralls-maven-plugin</artifactId>
+                    <version>4.3.0</version>
+                </plugin>
+
+                <!-- Used for parsers. Eg, to analyze regex -->
                 <plugin>
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr4-maven-plugin</artifactId>
