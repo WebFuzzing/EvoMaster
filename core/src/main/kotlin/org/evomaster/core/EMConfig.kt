@@ -9,7 +9,6 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import java.net.MalformedURLException
 import java.net.URL
-import java.util.regex.Pattern
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -478,6 +477,64 @@ class EMConfig {
         descriptions end-up in some screwed-up Markdown layout
      */
 
+    //----- "Important" options, sorted by priority --------------
+
+    val defaultMaxTime = "60s"
+
+    @Important(1.0)
+    @Cfg("Maximum amount of time allowed for the search. "+
+            " The time is expressed with a string where hours (`h`), minutes (`m`) and" +
+            " seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid" +
+            " and equivalent." +
+            " Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be specified. " +
+            " In other words, if you need to run the search for just `30` seconds, you can write `30s` " +
+            " instead of `0h0m30s`." +
+            " **The more time is allowed, the better results one can expect**." +
+            " But then of course the test generation will take longer." +
+            " For how long should _EvoMaster_ be left run?" +
+            " The default 1 _minute_ is just for demonstration." +
+            " __We recommend to run it between 1 and 24 hours__, depending on the size and complexity " +
+            " of the tested application."
+    )
+    @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
+    var maxTime = defaultMaxTime
+
+    @Important(2.0)
+    @Cfg("The path directory of where the generated test classes should be saved to")
+    //TODO check if can be created
+    var outputFolder = "src/em"
+
+
+    @Important(2.0)
+    @Cfg("The name of generated file with the test cases, without file type extension. " +
+            "In JVM languages, if the name contains '.', folders will be created to represent " +
+            "the given package structure")
+    //TODO constrain of no spaces or weird characters, eg use regular expression
+    var testSuiteFileName = "EvoMasterTest"
+
+    @Important(2.0)
+    @Cfg("Specify in which format the tests should be outputted." +
+            " If left on `DEFAULT`, then the value specified in the _EvoMaster Driver_ will be used." +
+            " But a different value must be chosen if doing Black-Box testing.")
+    var outputFormat = OutputFormat.DEFAULT
+
+    @Important(3.0)
+    @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
+    var blackBox = false
+
+    @Important(3.2)
+    @Url
+    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from")
+    var bbSwaggerUrl: String = ""
+
+    @Important(3.5)
+    @Url
+    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
+            "If this is missing, the URL will be inferred from Swagger.")
+    var bbTargetUrl: String = ""
+
+
+    //-------- other options -------------
 
     enum class Algorithm {
         MIO, RANDOM, WTS, MOSA
@@ -496,27 +553,10 @@ class EMConfig {
     var problemType = ProblemType.REST
 
 
-    @Cfg("Specify in which format the tests should be outputted")
-    var outputFormat = OutputFormat.DEFAULT
-
-
     @Cfg("Specify if test classes should be created as output of the tool. " +
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true
 
-
-    @Important(2.0)
-    @Cfg("The path directory of where the generated test classes should be saved to")
-            //TODO check if can be created
-    var outputFolder = "src/em"
-
-
-    @Important(2.0)
-    @Cfg("The name of generated file with the test cases, without file type extension. " +
-            "In JVM languages, if the name contains '.', folders will be created to represent " +
-            "the given package structure")
-            //TODO constrain of no spaces or weird characters, eg use regular expression
-    var testSuiteFileName = "EvoMasterTest"
 
 
     enum class TestSuiteSplitType {
@@ -589,30 +629,6 @@ class EMConfig {
             " If this value is 0, the setting 'maxTime' will be used instead.")
     @Min(0.0)
     var maxTimeInSeconds = defaultMaxTimeInSeconds
-
-
-    val defaultMaxTime = "60s"
-
-
-    @Important(1.0)
-    @Cfg("Maximum amount of time allowed for the search. "+
-            " The time is expressed with a string where hours (`h`), minutes (`m`) and" +
-            " seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid" +
-            " and equivalent." +
-            " Each component (i.e., `h`, `m` and `s`) is optional, but at least one must be specified. " +
-            " In other words, if you need to run the search for just `30` seconds, you can write `30s` " +
-            " instead of `0h0m30s`." +
-            " **The more time is allowed, the better results one can expect**." +
-            " But then of course the test generation will take longer." +
-            " For how long should _EvoMaster_ be left run?" +
-            " The default 1 _minute_ is just for demonstration." +
-            " __We recommend to run it between 1 and 24 hours__, depending on the size and complexity " +
-            " of the tested application."
-    )
-    @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
-    var maxTime = defaultMaxTime
-
-
 
 
     @Cfg("Whether or not writing statistics of the search process. " +
@@ -920,20 +936,6 @@ class EMConfig {
     var baseTaintAnalysisProbability = 0.9
 
 
-    @Important(3.0)
-    @Cfg("Use EvoMaster in black-box mode. This does not require an EvoMaster Driver up and running. However, you will need to provide further option to specify how to connect to the SUT")
-    var blackBox = false
-
-    @Important(3.5)
-    @Url
-    @Cfg("When in black-box mode, specify the URL of where the SUT can be reached. " +
-            "If this is missing, the URL will be inferred from Swagger.")
-    var bbTargetUrl: String = ""
-
-    @Important(3.2)
-    @Url
-    @Cfg("When in black-box mode for REST APIs, specify where the Swagger schema can be downloaded from")
-    var bbSwaggerUrl: String = ""
 
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
