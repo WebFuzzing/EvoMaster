@@ -609,7 +609,7 @@ class EMConfig {
             " __We recommend to run it between 1 and 24 hours__, depending on the size and complexity " +
             " of the tested application."
     )
-    @Regex("(\\s*)((?=([\\S]+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
+    @Regex("(\\s*)((?=(\\S+))(\\d+h)?(\\d+m)?(\\d+s)?)(\\s*)")
     var maxTime = defaultMaxTime
 
 
