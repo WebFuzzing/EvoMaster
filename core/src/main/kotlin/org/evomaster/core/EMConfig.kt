@@ -9,6 +9,9 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import java.net.MalformedURLException
 import java.net.URL
+import java.nio.file.Files
+import java.nio.file.InvalidPathException
+import java.nio.file.Paths
 import kotlin.reflect.KMutableProperty
 import kotlin.reflect.jvm.javaType
 
@@ -102,17 +105,17 @@ class EMConfig {
                 val constraints: String,
                 val enumValues: String,
                 val experimental: Boolean
-        ){
+        ) {
             override fun toString(): String {
                 var description = text
-                if(constraints.isNotBlank()){
+                if (constraints.isNotBlank()) {
                     description += " [Constraints: $constraints]."
                 }
-                if(enumValues.isNotBlank()){
+                if (enumValues.isNotBlank()) {
                     description += " [Values: $enumValues]."
                 }
 
-                if(experimental){
+                if (experimental) {
                     /*
                     TODO: For some reasons, coloring is not working here.
                     Could open an issue at:
@@ -145,7 +148,7 @@ class EMConfig {
             val regex = (m.annotations.find { it is Regex } as? Regex)?.regex
 
             var constraints = ""
-            if (min != null || max != null || probability!=null || url!=null || regex!=null) {
+            if (min != null || max != null || probability != null || url != null || regex != null) {
                 if (min != null) {
                     constraints += "min=$min"
                 }
@@ -153,13 +156,13 @@ class EMConfig {
                     if (min != null) constraints += ", "
                     constraints += "max=$max"
                 }
-                if(probability != null){
+                if (probability != null) {
                     constraints += "probability 0.0-1.0"
                 }
-                if(url != null){
+                if (url != null) {
                     constraints += "URL"
                 }
-                if(regex != null){
+                if (regex != null) {
                     constraints += "regex $regex"
                 }
             }
@@ -203,18 +206,194 @@ class EMConfig {
 
         getConfigurationProperties().forEach { m ->
 
-            val opt = options.valueOf(m.name)?.toString() ?:
-                    throw IllegalArgumentException("Value not found for property ${m.name}")
+            updateProperty(options, m)
 
-            val returnType = m.returnType.javaType as Class<*>
+            checkPropertyConstraints(m)
+        }
 
-            /*
+        checkMultiFieldConstraints()
+    }
+
+    private fun checkMultiFieldConstraints() {
+        /*
+            Each option field might have specific constraints, setup with @annotations.
+            However, there can be multi-field constraints as well.
+            Those are defined here.
+            They can be check only once all fields have been updated
+         */
+
+        when (stoppingCriterion) {
+            StoppingCriterion.TIME -> if (maxActionEvaluations != defaultMaxActionEvaluations) {
+                throw IllegalArgumentException("Changing number of max actions, but stopping criterion is time")
+            }
+            StoppingCriterion.FITNESS_EVALUATIONS -> if (maxTimeInSeconds != defaultMaxTimeInSeconds ||
+                    maxTime != defaultMaxTime) {
+                throw IllegalArgumentException("Changing max time, but stopping criterion is based on fitness evaluations")
+            }
+        }
+
+        if (shouldGenerateSqlData() && !heuristicsForSQL) {
+            throw IllegalArgumentException("Cannot generate SQL data if you not enable " +
+                    "collecting heuristics with 'heuristicsForSQL'")
+        }
+
+        if (heuristicsForSQL && !extractSqlExecutionInfo) {
+            throw IllegalArgumentException("Cannot collect heuristics SQL data if you not enable " +
+                    "extracting SQL execution info with 'extractSqlExecutionInfo'")
+        }
+
+        if (enableTrackEvaluatedIndividual && enableTrackIndividual) {
+            throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
+        }
+
+        //resource related parameters
+        if ((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
+                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)) {
+            throw IllegalArgumentException("Parameters (${
+            arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics", "exportDependencies")
+                    .filterIndexed { index, _ ->
+                        (index == 0 && resourceSampleStrategy != ResourceSamplingStrategy.NONE) ||
+                                (index == 1 && (probOfApplySQLActionToCreateResources > 0.0)) ||
+                                (index == 2 && doesApplyNameMatching) ||
+                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
+                                (index == 4 && exportDependencies)
+                    }.joinToString(" and ")
+            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
+        }
+
+        /*
+            resource-mio and sql configuration
+            TODO if required
+         */
+        if (resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)) {
+            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
+        }
+
+        //archive-based mutation
+        if (geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
+            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
+        }
+
+        if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
+            throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
+        }
+
+        if (blackBox && !bbExperiments) {
+            if (problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()) {
+                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
+            }
+            if (outputFormat == OutputFormat.DEFAULT) {
+                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
+            }
+        }
+
+        if (!blackBox && bbExperiments) {
+            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
+        }
+
+        if (testSuiteFileName.contains("-") && outputFormat.isJavaOrKotlin()) {
+            throw IllegalArgumentException("In JVM languages, you cannot use the symbol '-' in test suite file name")
+        }
+    }
+
+    private fun checkPropertyConstraints(m: KMutableProperty<*>) {
+        val parameterValue = m.getter.call(this).toString()
+
+        //check value against constraints on its field, if any
+        m.annotations.find { it is Min }?.also {
+            it as Min
+            if (parameterValue.toDouble() < it.min) {
+                throw IllegalArgumentException("Failed to handle Min ${it.min} constraint for" +
+                        " parameter '${m.name}' with value $parameterValue")
+            }
+        }
+
+        m.annotations.find { it is Max }?.also {
+            it as Max
+            if (parameterValue.toDouble() > it.max) {
+                throw IllegalArgumentException("Failed to handle Max ${it.max} constraint for" +
+                        " parameter '${m.name}' with value $parameterValue")
+            }
+        }
+
+        m.annotations.find { it is Probability }?.also {
+            it as Probability
+            val p = parameterValue.toDouble()
+            if (p < 0 || p > 1) {
+                throw IllegalArgumentException("Failed to handle probability constraint for" +
+                        " parameter '${m.name}' with value $parameterValue. The value must be in [0,1].")
+            }
+        }
+
+        m.annotations.find { it is Url }?.also {
+            if (!parameterValue.isNullOrBlank()) {
+                try {
+                    URL(parameterValue)
+                } catch (e: MalformedURLException) {
+                    throw IllegalArgumentException("Parameter '${m.name}' with value $parameterValue is" +
+                            " not a valid URL: ${e.message}")
+                }
+            }
+        }
+
+        m.annotations.find { it is Regex }?.also {
+            it as Regex
+            if (!parameterValue.matches(kotlin.text.Regex(it.regex))) {
+                throw IllegalArgumentException("Parameter '${m.name}' with value $parameterValue is" +
+                        " not matching the regex: ${it.regex}")
+            }
+        }
+
+        m.annotations.find { it is Folder }?.also{
+            val path = try{
+                Paths.get(parameterValue).toAbsolutePath()
+            } catch(e: InvalidPathException){
+                throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
+            }
+
+            if(Files.exists(path) && ! Files.isWritable(path)){
+                throw IllegalArgumentException("Parameter '${m.name}' refers to a folder that already" +
+                        " exists, but that cannot be written to: $path")
+            }
+            if(Files.exists(path) && ! Files.isDirectory(path)){
+                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
+                        " exists, but that it is not a folder: $path")
+            }
+        }
+
+        m.annotations.find { it is FilePath }?.also{
+            val path = try{
+                Paths.get(parameterValue).toAbsolutePath()
+            } catch(e: InvalidPathException){
+                throw IllegalArgumentException("Parameter '${m.name}' is not a valid FS path: ${e.message}")
+            }
+
+            if(Files.exists(path) && ! Files.isWritable(path)){
+                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that already" +
+                        " exists, but that cannot be written/replace to: $path")
+            }
+            if(Files.exists(path) && Files.isDirectory(path)){
+                throw IllegalArgumentException("Parameter '${m.name}' refers to a file that is instead an" +
+                        " existing folder: $path")
+            }
+        }
+    }
+
+    private fun updateProperty(options: OptionSet, m: KMutableProperty<*>) {
+        val opt = options.valueOf(m.name)?.toString()
+                ?: throw IllegalArgumentException("Value not found for property ${m.name}")
+
+        val returnType = m.returnType.javaType as Class<*>
+
+        /*
                 TODO: ugly checks. But not sure yet if can be made better in Kotlin.
                 Could be improved with isSubtypeOf from 1.1?
                 http://stackoverflow.com/questions/41553647/kotlin-isassignablefrom-and-reflection-type-checks
              */
 
-
+        //update value, but only if it was in the specified options.
+        //WARNING: without this check, it would reset to default for fields not in "options"
+        if (options.has(m.name)) {
             try {
                 if (Integer.TYPE.isAssignableFrom(returnType)) {
                     m.setter.call(this, Integer.parseInt(opt))
@@ -242,126 +421,12 @@ class EMConfig {
             } catch (e: Exception) {
                 throw IllegalArgumentException("Failed to handle property '${m.name}'", e)
             }
-
-            val parameterValue = m.getter.call(this).toString()
-
-            m.annotations.find { it is Min }?.also {
-                it as Min
-                if(parameterValue.toDouble() < it.min){
-                    throw IllegalArgumentException("Failed to handle Min ${it.min} constraint for" +
-                            " parameter '${m.name}' with value $parameterValue")
-                }
-            }
-
-            m.annotations.find { it is Max }?.also {
-                it as Max
-                if(parameterValue.toDouble() > it.max){
-                    throw IllegalArgumentException("Failed to handle Max ${it.max} constraint for" +
-                            " parameter '${m.name}' with value $parameterValue")
-                }
-            }
-
-            m.annotations.find { it is Probability }?.also {
-                it as Probability
-                val p = parameterValue.toDouble()
-                if( p < 0 || p > 1){
-                    throw IllegalArgumentException("Failed to handle probability constraint for" +
-                            " parameter '${m.name}' with value $parameterValue. The value must be in [0,1].")
-                }
-            }
-
-            m.annotations.find { it is Url }?.also {
-                if(! parameterValue.isNullOrBlank()){
-                    try {
-                        URL(parameterValue)
-                    }catch (e: MalformedURLException){
-                        throw IllegalArgumentException("Parameter '${m.name}' with value $parameterValue is" +
-                                " not a valid URL: ${e.message}")
-                    }
-                }
-            }
-
-            m.annotations.find { it is Regex }?.also {
-                it as Regex
-                if(! parameterValue.matches(kotlin.text.Regex(it.regex))){
-                    throw IllegalArgumentException("Parameter '${m.name}' with value $parameterValue is" +
-                            " not matching the regex: ${it.regex}")
-                }
-            }
-        }
-
-        when(stoppingCriterion){
-            StoppingCriterion.TIME -> if(maxActionEvaluations != defaultMaxActionEvaluations){
-                throw IllegalArgumentException("Changing number of max actions, but stopping criterion is time")
-            }
-            StoppingCriterion.FITNESS_EVALUATIONS -> if(maxTimeInSeconds != defaultMaxTimeInSeconds ||
-                    maxTime != defaultMaxTime){
-                throw IllegalArgumentException("Changing max time, but stopping criterion is based on fitness evaluations")
-            }
-        }
-
-        if(shouldGenerateSqlData() && ! heuristicsForSQL){
-            throw IllegalArgumentException("Cannot generate SQL data if you not enable " +
-                    "collecting heuristics with 'heuristicsForSQL'")
-        }
-
-        if(heuristicsForSQL && ! extractSqlExecutionInfo){
-            throw IllegalArgumentException("Cannot collect heuristics SQL data if you not enable " +
-                    "extracting SQL execution info with 'extractSqlExecutionInfo'")
-        }
-
-        if(enableTrackEvaluatedIndividual && enableTrackIndividual){
-            throw IllegalArgumentException("When tracking EvaluatedIndividual, it is not necessary to track individual")
-        }
-
-        //resource related parameters
-        if((resourceSampleStrategy != ResourceSamplingStrategy.NONE || (probOfApplySQLActionToCreateResources > 0.0) || doesApplyNameMatching || probOfEnablingResourceDependencyHeuristics > 0.0 || exportDependencies)
-                && (problemType != ProblemType.REST || algorithm != Algorithm.MIO)){
-            throw IllegalArgumentException("Parameters (${
-            arrayOf("resourceSampleStrategy", "probOfApplySQLActionToCreateResources", "doesApplyNameMatching", "probOfEnablingResourceDependencyHeuristics","exportDependencies")
-                    .filterIndexed { index, _ ->
-                        (index == 0 && resourceSampleStrategy!=ResourceSamplingStrategy.NONE) ||
-                                (index == 1 && (probOfApplySQLActionToCreateResources>0.0)) ||
-                                (index == 2 && doesApplyNameMatching) ||
-                                (index == 3 && probOfEnablingResourceDependencyHeuristics > 0.0) ||
-                                (index == 4 && exportDependencies)}.joinToString(" and ")
-            }) are only applicable on REST problem (but current is $problemType) with MIO algorithm (but current is $algorithm).")
-        }
-
-        /*
-            resource-mio and sql configuration
-            TODO if required
-         */
-        if(resourceSampleStrategy != ResourceSamplingStrategy.NONE && (heuristicsForSQL || generateSqlDataWithSearch || generateSqlDataWithDSE || geneMutationStrategy == GeneMutationStrategy.ONE_OVER_N)){
-            throw IllegalArgumentException(" resource-mio does not support SQL strategies for the moment")
-        }
-
-        //archive-based mutation
-        if(geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO){
-            throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
-        }
-
-        if(baseTaintAnalysisProbability > 0  && ! useMethodReplacement){
-            throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
-        }
-
-        if(blackBox && ! bbExperiments){
-            if(problemType == ProblemType.REST && bbSwaggerUrl.isNullOrBlank()){
-                throw IllegalArgumentException("In black-box mode for REST APIs, you need to set the bbSwaggerUrl option")
-            }
-            if(outputFormat == OutputFormat.DEFAULT){
-                throw IllegalArgumentException("In black-box mode, you must specify a value for the outputFormat option different from DEFAULT")
-            }
-        }
-
-        if(!blackBox && bbExperiments){
-            throw IllegalArgumentException("Cannot setup bbExperiments without black-box mode")
         }
     }
 
     fun shouldGenerateSqlData() = generateSqlDataWithDSE || generateSqlDataWithSearch
 
-    fun experimentalFeatures() : List<String>{
+    fun experimentalFeatures(): List<String> {
 
         val properties = getConfigurationProperties()
                 .filter { it.annotations.find { it is Experimental } != null }
@@ -369,7 +434,7 @@ class EMConfig {
                     val returnType = it.returnType.javaType as Class<*>
                     when {
                         java.lang.Boolean.TYPE.isAssignableFrom(returnType) -> it.getter.call(this) as Boolean
-                        it.annotations.find {p ->  p is Probability && p.activating} != null -> (it.getter.call(this) as Double) > 0
+                        it.annotations.find { p -> p is Probability && p.activating } != null -> (it.getter.call(this) as Double) > 0
                         else -> false
                     }
                 }
@@ -378,7 +443,7 @@ class EMConfig {
         val enums = getConfigurationProperties()
                 .filter {
                     val returnType = it.returnType.javaType as Class<*>
-                    if (returnType.isEnum){
+                    if (returnType.isEnum) {
                         val e = it.getter.call(this)
                         val f = returnType.getField(e.toString())
                         f.annotations.find { it is Experimental } != null
@@ -435,9 +500,8 @@ class EMConfig {
              * This is mainly needed when dealing with @Experimental probabilities that must
              * be put to 0 if they would activate a new feature that is still unstable
              */
-            val activating : Boolean = true
+            val activating: Boolean = true
     )
-
 
 
     /**
@@ -465,6 +529,14 @@ class EMConfig {
             val priority: Double
     )
 
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class Folder
+
+    @Target(AnnotationTarget.PROPERTY)
+    @MustBeDocumented
+    annotation class FilePath
+
 //------------------------------------------------------------------------
 //--- properties
 
@@ -482,7 +554,7 @@ class EMConfig {
     val defaultMaxTime = "60s"
 
     @Important(1.0)
-    @Cfg("Maximum amount of time allowed for the search. "+
+    @Cfg("Maximum amount of time allowed for the search. " +
             " The time is expressed with a string where hours (`h`), minutes (`m`) and" +
             " seconds (`s`) can be specified, e.g., `1h10m120s` and `72m` are both valid" +
             " and equivalent." +
@@ -501,15 +573,17 @@ class EMConfig {
 
     @Important(2.0)
     @Cfg("The path directory of where the generated test classes should be saved to")
-    //TODO check if can be created
+    @Folder
     var outputFolder = "src/em"
 
 
     @Important(2.0)
-    @Cfg("The name of generated file with the test cases, without file type extension. " +
-            "In JVM languages, if the name contains '.', folders will be created to represent " +
-            "the given package structure")
-    //TODO constrain of no spaces or weird characters, eg use regular expression
+    @Cfg("The name of generated file with the test cases, without file type extension." +
+            " In JVM languages, if the name contains '.', folders will be created to represent" +
+            " the given package structure." +
+            " Also, in JVM languages, should not use '-' in the file name, as not valid symbol" +
+            " for class identifiers.")
+    @Regex("[-a-zA-Z\$_][-0-9a-zA-Z\$_]*(.[-a-zA-Z\$_][-0-9a-zA-Z\$_]*)*")
     var testSuiteFileName = "EvoMasterTest"
 
     @Important(2.0)
@@ -546,7 +620,8 @@ class EMConfig {
 
     enum class ProblemType {
         REST,
-        @Experimental WEB
+        @Experimental
+        WEB
     }
 
     @Cfg("The type of SUT we want to generate tests for, e.g., a RESTful API")
@@ -556,7 +631,6 @@ class EMConfig {
     @Cfg("Specify if test classes should be created as output of the tool. " +
             "Usually, you would put it to 'false' only when debugging EvoMaster itself")
     var createTests = true
-
 
 
     enum class TestSuiteSplitType {
@@ -572,7 +646,8 @@ class EMConfig {
     var seed: Long = -1
 
     @Cfg("TCP port of where the SUT REST controller is listening on")
-    @Min(0.0) @Max(65535.0)
+    @Min(0.0)
+    @Max(65535.0)
     var sutControllerPort = ControllerConstants.DEFAULT_CONTROLLER_PORT
 
     @Cfg("Host name or IP address of where the SUT REST controller is listening on")
@@ -636,6 +711,7 @@ class EMConfig {
     var writeStatistics = false
 
     @Cfg("Where the statistics file (if any) is going to be written (in CSV format)")
+    @FilePath
     var statisticsFile = "statistics.csv"
 
     @Cfg("Whether should add to an existing statistics file, instead of replacing it")
@@ -647,6 +723,7 @@ class EMConfig {
     var snapshotInterval = -1.0
 
     @Cfg("Where the snapshot file (if any) is going to be written (in CSV format)")
+    @FilePath
     var snapshotStatisticsFile = "snapshot.csv"
 
     @Cfg("An id that will be part as a column of the statistics file (if any is generated)")
@@ -656,10 +733,11 @@ class EMConfig {
     var writeExtraHeuristicsFile = false
 
     @Cfg("Where the extra heuristics file (if any) is going to be written (in CSV format)")
+    @FilePath
     var extraHeuristicsFile = "extra_heuristics.csv"
 
 
-    enum class SecondaryObjectiveStrategy{
+    enum class SecondaryObjectiveStrategy {
         AVG_DISTANCE,
         AVG_DISTANCE_SAME_N_ACTIONS,
         BEST_MIN
@@ -676,7 +754,7 @@ class EMConfig {
     var structureMutationProbability = 0.5
 
 
-    enum class GeneMutationStrategy{
+    enum class GeneMutationStrategy {
         ONE_OVER_N,
         ONE_OVER_N_BIASED_SQL
     }
@@ -736,7 +814,7 @@ class EMConfig {
 
 
     @Cfg("Maximum size (in bytes) that EM handles response payloads in the HTTP responses. " +
-            "If larger than that, a response will not be stored internally in EM during the test generation. "+
+            "If larger than that, a response will not be stored internally in EM during the test generation. " +
             "This is needed to avoid running out of memory.")
     var maxResponseByteSize = 1_000_000
 
@@ -744,12 +822,13 @@ class EMConfig {
     var showProgress = true
 
     @Experimental
-    @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. "+
+    @Cfg("Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. " +
             "This is only needed when running experiments with different parameter settings")
     var enableProcessMonitor = false
 
     @Experimental
     @Cfg("Specify a folder to save results when a search monitor is enabled")
+    @Folder
     var processFiles = "process_data"
 
     @Experimental
@@ -799,7 +878,7 @@ class EMConfig {
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
-    enum class ResourceSamplingStrategy (val requiredArchive : Boolean = false){
+    enum class ResourceSamplingStrategy(val requiredArchive: Boolean = false) {
         NONE,
         /**
          * probability for applicable strategy is specified
@@ -820,11 +899,11 @@ class EMConfig {
         /**
          * probability for applicable strategy is adaptive with performance, i.e., Archive
          */
-        Archive (true),
+        Archive(true),
         /**
          * probability for applicable strategy is adaptive with performance, i.e., Archive
          */
-        ConArchive (true)
+        ConArchive(true)
     }
 
     @Experimental
@@ -845,6 +924,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a file that saves derived dependencies")
+    @FilePath
     var dependencyFile = "dependencies.csv"
 
     @Experimental
@@ -870,22 +950,22 @@ class EMConfig {
     @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
-    var S1iR : Double = 0.25
+    var S1iR: Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply S1dR when resource sampling strategy is 'Customized'")
     @Probability(false)
-    var S1dR : Double = 0.25
+    var S1dR: Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply S2dR when resource sampling strategy is 'Customized'")
     @Probability(false)
-    var S2dR : Double = 0.25
+    var S2dR: Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to apply SMdR when resource sampling strategy is 'Customized'")
     @Probability(false)
-    var SMdR : Double = 0.25
+    var SMdR: Double = 0.25
 
     @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
@@ -914,7 +994,7 @@ class EMConfig {
     @Cfg("Whether to enable archive-based gene mutation")
     var archiveGeneMutation = ArchiveGeneMutation.NONE
 
-    enum class ArchiveGeneMutation{
+    enum class ArchiveGeneMutation {
         NONE,
         SPECIFIED,
         ADAPTIVE
@@ -926,6 +1006,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a file that saves derived genes")
+    @FilePath
     var impactFile = "impact.csv"
 
     @Experimental
@@ -934,7 +1015,6 @@ class EMConfig {
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
     var baseTaintAnalysisProbability = 0.9
-
 
 
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
@@ -946,13 +1026,14 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
+    @FilePath
     var coveredTargetFile = "coveredTargets.txt"
 
     @Experimental
     @Cfg("Specify a format to organize the covered targets by the search")
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
 
-    enum class SortCoveredTargetBy{
+    enum class SortCoveredTargetBy {
         /**
          * sorted by ids of targets alphabetically
          */
@@ -969,8 +1050,8 @@ class EMConfig {
     }
 
 
-    fun timeLimitInSeconds() : Int{
-        if( maxTimeInSeconds > 0){
+    fun timeLimitInSeconds(): Int {
+        if (maxTimeInSeconds > 0) {
             return maxTimeInSeconds
         }
 
@@ -978,16 +1059,16 @@ class EMConfig {
         val m = maxTime.indexOf('m')
         val s = maxTime.indexOf('s')
 
-        val hours = if(h >= 0){
+        val hours = if (h >= 0) {
             maxTime.subSequence(0, h).toString().trim().toInt()
         } else 0
 
-        val minutes = if(m >=0 ){
-            maxTime.subSequence( if(h>=0) h+1 else 0, m).toString().trim().toInt()
+        val minutes = if (m >= 0) {
+            maxTime.subSequence(if (h >= 0) h + 1 else 0, m).toString().trim().toInt()
         } else 0
 
-        val seconds = if(s >=0){
-            maxTime.subSequence( if(m>=0) m+1 else (if(h>=0) h+1 else 0), s).toString().trim().toInt()
+        val seconds = if (s >= 0) {
+            maxTime.subSequence(if (m >= 0) m + 1 else (if (h >= 0) h + 1 else 0), s).toString().trim().toInt()
         } else 0
 
         return (hours * 60 * 60) + (minutes * 60) + seconds
