@@ -20,4 +20,8 @@ services:
   - docker
 
 
-script: travis_wait 50 mvn clean verify --fae  coveralls:report
+script: travis_wait 50 mvn clean verify --fae
+#  coveralls:report
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
