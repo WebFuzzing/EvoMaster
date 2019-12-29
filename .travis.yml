@@ -21,7 +21,7 @@ services:
 
 
 script: travis_wait 50 mvn clean verify --fae
-#  coveralls:report
 
+# After build is finshed, upload coverage results to CodeCov
 after_success:
   - bash <(curl -s https://codecov.io/bash)

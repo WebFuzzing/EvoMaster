@@ -761,7 +761,10 @@
 
                 <!--
                     To publish JaCoCo results to Coveralls.
-                    Should be run only on Travis
+                    Should be run only on Travis, by adding "coveralls:report"
+
+                    WARN: unfortunately, does not seem to work well with Kotlin :(
+                    So, rather use CodeCov, which is setup directly Travis
                  -->
                 <plugin>
                     <groupId>org.eluder.coveralls</groupId>
