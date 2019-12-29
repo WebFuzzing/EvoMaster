@@ -741,7 +741,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.3</version>
+                    <version>0.8.5</version>
                     <executions>
                         <execution>
                             <id>default-prepare-agent</id>
@@ -760,8 +760,25 @@
                 </plugin>
 
                 <!--
-                    Used for parsers. Eg, to analyze regex
-                  -->
+                    To publish JaCoCo results to Coveralls.
+                    Should be run only on Travis, by adding "coveralls:report"
+
+                    WARN: unfortunately, does not seem to work well with Kotlin :(
+                    So, rather use CodeCov, which is setup directly Travis
+                 -->
+                <plugin>
+                    <groupId>org.eluder.coveralls</groupId>
+                    <artifactId>coveralls-maven-plugin</artifactId>
+                    <version>4.3.0</version>
+                    <configuration>
+                        <sourceDirectories>
+                            <param>src/main/java</param>
+                            <param>src/main/kotlin</param>
+                        </sourceDirectories>
+                    </configuration>
+                </plugin>
+
+                <!-- Used for parsers. Eg, to analyze regex -->
                 <plugin>
                     <groupId>org.antlr</groupId>
                     <artifactId>antlr4-maven-plugin</artifactId>
