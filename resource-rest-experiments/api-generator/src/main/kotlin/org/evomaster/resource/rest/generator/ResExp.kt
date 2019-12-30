@@ -56,14 +56,13 @@ fun main(args : Array<String>){
 
     /*val exp = ResExp()
     exp.setDependency(5, config, ResExp.DependencyType.SPARSE)*/
-    config.numOfOneToMany =1
-    config.numOfOneToOne = 1
+    config.numOfOneToOne = 3
 
     config.outputType = GenConfig.OutputType.MAVEN_PROJECT
     config.outputContent = GenConfig.OutputContent.BOTH
-    config.dependencyKind = ConditionalDependencyKind.PROPERTY
+    //config.dependencyKind = ConditionalDependencyKind.PROPERTY
     config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
 
-    config.projectName = "rest-dep-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
+    config.projectName = "rest-dep-exi-cs-RM${config.restMethods.size}-N${config.numOfNodes}-1To1${config.numOfOneToOne}"
     GenerateREST(config).run()
 }
