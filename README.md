@@ -171,7 +171,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   we are very keen to receive feature requests, although of course we cannot
   guarantee when they are going to be implemented, if implemented at all. 
   As researchers, we want to know what are the problems that engineers in industry
-  do face, and that could be done to improve _EvoMaster_ to help them.
+  do face, and what could be done to improve _EvoMaster_ to help them.
   
   
 * *Pull Requests*: we are keen to receive PRs, as long as you agree

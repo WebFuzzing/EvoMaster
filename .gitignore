@@ -46,3 +46,4 @@ experiments/target/
 /e2e-tests/spring-rest-postgres/target/
 /core/testWithEMB.sh
 /resource-rest-experiments/api-generator/target/
+/e2e-tests/spring-rest-openapi-v3/target
