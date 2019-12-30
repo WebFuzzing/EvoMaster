@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
+import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
@@ -13,17 +14,23 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.URI
+import java.net.URISyntaxException
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md
  *
+ *  Create actions from a OpenApi/Swagger schema.
+ *  Must support both V2 and V3 specs.
  *
  */
 object RestActionBuilderV3 {
 
     private val log: Logger = LoggerFactory.getLogger(RestActionBuilderV3::class.java)
     private val idGenerator = AtomicInteger()
+
+    private val refCache = mutableMapOf<String, Gene>()
 
 
     /**
@@ -68,18 +75,18 @@ object RestActionBuilderV3 {
                         log.warn("Currently cannot handle 'path-scope' parameters")
                     }
 
-                    if(!e.value.description.isNullOrBlank()){
+                    if (!e.value.description.isNullOrBlank()) {
                         //TODO should we do something with it for doParseDescription?
                     }
 
-                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get,doParseDescription)
-                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post,doParseDescription)
-                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put,doParseDescription)
-                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch,doParseDescription)
-                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options,doParseDescription)
-                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete,doParseDescription)
-                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace,doParseDescription)
-                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head,doParseDescription)
+                    if (e.value.get != null) handleOperation(actionCluster, HttpVerb.GET, restPath, e.value.get, swagger, doParseDescription)
+                    if (e.value.post != null) handleOperation(actionCluster, HttpVerb.POST, restPath, e.value.post, swagger, doParseDescription)
+                    if (e.value.put != null) handleOperation(actionCluster, HttpVerb.PUT, restPath, e.value.put, swagger, doParseDescription)
+                    if (e.value.patch != null) handleOperation(actionCluster, HttpVerb.PATCH, restPath, e.value.patch, swagger, doParseDescription)
+                    if (e.value.options != null) handleOperation(actionCluster, HttpVerb.OPTIONS, restPath, e.value.options, swagger, doParseDescription)
+                    if (e.value.delete != null) handleOperation(actionCluster, HttpVerb.DELETE, restPath, e.value.delete, swagger, doParseDescription)
+                    if (e.value.trace != null) handleOperation(actionCluster, HttpVerb.TRACE, restPath, e.value.trace, swagger, doParseDescription)
+                    if (e.value.head != null) handleOperation(actionCluster, HttpVerb.HEAD, restPath, e.value.head, swagger, doParseDescription)
                 }
 
         checkSkipped(skipped, endpointsToSkip, actionCluster)
@@ -90,9 +97,10 @@ object RestActionBuilderV3 {
             verb: HttpVerb,
             restPath: RestPath,
             operation: Operation,
+            swagger: OpenAPI,
             doParseDescription: Boolean) {
 
-        val params = extractParams(restPath, operation)
+        val params = extractParams(restPath, operation, swagger)
 
         val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.filter { it.content != null && it.content.isNotEmpty() }
@@ -132,7 +140,8 @@ object RestActionBuilderV3 {
 
     private fun extractParams(
             restPath: RestPath,
-            operation: Operation
+            operation: Operation,
+            swagger: OpenAPI
     ): MutableList<Param> {
 
         val params = mutableListOf<Param>()
@@ -142,7 +151,7 @@ object RestActionBuilderV3 {
 
                     val name = p.name ?: "undefined"
 
-                    var gene = getGene(name, p.schema)
+                    var gene = getGene(name, p.schema, swagger)
 
                     if (p.`in` == "path" && gene is StringGene) {
                         /*
@@ -153,12 +162,12 @@ object RestActionBuilderV3 {
                         gene = StringGene(gene.name, (gene as StringGene).value, 1, (gene as StringGene).maxLength, listOf('/', '.'))
                     }
 
-                    if (p.required != true && p.`in` != "path") {
+                    if (p.required != true && p.`in` != "path" && gene !is OptionalGene) {
                         // As of V3, "path" parameters must be required
                         gene = OptionalGene(name, gene)
                     }
 
-                    //TODO could exploit "x-example" if available in Swagger
+                    //TODO could exploit "x-example" if available in OpenApi
 
                     when (p.`in`) {
                         "query" -> params.add(QueryParam(name, gene))
@@ -171,13 +180,13 @@ object RestActionBuilderV3 {
 
         //TODO do we need repairParams?
 
-        if(operation.requestBody != null){
+        if (operation.requestBody != null) {
 
             val body = operation.requestBody!!
 
             val name = "body"
 
-            if(body.content.isEmpty()){
+            if (body.content.isEmpty()) {
                 log.warn("No 'content' field in body payload for: $restPath")
             } else {
 
@@ -188,9 +197,9 @@ object RestActionBuilderV3 {
 
                 val obj: MediaType = body.content.values.first()
 
-                var gene = fromMediaType(obj)
+                var gene = getGene("body", obj.schema, swagger)
 
-                if (body.required != true) {
+                if (body.required != true && gene !is OptionalGene) {
                     gene = OptionalGene(name, gene)
                 }
 
@@ -204,17 +213,26 @@ object RestActionBuilderV3 {
         return params
     }
 
-    private fun fromMediaType(obj: MediaType): Gene {
+    private fun possiblyOptional(gene: Gene, required: Boolean?): Gene {
 
-        //TODO
-        return IntegerGene("TODO")
+        if (required != true) {
+            return OptionalGene(gene.name, gene)
+        }
+
+        return gene
     }
 
     private fun getGene(
             name: String,
-            schema: Schema<Any>,
+            schema: Schema<*>,
+            swagger: OpenAPI,
             history: MutableList<String> = mutableListOf()
     ): Gene {
+
+        if (!schema.`$ref`.isNullOrBlank()) {
+            return createObjectFromReference(name, schema.`$ref`, swagger)
+        }
+
 
         /*
             https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md#dataTypeFormat
@@ -269,12 +287,12 @@ object RestActionBuilderV3 {
             "number" -> return DoubleGene(name)
             "boolean" -> return BooleanGene(name)
             "string" -> {
-                return if(schema.pattern == null){
+                return if (schema.pattern == null) {
                     StringGene(name)
                 } else {
                     try {
                         RegexHandler.createGeneForEcma262(schema.pattern)
-                    } catch (e: Exception){
+                    } catch (e: Exception) {
                         /*
                             TODO: if the Regex is syntactically invalid, we should warn
                             the user. But, as we do not support 100% regex, might be an issue
@@ -287,67 +305,115 @@ object RestActionBuilderV3 {
                     }
                 }
             }
-//            "ref" -> {
-//                if (property == null) {
-//                    //TODO somehow will need to handle it
-//                    throw IllegalStateException("Cannot handle ref out of a property")
-//                }
-//                val rp = property as RefProperty
-//                return RestActionBuilder.createObjectFromReference(name, rp.`$ref`, swagger, history)
-//            }
-//            "array" -> {
-//
-//                val items = when {
-//                    property != null -> (property as ArrayProperty).items
-//                    parameter != null -> parameter.getItems()
-//                    else -> throw IllegalStateException("Failed to handle array")
-//                }
-//
-//                val template = RestActionBuilder.getGene(
-//                        name + "_item",
-//                        items.type,
-//                        items.format,
-//                        null, // no pattern available?
-//                        swagger,
-//                        items,
-//                        null,
-//                        history)
-//
-//                if (template is CycleObjectGene) {
-//                    return CycleObjectGene("<array> ${template.name}")
-//                }
-//
-//                return ArrayGene(name, template)
-//            }
-//            "object" -> {
-//                if (property == null) {
-//                    //TODO somehow will need to handle it
-//                    throw IllegalStateException("Cannot handle object out of a property")
-//                }
-//
-//                if (property is MapProperty) {
-//                    val ap = property.additionalProperties
-//                    return RestActionBuilder.createMapGene(
-//                            name, // + "_map", BMR: here's hoping nothing crashes + "_map",
-//                            ap.type,
-//                            ap.format,
-//                            swagger,
-//                            ap,
-//                            history)
-//                }
-//
-//
-//                if (property is ObjectProperty) {
-//
-//                    val fields = RestActionBuilder.createFields(property.properties, swagger, history)
-//                    return ObjectGene(name, fields, property.type)
-//                }
-//            }
+            "array" -> {
+                if (schema is ArraySchema) {
+                    val template = getGene(name + "_item", schema.items, swagger, history)
+
+                    if (template is CycleObjectGene) {
+                        return CycleObjectGene("<array> ${template.name}")
+                    }
+                    return ArrayGene(name, template)
+                } else {
+                    log.warn("Invalid 'array' definition for '$name'")
+                }
+            }
+
+            "object" -> {
+                return createObjectGene(name, schema, swagger, history)
+            }
+
             "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
         }
 
+        if(name == "body" && schema.properties?.isNotEmpty() == true) {
+            /*
+                This could happen when parsing a body-payload is formData
+            */
+            return createObjectGene(name, schema, swagger, history)
+        }
+
+
         throw IllegalArgumentException("Cannot handle combination $type/$format")
     }
+
+    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: MutableList<String>): Gene {
+
+        val fields = schema.properties?.entries?.map {
+            possiblyOptional(
+                    getGene(it.key, it.value, swagger, history),
+                    schema.required?.contains(it.key)
+            )
+        } ?: listOf()
+
+        /*
+                    Can be either a boolean or a Schema
+                 */
+        val additional = schema.additionalProperties
+
+        if (additional is Boolean) {
+            /*
+                        if 'false', no other fields besides the specified ones can be added.
+                        Default is 'true'.
+                     */
+            //TODO could add extra fields for robustness testing
+        }
+        if (additional is Schema<*>) {
+            /*
+                        TODO could add extra fields for robustness testing,
+                        with and without following the given schema for their type
+                     */
+        }
+
+        //TODO allOf, anyOf, oneOf and not
+
+        if (fields.isEmpty()) {
+            log.warn("No fields for object definition: $name")
+            return MapGene(name, StringGene(name + "_field"))
+        }
+
+        return ObjectGene(name, fields)
+    }
+
+
+    private fun createObjectFromReference(name: String,
+                                          reference: String,
+                                          swagger: OpenAPI,
+                                          history: MutableList<String> = mutableListOf()
+    ): Gene {
+
+        /*
+            We need to avoid cycles like A.B.A...
+         */
+        if (history.contains(reference)) {
+            return CycleObjectGene("Cycle for: $reference")
+        }
+        history.add(reference)
+
+
+        if(refCache.containsKey(reference)){
+            return refCache[reference]!!
+        }
+
+        try {
+            URI(reference)
+        } catch (e: URISyntaxException) {
+            LoggingUtil.uniqueWarn(log, "Object reference is not a valid URI: $reference")
+        }
+
+        //token after last /
+        val classDef = reference.substring(reference.lastIndexOf("/") + 1)
+
+        val schema = swagger.components.schemas[classDef]
+        if (schema == null) {
+            log.warn("No $classDef among the object definitions in the OpenApi file")
+            return ObjectGene(name, listOf(), classDef)
+        }
+
+        val gene = getGene(name, schema, swagger, history)
+        refCache[reference] = gene
+        return gene
+    }
+
 
     private fun removeDuplicatedParams(parameters: List<Parameter>?): List<Parameter> {
 
@@ -361,97 +427,6 @@ object RestActionBuilderV3 {
 
         return parameters ?: listOf()
     }
-
-//    private fun extractParams(
-//            opEntry: Map.Entry<HttpMethod, Operation>,
-//            swagger: Swagger,
-//            restPath: RestPath
-//    ): MutableList<Param> {
-//
-//        val params: MutableList<Param> = mutableListOf()
-//        val operation = opEntry.value
-//
-//        RestActionBuilder.removeDuplicatedParams(operation.parameters)
-//                .forEach { p ->
-//
-//                    val name = p.name ?: "undefined"
-//
-//                    if (p is AbstractSerializableParameter<*>) {
-//
-//                        val type = p.getType() ?: run {
-//                            RestActionBuilder.log.warn("Missing/invalid type for '$name' in Swagger file. Using default 'string'")
-//                            "string"
-//                        }
-//
-//                        var gene = RestActionBuilder.getGene(name, type, p.getFormat(), p.getPattern(), swagger, null, p)
-//
-//                        if(p.`in` == "path" && gene is StringGene){
-//                            /*
-//                                We want to avoid empty paths, and special chars like / which
-//                                would lead to 2 variables, or anyh other char that does affect the
-//                                structure of the URL, like '.'
-//                             */
-//                            gene = StringGene(gene.name, gene.value, 1, gene.maxLength, listOf('/', '.'))
-//                        }
-//
-//                        if (!p.required && p.`in` != "path") {
-//                            /*
-//                                Even if a "path" parameter might not be required, still
-//                                do not use an optional for it. Otherwise, might
-//                                end up in quite a few useless 405 errors.
-//
-//                                Furthermore, "path" parameters must be "required" according
-//                                to specs.
-//                                TODO: could issue warning that Swagger is incorrect
-//                            */
-//                            gene = OptionalGene(name, gene)
-//                        }
-//
-//                        //TODO could exploit "x-example" if available in Swagger
-//
-//                        when (p.`in`) {
-//                            "query" -> params.add(QueryParam(name, gene))
-//                            "path" -> params.add(PathParam(name, DisruptiveGene("d_", gene, 1.0)))
-//                            "header" -> params.add(HeaderParam(name, gene))
-//                            "formData" -> params.add(FormParam(name, gene))
-//                            else -> throw IllegalStateException("Unrecognized: ${p.getIn()}")
-//                        }
-//
-//                    } else if (p is BodyParameter
-//                            && !RestActionBuilder.shouldAvoidCreatingObject(p, swagger)
-//                            && opEntry.key != HttpMethod.GET
-//                    ) {
-//
-//                        val name = "body"
-//
-//                        var gene = p.schema.reference?.let { RestActionBuilder.createObjectFromReference(name, it, swagger) }
-//                                ?: (p.schema as ModelImpl).let {
-//                                    if (it.type == "object") {
-//                                        RestActionBuilder.createObjectFromModel(p.schema, "body", swagger, it.type)
-//                                    } else {
-//                                        RestActionBuilder.getGene(name, it.type, it.format, it.pattern, swagger)
-//                                    }
-//                                }
-//
-//                        if (!p.required) {
-//                            gene = OptionalGene(name, gene)
-//                        }
-//
-//                        var types = operation.consumes
-//                        if (types == null || types.isEmpty()) {
-//                            val msg = "Missing consume types in body payload definition. Defaulting to JSON. Endpoint: ${opEntry.key} $restPath}"
-//                            RestActionBuilder.log.warn(msg)
-//                            types = listOf("application/json")
-//                        }
-//
-//                        val contentTypeGene = EnumGene<String>("contentType", types)
-//
-//                        params.add(BodyParam(gene, contentTypeGene))
-//                    }
-//                }
-//
-//        return params
-//    }
 
 
     private fun checkSkipped(skipped: MutableList<String>, endpointsToSkip: List<String>, actionCluster: MutableMap<String, Action>) {

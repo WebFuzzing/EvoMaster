@@ -35,19 +35,19 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testMultiParamPath() {
-        loadAndAssertActions("/swagger/multi_param_path.json", 1)
+        loadAndAssertActions("/swagger/artificial/multi_param_path.json", 1)
     }
 
 
     @Test
     fun testNews() {
-        loadAndAssertActions("/swagger/news.json", 7)
+        loadAndAssertActions("/swagger/sut/news.json", 7)
     }
 
 
     @Test
     fun testCatWatch() {
-        val map = loadAndAssertActions("/swagger/catwatch.json", 23)
+        val map = loadAndAssertActions("/swagger/sut/catwatch.json", 23)
 
         val postScoring = map["POST:/config/scoring.project"] as RestAction
         assertEquals(3, postScoring.seeGenes().size)
@@ -59,40 +59,40 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testProxyPrint() {
-        loadAndAssertActions("/swagger/proxyprint.json", 115)
+        loadAndAssertActions("/swagger/sut/proxyprint.json", 115)
     }
 
     @Test
     fun testCreateActions() {
-        loadAndAssertActions("/swagger/positive_integer_swagger.json", 2)
+        loadAndAssertActions("/swagger/artificial/positive_integer_swagger.json", 2)
     }
 
 
     @Test
     fun testOCVN() {
-        loadAndAssertActions("/swagger/ocvn_1oc.json", 192)
+        loadAndAssertActions("/swagger/sut/ocvn_1oc.json", 192)
     }
 
     @Disabled("This is a bug in Swagger Core, reported at https://github.com/swagger-api/swagger-core/issues/2100")
     @Test
     fun testFeaturesServicesNull() {
-        loadAndAssertActions("/swagger/features_service_null.json", 18)
+        loadAndAssertActions("/swagger/sut/features_service_null.json", 18)
     }
 
     @Test
     fun testFeaturesServices() {
-        loadAndAssertActions("/swagger/features_service.json", 18)
+        loadAndAssertActions("/swagger/sut/features_service.json", 18)
     }
 
     @Test
     fun testScoutApi() {
-        loadAndAssertActions("/swagger/scout-api.json", 49)
+        loadAndAssertActions("/swagger/sut/scout-api.json", 49)
     }
 
 
     @Test
     fun testBranches() {
-        loadAndAssertActions("/swagger/branches.json", 3)
+        loadAndAssertActions("/swagger/artificial/branches.json", 3)
     }
 
 
@@ -101,7 +101,7 @@ class RestActionBuilderV3Test{
     @Disabled
     @Test
     fun testSimpleForm() {
-        val actions = loadAndAssertActions("/swagger/simpleform.json", 1)
+        val actions = loadAndAssertActions("/swagger/artificial/simpleform.json", 1)
 
         val a = actions.values.first() as RestCallAction
 
@@ -122,7 +122,7 @@ class RestActionBuilderV3Test{
     @Test
     fun testApisGuru() {
 
-        val actions = loadAndAssertActions("/swagger/apisguru/apis.guru.json", 2)
+        val actions = loadAndAssertActions("/swagger/apisguru-v2/apis.guru.json", 2)
 
         actions.values
                 .filterIsInstance<RestCallAction>()
@@ -134,6 +134,6 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testGreenPeace() {
-        loadAndAssertActions("/swagger/apisguru/greenpeace.org.json", 6)
+        loadAndAssertActions("/swagger/apisguru-v2/greenpeace.org.json", 6)
     }
 }
