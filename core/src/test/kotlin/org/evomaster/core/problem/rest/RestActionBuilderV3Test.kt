@@ -59,6 +59,9 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testProxyPrint() {
+
+        //TODO check for Principal, WebRequest, Map<String, String>
+
         loadAndAssertActions("/swagger/sut/proxyprint.json", 115)
     }
 

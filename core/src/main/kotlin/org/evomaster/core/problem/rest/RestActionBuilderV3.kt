@@ -182,6 +182,8 @@ object RestActionBuilderV3 {
 
         if (operation.requestBody != null) {
 
+            //TODO method check  and Principal/WebRequest
+
             val body = operation.requestBody!!
 
             val name = "body"
@@ -370,6 +372,8 @@ object RestActionBuilderV3 {
                         TODO could add extra fields for robustness testing,
                         with and without following the given schema for their type
                      */
+
+            //TODO actually needed for Proxyprint addPrintShopReviewUsingPOST
         }
 
         //TODO allOf, anyOf, oneOf and not
