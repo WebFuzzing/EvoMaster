@@ -18,6 +18,8 @@ For more information and for applying, see [here]().
 <br>
 -->
 
+### Summary 
+
 _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
 that automatically *generates* system-level test cases.
 Internally, it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
@@ -33,7 +35,15 @@ The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) format (
 The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
 
 
-A [short video](https://youtu.be/3mYxjgnhLEo) shows the use of _EvoMaster_ on one of the 
+<!--### Videos---> 
+<!-- 
+<div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div> 
+-->
+
+[![](docs/img/video-player-flaticon.png)](https://youtu.be/3mYxjgnhLEo) 
+
+A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
+shows the use of _EvoMaster_ on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 
