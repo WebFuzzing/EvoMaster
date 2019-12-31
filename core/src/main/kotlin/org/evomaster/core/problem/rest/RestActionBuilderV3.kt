@@ -146,7 +146,7 @@ object RestActionBuilderV3 {
 
         val params = mutableListOf<Param>()
 
-        removeDuplicatedParams(operation.parameters)
+        removeDuplicatedParams(operation)
                 .forEach { p ->
 
                     val name = p.name ?: "undefined"
@@ -230,7 +230,7 @@ object RestActionBuilderV3 {
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
-            return createObjectFromReference(name, schema.`$ref`, swagger)
+            return createObjectFromReference(name, schema.`$ref`, swagger, history)
         }
 
 
@@ -254,13 +254,21 @@ object RestActionBuilderV3 {
         val type = schema.type
         val format = schema.format
 
-        if (type == "string" && schema.enum?.isNotEmpty() == true) {
-            //TODO enum can be for any type, not just strings
-            //Besides the defined values, add one to test robustness
-            return EnumGene(name, (schema.enum as MutableList<String>).apply { add("EVOMASTER") })
-        }
+        if (schema.enum?.isNotEmpty() == true) {
 
-        //TODO enum integer
+            //Besides the defined values, add one to test robustness
+            when(type){
+                "string" ->
+                    return EnumGene(name, (schema.enum as MutableList<String>).apply { add("EVOMASTER") })
+                "number", "integer" -> {
+                    if (format == "double" || format == "float") {
+                        return EnumGene(name, (schema.enum as MutableList<Double>).apply { add(42.0) })
+                    }
+                    return EnumGene(name, (schema.enum as MutableList<Long>).apply { add(42) })
+                }
+                else -> log.warn("Cannot handle enum of type: $type")
+            }
+        }
 
         //first check for "optional" format
         when (format) {
@@ -327,7 +335,7 @@ object RestActionBuilderV3 {
 
         if(name == "body" && schema.properties?.isNotEmpty() == true) {
             /*
-                This could happen when parsing a body-payload is formData
+                This could happen when parsing a body-payload as formData
             */
             return createObjectGene(name, schema, swagger, history)
         }
@@ -391,7 +399,7 @@ object RestActionBuilderV3 {
 
 
         if(refCache.containsKey(reference)){
-            return refCache[reference]!!
+            return refCache[reference]!!.copy()
         }
 
         try {
@@ -415,17 +423,35 @@ object RestActionBuilderV3 {
     }
 
 
-    private fun removeDuplicatedParams(parameters: List<Parameter>?): List<Parameter> {
+    private fun removeDuplicatedParams(operation: Operation): List<Parameter> {
 
         /*
-            Duplicates are not allowed.
-            TODO should issue a warning if it happens
-            TODO detect duplicates... but would parser even allow it???
+            Duplicates are not allowed, based on combination of "name" and "location".
             https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md#operationObject
-            combination of "name" and "location"
          */
 
-        return parameters ?: listOf()
+        if(operation.parameters == null){
+            return listOf()
+        }
+
+        val selection = mutableListOf<Parameter>()
+        val seen = mutableSetOf<String>()
+
+        for(p in operation.parameters){
+
+            val key = p.`in` + "_" + p.name
+            if(! seen.contains(key)){
+                seen.add(key)
+                selection.add(p)
+            }
+        }
+
+        val diff = operation.parameters.size - selection.size
+        if(diff > 0){
+            log.warn("Operation ${operation.operationId} has $diff repeated parameters")
+        }
+
+        return selection
     }
 
 

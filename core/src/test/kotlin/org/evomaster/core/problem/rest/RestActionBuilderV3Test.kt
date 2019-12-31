@@ -112,7 +112,7 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testDuplicatedParamsInFeaturesServices() {
-        val actions = loadAndAssertActions("/swagger/features_service.json", 18)
+        val actions = loadAndAssertActions("/swagger/sut/features_service.json", 18)
         (actions["POST:/products/{productName}/configurations/{configurationName}/features/{featureName}"] as RestCallAction).apply {
             assertEquals(3, parameters.size)
         }
