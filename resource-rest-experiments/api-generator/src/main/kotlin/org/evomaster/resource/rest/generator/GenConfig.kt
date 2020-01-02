@@ -38,13 +38,16 @@ class GenConfig {
     var projectName = "auto-rest-example"
     var csName = "cs"
     var emName = "em"
+    var exName = "ex"
 
     var srcFolder = "src/main"
 
-    var csProjectPackage = "com.mz.resource.rest.artificial.cs"
+    var csProjectPackage = "org.resource.rest.artificial.cs"
 
-    var emProjectPackage = "com.mz.resource.rest.artificial.em.controller"
+    var emProjectPackage = "em.resource.rest.artificial.controller"
 
+    var exProjectPackage = "ex.resource.rest.artificial.controller"
+    
     var language = Format.JAVA_SPRING_SWAGGER
 
     enum class Format(val srcFolder : String, val resource : String?){

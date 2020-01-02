@@ -39,6 +39,7 @@ class JavaRestPostValueMethod(specification: ServiceClazz, method : RestMethod) 
 
     override fun getBody(): List<String> {
         val content = mutableListOf<String>()
+
         //check if the id exists
         content.add(assertNonExistence(specification.entityRepository.name, idVar))
 
@@ -68,6 +69,7 @@ class JavaRestPostValueMethod(specification: ServiceClazz, method : RestMethod) 
         }
 
         //refer to related entity
+        content.add("$created.${specification.entity.idProperty.nameSetterName()}($idVar);")
         if(referVars.isNotEmpty())
             content.add(JavaUtils.getSingleComment("refer to related entity"))
         (0 until specification.dto.referToOthers.size).forEach { index->
