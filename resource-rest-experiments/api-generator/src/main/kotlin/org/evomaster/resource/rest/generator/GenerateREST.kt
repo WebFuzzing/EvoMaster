@@ -4,7 +4,8 @@ import org.evomaster.resource.rest.generator.implementation.java.AppliedJavaType
 import org.evomaster.resource.rest.generator.implementation.java.app.JavaApp
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.implementation.java.dto.JavaDto
-import org.evomaster.resource.rest.generator.implementation.java.em.JavaEMController
+import org.evomaster.resource.rest.generator.implementation.java.controller.em.JavaEMController
+import org.evomaster.resource.rest.generator.implementation.java.controller.ex.JavaEXController
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntity
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntityRepository
 import org.evomaster.resource.rest.generator.implementation.java.service.JavaResourceAPI
@@ -12,6 +13,7 @@ import org.evomaster.resource.rest.generator.implementation.java.utils.RestDepUt
 import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.pom.CSPOModel
 import org.evomaster.resource.rest.generator.pom.EMPOModel
+import org.evomaster.resource.rest.generator.pom.EXPOModel
 import org.evomaster.resource.rest.generator.pom.PackagedPOModel
 import org.evomaster.resource.rest.generator.template.ClassTemplate
 import org.evomaster.resource.rest.generator.template.RegisterType
@@ -37,12 +39,18 @@ class GenerateREST(val config: GenConfig) {
             GenConfig.OutputContent.CS ->{
                 generateAndSaveCS(type)
             }
-            GenConfig.OutputContent.EM ->{
-                generateAndSaveEM("ResApp",type)
-            }
-            else ->{
+            GenConfig.OutputContent.CS_EM ->{
                 val cs = generateAndSaveCS(type)
                 generateAndSaveEM(cs.name, type)
+            }
+            GenConfig.OutputContent.CS_EX ->{
+                val cs = generateAndSaveCS(type)
+                generateAndSaveEX(cs.name, type)
+            }
+            GenConfig.OutputContent.CS_EM_EX ->{
+                val cs = generateAndSaveCS(type)
+                generateAndSaveEM(cs.name, type)
+                generateAndSaveEX(cs.name, type)
             }
 
         }
@@ -86,7 +94,7 @@ class GenerateREST(val config: GenConfig) {
 
     private fun generateAndSaveEM(appClazz: String, type: RegisterType){
         generateAndSaveCS(JavaEMController(AppClazz(
-                name = "EmbeddedEvoMasterController",
+                name = config.emMainClass,
                 rootPackage = config.emProjectPackage,
                 outputFolder = config.getEmOutputFolder()),
                 sutPackagePrefix = "${config.csProjectPackage}.",
@@ -94,15 +102,43 @@ class GenerateREST(val config: GenConfig) {
         ), type)
     }
 
+    private fun generateAndSaveEX(appClazz: String, type: RegisterType){
+        generateAndSaveCS(
+                JavaEXController(
+                        AppClazz(
+                            name = config.exMainClass,
+                            rootPackage = config.exProjectPackage,
+                            outputFolder = config.getExOutputFolder()),
+                        csName = config.projectName,
+                        jarName = config.getCSJarName(),
+                        sutPackagePrefix = "${config.csProjectPackage}.",
+                        appClazz = appClazz
+        ), type)
+    }
 
     private fun generatePOM(){
         when(config.outputType){
             GenConfig.OutputType.MAVEN_PROJECT ->{
-                val parent = PackagedPOModel(modules = mutableListOf(config.csName, config.emName),groupId = config.groupId, artifactId = config.projectName, output = config.getProjectFolder())
+                val parent = PackagedPOModel(modules = getModules(), groupId = config.groupId, artifactId = config.projectName, output = config.getProjectFolder())
                 parent.save()
-                val cs = CSPOModel(groupId = config.groupId, artifactId = config.csName, output = config.getCsRootFolder(), parent = parent)
+                val cs = CSPOModel(groupId = config.groupId, artifactId = config.csName, output = config.getCsRootFolder(), repackageName = config.repackageName(),parent = parent)
                 cs.save()
-                EMPOModel(groupId = config.groupId, artifactId = config.emName, output = config.getEmRootFolder(), csPOModel = cs, parent = parent).save()
+
+                when(config.outputContent){
+                    GenConfig.OutputContent.CS_EM ->{
+                        EMPOModel(groupId = config.groupId, artifactId = config.emName, output = config.getEmRootFolder(), csPOModel = cs, parent = parent).save()
+                    }
+                    GenConfig.OutputContent.CS_EX ->{
+                        EXPOModel(groupId = config.groupId, artifactId = config.exName, output = config.getExRootFolder(), repackageName = config.getEXJarFinalName(),exClazz = config.getFullExMainClass(), csPOModel = cs, parent = parent).save()
+                    }
+                    GenConfig.OutputContent.CS_EM_EX ->{
+                        EMPOModel(groupId = config.groupId, artifactId = config.emName, output = config.getEmRootFolder(), csPOModel = cs, parent = parent).save()
+                        EXPOModel(groupId = config.groupId, artifactId = config.exName, output = config.getExRootFolder(), repackageName = config.getEXJarFinalName(), exClazz = config.getFullExMainClass(), csPOModel = cs, parent = parent).save()
+                    }
+                    else ->{
+                        //do nothing
+                    }
+                }
             }
             GenConfig.OutputType.MAVEN_MODULE ->{
                 CSPOModel(config.groupId, config.csName, output = config.getCsRootFolder()).save()
@@ -190,25 +226,16 @@ class GenerateREST(val config: GenConfig) {
         return pros
     }
 
-}
+    private fun getModules() = when(config.outputContent){
+        GenConfig.OutputContent.CS -> listOf(config.csName)
+//        GenConfig.OutputContent.EM -> listOf(config.emName)
+//        GenConfig.OutputContent.EX -> listOf(config.exName)
+        GenConfig.OutputContent.CS_EM -> listOf(config.csName, config.emName)
+        GenConfig.OutputContent.CS_EX ->listOf(config.csName, config.exName)
+        GenConfig.OutputContent.CS_EM_EX ->listOf(config.csName, config.emName, config.exName)
 
-fun main(args : Array<String>){
-    val config = GenConfig()
+    }
 
-//    config.outputFolder = "e2e-tests/spring-examples/"
-//    config.outputType = GenConfig.OutputType.SOURCE
-//    config.csProjectPackage = "com.foo.rest.examples.spring.impacts"
-    config.numOfNodes = 50
-    config.numOfImpactProperties = 2
-    config.numOfExtraProperties = 8
-//    config.numOfOneToOne = 1
-    config.restMethods = listOf(RestMethod.POST_VALUE, RestMethod.GET_ALL, RestMethod.GET_ID)
-    config.branchesForImpact = 10
-    config.outputType = GenConfig.OutputType.MAVEN_PROJECT
-    config.outputContent = GenConfig.OutputContent.BOTH
-    config.dependencyKind = ConditionalDependencyKind.PROPERTY
-    config.projectName = "auto-dependency-rest-cs-RM${config.restMethods.size}-N${config.numOfNodes}-P${config.numOfExtraProperties}-IMP${config.numOfImpactProperties}-B${config.branchesForImpact}"
-    GenerateREST(config).run()
 }
 
 

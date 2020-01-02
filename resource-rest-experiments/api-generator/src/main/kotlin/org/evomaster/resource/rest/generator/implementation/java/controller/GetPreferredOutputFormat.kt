@@ -1,4 +1,4 @@
-package org.evomaster.resource.rest.generator.implementation.java.em
+package org.evomaster.resource.rest.generator.implementation.java.controller
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.template.Boundary
@@ -8,7 +8,7 @@ import org.evomaster.resource.rest.generator.template.Boundary
  */
 class GetPreferredOutputFormat : JavaMethod() {
     override fun getParams(): Map<String, String>  = mapOf()
-    override fun getBody(): List<String>  = listOf("return SutInfoDto.OutputFormat.JAVA_JUNIT_5;")
+    override fun getBody(): List<String>  = listOf("return SutInfoDto.OutputFormat.JAVA_JUNIT_4;")
 
     override fun getName(): String  = "getPreferredOutputFormat"
 

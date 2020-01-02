@@ -1,4 +1,4 @@
-package org.evomaster.resource.rest.generator.implementation.java.em
+package org.evomaster.resource.rest.generator.implementation.java.controller
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.model.CommonTypes
@@ -8,7 +8,7 @@ import org.evomaster.resource.rest.generator.template.MethodScript
 /**
  * created by manzh on 2019-10-11
  */
-class GetDatabaseDriverName : JavaMethod() {
+class GetH2DatabaseDriverName : JavaMethod() {
 
     override fun getParams(): Map<String, String> = mutableMapOf()
 

@@ -59,10 +59,11 @@ fun main(args : Array<String>){
     config.numOfOneToOne = 3
 
     config.outputType = GenConfig.OutputType.MAVEN_PROJECT
-    config.outputContent = GenConfig.OutputContent.BOTH
+    config.outputContent = GenConfig.OutputContent.CS_EM_EX
     //config.dependencyKind = ConditionalDependencyKind.PROPERTY
     config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
 
-    config.projectName = "rest-dep-exi-cs-RM${config.restMethods.size}-N${config.numOfNodes}-1To1${config.numOfOneToOne}"
+    //config.projectName = "rest-dep-exi-cs-RM${config.restMethods.size}-N${config.numOfNodes}-1To1${config.numOfOneToOne}"
+    config.projectName ="try2"
     GenerateREST(config).run()
 }

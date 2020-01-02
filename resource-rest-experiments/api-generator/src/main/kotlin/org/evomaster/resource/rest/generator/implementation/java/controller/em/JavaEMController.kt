@@ -1,6 +1,7 @@
-package org.evomaster.resource.rest.generator.implementation.java.em
+package org.evomaster.resource.rest.generator.implementation.java.controller.em
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaClass
+import org.evomaster.resource.rest.generator.implementation.java.controller.*
 import org.evomaster.resource.rest.generator.model.AppClazz
 import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.model.PropertySpecification
@@ -50,25 +51,25 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
                 CTXDeclaration(ctx),
                 //ApplicationDeclaration(application),
                 StaticDeclaration(port),
-                SimpleDeclaration(connection),
+                SimplePrivateDeclaration(connection),
                 StaticDeclaration(PropertySpecification(
                         name = "embeddedStarter",
-                        type =  "InstrumentedSutStarter",
+                        type = "InstrumentedSutStarter",
                         isId = false
                 )),
                 StaticDeclaration(PropertySpecification(
                         name = "baseUrlOfSut",
-                        type =  CommonTypes.STRING.toString(),
+                        type = CommonTypes.STRING.toString(),
                         isId = false
                 )),
                 StaticDeclaration(PropertySpecification(
                         name = "controller",
-                        type =  "SutController",
+                        type = "SutController",
                         isId = false
                 )),
                 StaticDeclaration(PropertySpecification(
                         name = "remoteController",
-                        type =  "RemoteController",
+                        type = "RemoteController",
                         isId = false
                 ))
         )
@@ -127,11 +128,11 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
                 GetSutPort(),
                 GetPackagePrefixesToCover(sutPackagePrefix),
                 IsSutRunning(),
-                GetDatabaseDriverName(),
-                GetConnection(),
+                GetH2DatabaseDriverName(),
+                GetConnection(connection.name),
                 StartSut(appClazz),
                 StopSut(),
-                ResetStateOfSut()
+                ResetStateOfSut(connection.name)
         )
     }
 

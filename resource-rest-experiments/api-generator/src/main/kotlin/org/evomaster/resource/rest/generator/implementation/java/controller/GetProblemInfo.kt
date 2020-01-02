@@ -1,4 +1,4 @@
-package org.evomaster.resource.rest.generator.implementation.java.em
+package org.evomaster.resource.rest.generator.implementation.java.controller
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.template.Boundary
@@ -6,14 +6,14 @@ import org.evomaster.resource.rest.generator.template.Boundary
 /**
  * created by manzh on 2019-10-14
  */
-class GetProblemInfo : JavaMethod() {
+class GetProblemInfo(val isEx : Boolean = false) : JavaMethod() {
     override fun getParams(): Map<String, String> = mapOf()
 
     override fun getBody(): List<String> =
             listOf(
                     """
                         return new RestProblem(
-                            "http://localhost:" + getSutPort() + "/v2/api-docs", null);
+                            ${if (!isEx) "\"http://localhost:\" + getSutPort()" else "getBaseURL()"} + "/v2/api-docs", null);
                     """.trimIndent()
             )
 

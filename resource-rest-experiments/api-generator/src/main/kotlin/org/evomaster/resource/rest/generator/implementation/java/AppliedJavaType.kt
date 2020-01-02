@@ -38,8 +38,9 @@ class AppliedJavaType : ConstantTypeScript {
                 "SutInfoDto.OutputFormat" to  "SutInfoDto.OutputFormat",
                 "InstrumentedSutStarter" to "InstrumentedSutStarter",
                 "SutController" to "SutController",
-                "RemoteController" to "RemoteController"
-        ).plus(typedCommonTypes).plus(map.map { it.value.toLowerCase() to it.value.toLowerCase() })
+                "RemoteController" to "RemoteController",
+                "Server" to "Server"
+        ).plus(typedCommonTypes).plus(map.map { it.key.name to it.value }).plus(map.map { it.key.name.toLowerCase() to it.value }).plus(map.map { it.value to it.value })
     }
 
     override fun getGenericTypes(list: List<String>): Map<String, String> {
