@@ -37,10 +37,10 @@ class GenConfig {
         CS_EM_EX(3)
     }
 
-    var groupId = "org.evomaster"
+    var groupId = "resource.exp"
     var projectName = "auto-rest-example"
-    var csName = "cs"
 
+    var csName = "cs"
     var emName = "em"
     var emMainClass = "EmbeddedEvoMasterController"
 

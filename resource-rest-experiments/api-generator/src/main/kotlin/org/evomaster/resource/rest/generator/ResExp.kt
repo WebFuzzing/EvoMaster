@@ -2,6 +2,8 @@ package org.evomaster.resource.rest.generator
 
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.model.StrategyNameResource
+import org.evomaster.resource.rest.generator.pom.DependencyManager
+import org.evomaster.resource.rest.generator.pom.PackagedPOModel
 import kotlin.math.roundToInt
 
 /**
@@ -10,40 +12,46 @@ import kotlin.math.roundToInt
 
 object ResExp{
 
-    fun n5_dense() : GenConfig{
-        val config_medium_5 = defaultN5()
-        config_medium_5.numOfTwoToTwo = 1
+    const val groupId = "evo.artificial.resource.exp"
 
-//        //branch
-//        config_medium_5.numOfExtraProperties = 2
-//        config_medium_5.branchesForImpact = 2
+    fun n5_dense(enablePropertyDependency : Boolean = false) : GenConfig{
+        val dense = default(5, enablePropertyDependency)
+        dense.numOfTwoToTwo = 1
 
-        config_medium_5.projectName ="n5-dense"
-        return config_medium_5
+        dense.projectName = "n5-dense${if (enablePropertyDependency)"-pd" else ""}"
+        setCSEMEX(dense)
+        return dense
     }
 
-    fun n5_medium() : GenConfig{
-        val config_medium_5 = defaultN5()
+    fun n5_medium(enablePropertyDependency : Boolean = false) : GenConfig{
+        val config_medium_5 = default(5, enablePropertyDependency)
         config_medium_5.numOfOneToOne = 3
 
-//        //branch
-//        config_medium_5.numOfExtraProperties = 2
-//        config_medium_5.branchesForImpact = 2
-
-        //additional dependency
-        config_medium_5.dependencyKind = ConditionalDependencyKind.PROPERTY
-
-        config_medium_5.projectName ="n5-medium"
+        config_medium_5.projectName ="n5-medium${if (enablePropertyDependency)"-pd" else ""}"
+        setCSEMEX(config_medium_5)
         return config_medium_5
     }
 
-    private fun defaultN5() : GenConfig{
-        val n5 = GenConfig()
-        n5.numOfNodes = 5
-        n5.outputType = GenConfig.OutputType.MAVEN_PROJECT
-        n5.outputContent = GenConfig.OutputContent.CS_EM_EX
-        n5.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
-        return n5
+    fun n5_sparse(enablePropertyDependency : Boolean = false) : GenConfig{
+        val sparse = default(5, enablePropertyDependency)
+        sparse.numOfOneToOne = 1
+
+        sparse.projectName ="n5-sparse${if (enablePropertyDependency)"-pd" else ""}"
+        setCSEMEX(sparse)
+
+        return sparse
+    }
+
+    private fun default(node: Int, enablePropertyDependency: Boolean) : GenConfig{
+        val config = GenConfig()
+        config.numOfNodes = node
+        config.groupId = groupId
+        config.outputType = GenConfig.OutputType.MAVEN_PROJECT
+        config.outputContent = GenConfig.OutputContent.CS_EM_EX
+        config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
+        if (enablePropertyDependency)
+            config.dependencyKind = ConditionalDependencyKind.PROPERTY
+        return config
     }
 
     fun setDependency(numOfNode : Int, config: GenConfig, type: DependencyType){
@@ -69,9 +77,28 @@ object ResExp{
         MEDIUM(0.5),
         DENSE(0.75)
     }
+
+    private fun setCSEMEX(config: GenConfig){
+        config.csName = "${config.projectName}-cs"
+        config.emName = "${config.projectName}-em"
+        config.exName = "${config.projectName}-ex"
+    }
 }
 
 fun main(args : Array<String>){
 
-    GenerateREST(ResExp.n5_dense()).run()
+    val exp = arrayOf(false, true).flatMap {
+        listOf(ResExp.n5_dense(it),ResExp.n5_medium(it),ResExp.n5_sparse(it))
+    }
+
+    val folder  = "/Users/mazh001/Documents/GitHub/artificial_rest_experiment/n5"
+    val expFolder = PackagedPOModel(modules = exp.map { it.projectName }, groupId = ResExp.groupId, artifactId = "n5", output = folder)
+    expFolder.save()
+
+    exp.forEach {
+        it.outputFolder = folder
+        GenerateREST(it).run()
+    }
+    Util.generateDeployScript(exp, DependencyManager.defined_version.getValue(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.versionKey), folder)
+
 }
