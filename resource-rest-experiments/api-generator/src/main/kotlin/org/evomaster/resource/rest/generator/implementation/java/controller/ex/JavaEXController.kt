@@ -1,9 +1,7 @@
 package org.evomaster.resource.rest.generator.implementation.java.controller.ex
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaClass
-import org.evomaster.resource.rest.generator.implementation.java.JavaDeclaration
 import org.evomaster.resource.rest.generator.implementation.java.controller.*
-import org.evomaster.resource.rest.generator.implementation.java.controller.em.*
 import org.evomaster.resource.rest.generator.model.AppClazz
 import org.evomaster.resource.rest.generator.model.PropertySpecification
 import org.evomaster.resource.rest.generator.template.DeclarationScript

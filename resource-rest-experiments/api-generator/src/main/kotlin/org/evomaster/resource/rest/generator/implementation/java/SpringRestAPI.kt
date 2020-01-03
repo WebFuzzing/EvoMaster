@@ -7,6 +7,7 @@ interface SpringRestAPI {
 
     fun assertNonExistence(repository : String, idScript : String, exceptionStatusCode : Int= 400) =
             """
+                //an entity with id $idScript should not exist
                 if ($repository.findById($idScript).isPresent())
                     return ResponseEntity.status($exceptionStatusCode).build();
             """.trimIndent()
@@ -19,24 +20,55 @@ interface SpringRestAPI {
 
     fun assertExistence(repository : String, idScript : String, exceptionStatusCode : Int= 400) =
             """
+                //an entity with id $idScript should exist
                 if (!$repository.findById($idScript).isPresent())
                     return ResponseEntity.status($exceptionStatusCode).build();
             """.trimIndent()
 
-    fun findEntityByIdAndAssigned(repository : String, idScript : String, target: String, targetType: String, exceptionStatusCode : Int= 400) =
+    fun findEntityByIdAndAssigned(repository : String, idScript : String, target: String, targetType: String, checkNull : Boolean = false, exceptionStatusCode : Int= 400) =
             """
+                ${if (checkNull) "if($idScript != null){" else ""}
                 if (! $repository.findById($idScript).isPresent())
                     return ResponseEntity.status($exceptionStatusCode).build();
                 $targetType $target =  $repository.findById($idScript).get();
+                ${if (checkNull) "}" else ""}
             """.trimIndent()
 
-    fun findOrCreateEntityByIdAndAssigned(repository : String, idScript : String, target: String, targetType: String, newInstanceMethod: String) =
+    fun findEntityByIdAndAssignedAndSave(repository : String, idScript : String, target: String, targetType: String,  settingScript: String, gettingScript : String, exceptionStatusCode : Int= 400) =
+            """
+                $targetType $target = null;
+                if($idScript != null){
+                    if (! $repository.findById($idScript).isPresent())
+                        return ResponseEntity.status($exceptionStatusCode).build();
+                    $target =  $repository.findById($idScript).get();
+                    $settingScript
+                }else{
+                    $target = $gettingScript;
+                }
+            """.trimIndent()
+
+    fun anyPropertiesNotNullUpdateEntity(repository: String, idScript: String, targetEntity : String,entityType: String, properties : List<String>, entitySetterProperties: List<String>) =
+            """
+                ${findEntityByIdAndAssigned(repository = repository, idScript = idScript, target = targetEntity, targetType = entityType)}
+                if(${properties.joinToString("||") { "$it != null" }}){
+                    ${properties.mapIndexed { index, p->  
+                            "if($p != null) $targetEntity.${entitySetterProperties[index]}($p);" 
+                        }.joinToString("")
+                    }
+                    ${repositorySave(repository=repository, entityVar = targetEntity)}
+                }
+            """.trimIndent()
+
+    fun findOrCreateEntityByIdAndAssigned(repository : String, idScript : String, target: String, targetType: String, newInstanceMethod: String, idSetter : String) =
             """
                 $targetType $target = null;
                 if ($repository.findById($idScript).isPresent())
                     $target =  $repository.findById($idScript).get();
-                else
+                else{
                     $target =  $newInstanceMethod;
+                    $idSetter
+                }
+                    
         
                 
             """.trimIndent()
@@ -55,6 +87,11 @@ interface SpringRestAPI {
                 if (! $repository.findById($idScript).isPresent())
                     return ResponseEntity.status($exceptionStatusCode).build();
                 $targetType $target =  $repository.findById($idScript).get().$toDtoMethod;
+            """.trimIndent()
+
+    fun entityConvertToDto(entityInstance: String, target: String, targetType: String, toDtoMethod: String, exceptionStatusCode : Int= 400) =
+            """
+                $targetType $target =  $entityInstance.$toDtoMethod;
             """.trimIndent()
 
     fun findEntityById(repository : String, idScript : String, entityType: String, target: String, exceptionStatusCode : Int= 400) =

@@ -1,21 +1,11 @@
 package org.evomaster.resource.rest.generator.pom
 
 import org.apache.maven.model.Build
-import org.apache.maven.model.Dependency
 import org.apache.maven.model.Model
 import org.apache.maven.model.PluginExecution
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer
-import org.codehaus.plexus.util.IOUtil
 import org.codehaus.plexus.util.xml.Xpp3Dom
-import org.codehaus.plexus.util.xml.Xpp3DomBuilder
-import org.codehaus.plexus.util.xml.Xpp3DomUtils
-import org.codehaus.plexus.util.xml.pull.MXParser
-import org.codehaus.plexus.util.xml.pull.XmlPullParser
-import org.w3c.dom.Document
-import org.w3c.dom.Element
-import org.w3c.dom.Node
 import java.io.FileWriter
-import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 

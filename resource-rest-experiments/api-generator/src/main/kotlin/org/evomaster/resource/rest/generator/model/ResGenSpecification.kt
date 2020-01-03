@@ -17,6 +17,9 @@ class ResGenSpecification(
         val plusProperties: Boolean = true,
         val dependencyKind: ConditionalDependencyKind
 ){
+    companion object{
+        const val TODTO_METHOD_NAME = "getDto"
+    }
     val name : String = resNode.name
     private val hideReferToOthers : MutableList<ResGenSpecification> = mutableListOf()
     private val obviousReferToOthers : MutableList<ResGenSpecification> = mutableListOf()
@@ -127,11 +130,16 @@ class ResGenSpecification(
                             isId = false,
                             autoGen = false,
                             allowNull = false,
-                            multiplicity = RelationMultiplicity.ONE_TO_ONE
+                            multiplicity = RelationMultiplicity.ONE_TO_ONE,
+                            ownedBy = nameEntityClass()
                     )
                 },
+                //refer to properties of owned resources
+                ownOthersProperties = ownOthers.map { res ->
+                    res.defaultProperties
+                },
                 isATable = doesMapToATable,
-                getDto = if (doesMapToATable) MethodSpecification("getDto", nameDtoClass(), mapOf()) else null,
+                getDto = if (doesMapToATable) MethodSpecification(TODTO_METHOD_NAME, nameDtoClass(), mapOf()) else null,
                 dto = getDto(),
                 rootPackage = nameEntityPackage(),
                 outputFolder = outputFolder,

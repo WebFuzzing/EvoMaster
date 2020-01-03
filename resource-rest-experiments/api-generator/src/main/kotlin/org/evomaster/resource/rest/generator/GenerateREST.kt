@@ -2,10 +2,10 @@ package org.evomaster.resource.rest.generator
 
 import org.evomaster.resource.rest.generator.implementation.java.AppliedJavaType
 import org.evomaster.resource.rest.generator.implementation.java.app.JavaApp
-import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
-import org.evomaster.resource.rest.generator.implementation.java.dto.JavaDto
 import org.evomaster.resource.rest.generator.implementation.java.controller.em.JavaEMController
 import org.evomaster.resource.rest.generator.implementation.java.controller.ex.JavaEXController
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
+import org.evomaster.resource.rest.generator.implementation.java.dto.JavaDto
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntity
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaEntityRepository
 import org.evomaster.resource.rest.generator.implementation.java.service.JavaResourceAPI
@@ -186,7 +186,8 @@ class GenerateREST(val config: GenConfig) {
                    dependencyKind = config.dependencyKind,
                    defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
                            PropertySpecification(DEFAULT_PROPERTY_NAME, CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
-                           PropertySpecification(DEFAULT_PROPERTY_VALUE, CommonTypes.INT.name, isId = false, autoGen = false, allowNull = false, impactful = true, dependency = config.dependencyKind, forDependency = true)
+                           PropertySpecification(DEFAULT_PROPERTY_VALUE,
+                                   CommonTypes.OBJ_INT.name, isId = false, autoGen = false, allowNull = false, impactful = true, dependency = config.dependencyKind, forAdditionalDependency = true)
                    )else generateProperties(config)
            ))
         }
@@ -219,7 +220,8 @@ class GenerateREST(val config: GenConfig) {
                     allowNull = p.allowNull,
                     impactful = p.impactful,
                     branches = p.branches,
-                    dependency = config.dependencyKind
+                    dependency = config.dependencyKind,
+                    forAdditionalDependency = true
             )
             pros.set(index, np)
         }

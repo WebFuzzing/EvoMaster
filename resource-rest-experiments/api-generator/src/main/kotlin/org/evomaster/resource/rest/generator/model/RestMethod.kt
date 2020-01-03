@@ -7,9 +7,10 @@ enum class RestMethod {
     POST,
     POST_VALUE,
     PUT,
+    //PUT_VALUE,
     GET_ID,
     GET_ALL,
-    PATCH,
+    //PATCH,
     PATCH_VALUE,
     DELETE
 }

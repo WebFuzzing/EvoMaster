@@ -83,7 +83,7 @@ class GenConfig {
 
     var numOfImpactProperties = 2
 
-    var propertiesTypes = listOf(CommonTypes.INT)//CommonTypes.values()
+    var propertiesTypes = listOf(CommonTypes.OBJ_INT)//CommonTypes.values(); make request param nullable for patch method
 
     var branchesForImpact = 4
 

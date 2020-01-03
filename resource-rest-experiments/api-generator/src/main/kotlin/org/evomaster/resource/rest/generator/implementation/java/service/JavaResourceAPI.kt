@@ -1,8 +1,8 @@
 package org.evomaster.resource.rest.generator.implementation.java.service
 
-import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.implementation.java.JavaClass
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.DeclarationScript
 import org.evomaster.resource.rest.generator.template.MethodScript
@@ -33,7 +33,7 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
                 RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.DELETE -> JavaRestDeleteMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.PATCH -> JavaRestPatchMethod(this.specification, r).apply { methods.add(this) }
+               // RestMethod.PATCH -> JavaRestPatchMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.PATCH_VALUE -> JavaRestPatchValueMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.PUT -> JavaRestPutMethod(this.specification, r).apply { methods.add(this) }
             }

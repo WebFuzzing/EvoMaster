@@ -1,7 +1,9 @@
 package org.evomaster.resource.rest.generator.pom
 
-import org.apache.maven.model.*
-
+import org.apache.maven.model.Dependency
+import org.apache.maven.model.Exclusion
+import org.apache.maven.model.Plugin
+import org.apache.maven.model.PluginExecution
 import org.codehaus.plexus.util.xml.Xpp3Dom
 
 /**

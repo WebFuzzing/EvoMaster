@@ -1,8 +1,8 @@
 package org.evomaster.resource.rest.generator.implementation.java.service
 
-import org.evomaster.resource.rest.generator.model.PropertySpecification
 import org.evomaster.resource.rest.generator.implementation.java.JavaDeclaration
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
+import org.evomaster.resource.rest.generator.model.PropertySpecification
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**

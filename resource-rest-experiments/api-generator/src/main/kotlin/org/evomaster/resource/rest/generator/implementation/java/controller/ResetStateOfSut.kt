@@ -2,7 +2,6 @@ package org.evomaster.resource.rest.generator.implementation.java.controller
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.template.Boundary
-import org.evomaster.resource.rest.generator.template.MethodScript
 
 /**
  * created by manzh on 2019-10-11

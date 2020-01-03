@@ -1,9 +1,7 @@
 package org.evomaster.resource.rest.generator.implementation.java.service
 
 import org.evomaster.resource.rest.generator.FormatUtil
-import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
-import org.evomaster.resource.rest.generator.implementation.java.SpringRestAPI
 import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.ServiceClazz
 import org.evomaster.resource.rest.generator.template.Boundary

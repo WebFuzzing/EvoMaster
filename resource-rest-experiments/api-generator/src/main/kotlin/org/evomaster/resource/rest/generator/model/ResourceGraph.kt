@@ -6,7 +6,8 @@ import org.evomaster.resource.rest.generator.FormatUtil
 import org.jgrapht.ext.JGraphXAdapter
 import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.DirectedMultigraph
-import org.jgrapht.io.*
+import org.jgrapht.io.ComponentNameProvider
+import org.jgrapht.io.DOTExporter
 import java.awt.Color
 import java.nio.file.Files
 import java.nio.file.Paths

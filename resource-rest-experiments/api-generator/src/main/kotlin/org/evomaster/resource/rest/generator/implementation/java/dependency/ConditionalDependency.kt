@@ -1,7 +1,6 @@
 package org.evomaster.resource.rest.generator.implementation.java.dependency
 
 import org.evomaster.resource.rest.generator.model.CommonTypes
-import org.evomaster.resource.rest.generator.model.PropertySpecification
 
 /**
  * created by manzh on 2019-12-20
@@ -24,7 +23,7 @@ object ConditionalDependency {
         if(CommonTypes.values().none { it.name.equals(type, ignoreCase = true)})
             throw IllegalArgumentException("a type of properties involved for dependency should be same based on current implementation")
 
-        if (type.equals(CommonTypes.INT.name, ignoreCase = true))
+        if (type.equals(CommonTypes.INT.name, ignoreCase = true) || type.equals(CommonTypes.OBJ_INT.name, ignoreCase = true))
             return handlingNumeric(proAs, proBs)
 
         // only support numeric at the moment (TODO String)

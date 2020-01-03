@@ -5,8 +5,6 @@ package org.evomaster.resource.rest.generator
  */
 object FormatUtil {
 
-
-
     fun upperFirst(text: String) = upper(text, 0)
 
     fun lowerFirst(text: String) = lower(text, 0)

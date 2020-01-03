@@ -13,6 +13,7 @@ abstract class ClazzSpecification(
 
 /**
  * @property methodToDto first is a name of method, and second is return value.
+ * @property ownOthersProperties only refer to properties of owned resources, which do not count as property of the entity!
  */
 class EntityClazz(
         name: String,
@@ -21,6 +22,7 @@ class EntityClazz(
         val defaultProperties : List<PropertySpecification>,
         val referToOthers: List<PropertySpecification>,
         val ownOthers: List<PropertySpecification>,
+        val ownOthersProperties : List<List<PropertySpecification>> = listOf(),
         val isATable : Boolean,
         val getDto : MethodSpecification?,
         val dto : DtoClazz,

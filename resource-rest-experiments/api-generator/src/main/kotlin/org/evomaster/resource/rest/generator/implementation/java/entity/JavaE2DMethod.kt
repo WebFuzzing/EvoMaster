@@ -1,8 +1,8 @@
 package org.evomaster.resource.rest.generator.implementation.java.entity
 
-import org.evomaster.resource.rest.generator.model.ResNodeTypedPropertySpecification
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.model.EntityClazz
+import org.evomaster.resource.rest.generator.model.ResNodeTypedPropertySpecification
 import org.evomaster.resource.rest.generator.template.Boundary
 
 

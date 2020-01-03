@@ -1,7 +1,6 @@
 package org.evomaster.resource.rest.generator.implementation.java.controller.ex
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
-import org.evomaster.resource.rest.generator.model.CommonTypes
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**

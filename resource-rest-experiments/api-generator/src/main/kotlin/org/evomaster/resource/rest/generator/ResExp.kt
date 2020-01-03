@@ -1,7 +1,6 @@
 package org.evomaster.resource.rest.generator
 
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
-import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.StrategyNameResource
 import kotlin.math.roundToInt
 
@@ -9,19 +8,42 @@ import kotlin.math.roundToInt
  * created by manzh on 2019-12-19
  */
 
-class ResExp{
+object ResExp{
 
-    fun desGenConfig() {
+    fun n5_dense() : GenConfig{
+        val config_medium_5 = defaultN5()
+        config_medium_5.numOfTwoToTwo = 1
 
-        val nodes = (1..10).map { it * 5 }
+//        //branch
+//        config_medium_5.numOfExtraProperties = 2
+//        config_medium_5.branchesForImpact = 2
 
-        val inproperty = 2
-        val nnproperty = 4
-        val branchForinproperty = 25
+        config_medium_5.projectName ="n5-dense"
+        return config_medium_5
+    }
 
-        for (n in nodes){
+    fun n5_medium() : GenConfig{
+        val config_medium_5 = defaultN5()
+        config_medium_5.numOfOneToOne = 3
 
-        }
+//        //branch
+//        config_medium_5.numOfExtraProperties = 2
+//        config_medium_5.branchesForImpact = 2
+
+        //additional dependency
+        config_medium_5.dependencyKind = ConditionalDependencyKind.PROPERTY
+
+        config_medium_5.projectName ="n5-medium"
+        return config_medium_5
+    }
+
+    private fun defaultN5() : GenConfig{
+        val n5 = GenConfig()
+        n5.numOfNodes = 5
+        n5.outputType = GenConfig.OutputType.MAVEN_PROJECT
+        n5.outputContent = GenConfig.OutputContent.CS_EM_EX
+        n5.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
+        return n5
     }
 
     fun setDependency(numOfNode : Int, config: GenConfig, type: DependencyType){
@@ -50,20 +72,6 @@ class ResExp{
 }
 
 fun main(args : Array<String>){
-    val config = GenConfig()
 
-    config.numOfNodes = 5
-
-    /*val exp = ResExp()
-    exp.setDependency(5, config, ResExp.DependencyType.SPARSE)*/
-    config.numOfOneToOne = 3
-
-    config.outputType = GenConfig.OutputType.MAVEN_PROJECT
-    config.outputContent = GenConfig.OutputContent.CS_EM_EX
-    //config.dependencyKind = ConditionalDependencyKind.PROPERTY
-    config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
-
-    //config.projectName = "rest-dep-exi-cs-RM${config.restMethods.size}-N${config.numOfNodes}-1To1${config.numOfOneToOne}"
-    config.projectName ="try2"
-    GenerateREST(config).run()
+    GenerateREST(ResExp.n5_dense()).run()
 }
