@@ -1,8 +1,10 @@
 package org.evomaster.core.problem.rest
 
 import io.swagger.parser.OpenAPIParser
+import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.MapGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
@@ -29,6 +31,67 @@ class RestActionBuilderV3Test{
     // ----------- V3 --------------
 
     //TODO v3
+
+    @Test
+    fun testBcgnews() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/bcgnws.json", 14)
+    }
+
+    @Test
+    fun testBclaws() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/bclaws.json", 7)
+    }
+
+    @Test
+    fun testBng2latlong() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/bng2latlong.json", 1)
+    }
+
+    @Test
+    fun testChecker() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/checker.json", 1)
+    }
+
+    @Test
+    fun testDisposable() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/disposable.json", 1)
+    }
+
+    @Test
+    fun testFraudDetection() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/fraud-detection.json", 2)
+    }
+
+    @Test
+    fun testGeolocation() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/geolocation.json", 1)
+    }
+
+    @Test
+    fun testIp2proxy() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/ip2proxy.com.json", 1)
+    }
+
+    @Test
+    fun testApisGuruNews() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/news.json", 27)
+    }
+
+    @Test
+    fun testOpen511() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/open511.json", 4)
+    }
+
+    @Test
+    fun testSmsVerification() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/sms-verification.json", 2)
+    }
+
+    @Test
+    fun testValidation() {
+        val map = loadAndAssertActions("/swagger/apisguru-v3/validation.json", 1)
+    }
+
 
 
     // ----------- V2 --------------
@@ -60,9 +123,24 @@ class RestActionBuilderV3Test{
     @Test
     fun testProxyPrint() {
 
-        //TODO check for Principal, WebRequest, Map<String, String>
+        //TODO check  Map<String, String> in additionalProperties
 
-        loadAndAssertActions("/swagger/sut/proxyprint.json", 115)
+        val map = loadAndAssertActions("/swagger/sut/proxyprint.json", 115)
+
+        val balance = map["GET:/consumer/balance"] as RestCallAction
+        //Principal should not appear, because anyway it is a GET
+        assertTrue(balance.parameters.none { it is BodyParam })
+
+
+        val update = map["PUT:/consumer/info/update"] as RestCallAction
+        //   Type is JSON, but no body info besides wrong Principal
+        assertTrue(update.parameters.none { it is BodyParam })
+
+
+        val register = map["POST:/consumer/register"] as RestCallAction
+        // Same for WebRequest
+        assertTrue(register.parameters.none { it is BodyParam })
+
     }
 
     @Test

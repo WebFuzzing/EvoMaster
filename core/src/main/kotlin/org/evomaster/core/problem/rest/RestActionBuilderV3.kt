@@ -100,7 +100,7 @@ object RestActionBuilderV3 {
             swagger: OpenAPI,
             doParseDescription: Boolean) {
 
-        val params = extractParams(restPath, operation, swagger)
+        val params = extractParams(verb, restPath, operation, swagger)
 
         val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.filter { it.content != null && it.content.isNotEmpty() }
@@ -139,6 +139,7 @@ object RestActionBuilderV3 {
 
 
     private fun extractParams(
+            verb: HttpVerb,
             restPath: RestPath,
             operation: Operation,
             swagger: OpenAPI
@@ -180,39 +181,67 @@ object RestActionBuilderV3 {
 
         //TODO do we need repairParams?
 
-        if (operation.requestBody != null) {
-
-            //TODO method check  and Principal/WebRequest
-
-            val body = operation.requestBody!!
-
-            val name = "body"
-
-            if (body.content.isEmpty()) {
-                log.warn("No 'content' field in body payload for: $restPath")
-            } else {
-
-                /*
-                    FIXME as of V3, different types might have different body definitions.
-                    This should refactored to enable possibility of different BodyParams
-                */
-
-                val obj: MediaType = body.content.values.first()
-
-                var gene = getGene("body", obj.schema, swagger)
-
-                if (body.required != true && gene !is OptionalGene) {
-                    gene = OptionalGene(name, gene)
-                }
-
-                val contentTypeGene = EnumGene<String>("contentType", body.content.keys)
-
-                params.add(BodyParam(gene, contentTypeGene))
-            }
-        }
+        handleBodyPaylaod(operation, verb, restPath, swagger, params)
 
 
         return params
+    }
+
+    private fun handleBodyPaylaod(
+            operation: Operation,
+            verb: HttpVerb,
+            restPath: RestPath,
+            swagger: OpenAPI,
+            params: MutableList<Param>) {
+
+        if (operation.requestBody == null) {
+            return
+        }
+
+        if (!listOf(HttpVerb.POST, HttpVerb.PATCH, HttpVerb.PUT).contains(verb)) {
+            log.warn("In HTTP, body payloads are undefined for $verb")
+            return
+        }
+
+        val body = operation.requestBody!!
+
+        val name = "body"
+
+        val bodies = body.content.filter {
+            /*
+                If it is a reference, then it must be present.
+                Had issue with SpringFox in Proxyprint generating wrong schemas
+                when WebRequest and Principal are used
+             */
+            val reference = it.value.schema.`$ref`
+            reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
+        }
+
+        if (bodies.isEmpty()) {
+            log.warn("No valid body-payload for $verb:$restPath")
+            /*
+                This will/should be handled by Testability Transformations at runtime.
+                So we just default to a string map
+             */
+            return
+        }
+
+
+        /*
+            FIXME as of V3, different types might have different body definitions.
+            This should refactored to enable possibility of different BodyParams
+        */
+        val obj: MediaType = bodies.values.first()
+        var gene = getGene("body", obj.schema, swagger)
+
+
+        if (body.required != true && gene !is OptionalGene) {
+            gene = OptionalGene(name, gene)
+        }
+
+        val contentTypeGene = EnumGene<String>("contentType", bodies.keys)
+
+        params.add(BodyParam(gene, contentTypeGene))
     }
 
     private fun possiblyOptional(gene: Gene, required: Boolean?): Gene {
@@ -259,18 +288,27 @@ object RestActionBuilderV3 {
         if (schema.enum?.isNotEmpty() == true) {
 
             //Besides the defined values, add one to test robustness
-            when(type){
+            when (type) {
                 "string" ->
                     return EnumGene(name, (schema.enum as MutableList<String>).apply { add("EVOMASTER") })
-                "number", "integer" -> {
-                    if (format == "double" || format == "float") {
-                        return EnumGene(name, (schema.enum as MutableList<Double>).apply { add(42.0) })
+                "integer" -> {
+                    if (format == "int64") {
+                        return EnumGene(name, (schema.enum as MutableList<Long>).apply { add(42) })
                     }
-                    return EnumGene(name, (schema.enum as MutableList<Long>).apply { add(42) })
+                    return EnumGene(name, (schema.enum as MutableList<Int>).apply { add(42) })
+                }
+                "number" -> {
+                    //if (format == "double" || format == "float") {
+                    //TODO: Is it always casted as Double even for Float??? Need test
+                    return EnumGene(name, (schema.enum as MutableList<Double>).apply { add(42.0) })
                 }
                 else -> log.warn("Cannot handle enum of type: $type")
             }
         }
+
+        /*
+            TODO constraints like min/max
+         */
 
         //first check for "optional" format
         when (format) {
@@ -335,7 +373,7 @@ object RestActionBuilderV3 {
             "file" -> return StringGene(name) //TODO file is a hack. I want to find a more elegant way of dealing with it (BMR)
         }
 
-        if(name == "body" && schema.properties?.isNotEmpty() == true) {
+        if (name == "body" && schema.properties?.isNotEmpty() == true) {
             /*
                 This could happen when parsing a body-payload as formData
             */
@@ -402,9 +440,33 @@ object RestActionBuilderV3 {
         history.add(reference)
 
 
-        if(refCache.containsKey(reference)){
+        if (refCache.containsKey(reference)) {
             return refCache[reference]!!.copy()
         }
+
+        try {
+            URI(reference)
+        } catch (e: URISyntaxException) {
+            LoggingUtil.uniqueWarn(log, "Object reference is not a valid URI: $reference")
+        }
+
+        val schema = getLocalObjectSchema(swagger, reference)
+
+        if (schema == null) {
+            //token after last /
+            val classDef = reference.substring(reference.lastIndexOf("/") + 1)
+
+            LoggingUtil.uniqueWarn(log, "No $classDef among the object definitions in the OpenApi file")
+
+            return ObjectGene(name, listOf(), classDef)
+        }
+
+        val gene = getGene(name, schema, swagger, history)
+        refCache[reference] = gene
+        return gene
+    }
+
+    private fun getLocalObjectSchema(swagger: OpenAPI, reference: String): Schema<*>? {
 
         try {
             URI(reference)
@@ -415,17 +477,8 @@ object RestActionBuilderV3 {
         //token after last /
         val classDef = reference.substring(reference.lastIndexOf("/") + 1)
 
-        val schema = swagger.components.schemas[classDef]
-        if (schema == null) {
-            log.warn("No $classDef among the object definitions in the OpenApi file")
-            return ObjectGene(name, listOf(), classDef)
-        }
-
-        val gene = getGene(name, schema, swagger, history)
-        refCache[reference] = gene
-        return gene
+        return swagger.components.schemas[classDef]
     }
-
 
     private fun removeDuplicatedParams(operation: Operation): List<Parameter> {
 
@@ -434,24 +487,24 @@ object RestActionBuilderV3 {
             https://github.com/OAI/OpenAPI-Specification/blob/3.0.1/versions/3.0.1.md#operationObject
          */
 
-        if(operation.parameters == null){
+        if (operation.parameters == null) {
             return listOf()
         }
 
         val selection = mutableListOf<Parameter>()
         val seen = mutableSetOf<String>()
 
-        for(p in operation.parameters){
+        for (p in operation.parameters) {
 
             val key = p.`in` + "_" + p.name
-            if(! seen.contains(key)){
+            if (!seen.contains(key)) {
                 seen.add(key)
                 selection.add(p)
             }
         }
 
         val diff = operation.parameters.size - selection.size
-        if(diff > 0){
+        if (diff > 0) {
             log.warn("Operation ${operation.operationId} has $diff repeated parameters")
         }
 
