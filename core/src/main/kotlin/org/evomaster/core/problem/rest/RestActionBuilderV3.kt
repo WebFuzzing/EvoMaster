@@ -101,6 +101,7 @@ object RestActionBuilderV3 {
             doParseDescription: Boolean) {
 
         val params = extractParams(verb, restPath, operation, swagger)
+        repairParams(params, restPath)
 
         val produces = operation.responses?.values //different response objects based on HTTP code
                 ?.filter { it.content != null && it.content.isNotEmpty() }
@@ -185,6 +186,36 @@ object RestActionBuilderV3 {
 
 
         return params
+    }
+
+    /**
+     * Have seen some cases of (old?) Swagger wrongly marking path params as query params
+     */
+    private fun repairParams(params: MutableList<Param>, restPath: RestPath) {
+
+        restPath.getVariableNames().forEach { n ->
+
+            val p = params.find { p -> p is PathParam && p.name == n }
+            if (p == null) {
+                log.warn("No path parameter for variable '$n' in $restPath")
+
+                //this could happen if bug in Swagger
+                var fixed = false
+                for (i in 0 until params.size) {
+                    if (params[i] is QueryParam && params[i].name == n) {
+                        params[i] = PathParam(params[i].name, DisruptiveGene("d_", params[i].gene, 1.0))
+                        fixed = true
+                        break
+                    }
+                }
+
+                if (!fixed) {
+                   //just create a string
+                    val k = PathParam(n, DisruptiveGene("d_", StringGene(n), 1.0))
+                    params.add(k)
+                }
+            }
+        }
     }
 
     private fun handleBodyPaylaod(
