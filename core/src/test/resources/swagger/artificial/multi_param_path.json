@@ -35,7 +35,7 @@
             "in": "path",
             "description": "z",
             "required": true,
-            "type": "int"
+            "type": "number"
           }
         ],
         "responses": {

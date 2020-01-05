@@ -12,6 +12,7 @@ enum class HttpVerb {
     DELETE,
     OPTIONS,
     PATCH,
+    TRACE,
     HEAD;
 
     companion object {

@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service.resource
 class ScoutApiResourceBasedTest : ResourceTestBase() {
 
     override fun getSchemaLocation() = "/sql_schema/scout-api.sql"
-    override fun getSwaggerLocation() = "/swagger/scout-api.json"
+    override fun getSwaggerLocation() = "/swagger/sut/scout-api.json"
 
     override fun testInitializedNumOfResourceCluster() {
         testSizeResourceCluster(21)

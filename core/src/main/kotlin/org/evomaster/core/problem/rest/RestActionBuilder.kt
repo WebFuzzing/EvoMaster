@@ -14,10 +14,10 @@ import org.evomaster.core.search.gene.*
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.Exception
-import java.sql.Ref
 import java.util.concurrent.atomic.AtomicInteger
 
 
+@Deprecated("Use RestActionBuilderV3 instead")
 class RestActionBuilder {
 
     companion object {
