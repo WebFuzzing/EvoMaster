@@ -32,7 +32,7 @@ random ones, trying to maximize measures like code coverage and fault detection.
 At the moment, _EvoMaster_ targets RESTful APIs compiled to 
 JVM __8__ and __11__ bytecode.
 The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
-format (both _v2_ and _v3_).
+format (either _v2_ or _v3_).
 The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
 
 
