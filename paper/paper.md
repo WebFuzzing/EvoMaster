@@ -13,13 +13,10 @@ authors:
     orcid: 0000-0003-0799-2930
     affiliation: 1
   - name: Juan Pablo Galeotti
-    orcid:
     affiliation: 2
   - name: Bogdan Marculescu
-    orcid:
     affiliation: 1
   - name: Man Zhang
-    orcid:
     affiliation: 1
 affiliations:
  - name: Kristiania University College, Department of Technology, Oslo, Norway
