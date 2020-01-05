@@ -12,6 +12,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
+/**
+ * FIXME: this needs to be refactored, as at the moment the
+ * keys are strings that are fixed.
+ * Keys should be of any basic type, and should be modifiable.
+ *
+ */
 class MapGene<T>(
         name: String,
         val template: T,

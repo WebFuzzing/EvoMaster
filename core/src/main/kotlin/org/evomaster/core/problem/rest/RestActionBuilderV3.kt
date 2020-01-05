@@ -431,18 +431,25 @@ object RestActionBuilderV3 {
 
         if (additional is Boolean) {
             /*
-                        if 'false', no other fields besides the specified ones can be added.
-                        Default is 'true'.
-                     */
+                if 'false', no other fields besides the specified ones can be added.
+                Default is 'true'.
+              */
             //TODO could add extra fields for robustness testing
         }
         if (additional is Schema<*>) {
             /*
-                        TODO could add extra fields for robustness testing,
-                        with and without following the given schema for their type
-                     */
+               TODO could add extra fields for robustness testing,
+               with and without following the given schema for their type
+             */
 
-            //TODO actually needed for Proxyprint addPrintShopReviewUsingPOST
+            /*
+                TODO proper handling.
+                Using a map is just a temp solution
+             */
+
+            if(fields.isEmpty()){
+                return MapGene(name, getGene(name+"_field", additional, swagger, history))
+            }
         }
 
         //TODO allOf, anyOf, oneOf and not
