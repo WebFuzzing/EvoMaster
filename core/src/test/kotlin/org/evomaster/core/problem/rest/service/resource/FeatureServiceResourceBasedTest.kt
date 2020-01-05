@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service.resource
 class FeatureServiceResourceBasedTest : ResourceTestBase() {
 
     override fun getSchemaLocation() = "/sql_schema/features_service.sql"
-    override fun getSwaggerLocation() = "/swagger/features_service.json"
+    override fun getSwaggerLocation() = "/swagger/sut/features_service.json"
 
     override fun testInitializedNumOfResourceCluster() {
         testSizeResourceCluster(11)
