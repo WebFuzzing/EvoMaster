@@ -30,6 +30,7 @@ object TestSuiteSplitter {
         }.toMutableList()
 
         if(errs.size <= 1) return listOf(solution)
+        // no clustering is attempted if there are not enough individuals containing errors
 
         return when(type){
             EMConfig.TestSuiteSplitType.NONE -> listOf(solution)
@@ -128,7 +129,7 @@ object TestSuiteSplitter {
             individuals.addAll(inds)
         }
 
-        val sortedSolution = Solution(individuals, "Clustered")
+        val sortedSolution = Solution(individuals, "${solution.testSuiteName}_Clustered")
         return sortedSolution
     }
 
@@ -169,7 +170,7 @@ object TestSuiteSplitter {
             sumSol.add(it)
         }
 
-        val sumSolution = Solution(sumSol, "EM_executiveSummary")
+        val sumSolution = Solution(sumSol, "${solution.testSuiteName}_executiveSummary")
         return mutableListOf(sumSolution)
     }
 
