@@ -91,7 +91,12 @@ class GenConfig {
 
     var dependencyKind : ConditionalDependencyKind = ConditionalDependencyKind.EXISTENCE
 
+    var hideExistsDependency = false
+
     var dependencyProperty : String = DEFAULT_PROPERTY_VALUE
+
+    var idName = "id"
+    var idType = CommonTypes.OBJ_INT
 
     fun getCsOutputFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.srcFolder}"
     fun getCsResourceFolder() = "${FormatUtil.formatFolder(getCsRootFolder())}$srcFolder/${language.resource}"

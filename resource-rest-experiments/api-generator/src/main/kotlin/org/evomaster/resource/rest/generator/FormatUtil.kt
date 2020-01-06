@@ -9,6 +9,10 @@ object FormatUtil {
 
     fun lowerFirst(text: String) = lower(text, 0)
 
+    fun formatResourceOnPath(name : String) = lowerFirst(name)
+
+    fun formatResourceIdAsPathParam(name: String, idName: String) = "${lowerFirst(name)}${upperFirst(idName)}"
+
 
     private fun upper(text : String, index : Int) = text.replaceRange(index, index+1, text[index].toUpperCase().toString())
 

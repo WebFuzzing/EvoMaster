@@ -7,11 +7,13 @@ import org.evomaster.resource.rest.generator.model.ServiceClazz
 /**
  * created by manzh on 2019-08-15
  */
-class JavaRestPutMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
+class JavaRestDeleteConMethod(specification: ServiceClazz, method : RestMethod) : JavaRestMethod(specification, method){
+
 
     override fun getReturn(): String? = "ResponseEntity"
 
+
     override fun getTags(): List<String> = listOf(
-            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "${specification.pathWithId}", "method" to "RequestMethod.PUT", "consumes" to "MediaType.APPLICATION_JSON"))}"
+            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "${specification.pathWithId}/{$idVar}", "method" to "RequestMethod.DELETE", "produces" to "MediaType.APPLICATION_JSON"))}"
     )
 }

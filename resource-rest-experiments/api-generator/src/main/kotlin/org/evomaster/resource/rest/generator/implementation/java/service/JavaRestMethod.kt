@@ -10,6 +10,7 @@ import org.evomaster.resource.rest.generator.implementation.java.dependency.Cond
 import org.evomaster.resource.rest.generator.implementation.java.entity.JavaE2DMethod
 import org.evomaster.resource.rest.generator.model.*
 import org.evomaster.resource.rest.generator.template.Boundary
+import org.evomaster.resource.rest.generator.template.Tag
 
 /**
  * created by manzh on 2019-12-19
@@ -32,56 +33,85 @@ abstract class JavaRestMethod (val specification: ServiceClazz, val method : Res
     override fun getParamTag(): Map<String, String> {
         return when(method){
             RestMethod.POST, RestMethod.PUT ->{
-                mapOf(dtoVar to SpringAnnotation.REQUEST_BODY.getText())
+                extraPathParamsTags(mapOf(dtoVar to SpringAnnotation.REQUEST_BODY.getText()).toMutableMap(), skip = listOf(idVar))
             }
             RestMethod.POST_VALUE ->{
-                mapOf(
-                        idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)))
-                        .plus(valueVars.plus(referVars.plus(ownedVars).toMap().keys).plus(ownedPVars.flatMap { it.map { s->s.first } })
-                                .map {valueVar-> valueVar to SpringAnnotation.REQUEST_PARAM.getText(mapOf("name" to valueVar)) }
-                        )
+                extraPathParamsTags(
+                        mapOf(
+                                idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar))
+                        ).plus(valueVars.plus(referVars.plus(ownedVars).toMap().keys).plus(ownedPVars.flatMap { it.map { s->s.first } })
+                                .map {valueVar-> valueVar to getTagText(valueVar) }
+                        ).toMutableMap()
+                )
+
             }
-            RestMethod.GET_ID, RestMethod.DELETE ->{
+            RestMethod.DELETE ->{
                 return mapOf(idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)))
             }
+            RestMethod.GET_ID, RestMethod.DELETE_CON -> extraPathParamsTags(mutableMapOf(idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar))))
             RestMethod.GET_ALL -> mapOf()
+            RestMethod.GET_ALL_CON -> extraPathParamsTags(mutableMapOf(), listOf(idVar)) //skip current idVar
             RestMethod.PATCH_VALUE ->{
                 /*
                     regarding patch method, it can update values of default properties, referred resources by id
                     and default properties of owned resources.  Since it does not allow to own an resource which
                     also owns/refer another resource, we don't need to handle the update of dependency of owned resources.
                 */
-                mapOf(
-                        idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)))
-                        .plus(valueVars.plus(referVars.toMap().keys).plus(ownedPVars.flatMap { it.map { s->s.first } })
-                                .map {valueVar-> valueVar to SpringAnnotation.REQUEST_PARAM.getText(mapOf("name" to valueVar, "required" to "false")) }
-                        )
+                extraPathParamsTags(
+                        mapOf(
+                                idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)))
+                                .plus(valueVars.plus(referVars.toMap().keys).plus(ownedPVars.flatMap { it.map { s->s.first } })
+                                        .map {valueVar-> valueVar to getTagText(valueVar, true) }
+                                ).toMutableMap()
+                )
+
             }
         }
+    }
+
+    private fun getTagText(name: String, patch : Boolean = false) : String{
+        if(specification.pathParams.contains(name))
+            return  SpringAnnotation.PATH_VAR.getText(mapOf("name" to name))
+        return if (patch) SpringAnnotation.REQUEST_PARAM.getText(mapOf("name" to name, "required" to "false")) else SpringAnnotation.REQUEST_PARAM.getText(mapOf("name" to name))
+    }
+
+    private fun extraPathParams(current : MutableMap<String, String>, skip : List<String> = listOf()): Map<String, String> {
+        val extra = specification.pathParams.filter { !current.keys.contains(it) && !skip.contains(it) }.sorted().map { it to specification.dto.idProperty.type }
+        current.putAll(extra)
+        return current
+    }
+
+    private fun extraPathParamsTags(current : MutableMap<String, String>, skip : List<String> = listOf()): Map<String, String> {
+        val extra = specification.pathParams.filter { !current.keys.contains(it) && !skip.contains(it)}.sorted().map { it to SpringAnnotation.PATH_VAR.getText(mapOf("name" to it)) }
+        current.putAll(extra)
+        return current
     }
 
     override fun getParams(): Map<String, String> {
         return when(method){
             RestMethod.POST, RestMethod.PUT ->{
-                mapOf(dtoVar to "${specification.dto.name}")
+                extraPathParams(mapOf(dtoVar to "${specification.dto.name}").toMutableMap(), skip = listOf(idVar))
+
             }
             RestMethod.POST_VALUE->{
-                mapOf(idVar to specification.dto.idProperty.type)
+                extraPathParams(mapOf(idVar to specification.dto.idProperty.type)
                         .plus(valueVars.mapIndexed { index, d-> d to specification.entity.defaultProperties[index].type })
                         .plus(referVars.toMap())
                         .plus(ownedVars.toMap())
-                        .plus(ownedPVars.flatten().toMap())
+                        .plus(ownedPVars.flatten().toMap()).toMutableMap())
             }
             RestMethod.PATCH_VALUE->{
-                mapOf(idVar to specification.dto.idProperty.type)
+                extraPathParams(mapOf(idVar to specification.dto.idProperty.type)
                         .plus(valueVars.mapIndexed { index, d-> d to specification.entity.defaultProperties[index].type })
                         .plus(referVars.toMap())
-                        .plus(ownedPVars.flatten().toMap())
+                        .plus(ownedPVars.flatten().toMap()).toMutableMap())
             }
-            RestMethod.GET_ID, RestMethod.DELETE ->{
+            RestMethod.DELETE ->{
                 return mapOf(idVar to "${specification.dto.idProperty.type}")
             }
             RestMethod.GET_ALL -> mapOf()
+            RestMethod.GET_ID, RestMethod.DELETE_CON -> extraPathParams(mutableMapOf(idVar to "${specification.dto.idProperty.type}"))
+            RestMethod.GET_ALL_CON -> extraPathParams(mutableMapOf(), listOf(idVar))
 
         }
     }
@@ -97,7 +127,7 @@ abstract class JavaRestMethod (val specification: ServiceClazz, val method : Res
         val content = mutableListOf<String>()
 
         when(method){
-            RestMethod.GET_ALL ->{
+            RestMethod.GET_ALL, RestMethod.GET_ALL_CON ->{
                 val allDtos = "allDtos"
                 content.add(findAllEntitiesAndConvertToDto(specification.entityRepository.name, specification.entity.name, allDtos, JavaE2DMethod(specification.entity).getInvocation(null),specification.dto.name))
                 content.add(returnWithContent(allDtos))
@@ -111,7 +141,7 @@ abstract class JavaRestMethod (val specification: ServiceClazz, val method : Res
                 content.add(returnWithContent(dto))
                 return content
             }
-            RestMethod.DELETE ->{
+            RestMethod.DELETE, RestMethod.DELETE_CON ->{
                 content.add(assertExistence(specification.entityRepository.name, idVar))
                 content.add(repositoryDeleteById(specification.entityRepository.name, idVar))
                 content.add(returnStatus(200))

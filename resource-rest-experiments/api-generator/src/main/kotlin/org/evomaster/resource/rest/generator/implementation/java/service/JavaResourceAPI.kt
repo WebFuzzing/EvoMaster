@@ -31,7 +31,9 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
                 RestMethod.POST -> JavaRestPostMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.POST_VALUE-> JavaRestPostValueMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.GET_ALL_CON -> JavaRestGetCollectionWithConMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.DELETE -> JavaRestDeleteMethod(this.specification, r).apply { methods.add(this) }
+                RestMethod.DELETE_CON -> JavaRestDeleteConMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification, r).apply { methods.add(this) }
                // RestMethod.PATCH -> JavaRestPatchMethod(this.specification, r).apply { methods.add(this) }
                 RestMethod.PATCH_VALUE -> JavaRestPatchValueMethod(this.specification, r).apply { methods.add(this) }
@@ -63,7 +65,7 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
     override fun generateConstructors(types: RegisterType) : List<String> = listOf()
 
     override fun getTags(): List<String> {
-        return listOf(SpringAnnotation.REST_CONTROLLER.getText(), SpringAnnotation.REQUEST_MAPPING.getText(mapOf("path" to "/api/${specification.resourceOnPath}"))).map { "@$it" }
+        return listOf(SpringAnnotation.REST_CONTROLLER.getText(), SpringAnnotation.REQUEST_MAPPING.getText(mapOf("path" to "/api"))).map { "@$it" }
     }
 
     override fun getName(): String = specification.name

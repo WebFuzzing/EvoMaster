@@ -6,7 +6,7 @@ import org.evomaster.resource.rest.generator.template.Boundary
 /**
  * created by manzh on 2019-10-11
  */
-class EXControllerMain(val jarName : String) : JavaMethod() {
+class EXControllerMain(val jarName : String, val csName:String) : JavaMethod() {
     override fun getParams(): Map<String, String> = mapOf("args" to "String[]")
 
     override fun getBody(): List<String> = listOf(
@@ -19,7 +19,7 @@ class EXControllerMain(val jarName : String) : JavaMethod() {
                 if (args.length > 1) {
                   sutPort = Integer.parseInt(args[1]);
                 }
-                String jarLocation = "cs/target";
+                String jarLocation = "$csName/target";
                 if (args.length > 2) {
                   jarLocation = args[2];
                 }

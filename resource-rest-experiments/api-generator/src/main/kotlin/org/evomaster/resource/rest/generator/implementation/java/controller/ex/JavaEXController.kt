@@ -113,7 +113,7 @@ class JavaEXController(specification: AppClazz, val csName : String, val jarName
 
     override fun getMethods(): List<MethodScript> {
         return listOf(
-                EXControllerMain(jarName = jarName),
+                EXControllerMain(jarName = jarName, csName = csName),
                 DbUrlMethod(csName),
                 GetInputParametersMethod(),
                 GetJVMParametersMethod(),

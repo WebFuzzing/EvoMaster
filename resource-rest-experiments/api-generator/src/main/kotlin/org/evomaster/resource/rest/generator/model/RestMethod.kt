@@ -10,7 +10,9 @@ enum class RestMethod {
     //PUT_VALUE,
     GET_ID,
     GET_ALL,
+    GET_ALL_CON, // get all resoruces with constraints on its owners by their ids
     //PATCH,
     PATCH_VALUE,
-    DELETE
+    DELETE,
+    DELETE_CON
 }

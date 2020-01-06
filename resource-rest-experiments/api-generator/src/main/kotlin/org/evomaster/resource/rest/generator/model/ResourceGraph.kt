@@ -8,6 +8,7 @@ import org.jgrapht.graph.DefaultEdge
 import org.jgrapht.graph.DirectedMultigraph
 import org.jgrapht.io.ComponentNameProvider
 import org.jgrapht.io.DOTExporter
+import org.jgrapht.traverse.BreadthFirstIterator
 import java.awt.Color
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -18,23 +19,26 @@ import kotlin.math.pow
 /**
  * created by manzh on 2019-08-19
  */
-class ResourceGraph(
-        val numOfNodes : Int,
-        val multiplicity: List<EdgeMultiplicitySpecification>,
-        private val graphName : String = "resourceGraph",
-        val strategyNameResource : StrategyNameResource = StrategyNameResource.RAND
-) {
+class ResourceGraph{
 
-    companion object{
-        const val MAX_LOOP = 3
-    }
-    val nodes : MutableMap<String, ResNode> = mutableMapOf()
-    val edges : MutableList<ResEdge> = mutableListOf()
+    private val numOfNodes : Int
+    private val graphName : String
+    private var strategyNameResource : StrategyNameResource? = null
+    val nodes : MutableMap<String, ResNode> //= mutableMapOf()
+    val edges : MutableList<ResEdge> //= mutableListOf()
 
-    private val alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz"
-    private val upperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    constructor(
+            numOfNodes : Int,
+            multiplicity: List<EdgeMultiplicitySpecification>,
+            graphName : String = "resourceGraph",
+            strategyNameResource : StrategyNameResource = StrategyNameResource.RAND
+    ){
+        this.numOfNodes = numOfNodes
+        this.graphName = graphName
+        this.strategyNameResource = strategyNameResource
+        nodes = mutableMapOf()
+        edges = mutableListOf()
 
-    init {
         multiplicity.forEach { s ->
             if (s.n == 1){
                 if (s.m == 1){
@@ -57,6 +61,30 @@ class ResourceGraph(
                 nodes.put(this.name, this)
             }
         }
+    }
+
+    constructor(nodes : MutableMap<String, ResNode>, edges : MutableList<ResEdge>, graphName: String = "resourceGraph"){
+        this.nodes = nodes
+        this.edges = edges
+        this.graphName = graphName
+        this.numOfNodes = nodes.size
+    }
+
+    private var graph : DirectedMultigraph<ResNode, LabelEdge>? = null
+    private var graphOnlyDepend : DirectedMultigraph<ResNode, LabelEdge>? = null
+
+    companion object{
+        const val MAX_LOOP = 3
+        const val INCLUDE_LABEL ="<includes>"
+        const val DEPEND_LABEL = "<depends>"
+    }
+
+
+    private val alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvxyz"
+    private val upperAlpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+    init {
+
     }
 
     private fun add(numOfOneToOne : Int){
@@ -138,7 +166,7 @@ class ResourceGraph(
         return name
     }
 
-    private fun randomResourceName() : String = when(strategyNameResource){
+    private fun randomResourceName() : String = when(strategyNameResource!!){
         StrategyNameResource.RAND -> "${random()}"
         StrategyNameResource.RAND_FIXED_LENGTH -> {
             val len = 5
@@ -169,24 +197,65 @@ class ResourceGraph(
     fun getSoleNodes() : Map<String, ResNode> = nodes.filter { it.value.outgoing.isEmpty() && it.value.incoming.isEmpty() }
 
     fun save(outputFolder : String, format : GraphExportFormat = GraphExportFormat.DOT){
-        val graph = DirectedMultigraph<ResNode, LabelEdge>(LabelEdge::class.java)
-        nodes.values.forEach {
-            graph.addVertex(it)
-            if (it is MultipleResNode){
-                it.nodes.forEach{i->
-                    graph.addEdge(it, i, LabelEdge("<includes>"))
-                }
-            }
-        }
-        edges.forEach {
-            graph.addEdge(it.source, it.target, LabelEdge("<depends>"))
-        }
+        val graph = getGraph()
         val dir = FormatUtil.formatFolder(outputFolder)
         Files.createDirectories(Paths.get(dir))
         when(format){
             GraphExportFormat.DOT -> saveAsDOT(dir, graph)
             GraphExportFormat.PNG -> saveAsImage(dir, graph)
         }
+    }
+    fun breadth(resNode: ResNode): List<ResNode>{
+        val breadthFirstIterator = BreadthFirstIterator<ResNode, LabelEdge>(getGraphOnlyDependency(), resNode)
+        return breadthFirstIterator.asSequence().toList()
+    }
+
+    fun getPath(resNode: ResNode): String{
+        return "/${breadth(resNode).reversed().joinToString("/"){FormatUtil.formatResourceOnPath(it.name)}}"
+    }
+
+    fun getPathWithIds(resNode: ResNode, idName: String, includeDependency : Boolean): String{
+        if (!includeDependency) return "/${FormatUtil.formatResourceOnPath(resNode.name)}"
+        val path = breadth(resNode).reversed().flatMap {
+            if(it.name == resNode.name)
+                listOf(FormatUtil.formatResourceOnPath(it.name))
+            else
+                listOf(FormatUtil.formatResourceOnPath(it.name), "{${FormatUtil.formatResourceIdAsPathParam(it.name, idName)}}")
+        }.joinToString("/")
+        return "/$path"
+    }
+
+    fun getPathParams(resNode: ResNode, idName: String) : List<String>{
+        return breadth(resNode).map { FormatUtil.formatResourceIdAsPathParam(it.name, idName) }
+    }
+
+    private fun getGraph() : DirectedMultigraph<ResNode, LabelEdge>{
+        if(graph != null) return graph!!
+        graph = DirectedMultigraph<ResNode, LabelEdge>(LabelEdge::class.java)
+        nodes.values.forEach {
+            graph!!.addVertex(it)
+            if (it is MultipleResNode){
+                it.nodes.forEach{i->
+                    graph!!.addEdge(it, i, LabelEdge(INCLUDE_LABEL))
+                }
+            }
+        }
+        edges.forEach {
+            graph!!.addEdge(it.source, it.target, LabelEdge(DEPEND_LABEL))
+        }
+        return graph!!
+    }
+
+    private fun getGraphOnlyDependency() : DirectedMultigraph<ResNode, LabelEdge>{
+        if(graphOnlyDepend != null) return graphOnlyDepend!!
+        graphOnlyDepend = DirectedMultigraph<ResNode, LabelEdge>(LabelEdge::class.java)
+        nodes.values.forEach {
+            graphOnlyDepend!!.addVertex(it)
+        }
+        edges.forEach {
+            graphOnlyDepend!!.addEdge(it.source, it.target, LabelEdge(DEPEND_LABEL))
+        }
+        return graphOnlyDepend!!
     }
 
     inner class LabelEdge(val label : String) : DefaultEdge()
@@ -207,6 +276,7 @@ class ResourceGraph(
         val image = mxCellRenderer.createBufferedImage(adapter, null, 2.0, Color.WHITE, true, null)
         ImageIO.write(image, "PNG", Paths.get("$outputFolder$graphName.png").toFile())
     }
+
 }
 
 enum class GraphExportFormat{

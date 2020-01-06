@@ -11,7 +11,9 @@ class JavaRestPostMethod(specification: ServiceClazz, method : RestMethod) : Jav
 
     override fun getReturn(): String = "ResponseEntity"
 
-    override fun getTags(): List<String> = listOf(
-            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "", "method" to "RequestMethod.POST", "consumes" to "MediaType.APPLICATION_JSON"))}"
-    )
+    override fun getTags(): List<String> {
+        return listOf(
+                "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "${specification.pathWithId}", "method" to "RequestMethod.POST", "consumes" to "MediaType.APPLICATION_JSON"))}"
+        )
+    }
 }

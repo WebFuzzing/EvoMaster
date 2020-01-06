@@ -105,7 +105,7 @@ class EXPOModel(groupId: String, artifactId: String, version: String = DEFAULT_V
         model.version = version
         model.packaging = "jar"
         model.modelVersion = "4.0.0"
-        model.dependencies.add(DependencyManager.EVOMASTER_CORE.getDependency())
+//        model.dependencies.add(DependencyManager.EVOMASTER_CORE.getDependency())
         model.dependencies.add(DependencyManager.EVOMASTER_CLIENT_JAVA_CONTROLLER.getDependency())
         model.dependencies.add(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.getDependency())
         model.dependencies.add(DependencyManager.IO_REST_ASSURED.getDependency())

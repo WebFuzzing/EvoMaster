@@ -16,11 +16,12 @@ open class Tag (val content : String){
 }
 
 open class RelationTag(content: String) : Tag(content){
-    private val params = mapOf("mappedBy" to false,"cascade" to true,"orphanRemoval" to true)
+    //private val params = mapOf("mappedBy" to false,"cascade" to true,"orphanRemoval" to true)
+    private val params = mapOf("cascade" to true,"orphanRemoval" to true)
     override fun validateParams(param: String): Boolean = params.containsKey(param)
     override fun withoutQuotation(param: String): Boolean = params.getValue(param)
 
     fun getTextForOwnedResource(ownerType : String) = getText(
-            mapOf("mappedBy" to ownerType,"cascade" to "CascadeType.ALL","orphanRemoval" to "true")
+            mapOf("cascade" to "CascadeType.ALL","orphanRemoval" to "true")
     )
 }

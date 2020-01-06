@@ -22,7 +22,7 @@ import kotlin.random.Random
 /**
  * created by manzh on 2019-08-16
  */
-class GenerateREST(val config: GenConfig) {
+class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGraph? = null) {
 
     companion object{
         const val DEFAULT_PROPERTY_NAME = "name"
@@ -52,13 +52,17 @@ class GenerateREST(val config: GenConfig) {
                 generateAndSaveEM(cs.name, type)
                 generateAndSaveEX(cs.name, type)
             }
-
         }
-
     }
 
     private fun init(){
-        val graph = ResourceGraph(
+        val graph = generateGraph()
+        graph.save(config.getCsResourceFolder())
+        createResources(graph)
+    }
+
+    fun generateGraph() : ResourceGraph{
+        return resourceGraph?: ResourceGraph(
                 numOfNodes = config.numOfNodes,
                 multiplicity = listOf(
                         EdgeMultiplicitySpecification(config.numOfOneToOne, 1,1),
@@ -71,8 +75,6 @@ class GenerateREST(val config: GenConfig) {
                 ),
                 strategyNameResource = config.nameStrategy
         )
-        graph.save(config.getCsResourceFolder())
-        createResources(graph)
     }
 
     private fun generateAndSaveCS(type: RegisterType) : AppClazz{
@@ -184,11 +186,16 @@ class GenerateREST(val config: GenConfig) {
                    outputFolder = config.getCsOutputFolder(),
                    restMethods = config.restMethods,
                    dependencyKind = config.dependencyKind,
+                   idProperty = PropertySpecification(config.idName, config.idType.name, isId = true, autoGen = false, allowNull = false, impactful = true),
                    defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
                            PropertySpecification(DEFAULT_PROPERTY_NAME, CommonTypes.STRING.name, isId = false, autoGen = false, allowNull = false, impactful = true),
                            PropertySpecification(DEFAULT_PROPERTY_VALUE,
                                    CommonTypes.OBJ_INT.name, isId = false, autoGen = false, allowNull = false, impactful = true, dependency = config.dependencyKind, forAdditionalDependency = true)
-                   )else generateProperties(config)
+                   )else generateProperties(config),
+                   path = if(config.hideExistsDependency) "" else graph.getPath(node),
+                   pathWithId = graph.getPathWithIds(node, config.idName, !config.hideExistsDependency),
+                   pathParams = if (config.hideExistsDependency) listOf() else graph.getPathParams(node, config.idName)
+
            ))
         }
 

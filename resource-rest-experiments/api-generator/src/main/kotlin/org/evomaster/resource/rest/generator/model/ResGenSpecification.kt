@@ -12,10 +12,13 @@ class ResGenSpecification(
         val rootPackage : String,
         val outputFolder : String,
         val restMethods : List<RestMethod>,
-        val idProperty : PropertySpecification = PropertySpecification("id", CommonTypes.OBJ_LONG.name, isId = true, autoGen = false, allowNull = false, impactful = true),
+        val idProperty : PropertySpecification ,
         val defaultProperties : List<PropertySpecification> = listOf(),
         val plusProperties: Boolean = true,
-        val dependencyKind: ConditionalDependencyKind
+        val dependencyKind: ConditionalDependencyKind,
+        val path : String,
+        val pathWithId : String,
+        val pathParams : List<String>
 ){
     companion object{
         const val TODTO_METHOD_NAME = "getDto"
@@ -169,7 +172,7 @@ class ResGenSpecification(
         apiService = ServiceClazz(
                 name = nameRestAPIClass(),
                 resourceName = name,
-                resourceOnPath = nameResNodeOnPath(),
+                resourceOnPath = FormatUtil.formatResourceOnPath(name),
                 entityRepository = PropertySpecification(
                         name = nameRepositoryClassVar(),
                         type = nameRepositoryClass(),
@@ -222,7 +225,10 @@ class ResGenSpecification(
                 }.toMap(),
                 restMethods = restMethods,
                 rootPackage = nameApiServicePackage(),
-                outputFolder = outputFolder
+                outputFolder = outputFolder,
+                path = path,
+                pathWithId = pathWithId,
+                pathParams = pathParams
         )
 
         return apiService!!
@@ -247,8 +253,6 @@ class ResGenSpecification(
     //for restAPI
     private fun nameRestAPIClass() = "${FormatUtil.upperFirst(name)}RestAPI"
     private fun nameRestAPIClassVar() = "${FormatUtil.lowerFirst(name)}RestAPI"
-
-    private fun nameResNodeOnPath() = "${FormatUtil.lowerFirst(name)}"
 
     private fun nameReferResNodePropertyOnDto() = "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
 

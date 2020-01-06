@@ -86,7 +86,10 @@ class ServiceClazz(
 
         val restMethods : List<RestMethod>,
         rootPackage: String,
-        outputFolder: String
+        outputFolder: String,
+        val path : String,
+        val pathWithId : String,
+        val pathParams : List<String>
 ) : ClazzSpecification(
         name,
         obviousReferEntityRepositories.values

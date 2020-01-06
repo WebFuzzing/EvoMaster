@@ -87,18 +87,22 @@ object ResExp{
 
 fun main(args : Array<String>){
 
+    val evomaster_version = "0.4.1-SNAPSHOT"
+    DependencyManager.defined_version.replace(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.versionKey, evomaster_version)
+
     val exp = arrayOf(false, true).flatMap {
         listOf(ResExp.n5_dense(it),ResExp.n5_medium(it),ResExp.n5_sparse(it))
     }
 
-    val folder  = "/Users/mazh001/Documents/GitHub/artificial_rest_experiment/n5"
-    val expFolder = PackagedPOModel(modules = exp.map { it.projectName }, groupId = ResExp.groupId, artifactId = "n5", output = folder)
+    val folder  = "/Users/mazh001/Documents/GitHub/artificial_rest_experiment/n5-try"
+    val expFolder = PackagedPOModel(modules = exp.map { it.projectName }, groupId = ResExp.groupId, artifactId = "n5-try", output = folder)
     expFolder.save()
 
     exp.forEach {
         it.outputFolder = folder
         GenerateREST(it).run()
     }
-    Util.generateDeployScript(exp, DependencyManager.defined_version.getValue(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.versionKey), folder)
+
+    Util.generateDeployScript(exp, evomaster_version, folder)
 
 }

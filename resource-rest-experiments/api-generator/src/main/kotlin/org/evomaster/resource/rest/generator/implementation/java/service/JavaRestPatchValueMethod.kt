@@ -14,6 +14,6 @@ class JavaRestPatchValueMethod(specification: ServiceClazz, method: RestMethod) 
     override fun getReturn(): String? = "ResponseEntity"
 
     override fun getTags(): List<String> = listOf(
-            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "/{$idVar}", "method" to "RequestMethod.PATCH", "produces" to "MediaType.APPLICATION_JSON"))}"
+            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "${specification.pathWithId}/{$idVar}", "method" to "RequestMethod.PATCH", "produces" to "MediaType.APPLICATION_JSON"))}"
     )
 }
