@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>0.4.1-SNAPSHOT</version>
+        <version>1.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-project-report</artifactId>
@@ -65,7 +65,11 @@
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-spring-rest-postgres</artifactId>
             <version>${project.version}</version>
-        </dependency>
+        </dependency>  <dependency>
+        <groupId>org.evomaster</groupId>
+        <artifactId>evomaster-e2e-tests-spring-rest-openapi-v3</artifactId>
+        <version>${project.version}</version>
+    </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-e2e-tests-utils</artifactId>

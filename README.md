@@ -31,7 +31,8 @@ random ones, trying to maximize measures like code coverage and fault detection.
 
 At the moment, _EvoMaster_ targets RESTful APIs compiled to 
 JVM __8__ and __11__ bytecode.
-The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) format (only _v2_ for now, i.e., no _v3_ support yet).
+The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+format (either _v2_ or _v3_).
 The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
 
 
@@ -181,7 +182,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   we are very keen to receive feature requests, although of course we cannot
   guarantee when they are going to be implemented, if implemented at all. 
   As researchers, we want to know what are the problems that engineers in industry
-  do face, and that could be done to improve _EvoMaster_ to help them.
+  do face, and what could be done to improve _EvoMaster_ to help them.
   
   
 * *Pull Requests*: we are keen to receive PRs, as long as you agree

@@ -7,7 +7,7 @@ package org.evomaster.core.problem.rest.service.resource
 class ProxyPrintResourceBasedTest : ResourceTestBase() {
 
     override fun getSchemaLocation() = "/sql_schema/proxyprint.sql"
-    override fun getSwaggerLocation() = "/swagger/proxyprint.json"
+    override fun getSwaggerLocation() = "/swagger/sut/proxyprint.json"
 
     override fun testInitializedNumOfResourceCluster() {
         testSizeResourceCluster(79)

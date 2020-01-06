@@ -23,7 +23,7 @@ In your local `~/.m2` Maven repository, you need to create a `settings.xml` file
 </settings>
 ```
 
-The username and password are linked to the account that own the domain `evomaster.org`.
+The username and password are linked to the account that owns the domain `evomaster.org`.
 
 You need to have installed `GPG` on your machine (used to sign files).
 Create a public-private keyset with:
@@ -68,9 +68,9 @@ mvn clean -Pdeployment -DskipTests  deploy
 ```
 
 If everything went well, you should be able to see the deployed files at
-[https://oss.sonatype.org/](). 
+[https://oss.sonatype.org/](https://oss.sonatype.org/). 
 However, it might take some hours before those are in sync with Maven Central,
-which you can check at [https://search.maven.org/]().
+which you can check at [https://search.maven.org/](https://search.maven.org/).
 
 
 ## GitHub Release
@@ -100,7 +100,7 @@ be `0.4.1-SNAPSHOT`.
 ## EMB Release
 
 After completing the release of a new version of `EvoMaster`, you need to make a new
-release for [https://github.com/EMResearch/EMB]() as well.
+release for [https://github.com/EMResearch/EMB](https://github.com/EMResearch/EMB) as well.
 The two repositories __MUST__ have their version numbers aligned.
 
 You need to update all `pom.xml` files with the same:

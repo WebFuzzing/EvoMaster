@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.evomaster</groupId>
         <artifactId>evomaster</artifactId>
-        <version>0.4.1-SNAPSHOT</version>
+        <version>1.0.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>evomaster-e2e-tests</artifactId>
@@ -17,6 +17,7 @@
         <module>dropwizard-examples</module>
         <module>spring-examples</module>
         <module>spring-rest-postgres</module>
+        <module>spring-rest-openapi-v3</module>
     </modules>
 
 
