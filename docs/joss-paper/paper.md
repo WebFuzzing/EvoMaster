@@ -17,6 +17,7 @@ authors:
   - name: Bogdan Marculescu
     affiliation: 1
   - name: Man Zhang
+    orcid: 0000-0003-1204-9322
     affiliation: 1
 affiliations:
  - name: Kristiania University College, Department of Technology, Oslo, Norway
@@ -31,7 +32,7 @@ bibliography: paper.bib
 # Summary
 
 Testing web/enterprise applications is complex and expensive when done manually.
-Therefore, in *Software Engineering* (SE) research, lot of effort has been spent in trying 
+Therefore, in *Software Engineering* (SE) research, a lot of effort has been spent in trying 
 to design and implement novel techniques aimed at automating several different tasks in SE.
 *Search-Based Software Testing* (SBST) casts the problem of software testing as an optimization problem,
 aimed at for example maximizing code coverage and fault detection.   
@@ -44,7 +45,7 @@ The approach is to *evolve* test cases from an initial population of
 random ones, using code coverage and fault detection as fitness function.
 
 When addressing the testing of real-world web/enterprise applications, there are many challenges. 
-To face and overcome those challenges, EvoMaster has been used to experiment several novel techniques.
+To face and overcome those challenges, EvoMaster has been used to experiment with several novel techniques.
 This led to several publications:
 novel search algorithms such as *MIO* [@mio2017][@arcuri2018test],
 addressing the white-box testing of RESTful APIs [@arcuri2017restful][@arcuri2019restful],
