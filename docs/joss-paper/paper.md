@@ -13,6 +13,7 @@ authors:
     orcid: 0000-0003-0799-2930
     affiliation: 1
   - name: Juan Pablo Galeotti
+    orcid: 0000-0002-0747-8205
     affiliation: 2
   - name: Bogdan Marculescu
     affiliation: 1
@@ -35,7 +36,7 @@ Testing web/enterprise applications is complex and expensive when done manually.
 Therefore, in *Software Engineering* (SE) research, a lot of effort has been spent in trying 
 to design and implement novel techniques aimed at automating several different tasks in SE.
 *Search-Based Software Testing* (SBST) casts the problem of software testing as an optimization problem,
-aimed at for example maximizing code coverage and fault detection.   
+aimed at, for example, maximizing code coverage and fault detection.   
 
 ``EvoMaster`` [@arcuri2018evomaster]  is a SBST tool 
 that automatically *generates* system-level test cases.
@@ -54,7 +55,7 @@ and novel *testability transformations* [@arcuri2020testability].
 
 
 ``EvoMaster`` is aimed both at practitioners that want to automatically test their software, 
-and also at researchers that need generated test cases for the SE problems that they are investigating.  
+and at researchers that need generated test cases for the SE problems that they are investigating.  
 
 At the moment, ``EvoMaster`` targets RESTful APIs compiled to 
 JVM __8__ and __11__ bytecode.
