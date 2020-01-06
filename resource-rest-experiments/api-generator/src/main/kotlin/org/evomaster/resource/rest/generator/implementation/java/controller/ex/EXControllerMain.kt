@@ -6,7 +6,7 @@ import org.evomaster.resource.rest.generator.template.Boundary
 /**
  * created by manzh on 2019-10-11
  */
-class EXControllerMain(val jarName : String, val csName:String) : JavaMethod() {
+class EXControllerMain(val exClazz :String, val jarName : String, val csName:String) : JavaMethod() {
     override fun getParams(): Map<String, String> = mapOf("args" to "String[]")
 
     override fun getBody(): List<String> = listOf(
@@ -33,7 +33,7 @@ class EXControllerMain(val jarName : String, val csName:String) : JavaMethod() {
                 }
             
                 ExternalEvoMasterController controller =
-                        new ExternalEvoMasterController(controllerPort, jarLocation, sutPort, timeoutSeconds);
+                        new $exClazz(controllerPort, jarLocation, sutPort, timeoutSeconds);
                 InstrumentedSutStarter starter = new InstrumentedSutStarter(controller);
             
                 starter.start();

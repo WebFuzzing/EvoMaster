@@ -16,22 +16,10 @@ class EMControllerMain(val emClazz : String) : JavaMethod() {
                   port = Integer.parseInt(args[0]);
                 }
             
-                controller = new $emClazz(port);
-
-                embeddedStarter = new InstrumentedSutStarter(controller);
-                embeddedStarter.start();
+                EmbeddedEvoMasterController controller = new $emClazz(port);
+                InstrumentedSutStarter starter = new InstrumentedSutStarter(controller);
             
-                controllerPort = embeddedStarter.getControllerServerPort();
-            
-                remoteController = new RemoteController("localhost", controllerPort, true);
-                boolean started = remoteController.startSUT();
-            
-                SutInfoDto dto = remoteController.getSutInfo();
-            
-                baseUrlOfSut = dto.baseUrlOfSUT;
-            
-                System.out.println("Remote controller running on port " + controllerPort);
-                System.out.println("SUT listening on " + baseUrlOfSut);
+                starter.start();
             """.trimIndent()
     )
 

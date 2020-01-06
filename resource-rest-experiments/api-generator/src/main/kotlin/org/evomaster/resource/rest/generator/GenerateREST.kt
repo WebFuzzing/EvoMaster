@@ -184,7 +184,7 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
                    resNode = node,
                    rootPackage = config.csProjectPackage,
                    outputFolder = config.getCsOutputFolder(),
-                   restMethods = config.restMethods,
+                   restMethods = getMethods(node),
                    dependencyKind = config.dependencyKind,
                    idProperty = PropertySpecification(config.idName, config.idType.name, isId = true, autoGen = false, allowNull = false, impactful = true),
                    defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
@@ -202,6 +202,12 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
         resourceCluster.forEach { (t, u) ->
             u.initDependence(resourceCluster)
         }
+    }
+
+    private fun getMethods(node: ResNode) : List<RestMethod>{
+        if(config.hideExistsDependency || node.outgoing.isEmpty())
+            return config.restMethods.filter { it != RestMethod.DELETE_CON && it != RestMethod.GET_ALL_CON }
+        return config.restMethods
     }
 
     private fun generateProperties(config: GenConfig) : List<PropertySpecification>{

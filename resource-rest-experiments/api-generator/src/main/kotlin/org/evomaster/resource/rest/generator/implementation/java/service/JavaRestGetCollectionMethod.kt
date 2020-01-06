@@ -13,6 +13,6 @@ class JavaRestGetCollectionMethod(specification: ServiceClazz, method : RestMeth
     override fun getReturn(): String? = "ResponseEntity<List<${specification.dto.name}>>"
 
     override fun getTags(): List<String> = listOf(
-            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "", "method" to "RequestMethod.GET", "produces" to "MediaType.APPLICATION_JSON"))}"
+            "@${SpringAnnotation.REQUEST_MAPPING.getText(mapOf("value" to "/${specification.resourceOnPath}", "method" to "RequestMethod.GET", "produces" to "MediaType.APPLICATION_JSON"))}"
     )
 }

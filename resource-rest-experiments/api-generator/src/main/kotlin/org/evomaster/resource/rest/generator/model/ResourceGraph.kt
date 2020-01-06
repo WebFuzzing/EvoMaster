@@ -226,7 +226,7 @@ class ResourceGraph{
     }
 
     fun getPathParams(resNode: ResNode, idName: String) : List<String>{
-        return breadth(resNode).map { FormatUtil.formatResourceIdAsPathParam(it.name, idName) }
+        return breadth(resNode).filter { it.name == resNode.name }.map { FormatUtil.formatResourceIdAsPathParam(it.name, idName) }
     }
 
     private fun getGraph() : DirectedMultigraph<ResNode, LabelEdge>{
