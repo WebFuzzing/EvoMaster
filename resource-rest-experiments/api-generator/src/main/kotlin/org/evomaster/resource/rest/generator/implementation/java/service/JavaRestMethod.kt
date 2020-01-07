@@ -15,7 +15,7 @@ import org.evomaster.resource.rest.generator.template.Tag
 /**
  * created by manzh on 2019-12-19
  */
-abstract class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod): JavaMethod(), SpringRestAPI{
+class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod): JavaMethod(), SpringRestAPI{
 
     //by object
     private val dtoVar = FormatUtil.lowerFirst(specification.dto.name)
@@ -91,7 +91,6 @@ abstract class JavaRestMethod (val specification: ServiceClazz, val method : Res
         return when(method){
             RestMethod.POST, RestMethod.PUT ->{
                 extraPathParams(mapOf(dtoVar to "${specification.dto.name}").toMutableMap(), skip = listOf(idVar))
-
             }
             RestMethod.POST_VALUE->{
                 extraPathParams(mapOf(idVar to specification.dto.idProperty.type)
@@ -375,5 +374,32 @@ abstract class JavaRestMethod (val specification: ServiceClazz, val method : Res
 
         if (!withImpact) content.add(returnStatus(200)) else content.add(returnStatus(200, msg = getBranchMsg()))
         return content
+    }
+
+    fun getPath(): String{
+        return when(method){
+            RestMethod.GET_ALL_CON,RestMethod.POST, RestMethod.PUT -> specification.pathWithId
+            RestMethod.GET_ID, RestMethod.DELETE_CON,RestMethod.POST_VALUE,RestMethod.PATCH_VALUE -> "${specification.pathWithId}/{$idVar}"
+            RestMethod.GET_ALL-> "/${specification.resourceOnPath}"
+            RestMethod.DELETE-> "/${specification.resourceOnPath}/{$idVar}"
+        }
+    }
+
+    override fun getTags(): List<String> {
+        val map = when(method){
+            RestMethod.POST, RestMethod.PUT -> mapOf("value" to getPath(), "method" to "RequestMethod.${method.text}", "consumes" to "MediaType.APPLICATION_JSON")
+            else -> mapOf("value" to getPath(), "method" to "RequestMethod.${method.text}", "produces" to "MediaType.APPLICATION_JSON")
+        }
+        return listOf(
+                "@${SpringAnnotation.REQUEST_MAPPING.getText(map)}"
+        )
+    }
+
+    override fun getReturn(): String? {
+        return when(method){
+            RestMethod.POST, RestMethod.POST_VALUE, RestMethod.PUT, RestMethod.PATCH_VALUE, RestMethod.DELETE, RestMethod.DELETE_CON -> "ResponseEntity"
+            RestMethod.GET_ALL, RestMethod.GET_ALL_CON -> "ResponseEntity<List<${specification.dto.name}>>"
+            RestMethod.GET_ID -> "ResponseEntity<${specification.dto.name}>"
+        }
     }
 }

@@ -3,6 +3,7 @@ package org.evomaster.resource.rest.generator
 import org.evomaster.resource.rest.generator.GenerateREST.Companion.DEFAULT_PROPERTY_VALUE
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 import org.evomaster.resource.rest.generator.model.CommonTypes
+import org.evomaster.resource.rest.generator.model.GraphExportFormat
 import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.StrategyNameResource
 
@@ -16,10 +17,9 @@ class GenConfig {
      */
     var outputFolder = "/Users/mazh001/Documents/GitHub/automated-generated-api/"
 
-    /**
-     *
-     */
     var outputType = OutputType.MAVEN_MODULE
+
+    var saveGraph = GraphExportFormat.DOT
 
     enum class OutputType{
         SOURCE,

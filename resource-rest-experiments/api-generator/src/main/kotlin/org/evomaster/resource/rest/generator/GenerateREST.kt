@@ -31,6 +31,12 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
 
     private val resourceCluster = mutableMapOf<String, ResGenSpecification>()
 
+    //only for debugging
+    fun getResourceCluster() : Map<String, ResGenSpecification>{
+        init()
+        return resourceCluster.toMap()
+    }
+
     fun run(){
         init()
         generatePOM()
@@ -56,12 +62,13 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
     }
 
     private fun init(){
-        val graph = generateGraph()
-        graph.save(config.getCsResourceFolder())
+        val graph = resourceGraph?:generateGraph()
+
+        graph.save(config.getCsResourceFolder(), config.saveGraph)
         createResources(graph)
     }
 
-    fun generateGraph() : ResourceGraph{
+    private fun generateGraph() : ResourceGraph{
         return resourceGraph?: ResourceGraph(
                 numOfNodes = config.numOfNodes,
                 multiplicity = listOf(

@@ -27,18 +27,19 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
     override fun getMethods(): List<out MethodScript> {
         val methods = mutableListOf<MethodScript>()
         specification.restMethods.forEach { r->
-            when(r){
-                RestMethod.POST -> JavaRestPostMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.POST_VALUE-> JavaRestPostValueMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.GET_ALL_CON -> JavaRestGetCollectionWithConMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.DELETE -> JavaRestDeleteMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.DELETE_CON -> JavaRestDeleteConMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification, r).apply { methods.add(this) }
-               // RestMethod.PATCH -> JavaRestPatchMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.PATCH_VALUE -> JavaRestPatchValueMethod(this.specification, r).apply { methods.add(this) }
-                RestMethod.PUT -> JavaRestPutMethod(this.specification, r).apply { methods.add(this) }
-            }
+            JavaRestMethod(this.specification, r).apply { methods.add(this) }
+//            when(r){
+//                RestMethod.POST -> JavaRestPostMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.POST_VALUE-> JavaRestPostValueMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.GET_ALL -> JavaRestGetCollectionMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.GET_ALL_CON -> JavaRestGetCollectionWithConMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.DELETE -> JavaRestDeleteMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.DELETE_CON -> JavaRestDeleteConMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.GET_ID -> JavaRestGetByIdMethod(this.specification, r).apply { methods.add(this) }
+//               // RestMethod.PATCH -> JavaRestPatchMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.PATCH_VALUE -> JavaRestPatchValueMethod(this.specification, r).apply { methods.add(this) }
+//                RestMethod.PUT -> JavaRestPutMethod(this.specification, r).apply { methods.add(this) }
+//            }
         }
         return methods
     }

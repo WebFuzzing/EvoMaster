@@ -197,6 +197,7 @@ class ResourceGraph{
     fun getSoleNodes() : Map<String, ResNode> = nodes.filter { it.value.outgoing.isEmpty() && it.value.incoming.isEmpty() }
 
     fun save(outputFolder : String, format : GraphExportFormat = GraphExportFormat.DOT){
+        if (format == GraphExportFormat.NONE) return
         val graph = getGraph()
         val dir = FormatUtil.formatFolder(outputFolder)
         Files.createDirectories(Paths.get(dir))
@@ -226,7 +227,7 @@ class ResourceGraph{
     }
 
     fun getPathParams(resNode: ResNode, idName: String) : List<String>{
-        return breadth(resNode).filter { it.name == resNode.name }.map { FormatUtil.formatResourceIdAsPathParam(it.name, idName) }
+        return breadth(resNode).filter { it.name != resNode.name }.map { FormatUtil.formatResourceIdAsPathParam(it.name, idName) }
     }
 
     private fun getGraph() : DirectedMultigraph<ResNode, LabelEdge>{
@@ -280,6 +281,7 @@ class ResourceGraph{
 }
 
 enum class GraphExportFormat{
+    NONE,
     DOT,
     PNG
 }
