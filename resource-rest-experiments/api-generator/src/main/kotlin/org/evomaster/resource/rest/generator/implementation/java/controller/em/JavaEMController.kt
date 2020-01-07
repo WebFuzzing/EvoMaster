@@ -87,7 +87,7 @@ class JavaEMController(specification: AppClazz, val appClazz : String, val sutPa
     }
 
     override fun getImports(): List<String> = listOf(
-            "ch.qos.logback.core.db.dialect.H2Dialect",
+            "org.hibernate.dialect.H2Dialect",
             "com.p6spy.engine.spy.P6SpyDriver",
             "org.evomaster.client.java.controller.EmbeddedSutController",
             "org.evomaster.client.java.controller.InstrumentedSutStarter",

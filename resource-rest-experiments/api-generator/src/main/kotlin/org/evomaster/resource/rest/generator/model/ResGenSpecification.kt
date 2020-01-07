@@ -11,6 +11,7 @@ class ResGenSpecification(
         val doesMapToATable: Boolean = true,
         val rootPackage : String,
         val outputFolder : String,
+        val resourceFolder : String,
         val restMethods : List<RestMethod>,
         val idProperty : PropertySpecification ,
         val defaultProperties : List<PropertySpecification> = listOf(),
@@ -100,7 +101,8 @@ class ResGenSpecification(
                 ownOthersTypes = ownOthers.map { it.nameDtoClass() },
                 rootPackage = nameDtoPackage(),
                 outputFolder =  outputFolder,
-                idFromSuperClazz = !plusProperties
+                idFromSuperClazz = !plusProperties,
+                resourceFolder = resourceFolder
                 )
         return dto!!
     }
@@ -146,6 +148,7 @@ class ResGenSpecification(
                 dto = getDto(),
                 rootPackage = nameEntityPackage(),
                 outputFolder = outputFolder,
+                resourceFolder = resourceFolder,
                 idFromSuperClazz = !plusProperties)
         return entity!!
     }
@@ -161,7 +164,8 @@ class ResGenSpecification(
                 idType = idProperty.type,
                 properties = listOf(),
                 rootPackage = nameEntityPackage(),
-                outputFolder = outputFolder
+                outputFolder = outputFolder,
+                resourceFolder = resourceFolder
         )
         return repository
     }
@@ -226,6 +230,7 @@ class ResGenSpecification(
                 restMethods = restMethods,
                 rootPackage = nameApiServicePackage(),
                 outputFolder = outputFolder,
+                resourceFolder = resourceFolder,
                 path = path,
                 pathWithId = pathWithId,
                 pathParams = pathParams

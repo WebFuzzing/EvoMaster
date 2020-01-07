@@ -92,6 +92,7 @@ object ResExp{
 
 fun main(args : Array<String>){
 
+    val parent = "rest-n5-mark"
     val evomaster_version = "0.4.1-SNAPSHOT"
     DependencyManager.defined_version.replace(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.versionKey, evomaster_version)
 
@@ -99,12 +100,13 @@ fun main(args : Array<String>){
         listOf(ResExp.n5_dense(hideDep = it),ResExp.n5_medium(hideDep = it),ResExp.n5_sparse(hideDep = it))
     }
 
-    val folder  = "/Users/mazh001/Documents/GitHub/artificial_rest_experiment/rest-n5-try"
-    val expFolder = PackagedPOModel(modules = exp.map { it.projectName }, groupId = ResExp.groupId, artifactId = "rest-n5-try", output = folder)
+    val folder  = "/Users/mazh001/Documents/GitHub/artificial_rest_experiment/$parent"
+    val expFolder = PackagedPOModel(modules = exp.map { it.projectName }, groupId = ResExp.groupId, artifactId = parent, output = folder)
     expFolder.save()
 
     exp.forEach {
         it.outputFolder = folder
+        it.parents = listOf(parent)
         GenerateREST(it).run()
     }
 

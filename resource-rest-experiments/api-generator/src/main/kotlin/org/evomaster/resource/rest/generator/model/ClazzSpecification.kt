@@ -8,6 +8,7 @@ abstract class ClazzSpecification(
         val properties : List<PropertySpecification>,
         val rootPackage : String,
         val outputFolder : String,
+        val resourceFolder : String,
         val methods : MutableList<MethodSpecification> = mutableListOf()
 )
 
@@ -28,9 +29,10 @@ class EntityClazz(
         val dto : DtoClazz,
         rootPackage: String,
         outputFolder: String,
+        resourceFolder: String,
         val idFromSuperClazz : Boolean
 )
-    : ClazzSpecification(name, defaultProperties.plus(referToOthers).plus(ownOthers).plus(idProperty), rootPackage, outputFolder)
+    : ClazzSpecification(name, defaultProperties.plus(referToOthers).plus(ownOthers).plus(idProperty), rootPackage, outputFolder, resourceFolder)
 
 class DtoClazz(
         name: String,
@@ -42,8 +44,9 @@ class DtoClazz(
         val ownOthersTypes: List<String> = listOf(),
         rootPackage: String,
         outputFolder: String,
+        resourceFolder: String,
         val idFromSuperClazz : Boolean
-) : ClazzSpecification(name, defaultProperties.plus(referToOthers).plus(ownOthers).plus(ownOthersProperties.flatten()).plus(idProperty), rootPackage, outputFolder)
+) : ClazzSpecification(name, defaultProperties.plus(referToOthers).plus(ownOthers).plus(ownOthersProperties.flatten()).plus(idProperty), rootPackage, outputFolder,resourceFolder)
 
 class RepositoryClazz(
         name: String,
@@ -51,7 +54,8 @@ class RepositoryClazz(
         val idType : String,
         properties: List<PropertySpecification>,
         rootPackage: String,
-        outputFolder: String) : ClazzSpecification(name, properties, rootPackage, outputFolder)
+        outputFolder: String,
+        resourceFolder: String) : ClazzSpecification(name, properties, rootPackage, outputFolder,resourceFolder)
 
 class ServiceClazz(
         name: String,
@@ -87,6 +91,7 @@ class ServiceClazz(
         val restMethods : List<RestMethod>,
         rootPackage: String,
         outputFolder: String,
+        resourceFolder: String,
         val path : String,
         val pathWithId : String,
         val pathParams : List<String>
@@ -97,16 +102,18 @@ class ServiceClazz(
                 .plus(hideReferEntityRepositories.values)
                 .plus(ownedEntityRepositories.values)
                 .plus(ownedResourceService.values),
-        rootPackage, outputFolder)
+        rootPackage, outputFolder,resourceFolder)
 
 class AppClazz(
         name: String = "ResApp",
         rootPackage: String,
-        outputFolder: String
-) : ClazzSpecification(name, listOf(), rootPackage, outputFolder )
+        outputFolder: String,
+        resourceFolder: String
+) : ClazzSpecification(name, listOf(), rootPackage, outputFolder,resourceFolder )
 
 class ServiceUtilClazz(
         name: String = "Util",
         rootPackage: String,
-        outputFolder: String
-) : ClazzSpecification(name, listOf(), "$rootPackage.service", outputFolder )
+        outputFolder: String,
+        resourceFolder: String
+) : ClazzSpecification(name, listOf(), "$rootPackage.service", outputFolder,resourceFolder)

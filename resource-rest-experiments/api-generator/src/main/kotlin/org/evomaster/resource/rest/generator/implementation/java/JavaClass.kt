@@ -14,6 +14,9 @@ abstract class JavaClass<T> (val specification: T): ClassTemplate, JavaTemplate 
     override fun isAbstract(): Boolean = false
 
     override fun getOutputSrcFolder(): String = specification.outputFolder
+
+    override fun getOutputResourceFolder(): String = specification.resourceFolder
+
     override fun getFileSuffix(): String = "java"
 
     override fun getPackage(): String  = specification.rootPackage

@@ -30,6 +30,8 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
     private val ownedVars = specification.dto.ownOthers.map { Pair(it.name, it.type)}
     private val ownedPVars = specification.dto.ownOthersProperties.map { s-> s.map { Pair(it.name, it.type) } }
 
+    private val ifsnippet : MutableList<IfSnippet> =  mutableListOf()
+
     override fun getParamTag(): Map<String, String> {
         return when(method){
             RestMethod.POST, RestMethod.PUT ->{
@@ -123,25 +125,34 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
     }
 
     private fun getBodyByMethod(): List<String> {
+        // mark if branch with type
         val content = mutableListOf<String>()
+        ifsnippet.clear()
 
         when(method){
             RestMethod.GET_ALL, RestMethod.GET_ALL_CON ->{
                 val allDtos = "allDtos"
-                content.add(findAllEntitiesAndConvertToDto(specification.entityRepository.name, specification.entity.name, allDtos, JavaE2DMethod(specification.entity).getInvocation(null),specification.dto.name))
+                content.add(findAllEntitiesAndConvertToDto(
+                        specification.entityRepository.name, specification.entity.name, allDtos, JavaE2DMethod(specification.entity).getInvocation(null),specification.dto.name))
                 content.add(returnWithContent(allDtos))
                 return content
             }
             RestMethod.GET_ID ->{
                 var dto = "dto"
                 content.add(
-                        findEntityByIdAndConvertToDto(specification.entityRepository.name, idVar, specification.entity.name, dto, specification.dto.name, JavaE2DMethod(specification.entity).getInvocation(null))
+                        findEntityByIdAndConvertToDto(
+                                specification.entityRepository.name,
+                                idVar, specification.entity.name, dto, specification.dto.name,
+                                JavaE2DMethod(specification.entity).getInvocation(null),
+                                ifsnippets = ifsnippet,
+                                iftype = IfSnippetType.CHECK_OWN_EXISTENCE
+                                )
                 )
                 content.add(returnWithContent(dto))
                 return content
             }
             RestMethod.DELETE, RestMethod.DELETE_CON ->{
-                content.add(assertExistence(specification.entityRepository.name, idVar))
+                content.add(assertExistence(specification.entityRepository.name, idVar, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE))
                 content.add(repositoryDeleteById(specification.entityRepository.name, idVar))
                 content.add(returnStatus(200))
                 return content
@@ -158,7 +169,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
         when(method){
             RestMethod.POST, RestMethod.POST_VALUE ->{
-                content.add(assertNonExistence(specification.entityRepository.name, idValue))
+                content.add(assertNonExistence(specification.entityRepository.name, idValue, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE))
                 content.add(formatInstanceClassAndAssigned(specification.entity.name, created, listOf()))
                 content.add("$created.${specification.entity.idProperty.nameSetterName()}($idValue);")
             }
@@ -177,7 +188,9 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                         specification.entityRepository.name,
                         idValue,
                         created,
-                        specification.entity.name
+                        specification.entity.name,
+                        ifsnippet,
+                        IfSnippetType.CHECK_SELF_EXISTENCE
                 ))
             }
 
@@ -224,7 +237,9 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                                 specification.ownedEntityRepositories.getValue(entityProperty.type).name,
                                 id,
                                 found,
-                                entityProperty.type
+                                entityProperty.type,
+                                ifsnippet,
+                                IfSnippetType.CHECK_OWN_EXISTENCE
                         ))
                         content.add("$created.${entityProperty.nameSetterName()}($found);")
                     }
@@ -251,7 +266,9 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                             specification.obviousReferEntityRepositories.getValue(entityProperty.type).name,
                             refer,
                             found,
-                            entityProperty.type
+                            entityProperty.type,
+                            ifsnippet,
+                            IfSnippetType.CHECK_REFER_EXISTENCE
                     ))
 
                     content.add("$created.${entityProperty.nameSetterName()}($found);")
@@ -282,7 +299,9 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                                 entityType = entityType,
                                 targetEntity = findEntityVar,
                                 properties = proVars,
-                                entitySetterProperties = proSetterInEntity
+                                entitySetterProperties = proSetterInEntity,
+                                ifsnippets = ifsnippet,
+                                iftype = IfSnippetType.CHECK_OWN_EXISTENCE
                         ))
                         val createdDtoVar = "ownedDto$index" //dto
                         content.add(entityConvertToDto(
@@ -312,7 +331,9 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                             found,
                             entityProperty.type,
                             settingScript = "$created.${entityProperty.nameSetterName()}($found);",
-                            gettingScript = "$created.${entityProperty.nameGetterName()}()"
+                            gettingScript = "$created.${entityProperty.nameGetterName()}()",
+                            ifsnippets = ifsnippet,
+                            iftype = IfSnippetType.CHECK_REFER_EXISTENCE
                     ))
                 }
 
@@ -332,8 +353,11 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                 val variableName = if(inputIsObject)"$dtoVar.${entityValue.name}" else valueVars[index]
 
                 if(method == RestMethod.PATCH_VALUE){
-                    content.add("if($variableName != null){")
+                    val ifText = "if($variableName != null)"
+                    ifsnippet.add(IfSnippet(ifText, IfSnippetType.CHECK_OPTIONAL_PARAM_EXISTENCE))
+                    content.add("$ifText{")
                 }
+                //TODO mark if branch for branches setting
                 content.add("$created.${entityValue.nameSetterName()}($variableName);")
                 if (entityValue.branches > 1)
                     content.add(
@@ -364,7 +388,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                 //entity requires getter, dto direct access
                 val probAs = if (createdDtos.isEmpty()) listOf("$created.${p.nameGetterName()}()") else createdDtos.map { "$it.${p.name}" }
                 val probBs = referredEntity.map { "$it.${p.nameGetterName()}()" }
-                content.add(assertCondition(ConditionalDependency.generateDependency(p.type, probAs, probBs), not = true))
+                content.add(assertCondition(ConditionalDependency.generateDependency(p.type, probAs, probBs), not = true, ifsnippets = ifsnippet, iftype = IfSnippetType.CHECK_REFER_PROPERTY))
             }
         }
 
@@ -401,5 +425,9 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
             RestMethod.GET_ALL, RestMethod.GET_ALL_CON -> "ResponseEntity<List<${specification.dto.name}>>"
             RestMethod.GET_ID -> "ResponseEntity<${specification.dto.name}>"
         }
+    }
+
+    override fun getIfSnippets() : List<IfSnippet>{
+        return ifsnippet.toList()
     }
 }

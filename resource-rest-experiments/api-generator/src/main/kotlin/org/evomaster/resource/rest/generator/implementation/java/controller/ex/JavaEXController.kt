@@ -12,7 +12,7 @@ import org.evomaster.resource.rest.generator.template.RegisterType
 /**
  * created by manzh on 2020-01-02
  */
-class JavaEXController(specification: AppClazz, val csName : String, val jarName : String, val appClazz : String, val sutPackagePrefix : String) : JavaClass<AppClazz>(specification) {
+class JavaEXController(specification: AppClazz, val rootProject: String, val csName : String, val jarName : String, val appClazz : String, val sutPackagePrefix : String) : JavaClass<AppClazz>(specification) {
 
     companion object{
 
@@ -81,7 +81,12 @@ class JavaEXController(specification: AppClazz, val csName : String, val jarName
     override fun generateConstructors(types: RegisterType): List<String> {
 
         return listOf(
-
+                """
+                    ${formatBoundary(getBoundary())} ${getName()} ()${GeneralSymbol.LEFT_BRACE}
+                    this(40100,"\"$rootProject$csName/target/$jarName.jar\"",12345, 120);
+                    ${GeneralSymbol.RIGHT_BRACE}
+                """.trimIndent()
+                ,
                 """
                     ${formatBoundary(getBoundary())} ${getName()} (${controllerPort.generateAsVarOfConstructor(types)}, ${(0..2).joinToString(",") { declarations[it].generateAsVarOfConstructor(types) }})${GeneralSymbol.LEFT_BRACE}
                     ${(0..2).joinToString(";${System.lineSeparator()}") { "this.${declarations[it].getName()}=${declarations[it].generateDefaultVarName()}" }};
@@ -113,7 +118,7 @@ class JavaEXController(specification: AppClazz, val csName : String, val jarName
 
     override fun getMethods(): List<MethodScript> {
         return listOf(
-                EXControllerMain(exClazz = specification.name, jarName = jarName, csName = csName),
+                EXControllerMain(exClazz = specification.name, jarName = jarName, csName = csName, rootProject = rootProject),
                 DbUrlMethod(csName),
                 GetInputParametersMethod(),
                 GetJVMParametersMethod(),

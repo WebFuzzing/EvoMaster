@@ -17,6 +17,8 @@ class GenConfig {
      */
     var outputFolder = "/Users/mazh001/Documents/GitHub/automated-generated-api/"
 
+    var parents = listOf("")
+
     var outputType = OutputType.MAVEN_MODULE
 
     var saveGraph = GraphExportFormat.DOT
@@ -108,7 +110,10 @@ class GenConfig {
     fun getExRootFolder() = "${FormatUtil.formatFolder(getProjectFolder())}${if (outputType != OutputType.SOURCE) exName else ""}"
 
     fun getEmOutputFolder() = "${FormatUtil.formatFolder(getProjectFolder())}$emName/$srcFolder/${language.srcFolder}"
+    fun getEmResourceFolder() = "${FormatUtil.formatFolder(getProjectFolder())}$emName/$srcFolder/${language.resource}"
+
     fun getExOutputFolder() = "${FormatUtil.formatFolder(getProjectFolder())}$exName/$srcFolder/${language.srcFolder}"
+    fun getExResourceFolder() = "${FormatUtil.formatFolder(getProjectFolder())}$exName/$srcFolder/${language.resource}"
 
     fun getFullExMainClass() = "$exProjectPackage.$exMainClass"
 
@@ -116,4 +121,10 @@ class GenConfig {
     fun getCSJarName() = "${repackageName()}-sut"
     fun getEXJarFinalName() = "${repackageName()}-runner"
 
+    fun getCSRootProjectPathForExternal() : String{
+        if (outputContent != OutputContent.CS_EM_EX && outputContent != OutputContent.CS_EX)
+            throw IllegalStateException("incorrect invocation")
+        val p = parents.plus(projectName).drop(1).joinToString("/"){it}
+        return if (p.isBlank()) p else "$p/"
+    }
 }

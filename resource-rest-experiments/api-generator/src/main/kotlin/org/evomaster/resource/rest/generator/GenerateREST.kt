@@ -87,14 +87,16 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
     private fun generateAndSaveCS(type: RegisterType) : AppClazz{
         val cs = AppClazz(
                 rootPackage = config.csProjectPackage,
-                outputFolder = config.getCsOutputFolder()
+                outputFolder = config.getCsOutputFolder(),
+                resourceFolder = config.getCsResourceFolder()
         )
         generateAndSaveCS(JavaApp(cs), type)
         resourceCluster.values.forEach { generateAndSaveCS(it, type) }
         if (config.dependencyKind != ConditionalDependencyKind.EXISTENCE){
             val utilClazz = ServiceUtilClazz(
                     rootPackage = config.csProjectPackage,
-                    outputFolder = config.getCsOutputFolder()
+                    outputFolder = config.getCsOutputFolder(),
+                    resourceFolder = config.getCsResourceFolder()
             )
             generateAndSaveCS(RestDepUtil(utilClazz), type)
         }
@@ -105,7 +107,8 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
         generateAndSaveCS(JavaEMController(AppClazz(
                 name = config.emMainClass,
                 rootPackage = config.emProjectPackage,
-                outputFolder = config.getEmOutputFolder()),
+                outputFolder = config.getEmOutputFolder(),
+                resourceFolder = config.getEmResourceFolder()),
                 sutPackagePrefix = "${config.csProjectPackage}.",
                 appClazz = appClazz
         ), type)
@@ -117,11 +120,12 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
                         AppClazz(
                             name = config.exMainClass,
                             rootPackage = config.exProjectPackage,
-                            outputFolder = config.getExOutputFolder()),
-                        csName = config.projectName,
+                            outputFolder = config.getExOutputFolder(), resourceFolder = config.getExResourceFolder()),
+                        csName = config.csName,
                         jarName = config.getCSJarName(),
                         sutPackagePrefix = "${config.csProjectPackage}.",
-                        appClazz = appClazz
+                        appClazz = appClazz,
+                        rootProject = config.getCSRootProjectPathForExternal()
         ), type)
     }
 
@@ -191,6 +195,7 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
                    resNode = node,
                    rootPackage = config.csProjectPackage,
                    outputFolder = config.getCsOutputFolder(),
+                   resourceFolder = config.getCsResourceFolder(),
                    restMethods = getMethods(node),
                    dependencyKind = config.dependencyKind,
                    idProperty = PropertySpecification(config.idName, config.idType.name, isId = true, autoGen = false, allowNull = false, impactful = true),
