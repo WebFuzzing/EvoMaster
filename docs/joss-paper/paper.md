@@ -16,6 +16,7 @@ authors:
     orcid: 0000-0002-0747-8205
     affiliation: 2
   - name: Bogdan Marculescu
+    orcid: 0000-0002-1393-4123
     affiliation: 1
   - name: Man Zhang
     orcid: 0000-0003-1204-9322
