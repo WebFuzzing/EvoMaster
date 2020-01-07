@@ -154,9 +154,5 @@ interface ClassTemplate : ScriptTemplate {
         val targetFolder =  getOutputResourceFolder().run { if (this.endsWith(System.getProperty("file.separator"))) this else "$this${System.getProperty("file.separator")}" }
         Files.createDirectories(Paths.get(targetFolder))
         Files.write(Paths.get("$targetFolder$targetFile.csv"), targets.toByteArray())
-
-
-
-
     }
 }
