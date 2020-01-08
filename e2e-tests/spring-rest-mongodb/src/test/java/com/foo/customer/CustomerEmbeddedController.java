@@ -1,8 +1,8 @@
 package com.foo.customer;
 
-import com.foo.spring.rest.mongodb.SpringRestMongodbController;
+import com.foo.spring.rest.mongo.SpringRestMongoController;
 
-public class CustomerEmbeddedController extends SpringRestMongodbController {
+public class CustomerEmbeddedController extends SpringRestMongoController {
 
     public CustomerEmbeddedController() {
         super(CustomerApplication.class);

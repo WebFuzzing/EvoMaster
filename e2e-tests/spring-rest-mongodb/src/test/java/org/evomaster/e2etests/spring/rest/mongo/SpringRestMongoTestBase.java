@@ -1,9 +1,9 @@
-package org.evomaster.e2etests.spring.rest.mongodb;
+package org.evomaster.e2etests.spring.rest.mongo;
 
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.e2etests.utils.RestTestBase;
 
-public class SpringRestMongoDBTestBase extends RestTestBase {
+public class SpringRestMongoTestBase extends RestTestBase {
 
 
     protected static void initClass(EmbeddedSutController controller) throws Exception {

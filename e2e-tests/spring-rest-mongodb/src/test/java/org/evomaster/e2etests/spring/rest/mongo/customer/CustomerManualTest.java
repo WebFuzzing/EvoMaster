@@ -1,22 +1,22 @@
-package org.evomaster.e2etests.spring.rest.mongodb.customer;
+package org.evomaster.e2etests.spring.rest.mongo.customer;
 
 import com.foo.customer.CustomerEmbeddedController;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
-import org.evomaster.e2etests.spring.rest.mongodb.SpringRestMongoDBTestBase;
+import org.evomaster.e2etests.spring.rest.mongo.SpringRestMongoTestBase;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CustomerManualTest extends SpringRestMongoDBTestBase {
+public class CustomerManualTest extends SpringRestMongoTestBase {
 
     @BeforeAll
     public static void init() throws Exception {
-        SpringRestMongoDBTestBase.initClass(new CustomerEmbeddedController());
+        SpringRestMongoTestBase.initClass(new CustomerEmbeddedController());
     }
 
     @Test

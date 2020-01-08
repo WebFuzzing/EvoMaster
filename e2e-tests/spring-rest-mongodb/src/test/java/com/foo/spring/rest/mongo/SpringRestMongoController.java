@@ -1,4 +1,4 @@
-package com.foo.spring.rest.mongodb;
+package com.foo.spring.rest.mongo;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCursor;
@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public abstract class SpringRestMongodbController extends EmbeddedSutController {
+public abstract class SpringRestMongoController extends EmbeddedSutController {
 
     private final Class<?> applicationClass;
 
@@ -28,7 +28,7 @@ public abstract class SpringRestMongodbController extends EmbeddedSutController 
     private Connection connection;
     private MongoClient mongoClient;
 
-    public SpringRestMongodbController(Class<?> applicationClass) {
+    public SpringRestMongoController(Class<?> applicationClass) {
         this.applicationClass = applicationClass;
     }
 

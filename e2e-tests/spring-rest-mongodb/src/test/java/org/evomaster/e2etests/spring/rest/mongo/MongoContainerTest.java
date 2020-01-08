@@ -1,4 +1,4 @@
-package org.evomaster.e2etests.spring.rest.mongodb;
+package org.evomaster.e2etests.spring.rest.mongo;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
