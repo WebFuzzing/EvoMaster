@@ -2,6 +2,7 @@ package com.foo.spring.rest.mongodb;
 
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCursor;
+import com.p6spy.engine.spy.P6SpyDriver;
 import org.bson.Document;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
@@ -53,8 +54,8 @@ public abstract class SpringRestMongodbController extends EmbeddedSutController 
 
     @Override
     public String getDatabaseDriverName() {
-        return "mongodb.jdbc.MongoDriver";
-        //return "org.h2.Driver";
+        //return "mongodb.jdbc.MongoDriver";
+        return "org.h2.Driver";
     }
 
     @Override
@@ -91,31 +92,13 @@ public abstract class SpringRestMongodbController extends EmbeddedSutController 
             c.add(collName);
         }
 
-//        String mongoURI = "mongodb://" + host + ":" + port;
-
-//        ctx = SpringApplication.run(applicationClass,
-//                new String[]{"--server.port=0",
-//                        "--liquibase.enabled=false",
-//                        "--spring.data.mongodb.uri=" + mongoURI,
-//                        "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
-//                        "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
-//                        "--spring.jpa.database-platform=org.hibernate.dialect.H2Dialect",
-//                        "--spring.jpa.properties.hibernate.enable_lazy_load_no_trans=true",
-//                        "--spring.datasource.username=sa",
-//                        "--spring.datasource.password",
-//                        "--dg-toolkit.derby.port=0",
-//                        "--spring.cache.type=NONE"
-//                });
-
-//        ctx = SpringApplication.run(applicationClass,
-//                "--server.port=0",
-//                "--spring.data.mongodb.uri=" + mongoURI
-//        );
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
                 "--spring.data.mongodb.host=" + host,
                 "--spring.data.mongodb.port=" + port,
                 "--spring.data.mongodb.database=testdb",
+                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
+                "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
                 "--spring.mongodb.embedded.version=3.2",
                 "--spring.main.allow-bean-definition-overriding=true"); // start app with mongodb connected
 
@@ -135,11 +118,11 @@ public abstract class SpringRestMongodbController extends EmbeddedSutController 
         }
         JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
 
-//        try {
-//            connection = jdbc.getDataSource().getConnection();
-//        } catch (SQLException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            connection = jdbc.getDataSource().getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         return "http://localhost:" + getSutPort();
 
@@ -160,6 +143,7 @@ public abstract class SpringRestMongodbController extends EmbeddedSutController 
 
     @Override
     public void resetStateOfSUT() {
-        // reset database
+        mongoClient.getDatabase("testdb").drop();
+        //DbCleaner.clearDatabase_H2(connection);
     }
 }

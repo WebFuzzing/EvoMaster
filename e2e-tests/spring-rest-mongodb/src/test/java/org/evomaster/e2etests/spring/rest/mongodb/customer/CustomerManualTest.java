@@ -36,18 +36,18 @@ public class CustomerManualTest extends SpringRestMongoDBTestBase {
         assertEquals(2, swagger.getPaths().size());
     }
 
-//    @Test
-//    public void testPostAndThenGet() {
-//        String url = baseUrlOfSut + "/api/mongodb/customer";
-//
-//        given().post(url)
-//                .then()
-//                .statusCode(200);
-//
-//        given().get(url)
-//                .then()
-//                .statusCode(200);
-//    }
+    @Test
+    public void testPostAndThenGet() {
+        String url = baseUrlOfSut + "/api/mongodb/customer";
+
+        given().post(url)
+                .then()
+                .statusCode(200);
+
+        given().get(url)
+                .then()
+                .statusCode(200);
+    }
 
     @Test
     public void testGetOnEmpty() {
