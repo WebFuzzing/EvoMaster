@@ -1,9 +1,7 @@
 package com.foo.spring.rest.mongo;
 
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCursor;
 import com.p6spy.engine.spy.P6SpyDriver;
-import org.bson.Document;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
@@ -16,7 +14,6 @@ import org.testcontainers.containers.GenericContainer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +51,6 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
 
     @Override
     public String getDatabaseDriverName() {
-        //return "mongodb.jdbc.MongoDriver";
         return "org.h2.Driver";
     }
 
@@ -82,16 +78,6 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
         String host = mongodb.getContainerIpAddress();
         int port = mongodb.getMappedPort(MONGO_PORT);
 
-        ArrayList<String> l = new ArrayList<>();
-        for (String dbName : mongoClient.listDatabaseNames()) {
-            l.add(dbName);
-        }
-
-        ArrayList<String> c = new ArrayList<>();
-        for (String collName : mongoClient.getDatabase("local").listCollectionNames()) {
-            c.add(collName);
-        }
-
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
                 "--spring.data.mongodb.host=" + host,
@@ -102,12 +88,6 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
                 "--spring.mongodb.embedded.version=3.2",
                 "--spring.main.allow-bean-definition-overriding=true"); // start app with mongodb connected
 
-        for (String collectionName :mongoClient.getDatabase("testdb").listCollectionNames()) {
-            MongoCursor<Document> cursor = mongoClient.getDatabase("testdb").getCollection(collectionName).find().iterator() ;
-            while (cursor.hasNext()) {
-                Document doc = cursor.next();
-            }
-        }
 
         if (connection != null) {
             try {
@@ -144,6 +124,5 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
     @Override
     public void resetStateOfSUT() {
         mongoClient.getDatabase("testdb").drop();
-        //DbCleaner.clearDatabase_H2(connection);
     }
 }
