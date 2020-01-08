@@ -10,7 +10,7 @@
         <version>1.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>evomaster-e2e-tests-spring-rest-mongodb</artifactId>
+    <artifactId>evomaster-e2e-tests-spring-rest-mongo</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
