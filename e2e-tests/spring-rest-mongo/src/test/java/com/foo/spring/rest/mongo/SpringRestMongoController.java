@@ -1,7 +1,8 @@
 package com.foo.spring.rest.mongo;
 
 import com.mongodb.MongoClient;
-import com.p6spy.engine.spy.P6SpyDriver;
+import com.mongodb.MongoClientOptions;
+import com.mongodb.ServerAddress;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
@@ -9,11 +10,9 @@ import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.containers.GenericContainer;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
@@ -71,38 +70,27 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
     public String startSut() {
 
         mongodb.start();
+        ServerAddress serverAddress = new ServerAddress(mongodb.getContainerIpAddress(), mongodb.getMappedPort(MONGO_PORT));
+        MongoClientOptions mongoClientOptions = MongoClientOptions.builder()
+                .build();
 
-        mongoClient = new MongoClient(mongodb.getContainerIpAddress(),
-                mongodb.getMappedPort(MONGO_PORT));
+        mongoClient = new MongoClient(serverAddress, mongoClientOptions);
+        mongoClient.getDatabase("testdb");
 
         String host = mongodb.getContainerIpAddress();
         int port = mongodb.getMappedPort(MONGO_PORT);
 
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
+                "--spring.mongodb.embedded.version=3.2",
                 "--spring.data.mongodb.host=" + host,
                 "--spring.data.mongodb.port=" + port,
                 "--spring.data.mongodb.database=testdb",
-                "--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",
-                "--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),
-                "--spring.mongodb.embedded.version=3.2",
-                "--spring.main.allow-bean-definition-overriding=true"); // start app with mongodb connected
-
-
-        if (connection != null) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        JdbcTemplate jdbc = ctx.getBean(JdbcTemplate.class);
-
-        try {
-            connection = jdbc.getDataSource().getConnection();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+                /*"--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",*/
+                /*"--spring.datasource.url=jdbc:p6spy:mongodb://"+host + ":" + port + "/" + "testdb;DB_CLOSE_DELAY=-1;",*/
+                /*"--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),*/
+                "--spring.main.allow-bean-definition-overriding=true",
+                "--logging.level.org.springframework.data.mongodb.core.MongoTemplate=DEBUG"); // start app with mongodb connected
 
         return "http://localhost:" + getSutPort();
 

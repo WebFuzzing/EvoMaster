@@ -9,7 +9,16 @@ import java.util.stream.Collectors;
 
 public class ReplacementList {
 
+    private static List<MethodReplacementClass> singletonList;
+
     public static List<MethodReplacementClass> getList() {
+        if (singletonList == null) {
+            singletonList = buildList();
+        }
+        return singletonList;
+    }
+
+    private static List<MethodReplacementClass> buildList() {
         return Arrays.asList(
                 new BooleanClassReplacement(),
                 new CollectionClassReplacement(),
@@ -29,7 +38,8 @@ public class ReplacementList {
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
                 new ByteClassReplacement(),
-                new CharacterClassReplacement()
+                new CharacterClassReplacement()/*,
+                new MongoCollectionClassReplacement()*/
         );
     }
 

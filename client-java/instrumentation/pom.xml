@@ -47,6 +47,13 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
 
+
+        <!-- Dependencies for tracking MongoDB queries -->
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver</artifactId>
+        </dependency>
+
         <!-- Dependencies for Java Regex distances -->
         <dependency>
             <groupId>net.sf.jgrapht</groupId>

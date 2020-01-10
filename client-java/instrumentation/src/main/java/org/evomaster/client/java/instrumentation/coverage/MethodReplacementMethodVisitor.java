@@ -67,7 +67,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
             TODO: in future, might also target methods in Kotlin API
          */
-        if (!owner.startsWith("java/")) {
+        if (!owner.startsWith("java/") /*&& !owner.equals("com/mongodb/client/internal/MongoCollectionImpl")*/) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
             return;
         }
