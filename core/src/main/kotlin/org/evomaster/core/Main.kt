@@ -345,9 +345,8 @@ class Main {
 
              */
 
-            solutions.filter { !it.individuals.isNullOrEmpty() }.map {
-                writer.writeTests(it, controllerInfoDto?.fullName)
-            }
+            solutions.filter { !it.individuals.isNullOrEmpty() }
+                    .forEach {writer.writeTests(it, controllerInfoDto?.fullName) }
 
         }
 
