@@ -1,13 +1,14 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import io.swagger.models.Swagger
-import io.swagger.parser.SwaggerParser
+import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.problem.rest.RestActionBuilder
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.CookieLogin
@@ -49,7 +50,7 @@ class RestResourceSampler : ResourceSampler(){
 
         val actionCluster = mutableMapOf<String, Action>()
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf(), doParseDescription = config.doesApplyNameMatching)
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf(), doParseDescription = config.doesApplyNameMatching)
 
         setupAuthentication(infoDto)
 
@@ -111,7 +112,7 @@ class RestResourceSampler : ResourceSampler(){
         return authenticationsInfo
     }
 
-    private fun getSwagger(infoDto: SutInfoDto): Swagger {
+    private fun getSwagger(infoDto: SutInfoDto): OpenAPI {
 
         val swaggerURL = infoDto.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
 
@@ -124,9 +125,9 @@ class RestResourceSampler : ResourceSampler(){
         val json = response.readEntity(String::class.java)
 
         val swagger = try {
-            SwaggerParser().parse(json)
+            OpenAPIParser().readContents(json, null, null).openAPI
         } catch (e: Exception) {
-            throw SutProblemException("Failed to parse Swagger JSON data: $e")
+            throw SutProblemException("Failed to parse OpenApi JSON data: $e")
         }
 
         return swagger

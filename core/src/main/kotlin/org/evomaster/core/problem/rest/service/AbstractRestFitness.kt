@@ -499,6 +499,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
+            HttpVerb.TRACE -> builder.build("TRACE")
         }
         return invocation
     }

@@ -76,7 +76,7 @@ Its first step will be to tell it to start the SUT with  all the required instru
 Then, it will finally start an evolutionary algorithm to evolve test cases, and measure their fitness
 when executed against the SUT. 
 To see which options to use when running _EvoMaster_ (e.g., for how long to run the evolution),
-see the [main options](options_main.md).  
+see the [main options](options.md).  
   
 
 
