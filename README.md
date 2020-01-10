@@ -3,9 +3,10 @@
 
 ![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![Build Status](https://travis-ci.org/EMResearch/EvoMaster.svg?branch=master)](https://travis-ci.org/EMResearch/EvoMaster)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 <!---
 Needs auth :(
 [[JaCoCo]](https://circleci.com/api/v1.1/project/github/arcuri82/evomaster/latest/artifacts/0/home/circleci/evomaster-build/report/target/site/jacoco-aggregate/index.html)
@@ -17,6 +18,8 @@ For more information and for applying, see [here]().
 <br>
 -->
 
+### Summary 
+
 _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
 that automatically *generates* system-level test cases.
 Internally, it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
@@ -27,12 +30,21 @@ random ones, trying to maximize measures like code coverage and fault detection.
 
 
 At the moment, _EvoMaster_ targets RESTful APIs compiled to 
-JVM 8 bytecode.
-The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) format.
+JVM __8__ and __11__ bytecode.
+The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+format (either _v2_ or _v3_).
 The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
 
 
-A [short video](https://youtu.be/3mYxjgnhLEo) shows the use of _EvoMaster_ on one of the 
+<!--### Videos---> 
+<!-- 
+<div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div> 
+-->
+
+[![](docs/img/video-player-flaticon.png)](https://youtu.be/3mYxjgnhLEo) 
+
+A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
+shows the use of _EvoMaster_ on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 
@@ -137,8 +149,7 @@ At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.
 
 * [Download EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
-* [Main console options](docs/options_main.md)
-    * [All console options](docs/options_all.md)
+* [Console options](docs/options.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
@@ -171,7 +182,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   we are very keen to receive feature requests, although of course we cannot
   guarantee when they are going to be implemented, if implemented at all. 
   As researchers, we want to know what are the problems that engineers in industry
-  do face, and that could be done to improve _EvoMaster_ to help them.
+  do face, and what could be done to improve _EvoMaster_ to help them.
   
   
 * *Pull Requests*: we are keen to receive PRs, as long as you agree
