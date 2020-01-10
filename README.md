@@ -150,6 +150,7 @@ At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.
 * [Download EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
 * [Console options](docs/options.md)
+* [OpenApi/Swagger Schema](docs/openapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
@@ -219,8 +220,8 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
 ### Funding
 
 _EvoMaster_ has been funded by: 
-* 2020-2026: a 2 million Euro grant by the European Research Council (ERC),
-as part of the ERC Consolidator project 
+* 2020-2025: a 2 million Euro grant by the European Research Council (ERC),
+as part of the *ERC Consolidator* project 
 <i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
 *  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN), 
 as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
