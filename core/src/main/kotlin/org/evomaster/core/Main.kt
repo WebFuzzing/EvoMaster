@@ -337,12 +337,17 @@ class Main {
 
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-
             val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             writer.setSwagger(swagger)
-            solutions.forEach {
-                writer.writeTests(it, controllerInfoDto?.fullName)
+            /*solutions.forEach {
+                if(it.individuals.isNotEmpty()) writer.writeTests(it, controllerInfoDto?.fullName)
             }
+
+             */
+
+            solutions.filter { !it.individuals.isNullOrEmpty() }
+                    .forEach {writer.writeTests(it, controllerInfoDto?.fullName) }
+
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
