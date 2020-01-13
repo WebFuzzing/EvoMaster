@@ -74,7 +74,7 @@ public class StringsRest {
 
     @RequestMapping(
             value = "/nope/{s}",
-            method = RequestMethod.GET,
+            method = RequestMethod.POST,
             produces = MediaType.APPLICATION_JSON
     )
     public StringsResponseDto nope(

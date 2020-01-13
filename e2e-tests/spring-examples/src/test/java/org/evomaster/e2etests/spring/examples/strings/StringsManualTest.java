@@ -107,12 +107,12 @@ public class StringsManualTest extends StringsTestBase {
     public void testNope() {
 
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/strings/nope/bar")
+                .post(baseUrlOfSut + "/api/strings/nope/bar")
                 .then()
                 .statusCode(500);
 
         given().accept(ContentType.JSON)
-                .get(baseUrlOfSut + "/api/strings/nope/foo")
+                .post(baseUrlOfSut + "/api/strings/nope/foo")
                 .then()
                 .statusCode(500);
     }

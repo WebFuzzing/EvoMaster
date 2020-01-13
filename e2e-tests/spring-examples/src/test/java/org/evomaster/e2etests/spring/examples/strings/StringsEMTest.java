@@ -26,11 +26,12 @@ public class StringsEMTest extends StringsTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/equalsFoo/{s}", "false");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/contains/{s}", "false");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/startEnds/{s}", "false");
-                    assertHasAtLeastOne(solution, HttpVerb.GET, 500);
+
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/equalsFoo/{s}", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/contains/{s}", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/startEnds/{s}", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 500);
                 });
     }
 }
