@@ -344,12 +344,59 @@ class Main {
             solutions.forEach {
                 writer.writeTests(it, controllerInfoDto?.fullName)
             }
+
+            if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.SUMMARY){
+                writeExecutiveSummary(injector, solution, controllerInfoDto)
+            }
+
+            if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+                writeClusteredSolution(injector, solution, controllerInfoDto)
+            }
+
+            /*
             val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
             if(executiveSummary.isNotEmpty() && config.testSuiteSplitType == EMConfig.TestSuiteSplitType.SUMMARY) {
                 executiveSummary.forEach {
                     writer.writeTests(it, controllerInfoDto?.fullName)
                 }
             }
+
+
+            val clusteredSolutions = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
+            if(clusteredSolutions.isNotEmpty() && config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER) {
+                clusteredSolutions.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
+            }
+            */
+        }
+
+        private fun writeExecutiveSummary(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
+            if(executiveSummary.isNotEmpty()) {
+                executiveSummary.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
+            }
+        }
+
+        private fun writeClusteredSolution(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
             val clusteredSolutions = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
             if(clusteredSolutions.isNotEmpty() && config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER) {
                 clusteredSolutions.forEach {
