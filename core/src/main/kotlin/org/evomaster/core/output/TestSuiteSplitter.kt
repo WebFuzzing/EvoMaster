@@ -29,11 +29,11 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
-        if(errs.size <= 1) return listOf(solution)
+        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return listOf(solution)
         // no clustering is attempted if there are not enough individuals containing errors
 
         return when(type){
-            EMConfig.TestSuiteSplitType.NONE -> listOf(solution)
+            EMConfig.TestSuiteSplitType.NONE  -> listOf(solution)
             EMConfig.TestSuiteSplitType.CLUSTER -> listOf(sortByClusters(solution as Solution<RestIndividual>))
             EMConfig.TestSuiteSplitType.SUMMARY -> executiveSummary(solution as Solution<RestIndividual>)
             EMConfig.TestSuiteSplitType.CODE -> splitByCode(solution)
