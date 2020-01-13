@@ -14,6 +14,8 @@ class ExpectationsWriter {
     private val responseStructureOracle = "responseStructureOracle"
     private lateinit var swagger: Swagger
     private lateinit var partialOracles: PartialOracles
+    //private val portRegex = """\w+:\d{4,5}""".toRegex()
+    private val portRegex = """(\w+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})):\d{1,5}""".toRegex()
 
     fun setFormat(format: OutputFormat){
         this.format = format
@@ -102,7 +104,10 @@ class ExpectationsWriter {
                                 val printableElement = handleFieldValuesExpect(name, fieldName, result)
                                 if (printableElement != "null"
                                         && printableElement != TestCaseWriter.NOT_COVERED_YET
-                                        && !printableTh.contains("logged")
+                                        && !printableTh.contains("logged") // messages that were logged in some external service are unlikely to be consistent between runs and introduce some flakiness
+                                        && !printableTh.contains(portRegex)
+                                // Error messages often contain the host and port. Since different runs are likely to be assigned different ports, this leads to flakiness
+                                //TODO: Bogdan: Note that these are only meant to be temporary fixes, until a better solution can be found.
                                 ) {
                                     lines.add(".that($expectationsMasterSwitch, $printableElement)")
                                 }
@@ -120,7 +125,8 @@ class ExpectationsWriter {
                                         if (printableTh != "null"
                                                 && printableTh != TestCaseWriter.NOT_COVERED_YET
                                                 && !printableTh.contains("logged") //again, unpleasant, but IDs logged as part of the error message are a problem
-                                            //TODO: find a more elegant way to deal with IDs, object refs, timestamps, etc.
+                                                && !printableTh.contains(portRegex)
+                                        //TODO: find a more elegant way to deal with IDs, object refs, timestamps, etc.
                                         ) {
                                             lines.add(".that($expectationsMasterSwitch, $printableTh)")
                                         }
