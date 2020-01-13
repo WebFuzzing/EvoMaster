@@ -73,9 +73,7 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
         ServerAddress serverAddress = new ServerAddress(mongodb.getContainerIpAddress(), mongodb.getMappedPort(MONGO_PORT));
         MongoClientOptions mongoClientOptions = MongoClientOptions.builder()
                 .build();
-
         mongoClient = new MongoClient(serverAddress, mongoClientOptions);
-        mongoClient.getDatabase("testdb");
 
         String host = mongodb.getContainerIpAddress();
         int port = mongodb.getMappedPort(MONGO_PORT);

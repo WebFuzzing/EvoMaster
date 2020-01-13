@@ -59,6 +59,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
+
         /*
             Loading class here could have side-effects.
             However, method replacements is only done for JDK APIs, which
@@ -67,10 +68,11 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
 
             TODO: in future, might also target methods in Kotlin API
          */
-        if (!owner.startsWith("java/") /*&& !owner.equals("com/mongodb/client/internal/MongoCollectionImpl")*/) {
+        if (!owner.startsWith("java/")) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
             return;
         }
+
 
 
         /*

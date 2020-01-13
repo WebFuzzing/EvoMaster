@@ -9,6 +9,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.internal.db.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -42,6 +43,8 @@ public abstract class SutController implements SutHandler {
     private String controllerHost = ControllerConstants.DEFAULT_CONTROLLER_HOST;
 
     private final SqlHandler sqlHandler = new SqlHandler();
+
+    private final MongoHandler mongoHandler = new MongoHandler();
 
     private Server controllerServer;
 
