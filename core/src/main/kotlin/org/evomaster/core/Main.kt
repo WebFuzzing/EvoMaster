@@ -340,11 +340,11 @@ class Main {
             solutions.filter { !it.individuals.isNullOrEmpty() }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
 
-            if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.SUMMARY){
+            if(config.executiveSummary){
                 writeExecutiveSummary(injector, solution, controllerInfoDto)
             }
 
-            if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+            if(config.sortFaultsByCluster){
                 writeClusteredSolution(injector, solution, controllerInfoDto)
             }
         }
@@ -434,6 +434,7 @@ class Main {
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+
             val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
             if(executiveSummary.isNotEmpty()) {
                 executiveSummary.forEach {

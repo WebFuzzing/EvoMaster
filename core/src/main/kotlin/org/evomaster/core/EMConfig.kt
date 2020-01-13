@@ -644,6 +644,14 @@ class EMConfig {
     @Cfg("Instead of generating a single test file, it could be split in several files, according to different strategies")
     var testSuiteSplitType = TestSuiteSplitType.NONE
 
+    @Experimental
+    @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
+    var executiveSummary = false
+
+    @Experimental
+    @Cfg(" Sort potential faults based on their similarity (i.e. the cluster they belong to).")
+    var sortFaultsByCluster = false
+
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")
     var seed: Long = -1

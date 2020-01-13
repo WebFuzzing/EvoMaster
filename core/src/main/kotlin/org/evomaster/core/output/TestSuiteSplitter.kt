@@ -109,7 +109,7 @@ object TestSuiteSplitter {
             individuals.addAll(inds)
         }
 
-        val sortedSolution = Solution(individuals, "${solution.testSuiteName}_Clustered")
+        val sortedSolution = Solution(individuals, "${solution.testSuiteName}_clustered")
         return sortedSolution
     }
 
@@ -133,7 +133,12 @@ object TestSuiteSplitter {
                     clu.contains(ac.result as RestCallResult)
                 }
             }.toMutableList()
-            sumSol.add(index, inds.random())
+            // Add a random individual from each cluster.
+            // Other selection criteria than random might be added at some later date.
+            // For example, one might want the smallest individual in a cluster (i.e. the smallest test case that
+            // shows a particular type of behaviour).
+            //sumSol.add(index, inds.random())
+            sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
         }
 
         val skipped = solution.individuals.filter { ind ->

@@ -28,7 +28,7 @@ public class StringsManualTest extends StringsTestBase {
         Swagger swagger = new SwaggerParser().parse(swaggerJson);
 
         assertEquals("/", swagger.getBasePath());
-        assertEquals(3, swagger.getPaths().size());
+        assertEquals(4, swagger.getPaths().size());
     }
 
     @Test
@@ -102,5 +102,18 @@ public class StringsManualTest extends StringsTestBase {
                 .then()
                 .statusCode(200)
                 .body("valid", is(true));
+    }
+    @Test
+    public void testNope() {
+
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/strings/nope/bar")
+                .then()
+                .statusCode(500);
+
+        given().accept(ContentType.JSON)
+                .get(baseUrlOfSut + "/api/strings/nope/foo")
+                .then()
+                .statusCode(500);
     }
 }
