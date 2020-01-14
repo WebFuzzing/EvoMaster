@@ -120,8 +120,11 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
+        // If no individuals have a 500 result, the summary is empty
+        // If only one individual has a 500 result, clustering is skipped, and the relevant individual is returned
         when (errs.size){
-            0, 1 -> return mutableListOf()
+            0 -> return mutableListOf()
+            1 -> return mutableListOf(Solution(errs, "${solution.testSuiteName}_executiveSummary"))
         }
 
         val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
@@ -137,7 +140,7 @@ object TestSuiteSplitter {
             // Other selection criteria than random might be added at some later date.
             // For example, one might want the smallest individual in a cluster (i.e. the smallest test case that
             // shows a particular type of behaviour).
-            //sumSol.add(index, inds.random())
+            // sumSol.add(index, inds.random())
             sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
         }
 
