@@ -80,19 +80,7 @@ public class StringsRest {
     public StringsResponseDto nope(
             @PathVariable("s") String s
     ) throws NopeException {
-        StringsResponseDto dto = new StringsResponseDto();
-        if(s == null || s.isEmpty()){
-            dto.valid = false;
-        }
-        else if(s.length() == 3 && "123456789".contains(s)){
-            dto.valid = true;
-        } else {
-            dto.valid = false;
-        }
-
         throw new NopeException("Nope");
-
-        //return dto;
     }
 
     class NopeException extends Exception{

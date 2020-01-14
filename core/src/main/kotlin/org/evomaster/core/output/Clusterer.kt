@@ -24,6 +24,10 @@ object Clusterer {
 
     fun cluster(solution: Solution<RestIndividual>,
                 epsilon: Double = 0.6): MutableList<MutableList<RestCallResult>>{
+
+        /*
+        In order to be clustered, an individual must have at least one failed result.
+         */
         val sol1 = solution.individuals.filter{
             it.evaluatedActions().any{ ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
@@ -32,9 +36,15 @@ object Clusterer {
             }
         }
 
+        /*
+        In order to "participate" in the clustering process, an action must be a RestCallResult
+        and it must be a failed result (i.e. a 500 call).
+         */
         val cluterableActions = sol1.flatMap {
-            it.evaluatedActions().map { ac ->
-                (ac.result as RestCallResult) }
+            it.evaluatedActions()
+                    .filter{ ac -> ac.result is RestCallResult }
+                    .map { ac -> (ac.result as RestCallResult) }
+                    .filter { it.getStatusCode() == 500 }
         }
 
         val clu = DBSCANClusterer<RestCallResult>(
