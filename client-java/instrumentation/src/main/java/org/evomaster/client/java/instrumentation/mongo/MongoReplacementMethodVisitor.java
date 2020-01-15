@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.mongo;
 
 import com.mongodb.client.ClientSession;
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.instrumentation.Constants;
@@ -12,16 +13,16 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MongoMethodReplacementMethodVisitor extends MethodVisitor {
+public class MongoReplacementMethodVisitor extends MethodVisitor {
 
     private final String className;
     private final String methodName;
     private final String descriptor;
 
-    public MongoMethodReplacementMethodVisitor(MethodVisitor mv,
-                                               String className,
-                                               String methodName,
-                                               String descriptor) {
+    public MongoReplacementMethodVisitor(MethodVisitor mv,
+                                         String className,
+                                         String methodName,
+                                         String descriptor) {
         super(Constants.ASM, mv);
 
         this.className = className;
@@ -31,7 +32,15 @@ public class MongoMethodReplacementMethodVisitor extends MethodVisitor {
         fillMethodsToReplace();
     }
 
-
+    /**
+     * Visits a method instruction. A method instruction is an instruction that invokes a method.
+     *
+     * @param opcode the opcode of the type instruction to be visited. This opcode is either INVOKEVIRTUAL, INVOKESPECIAL, INVOKESTATIC or INVOKEINTERFACE.
+     * @param owner  the internal name of the method's owner class (see getInternalName).
+     * @param name   the method's name.
+     * @param desc   the method's descriptor (see Type).
+     * @param itf    if the method's owner class is an interface.
+     */
     @Override
     public void visitMethodInsn(int opcode, String owner, String name,
                                 String desc, boolean itf) {
@@ -61,10 +70,10 @@ public class MongoMethodReplacementMethodVisitor extends MethodVisitor {
      */
     private void addMethodToReplace(String owner, String name, String desc, Method method) {
         if (!methodsToReplace.containsKey(owner)) {
-            methodsToReplace.put(owner, new HashMap<String, Map<String, Method>>());
+            methodsToReplace.put(owner, new HashMap<>());
         }
         if (!methodsToReplace.get(owner).containsKey(name)) {
-            methodsToReplace.get(owner).put(name, new HashMap<String, Method>());
+            methodsToReplace.get(owner).put(name, new HashMap<>());
         }
         methodsToReplace.get(owner).get(name).put(desc, method);
     }
@@ -75,34 +84,33 @@ public class MongoMethodReplacementMethodVisitor extends MethodVisitor {
         try {
             addMethodToReplace("com/mongodb/client/internal/MongoCollectionImpl",
                     "find",
-                    "(Lorg/bson/conversions/Bson;)Lcom/mongodb/client/FindIterable;",
-                    MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, Bson.class));
-
-            addMethodToReplace("com/mongodb/client/internal/MongoCollectionImpl",
-                    "find",
-                    "(Lorg/bson/conversions/Bson;Ljava/lang/Class;)Lcom/mongodb/client/FindIterable;",
+                    Type.getMethodDescriptor(Type.getType(FindIterable.class),
+                            Type.getType(Bson.class),
+                            Type.getType(Class.class)),
                     MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, Bson.class, Class.class));
 
             addMethodToReplace("com/mongodb/client/internal/MongoCollectionImpl",
                     "find",
-                    "(Lcom/mongodb/client/ClientSession;Lorg/bson/conversions/Bson;Ljava/lang/Class;)Lcom/mongodb/client/FindIterable;",
+                    Type.getMethodDescriptor(Type.getType(FindIterable.class),
+                            Type.getType(ClientSession.class),
+                            Type.getType(Bson.class),
+                            Type.getType(Class.class)),
                     MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, ClientSession.class, Bson.class, Class.class));
 
             addMethodToReplace("com/mongodb/client/MongoCollection",
                     "find",
-                    "(Lorg/bson/conversions/Bson;)Lcom/mongodb/client/FindIterable;",
-                    MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, Bson.class));
-
-            addMethodToReplace("com/mongodb/client/MongoCollection",
-                    "find",
-                    "(Lorg/bson/conversions/Bson;Ljava/lang/Class;)Lcom/mongodb/client/FindIterable;",
+                    Type.getMethodDescriptor(Type.getType(FindIterable.class),
+                            Type.getType(Bson.class),
+                            Type.getType(Class.class)),
                     MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, Bson.class, Class.class));
 
             addMethodToReplace("com/mongodb/client/MongoCollection",
                     "find",
-                    "(Lcom/mongodb/client/ClientSession;Lorg/bson/conversions/Bson;Ljava/lang/Class;)Lcom/mongodb/client/FindIterable;",
+                    Type.getMethodDescriptor(Type.getType(FindIterable.class),
+                            Type.getType(ClientSession.class),
+                            Type.getType(Bson.class),
+                            Type.getType(Class.class)),
                     MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, ClientSession.class, Bson.class, Class.class));
-
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("A replacement method for MongoDB was not found", e);
         }

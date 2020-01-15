@@ -21,7 +21,6 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
     private final Class<?> applicationClass;
 
     private ConfigurableApplicationContext ctx;
-    private Connection connection;
     private MongoClient mongoClient;
 
     public SpringRestMongoController(Class<?> applicationClass) {
@@ -45,7 +44,7 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
 
     @Override
     public Connection getConnection() {
-        return connection;
+        return null;
     }
 
     @Override
@@ -84,9 +83,6 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
                 "--spring.data.mongodb.host=" + host,
                 "--spring.data.mongodb.port=" + port,
                 "--spring.data.mongodb.database=testdb",
-                /*"--spring.datasource.url=jdbc:p6spy:h2:mem:testdb;DB_CLOSE_DELAY=-1;",*/
-                /*"--spring.datasource.url=jdbc:p6spy:mongodb://"+host + ":" + port + "/" + "testdb;DB_CLOSE_DELAY=-1;",*/
-                /*"--spring.datasource.driver-class-name=" + P6SpyDriver.class.getName(),*/
                 "--spring.main.allow-bean-definition-overriding=true",
                 "--logging.level.org.springframework.data.mongodb.core.MongoTemplate=DEBUG"); // start app with mongodb connected
 
@@ -110,5 +106,10 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
     @Override
     public void resetStateOfSUT() {
         mongoClient.getDatabase("testdb").drop();
+    }
+
+    @Override
+    public MongoClient getMongoClient() {
+        return this.mongoClient;
     }
 }

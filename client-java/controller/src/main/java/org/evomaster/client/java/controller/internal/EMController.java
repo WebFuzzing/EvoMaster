@@ -205,10 +205,12 @@ public class EMController {
                             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
                         }
                         sutController.initSqlHandler();
+                        sutController.initMongoClient();
                     } else {
                         //TODO as starting should be blocking, need to check
                         //if initialized, and wait if not
                     }
+
 
                     /*
                         regardless of where it was running or not, need to reset state.

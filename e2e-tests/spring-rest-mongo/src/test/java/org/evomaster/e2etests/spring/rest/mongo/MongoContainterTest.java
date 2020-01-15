@@ -17,7 +17,7 @@ import java.util.stream.StreamSupport;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class MongoContainerTest {
+public class MongoContainterTest {
 
     private static final int MONGO_PORT = 27017;
     private GenericContainer mongo;

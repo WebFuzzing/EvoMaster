@@ -5,8 +5,11 @@ import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.e2etests.spring.rest.mongo.SpringRestMongoTestBase;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -14,9 +17,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class CustomerManualTest extends SpringRestMongoTestBase {
 
+    private static final CustomerEmbeddedController sutController = new CustomerEmbeddedController();
+
     @BeforeAll
     public static void init() throws Exception {
-        SpringRestMongoTestBase.initClass(new CustomerEmbeddedController());
+        SpringRestMongoTestBase.initClass(sutController);
+    }
+
+    @BeforeEach
+    public void turnOnTracker() {
+        StandardOutputTracker.setTracker(true, sutController);
+    }
+
+    @AfterEach
+    public void turnOffTracker() {
+        StandardOutputTracker.setTracker(false, sutController);
     }
 
     @Test

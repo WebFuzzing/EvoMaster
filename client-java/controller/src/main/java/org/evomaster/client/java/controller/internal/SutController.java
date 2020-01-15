@@ -1,5 +1,6 @@
 package org.evomaster.client.java.controller.internal;
 
+import com.mongodb.MongoClient;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
@@ -9,7 +10,7 @@ import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
-import org.evomaster.client.java.controller.internal.db.MongoHandler;
+import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
@@ -44,7 +45,7 @@ public abstract class SutController implements SutHandler {
 
     private final SqlHandler sqlHandler = new SqlHandler();
 
-    private final MongoHandler mongoHandler = new MongoHandler();
+    protected final MongoHandler mongoHandler = new MongoHandler();
 
     private Server controllerServer;
 
@@ -183,8 +184,18 @@ public abstract class SutController implements SutHandler {
         sqlHandler.setConnection(getConnection());
     }
 
+    /**
+     * This is needed only during test generation (not execution),
+     * and it is automatically called by the EM controller after
+     * the SUT is started.
+     */
+    public final void initMongoClient() {
+        mongoHandler.setMongoClient(getMongoClient());
+    }
+
     public final void resetExtraHeuristics() {
         sqlHandler.reset();
+        mongoHandler.reset();
     }
 
     public final List<ExtraHeuristicsDto> getExtraHeuristics() {
@@ -359,6 +370,16 @@ public abstract class SutController implements SutHandler {
     public abstract Connection getConnection();
 
     /**
+     * If the system under test (SUT) uses a Mongo database, we need to have a
+     * configured client to access it.
+     *
+     * @return {@code null} if the SUT does not use any Mongo database
+     */
+    public MongoClient getMongoClient() {
+        return null;
+    }
+
+    /**
      * If the system under test (SUT) uses a SQL database, we need to specify
      * the driver used to connect, eg. {@code org.h2.Driver}.
      * This is needed for when we intercept SQL commands with P6Spy
@@ -405,5 +426,11 @@ public abstract class SutController implements SutHandler {
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
         return dto;
+    }
+
+    public final void handleMongo(String mongoOperation) {
+        Objects.requireNonNull(mongoOperation);
+
+        mongoHandler.handle(mongoOperation);
     }
 }
