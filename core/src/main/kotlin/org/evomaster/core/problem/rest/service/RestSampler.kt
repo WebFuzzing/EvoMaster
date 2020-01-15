@@ -57,7 +57,7 @@ class RestSampler : Sampler<RestIndividual>(){
 
     //private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
-    private val usedObjects: UsedObjects = UsedObjects()
+    //private val usedObjects: UsedObjects = UsedObjects()
 
     private lateinit var swagger: Swagger
 
@@ -241,13 +241,13 @@ class RestSampler : Sampler<RestIndividual>(){
         val actions = mutableListOf<RestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
-        usedObjects.clear()
+        //usedObjects.clear()
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-        val objInd =  RestIndividual(actions, SampleType.RANDOM, mutableListOf(), usedObjects.copy()
+        val objInd =  RestIndividual(actions, SampleType.RANDOM, mutableListOf()//, usedObjects.copy()
                 , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
-        usedObjects.clear()
+        //usedObjects.clear()
         return objInd
     }
 
@@ -304,11 +304,11 @@ class RestSampler : Sampler<RestIndividual>(){
          */
         if (!adHocInitialIndividuals.isEmpty()) {
             val action = adHocInitialIndividuals.removeAt(adHocInitialIndividuals.size - 1)
-            usedObjects.clear()
+            //usedObjects.clear()
             randomizeActionGenes(action, false)
-            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf(), usedObjects.copy()
+            val objInd = RestIndividual(mutableListOf(action), SampleType.SMART, mutableListOf()//, usedObjects.copy()
                     , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
-            usedObjects.clear()
+            //usedObjects.clear()
             return objInd
         }
 
@@ -347,13 +347,13 @@ class RestSampler : Sampler<RestIndividual>(){
         }
 
         if (!test.isEmpty()) {
-            val objInd = RestIndividual(test, sampleType, mutableListOf(), usedObjects.copy()
+            val objInd = RestIndividual(test, sampleType, mutableListOf()//, usedObjects.copy()
                     , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
 
-            usedObjects.clear()
+            //usedObjects.clear()
             return objInd
         }
-        usedObjects.clear()
+        //usedObjects.clear()
         return sampleAtRandom()
     }
 

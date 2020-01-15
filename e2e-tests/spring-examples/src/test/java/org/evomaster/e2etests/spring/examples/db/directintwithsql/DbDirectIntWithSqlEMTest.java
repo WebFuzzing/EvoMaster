@@ -134,7 +134,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, ind.getUsedObjects(), null, null);
+        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, null);
 
         ei = ff.calculateCoverage(withSQL);
         assertNotNull(ei);
