@@ -75,8 +75,8 @@ class ResourceGraph{
 
     companion object{
         const val MAX_LOOP = 3
-        const val INCLUDE_LABEL ="<includes>"
-        const val DEPEND_LABEL = "<depends>"
+        const val INCLUDE_LABEL ="<is composed of>"
+        const val DEPEND_LABEL = "<depends on>"
     }
 
 

@@ -28,7 +28,7 @@ interface SpringRestAPI {
             """.trimIndent()
     }
 
-    fun assertExistence(repository : String, idScript : String, ifsnippets : MutableList<IfSnippet>, iftype: IfSnippetType, exceptionStatusCode : Int= 400) :String{
+    fun assertExistence(repository : String, idScript : String, ifsnippets : MutableList<IfSnippet>, iftype: IfSnippetType, exceptionStatusCode : Int= 404) :String{
         val ifText = "if (!$repository.findById($idScript).isPresent())"
         ifsnippets.add(IfSnippet(ifText, type = iftype))
         return """
@@ -40,7 +40,7 @@ interface SpringRestAPI {
 
 
     fun findEntityByIdAndAssigned(repository : String, idScript : String, target: String, targetType: String,
-                                  ifsnippets : MutableList<IfSnippet>, iftype: IfSnippetType, exceptionStatusCode : Int= 400) :String{
+                                  ifsnippets : MutableList<IfSnippet>, iftype: IfSnippetType, exceptionStatusCode : String = "404") :String{
         val ifText = "if (! $repository.findById($idScript).isPresent())"
         ifsnippets.add(IfSnippet(ifText, iftype))
 
@@ -96,6 +96,7 @@ interface SpringRestAPI {
         return content
     }
 
+    fun setIdOnPathToDto(idScript: String, idOnPath: String) = "$idScript = $idOnPath;"
 
     fun findOrCreateEntityByIdAndAssigned(repository : String, idScript : String, target: String, targetType: String, newInstanceMethod: String, idSetter : String) =
             """
@@ -120,7 +121,7 @@ interface SpringRestAPI {
 
 
     fun findEntityByIdAndConvertToDto(repository : String, idScript : String, entityType: String, target: String, targetType: String,
-                                      toDtoMethod: String, ifsnippets : MutableList<IfSnippet>, iftype: IfSnippetType, exceptionStatusCode : Int= 400) : String{
+                                      toDtoMethod: String, ifsnippets : MutableList<IfSnippet>, iftype: IfSnippetType, exceptionStatusCode : Int= 404) : String{
         val ifText = "if (! $repository.findById($idScript).isPresent())"
         ifsnippets.add(IfSnippet(ifText, iftype))
         return """
@@ -131,7 +132,7 @@ interface SpringRestAPI {
     }
 
 
-    fun entityConvertToDto(entityInstance: String, target: String, targetType: String, toDtoMethod: String, exceptionStatusCode : Int= 400) =
+    fun entityConvertToDto(entityInstance: String, target: String, targetType: String, toDtoMethod: String, exceptionStatusCode : Int= 404) =
             """
                 $targetType $target =  $entityInstance.$toDtoMethod;
             """.trimIndent()

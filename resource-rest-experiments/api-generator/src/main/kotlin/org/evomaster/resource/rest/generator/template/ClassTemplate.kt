@@ -1,8 +1,11 @@
 package org.evomaster.resource.rest.generator.template
 
+import org.evomaster.resource.rest.generator.GenConfig
 import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippet
 import java.nio.file.Files
+import java.nio.file.OpenOption
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 /**
  * created by manzh on 2019-08-13
@@ -99,8 +102,9 @@ interface ClassTemplate : ScriptTemplate {
                 }
             }
         }
-
-        getMethods().forEach { d ->
+        val methods = getMethods()
+        println("generating ${methods.size} methods for ${getName()}")
+        methods.forEach { d ->
             val text = d.generate(types)
             if (!text.isNullOrBlank()){
                 content.append(d.generate(types))
@@ -144,15 +148,13 @@ interface ClassTemplate : ScriptTemplate {
             }
             index++
         }
-        val targets = listOf(IfSnippet.getHeader()).plus(allIf.map { it.toCSV() }).joinToString(System.lineSeparator())
-
-        val targetFile = if(indexToDetect < allIf.size){
-            "targets_incomplete"
-        }else{
-            "targets"
-        }
+        //TODO
+        if(indexToDetect < allIf.size)
+            print("identified targets for ${getName()} are not complete!")
         val targetFolder =  getOutputResourceFolder().run { if (this.endsWith(System.getProperty("file.separator"))) this else "$this${System.getProperty("file.separator")}" }
         Files.createDirectories(Paths.get(targetFolder))
-        Files.write(Paths.get("$targetFolder$targetFile.csv"), targets.toByteArray())
+        val path = Paths.get("$targetFolder${GenConfig.targetFile}.csv")
+        val targets = (if (Files.exists(path)) listOf("") else listOf(IfSnippet.getHeader())).plus(allIf.map { it.toCSV() }).joinToString(System.lineSeparator())
+        Files.write(path, targets.toByteArray(), if(Files.exists(path))StandardOpenOption.APPEND else StandardOpenOption.CREATE_NEW)
     }
 }

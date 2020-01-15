@@ -207,7 +207,6 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
                    path = if(config.hideExistsDependency) "" else graph.getPath(node),
                    pathWithId = graph.getPathWithIds(node, config.idName, !config.hideExistsDependency),
                    pathParams = if (config.hideExistsDependency) listOf() else graph.getPathParams(node, config.idName)
-
            ))
         }
 
@@ -219,7 +218,7 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
     private fun getMethods(node: ResNode) : List<RestMethod>{
         if(config.hideExistsDependency || node.outgoing.isEmpty())
             return config.restMethods.filter { it != RestMethod.DELETE_CON && it != RestMethod.GET_ALL_CON }
-        return config.restMethods
+        return config.restMethods.filter { it != RestMethod.DELETE && it != RestMethod.GET_ALL }
     }
 
     private fun generateProperties(config: GenConfig) : List<PropertySpecification>{

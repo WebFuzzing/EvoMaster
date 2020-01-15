@@ -83,7 +83,7 @@ class JavaEXController(specification: AppClazz, val rootProject: String, val csN
         return listOf(
                 """
                     ${formatBoundary(getBoundary())} ${getName()} ()${GeneralSymbol.LEFT_BRACE}
-                    this(40100,"\"$rootProject$csName/target/$jarName.jar\"",12345, 120);
+                    this(40100,"$rootProject$csName/target/$jarName.jar",12345, 120);
                     ${GeneralSymbol.RIGHT_BRACE}
                 """.trimIndent()
                 ,

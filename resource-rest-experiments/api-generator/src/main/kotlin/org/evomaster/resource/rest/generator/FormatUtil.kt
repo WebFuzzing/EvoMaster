@@ -9,7 +9,7 @@ object FormatUtil {
 
     fun lowerFirst(text: String) = lower(text, 0)
 
-    fun formatResourceOnPath(name : String) = lowerFirst(name)
+    fun formatResourceOnPath(name : String) = "${lowerFirst(name)}s"
 
     fun formatResourceIdAsPathParam(name: String, idName: String) = "${lowerFirst(name)}${upperFirst(idName)}"
 

@@ -12,6 +12,10 @@ import org.evomaster.resource.rest.generator.model.StrategyNameResource
  */
 class GenConfig {
 
+    companion object{
+        const val targetFile = "targets"
+    }
+
     /**
      * output folder
      */

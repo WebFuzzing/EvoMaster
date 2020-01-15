@@ -1,6 +1,7 @@
 package org.evomaster.resource.rest.generator
 
 import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
+import org.evomaster.resource.rest.generator.model.RestMethod
 import org.evomaster.resource.rest.generator.model.StrategyNameResource
 import org.evomaster.resource.rest.generator.pom.DependencyManager
 import org.evomaster.resource.rest.generator.pom.PackagedPOModel
@@ -50,6 +51,7 @@ object ResExp{
         config.outputContent = GenConfig.OutputContent.CS_EM_EX
         config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
         config.hideExistsDependency = hideDep
+        config.restMethods = RestMethod.values().filter { it != RestMethod.POST_VALUE }
         if (enablePropertyDependency)
             config.dependencyKind = ConditionalDependencyKind.PROPERTY
         return config
@@ -92,15 +94,19 @@ object ResExp{
 
 fun main(args : Array<String>){
 
-    val parent = "rest-n5-mark"
+    val parent = "rest-n5-set"
     val evomaster_version = "0.4.1-SNAPSHOT"
     DependencyManager.defined_version.replace(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.versionKey, evomaster_version)
 
     val exp = arrayOf(false, true).flatMap {
-        listOf(ResExp.n5_dense(hideDep = it),ResExp.n5_medium(hideDep = it),ResExp.n5_sparse(hideDep = it))
+        arrayOf(false, true).flatMap {p->
+            listOf(ResExp.n5_dense(enablePropertyDependency = p, hideDep = it)
+                    ,ResExp.n5_medium(enablePropertyDependency = p,hideDep = it)
+                    ,ResExp.n5_sparse(enablePropertyDependency = p,hideDep = it))
+        }
     }
 
-    val folder  = "/Users/mazh001/Documents/GitHub/artificial_rest_experiment/$parent"
+    val folder  = "/Users/mazh001/Documents/GitHub/ap/$parent"
     val expFolder = PackagedPOModel(modules = exp.map { it.projectName }, groupId = ResExp.groupId, artifactId = parent, output = folder)
     expFolder.save()
 

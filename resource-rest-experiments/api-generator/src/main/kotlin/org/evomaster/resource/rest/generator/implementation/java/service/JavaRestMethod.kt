@@ -34,8 +34,14 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
     override fun getParamTag(): Map<String, String> {
         return when(method){
-            RestMethod.POST, RestMethod.PUT ->{
+            RestMethod.POST ->{
                 extraPathParamsTags(mapOf(dtoVar to SpringAnnotation.REQUEST_BODY.getText()).toMutableMap(), skip = listOf(idVar))
+            }
+            RestMethod.PUT ->{
+                extraPathParamsTags(mapOf(
+                        idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)),
+                        dtoVar to SpringAnnotation.REQUEST_BODY.getText()
+                ).toMutableMap())
             }
             RestMethod.POST_VALUE ->{
                 extraPathParamsTags(
@@ -91,8 +97,14 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
     override fun getParams(): Map<String, String> {
         return when(method){
-            RestMethod.POST, RestMethod.PUT ->{
+            RestMethod.POST ->{
                 extraPathParams(mapOf(dtoVar to "${specification.dto.name}").toMutableMap(), skip = listOf(idVar))
+            }
+            RestMethod.PUT -> {
+                extraPathParams(mapOf(
+                        idVar to specification.dto.idProperty.type,
+                        dtoVar to "${specification.dto.name}"
+                ).toMutableMap())
             }
             RestMethod.POST_VALUE->{
                 extraPathParams(mapOf(idVar to specification.dto.idProperty.type)
@@ -145,16 +157,17 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                                 idVar, specification.entity.name, dto, specification.dto.name,
                                 JavaE2DMethod(specification.entity).getInvocation(null),
                                 ifsnippets = ifsnippet,
-                                iftype = IfSnippetType.CHECK_OWN_EXISTENCE
+                                iftype = IfSnippetType.CHECK_OWN_EXISTENCE,
+                                exceptionStatusCode = 404
                                 )
                 )
                 content.add(returnWithContent(dto))
                 return content
             }
             RestMethod.DELETE, RestMethod.DELETE_CON ->{
-                content.add(assertExistence(specification.entityRepository.name, idVar, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE))
+                content.add(assertExistence(specification.entityRepository.name, idVar, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE, exceptionStatusCode = 404))
                 content.add(repositoryDeleteById(specification.entityRepository.name, idVar))
-                content.add(returnStatus(200))
+                content.add(returnStatus(200)) // delete the resource succesfully
                 return content
             }
         }
@@ -169,11 +182,12 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
         when(method){
             RestMethod.POST, RestMethod.POST_VALUE ->{
-                content.add(assertNonExistence(specification.entityRepository.name, idValue, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE))
+                content.add(assertNonExistence(specification.entityRepository.name, idValue, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE, exceptionStatusCode = 400))
                 content.add(formatInstanceClassAndAssigned(specification.entity.name, created, listOf()))
                 content.add("$created.${specification.entity.idProperty.nameSetterName()}($idValue);")
             }
             RestMethod.PUT ->{
+                content.add(setIdOnPathToDto(idValue, idVar))
                 content.add(findOrCreateEntityByIdAndAssigned(
                         specification.entityRepository.name,
                         idValue,
@@ -190,7 +204,8 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                         created,
                         specification.entity.name,
                         ifsnippet,
-                        IfSnippetType.CHECK_SELF_EXISTENCE
+                        IfSnippetType.CHECK_SELF_EXISTENCE,
+                        exceptionStatusCode = "404"
                 ))
             }
 
@@ -208,6 +223,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                         val createdDtoVar = "ownedDto$index" //dto
                         createdDtos.add(createdDtoVar)
                         content.add(formatInstanceClassAndAssigned( specification.dto.ownOthersTypes[index], createdDtoVar, listOf()))
+                        val statusCode = "${createdDtoVar}Code"
                         if (inputIsObject){
                             specification.dto.ownOthersProperties[index].plus(ownedId[index]).forEach { op->
                                 val opp = op as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
@@ -215,7 +231,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                             }
                             val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
                                     ?:throw IllegalArgumentException("cannot find service to create the owned entity")
-                            content.add("${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar);")
+                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
                         }else{
                             val varsOnParams = ownedPVars[index]
                             val opid = ownedId[index] as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
@@ -228,7 +244,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                             val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
                                     ?:throw IllegalArgumentException("cannot find service to create the owned entity")
 
-                            content.add("${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar);")
+                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
                         }
                         val entityProperty = specification.entity.ownOthers[index]
                         val found = "ownedEntity${entityProperty.type}"
@@ -239,7 +255,8 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                                 found,
                                 entityProperty.type,
                                 ifsnippet,
-                                IfSnippetType.CHECK_OWN_EXISTENCE
+                                IfSnippetType.CHECK_OWN_EXISTENCE,
+                                exceptionStatusCode = statusCode // owned resource should be created by API with POST method
                         ))
                         content.add("$created.${entityProperty.nameSetterName()}($found);")
                     }
@@ -396,14 +413,21 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
         content.add(JavaUtils.getSingleComment("save the entity"))
         content.add(repositorySave(specification.entityRepository.name, created))
 
-        if (!withImpact) content.add(returnStatus(200)) else content.add(returnStatus(200, msg = getBranchMsg()))
+        //NOT APPLY this: Set the Location header to contain a link to the newly-created resource (on POST or PUT).
+
+        val statusCode = when(method){
+            RestMethod.PATCH_VALUE -> 200
+            RestMethod.POST_VALUE, RestMethod.POST, RestMethod.PUT -> 201
+            else -> throw IllegalArgumentException("NOT IMPLEMENT $method")
+        }
+        if (!withImpact) content.add(returnStatus(statusCode)) else content.add(returnStatus(statusCode, msg = getBranchMsg()))
         return content
     }
 
     fun getPath(): String{
         return when(method){
-            RestMethod.GET_ALL_CON,RestMethod.POST, RestMethod.PUT -> specification.pathWithId
-            RestMethod.GET_ID, RestMethod.DELETE_CON,RestMethod.POST_VALUE,RestMethod.PATCH_VALUE -> "${specification.pathWithId}/{$idVar}"
+            RestMethod.GET_ALL_CON,RestMethod.POST -> specification.pathWithId
+            RestMethod.PUT, RestMethod.GET_ID, RestMethod.DELETE_CON,RestMethod.POST_VALUE,RestMethod.PATCH_VALUE -> "${specification.pathWithId}/{$idVar}"
             RestMethod.GET_ALL-> "/${specification.resourceOnPath}"
             RestMethod.DELETE-> "/${specification.resourceOnPath}/{$idVar}"
         }
