@@ -1,6 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
+import io.swagger.models.Swagger
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -26,11 +27,20 @@ class TestSuiteWriter {
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
+    private lateinit var swagger: Swagger
+
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
+        private const val expectationsMasterSwitch = "expectationsMasterSwitch"
+        private const val responseStructureOracle = "responseStructureOracle"
         private const val activeExpectations = "activeExpectations"
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
+
+    }
+
+    fun setSwagger(sw: Swagger){
+        swagger = sw
     }
 
     fun writeTests(
@@ -38,7 +48,7 @@ class TestSuiteWriter {
             controllerName: String?
     ) {
 
-        val name = TestSuiteFileName(config.testSuiteFileName)
+        val name = TestSuiteFileName(solution.testSuiteName)
 
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
@@ -65,6 +75,8 @@ class TestSuiteWriter {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
+        val testCaseWriter = TestCaseWriter()
+        if(::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
 
         header(solution, testSuiteFileName, lines)
 
@@ -89,7 +101,7 @@ class TestSuiteWriter {
 
                 // catch writing problems on an individual test case basis
                 val testLines = try {
-                    TestCaseWriter()
+                    testCaseWriter
                             .convertToCompilableTestCode(config, test, baseUrlOfSut)
 
                 }
@@ -202,18 +214,20 @@ class TestSuiteWriter {
             addImport("io.restassured.path.json.config.JsonPathConfig", lines)
             addImport("io.restassured.config.RedirectConfig.redirectConfig", lines, true)
             addImport("org.evomaster.client.java.controller.contentMatchers.NumberMatcher.*", lines, true)
+            addImport("org.evomaster.client.java.controller.contentMatchers.StringMatcher.*", lines, true)
+            addImport("org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.*", lines, true)
         }
 
         if(config.expectationsActive) {
             addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
+            addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
+            addImport("io.restassured.response.ValidatableResponse", lines)
+            addImport("io.restassured.path.json.JsonPath", lines)
+            addImport("java.util.Arrays", lines)
+
         }
-        //addImport("static org.hamcrest.core.Is.is", lines, format)
 
         lines.addEmpty(2)
-
-        /*if(config.enableBasicAssertions && config.outputFormat.isJava()){
-            addAdditionalNumberMatcher(lines)
-        }*/
 
         lines.addEmpty(2)
 
@@ -236,7 +250,9 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
-                lines.add("private static boolean activeExpectations = false;")
+                lines.add("private static boolean $expectationsMasterSwitch = false;")
+                //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
+                lines.add("private static boolean $responseStructureOracle = false;")
             }
 
         } else if(config.outputFormat.isKotlin()) {
@@ -248,7 +264,8 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
-                lines.add("private val $activeExpectations = false")
+                lines.add("private val $expectationsMasterSwitch = false")
+                lines.add("private val $responseStructureOracle = false")
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
@@ -277,6 +294,8 @@ class TestSuiteWriter {
                 addStatement("assertNotNull(baseUrlOfSut)", lines)
             }
 
+            addStatement("RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()", lines)
+            addStatement("RestAssured.useRelaxedHTTPSValidation()", lines)
             addStatement("RestAssured.urlEncodingEnabled = false", lines)
 
             if (config.enableBasicAssertions){

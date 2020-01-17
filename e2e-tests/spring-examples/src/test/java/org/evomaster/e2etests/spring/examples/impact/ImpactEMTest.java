@@ -55,8 +55,8 @@ public class ImpactEMTest extends SpringTestBase {
     public void testRunEM(GeneMutationSelectionMethod method) throws Throwable {
 
         runTestHandlingFlakyAndCompilation(
-                "",
-                "",
+                "none",
+                "none",
                 2_000,
                 false,
                 (args) -> {

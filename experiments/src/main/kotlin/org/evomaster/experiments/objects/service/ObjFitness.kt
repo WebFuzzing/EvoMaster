@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto
 import org.evomaster.core.database.DbActionTransformer
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.HeaderParam
@@ -367,6 +368,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
+            HttpVerb.TRACE -> builder.build("TRACE")
         }
 
         val rcr = RestCallResult()
@@ -418,7 +420,8 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
                 if (body.length < configuration.maxResponseByteSize) {
                     rcr.setBody(body)
                 } else {
-                    log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
+                    LoggingUtil.uniqueWarn(log,
+                            "A very large response body was retrieved from the endpoint '${a.path}'." +
                             " If that was expected, increase the 'maxResponseByteSize' threshold" +
                             " in the configurations.")
                     rcr.setTooLargeBody(true)

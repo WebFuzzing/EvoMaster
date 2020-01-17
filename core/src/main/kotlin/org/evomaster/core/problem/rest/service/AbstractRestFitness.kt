@@ -7,6 +7,7 @@ import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -361,7 +362,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 if (body.length < configuration.maxResponseByteSize) {
                     rcr.setBody(body)
                 } else {
-                    log.warn("A very large response body was retrieved from the endpoint '${a.path}'." +
+                    LoggingUtil.uniqueWarn(log,
+                            "A very large response body was retrieved from the endpoint '${a.path}'." +
                             " If that was expected, increase the 'maxResponseByteSize' threshold" +
                             " in the configurations.")
                     rcr.setTooLargeBody(true)
@@ -415,14 +417,19 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     GeneUtils.applyEscapes(it, GeneUtils.EscapeMode.URI, configuration.outputFormat)
                 }
 
-        /*
-            TODO: This only considers the first in the list of produced responses
-            This is fine for endpoints that only produce one type of response.
-            Could be a problem in future
-        */
-        val produces = a.produces.first()
 
-        val builder = client.target(fullUri).request(produces)
+        val builder = if(a.produces.isEmpty()){
+            log.debug("No 'produces' type defined for {}", path)
+            client.target(fullUri).request("*/*")
+
+        } else {
+            /*
+                TODO: This only considers the first in the list of produced responses
+                This is fine for endpoints that only produce one type of response.
+                Could be a problem in future
+            */
+            client.target(fullUri).request(a.produces.first())
+        }
 
         a.auth.headers.forEach {
             builder.header(it.name, it.value)
@@ -492,6 +499,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
+            HttpVerb.TRACE -> builder.build("TRACE")
         }
         return invocation
     }

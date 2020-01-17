@@ -22,10 +22,10 @@ public class NumberMatcher extends TypeSafeMatcher<Number> {
         if (item == null) return false;
         else return item.doubleValue() == value;
     }
-    public static Matcher<Number> numberMatches(Number item) {
+    public static NumberMatcher numberMatches(Number item) {
         return new NumberMatcher(item.doubleValue());
     }
-    public static Matcher<Number> numberMatches(String item) {
+    public static NumberMatcher numberMatches(String item) {
         try{
             Number value = Double.parseDouble(item);
             return new NumberMatcher(value.doubleValue());
@@ -39,4 +39,12 @@ public class NumberMatcher extends TypeSafeMatcher<Number> {
         NumberMatcher n1 = new NumberMatcher(item1.doubleValue());
         return n1.matchesSafely(item2);
     }
+
+    public static boolean numbersMatch(Number item1, String item2){
+        if(item1 == null || item2 == null) return false;
+        NumberMatcher n2 = numberMatches(item2);
+        return n2.matchesSafely(item1);
+    }
+
+
 }

@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -104,17 +105,85 @@ public abstract class RestTestBase {
         });
     }
 
+    protected void runTestHandlingFlaky(
+            String outputFolderName,
+            String fullClassName,
+            List<String> terminations,
+            int iterations,
+            boolean createTests,
+            Consumer<List<String>> lambda,
+            int timeoutMinutes) throws Throwable{
+
+        /*
+            Years have passed, still JUnit 5 does not handle global test timeouts :(
+            https://github.com/junit-team/junit5/issues/80
+         */
+        //
+
+        List<ClassName> classNames = new ArrayList<ClassName>(Collections.emptyList());
+
+        for (String termination : terminations) {
+            classNames.add(new ClassName(fullClassName + termination));
+        }
+
+
+        assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
+            ClassName className = new ClassName(fullClassName);
+            clearGeneratedFiles(outputFolderName, classNames);
+
+            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
+
+            handleFlaky(
+                    () -> lambda.accept(new ArrayList<>(args))
+            );
+        });
+    }
+
+
+
     protected void runTestHandlingFlakyAndCompilation(
             String outputFolderName,
             String fullClassName,
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, iterations, true, lambda, 3);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, Arrays.asList(""), iterations, true, lambda, 3);
     }
 
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            List<String> terminations,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, terminations, iterations, true, lambda, 3);
+    }
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            List<String> terminations,
+            int iterations,
+            boolean createTests,
+            Consumer<List<String>> lambda,
+            int timeoutMinutes) throws Throwable {
+
+        runTestHandlingFlaky(outputFolderName, fullClassName, terminations, iterations, createTests,lambda, timeoutMinutes);
 
 
+        //BMR: this is where I should handle multiples???
+        if (createTests){
+            for (String termination : terminations) {
+                assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                    ClassName className = new ClassName(fullClassName + termination);
+                    clearCompiledFiles(className);
+                    //the first one goes through, but for the second generated files appear to not be clean.
+                    compileRunAndVerifyTests(outputFolderName, className);
+                });
+            }
+        }
+    }
 
     protected void runTestHandlingFlakyAndCompilation(
             String outputFolderName,
@@ -158,7 +227,7 @@ public abstract class RestTestBase {
         assertTrue(summary.getTestsSucceededCount() > 0);
     }
 
-    protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
+    protected void clearGeneratedFiles(String outputFolderName, List<ClassName> testClassNames){
 
         File folder = new File(outputFolderPath(outputFolderName));
         try{
@@ -167,9 +236,24 @@ public abstract class RestTestBase {
             throw new RuntimeException(e);
         }
 
-        String bytecodePath = "target/test-classes/" + testClassName.getAsResourcePath();
-        File compiledFile = new File(bytecodePath);
-        compiledFile.delete();
+        for (ClassName testClassName : testClassNames){
+            clearCompiledFiles(testClassName);
+        }
+
+    }
+
+    protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
+        List<ClassName> classNames = new ArrayList<ClassName>();
+        classNames.add(testClassName);
+
+        clearGeneratedFiles(outputFolderName, classNames);
+    }
+
+    protected void clearCompiledFiles(ClassName testClassName){
+        String byteCodePath = "target/test-classes/" + testClassName.getAsResourcePath();
+        File compiledFile = new File(byteCodePath);
+        boolean result = compiledFile.delete();
+
     }
 
     protected Class<?> loadClass(ClassName className){

@@ -1,10 +1,12 @@
 package org.evomaster.core
 
 import org.evomaster.client.java.controller.api.ControllerConstants
+import org.evomaster.core.output.OutputFormat
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
+import java.lang.IllegalArgumentException
 
 internal class EMConfigTest{
 
@@ -235,4 +237,74 @@ internal class EMConfigTest{
     }
 
 
+    @ParameterizedTest
+    @ValueSource(strings =  ["","1",".a","a.","a..a","a.1","?","!","%"])
+    fun testFileNameWrong(value : String){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["testSuiteFileName"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--testSuiteFileName", value)
+
+        assertThrows(Exception::class.java) {config.updateProperties(options)}
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings =  ["a","a.a","a.a1","A","a123","a.b.c.d1.e123"])
+    fun testFileNameOK(value : String){
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["testSuiteFileName"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--testSuiteFileName", value)
+
+        config.updateProperties(options)
+
+        assertEquals(value, config.testSuiteFileName)
+    }
+
+
+    @Test
+    fun testMinusInFileName(){
+
+        val name = "a-a"
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["testSuiteFileName"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--testSuiteFileName", name)
+
+        config.outputFormat = OutputFormat.JAVA_JUNIT_4
+        assertThrows(Exception::class.java) {config.updateProperties(options)}
+
+        //TODO update when ll support JavaScript
+//        config.outputFormat = TODO JS
+//        config.updateProperties(options)
+//        assertEquals(name, config.testSuiteFileName)
+    }
+
+
+    @ParameterizedTest
+    @ValueSource(strings =  ["pom.xml"])
+    fun testWrongPath(value : String){
+
+        /*
+            Interestingly, a name like
+            ?*!$%@
+            would fail in Windows, but it is OK in Mac...
+            Mac practically accepts anything:
+            https://superuser.com/questions/326103/what-are-invalid-characters-for-a-file-name-under-os-x
+         */
+
+        val parser = EMConfig.getOptionParser()
+        parser.recognizedOptions()["outputFolder"] ?: throw Exception("Cannot find option")
+
+        val config = EMConfig()
+        val options = parser.parse("--outputFolder", value)
+
+        assertThrows(Exception::class.java) {config.updateProperties(options)}
+    }
 }

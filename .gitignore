@@ -55,3 +55,5 @@ experiments/target/
 /client-js/evomaster-client-js/node_modules/
 /client-js/evomaster-client-js/dist/
 /client-js/integration-tests/check/
+
+/e2e-tests/spring-rest-openapi-v3/target
