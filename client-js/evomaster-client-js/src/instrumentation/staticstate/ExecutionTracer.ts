@@ -6,6 +6,7 @@ import TargetInfo from "../TargetInfo";
 import Action from "../Action";
 import ObjectiveNaming from "../ObjectiveNaming";
 import AdditionalInfoDto from "../../controller/api/dto/AdditionalInfoDto";
+import AdditionalInfo from "../AdditionalInfo";
 
 export default class ExecutionTracer {
 
@@ -20,7 +21,7 @@ export default class ExecutionTracer {
     /**
      * Key -> the unique descriptive id of the coverage objective
      */
-    private static readonly  objectiveCoverage : Map<String, TargetInfo> = new Map<>();
+    private static readonly  objectiveCoverage : Map<string, TargetInfo> = new Map<>();
 
     /**
      * A test case can be composed by 1 or more actions, eg HTTP calls.
@@ -40,14 +41,14 @@ export default class ExecutionTracer {
      * keep track during test execution.
      * We keep track of it separately for each action
      */
-    private static readonly  additionalInfoList : Array<AdditionalInfoDto> = [];
+    private static readonly  additionalInfoList : Array<AdditionalInfo> = [];
 
 
     static  reset() {
         ExecutionTracer.objectiveCoverage.clear();
         ExecutionTracer.actionIndex = 0;
         ExecutionTracer.additionalInfoList.length = 0;
-        ExecutionTracer.additionalInfoList.push(new AdditionalInfoDto());
+        ExecutionTracer.additionalInfoList.push(new AdditionalInfo());
         ExecutionTracer.inputVariables = new Set<>();
     }
 
@@ -55,7 +56,7 @@ export default class ExecutionTracer {
     static setAction(action: Action){
         if(action.getIndex() != ExecutionTracer.actionIndex) {
             ExecutionTracer.actionIndex = action.getIndex();
-            //additionalInfoList.add(new AdditionalInfo());
+            ExecutionTracer.additionalInfoList.add(new AdditionalInfo());
         }
 
         if(action.getInputVariables() && action.getInputVariables().size > 0){
@@ -94,7 +95,7 @@ export default class ExecutionTracer {
     // }
 
 
-    static  exposeAdditionalInfoList() : Array<AdditionalInfoDto>{
+    static  exposeAdditionalInfoList() : Array<AdditionalInfo>{
         return ExecutionTracer.additionalInfoList;
     }
 
@@ -112,36 +113,34 @@ export default class ExecutionTracer {
 
 
 
- static markLastExecutedStatement(lastLine:string, lastMethod: string){
-    ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex]
-        .pushLastExecutedStatement(lastLine, lastMethod);
-}
+    public static markLastExecutedStatement(lastLine:string, lastMethod: string){
+        ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex]
+            .pushLastExecutedStatement(lastLine, lastMethod);
+    }
 
-public static final String COMPLETED_LAST_EXECUTED_STATEMENT_NAME = "completedLastExecutedStatement";
-public static final String COMPLETED_LAST_EXECUTED_STATEMENT_DESCRIPTOR = "()V";
 
-public static void completedLastExecutedStatement(){
-    additionalInfoList.get(actionIndex).popLastExecutedStatement();
-}
+    public static completedLastExecutedStatement(){
+        ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].popLastExecutedStatement();
+    }
 
-public static Map<String, TargetInfo> getInternalReferenceToObjectiveCoverage() {
-    return objectiveCoverage;
-}
+    public static  getInternalReferenceToObjectiveCoverage() : Map<String, TargetInfo> {
+        return ExecutionTracer.objectiveCoverage;
+    }
 
 /**
  * @return the number of objectives that have been encountered
  * during the test execution
  */
-public static int getNumberOfObjectives() {
-    return objectiveCoverage.size();
+public static  getNumberOfObjectives() : number{
+    return ExecutionTracer.objectiveCoverage.size;
 }
 
-public static int getNumberOfObjectives(String prefix) {
-    return (int) objectiveCoverage
-        .entrySet().stream()
-        .filter(e -> prefix == null || e.getKey().startsWith(prefix))
-        .count();
-}
+// public static int getNumberOfObjectives(String prefix) {
+//     return (int) objectiveCoverage
+//         .entrySet().stream()
+//         .filter(e -> prefix == null || e.getKey().startsWith(prefix))
+//         .count();
+// }
 
 /**
  * Note: only the objectives encountered so far can have
@@ -155,58 +154,55 @@ public static int getNumberOfObjectives(String prefix) {
  *               Use "" or {@code null} to pick up everything
  * @return
  */
-public static int getNumberOfNonCoveredObjectives(String prefix) {
+// public static int getNumberOfNonCoveredObjectives(String prefix) {
+//
+//     return getNonCoveredObjectives(prefix).size();
+// }
 
-    return getNonCoveredObjectives(prefix).size();
+// public static Set<String> getNonCoveredObjectives(String prefix) {
+//
+//     return objectiveCoverage
+//         .entrySet().stream()
+//         .filter(e -> prefix == null || e.getKey().startsWith(prefix))
+//         .filter(e -> e.getValue().value < 1)
+//         .map(e -> e.getKey())
+//         .collect(Collectors.toSet());
+// }
+
+public static getValue(id: string) : number{
+    return ExecutionTracer.objectiveCoverage.get(id).value;
 }
 
-public static Set<String> getNonCoveredObjectives(String prefix) {
-
-    return objectiveCoverage
-        .entrySet().stream()
-        .filter(e -> prefix == null || e.getKey().startsWith(prefix))
-        .filter(e -> e.getValue().value < 1)
-        .map(e -> e.getKey())
-        .collect(Collectors.toSet());
-}
-
-public static Double getValue(String id) {
-    return objectiveCoverage.get(id).value;
-}
-
-private static void updateObjective(String id, double value) {
-    if (value < 0d || value > 1d) {
-        throw new IllegalArgumentException("Invalid value " + value + " out of range [0,1]");
+private static updateObjective(id: string, value: number) {
+    if (value < 0 || value > 1) {
+        throw new Error("Invalid value " + value + " out of range [0,1]");
     }
 
     /*
         In the same execution, a target could be reached several times,
         so we should keep track of the best value found so far
      */
-    if (objectiveCoverage.containsKey(id)) {
-        double previous = objectiveCoverage.get(id).value;
+    if (ExecutionTracer.objectiveCoverage.has(id)) {
+        let previous = ExecutionTracer.objectiveCoverage.get(id).value;
         if(value > previous){
-            objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
+            ExecutionTracer.objectiveCoverage.set(id, new TargetInfo(null, id, value, ExecutionTracer.actionIndex));
         }
     } else {
-        objectiveCoverage.put(id, new TargetInfo(null, id, value, actionIndex));
+        ExecutionTracer.objectiveCoverage.set(id, new TargetInfo(null, id, value, ExecutionTracer.actionIndex));
     }
 
-    ObjectiveRecorder.update(id, value);
+    //ObjectiveRecorder.update(id, value);
 }
 
-public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t){
+// public static executedReplacedMethod(idTemplate: string, ReplacementType type, Truthness t){
+//
+//     String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
+//     String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
+//
+//     updateObjective(idTrue, t.getOfTrue());
+//     updateObjective(idFalse, t.getOfFalse());
+// }
 
-    String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
-    String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
-
-    updateObjective(idTrue, t.getOfTrue());
-    updateObjective(idFalse, t.getOfFalse());
-}
-
-
-public static final String EXECUTED_LINE_METHOD_NAME = "executedLine";
-public static final String EXECUTED_LINE_DESCRIPTOR = "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V";
 
 /**
  * Report on the fact that a given line has been executed.

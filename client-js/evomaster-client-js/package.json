@@ -32,7 +32,7 @@
     "typescript": "^3.7.2"
   },
   "scripts": {
-    "prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
+    "//prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
     "build": "tsc",
     "test": "jest --coverage"
   },
