@@ -21,7 +21,7 @@ export default class ExecutionTracer {
     /**
      * Key -> the unique descriptive id of the coverage objective
      */
-    private static readonly  objectiveCoverage : Map<string, TargetInfo> = new Map<>();
+    private static readonly  objectiveCoverage : Map<string, TargetInfo> = new Map<string, TargetInfo>();
 
     /**
      * A test case can be composed by 1 or more actions, eg HTTP calls.
@@ -34,7 +34,7 @@ export default class ExecutionTracer {
      * A set of possible values used in the tests, needed for some kinds
      * of taint analyses
      */
-    private static inputVariables : Set<String> = new Set<>();
+    private static inputVariables : Set<string> = new Set();
 
     /**
      * Besides code coverage, there might be other events that we want to
@@ -49,14 +49,14 @@ export default class ExecutionTracer {
         ExecutionTracer.actionIndex = 0;
         ExecutionTracer.additionalInfoList.length = 0;
         ExecutionTracer.additionalInfoList.push(new AdditionalInfo());
-        ExecutionTracer.inputVariables = new Set<>();
+        ExecutionTracer.inputVariables = new Set();
     }
 
 
     static setAction(action: Action){
         if(action.getIndex() != ExecutionTracer.actionIndex) {
             ExecutionTracer.actionIndex = action.getIndex();
-            ExecutionTracer.additionalInfoList.add(new AdditionalInfo());
+            ExecutionTracer.additionalInfoList.push(new AdditionalInfo());
         }
 
         if(action.getInputVariables() && action.getInputVariables().size > 0){
@@ -207,21 +207,20 @@ private static updateObjective(id: string, value: number) {
 /**
  * Report on the fact that a given line has been executed.
  */
-public static void executedLine(String className, String methodName, String descriptor, int line) {
+public static executedLine(fileName: string, methodName: string, descriptor: string, line: number) {
+
     //for targets to cover
-    String lineId = ObjectiveNaming.lineObjectiveName(className, line);
-    String classId = ObjectiveNaming.classObjectiveName(className);
-    updateObjective(lineId, 1d);
-    updateObjective(classId, 1d);
+    const lineId = ObjectiveNaming.lineObjectiveName(fileName, line);
+    const fileId = ObjectiveNaming.classObjectiveName(fileName);
+    ExecutionTracer.updateObjective(lineId, 1);
+    ExecutionTracer.updateObjective(fileId, 1);
 
     //to calculate last executed line
-    String lastLine = className + "_" + line + "_" + methodName;
-    String lastMethod = className + "_" + methodName + "_" + descriptor;
-    markLastExecutedStatement(lastLine, lastMethod);
+    const lastLine = fileName + "_" + line + "_" + methodName;
+    const lastMethod = fileName + "_" + methodName + "_" + descriptor;
+    ExecutionTracer.markLastExecutedStatement(lastLine, lastMethod);
 }
 
-public static final String EXECUTING_METHOD_METHOD_NAME = "executingMethod";
-public static final String EXECUTING_METHOD_DESCRIPTOR = "(Ljava/lang/String;IIZ)V";
 
 /**
  *  Report on whether method calls have been successfully completed.
@@ -232,82 +231,74 @@ public static final String EXECUTING_METHOD_DESCRIPTOR = "(Ljava/lang/String;IIZ
  * @param index    as there can be many method calls on same line, need to differentiate them
  * @param completed whether the method call was successfully completed.
  */
-public static void executingMethod(String className, int line, int index, boolean completed){
-    String id = ObjectiveNaming.successCallObjectiveName(className, line, index);
+public static  executingMethod(fileName: string, line: number, index: number, completed: boolean){
+    const id = ObjectiveNaming.successCallObjectiveName(fileName, line, index);
     if(completed) {
-        updateObjective(id, 1d);
+        ExecutionTracer.updateObjective(id, 1);
     } else {
-        updateObjective(id, 0.5);
+        ExecutionTracer.updateObjective(id, 0.5);
     }
 }
 
 
 //---- branch-jump methods --------------------------
-
-private static void updateBranch(String className, int line, int branchId, Truthness t) {
-
-    /*
-        Note: when we have
-        if(x > 0){}
-
-        the "jump" to "else" branch is done if that is false.
-        So, the actual evaluated condition is the negation, ie
-        x <= 0
-     */
-
-    String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);
-    String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);
-
-    updateObjective(forElse, t.getOfTrue());
-    updateObjective(forThen, t.getOfFalse());
-}
-
-public static final String EXECUTING_BRANCH_JUMP_METHOD_NAME = "executingBranchJump";
+//
+// private static void updateBranch(String className, int line, int branchId, Truthness t) {
+//
+//     /*
+//         Note: when we have
+//         if(x > 0){}
+//
+//         the "jump" to "else" branch is done if that is false.
+//         So, the actual evaluated condition is the negation, ie
+//         x <= 0
+//      */
+//
+//     String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);
+//     String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);
+//
+//     updateObjective(forElse, t.getOfTrue());
+//     updateObjective(forThen, t.getOfFalse());
+// }
 
 
-public static final String JUMP_DESC_1_VALUE = "(IILjava/lang/String;II)V";
-
-public static void executingBranchJump(
-    int value, int opcode, String className, int line, int branchId) {
-
-    Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);
-
-    updateBranch(className, line, branchId, t);
-}
+// public static void executingBranchJump(
+//     int value, int opcode, String className, int line, int branchId) {
+//
+//     Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);
+//
+//     updateBranch(className, line, branchId, t);
+// }
 
 
-public static final String JUMP_DESC_2_VALUES = "(IIILjava/lang/String;II)V";
 
-public static void executingBranchJump(
-    int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
-
-    Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);
-
-    updateBranch(className, line, branchId, t);
-}
-
-public static final String JUMP_DESC_OBJECTS =
-    "(Ljava/lang/Object;Ljava/lang/Object;ILjava/lang/String;II)V";
-
-public static void executingBranchJump(
-    Object first, Object second, int opcode, String className, int line, int branchId) {
-
-    Truthness t = HeuristicsForJumps.getForObjectComparison(first, second, opcode);
-
-    updateBranch(className, line, branchId, t);
-}
+// public static void executingBranchJump(
+//     int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
+//
+//     Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);
+//
+//     updateBranch(className, line, branchId, t);
+// }
 
 
-public static final String JUMP_DESC_NULL =
-    "(Ljava/lang/Object;ILjava/lang/String;II)V";
+// public static void executingBranchJump(
+//     Object first, Object second, int opcode, String className, int line, int branchId) {
+//
+//     Truthness t = HeuristicsForJumps.getForObjectComparison(first, second, opcode);
+//
+//     updateBranch(className, line, branchId, t);
+// }
 
-public static void executingBranchJump(
-    Object obj, int opcode, String className, int line, int branchId) {
 
-    Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
 
-    updateBranch(className, line, branchId, t);
-}
+// public static void executingBranchJump(
+//     Object obj, int opcode, String className, int line, int branchId) {
+//
+//     Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
+//
+//     updateBranch(className, line, branchId, t);
+// }
+
 }
 
 

@@ -7,19 +7,19 @@ export default class Action {
      * This info can be used for different kinds of taint analysis, eg
      * to check how such values are used in the SUT
      */
-    private readonly inputVariables: Set<String>;
+    private readonly inputVariables: Set<string>;
 
-    constructor(index: number, inputVariables: Set<String>) {
+    constructor(index: number, inputVariables: Set<string>) {
         this.index = index;
-        this.inputVariables = new Set<String>(inputVariables);
+        this.inputVariables = new Set<string>(inputVariables);
     }
 
     getIndex(): number {
         return this.index;
     }
 
-    getInputVariables(): Set<String> {
+    getInputVariables(): Set<string> {
         //TODO consider to use Immutable.js or equivalent
-        return new Set<String>(this.inputVariables);
+        return new Set<string>(this.inputVariables);
     }
 }
