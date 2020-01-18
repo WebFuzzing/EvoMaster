@@ -5,7 +5,7 @@ function runPlugin(code: string) {
     const res = transform(code, {
         babelrc: false,
         filename: "test.ts",
-        plugins: [__dirname + "/../../../src/instrumentation/babel-plugin-simple.ts"],
+        plugins: [__dirname + "/../../../src/instrumentation/babel-plugin-evomaster.ts"],
     });
 
     if (!res) {
@@ -22,8 +22,7 @@ test("simple", () => {
 
     const res = runPlugin(code);
     expect(res.code).toEqual(dedent`
-        //BEFORE
+        //File instrumented with EvoMaster
         let x = 0;
-        //AFTER
     `);
 });

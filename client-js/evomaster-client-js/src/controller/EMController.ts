@@ -11,10 +11,12 @@ import SutRunDto from "./api/dto/SutRunDto";
 import TestResultsDto from "./api/dto/TestResultsDto";
 import WrappedResponseDto from "./api/dto/WrappedResponseDto";
 import SutController from "./SutController";
+import AdditionalInfoDto from "./api/dto/AdditionalInfoDto";
+import TargetInfoDto from "./api/dto/TargetInfoDto";
 
 export default class EMController {
 
-    private sutController: SutController;
+    private readonly sutController: SutController;
     private app = express();
     private baseUrlOfSUT: string;
 
@@ -220,9 +222,46 @@ export default class EMController {
 
             const dto = new TestResultsDto();
 
-            targetInfos.forEach((t) => { dto.targets.push(t); });
+            targetInfos.forEach((t) => {
+                const info = new TargetInfoDto();
+                info.id = t.mappedId;
+                info.value = t.value;
+                info.descriptiveId = t.descriptiveId;
+                info.actionIndex = t.actionIndex;
+                dto.targets.push(info);
+            });
 
-            // TODO AdditionalInfoDto
+            const additionalInfos = this.sutController.getAdditionalInfoList();
+            if(! additionalInfos){
+                res.status(500);
+                res.json(WrappedResponseDto.withError("Failed to collect additional info"));
+                return;
+            }
+
+            additionalInfos.forEach(a => {
+                    const info = new AdditionalInfoDto();
+                    info.queryParameters = new Set<string>(a.getQueryParametersView());
+                    info.headers = new Set<string>(a.getHeadersView());
+                    info.lastExecutedStatement = a.getLastExecutedStatement();
+
+                    // info.stringSpecializations = new HashMap<>();
+                    // for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
+                    // a.getStringSpecializationsView().entrySet()){
+                    //
+                    //     assert ! entry.getValue().isEmpty();
+                    //
+                    //     List<StringSpecializationInfoDto> list = entry.getValue().stream()
+                    //         .map(it -> new StringSpecializationInfoDto(
+                    //             it.getStringSpecialization().toString(),
+                    //             it.getValue(),
+                    //             it.getType().toString()))
+                    //         .collect(Collectors.toList());
+                    //
+                    //     info.stringSpecializations.put(entry.getKey(), list);
+                    // }
+
+                    dto.additionalInfoList.push(info);
+                });
 
             res.status(200);
             res.json(WrappedResponseDto.withData(dto));

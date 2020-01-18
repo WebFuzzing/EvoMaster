@@ -15,6 +15,10 @@ export interface Babel {
     types: typeof BabelTypes;
 }
 
+
+const ref = "__EM__";
+
+
 export default function evomaster(
     babel: Babel,
 ): {visitor: Visitor<PluginOptions>} {
@@ -26,6 +30,7 @@ export default function evomaster(
             Program: {
                 enter(path) {
                     t.addComment(path.node, "leading", "File instrumented with EvoMaster", true);
+
                 },
                 exit(path: NodePath) {
                     //

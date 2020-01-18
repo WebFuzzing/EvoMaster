@@ -82,6 +82,8 @@ export default class ObjectiveRecorder {
             /*
                 Shouldn't always reset it, because
                 it is only computed at SUT classloading time
+
+                TODO does this still apply for JavaScript?
              */
             ObjectiveRecorder.allTargets.clear();
         }

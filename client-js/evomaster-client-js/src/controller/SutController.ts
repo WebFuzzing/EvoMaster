@@ -2,9 +2,13 @@ import ActionDto from "./api/dto/ActionDto";
 import AuthenticationDto from "./api/dto/AuthenticationDto";
 import ProblemInfo from "./api/dto/problem/ProblemInfo";
 import {OutputFormat} from "./api/dto/SutInfoDto";
-import TargetInfoDto from "./api/dto/TargetInfoDto";
 import UnitsInfoDto from "./api/dto/UnitsInfoDto";
 import SutHandler from "./SutHandler";
+import AdditionalInfo from "../instrumentation/AdditionalInfo";
+import ExecutionTracer from "../instrumentation/staticstate/ExecutionTracer";
+import ObjectiveRecorder from "../instrumentation/staticstate/ObjectiveRecorder";
+import TargetInfo from "../instrumentation/TargetInfo";
+import Action from "../instrumentation/Action";
 
 export default abstract class SutController implements SutHandler {
 
@@ -50,6 +54,15 @@ export default abstract class SutController implements SutHandler {
         overridden...
      */
 
+
+    /**
+     * @return additional info for each action in the test.
+     * The list is ordered based on the action index.
+     */
+    public  getAdditionalInfoList() : Array<AdditionalInfo>{
+        return [...ExecutionTracer.exposeAdditionalInfoList()];
+    }
+
     public getUnitsInfoDto(): UnitsInfoDto {
         return null; // TODO
     }
@@ -68,19 +81,62 @@ export default abstract class SutController implements SutHandler {
      * which should be independent from previous ones
      */
     public newSearch(): void {
-        // TODO
+        ExecutionTracer.reset();
+        ObjectiveRecorder.reset(false);
     }
 
     /**
      * Re-initialize some internal data needed before running a new test
      */
     public newTest(): void {
-        // TODO
+        // actionIndex = -1;
+        // resetExtraHeuristics();
+        // extras.clear();
+
+        ExecutionTracer.reset();
+
+        /*
+           Note: it should be fine but, if for any reason EM did not do
+           a GET on the targets, then all those newly encountered targets
+           would be lost, as EM will have no way to ask for them later, unless
+           we explicitly say to return ALL targets
+         */
+        ObjectiveRecorder.clearFirstTimeEncountered();
     }
 
-    public getTargetInfos(ids: Set<number>): TargetInfoDto[] {
-        // TODO
-        return null;
+    public getTargetInfos(ids: Set<number>): Array<TargetInfo> {
+
+        const list = new Array<TargetInfo>();
+
+        const objectives = ExecutionTracer.getInternalReferenceToObjectiveCoverage();
+
+        ids.forEach(id => {
+
+            const descriptiveId = ObjectiveRecorder.getDescriptiveId(id);
+
+            let info = objectives.get(descriptiveId);
+            if(!info){
+                info = TargetInfo.notReached(id);
+            } else {
+                info = info.withMappedId(id).withNoDescriptiveId();
+            }
+
+            list.push(info);
+        });
+
+        /*
+         *  If new targets were found, we add them even if not requested by EM
+         */
+        ObjectiveRecorder.getTargetsSeenFirstTime().forEach(s => {
+
+            const mappedId = ObjectiveRecorder.getMappedId(s);
+
+            const info = objectives.get(s).withMappedId(mappedId);
+
+            list.push(info);
+        });
+
+        return list;
     }
 
     /**
@@ -100,6 +156,8 @@ export default abstract class SutController implements SutHandler {
         resetExtraHeuristics();
         newActionSpecificHandler(dto);
          */
+
+        ExecutionTracer.setAction(new Action(dto.index, new Set<string>(dto.inputVariables)));
     }
 
 }

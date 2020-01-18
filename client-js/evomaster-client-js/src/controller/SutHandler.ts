@@ -1,7 +1,7 @@
 /**
  * Base interface used to control the system under test (SUT)
  * from the generated tests.
- * Needed base functionalities are for example, starting/stopping
+ * Needed base functionalities are, for example, starting/stopping
  * the SUT, and reset its state.
  */
 export default interface SutHandler {

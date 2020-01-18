@@ -10,6 +10,9 @@ import RestProblemDto from "./controller/api/dto/problem/RestProblemDto";
 import {OutputFormat} from "./controller/api/dto/SutInfoDto";
 import SutRunDto from "./controller/api/dto/SutRunDto";
 
+import InjectedFunctions from "./instrumentation/InjectedFunctions";
+
+
 module.exports = babel;
 const ex = module.exports;
 
@@ -23,3 +26,6 @@ ex.dto.ProblemInfo = ProblemInfo;
 ex.dto.RestProblemDto = RestProblemDto;
 ex.dto.OutputFormat = OutputFormat;
 ex.dto.SutRunDto = SutRunDto;
+
+
+ex.InjectedFunctions = InjectedFunctions;
