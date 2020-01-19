@@ -34,7 +34,8 @@ export default function evomaster(
 
     let statementCounter = 0;
 
-    const fileName = "foo"; //TODO
+    let fileName = "filename";
+
 
     function addLineProbeIfNeeded(path: NodePath){
 
@@ -60,11 +61,11 @@ export default function evomaster(
         const l = stmt.loc.start.line;
 
         const enter = template.ast(
-            `${ref}.${InjectedFunctions.enteringStatement.name}(${fileName},${l},${statementCounter})`);
+            `${ref}.${InjectedFunctions.enteringStatement.name}("${fileName}",${l},${statementCounter})`);
         path.insertBefore(enter);
 
         const completed = template.ast(
-            `${ref}.${InjectedFunctions.completedStatement.name}(${fileName},${l},${statementCounter})`);
+            `${ref}.${InjectedFunctions.completedStatement.name}("${fileName}",${l},${statementCounter})`);
         path.insertAfter(completed);
 
         statementCounter++;
@@ -80,10 +81,18 @@ export default function evomaster(
             //   }
             // },
             Program: {
-                enter(path: NodePath) {
+                enter(path: NodePath, state) {
                     t.addComment(path.node, "leading", "File instrumented with EvoMaster", true);
 
                     statementCounter = 0;
+
+                    //@ts-ignore
+                    const srcFilePath: string = state.file.opts.filename;
+                    //@ts-ignore
+                    const root: string = state.file.opts.root;
+
+                    fileName = srcFilePath.substr(root.length, srcFilePath.length);
+
 
                     const emImport = template.ast(
                         "const "+ref+" = require(\"evomaster-client-js\").InjectedFunctions;"
@@ -95,7 +104,7 @@ export default function evomaster(
                 }
             },
             Statement: {
-                enter(path){
+                enter(path: NodePath){
                     addLineProbeIfNeeded(path);
                 }
             }

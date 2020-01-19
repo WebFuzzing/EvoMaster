@@ -6,6 +6,7 @@ import TargetInfo from "../TargetInfo";
 import Action from "../Action";
 import ObjectiveNaming from "../ObjectiveNaming";
 import AdditionalInfo from "../AdditionalInfo";
+import ObjectiveRecorder from "./ObjectiveRecorder";
 
 export default class ExecutionTracer {
 
@@ -200,7 +201,7 @@ export default class ExecutionTracer {
             ExecutionTracer.objectiveCoverage.set(id, new TargetInfo(null, id, value, ExecutionTracer.actionIndex));
         }
 
-        //ObjectiveRecorder.update(id, value);
+        ObjectiveRecorder.update(id, value);
     }
 
 // public static executedReplacedMethod(idTemplate: string, ReplacementType type, Truthness t){
@@ -227,7 +228,7 @@ export default class ExecutionTracer {
         ExecutionTracer.updateObjective(lineId, 1);
         ExecutionTracer.updateObjective(fileId, 1);
 
-        //TODO statement target
+        //TODO statement target 0.5
 
         const lastLine = fileName + "_" + line+"_" + statementId;
 
@@ -236,7 +237,7 @@ export default class ExecutionTracer {
 
     public static completedStatement(fileName: string, line: number, statementId: number){
 
-        //TODO statement target
+        //TODO statement target 1
 
         const lastLine = fileName + "_" + line+"_" + statementId;
 
@@ -248,7 +249,7 @@ export default class ExecutionTracer {
      *  Report on whether method calls have been successfully completed.
      *  Failures can happen due to thrown exceptions.
      *
-     * @param className
+     * @param fileName
      * @param line
      * @param index    as there can be many method calls on same line, need to differentiate them
      * @param completed whether the method call was successfully completed.
