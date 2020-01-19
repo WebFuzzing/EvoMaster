@@ -1,7 +1,7 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import template from "@babel/template";
-import {Statement} from "@babel/types";
+import {ReturnStatement, Statement} from "@babel/types";
 import InjectedFunctions from "./InjectedFunctions";
 
 /*
@@ -64,11 +64,33 @@ export default function evomaster(
             `${ref}.${InjectedFunctions.enteringStatement.name}("${fileName}",${l},${statementCounter})`);
         path.insertBefore(enter);
 
-        const completed = template.ast(
-            `${ref}.${InjectedFunctions.completedStatement.name}("${fileName}",${l},${statementCounter})`);
-        path.insertAfter(completed);
+        /*
+            TODO
+            - continue
+            - break
+            - throw
+            - direct expression, eg just "x" or method call at end of block / file
+         */
 
-        statementCounter++;
+
+        if(t.isReturnStatement(path.node)){
+
+            const rs = path.node as ReturnStatement;
+            const call = t.callExpression(
+                t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.completingStatement.name)),
+                [rs.argument, t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+                );
+
+            path.replaceWith(t.returnStatement(call));
+            statementCounter++;
+
+        } else {
+
+            const completed = template.ast(
+                `${ref}.${InjectedFunctions.completedStatement.name}("${fileName}",${l},${statementCounter})`);
+            path.insertAfter(completed);
+            statementCounter++;
+        }
     }
 
 

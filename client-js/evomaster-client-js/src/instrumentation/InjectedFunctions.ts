@@ -23,5 +23,9 @@ export default class InjectedFunctions {
     }
 
 
+    public static completingStatement(value: any, fileName: string, line: number, statementId: number) : any {
+        ExecutionTracer.completedStatement(fileName, line, statementId)
+        return value
+    }
 
 }
