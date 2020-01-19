@@ -111,14 +111,25 @@ export default class ExecutionTracer {
     // }
 
 
-    public static markLastExecutedStatement(lastLine: string, lastMethod: string) {
+    public static markLastExecutedStatement(lastLine: string) {
+
+        /*
+            There is a possible issue here: when there is an exception, there
+            is no pop of the stmt. So, the "call-stack" until the exception will still
+            be saved in this stack, even if computation continues (eg after a try/catch).
+            This is possibly a memory leak
+         */
+
         ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex]
-            .pushLastExecutedStatement(lastLine, lastMethod);
+            .pushLastExecutedStatement(lastLine);
     }
 
 
-    public static completedLastExecutedStatement() {
-        ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].popLastExecutedStatement();
+    public static completedLastExecutedStatement(lastLine: string) {
+        const stmt = ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].popLastExecutedStatement();
+        if(stmt !== lastLine){
+            throw Error(`Expected to pop ${lastLine} instead of ${stmt}`);
+        }
     }
 
     public static getInternalReferenceToObjectiveCoverage(): Map<String, TargetInfo> {
@@ -203,20 +214,33 @@ export default class ExecutionTracer {
 
 
     /**
-     * Report on the fact that a given line has been executed.
+     *
+     * WARNING: here we do differently from Java, as we can not rely on reflection
+     * to get unique id for methods.
+     *
+     * We rather do "statement" coverage, and have a further id for it.
      */
-    public static executedLine(fileName: string, methodName: string, descriptor: string, line: number) {
+    public static enteringStatement(fileName: string, line: number, statementId: number) {
 
-        //for targets to cover
         const lineId = ObjectiveNaming.lineObjectiveName(fileName, line);
         const fileId = ObjectiveNaming.classObjectiveName(fileName);
         ExecutionTracer.updateObjective(lineId, 1);
         ExecutionTracer.updateObjective(fileId, 1);
 
-        //to calculate last executed line
-        const lastLine = fileName + "_" + line + "_" + methodName;
-        const lastMethod = fileName + "_" + methodName + "_" + descriptor;
-        ExecutionTracer.markLastExecutedStatement(lastLine, lastMethod);
+        //TODO statement target
+
+        const lastLine = fileName + "_" + line+"_" + statementId;
+
+        ExecutionTracer.markLastExecutedStatement(lastLine);
+    }
+
+    public static completedStatement(fileName: string, line: number, statementId: number){
+
+        //TODO statement target
+
+        const lastLine = fileName + "_" + line+"_" + statementId;
+
+        ExecutionTracer.completedLastExecutedStatement(lastLine);
     }
 
 

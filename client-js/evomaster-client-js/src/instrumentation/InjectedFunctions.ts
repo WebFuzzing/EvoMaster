@@ -14,7 +14,14 @@ import ExecutionTracer from "./staticstate/ExecutionTracer";
 
 export default class InjectedFunctions {
 
-    public static executedLine(fileName: string, methodName: string, descriptor: string, line: number) {
-        ExecutionTracer.executedLine(fileName, methodName, descriptor, line)
+    public static enteringStatement(fileName: string, line: number, statementId: number) {
+        ExecutionTracer.enteringStatement(fileName, line, statementId)
     }
+
+    public static completedStatement(fileName: string, line: number, statementId: number) {
+        ExecutionTracer.completedStatement(fileName, line, statementId)
+    }
+
+
+
 }

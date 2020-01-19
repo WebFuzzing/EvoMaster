@@ -39,6 +39,11 @@ export default class AdditionalInfo {
     //private Map<String, Set<StringSpecializationInfo>> stringSpecializations = new ConcurrentHashMap<>();
 
 
+    /*
+        WARNING: code below on lastExecutedStatementStack is different from Java version:
+        we always force a pop after each statement, and we do not collect info on Methdo
+     */
+
     /**
      * Keep track of the last executed statement done in the SUT.
      * But not in the third-party libraries, just the business logic of the SUT.
@@ -47,12 +52,12 @@ export default class AdditionalInfo {
      * We need to use a stack to handle method call invocations, as we can know when a statement
      * starts, but not so easily when it ends.
      */
-    private lastExecutedStatementStack: Array<StatementDescription> = new Array<StatementDescription>();
+    private lastExecutedStatementStack: Array<string> = new Array<string>();
 
     /**
      * In case we pop all elements from stack, keep track of last one separately.
      */
-    private noExceptionStatement: StatementDescription = null;
+    private noExceptionStatement: string = null;
 
 
 // public void addSpecialization(String taintInputName, StringSpecializationInfo info){
@@ -97,32 +102,24 @@ export default class AdditionalInfo {
             if (!this.noExceptionStatement) {
                 return null;
             }
-            return this.noExceptionStatement.line;
+            return this.noExceptionStatement;
         }
 
-        let current: StatementDescription = this.lastExecutedStatementStack[this.lastExecutedStatementStack.length - 1];
-        return current.line;
+        return  this.lastExecutedStatementStack[this.lastExecutedStatementStack.length - 1];
     }
 
-    public pushLastExecutedStatement(lastLine: string, lastMethod: string) {
+    public pushLastExecutedStatement(lastLine: string) {
 
         this.noExceptionStatement = null;
 
-        let statement = new StatementDescription(lastLine, lastMethod);
-        let current: StatementDescription = this.lastExecutedStatementStack[this.lastExecutedStatementStack.length - 1];
-
-        //if some method, then replace top of stack
-        if (current && lastMethod === current.method) {
-            this.lastExecutedStatementStack.pop();
-        }
-
-        this.lastExecutedStatementStack.push(statement);
+        this.lastExecutedStatementStack.push(lastLine);
     }
 
-    public popLastExecutedStatement() {
-        let statementDescription: StatementDescription = this.lastExecutedStatementStack.pop();
+    public popLastExecutedStatement() : string {
+        const statementDescription = this.lastExecutedStatementStack.pop();
         if (this.lastExecutedStatementStack.length == 0) {
             this.noExceptionStatement = statementDescription;
         }
+        return statementDescription;
     }
 }
