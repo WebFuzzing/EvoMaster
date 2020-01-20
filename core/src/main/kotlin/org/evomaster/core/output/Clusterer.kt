@@ -39,14 +39,6 @@ object Clusterer {
         In order to "participate" in the clustering process, an action must be a RestCallResult
         and it must be a failed result (i.e. a 500 call).
          */
-        /*val cluterableActions = sol1.flatMap {
-            it.evaluatedActions()
-                    .filter{ ac -> ac.result is RestCallResult }
-                    .map { ac -> (ac.result as RestCallResult) }
-                    .filter { ac -> ac.getStatusCode() == 500 }
-        }
-
-         */
 
         val clusterableActions = sol1.flatMap { it.evaluatedActions().map { ac-> ac.result } }
                 .filterIsInstance<RestCallResult>()
