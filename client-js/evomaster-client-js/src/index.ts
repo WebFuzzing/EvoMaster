@@ -13,6 +13,8 @@ import SutRunDto from "./controller/api/dto/SutRunDto";
 import InjectedFunctions from "./instrumentation/InjectedFunctions";
 import ExecutionTracer from "./instrumentation/staticstate/ExecutionTracer";
 import ObjectiveRecorder from "./instrumentation/staticstate/ObjectiveRecorder";
+import ObjectiveNaming from "./instrumentation/ObjectiveNaming";
+
 import {Visitor} from "@babel/traverse";
 
 
@@ -32,7 +34,8 @@ interface EM {
     InjectedFunctions: typeof InjectedFunctions,
     internal: {
         ExecutionTracer: typeof ExecutionTracer,
-        ObjectiveRecorder: typeof ObjectiveRecorder
+        ObjectiveRecorder: typeof ObjectiveRecorder,
+        ObjectiveNaming: typeof ObjectiveNaming
     }
 }
 
@@ -50,7 +53,8 @@ f.dto = {
 f.InjectedFunctions = InjectedFunctions;
 f.internal = {
     ExecutionTracer: ExecutionTracer,
-    ObjectiveRecorder: ObjectiveRecorder
+    ObjectiveRecorder: ObjectiveRecorder,
+    ObjectiveNaming: ObjectiveNaming
 };
 
 export = f;

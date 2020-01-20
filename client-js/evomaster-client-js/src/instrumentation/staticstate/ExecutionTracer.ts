@@ -128,7 +128,7 @@ export default class ExecutionTracer {
 
     public static completedLastExecutedStatement(lastLine: string) {
         const stmt = ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].popLastExecutedStatement();
-        if(stmt !== lastLine){
+        if (stmt !== lastLine) {
             throw Error(`Expected to pop ${lastLine} instead of ${stmt}`);
         }
     }
@@ -141,16 +141,16 @@ export default class ExecutionTracer {
      * @return the number of objectives that have been encountered
      * during the test execution
      */
-    public static getNumberOfObjectives(): number {
-        return ExecutionTracer.objectiveCoverage.size;
-    }
+    public static getNumberOfObjectives(prefix: string): number {
 
-// public static int getNumberOfObjectives(String prefix) {
-//     return (int) objectiveCoverage
-//         .entrySet().stream()
-//         .filter(e -> prefix == null || e.getKey().startsWith(prefix))
-//         .count();
-// }
+        if(! prefix){
+            return ExecutionTracer.objectiveCoverage.size;
+        }
+
+        return Array.from(ExecutionTracer.objectiveCoverage.keys())
+            .filter(e => e.startsWith(prefix))
+            .length;
+    }
 
     /**
      * Note: only the objectives encountered so far can have
@@ -164,20 +164,19 @@ export default class ExecutionTracer {
      *               Use "" or {@code null} to pick up everything
      * @return
      */
-// public static int getNumberOfNonCoveredObjectives(String prefix) {
-//
-//     return getNonCoveredObjectives(prefix).size();
-// }
+    public static getNumberOfNonCoveredObjectives(prefix: string): number {
 
-// public static Set<String> getNonCoveredObjectives(String prefix) {
-//
-//     return objectiveCoverage
-//         .entrySet().stream()
-//         .filter(e -> prefix == null || e.getKey().startsWith(prefix))
-//         .filter(e -> e.getValue().value < 1)
-//         .map(e -> e.getKey())
-//         .collect(Collectors.toSet());
-// }
+        return ExecutionTracer.getNonCoveredObjectives(prefix).size;
+    }
+
+    public static getNonCoveredObjectives(prefix: string): Set<string> {
+
+        return new Set(Array.from(ExecutionTracer.objectiveCoverage.entries())
+            .filter(e => !prefix || e[0].startsWith(prefix))
+            .filter(e => e[1].value < 1)
+            .map(e => e[0])
+        );
+    }
 
     public static getValue(id: string): number {
         return ExecutionTracer.objectiveCoverage.get(id).value;
@@ -224,22 +223,22 @@ export default class ExecutionTracer {
     public static enteringStatement(fileName: string, line: number, statementId: number) {
 
         const lineId = ObjectiveNaming.lineObjectiveName(fileName, line);
-        const fileId = ObjectiveNaming.classObjectiveName(fileName);
+        const fileId = ObjectiveNaming.fileObjectiveName(fileName);
         ExecutionTracer.updateObjective(lineId, 1);
         ExecutionTracer.updateObjective(fileId, 1);
 
         //TODO statement target 0.5
 
-        const lastLine = fileName + "_" + line+"_" + statementId;
+        const lastLine = fileName + "_" + line + "_" + statementId;
 
         ExecutionTracer.markLastExecutedStatement(lastLine);
     }
 
-    public static completedStatement(fileName: string, line: number, statementId: number){
+    public static completedStatement(fileName: string, line: number, statementId: number) {
 
         //TODO statement target 1
 
-        const lastLine = fileName + "_" + line+"_" + statementId;
+        const lastLine = fileName + "_" + line + "_" + statementId;
 
         ExecutionTracer.completedLastExecutedStatement(lastLine);
     }

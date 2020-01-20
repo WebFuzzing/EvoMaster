@@ -41,14 +41,12 @@ export default class ObjectiveNaming {
     static readonly SUCCESS_CALL: string = "Success_Call";
 
 
-    static classObjectiveName(fileId: string): string {
+    static fileObjectiveName(fileId: string): string {
         return ObjectiveNaming.FILE + "_" + fileId;
     }
 
-    //TODO replace className with something like fileId?
-
     static lineObjectiveName(fileId: string, line: number): string {
-        return ObjectiveNaming.FILE + "_" + fileId + ObjectiveNaming.padNumber(line);
+        return ObjectiveNaming.LINE + "_" + fileId + "_" + ObjectiveNaming.padNumber(line);
     }
 
     static successCallObjectiveName(fileId: string, line: number, index: number): string {
