@@ -25,3 +25,7 @@ org.xml.
 org.w3c.
 mockit.
 sun.
+com.mongodb.client.MongoCollection
+com.mongodb.client.FindIterable
+com.mongodb.client.ClientSession
+org.bson.conversions.Bson

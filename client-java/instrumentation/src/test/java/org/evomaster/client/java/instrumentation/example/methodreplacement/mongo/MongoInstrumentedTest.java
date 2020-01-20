@@ -1,16 +1,15 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement.mongo;
 
 import com.foo.somedifferentpackage.examples.methodreplacement.mongo.MockedMongoCollection;
-import com.foo.somedifferentpackage.examples.methodreplacement.mongo.SimpleMongoClient;
-import com.mongodb.client.MongoCollection;
-import org.bson.conversions.Bson;
+import com.foo.somedifferentpackage.examples.methodreplacement.mongo.MongoInstrumentedImpl;
+import com.mongodb.MongoNamespace;
+import org.bson.BsonDocument;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
 import org.evomaster.client.java.instrumentation.mongo.MongoLogger;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -21,46 +20,56 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class MongoInstrumentedTest {
 
+
+    protected MongoInstrumented getInstance() throws Exception {
+
+        InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
+
+        return (MongoInstrumented)
+                cl.loadClass(MongoInstrumentedImpl.class.getName()).newInstance();
+    }
+
+
     @Test
-    public void testLoadClasses() throws Exception {
-        ClassLoader cl = new InstrumentingClassLoader("com.foo");
-        Class<?> mockedMongoCollectionClass = cl.loadClass(MockedMongoCollection.class.getName());
-        Class<?> mongoCollectionClass= cl.loadClass(MongoCollection.class.getName());
-        Class<?> simpleMongoClientClass = cl.loadClass(SimpleMongoClient.class.getName());
-        Class<?> bsonClass = cl.loadClass(Bson.class.getName());
+    public void testFindBsonDocument() throws Exception {
 
-        assertNotNull(mockedMongoCollectionClass);
-        assertNotNull(mongoCollectionClass);
-        assertNotNull(simpleMongoClientClass);
-        assertNotNull(bsonClass);
+        MongoInstrumented mongoInstrumented = getInstance();
 
-        assertTrue(mongoCollectionClass.isAssignableFrom(mockedMongoCollectionClass));
+        MockedMongoCollection mockedMongoCollection = new MockedMongoCollection();
+        mockedMongoCollection.setNamespace(new MongoNamespace("mydb.mycollection"));
 
+        MongoLogger.getInstance().reset();
+        String output;
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            MongoLogger.getInstance().setOutputStream(new PrintStream(byteArrayOutputStream));
+
+            mongoInstrumented.callFind(mockedMongoCollection, new BsonDocument(), null);
+
+            output = new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8);
+        }
+        assertNotNull(output);
+        assertTrue(output.startsWith(MongoLogger.PREFIX));
     }
 
     @Test
-    public void testInvokeFind0() throws Exception {
-        ClassLoader cl = new InstrumentingClassLoader("com.foo");
-        Class<?> mongoCollectionClass= cl.loadClass(MongoCollection.class.getName());
-        Class<?> mockedMongoCollectionClass = cl.loadClass(MockedMongoCollection.class.getName());
-        Class<?> simpleMongoClientClass = cl.loadClass(SimpleMongoClient.class.getName());
-        Class<?> bsonClass = cl.loadClass(Bson.class.getName());
+    public void testFindClientSession() throws Exception {
 
-        Object simpleMongoClientInstance = simpleMongoClientClass.newInstance();
-        Object mockedMongoCollectionInstance = mockedMongoCollectionClass.newInstance();
+        MongoInstrumented mongoInstrumented = getInstance();
 
-        assertTrue(mockedMongoCollectionClass.isAssignableFrom(mockedMongoCollectionInstance.getClass()));
-        assertTrue(mongoCollectionClass.isAssignableFrom(mockedMongoCollectionInstance.getClass()));
-
-        Method m = simpleMongoClientClass.getMethod("invokeFind", mongoCollectionClass, bsonClass, Class.class);
-        assertNotNull(m);
+        MockedMongoCollection mockedMongoCollection = new MockedMongoCollection();
+        mockedMongoCollection.setNamespace(new MongoNamespace("mydb.mycollection"));
 
         MongoLogger.getInstance().reset();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        MongoLogger.getInstance().setOutputStream(new PrintStream(baos));
-        m.invoke(simpleMongoClientInstance, mockedMongoCollectionInstance, null, null);
-        String output = new String(baos.toByteArray(),StandardCharsets.UTF_8);
+        String output;
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+            MongoLogger.getInstance().setOutputStream(new PrintStream(byteArrayOutputStream));
+
+            mongoInstrumented.callFind(mockedMongoCollection, null, new BsonDocument(), null);
+
+            output = new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8);
+        }
         assertNotNull(output);
+        assertTrue(output.startsWith(MongoLogger.PREFIX));
     }
 
 

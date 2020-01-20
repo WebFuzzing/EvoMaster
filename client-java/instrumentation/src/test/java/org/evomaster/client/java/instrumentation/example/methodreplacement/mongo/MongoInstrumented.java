@@ -5,7 +5,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import org.bson.conversions.Bson;
 
-public interface CustomMongoClient {
+public interface MongoInstrumented {
 
     FindIterable<?> callFind(MongoCollection<?> mongoCollection, Bson bson, Class<?> documentClass);
 

@@ -17,9 +17,15 @@ import java.util.List;
 
 public class MockedMongoCollection<TDocument> implements MongoCollection<TDocument> {
 
+    private MongoNamespace namespace = null;
+
     @Override
     public MongoNamespace getNamespace() {
-        return null;
+        return namespace;
+    }
+
+    public void setNamespace(MongoNamespace namespace) {
+        this.namespace = namespace;
     }
 
     @Override
