@@ -20,7 +20,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
     private MongoNamespace namespace = null;
     private MockedFindIterable<TDocument> mockedFindIterable;
 
-    public void setFindIterable(MockedFindIterable<TDocument> mockedFIndIterable) {
+    public void setFindIterable(MockedFindIterable<TDocument> mockedFindIterable) {
         this.mockedFindIterable = mockedFindIterable;
     }
 
@@ -180,7 +180,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public <TResult> FindIterable<TResult> find(Class<TResult> tResultClass) {
-        return null;
+        return (FindIterable<TResult>) mockedFindIterable;
     }
 
     @Override
@@ -190,7 +190,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public <TResult> FindIterable<TResult> find(Bson filter, Class<TResult> tResultClass) {
-        return null;
+        return (FindIterable<TResult>) mockedFindIterable;
     }
 
     @Override
@@ -200,7 +200,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public <TResult> FindIterable<TResult> find(ClientSession clientSession, Class<TResult> tResultClass) {
-        return null;
+        return (FindIterable<TResult>) mockedFindIterable;
     }
 
     @Override
@@ -210,7 +210,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public <TResult> FindIterable<TResult> find(ClientSession clientSession, Bson filter, Class<TResult> tResultClass) {
-        return null;
+        return (FindIterable<TResult>) mockedFindIterable;
     }
 
     @Override

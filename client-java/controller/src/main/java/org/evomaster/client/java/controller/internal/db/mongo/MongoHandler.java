@@ -51,7 +51,7 @@ public class MongoHandler {
         }
 
         MongoExecutionDto dto = new MongoExecutionDto();
-        dto.findOperations.addAll(mongoOperations);
+        dto.mongoOperations.addAll(mongoOperations);
         return dto;
     }
 }

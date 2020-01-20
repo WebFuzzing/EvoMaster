@@ -14,5 +14,5 @@ import java.util.List;
  */
 public class MongoExecutionDto {
 
-    public List<String> findOperations = new ArrayList<>();
+    public List<String> mongoOperations = new ArrayList<>();
 }
