@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by arcuri82 on 27-Jun-19.
  */
-public class MongoInstrumentedTest {
+public class MongoInstrumentationTest {
 
 
     protected MongoInstrumented getInstance() throws Exception {

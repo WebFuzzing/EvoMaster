@@ -1,9 +1,9 @@
 package org.evomaster.client.java.instrumentation;
 
 
-
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
 import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
+import org.evomaster.client.java.instrumentation.mongo.MongoClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.tracker.TrackerClassVisitor;
 import org.objectweb.asm.ClassReader;
@@ -27,7 +27,7 @@ public class Instrumentator {
                 packagePrefixesToCover.split(","))
                 .stream()
                 .map(s -> s.trim())
-                .filter(s -> ! s.isEmpty())
+                .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
 
         if (prefixes.isEmpty()) {
@@ -64,7 +64,7 @@ public class Instrumentator {
         ClassNode cn = new ClassNode();
         reader.accept(cn, readFlags);
 
-        if(canInstrumentForCoverage(className)){
+        if (canInstrumentForCoverage(className)) {
 
             cv = new CoverageClassVisitor(cv, className);
 
@@ -82,13 +82,18 @@ public class Instrumentator {
             //reader.accept(cv, readFlags);
         }
 
+        /*
+         SUT and third party library need to keep track
+         of MongoDB invocations */
+        cv = new MongoClassVisitor(cv, className);
+
         cn.accept(cv);
 
         return writer.toByteArray();
     }
 
 
-    private boolean canInstrumentForCoverage(ClassName className){
+    private boolean canInstrumentForCoverage(ClassName className) {
 
         String name = className.getFullNameWithDots();
 

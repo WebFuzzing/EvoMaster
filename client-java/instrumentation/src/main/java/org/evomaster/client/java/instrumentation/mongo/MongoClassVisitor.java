@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.tracker;
+package org.evomaster.client.java.instrumentation.mongo;
 
 import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
@@ -6,15 +6,15 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.MethodVisitor;
 
 /**
- * Instrumentation done to keep track of when some specific methods
- * are called
+ * Instrumentation done to keep track of when MongoDB
+ * methods are invoked
  */
-public class TrackerClassVisitor extends ClassVisitor {
+public class MongoClassVisitor extends ClassVisitor {
 
     private final String bytecodeClassName;
 
 
-    public TrackerClassVisitor(ClassVisitor classVisitor, ClassName className) {
+    public MongoClassVisitor(ClassVisitor classVisitor, ClassName className) {
         super(Constants.ASM, classVisitor);
         bytecodeClassName = className.getBytecodeName();
     }
@@ -44,9 +44,10 @@ public class TrackerClassVisitor extends ClassVisitor {
             return mv;
         }
 
-        mv = new TrackerMethodVisitor(mv, bytecodeClassName, name, descriptor);
+        mv = new MongoMethodVisitor(mv, bytecodeClassName, name, descriptor);
 
         return mv;
     }
 
 }
+

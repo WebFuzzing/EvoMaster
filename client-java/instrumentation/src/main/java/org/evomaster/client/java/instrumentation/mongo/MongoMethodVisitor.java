@@ -13,16 +13,16 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MongoReplacementMethodVisitor extends MethodVisitor {
+public class MongoMethodVisitor extends MethodVisitor {
 
     private final String className;
     private final String methodName;
     private final String descriptor;
 
-    public MongoReplacementMethodVisitor(MethodVisitor mv,
-                                         String className,
-                                         String methodName,
-                                         String descriptor) {
+    public MongoMethodVisitor(MethodVisitor mv,
+                              String className,
+                              String methodName,
+                              String descriptor) {
         super(Constants.ASM, mv);
 
         this.className = className;
