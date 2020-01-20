@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MongoLoggerTest {
 
     @Test
-    public void testLog() {
+    public void testLogFind() {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         MongoLogger.getInstance().reset();
         MongoLogger.getInstance().setOutputStream(new PrintStream(byteArrayOutputStream));

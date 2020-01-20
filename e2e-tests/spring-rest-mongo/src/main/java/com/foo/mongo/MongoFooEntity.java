@@ -1,18 +1,21 @@
-package com.foo.customer;
+package com.foo.mongo;
 
 import org.springframework.data.annotation.Id;
 
-public class CustomerEntity {
+/**
+ * An Entity that is used by this Mongo application
+ */
+public class MongoFooEntity {
 
     @Id
     public String id;
     public String firstName;
     public String lastName;
 
-    public CustomerEntity() {
+    public MongoFooEntity() {
     }
 
-    public CustomerEntity(String firstName, String lastName) {
+    public MongoFooEntity(String firstName, String lastName) {
         this.firstName = firstName;
         this.lastName = lastName;
     }

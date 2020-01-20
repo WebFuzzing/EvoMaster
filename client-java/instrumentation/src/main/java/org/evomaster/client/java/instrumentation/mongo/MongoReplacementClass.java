@@ -6,7 +6,7 @@ import com.mongodb.client.MongoCollection;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 
-public class MongoCollectionClassReplacement implements MethodReplacementClass {
+public class MongoReplacementClass implements MethodReplacementClass {
 
     @Override
     public Class<?> getTargetClass() {

@@ -1,6 +1,6 @@
 package org.evomaster.e2etests.spring.rest.mongo.customer;
 
-import com.foo.customer.CustomerEmbeddedController;
+import com.foo.mongo.MyMongoAppEmbeddedController;
 import io.swagger.models.Swagger;
 import io.swagger.parser.SwaggerParser;
 import org.evomaster.client.java.controller.api.Formats;
@@ -15,9 +15,9 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CustomerManualTest extends SpringRestMongoTestBase {
+public class MyMongoAppManualTest extends SpringRestMongoTestBase {
 
-    private static final CustomerEmbeddedController sutController = new CustomerEmbeddedController();
+    private static final MyMongoAppEmbeddedController sutController = new MyMongoAppEmbeddedController();
 
     @BeforeAll
     public static void init() throws Exception {
@@ -53,7 +53,7 @@ public class CustomerManualTest extends SpringRestMongoTestBase {
 
     @Test
     public void testPostAndThenGet() {
-        String url = baseUrlOfSut + "/api/mongodb/customer";
+        String url = baseUrlOfSut + "/api/mymongoapp/foo";
 
         given().post(url)
                 .then()
@@ -66,7 +66,7 @@ public class CustomerManualTest extends SpringRestMongoTestBase {
 
     @Test
     public void testGetOnEmpty() {
-        String url = baseUrlOfSut + "/api/mongodb/customer";
+        String url = baseUrlOfSut + "/api/mymongoapp/foo";
 
         given()
                 .get(url)
@@ -76,7 +76,7 @@ public class CustomerManualTest extends SpringRestMongoTestBase {
 
     @Test
     public void testPostGetDeleteGet() {
-        String url = baseUrlOfSut + "/api/mongodb/customer";
+        String url = baseUrlOfSut + "/api/mymongoapp/foo";
 
         given().post(url)
                 .then()
@@ -98,7 +98,7 @@ public class CustomerManualTest extends SpringRestMongoTestBase {
 
     @Test
     public void testDeleteOnEmpty() {
-        String url = baseUrlOfSut + "/api/mongodb/customer";
+        String url = baseUrlOfSut + "/api/mymongoapp/foo";
 
         given()
                 .delete(url)
@@ -109,7 +109,7 @@ public class CustomerManualTest extends SpringRestMongoTestBase {
 
     @Test
     public void testDuplicatePost() {
-        String url = baseUrlOfSut + "/api/mongodb/customer";
+        String url = baseUrlOfSut + "/api/mymongoapp/foo";
 
         given().post(url)
                 .then()

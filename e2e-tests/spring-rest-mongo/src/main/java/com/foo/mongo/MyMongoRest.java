@@ -1,4 +1,4 @@
-package com.foo.customer;
+package com.foo.mongo;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -7,18 +7,18 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(path = "/api/mongodb/customer")
-public class CustomerRest {
+@RequestMapping(path = "/api/mymongoapp/foo")
+public class MyMongoRest {
 
     @Autowired
-    private CustomerMongoRepository repository;
+    private MyMongoRepository repository;
 
     @RequestMapping(
             method = RequestMethod.POST
     )
     public ResponseEntity post() {
         if (repository.findAll().isEmpty()) {
-            CustomerEntity entity = new CustomerEntity("Alice", "Smith");
+            MongoFooEntity entity = new MongoFooEntity("Alice", "Smith");
             repository.save(entity);
             return ResponseEntity.ok().build();
         } else {

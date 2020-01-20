@@ -18,6 +18,11 @@ import java.util.List;
 public class MockedMongoCollection<TDocument> implements MongoCollection<TDocument> {
 
     private MongoNamespace namespace = null;
+    private MockedFindIterable<TDocument> mockedFindIterable;
+
+    public void setFindIterable(MockedFindIterable<TDocument> mockedFIndIterable) {
+        this.mockedFindIterable = mockedFindIterable;
+    }
 
     @Override
     public MongoNamespace getNamespace() {
@@ -170,7 +175,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public FindIterable<TDocument> find() {
-        return null;
+        return mockedFindIterable;
     }
 
     @Override
@@ -180,7 +185,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public FindIterable<TDocument> find(Bson filter) {
-        return null;
+        return mockedFindIterable;
     }
 
     @Override
@@ -190,7 +195,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public FindIterable<TDocument> find(ClientSession clientSession) {
-        return null;
+        return mockedFindIterable;
     }
 
     @Override
@@ -200,7 +205,7 @@ public class MockedMongoCollection<TDocument> implements MongoCollection<TDocume
 
     @Override
     public FindIterable<TDocument> find(ClientSession clientSession, Bson filter) {
-        return null;
+        return mockedFindIterable;
     }
 
     @Override

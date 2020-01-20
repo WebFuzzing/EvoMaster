@@ -87,7 +87,7 @@ public class MongoMethodVisitor extends MethodVisitor {
                     Type.getMethodDescriptor(Type.getType(FindIterable.class),
                             Type.getType(Bson.class),
                             Type.getType(Class.class)),
-                    MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, Bson.class, Class.class));
+                    MongoReplacementClass.class.getMethod("find", MongoCollection.class, Bson.class, Class.class));
 
             addMethodToReplace("com/mongodb/client/internal/MongoCollectionImpl",
                     "find",
@@ -95,14 +95,14 @@ public class MongoMethodVisitor extends MethodVisitor {
                             Type.getType(ClientSession.class),
                             Type.getType(Bson.class),
                             Type.getType(Class.class)),
-                    MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, ClientSession.class, Bson.class, Class.class));
+                    MongoReplacementClass.class.getMethod("find", MongoCollection.class, ClientSession.class, Bson.class, Class.class));
 
             addMethodToReplace("com/mongodb/client/MongoCollection",
                     "find",
                     Type.getMethodDescriptor(Type.getType(FindIterable.class),
                             Type.getType(Bson.class),
                             Type.getType(Class.class)),
-                    MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, Bson.class, Class.class));
+                    MongoReplacementClass.class.getMethod("find", MongoCollection.class, Bson.class, Class.class));
 
             addMethodToReplace("com/mongodb/client/MongoCollection",
                     "find",
@@ -110,7 +110,7 @@ public class MongoMethodVisitor extends MethodVisitor {
                             Type.getType(ClientSession.class),
                             Type.getType(Bson.class),
                             Type.getType(Class.class)),
-                    MongoCollectionClassReplacement.class.getMethod("find", MongoCollection.class, ClientSession.class, Bson.class, Class.class));
+                    MongoReplacementClass.class.getMethod("find", MongoCollection.class, ClientSession.class, Bson.class, Class.class));
         } catch (NoSuchMethodException e) {
             throw new RuntimeException("A replacement method for MongoDB was not found", e);
         }
