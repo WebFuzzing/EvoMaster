@@ -47,66 +47,59 @@ public class MongoHandlerTest extends MongoTestTemplate {
     @Test
     public void testEmptyDistances() {
         startNewTest(url);
-        assertTrue(sutController.getMongoHandler().getDistances().isEmpty());
+        assertTrue(sutController.getMongoHandler().getMongoExecutionDto().findOperations.isEmpty());
     }
 
     @Test
     public void testFindNoResult() {
         startNewTest(url);
-        assertTrue(sutController.getMongoHandler().getDistances().isEmpty());
+        assertTrue(sutController.getMongoHandler().getMongoExecutionDto().findOperations.isEmpty());
 
         MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
 
         // find({}) returns no element
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
 
-        assertEquals(1, sutController.getMongoHandler().getDistances().size());
-        assertTrue(sutController.getMongoHandler().getDistances().get(0).distance > 0);
+        assertEquals(1, sutController.getMongoHandler().getMongoExecutionDto().findOperations.size());
     }
 
 
     @Test
     public void testTwoFindOperations() {
         startNewTest(url);
-        assertTrue(sutController.getMongoHandler().getDistances().isEmpty());
+        assertTrue(sutController.getMongoHandler().getMongoExecutionDto().findOperations.isEmpty());
 
         MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
 
         // log find({}) operation
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
 
-        assertEquals(1, sutController.getMongoHandler().getDistances().size());
-        assertTrue(sutController.getMongoHandler().getDistances().get(0).distance > 0);
+        assertEquals(1, sutController.getMongoHandler().getMongoExecutionDto().findOperations.size());
 
         // log find({}) operation
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
 
-        assertEquals(2, sutController.getMongoHandler().getDistances().size());
-        assertTrue(sutController.getMongoHandler().getDistances().get(0).distance > 0);
-        assertTrue(sutController.getMongoHandler().getDistances().get(1).distance > 0);
+        assertEquals(2, sutController.getMongoHandler().getMongoExecutionDto().findOperations.size());
     }
 
 
     @Test
     public void testFindSomeResult() {
         startNewTest(url);
-        assertTrue(sutController.getMongoHandler().getDistances().isEmpty());
+        assertTrue(sutController.getMongoHandler().getMongoExecutionDto().findOperations.isEmpty());
 
         MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
 
         // find({}) returns no element
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
 
-        assertEquals(1, sutController.getMongoHandler().getDistances().size());
-        assertTrue(sutController.getMongoHandler().getDistances().get(0).distance > 0);
+        assertEquals(1, sutController.getMongoHandler().getMongoExecutionDto().findOperations.size());
 
         mongoCollection.insertOne(new Document());
 
         // log find({}) that returns an element
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
-        assertEquals(2, sutController.getMongoHandler().getDistances().size());
-        assertTrue(sutController.getMongoHandler().getDistances().get(0).distance > 0);
-        assertEquals(0, sutController.getMongoHandler().getDistances().get(1).distance);
+        assertEquals(2, sutController.getMongoHandler().getMongoExecutionDto().findOperations.size());
     }
 
 }

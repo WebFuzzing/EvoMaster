@@ -143,6 +143,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
             }
         }
+
+        if (configuration.heuristicsForMongo) {
+            // TODO
+        } else if (configuration.extractMongoExecutionInfo) {
+            // TODO
+        }
     }
 
     /**

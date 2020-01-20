@@ -42,7 +42,7 @@ public class EMController {
      * Keep track of all host:port clients connect so far.
      * This is the mainly done for debugging, to check that we are using
      * a single TCP connection, instead of creating new ones at each request.
-     *
+     * <p>
      * However, we want to check it only during testing
      */
     private static final Set<String> connectedClientsSoFar = new CopyOnWriteArraySet<>();
@@ -52,7 +52,7 @@ public class EMController {
         this.sutController = Objects.requireNonNull(sutController);
     }
 
-    private boolean trackRequestSource(HttpServletRequest request){
+    private boolean trackRequestSource(HttpServletRequest request) {
         String source = request.getRemoteAddr() + ":" + request.getRemotePort();
         connectedClientsSoFar.add(source);
         return true;
@@ -70,7 +70,7 @@ public class EMController {
     /**
      * Only used debugging/testing
      */
-    public static void resetConnectedClientsSoFar(){
+    public static void resetConnectedClientsSoFar() {
         connectedClientsSoFar.clear();
     }
 
@@ -79,15 +79,15 @@ public class EMController {
     public Response getSutInfo(@Context HttpServletRequest httpServletRequest) {
 
         String connectionHeader = httpServletRequest.getHeader("Connection");
-        if( connectionHeader == null
-                || !connectionHeader.equalsIgnoreCase("keep-alive")){
+        if (connectionHeader == null
+                || !connectionHeader.equalsIgnoreCase("keep-alive")) {
             return Response.status(400).entity(WrappedResponseDto
                     .withError("Requests should always contain a 'Connection: keep-alive'")).build();
         }
 
         assert trackRequestSource(httpServletRequest);
 
-        if(! sutController.verifySqlConnection()){
+        if (!sutController.verifySqlConnection()) {
             String msg = "SQL drivers are misconfigured. You must use a 'p6spy' wrapper when you " +
                     "run the SUT. For example, a database connection URL like 'jdbc:h2:mem:testdb' " +
                     "should be changed into 'jdbc:p6spy:h2:mem:testdb'. " +
@@ -122,7 +122,7 @@ public class EMController {
         }
 
         dto.unitsInfoDto = sutController.getUnitsInfoDto();
-        if(dto.unitsInfoDto == null){
+        if (dto.unitsInfoDto == null) {
             String msg = "Failed to extract units info";
             SimpleLogger.error(msg);
             return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
@@ -172,8 +172,10 @@ public class EMController {
 
             boolean sqlHeuristics = dto.calculateSqlHeuristics != null && dto.calculateSqlHeuristics;
             boolean sqlExecution = dto.extractSqlExecutionInfo != null && dto.extractSqlExecutionInfo;
+            boolean mongoExecution = dto.extractMongoExecutionInfo != null && dto.extractMongoExecutionInfo;
 
             sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution);
+            sutController.enableMongoExtractExecution(mongoExecution);
 
             boolean doReset = dto.resetState != null && dto.resetState;
 
@@ -298,10 +300,10 @@ public class EMController {
                     info.lastExecutedStatement = a.getLastExecutedStatement();
 
                     info.stringSpecializations = new HashMap<>();
-                    for(Map.Entry<String, Set<StringSpecializationInfo>> entry :
-                            a.getStringSpecializationsView().entrySet()){
+                    for (Map.Entry<String, Set<StringSpecializationInfo>> entry :
+                            a.getStringSpecializationsView().entrySet()) {
 
-                        assert ! entry.getValue().isEmpty();
+                        assert !entry.getValue().isEmpty();
 
                         List<StringSpecializationInfoDto> list = entry.getValue().stream()
                                 .map(it -> new StringSpecializationInfoDto(

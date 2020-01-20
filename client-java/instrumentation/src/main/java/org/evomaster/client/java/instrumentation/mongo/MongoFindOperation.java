@@ -2,7 +2,7 @@ package org.evomaster.client.java.instrumentation.mongo;
 
 import org.bson.Document;
 
-public class MongoFindOperation {
+public class MongoFindOperation extends MongoOperation {
 
     public MongoFindOperation(String databaseName, String collectionName, Document query) {
         this.databaseName = databaseName;

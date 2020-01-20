@@ -73,7 +73,7 @@ public abstract class MongoTestTemplate {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
-                .body(new SutRunDto(true, true, true))
+                .body(new SutRunDto(true, true, true, true,true))
                 .put(url + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);

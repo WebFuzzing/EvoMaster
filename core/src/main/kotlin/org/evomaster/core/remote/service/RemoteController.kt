@@ -12,10 +12,8 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
-import org.glassfish.jersey.client.ClientConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.BindException
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
@@ -45,22 +43,38 @@ class RemoteController() : DatabaseExecutor {
 
     private var extractSqlExecutionInfo = true
 
+    private var computeMongoHeuristics = true
+
+    private var extractMongoExecutionInfo = true
+
 
     @Inject
     private lateinit var config: EMConfig
 
     private var client: Client = ClientBuilder.newClient()
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, extractSqlExecutionInfo: Boolean) : this() {
+    constructor(host: String,
+                port: Int,
+                computeSqlHeuristics: Boolean,
+                extractSqlExecutionInfo: Boolean,
+                computeMongoHeuristics: Boolean,
+                extractMongoExecutionInfo: Boolean) : this() {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")
+
+        if (computeMongoHeuristics && !extractMongoExecutionInfo)
+            throw IllegalArgumentException("'extractMongoExecutionInfo' should be enabled when 'computeMongoHeuristics' is enabled")
+
         this.host = host
         this.port = port
         this.computeSqlHeuristics = computeSqlHeuristics
         this.extractSqlExecutionInfo = computeSqlHeuristics || extractSqlExecutionInfo
+        this.computeMongoHeuristics = computeMongoHeuristics
+        this.extractMongoExecutionInfo = computeMongoHeuristics || extractMongoExecutionInfo
     }
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean) : this(host, port, computeSqlHeuristics, computeSqlHeuristics)
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean) :
+            this(host, port, computeSqlHeuristics, computeSqlHeuristics, false, false)
 
     @PostConstruct
     private fun initialize() {
@@ -202,7 +216,7 @@ class RemoteController() : DatabaseExecutor {
                 getWebTarget()
                         .path(ControllerConstants.RUN_SUT_PATH)
                         .request()
-                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo)))
+                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo, extractMongoExecutionInfo)))
             }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
