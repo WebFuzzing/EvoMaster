@@ -16,6 +16,8 @@ public class MongoLogger {
 
     private static MongoLogger instance;
 
+    private PrintStream outputStream;
+
     public synchronized static MongoLogger getInstance() {
         if (instance == null) {
             instance = new MongoLogger();
@@ -23,8 +25,20 @@ public class MongoLogger {
         return instance;
     }
 
-    private MongoLogger() {
+    public void setOutputStream(PrintStream os) {
+        outputStream = os;
+    }
 
+    private MongoLogger() {
+        initLogger();
+    }
+
+    private void initLogger() {
+        outputStream = DEFAULT_OUT;
+    }
+
+    public void reset() {
+        initLogger();
     }
 
     public static final String PREFIX = "MONGO_LOGGER";
@@ -33,11 +47,11 @@ public class MongoLogger {
         String dbName = mongoCollection.getNamespace().getDatabaseName();
         String collectionName = mongoCollection.getNamespace().getCollectionName();
         BsonDocument query = bson.toBsonDocument(BsonDocument.class, mongoCollection.getCodecRegistry());
-        Document queryDoc = new DocumentCodec().decode(query.asBsonReader(), DecoderContext.builder().build());;
+        Document queryDoc = new DocumentCodec().decode(query.asBsonReader(), DecoderContext.builder().build());
 
         MongoFindOperation op = new MongoFindOperation(dbName, collectionName, queryDoc);
         String jsonString = new Gson().toJson(op);
         String mongoOperation = String.format("%s:%s", PREFIX, jsonString);
-        DEFAULT_OUT.println(mongoOperation);
+        outputStream.println(mongoOperation);
     }
 }

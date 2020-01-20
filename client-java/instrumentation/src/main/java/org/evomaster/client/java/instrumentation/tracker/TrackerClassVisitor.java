@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.tracker;
 
+import org.evomaster.client.java.instrumentation.mongo.MongoReplacementMethodVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.client.java.instrumentation.Constants;
 import org.objectweb.asm.ClassVisitor;
@@ -45,6 +46,8 @@ public class TrackerClassVisitor extends ClassVisitor {
         }
 
         mv = new TrackerMethodVisitor(mv, bytecodeClassName, name, descriptor);
+
+        mv = new MongoReplacementMethodVisitor(mv, bytecodeClassName, name, descriptor);
 
         return mv;
     }

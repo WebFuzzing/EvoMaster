@@ -84,8 +84,6 @@ public class MongoHandlerTest extends MongoTestTemplate {
         assertEquals(2, sutController.getMongoHandler().getDistances().size());
         assertTrue(sutController.getMongoHandler().getDistances().get(0).distance > 0);
         assertTrue(sutController.getMongoHandler().getDistances().get(1).distance > 0);
-
-
     }
 
 
