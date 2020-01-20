@@ -30,8 +30,7 @@ object Clusterer {
         val sol1 = solution.individuals.filter{
             it.evaluatedActions().any{ ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if (code!=null) (code == 500)
-                else false
+                (code != null && code == 500)
             }
         }
 
