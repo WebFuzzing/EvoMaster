@@ -157,8 +157,6 @@ class Main {
 
             writeTests(injector, solution, controllerInfo)
 
-
-
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
@@ -337,17 +335,18 @@ class Main {
 
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-            val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             writer.setSwagger(swagger)
-            /*solutions.forEach {
-                if(it.individuals.isNotEmpty()) writer.writeTests(it, controllerInfoDto?.fullName)
+            val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
+            solutions.filter { !it.individuals.isNullOrEmpty() }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+
+            if(config.executiveSummary){
+                writeExecutiveSummary(injector, solution, controllerInfoDto)
             }
 
-             */
-
-            solutions.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach {writer.writeTests(it, controllerInfoDto?.fullName) }
-
+            if(config.sortFaultsByCluster){
+                writeClusteredSolution(injector, solution, controllerInfoDto)
+            }
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -425,6 +424,40 @@ class Main {
 
             val statistics = injector.getInstance(Statistics::class.java)
             statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
+        }
+        private fun writeExecutiveSummary(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
+            if(executiveSummary.isNotEmpty()) {
+                executiveSummary.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
+            }
+        }
+
+        private fun writeClusteredSolution(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+            val clusteredSolutions = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.CLUSTER)
+            if(clusteredSolutions.isNotEmpty() && config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER) {
+                clusteredSolutions.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
+            }
         }
     }
 }

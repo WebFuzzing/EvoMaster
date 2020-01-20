@@ -72,5 +72,21 @@ public class StringsRest {
         return dto;
     }
 
+    @RequestMapping(
+            value = "/nope/{s}",
+            method = RequestMethod.POST,
+            produces = MediaType.APPLICATION_JSON
+    )
+    public StringsResponseDto nope(
+            @PathVariable("s") String s
+    ) throws NopeException {
+        throw new NopeException("Nope");
+    }
+
+    class NopeException extends Exception{
+        NopeException(String text){
+            super(text);
+        }
+    }
 
 }
