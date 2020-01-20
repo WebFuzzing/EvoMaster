@@ -26,11 +26,11 @@ test("simple", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
-        __EM__.enteringStatement("/test.ts", 1, 0);
+        __EM__.enteringStatement("test.ts", 1, 0);
         
         let x = 0;
         
-        __EM__.completedStatement("/test.ts", 1, 0);
+        __EM__.completedStatement("test.ts", 1, 0);
     `);
 });
 
@@ -86,17 +86,17 @@ test("simple multi assignment, same line", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.enteringStatement("/test.ts", 1, 0);
+        __EM__.enteringStatement("test.ts", 1, 0);
         
         let x = 0;
         
-        __EM__.completedStatement("/test.ts", 1, 0);
+        __EM__.completedStatement("test.ts", 1, 0);
         
-        __EM__.enteringStatement("/test.ts", 1, 1);
+        __EM__.enteringStatement("test.ts", 1, 1);
         
         let y = 0;
         
-        __EM__.completedStatement("/test.ts", 1, 1);
+        __EM__.completedStatement("test.ts", 1, 1);
     `);
 });
 
@@ -121,32 +121,32 @@ test("simple multi lines", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.enteringStatement("/test.ts", 1, 0);
+        __EM__.enteringStatement("test.ts", 1, 0);
         
         let x = 0;
         
-        __EM__.completedStatement("/test.ts", 1, 0);
+        __EM__.completedStatement("test.ts", 1, 0);
         
-        __EM__.enteringStatement("/test.ts", 3, 1);
+        __EM__.enteringStatement("test.ts", 3, 1);
         
         let y = 1;
         
-        __EM__.completedStatement("/test.ts", 3, 1);
+        __EM__.completedStatement("test.ts", 3, 1);
         
-        __EM__.enteringStatement("/test.ts", 5, 2);
+        __EM__.enteringStatement("test.ts", 5, 2);
         
         const sum = function (a, b) {
-          __EM__.enteringStatement("/test.ts", 6, 3);
+          __EM__.enteringStatement("test.ts", 6, 3);
 
-          return __EM__.completingStatement(a + b, "/test.ts", 6, 3);
+          return __EM__.completingStatement(a + b, "test.ts", 6, 3);
         };
     
-        __EM__.completedStatement("/test.ts", 5, 2);
+        __EM__.completedStatement("test.ts", 5, 2);
         
-        __EM__.enteringStatement("/test.ts", 9, 4);
+        __EM__.enteringStatement("test.ts", 9, 4);
         
         const k = sum(x, y);
         
-        __EM__.completedStatement("/test.ts", 9, 4);
+        __EM__.completedStatement("test.ts", 9, 4);
     `);
 });

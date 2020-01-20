@@ -1,7 +1,7 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import template from "@babel/template";
-import {ReturnStatement, Statement} from "@babel/types";
+import {file, ReturnStatement, Statement} from "@babel/types";
 import InjectedFunctions from "./InjectedFunctions";
 
 /*
@@ -26,7 +26,7 @@ export interface Babel {
 const ref = "__EM__";
 
 
-export default function evomaster(
+export default function evomasterPlugin(
     babel: Babel,
 ): {visitor: Visitor<PluginOptions>} {
 
@@ -114,6 +114,9 @@ export default function evomaster(
                     const root: string = state.file.opts.root;
 
                     fileName = srcFilePath.substr(root.length, srcFilePath.length);
+                    if(fileName.startsWith('/') || fileName.startsWith('\\')){
+                        fileName = fileName.substr(1, fileName.length);
+                    }
 
 
                     const emImport = template.ast(
