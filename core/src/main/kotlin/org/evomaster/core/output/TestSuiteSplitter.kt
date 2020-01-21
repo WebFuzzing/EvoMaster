@@ -29,7 +29,8 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
-        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return listOf(solution)
+        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return splitByCode(solution)
+        // listOf(solution)
         // no clustering is attempted if there are not enough individuals containing errors
 
         return when(type){
@@ -79,7 +80,10 @@ object TestSuiteSplitter {
     }
 
     /**
+     * The [executiveSummary] function takes in a solution, clusters individuals containing errors by error messsage,
+     * then picks from each cluster one individual.
      *
+     * The individual selected is the shortest (by action count) or random.
      */
 
     fun executiveSummary(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
@@ -160,8 +164,9 @@ object TestSuiteSplitter {
             !s500.contains(it) &&
             it.evaluatedActions().all { ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if(code!=null) code < 400
-                else false
+                (code != null && code < 400)
+                //if(code!=null) code < 400
+                //else false
             }
         }.toMutableList()
 
@@ -199,8 +204,9 @@ object TestSuiteSplitter {
             !errs.contains(it) &&
                     it.evaluatedActions().all { ac ->
                         val code = (ac.result as RestCallResult).getStatusCode()
-                        if(code!=null) code < 400
-                        else false
+                        (code != null && code < 400)
+                        //if(code!=null) code < 400
+                        //else false
                     }
         }.toMutableList()
 
@@ -221,7 +227,6 @@ object TestSuiteSplitter {
         }
 
         val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
-
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -229,13 +234,10 @@ object TestSuiteSplitter {
                 ind.evaluatedActions().any { ac ->
                     clu.contains(ac.result as RestCallResult)
                 }
+            }.map {
+                it.assignToCluster(index)
             }.toMutableList()
-            // Add a random individual from each cluster.
-            // Other selection criteria than random might be added at some later date.
-            // For example, one might want the smallest individual in a cluster (i.e. the smallest test case that
-            // shows a particular type of behaviour).
-            // sumSol.add(index, inds.random())
-            sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
+            sumSol.addAll(inds)
         }
 
         val skipped = solution.individuals.filter { ind ->
@@ -256,31 +258,6 @@ object TestSuiteSplitter {
         return mutableListOf(solErrors,
                 solSuccesses,
                 solRemainder)
-
-        /*val errs = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
-                (ac.result as RestCallResult).getStatusCode() == 500
-            }
-        }.toMutableList()
-
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
-        val clusteredSolutions = mutableListOf<Solution<RestIndividual>>()
-        val individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
-
-        clusters.forEachIndexed { index, clu ->
-            val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac ->
-                    clu.contains(ac.result as RestCallResult)
-                }
-            }.map {
-                it.assignToCluster(index)
-            }.toMutableList()
-            clusteredSolutions.add(index, Solution(inds, "C_$index"))
-            individuals.addAll(inds)
-        }
-        return clusteredSolutions
-
-         */
     }
 
 }

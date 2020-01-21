@@ -840,6 +840,7 @@ class TestCaseWriter {
                     format.isJava() -> lines.add("String id_$counter = $extract")
                     format.isKotlin() -> lines.add("val id_$counter: String = $extract")
                 }
+                appendSemicolon(lines)
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter")
                 appendSemicolon(lines)
             }
