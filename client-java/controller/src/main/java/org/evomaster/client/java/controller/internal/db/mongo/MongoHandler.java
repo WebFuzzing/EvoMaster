@@ -1,10 +1,12 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoOperationDto;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The client-side MongoHandler basically records interactions
@@ -13,6 +15,8 @@ import java.util.Objects;
 public class MongoHandler {
 
     private final List<String> mongoOperations;
+
+    private volatile boolean extractMongoExecution;
 
     public MongoHandler() {
         mongoOperations = new ArrayList<>();
@@ -33,8 +37,6 @@ public class MongoHandler {
         this.mongoOperations.add(mongoOperation);
     }
 
-    private volatile boolean extractMongoExecution;
-
 
     public boolean isExtractMongoExecution() {
         return extractMongoExecution;
@@ -51,7 +53,14 @@ public class MongoHandler {
         }
 
         MongoExecutionDto dto = new MongoExecutionDto();
-        dto.mongoOperations.addAll(mongoOperations);
+        dto.mongoOperations.addAll(mongoOperations.stream().map(MongoHandler::toDto).collect(Collectors.toList()));
+        return dto;
+    }
+
+    private static MongoOperationDto toDto(String op) {
+        MongoOperationDto dto = new MongoOperationDto();
+        dto.operationType = MongoOperationDto.Type.MONGO_FIND;
+        dto.operationJsonStr = op;
         return dto;
     }
 }

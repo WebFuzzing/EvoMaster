@@ -1,4 +1,4 @@
-package org.evomaster.client.java.instrumentation.mongo;
+package org.evomaster.client.java.instrumentation.shared.mongo;
 
 import org.bson.Document;
 

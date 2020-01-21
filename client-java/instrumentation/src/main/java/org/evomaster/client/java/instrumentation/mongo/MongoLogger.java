@@ -7,6 +7,7 @@ import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
+import org.evomaster.client.java.instrumentation.shared.mongo.MongoFindOperation;
 
 import java.io.PrintStream;
 
