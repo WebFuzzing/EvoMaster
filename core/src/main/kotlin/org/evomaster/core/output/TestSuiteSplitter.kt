@@ -252,7 +252,7 @@ object TestSuiteSplitter {
             sumSol.add(it)
         }
 
-        val solErrors = Solution(sumSol, "${solution.testSuiteName}_executiveSummary")
+        val solErrors = Solution(sumSol, "${solution.testSuiteName}_errs")
         return mutableListOf(solErrors,
                 solSuccesses,
                 solRemainder)

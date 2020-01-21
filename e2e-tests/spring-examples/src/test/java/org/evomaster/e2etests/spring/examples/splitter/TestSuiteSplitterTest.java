@@ -44,7 +44,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
             terminations = Arrays.asList("_errs", "_successes", "_remainder");
         }
         if(splitType == EMConfig.TestSuiteSplitType.CLUSTER){
-            terminations = Arrays.asList("_successes", "_remainder");
+            terminations = Arrays.asList("_errs", "_successes", "_remainder");
         }
 
         runTestHandlingFlakyAndCompilation(
