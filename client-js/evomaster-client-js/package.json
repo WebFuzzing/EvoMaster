@@ -42,7 +42,7 @@
     "testEnvironment": "node",
     "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
     "collectCoverageFrom": [
-      "src/**/.*(js|jsx|ts|tsx)"
+      "src/**/*\\.(js|jsx|ts|tsx)"
     ],
     "transform": {
       "^.+\\.(ts|tsx)?$": "ts-jest"

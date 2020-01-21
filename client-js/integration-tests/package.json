@@ -23,6 +23,7 @@
     "test": "jest --coverage"
   },
   "babel": {
+    "only": ["src"],
     "plugins": [
       "module:evomaster-client-js"
     ]
@@ -30,9 +31,10 @@
   "jest": {
     "testEnvironment": "node",
     "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
+    "//TODO":  "should be fixed to point to other module, if possible...",
     "collectCoverageFrom": [
       "src/**/.*(js|jsx|ts|tsx)"
     ],
-    "transform": {}
+    "transformIgnorePatterns": ["/node_modules/", "/tests/"]
   }
 }

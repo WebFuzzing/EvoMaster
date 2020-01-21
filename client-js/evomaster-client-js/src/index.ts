@@ -1,6 +1,5 @@
 import plugin, {Babel, PluginOptions} from "./instrumentation/babel-plugin-evomaster";
 
-import * as ControllerConstants from "./controller/api/ControllerConstants";
 import EMController from "./controller/EMController";
 import SutController from "./controller/SutController";
 
@@ -9,11 +8,13 @@ import ProblemInfo from "./controller/api/dto/problem/ProblemInfo";
 import RestProblemDto from "./controller/api/dto/problem/RestProblemDto";
 import {OutputFormat} from "./controller/api/dto/SutInfoDto";
 import SutRunDto from "./controller/api/dto/SutRunDto";
+import ControllerConstants from "./controller/api/ControllerConstants";
 
 import InjectedFunctions from "./instrumentation/InjectedFunctions";
 import ExecutionTracer from "./instrumentation/staticstate/ExecutionTracer";
 import ObjectiveRecorder from "./instrumentation/staticstate/ObjectiveRecorder";
 import ObjectiveNaming from "./instrumentation/ObjectiveNaming";
+
 
 import {Visitor} from "@babel/traverse";
 
@@ -23,7 +24,6 @@ interface EM {
     (babel: Babel):  {visitor: Visitor<PluginOptions>},
     SutController: typeof SutController,
     EMController: typeof EMController;
-    // ControllerConstants: Array<string>; //FIXME
     dto: {
         AuthenticationDto: typeof AuthenticationDto,
         ProblemInfo: typeof ProblemInfo,
@@ -35,7 +35,8 @@ interface EM {
     internal: {
         ExecutionTracer: typeof ExecutionTracer,
         ObjectiveRecorder: typeof ObjectiveRecorder,
-        ObjectiveNaming: typeof ObjectiveNaming
+        ObjectiveNaming: typeof ObjectiveNaming,
+        ControllerConstants: typeof ControllerConstants
     }
 }
 
@@ -54,7 +55,8 @@ f.InjectedFunctions = InjectedFunctions;
 f.internal = {
     ExecutionTracer: ExecutionTracer,
     ObjectiveRecorder: ObjectiveRecorder,
-    ObjectiveNaming: ObjectiveNaming
+    ObjectiveNaming: ObjectiveNaming,
+    ControllerConstants: ControllerConstants
 };
 
 export = f;

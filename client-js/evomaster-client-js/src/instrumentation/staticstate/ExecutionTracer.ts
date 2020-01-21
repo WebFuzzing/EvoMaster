@@ -141,7 +141,7 @@ export default class ExecutionTracer {
      * @return the number of objectives that have been encountered
      * during the test execution
      */
-    public static getNumberOfObjectives(prefix: string): number {
+    public static getNumberOfObjectives(prefix?: string): number {
 
         if(! prefix){
             return ExecutionTracer.objectiveCoverage.size;

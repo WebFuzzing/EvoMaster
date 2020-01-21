@@ -43,12 +43,12 @@ export default function evomasterPlugin(
             throw Error("Node is not a Statement: " + path.node);
         }
 
-        if(t.isBlockStatement(path.node)){
-            //no point in instrumenting it. Recall, we still instrument its content though
+        const stmt = path.node as Statement;
+
+        if(t.isBlockStatement(stmt)){
+            //no point in instrumenting it. Recall, we still instrument its content anyway
             return;
         }
-
-        const stmt = path.node as Statement;
 
         /*
             TODO: need better, more explicit way to skip traversing
@@ -60,35 +60,37 @@ export default function evomasterPlugin(
 
         const l = stmt.loc.start.line;
 
-        const enter = template.ast(
-            `${ref}.${InjectedFunctions.enteringStatement.name}("${fileName}",${l},${statementCounter})`);
-        path.insertBefore(enter);
+        if( (t.isReturnStatement(stmt) && !stmt.argument)
+            || t.isContinueStatement(stmt)
+            || t.isThrowStatement(stmt)){
 
-        /*
-            TODO
-            - continue
-            - break
-            - throw
-            - direct expression, eg just "x" or method call at end of block / file
-         */
-
-
-        if(t.isReturnStatement(path.node)){
-
-            const rs = path.node as ReturnStatement;
-            const call = t.callExpression(
-                t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.completingStatement.name)),
-                [rs.argument, t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
-                );
-
-            path.replaceWith(t.returnStatement(call));
-            statementCounter++;
+            const mark = template.ast(
+                `${ref}.${InjectedFunctions.markStatementForCompletion.name}("${fileName}",${l},${statementCounter})`);
+            path.insertBefore(mark);
 
         } else {
 
-            const completed = template.ast(
-                `${ref}.${InjectedFunctions.completedStatement.name}("${fileName}",${l},${statementCounter})`);
-            path.insertAfter(completed);
+            const enter = template.ast(
+                `${ref}.${InjectedFunctions.enteringStatement.name}("${fileName}",${l},${statementCounter})`);
+            path.insertBefore(enter);
+
+            if (t.isReturnStatement(stmt)) {
+
+                const rs = stmt as ReturnStatement;
+                const call = t.callExpression(
+                    t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.completingStatement.name)),
+                    [rs.argument, t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(statementCounter)]
+                );
+
+                path.replaceWith(t.returnStatement(call));
+
+            } else {
+
+                const completed = template.ast(
+                    `${ref}.${InjectedFunctions.completedStatement.name}("${fileName}",${l},${statementCounter})`);
+                path.insertAfter(completed);
+            }
+
             statementCounter++;
         }
     }
@@ -117,6 +119,7 @@ export default function evomasterPlugin(
                     if(fileName.startsWith('/') || fileName.startsWith('\\')){
                         fileName = fileName.substr(1, fileName.length);
                     }
+                    fileName = fileName.replace(/\\/g, "/");
 
 
                     const emImport = template.ast(

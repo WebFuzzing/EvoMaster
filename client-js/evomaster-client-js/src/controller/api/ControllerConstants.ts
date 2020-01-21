@@ -1,12 +1,14 @@
-export const DEFAULT_CONTROLLER_HOST = "localhost";
-export const DEFAULT_CONTROLLER_PORT = 40100;
+export default class ControllerConstants {
 
-export const BASE_PATH = "/controller/api";
-export const INFO_SUT_PATH = "/infoSUT";
-export const RUN_SUT_PATH = "/runSUT";
-export const TEST_RESULTS = "/testResults";
-export const CONTROLLER_INFO = "/controllerInfo";
-export const NEW_SEARCH = "/newSearch";
-export const NEW_ACTION = "/newAction";
-export const EXTRA_HEURISTICS = "/extraHeuristics";
-export const DATABASE_COMMAND = "/databaseCommand";
+    static readonly DEFAULT_CONTROLLER_HOST = "localhost";
+    static readonly DEFAULT_CONTROLLER_PORT = 40100;
+    static readonly BASE_PATH = "/controller/api";
+    static readonly INFO_SUT_PATH = "/infoSUT";
+    static readonly RUN_SUT_PATH = "/runSUT";
+    static readonly TEST_RESULTS = "/testResults";
+    static readonly CONTROLLER_INFO = "/controllerInfo";
+    static readonly NEW_SEARCH = "/newSearch";
+    static readonly NEW_ACTION = "/newAction";
+    static readonly EXTRA_HEURISTICS = "/extraHeuristics";
+    static readonly DATABASE_COMMAND = "/databaseCommand";
+}

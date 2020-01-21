@@ -4,7 +4,7 @@ import AppController from "./app-driver";
 import superagent from "superagent";
 import rep from "../../sut/books-api/repository";
 
-import * as c from "../../../src/controller/api/ControllerConstants";
+import c from "../../../src/controller/api/ControllerConstants";
 import SutRunDto from "../../../src/controller/api/dto/SutRunDto";
 
 function initWithSomeBooks() {

@@ -2,7 +2,7 @@ import bodyParser from "body-parser";
 import express from "express";
 import * as http from "http";
 import {AddressInfo} from "net";
-import * as c from "./api/ControllerConstants";
+import c from "./api/ControllerConstants";
 import ActionDto from "./api/dto/ActionDto";
 import ControllerInfoDto from "./api/dto/ControllerInfoDto";
 import RestProblemDto from "./api/dto/problem/RestProblemDto";

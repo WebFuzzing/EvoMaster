@@ -3,9 +3,10 @@ const AppController = require("./app-driver");
 const superagent = require("superagent");
 const rep  = require("../../src/books-api/repository");
 
-const em = require("evomaster-client-js")
+const em = require("evomaster-client-js");
 
-const c = em.ControllerConstants;
+const ET = em.internal.ExecutionTracer;
+const c = em.internal.ControllerConstants;
 
 function initWithSomeBooks() {
 
@@ -40,6 +41,8 @@ afterAll( async () => {
 beforeEach(async () => {
     sutUrl = await startSut();
     initWithSomeBooks();
+
+    ET.reset();
 });
 
 async function startSut() {
@@ -115,20 +118,32 @@ test("Test start/stop/reset SUT", async () => {
 
 test("Test get all", async () => {
 
+    const before = ET.getNumberOfObjectives();
+
     const response = await superagent.get(sutUrl + "/books");
     expect(response.status).toBe(200);
     expect(response.body.length).toBe(5);
+
+    const after = ET.getNumberOfObjectives();
+    expect(after).toBeGreaterThan(before);
 });
 
 test("Test not found book", async () => {
+
+    const before = ET.getNumberOfObjectives();
 
     const response = await superagent
         .get(sutUrl + "/books/-3")
         .ok((res) => res.status < 600);
     expect(response.status).toBe(404);
+
+    const after = ET.getNumberOfObjectives();
+    expect(after).toBeGreaterThan(before);
 });
 
 test("Test retrieve each single book", async () => {
+
+    const before = ET.getNumberOfObjectives();
 
     const responseAll = await superagent.get(sutUrl + "/books");
     expect(responseAll.status).toBe(200);
@@ -142,9 +157,14 @@ test("Test retrieve each single book", async () => {
 
         expect(res.body.title).toBe(book.title);
     }
+
+    const after = ET.getNumberOfObjectives();
+    expect(after).toBeGreaterThan(before);
 });
 
 test("Test create book", async () => {
+
+    const before = ET.getNumberOfObjectives();
 
     let responseAll = await superagent.get(sutUrl + "/books");
     const n = responseAll.body.length;
@@ -166,9 +186,14 @@ test("Test create book", async () => {
     const resGet = await superagent.get(sutUrl + location);
     expect(resGet.status).toBe(200);
     expect(resGet.body.title).toBe(title);
+
+    const after = ET.getNumberOfObjectives();
+    expect(after).toBeGreaterThan(before);
 });
 
 test("Delete all books", async () => {
+
+    const before = ET.getNumberOfObjectives();
 
     let responseAll = await superagent.get(sutUrl + "/books");
     expect(responseAll.status).toBe(200);
@@ -185,9 +210,14 @@ test("Delete all books", async () => {
     responseAll = await superagent.get(sutUrl + "/books");
     expect(responseAll.status).toBe(200);
     expect(responseAll.body.length).toBe(0);
+
+    const after = ET.getNumberOfObjectives();
+    expect(after).toBeGreaterThan(before);
 });
 
 test("Update book", async () => {
+
+    const before = ET.getNumberOfObjectives();
 
     const title = "foo";
 
@@ -218,4 +248,7 @@ test("Update book", async () => {
     resGet = await superagent.get(sutUrl + location);
     expect(resGet.status).toBe(200);
     expect(resGet.body.title).toBe(modified);
+
+    const after = ET.getNumberOfObjectives();
+    expect(after).toBeGreaterThan(before);
 });

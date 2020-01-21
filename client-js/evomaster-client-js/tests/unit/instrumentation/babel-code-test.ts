@@ -100,6 +100,30 @@ test("simple multi assignment, same line", () => {
     `);
 });
 
+test("return void", () => {
+    const code = dedent`
+        const x = function(){             
+            return;
+        };
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = function () {
+          __EM__.markStatementForCompletion("test.ts", 2, 1);
+        
+          return;
+        };
+        
+        __EM__.completedStatement("test.ts", 1, 0);
+    `);
+});
 
 test("simple multi lines", () => {
     const code = dedent`

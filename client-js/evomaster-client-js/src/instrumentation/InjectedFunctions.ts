@@ -15,17 +15,28 @@ import ExecutionTracer from "./staticstate/ExecutionTracer";
 export default class InjectedFunctions {
 
     public static enteringStatement(fileName: string, line: number, statementId: number) {
-        ExecutionTracer.enteringStatement(fileName, line, statementId)
+        ExecutionTracer.enteringStatement(fileName, line, statementId);
     }
 
     public static completedStatement(fileName: string, line: number, statementId: number) {
-        ExecutionTracer.completedStatement(fileName, line, statementId)
+        ExecutionTracer.completedStatement(fileName, line, statementId);
     }
 
 
     public static completingStatement(value: any, fileName: string, line: number, statementId: number) : any {
-        ExecutionTracer.completedStatement(fileName, line, statementId)
-        return value
+        ExecutionTracer.completedStatement(fileName, line, statementId);
+        return value;
     }
 
+    /**
+     *  Used for statements like:
+     *  - return (with no data)
+     *  - continue
+     *  - break
+     *  - throw
+     */
+    public static markStatementForCompletion(fileName: string, line: number, statementId: number){
+        InjectedFunctions.enteringStatement(fileName,line,statementId);
+        InjectedFunctions.completedStatement(fileName,line,statementId);
+    }
 }
