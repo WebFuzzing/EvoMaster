@@ -343,10 +343,6 @@ class Main {
             if(config.executiveSummary){
                 writeExecutiveSummary(injector, solution, controllerInfoDto)
             }
-
-            if(config.sortFaultsByCluster){
-                writeClusteredSolution(injector, solution, controllerInfoDto)
-            }
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -435,7 +431,7 @@ class Main {
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
 
-            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY_ONLY)
             if(executiveSummary.isNotEmpty()) {
                 executiveSummary.forEach {
                     writer.writeTests(it, controllerInfoDto?.fullName)
