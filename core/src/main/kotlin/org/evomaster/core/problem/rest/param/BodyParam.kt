@@ -14,9 +14,13 @@ class BodyParam(gene: Gene,
 
     override fun seeGenes() = listOf(gene, contenTypeGene)
 
-    fun contentType() = contenTypeGene.getValueAsRawString()
+    fun contentType() = contenTypeGene.getValueAsRawString().trim()
 
-    //FIXME these check could be more precise
+    /*
+        FIXME these check could be more precise.
+        Need to consider ";" and "vnd" formats, where ending defines the
+        type with a "+"
+     */
 
     fun isJson() = contentType().contains("json", ignoreCase = true)
 
@@ -24,4 +28,5 @@ class BodyParam(gene: Gene,
 
     fun isTextPlain() = contentType().contains("text/plain", ignoreCase = true)
 
+    fun isForm() = contentType().contains("application/x-www-form-urlencoded", ignoreCase = true)
 }

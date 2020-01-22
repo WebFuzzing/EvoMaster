@@ -128,6 +128,7 @@ class RestCallAction(
     https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
 
      */
+    @Deprecated("No needed anymore with OpenAPI v3")
     fun getBodyFormData(): String? {
 
         val forms = parameters.filterIsInstance<FormParam>()

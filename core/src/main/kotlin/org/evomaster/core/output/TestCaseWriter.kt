@@ -720,14 +720,18 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     lines.add(".body($body)")
-                }
-                else {
+                } else {
                     lines.add(".body(\"${"""\"\""""}\")")
                 }
 
                 //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
                 // inserting \"\" should prevent that problem
                 // TODO: get some tests done of this
+            } else if(bodyParam.isForm()) {
+                val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED, targetFormat = format)
+                lines.add(".contentType(\"application/x-www-form-urlencoded\")")
+                lines.add(".body(\"$body\")")
+
             } else {
                 throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
             }

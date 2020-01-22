@@ -474,7 +474,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         val bodyEntity = if (body != null && body is BodyParam) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
-                //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                body.isXml() -> GeneUtils.EscapeMode.XML
+                body.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
