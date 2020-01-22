@@ -468,7 +468,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
-            throw IllegalStateException("Issue in Swagger configuration: both Body and FormData definitions in the same endpoint")
+            throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
         val bodyEntity = if (body != null && body is BodyParam) {

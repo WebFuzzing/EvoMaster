@@ -180,10 +180,7 @@ object RestActionBuilderV3 {
                     }
                 }
 
-        //TODO do we need repairParams?
-
-        handleBodyPaylaod(operation, verb, restPath, swagger, params)
-
+        handleBodyPayload(operation, verb, restPath, swagger, params)
 
         return params
     }
@@ -218,7 +215,7 @@ object RestActionBuilderV3 {
         }
     }
 
-    private fun handleBodyPaylaod(
+    private fun handleBodyPayload(
             operation: Operation,
             verb: HttpVerb,
             restPath: RestPath,
