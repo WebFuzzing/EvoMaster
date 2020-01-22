@@ -50,6 +50,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     var hasImprovement = false
 
     var mutatedGeneSpecification : MutatedGeneSpecification? = null
+    val clusterAssignments : MutableSet<Int> = mutableSetOf<Int>()
 
     init{
         if(individual.seeActions().size < results.size){
@@ -425,5 +426,18 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             return tacking as List<EvaluatedIndividual<T>>
         else
             throw IllegalArgumentException("tracking has elements with mismatched type")
+    }
+
+    fun assignToCluster(cluster : Int) : EvaluatedIndividual<T>{
+        clusterAssignments.add(cluster)
+        return this
+    }
+
+    fun getClusters(): MutableSet<Int> {
+        return clusterAssignments
+    }
+
+    fun belongsToCluster(cluster: Int) : Boolean{
+        return clusterAssignments.contains(cluster)
     }
 }

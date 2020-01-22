@@ -24,8 +24,29 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
         testRunEM(EMConfig.TestSuiteSplitType.NONE);
     }
 
+    @Test
+    public void testRunEM_SUMMARY() throws Throwable{
+        testRunEMMulti(EMConfig.TestSuiteSplitType.SUMMARY);
+    }
+
+    @Test
+    public void testRunEM_CLUSTERING() throws Throwable{
+        testRunEMMulti(EMConfig.TestSuiteSplitType.CLUSTER);
+    }
+
     private void testRunEMMulti(EMConfig.TestSuiteSplitType splitType) throws Throwable {
-        List<String> terminations = Arrays.asList("_successes", "_remainder");
+        List<String> terminations = Arrays.asList();
+
+        if(splitType == EMConfig.TestSuiteSplitType.SUMMARY){
+            terminations = Arrays.asList("_executiveSummary");
+        }
+        if(splitType == EMConfig.TestSuiteSplitType.CODE){
+            terminations = Arrays.asList("_500s", "_successes", "_remainder");
+        }
+        if(splitType == EMConfig.TestSuiteSplitType.CLUSTER){
+            terminations = Arrays.asList("_clustered");
+        }
+
         runTestHandlingFlakyAndCompilation(
                 "SplitterEM",
                 "org.bar.splitter.Split_" + splitType,
