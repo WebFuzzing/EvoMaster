@@ -32,7 +32,7 @@ class BodyParam(gene: Gene,
             options.add("application/json")
         }
 
-       contenTypeGene = EnumGene(typeGene.name, options)
+       contenTypeGene = EnumGene(typeGene.name, options, typeGene.index)
     }
 
     override fun copy(): Param {
