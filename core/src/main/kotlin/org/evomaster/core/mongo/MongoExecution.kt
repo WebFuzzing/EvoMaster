@@ -7,21 +7,20 @@ import org.evomaster.client.java.instrumentation.shared.mongo.MongoFindOperation
 import org.evomaster.client.java.instrumentation.shared.mongo.MongoOperation
 
 
-class MongoExecution {
-
+class MongoExecution(val mongoOperations: MutableList<MongoOperation> = mutableListOf()) {
 
     companion object {
 
         fun fromDto(dto: MongoExecutionDto?): MongoExecution {
-            val mongoOperations = dto!!.mongoOperations.map { parseMongoOperation(it) }.toMutableList()
-            return MongoExecution()
+            val mongoExecution = MongoExecution()
+            mongoExecution.mongoOperations += dto!!.mongoOperations.map { parseMongoOperation(it) }.toMutableList()
+            return mongoExecution
         }
 
         private fun parseMongoOperation(dto: MongoOperationDto): MongoOperation {
             when (dto.operationType) {
                 MongoOperationDto.Type.MONGO_FIND -> {
-                    val findOp = Gson().fromJson<MongoFindOperation>(dto.operationJsonStr!!, MongoFindOperation::class.java)
-                    return findOp
+                    return Gson().fromJson(dto.operationJsonStr!!, MongoFindOperation::class.java)
                 }
                 else -> {
                     throw RuntimeException("")
