@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
+import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.CookieLogin
@@ -23,6 +24,7 @@ import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
+import org.slf4j.LoggerFactory
 import javax.ws.rs.core.MediaType
 
 
@@ -41,7 +43,9 @@ class TestCaseWriter {
     private lateinit var swagger: Swagger
 
     companion object{
-        val NOT_COVERED_YET = "NotCoveredYet"
+        private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
+
+        const val NOT_COVERED_YET = "NotCoveredYet"
     }
 
     fun convertToCompilableTestCode(
@@ -720,16 +724,22 @@ class TestCaseWriter {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
                     lines.add(".body($body)")
-                }
-                else {
+                } else {
                     lines.add(".body(\"${"""\"\""""}\")")
                 }
 
                 //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
                 // inserting \"\" should prevent that problem
                 // TODO: get some tests done of this
+
+            } else if(bodyParam.isForm()) {
+                val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED, targetFormat = format)
+                lines.add(".body(\"$body\")")
+
             } else {
-                throw IllegalStateException("Unrecognized type: " + bodyParam.contentType())
+                //TODO XML
+
+                LoggingUtil.uniqueWarn(log, "Unrecognized type: " + bodyParam.contentType())
             }
         }
 

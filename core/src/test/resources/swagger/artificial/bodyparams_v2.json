@@ -1,0 +1,380 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Some description",
+    "version": "1.0",
+    "title": "API"
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "body-types-rest",
+      "description": "Body Types Rest"
+    }
+  ],
+  "paths": {
+    "/api/bodytypes/k": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "plainK",
+        "operationId": "plainKUsingPOST",
+        "consumes": [
+          "application/json",
+          "text/plain"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "text",
+            "description": "text",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/bodytypes/q": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "jsonQ",
+        "operationId": "jsonQUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "dto",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BodyTypesDto",
+              "originalRef": "BodyTypesDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/bodytypes/r": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "formR",
+        "operationId": "formRUsingPOST",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "value",
+            "in": "formData",
+            "description": "value",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/bodytypes/t": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "formT",
+        "operationId": "formTUsingPOST",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "a",
+            "in": "formData",
+            "description": "a",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "b",
+            "in": "formData",
+            "description": "b",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/bodytypes/x": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "jsonX",
+        "operationId": "jsonXUsingPOST",
+        "consumes": [
+          "application/json",
+          "application/merge-patch+json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "dto",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BodyTypesDto",
+              "originalRef": "BodyTypesDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/bodytypes/y": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "y",
+        "operationId": "yUsingPOST",
+        "consumes": [
+          "application/json",
+          "application/merge-patch+json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "dto",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BodyTypesDto",
+              "originalRef": "BodyTypesDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    },
+    "/api/bodytypes/z": {
+      "post": {
+        "tags": [
+          "body-types-rest"
+        ],
+        "summary": "charsetZ",
+        "operationId": "charsetZUsingPOST",
+        "consumes": [
+          "application/json;charset=iso-8859-1",
+          "application/json;charset=utf-8"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "dto",
+            "description": "dto",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BodyTypesDto",
+              "originalRef": "BodyTypesDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "deprecated": false
+      }
+    }
+  },
+  "definitions": {
+    "BodyTypesDto": {
+      "type": "object",
+      "properties": {
+        "value": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "title": "BodyTypesDto"
+    }
+  }
+}

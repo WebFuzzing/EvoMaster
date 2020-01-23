@@ -1,13 +1,12 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.RestActionBuilder
+import org.evomaster.core.problem.rest.OpenApiAccess
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.auth.AuthenticationHeader
 import org.evomaster.core.problem.rest.auth.AuthenticationInfo
@@ -15,11 +14,7 @@ import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.Action
-import java.net.ConnectException
 import javax.annotation.PostConstruct
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.core.MediaType
-import javax.ws.rs.core.Response
 
 class RestResourceSampler : ResourceSampler(){
 
@@ -114,48 +109,11 @@ class RestResourceSampler : ResourceSampler(){
 
     private fun getSwagger(infoDto: SutInfoDto): OpenAPI {
 
-        val swaggerURL = infoDto.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
+        val openApiUrl = infoDto.restProblem?.swaggerJsonUrl ?: throw IllegalStateException("Missing information about the Swagger URL")
 
-        val response = connectToSwagger(swaggerURL, 30)
-
-        if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            throw SutProblemException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
-        }
-
-        val json = response.readEntity(String::class.java)
-
-        val swagger = try {
-            OpenAPIParser().readContents(json, null, null).openAPI
-        } catch (e: Exception) {
-            throw SutProblemException("Failed to parse OpenApi JSON data: $e")
-        }
-
-        return swagger
+        return OpenApiAccess.getOpenAPI(openApiUrl)
     }
 
-    private fun connectToSwagger(swaggerURL: String, attempts: Int): Response {
 
-        for (i in 0 until attempts) {
-            try {
-                return ClientBuilder.newClient()
-                        .target(swaggerURL)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
-                        .get()
-            } catch (e: Exception) {
-
-                if (e.cause is ConnectException) {
-                    /*
-                        Even if SUT is running, Swagger service might not be ready
-                        yet. So let's just wait a bit, and then retry
-                    */
-                    Thread.sleep(1_000)
-                } else {
-                    throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
-                }
-            }
-        }
-
-        throw IllegalStateException("Failed to connect to $swaggerURL")
-    }
 
 }
