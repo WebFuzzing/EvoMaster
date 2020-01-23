@@ -4,7 +4,6 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
-import org.evomaster.core.search.gene.MapGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
@@ -29,8 +28,6 @@ class RestActionBuilderV3Test{
     }
 
     // ----------- V3 --------------
-
-    //TODO v3
 
     @Test
     fun testBcgnews() {
@@ -95,6 +92,12 @@ class RestActionBuilderV3Test{
 
 
     // ----------- V2 --------------
+
+    @Test
+    fun testPetStore() {
+        val map = loadAndAssertActions("/swagger/others/petstore.json", 20)
+    }
+
 
     @Test
     fun testMultiParamPath() {
