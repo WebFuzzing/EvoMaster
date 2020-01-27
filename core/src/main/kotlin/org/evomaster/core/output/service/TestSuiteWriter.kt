@@ -32,7 +32,7 @@ class TestSuiteWriter {
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "expectationsMasterSwitch"
+        private const val expectationsMasterSwitch = "ems"
         private const val responseStructureOracle = "responseStructureOracle"
         private const val activeExpectations = "activeExpectations"
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
@@ -251,6 +251,9 @@ class TestSuiteWriter {
 
             if(config.expectationsActive){
                 lines.add("private static boolean $expectationsMasterSwitch = false;")
+                lines.add("// ems - expectations master switch - is the variable that activates/deactivates expectations " +
+                        "individual test cases")
+                lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
                 //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
                 lines.add("private static boolean $responseStructureOracle = false;")
             }
@@ -265,6 +268,9 @@ class TestSuiteWriter {
 
             if(config.expectationsActive){
                 lines.add("private val $expectationsMasterSwitch = false")
+                lines.add("// ems - expectations master switch - is the variable that activates/deactivates expectations " +
+                        "individual test cases")
+                lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
                 lines.add("private val $responseStructureOracle = false")
             }
         }

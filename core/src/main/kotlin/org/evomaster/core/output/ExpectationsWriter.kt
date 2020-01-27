@@ -10,7 +10,7 @@ import javax.ws.rs.core.MediaType
 
 class ExpectationsWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
-    private val expectationsMasterSwitch = "expectationsMasterSwitch"
+    private val expectationsMasterSwitch = "ems"
     private val responseStructureOracle = "responseStructureOracle"
     private lateinit var swagger: Swagger
     private lateinit var partialOracles: PartialOracles
@@ -36,11 +36,8 @@ class ExpectationsWriter {
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
 
         }
-        lines.indented {
-            lines.add(".expect($expectationsMasterSwitch)")
-            if (format.isJava()) lines.append(";")
-        }
-
+        //lines.indented { lines.add(".expect($expectationsMasterSwitch)") }
+        if (format.isJava()) lines.append(";")
     }
 
     fun handleGenericFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, header: String){
