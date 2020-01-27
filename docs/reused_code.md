@@ -9,13 +9,7 @@ are listed here:
 
 * _RegexEcma262.g4_: from [Antlr examples](https://github.com/antlr/grammars-v4/blob/master/ecmascript/ECMAScript.g4).
   Released under MIT license.
-  
-* _CustomSummaryGeneratingListener.java_ and _CustomMutableTestExecutionSummary.java_:
-  from JUnit 5.
-  Released under Eclipse Public License.
-  These classes will be removed when this [PR](https://github.com/junit-team/junit5/issues/1947)
-  will be part of the next JUnit release.  
-  
+    
 * _RegexDistanceUtils.java_: from [EvoSuite](http://www.evosuite.org) unit test generator. 
   Released under GNU Lesser General Public
   

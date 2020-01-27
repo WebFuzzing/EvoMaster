@@ -216,7 +216,7 @@ public abstract class RestTestBase {
         PrintWriter pw = new PrintWriter(writer);
 
         TestExecutionSummary summary = JUnitTestRunner.runTestsInClass(klass);
-        summary.printFailuresTo(pw);
+        summary.printFailuresTo(pw, 100);
         String failures = writer.toString();
 
         assertTrue(summary.getContainersFoundCount() > 0);
