@@ -45,6 +45,18 @@ object RestActionBuilderV3 {
 
         val skipped = mutableListOf<String>()
 
+        /*
+            TODO would need more general approach, as different HTTP servers could
+            have different base paths
+         */
+        val serverUrl = swagger.servers[0].url
+        val basePath : String = try{
+            URI(serverUrl).path.trim()
+        } catch (e: URISyntaxException){
+            LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
+            ""
+        }
+
         swagger.paths
                 .filter { e ->
                     if (endpointsToSkip.contains(e.key)) {
@@ -63,7 +75,7 @@ object RestActionBuilderV3 {
                         like a "host+basePath"
                      */
 
-                    val restPath = RestPath(e.key)
+                    val restPath = RestPath(if(basePath=="/") e.key else (basePath + e.key))
 
                     if (e.value.`$ref` != null) {
                         //TODO
@@ -180,10 +192,7 @@ object RestActionBuilderV3 {
                     }
                 }
 
-        //TODO do we need repairParams?
-
-        handleBodyPaylaod(operation, verb, restPath, swagger, params)
-
+        handleBodyPayload(operation, verb, restPath, swagger, params)
 
         return params
     }
@@ -218,7 +227,7 @@ object RestActionBuilderV3 {
         }
     }
 
-    private fun handleBodyPaylaod(
+    private fun handleBodyPayload(
             operation: Operation,
             verb: HttpVerb,
             restPath: RestPath,

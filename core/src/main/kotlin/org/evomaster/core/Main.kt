@@ -331,11 +331,13 @@ class Main {
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
             val writer = injector.getInstance(TestSuiteWriter::class.java)
-            val swagger = injector.getInstance(RestSampler::class.java).getSwagger()
+            val swagger = injector.getInstance(RestSampler::class.java).getOpenAPI()
 
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-            writer.setSwagger(swagger)
+            //FIXME
+            //writer.setSwagger(swagger)
+
             val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             solutions.filter { !it.individuals.isNullOrEmpty() }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
