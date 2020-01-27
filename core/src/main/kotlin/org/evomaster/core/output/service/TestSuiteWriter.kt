@@ -1,7 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import io.swagger.models.Swagger
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -27,7 +27,7 @@ class TestSuiteWriter {
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
 
     companion object {
         private const val controller = "controller"
@@ -39,7 +39,7 @@ class TestSuiteWriter {
 
     }
 
-    fun setSwagger(sw: Swagger){
+    fun setSwagger(sw: OpenAPI){
         swagger = sw
     }
 

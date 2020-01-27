@@ -1,7 +1,7 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
-import io.swagger.models.Swagger
+import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -40,7 +40,7 @@ class TestCaseWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
     private lateinit var expectationsWriter: ExpectationsWriter
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
 
     companion object{
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
@@ -819,7 +819,7 @@ class TestCaseWriter {
         return returnMap
     }
 
-    fun setSwagger(sw: Swagger){
+    fun setSwagger(sw: OpenAPI){
         swagger = sw
     }
 

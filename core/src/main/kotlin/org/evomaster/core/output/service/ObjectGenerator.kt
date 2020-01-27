@@ -1,38 +1,31 @@
 package org.evomaster.core.output.service
 
-import com.google.inject.Inject
-import io.swagger.models.Swagger
-import org.evomaster.core.problem.rest.RestActionBuilder
+import io.swagger.v3.oas.models.OpenAPI
+import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.UsedObjects
 import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
-//import org.evomaster.core.search.service.Randomness
-import javax.annotation.PostConstruct
 
 class ObjectGenerator {
 
-    //@Inject
-    //protected lateinit var randomness: Randomness
-
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
     private val modelCluster: MutableMap<String, ObjectGene> = mutableMapOf()
 
     fun initialize() {
         if (swagger != null) {
             modelCluster.clear()
-            RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
+            RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster)
         }
     }
 
-    fun setSwagger(sw: Swagger){
+    fun setSwagger(sw: OpenAPI){
         swagger = sw
         if (swagger != null) {
             modelCluster.clear()
-            RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
+            RestActionBuilderV3.getModelsFromSwagger(swagger, modelCluster)
         }
     }
 
@@ -223,7 +216,7 @@ class ObjectGenerator {
     fun addResponseObjects(action: RestCallAction, individual: RestIndividual){
         val refs = action.responseRefs.values
         refs.forEach{
-            val respObject = swagger.definitions.get(it)
+            val respObject = swagger.components.schemas.get(it)
 
         }
     }

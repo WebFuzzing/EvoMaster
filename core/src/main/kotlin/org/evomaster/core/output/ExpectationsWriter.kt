@@ -1,7 +1,8 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
-import io.swagger.models.Swagger
+import io.swagger.parser.OpenAPIParser
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -12,7 +13,7 @@ class ExpectationsWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private val expectationsMasterSwitch = "ems"
     private val responseStructureOracle = "responseStructureOracle"
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
     private lateinit var partialOracles: PartialOracles
     //private val portRegex = """\w+:\d{4,5}""".toRegex()
     private val portRegex = """(\w+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})):\d{1,5}""".toRegex()
@@ -21,7 +22,7 @@ class ExpectationsWriter {
         this.format = format
     }
 
-    fun setSwagger(swagger: Swagger){
+    fun setSwagger(swagger: OpenAPI){
         this.swagger = swagger
     }
 
