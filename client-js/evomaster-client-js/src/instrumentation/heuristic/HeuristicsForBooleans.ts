@@ -22,6 +22,9 @@ export default class HeuristicsForBooleans {
         return !value;
     }
 
+    public static clearLastEvaluation(){
+        HeuristicsForBooleans.lastEvaluation = null;
+    }
 
     public static evaluateAnd(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
 

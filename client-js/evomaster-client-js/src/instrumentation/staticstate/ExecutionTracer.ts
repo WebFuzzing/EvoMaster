@@ -8,6 +8,7 @@ import ObjectiveNaming from "../ObjectiveNaming";
 import AdditionalInfo from "../AdditionalInfo";
 import ObjectiveRecorder from "./ObjectiveRecorder";
 import Truthness from "../heuristic/Truthness";
+import HeuristicsForBooleans from "../heuristic/HeuristicsForBooleans";
 
 export default class ExecutionTracer {
 
@@ -234,6 +235,8 @@ export default class ExecutionTracer {
         const lastLine = fileName + "_" + line + "_" + statementId;
 
         ExecutionTracer.completedLastExecutedStatement(lastLine);
+
+        HeuristicsForBooleans.clearLastEvaluation();
     }
 
 
