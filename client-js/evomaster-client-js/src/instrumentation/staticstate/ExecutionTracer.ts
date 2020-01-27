@@ -7,16 +7,9 @@ import Action from "../Action";
 import ObjectiveNaming from "../ObjectiveNaming";
 import AdditionalInfo from "../AdditionalInfo";
 import ObjectiveRecorder from "./ObjectiveRecorder";
+import Truthness from "../heuristic/Truthness";
 
 export default class ExecutionTracer {
-
-    /*
-        Careful if you change the signature of any of the
-        methods in this class, as they are injected in the
-        bytecode instrumentation.
-        Fortunately, unit tests should quickly find such
-        type of issues.
-     */
 
     /**
      * Key -> the unique descriptive id of the coverage objective
@@ -143,7 +136,7 @@ export default class ExecutionTracer {
      */
     public static getNumberOfObjectives(prefix?: string): number {
 
-        if(! prefix){
+        if (!prefix) {
             return ExecutionTracer.objectiveCoverage.size;
         }
 
@@ -263,62 +256,14 @@ export default class ExecutionTracer {
     }
 
 
-//---- branch-jump methods --------------------------
-//
-// private static void updateBranch(String className, int line, int branchId, Truthness t) {
-//
-//     /*
-//         Note: when we have
-//         if(x > 0){}
-//
-//         the "jump" to "else" branch is done if that is false.
-//         So, the actual evaluated condition is the negation, ie
-//         x <= 0
-//      */
-//
-//     String forThen = ObjectiveNaming.branchObjectiveName(className, line, branchId, true);
-//     String forElse = ObjectiveNaming.branchObjectiveName(className, line, branchId, false);
-//
-//     updateObjective(forElse, t.getOfTrue());
-//     updateObjective(forThen, t.getOfFalse());
-// }
+    public static updateBranch(fileName: string, line: number, branchId: number, t: Truthness) {
 
+        const forThen = ObjectiveNaming.branchObjectiveName(fileName, line, branchId, true);
+        const forElse = ObjectiveNaming.branchObjectiveName(fileName, line, branchId, false);
 
-// public static void executingBranchJump(
-//     int value, int opcode, String className, int line, int branchId) {
-//
-//     Truthness t = HeuristicsForJumps.getForSingleValueJump(value, opcode);
-//
-//     updateBranch(className, line, branchId, t);
-// }
-
-
-// public static void executingBranchJump(
-//     int firstValue, int secondValue, int opcode, String className, int line, int branchId) {
-//
-//     Truthness t = HeuristicsForJumps.getForValueComparison(firstValue, secondValue, opcode);
-//
-//     updateBranch(className, line, branchId, t);
-// }
-
-
-// public static void executingBranchJump(
-//     Object first, Object second, int opcode, String className, int line, int branchId) {
-//
-//     Truthness t = HeuristicsForJumps.getForObjectComparison(first, second, opcode);
-//
-//     updateBranch(className, line, branchId, t);
-// }
-
-
-// public static void executingBranchJump(
-//     Object obj, int opcode, String className, int line, int branchId) {
-//
-//     Truthness t = HeuristicsForJumps.getForNullComparison(obj, opcode);
-//
-//     updateBranch(className, line, branchId, t);
-// }
-
+        ExecutionTracer.updateObjective(forThen, t.getOfTrue());
+        ExecutionTracer.updateObjective(forElse, t.getOfFalse());
+    }
 }
 
 

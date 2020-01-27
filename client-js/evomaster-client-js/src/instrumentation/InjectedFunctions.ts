@@ -11,6 +11,7 @@
 
 
 import ExecutionTracer from "./staticstate/ExecutionTracer";
+import HeuristicsForBooleans from "./heuristic/HeuristicsForBooleans";
 
 export default class InjectedFunctions {
 
@@ -23,7 +24,7 @@ export default class InjectedFunctions {
     }
 
 
-    public static completingStatement(value: any, fileName: string, line: number, statementId: number) : any {
+    public static completingStatement(value: any, fileName: string, line: number, statementId: number): any {
         ExecutionTracer.completedStatement(fileName, line, statementId);
         return value;
     }
@@ -35,8 +36,27 @@ export default class InjectedFunctions {
      *  - break
      *  - throw
      */
-    public static markStatementForCompletion(fileName: string, line: number, statementId: number){
-        InjectedFunctions.enteringStatement(fileName,line,statementId);
-        InjectedFunctions.completedStatement(fileName,line,statementId);
+    public static markStatementForCompletion(fileName: string, line: number, statementId: number) {
+        InjectedFunctions.enteringStatement(fileName, line, statementId);
+        InjectedFunctions.completedStatement(fileName, line, statementId);
     }
+
+
+    public static cmp(left: any, op: string, right: any, fileName: string, line: number, branchId: number): any {
+        return HeuristicsForBooleans.evaluate(left,op,right,fileName,line,branchId);
+    }
+
+
+    public static or(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
+        return HeuristicsForBooleans.evaluateOr(left, right, isRightPure, false, fileName, line, branchId);
+    }
+
+    public static and(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
+        return HeuristicsForBooleans.evaluateAnd(left, right, isRightPure, fileName, line, branchId);
+    }
+
+    public static not(value: any) : any{
+        return HeuristicsForBooleans.handleNot(value);
+    }
+
 }

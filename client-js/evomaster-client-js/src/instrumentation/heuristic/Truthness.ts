@@ -8,6 +8,10 @@ import assert from "assert";
  * an expression evaluates to either true or false.
  * The non-1 value represents how close the other option
  * would had been from being taken
+ *
+ *
+ * NOTE: had to change it compared to JVM, as here we need to handle the
+ * case of exceptions, in which a predicate can be neither true nor false
  */
 
 export default class Truthness {
@@ -22,9 +26,10 @@ export default class Truthness {
         if (ofFalse < 0 || ofFalse > 1) {
             throw new Error("Invalid value for ofFalse: " + ofFalse);
         }
-        if (ofTrue != 1 && ofFalse != 1) {
-            throw new Error("At least one value should be equal to 1");
-        }
+        //NOTE: no longer the case
+        // if (ofTrue != 1 && ofFalse != 1) {
+        //     throw new Error("At least one value should be equal to 1");
+        // }
         if (ofTrue == 1 && ofFalse == 1) {
             throw new Error("Values cannot be both equal to 1");
         }
@@ -34,6 +39,14 @@ export default class Truthness {
 
     public invert(): Truthness {
         return new Truthness(this.ofFalse, this.ofTrue);
+    }
+
+    public rescaleFromMin(min: number) : Truthness {
+
+        return new Truthness(
+            this.ofTrue === 1 ? 1 : (min + (1-min)*this.ofTrue),
+            this.ofFalse === 1 ? 1 : (min + (1-min)*this.ofFalse)
+        );
     }
 
     /**
