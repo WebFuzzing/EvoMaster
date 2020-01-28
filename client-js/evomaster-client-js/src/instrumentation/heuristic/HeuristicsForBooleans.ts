@@ -22,6 +22,10 @@ export default class HeuristicsForBooleans {
         return !value;
     }
 
+    public static getLastEvaluation() : Truthness{
+        return HeuristicsForBooleans.lastEvaluation;
+    }
+
     public static clearLastEvaluation(){
         HeuristicsForBooleans.lastEvaluation = null;
     }
@@ -30,45 +34,92 @@ export default class HeuristicsForBooleans {
 
         // (x && y) == ! (!x || !y)
 
+        HeuristicsForBooleans.lastEvaluation = null;
+
         const base = HeuristicsForBooleans.FLAG_NO_EXCEPTION;
+        const exception = HeuristicsForBooleans.EXCEPTION;
 
-        const negatedLeft = () => {
+        let x: any;
+        let xT: Truthness;
+        let xE: any = null;
 
-            //not important that throws exception, it ll be handled later
-            const x = left();
-
-            let xT = HeuristicsForBooleans.lastEvaluation;
+        try {
+            x = left();
+            xT = HeuristicsForBooleans.lastEvaluation;
             if (!xT) {
-                xT = new Truthness(!x ? 1 : base, !x ? base : 1);
+                xT = new Truthness(x ? 1 : base, x ? base : 1);
             } else {
-                xT = xT.invert();
+                xT = xT.rescaleFromMin(base);
             }
-            HeuristicsForBooleans.lastEvaluation = xT;
-        };
 
-        const negatedRight = () => {
+        } catch (e) {
+            xT = new Truthness(exception, exception);
+            xE = e;
+        }
 
-            //not important that throws exception, it ll be handled later
-            const x = right();
+        const leftIsTrue = (x && xE === null);
 
-            let xT = HeuristicsForBooleans.lastEvaluation;
-            if (!xT) {
-                xT = new Truthness(!x ? 1 : base, !x ? base : 1);
-            } else {
-                xT = xT.invert();
+        let h: Truthness;
+        let yE: any = null;
+        let y: any;
+
+        /*
+            Two cases in which we can evaluate the right:
+            - it is pure
+            - left was false, and without exception
+         */
+        if (leftIsTrue || isRightPure) {
+
+            HeuristicsForBooleans.lastEvaluation = null;
+
+            let yT: Truthness;
+
+            try {
+                y = right();
+                yT = HeuristicsForBooleans.lastEvaluation;
+                if (!yT) {
+                    yT = new Truthness(y ? 1 : base, y ? base : 1);
+                } else {
+                    yT = yT.rescaleFromMin(base);
+                }
+
+            } catch (e) {
+                yT = new Truthness(exception, exception);
+                yE = e;
             }
-            HeuristicsForBooleans.lastEvaluation = xT;
-        };
 
+            h = new Truthness(
+                (xT.getOfTrue() / 2) + (yT.getOfTrue() / 2),
+                Math.max(xT.getOfFalse(), yT.getOfFalse())
+            );
+        } else {
 
-        return HeuristicsForBooleans.evaluateOr(negatedLeft, negatedRight, isRightPure, true, fileName, line, branchId);
+            // this means either the left threw an exception, or it was false and right is not pure
+            h = new Truthness(
+                xT.getOfTrue() / 2,
+                xT.getOfFalse()
+            );
+        }
+
+        ExecutionTracer.updateBranch(fileName, line, branchId, h);
+
+        HeuristicsForBooleans.lastEvaluation = h;
+
+        if(xE){
+            throw xE;
+        }
+
+        if(leftIsTrue && yE){
+            throw yE;
+        }
+
+        return x && y;
     }
 
 
     public static evaluateOr(left: () => any,
                              right: () => any,
                              isRightPure: boolean,
-                             isNegated: boolean,
                              fileName: string,
                              line: number,
                              branchId: number): any {
@@ -152,11 +203,7 @@ export default class HeuristicsForBooleans {
             throw yE;
         }
 
-        if(x){
-            return x;
-        }
-
-        return y;
+        return x || y;
     }
 
 
