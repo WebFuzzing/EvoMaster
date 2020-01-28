@@ -2,7 +2,6 @@ package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.service.Termination
-import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.*
@@ -53,7 +52,7 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}${Termination.FAULTS.suffix}"))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS))
         val individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -67,7 +66,7 @@ object TestSuiteSplitter {
             individuals.addAll(inds)
         }
 
-        val sortedSolution = Solution(individuals, "${solution.testSuiteName}${Termination.CLUSTERED.suffix}")
+        val sortedSolution = Solution(individuals, solution.testSuiteName, Termination.CLUSTERED)
         return sortedSolution
     }
 
@@ -89,10 +88,10 @@ object TestSuiteSplitter {
         // If only one individual has a 500 result, clustering is skipped, and the relevant individual is returned
         when (errs.size){
             0 -> return mutableListOf()
-            1 -> return mutableListOf(Solution(errs, "${solution.testSuiteName}${Termination.SUMMARY.suffix}"))
+            1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         }
 
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}${Termination.SUMMARY.suffix}"))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -123,7 +122,7 @@ object TestSuiteSplitter {
             sumSol.add(it)
         }
 
-        val sumSolution = Solution(sumSol, "${solution.testSuiteName}${Termination.SUMMARY.suffix}")
+        val sumSolution = Solution(sumSol, solution.testSuiteName, Termination.SUMMARY)
         return mutableListOf(sumSolution)
     }
 
@@ -167,9 +166,9 @@ object TestSuiteSplitter {
                     !successses.contains(it)
         }.toMutableList()
 
-        return listOf(Solution(s500, "${solution.testSuiteName}${Termination.FAULTS.suffix}"),
-                Solution(successses, "${solution.testSuiteName}${Termination.SUCCESSES.suffix}"),
-                Solution(remainder, "${solution.testSuiteName}${Termination.OTHER.suffix}")
+        return listOf(Solution(s500, solution.testSuiteName, Termination.FAULTS),
+                Solution(successses, solution.testSuiteName, Termination.SUCCESSES),
+                Solution(remainder, solution.testSuiteName, Termination.OTHER)
         )
     }
 
@@ -202,23 +201,23 @@ object TestSuiteSplitter {
                     }
         }.toMutableList()
 
-        val solSuccesses = Solution(successses, "${solution.testSuiteName}${Termination.SUCCESSES.suffix}")
+        val solSuccesses = Solution(successses, solution.testSuiteName, Termination.SUCCESSES)
 
         val remainder = solution.individuals.filter {
             !errs.contains(it) &&
                     !successses.contains(it)
         }.toMutableList()
 
-        val solRemainder = Solution(remainder, "${solution.testSuiteName}${Termination.OTHER.suffix}")
+        val solRemainder = Solution(remainder, solution.testSuiteName, Termination.OTHER)
 
         // If no individuals have a 500 result, the summary is empty
         // If only one individual has a 500 result, clustering is skipped, and the relevant individual is returned
         when (errs.size){
             0 -> return mutableListOf(solSuccesses, solRemainder)
-            1 -> return mutableListOf(Solution(errs, "${solution.testSuiteName}${Termination.FAULTS.suffix}"), solSuccesses, solRemainder)
+            1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.FAULTS), solSuccesses, solRemainder)
         }
 
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}${Termination.FAULTS.suffix}"))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS))
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -246,7 +245,7 @@ object TestSuiteSplitter {
             sumSol.add(it)
         }
 
-        val solErrors = Solution(sumSol, "${solution.testSuiteName}${Termination.FAULTS.suffix}")
+        val solErrors = Solution(sumSol, solution.testSuiteName, Termination.FAULTS)
         return mutableListOf(solErrors,
                 solSuccesses,
                 solRemainder)

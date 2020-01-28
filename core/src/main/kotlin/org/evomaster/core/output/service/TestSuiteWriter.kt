@@ -48,21 +48,10 @@ class TestSuiteWriter {
             controllerName: String?
     ) {
 
-        val name = TestSuiteFileName(solution.testSuiteName)
+        val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
 
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
-
-        /*if (config.expectationsActive || config.enableBasicAssertions){
-            val numberMatcher = addAdditionalNumberMatcher(name)
-            if (name.hasPackage() && config.outputFormat.isJavaOrKotlin()) {
-                saveToDisk(numberMatcher, config, TestSuiteFileName("${name.getPackage()}.NumberMatcher"))
-            }
-            else{
-                saveToDisk(numberMatcher, config, TestSuiteFileName("NumberMatcher"))
-            }
-        }*/
-
     }
 
 

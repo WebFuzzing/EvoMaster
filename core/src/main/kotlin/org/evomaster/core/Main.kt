@@ -335,8 +335,7 @@ class Main {
 
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-            //FIXME
-            //writer.setSwagger(swagger)
+            writer.setSwagger(swagger)
 
             val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             solutions.filter { !it.individuals.isNullOrEmpty() }
