@@ -1,7 +1,7 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import template from "@babel/template";
-import {file, ReturnStatement, Statement} from "@babel/types";
+import {BinaryExpression, file, LogicalExpression, ReturnStatement, Statement, UnaryExpression} from "@babel/types";
 import InjectedFunctions from "./InjectedFunctions";
 
 /*
@@ -33,9 +33,114 @@ export default function evomasterPlugin(
     const t = babel.types;
 
     let statementCounter = 0;
+    let branchCounter = 0;
 
     let fileName = "filename";
 
+    function  replaceUnaryExpression(path: NodePath){
+
+        if(!t.isUnaryExpression(path.node)){
+            throw Error("Node is not a UnaryExpression: " + path.node);
+        }
+
+        const exp = path.node as UnaryExpression;
+
+        if(exp.operator !== "!"){
+            //only handling negation, for now at least...
+            return;
+        }
+
+        const call = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.not.name)),
+            [exp.argument]
+        );
+
+        path.replaceWith(call);
+    }
+
+
+
+    function replaceLogicalExpression(path: NodePath){
+
+        if(!t.isLogicalExpression(path.node)){
+            throw Error("Node is not a LogicalExpression: " + path.node);
+        }
+
+        const exp = path.node as LogicalExpression;
+
+        if(exp.operator !== "&&" && exp.operator !== "||"){
+            //nothing to do. Note the existence of the "??" operator
+            return;
+        }
+
+        /*
+           TODO: need better, more explicit way to skip traversing
+           new nodes we are adding
+      */
+        if(! exp.loc){
+            return;
+        }
+
+        const l = exp.loc.start.line;
+
+        const methodName = exp.operator === "&&" ? InjectedFunctions.and.name : InjectedFunctions.or.name;
+
+        /*
+            TODO: there is proper documentation on this function.
+            Look like is checking for some types, which in theory should always be pure, like literals.
+            But very unclear on its features... eg, would it handle as pure "!false" ???
+            TODO need to check... furthermore we do not care if throwing exception
+         */
+        //const pure = t.isPureish(exp.right);
+        const pure = false; //TODO
+
+        const left = t.arrowFunctionExpression([], exp.left, false);
+        const right = t.arrowFunctionExpression([], exp.right, false);
+
+        const call = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(methodName)),
+            [left,  right, t.booleanLiteral(pure),
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter)]
+        );
+
+        path.replaceWith(call);
+        branchCounter++;
+    }
+
+    function replaceBinaryExpression(path: NodePath){
+
+        if(!t.isBinaryExpression(path.node)){
+            throw Error("Node is not a BinaryExpression: " + path.node);
+        }
+
+        const exp = path.node as BinaryExpression;
+
+        const validOps = ["==", "===", "!=", "!==", "<", "<=", ">", ">="];
+
+        if(! validOps.includes(exp.operator)){
+            //nothing to do
+            return;
+        }
+
+        /*
+             TODO: need better, more explicit way to skip traversing
+             new nodes we are adding
+        */
+        if(! exp.loc){
+            return;
+        }
+
+        const l = exp.loc.start.line;
+
+        const call = t.callExpression(
+            t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.cmp.name)),
+            [exp.left, t.stringLiteral(exp.operator), exp.right,
+                t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter)]
+        );
+
+        path.replaceWith(call);
+        branchCounter++;
+    }
 
     function addLineProbeIfNeeded(path: NodePath){
 
@@ -129,6 +234,21 @@ export default function evomasterPlugin(
                     path.unshiftContainer('body', emImport);
                 },
                 exit(path) {
+                }
+            },
+            BinaryExpression:{
+                enter(path: NodePath){
+                    replaceBinaryExpression(path);
+                }
+            },
+            LogicalExpression:{
+                enter(path: NodePath){
+                    replaceLogicalExpression(path);
+                }
+            },
+            UnaryExpression:{
+                enter(path: NodePath){
+                    replaceUnaryExpression(path);
                 }
             },
             Statement: {

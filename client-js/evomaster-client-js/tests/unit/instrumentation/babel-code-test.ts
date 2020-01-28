@@ -174,3 +174,86 @@ test("simple multi lines", () => {
         __EM__.completedStatement("test.ts", 9, 4);
     `);
 });
+
+
+test("< branch distance", () => {
+    const code = dedent`
+        const x = 2 < 5;        
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.cmp(2, "<", 5, "test.ts", 1, 0);
+        
+        __EM__.completedStatement("test.ts", 1, 0);        
+    `);
+});
+
+
+test("! branch distance", () => {
+    const code = dedent`
+        const x = !!true;        
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.not(__EM__.not(true));
+        
+        __EM__.completedStatement("test.ts", 1, 0);        
+    `);
+});
+
+
+test("|| branch distance", () => {
+    const code = dedent`
+        const x = true || false;        
+    `;
+
+    //TODO purity boolean will need to be fixed, once implemented
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.or(() => true, () => false, false, "test.ts", 1, 0);
+        
+        __EM__.completedStatement("test.ts", 1, 0);        
+    `);
+});
+
+
+test("&& branch distance", () => {
+    const code = dedent`
+        const x = 4 && foo.bar();        
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        const x = __EM__.and(() => 4, () => foo.bar(), false, "test.ts", 1, 0);
+        
+        __EM__.completedStatement("test.ts", 1, 0);        
+    `);
+});
+
