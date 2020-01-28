@@ -394,3 +394,125 @@ test("&& constants pure", () =>{
     expect(c.getOfFalse()).toBe(1);
     expect(d.getOfFalse()).toBe(1);
 });
+
+
+test("|| right exception", () =>{
+
+    const a = h.evaluateOr(
+        () => 42,
+        () => {throw new Error("foo")},
+        false, "",0,0);
+
+    expect(a).toBe(42);
+});
+
+test("|| left exception, with pure", () =>{
+
+    const f = () => h.evaluateOr(
+        () => {throw new Error("foo")},
+        () => {return h.evaluate(42,"===",42,"",0,0)},
+        true, "",0,0);
+
+    expect(f).toThrow();
+    const t = HeuristicsForBooleans.getLastEvaluation();
+    expect(t).not.toBeNull();
+    //exception was thrown, so neither true nor false
+    expect(t.getOfTrue()).toBeLessThan(1);
+    expect(t.getOfFalse()).toBeLessThan(1);
+});
+
+test("|| right exception gradient", () =>{
+
+    const x = () => h.evaluateOr(
+        () => {return h.evaluate(0,"===",42,"",0,0)},
+        () => {throw new Error("foo")},
+        false, "",0,0);
+
+    const y = () => h.evaluateOr(
+        () => {return h.evaluate(40,"===",42,"",0,0)},
+        () => {throw new Error("foo")},
+        false, "",0,0);
+
+    expect(x).toThrow();
+    const a = HeuristicsForBooleans.getLastEvaluation();
+
+    expect(y).toThrow();
+    const b = HeuristicsForBooleans.getLastEvaluation();
+
+    //exception was thrown, so neither true nor false
+    expect(a.getOfTrue()).toBeLessThan(1);
+    expect(a.getOfFalse()).toBeLessThan(1);
+    expect(b.getOfTrue()).toBeLessThan(1);
+    expect(b.getOfFalse()).toBeLessThan(1);
+
+    //however, the second is closer to be true
+    expect(b.getOfTrue()).toBeGreaterThan(a.getOfTrue());
+});
+
+
+
+
+test("&& left exception, pure", () =>{
+
+    const f = () => h.evaluateAnd(
+        () => {throw new Error("foo")},
+        () => {return h.evaluate(42,"===",42,"",0,0)},
+        true, "",0,0);
+
+    expect(f).toThrow();
+    const t = HeuristicsForBooleans.getLastEvaluation();
+    expect(t).not.toBeNull();
+    //exception was thrown, so neither true nor false
+    expect(t.getOfTrue()).toBeLessThan(1);
+    expect(t.getOfFalse()).toBeLessThan(1);
+});
+
+test("&& right exception gradient, pure", () =>{
+
+    const a = and(
+        () => {return h.evaluate(0,"===",42,"",0,0)},
+        () => {throw new Error("foo")},
+        true, "",0,0);
+
+    const b = and(
+        () => {return h.evaluate(40,"===",42,"",0,0)},
+        () => {throw new Error("foo")},
+        true, "",0,0);
+
+
+    //no exception was thrown, even when evaluating right due to pure
+    expect(a.getOfTrue()).toBeLessThan(1);
+    expect(a.getOfFalse()).toBe(1);
+    expect(b.getOfTrue()).toBeLessThan(1);
+    expect(b.getOfFalse()).toBe(1);
+
+    //however, the second is closer to be true
+    expect(b.getOfTrue()).toBeGreaterThan(a.getOfTrue());
+});
+
+test("&& left true, right exception", () =>{
+
+    const f = () => h.evaluateAnd(
+        () => {return h.evaluate(42,"===",42,"",0,0)},
+        () => {throw new Error("foo")},
+        true, "",0,0);
+
+    expect(f).toThrow();
+    const t = HeuristicsForBooleans.getLastEvaluation();
+    expect(t).not.toBeNull();
+    //exception was thrown, so neither true nor false
+    expect(t.getOfTrue()).toBeLessThan(1);
+    expect(t.getOfFalse()).toBeLessThan(1);
+});
+
+
+test("", () =>{
+
+});
+
+test("", () =>{
+
+});
+
+
+

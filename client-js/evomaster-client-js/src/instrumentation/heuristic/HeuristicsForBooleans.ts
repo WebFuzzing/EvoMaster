@@ -90,7 +90,7 @@ export default class HeuristicsForBooleans {
 
             h = new Truthness(
                 (xT.getOfTrue() / 2) + (yT.getOfTrue() / 2),
-                Math.max(xT.getOfFalse(), yT.getOfFalse())
+                Math.max(xT.getOfFalse(), xE ? yT.getOfFalse()/2 : yT.getOfFalse())
             );
         } else {
 
@@ -179,7 +179,7 @@ export default class HeuristicsForBooleans {
             }
 
             h = new Truthness(
-                Math.max(xT.getOfTrue(), yT.getOfTrue()),
+                Math.max(xT.getOfTrue(), xE ? yT.getOfTrue()/2 : yT.getOfTrue()),
                 (xT.getOfFalse() / 2) + (yT.getOfFalse() / 2)
             );
         } else {
