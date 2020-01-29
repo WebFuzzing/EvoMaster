@@ -47,11 +47,11 @@ public class BodyTypesEMTest extends SpringTestBase {
                     //Looks like SpringFox or Swagger has bug in which this endpoint does not
                     //appear in the schema. But maybe in 3.0 could be expressed?
                     // Plus looks like issues in handling on Spring side
+                    //TODO check with new SpringDoc in V3
                     //assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/q", "8");
 
-                    // x-www-form-urlencoded has changed in Springfox, as now handled in BodyParam
-                    // assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/r", "9");
-                    // assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/t", "10");
+                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/r", "9");
+                     assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/bodytypes/t", "10");
                 }
         );
     }

@@ -3,6 +3,7 @@ package org.evomaster.core.problem.rest.service
 import com.google.inject.Inject
 import io.swagger.models.Swagger
 import io.swagger.parser.SwaggerParser
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -59,7 +60,7 @@ class RestSampler : Sampler<RestIndividual>(){
 
     //private val usedObjects: UsedObjects = UsedObjects()
 
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
 
     @PostConstruct
     private fun initialize() {
@@ -84,13 +85,13 @@ class RestSampler : Sampler<RestIndividual>(){
         val swaggerURL = infoDto.restProblem?.swaggerJsonUrl
                 ?: throw IllegalStateException("Missing information about the Swagger URL")
 
-        swagger = getSwagger(swaggerURL)
+        swagger = OpenApiAccess.getOpenAPI(swaggerURL)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
 
         //modelCluster.clear()
        // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
@@ -120,13 +121,13 @@ class RestSampler : Sampler<RestIndividual>(){
 
     private fun initForBlackBox() {
 
-        swagger = getSwagger(configuration.bbSwaggerUrl)
+        swagger = OpenApiAccess.getOpenAPI(configuration.bbSwaggerUrl)
         if (swagger.paths == null) {
             throw SutProblemException("There is no endpoint definition in the retrieved Swagger file")
         }
 
         actionCluster.clear()
-        RestActionBuilder.addActionsFromSwagger(swagger, actionCluster, listOf())
+        RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, listOf())
 
         //modelCluster.clear()
         // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
@@ -171,54 +172,6 @@ class RestSampler : Sampler<RestIndividual>(){
             authentications.add(auth)
         }
     }
-
-
-    private fun getSwagger(swaggerURL: String): Swagger {
-
-        val response = connectToSwagger(swaggerURL, 30)
-
-        if (!response.statusInfo.family.equals(Response.Status.Family.SUCCESSFUL)) {
-            throw SutProblemException("Cannot retrieve Swagger JSON data from $swaggerURL , status=${response.status}")
-        }
-
-        val json = response.readEntity(String::class.java)
-
-        val swagger = try {
-            SwaggerParser().parse(json)
-        } catch (e: Exception) {
-            throw SutProblemException("Failed to parse Swagger JSON data: $e")
-        }
-
-        return swagger
-    }
-
-    private fun connectToSwagger(swaggerURL: String, attempts: Int): Response {
-
-        for (i in 0 until attempts) {
-            try {
-                return ClientBuilder.newClient()
-                        .target(swaggerURL)
-                        .request(MediaType.APPLICATION_JSON_TYPE)
-                        .get()
-            } catch (e: Exception) {
-
-                if (e.cause is ConnectException) {
-                    /*
-                        Even if SUT is running, Swagger service might not be ready
-                        yet. So let's just wait a bit, and then retry
-                    */
-                    Thread.sleep(1_000)
-                } else if(e.cause is MalformedURLException){
-                    throw SutProblemException("Provided URL for Swagger schema is invalid: $swaggerURL")
-                }else {
-                    throw IllegalStateException("Failed to connect to $swaggerURL: ${e.message}")
-                }
-            }
-        }
-
-        throw IllegalStateException("Failed to connect to $swaggerURL")
-    }
-
 
     fun canInsertInto(tableName: String) : Boolean {
         //TODO might need to refactor/remove once we deal with VIEWs
@@ -667,7 +620,7 @@ class RestSampler : Sampler<RestIndividual>(){
                 }
     }
 
-    fun getSwagger(): Swagger{
+    fun getOpenAPI(): OpenAPI{
         return swagger
     }
 

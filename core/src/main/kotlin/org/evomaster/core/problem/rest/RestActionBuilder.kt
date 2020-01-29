@@ -27,6 +27,7 @@ class RestActionBuilder {
         /**
          * @param doParseDescription presents whether apply name/text analysis on description and summary of rest action
          */
+        @Deprecated("Use RestActionBuilderV3 instead")
         fun addActionsFromSwagger(swagger: Swagger,
                                   actionCluster: MutableMap<String, Action>,
                                   endpointsToSkip: List<String> = listOf(),

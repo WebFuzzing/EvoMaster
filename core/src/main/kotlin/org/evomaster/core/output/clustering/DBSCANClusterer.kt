@@ -6,7 +6,7 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetric
  * Implementation of density-based clustering algorithm DBSCAN.
  *
  * Original Publication:
- * Ester, Martin; Kriegel, Hans-Peter; Sander, J�rg; Xu, Xiaowei (1996).
+ * Ester, Martin; Kriegel, Hans-Peter; Sander, Jørg; Xu, Xiaowei (1996).
  * Simoudis, Evangelos; Han, Jiawei; Fayyad, Usama M., eds.
  * A density-based algorithm for discovering clusters in large spatial
  * databases with noise. Proceedings of the Second International Conference
@@ -36,14 +36,14 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetric
  *
  */
 
-class DBSCANClusterer<V> {
+class DBSCANClusterer<V>(values: Collection<V>, epsilon: Double = 0.5, minimumMembers: Int = 2, metric: DistanceMetric<V>) {
     private var epsilon: Double = 1.0
     private var minimumNumberOfClusterMembers: Int = 2
     private lateinit var metric: DistanceMetric<V>
     private lateinit var inputValues: List<V>
     private var visitedPoints: HashSet<V> = HashSet()
 
-    constructor(values: Collection<V> , epsilon: Double = 0.5, minimumMembers: Int = 2, metric: DistanceMetric<V>){
+    init {
         setEpsilon(epsilon)
         setMinimumNrOfMembers(members = minimumMembers)
         setInputValues(values)
@@ -52,10 +52,12 @@ class DBSCANClusterer<V> {
 
     fun setMinimumNrOfMembers(members: Int){
         if(members > 1) this.minimumNumberOfClusterMembers = members
+        else throw IllegalArgumentException("Minimum number of members per cluster cannot be less than 2. This would result in each element being its own cluster, and therefore not terribly helpful.")
     }
 
     fun setEpsilon(epsilon: Double){
         if(epsilon > 0.0) this.epsilon = epsilon
+        else throw IllegalArgumentException("Epsilon cannot be a negative number. Epsilon is the allowable distance between members of the same cluster. Distances in general should not be negative.")
     }
 
     fun setMetric(metric: DistanceMetric<V>){
@@ -64,7 +66,7 @@ class DBSCANClusterer<V> {
 
     fun setInputValues(values: Collection<V>){
         if(values.isEmpty()){
-            throw Exception("DBSCAN: The list of values appears to be empty")
+            throw IllegalArgumentException("DBSCAN: The list of values appears to be empty")
         }
         this.inputValues = values.toList()
     }
@@ -90,10 +92,10 @@ class DBSCANClusterer<V> {
 
 
     fun performCLustering(): MutableList<MutableList<V>>{
-        if(!::inputValues.isInitialized) throw Exception("DBSCAN: List of inputs has not been initialized")
-        if(inputValues.isEmpty()) throw Exception("DBSCAN: List of inputs is empty")
-        if(inputValues.size < 2) throw Exception("DBSCAN: clustering less than 2 values is problematic")
-        if(epsilon < 0.0) throw Exception("DBSCAN: Maximum distance cannot be less than 0 (though I don't know how you got here, because it shouldn't be possible)")
+        if(!::inputValues.isInitialized) throw IllegalArgumentException("DBSCAN: List of inputs has not been initialized")
+        if(inputValues.isEmpty()) throw IllegalArgumentException("DBSCAN: List of inputs is empty")
+        if(inputValues.size < 2) throw IllegalArgumentException("DBSCAN: clustering less than 2 values is problematic")
+        if(epsilon < 0.0) throw IllegalArgumentException("DBSCAN: Maximum distance cannot be less than 0 (though I don't know how you got here, because it shouldn't be possible)")
 
         val resultList = mutableListOf<MutableList<V>>()
         visitedPoints.clear()

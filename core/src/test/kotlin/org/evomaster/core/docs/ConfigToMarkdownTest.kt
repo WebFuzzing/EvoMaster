@@ -19,7 +19,7 @@ class ConfigToMarkdownTest{
         val file = File("../docs/options.md")
         assertTrue(file.isFile)
 
-        val text = file.readText(Charset.forName("utf-8"))
+        val text = file.readText(Charset.forName("utf-8")).replace("\r", "")
         val expected = ConfigToMarkdown.toMarkdown()
 
         assertEquals(expected, text)

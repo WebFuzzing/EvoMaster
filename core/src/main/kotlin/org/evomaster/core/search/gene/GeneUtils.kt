@@ -36,7 +36,8 @@ object GeneUtils {
         TEXT,
         XML,
         BODY,
-        NONE
+        NONE,
+        X_WWW_FORM_URLENCODED
     }
 
     fun getDelta(
@@ -172,7 +173,7 @@ object GeneUtils {
             EscapeMode.EXPECTATION -> applyExpectationEscapes(string, format)
             EscapeMode.JSON -> applyJsonEscapes(string, format)
             EscapeMode.TEXT -> applyTextEscapes(string, format)
-            EscapeMode.NONE -> string
+            EscapeMode.NONE, EscapeMode.X_WWW_FORM_URLENCODED -> string
             EscapeMode.BODY -> applyBodyEscapes(string, format)
             EscapeMode.XML -> StringEscapeUtils.escapeXml(string)
         }
