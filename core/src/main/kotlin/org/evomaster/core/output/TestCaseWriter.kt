@@ -90,10 +90,6 @@ class TestCaseWriter {
             val ind = test.test.individual
 
             if (ind is RestIndividual) {
-                // BMR: test.test should have the used objects attached (if any).
-                if (config.enableCompleteObjects) {
-                    usedObjects = ind.usedObjects.copy()
-                }
                 if(configuration.expectationsActive){
                     expectationsWriter.addDeclarations(lines)
                 }

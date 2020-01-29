@@ -29,6 +29,10 @@ class ObjectGenerator {
         }
     }
 
+    fun getSwagger(): OpenAPI{
+        return swagger
+    }
+
     /*
     private fun proposeObject(g: Gene): Pair<ObjectGene, Pair<String, String>> {
         var restrictedModels = mutableMapOf<String, ObjectGene>()

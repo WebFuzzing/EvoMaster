@@ -3,6 +3,7 @@ package org.evomaster.core.output.service
 import com.google.gson.Gson
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.gene.ObjectGene
@@ -90,5 +91,32 @@ class PartialOracles {
                 }
             }
         }
+    }
+
+    fun supportedCode(call: RestCallAction, lines: Lines, res: RestCallResult, name: String): Boolean{
+        val code = res.getStatusCode().toString()
+        val validCodes = getSupportedCode(call)
+        return !validCodes.contains(code)
+    }
+
+    fun getSupportedCode(call: RestCallAction): MutableSet<String>{
+        val verb = call.verb
+        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val result = when (verb){
+            HttpVerb.GET -> path?.get?.responses?.keys ?: mutableSetOf()
+            HttpVerb.POST -> path?.post?.responses?.keys ?: mutableSetOf()
+            HttpVerb.PUT -> path?.put?.responses?.keys ?: mutableSetOf()
+            HttpVerb.DELETE -> path?.delete?.responses?.keys ?: mutableSetOf()
+            HttpVerb.PATCH -> path?.patch?.responses?.keys ?: mutableSetOf()
+            HttpVerb.HEAD -> path?.head?.responses?.keys ?: mutableSetOf()
+            HttpVerb.OPTIONS -> path?.options?.responses?.keys ?: mutableSetOf()
+            HttpVerb.TRACE -> path?.trace?.responses?.keys ?: mutableSetOf()
+            else -> mutableSetOf()
+        }
+        return result
+    }
+
+    fun relevantExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String): Boolean{
+        return supportedCode(call, lines, res, name)
     }
 }
