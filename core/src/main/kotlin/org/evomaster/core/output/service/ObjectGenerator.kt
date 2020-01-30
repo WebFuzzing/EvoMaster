@@ -5,7 +5,6 @@ import io.swagger.models.Swagger
 import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.UsedObjects
 import org.evomaster.core.search.gene.DisruptiveGene
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene

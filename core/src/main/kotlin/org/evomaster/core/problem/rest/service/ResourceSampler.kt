@@ -151,10 +151,10 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
 
         if (!restCalls.isEmpty()) {
             val individual= if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual){
-                RestIndividual(restCalls,SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),trackOperator = this,
+                RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency), trackOperator = this,
                         traces = if(config.enableTrackIndividual) mutableListOf() else null)
             }else
-                RestIndividual(restCalls,SampleType.SMART_RESOURCE,sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency))
+                RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency))
 
             individual.repairDBActions(sqlInsertBuilder)
             return individual
