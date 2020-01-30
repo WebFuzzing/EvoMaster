@@ -1,7 +1,14 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
 import template from "@babel/template";
-import {BinaryExpression, file, LogicalExpression, ReturnStatement, Statement, UnaryExpression} from "@babel/types";
+import {
+    BinaryExpression, For,
+    IfStatement,
+    LogicalExpression,
+    ReturnStatement,
+    Statement,
+    UnaryExpression
+} from "@babel/types";
 import InjectedFunctions from "./InjectedFunctions";
 
 /*
@@ -36,6 +43,41 @@ export default function evomasterPlugin(
     let branchCounter = 0;
 
     let fileName = "filename";
+
+    function addBlockIfNeeded(path: NodePath){
+
+        if(!t.isFor(path.node) && !t.isWhile(path.node)){
+            throw Error("Node is not a For: " + path.node);
+        }
+
+        const stmt = path.node;
+
+        if(!t.isBlockStatement(stmt.body)){
+            stmt.body = t.blockStatement([stmt.body]);
+            path.replaceWith(stmt);
+        }
+    }
+
+    function addBlocksToIf(path: NodePath){
+
+        if(!t.isIfStatement(path.node)){
+            throw Error("Node is not a IfStatement: " + path.node);
+        }
+
+        const ifs = path.node as IfStatement;
+
+        if(!t.isBlockStatement(ifs.consequent)){
+            const block = t.blockStatement([ifs.consequent]);
+            ifs.consequent = block;
+            path.replaceWith(ifs);
+        }
+
+        if(!t.isBlockStatement(ifs.alternate)){
+            const block = t.blockStatement([ifs.alternate]);
+            ifs.alternate = block;
+            path.replaceWith(ifs);
+        }
+    }
 
     function  replaceUnaryExpression(path: NodePath){
 
@@ -214,6 +256,7 @@ export default function evomasterPlugin(
                     t.addComment(path.node, "leading", "File instrumented with EvoMaster", true);
 
                     statementCounter = 0;
+                    branchCounter = 0;
 
                     //@ts-ignore
                     const srcFilePath: string = state.file.opts.filename;
@@ -253,6 +296,15 @@ export default function evomasterPlugin(
             },
             Statement: {
                 enter(path: NodePath){
+
+                    if(t.isIfStatement(path.node)){
+                        addBlocksToIf(path);
+                    }
+
+                    if(t.isFor(path.node) || t.isWhile(path.node)){
+                        addBlockIfNeeded(path);
+                    }
+
                     addLineProbeIfNeeded(path);
                 }
             }

@@ -257,3 +257,31 @@ test("&& branch distance", () => {
     `);
 });
 
+test("for loop", () => {
+    const code = dedent`
+        for(let i=0; i<5; i++) x=i;        
+    `;
+
+    const res = runPlugin(code);
+    expect(res.code).toEqual(dedent`
+        //File instrumented with EvoMaster
+        
+        const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.enteringStatement("test.ts", 1, 0);
+        
+        for (let i = 0; __EM__.cmp(i, "<", 5, "test.ts", 1, 0); i++) {
+          __EM__.enteringStatement("test.ts", 1, 1);
+
+          x = i;
+
+          __EM__.completedStatement("test.ts", 1, 1);
+        }
+        
+        __EM__.completedStatement("test.ts", 1, 0);          
+    `);
+});
+
+
+
+

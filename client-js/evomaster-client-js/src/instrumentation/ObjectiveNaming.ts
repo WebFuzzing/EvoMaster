@@ -70,8 +70,8 @@ export default class ObjectiveNaming {
 
     static branchObjectiveName(fileId: string, line: number, branchId: number, thenBranch: boolean): string {
 
-        let name = ObjectiveNaming.BRANCH + "_at_" + fileId +
-            +"_at_line_" + ObjectiveNaming.padNumber(line) + "_position_" + branchId;
+        let name = ObjectiveNaming.BRANCH + "_at_" + fileId
+            + "_at_line_" + ObjectiveNaming.padNumber(line) + "_position_" + branchId;
         if (thenBranch) {
             name += ObjectiveNaming.TRUE_BRANCH;
         } else {

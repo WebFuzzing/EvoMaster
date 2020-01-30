@@ -21,6 +21,7 @@ function runPlugin(code) {
 
 beforeEach(()=>{
     ET.reset();
+    expect(ET.getNumberOfObjectives()).toBe(0);
 });
 
 
@@ -55,11 +56,52 @@ test("simple block", () => {
     `;
 
     const instrumented = runPlugin(code).code;
-
-    const i = eval(instrumented);
+    eval(instrumented);
 
     expect(x).toBe(42);
 
     expect(ET.getNumberOfObjectives()).toBe(3); // 2 lines and 1 file
     expect(ET.getNumberOfObjectives(ON.LINE)).toBe(2);
+});
+
+
+
+test("=== number", () => {
+
+    expect(ET.getNumberOfObjectives(ON.BRANCH)).toBe(0);
+
+    let f;
+
+    const code = dedent`
+       f = function(x){ 
+            if(x === 42) return true;
+            else return false;          
+       };
+    `;
+
+    const instrumented = runPlugin(code).code;
+
+    eval(instrumented);
+
+    //function is just declared, but not called
+    expect(ET.getNumberOfObjectives(ON.BRANCH)).toBe(0);
+
+    f(0);
+
+    expect(ET.getNumberOfObjectives(ON.BRANCH)).toBe(2);
+    expect(ET.getNumberOfNonCoveredObjectives(ON.BRANCH)).toBe(1);
+    const id = ET.getNonCoveredObjectives(ON.BRANCH).values().next().value;
+
+    const h0 = ET.getValue(id);
+    expect(h0).toBeGreaterThan(0);
+    expect(h0).toBeLessThan(1);
+
+    f(7);
+    const h7 = ET.getValue(id);
+    expect(h7).toBeGreaterThan(h0);
+    expect(h7).toBeLessThan(1);
+
+    f(42);
+    const h42 = ET.getValue(id);
+    expect(h42).toBe(1);
 });

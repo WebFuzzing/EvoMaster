@@ -48,7 +48,7 @@ export default class InjectedFunctions {
 
 
     public static or(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
-        return HeuristicsForBooleans.evaluateOr(left, right, isRightPure, false, fileName, line, branchId);
+        return HeuristicsForBooleans.evaluateOr(left, right, isRightPure, fileName, line, branchId);
     }
 
     public static and(left: () => any, right: () => any, isRightPure: boolean, fileName: string, line: number, branchId: number): any {
