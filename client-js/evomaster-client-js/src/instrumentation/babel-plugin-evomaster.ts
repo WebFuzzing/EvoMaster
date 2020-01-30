@@ -1,14 +1,14 @@
 import {NodePath, Visitor} from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
-import template from "@babel/template";
 import {
-    BinaryExpression, For,
+    BinaryExpression,
     IfStatement,
     LogicalExpression,
     ReturnStatement,
     Statement,
     UnaryExpression
 } from "@babel/types";
+import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
 
 /*
@@ -52,7 +52,7 @@ export default function evomasterPlugin(
 
         const stmt = path.node;
 
-        if(!t.isBlockStatement(stmt.body)){
+        if(stmt.body && !t.isBlockStatement(stmt.body)){
             stmt.body = t.blockStatement([stmt.body]);
             path.replaceWith(stmt);
         }
@@ -66,15 +66,13 @@ export default function evomasterPlugin(
 
         const ifs = path.node as IfStatement;
 
-        if(!t.isBlockStatement(ifs.consequent)){
-            const block = t.blockStatement([ifs.consequent]);
-            ifs.consequent = block;
+        if(ifs.consequent && !t.isBlockStatement(ifs.consequent)){
+            ifs.consequent = t.blockStatement([ifs.consequent]);
             path.replaceWith(ifs);
         }
 
-        if(!t.isBlockStatement(ifs.alternate)){
-            const block = t.blockStatement([ifs.alternate]);
-            ifs.alternate = block;
+        if(ifs.alternate && !t.isBlockStatement(ifs.alternate)){
+            ifs.alternate = t.blockStatement([ifs.alternate]);
             path.replaceWith(ifs);
         }
     }
