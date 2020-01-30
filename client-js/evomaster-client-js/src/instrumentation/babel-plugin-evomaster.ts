@@ -10,6 +10,8 @@ import {
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
+import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
+import ObjectiveNaming from "./ObjectiveNaming";
 
 /*
     https://github.com/jamiebuilds/babel-handbook
@@ -205,6 +207,10 @@ export default function evomasterPlugin(
 
         const l = stmt.loc.start.line;
 
+        //TODO stmt as well
+        //FIXME: can't call directly, as instrumentation could be offline :( must inject at beginning of file
+        //ObjectiveRecorder.registerTarget(ObjectiveNaming.lineObjectiveName(fileName,l));
+
         if( (t.isReturnStatement(stmt) && !stmt.argument)
             || t.isContinueStatement(stmt)
             || t.isThrowStatement(stmt)){
@@ -267,10 +273,12 @@ export default function evomasterPlugin(
                     }
                     fileName = fileName.replace(/\\/g, "/");
 
-
                     const emImport = template.ast(
                         "const "+ref+" = require(\"evomaster-client-js\").InjectedFunctions;"
                     );
+
+                    //TODO
+                    //ObjectiveRecorder.registerTarget(ObjectiveNaming.fileObjectiveName(fileName));
 
                     path.unshiftContainer('body', emImport);
                 },

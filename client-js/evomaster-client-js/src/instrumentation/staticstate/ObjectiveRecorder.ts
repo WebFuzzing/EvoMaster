@@ -2,7 +2,7 @@ export default class ObjectiveRecorder {
 
 
     /**
-     * Key -> the unique id of the coverage objective
+     * Key -> the unique numeric id of the coverage objective
      * <br>
      * Value -> heuristic [0,1], where 1 means covered.
      * Only the highest value found so far is kept.
