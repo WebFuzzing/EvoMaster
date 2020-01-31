@@ -12,8 +12,15 @@
 
 import ExecutionTracer from "./staticstate/ExecutionTracer";
 import HeuristicsForBooleans from "./heuristic/HeuristicsForBooleans";
+import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
 
 export default class InjectedFunctions {
+
+    public static registerTargets(idArray: Array<string>){
+        for(let id in idArray){
+            ObjectiveRecorder.registerTarget(id);
+        }
+    }
 
     public static enteringStatement(fileName: string, line: number, statementId: number) {
         ExecutionTracer.enteringStatement(fileName, line, statementId);

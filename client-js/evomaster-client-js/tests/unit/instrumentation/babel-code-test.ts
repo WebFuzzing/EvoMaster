@@ -26,11 +26,13 @@ test("simple", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001"]);
+
         __EM__.enteringStatement("test.ts", 1, 0);
         
         let x = 0;
         
-        __EM__.completedStatement("test.ts", 1, 0);
+        __EM__.completedStatement("test.ts", 1, 0);        
     `);
 });
 
@@ -86,6 +88,8 @@ test("simple multi assignment, same line", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001"]);
+
         __EM__.enteringStatement("test.ts", 1, 0);
         
         let x = 0;
@@ -96,7 +100,7 @@ test("simple multi assignment, same line", () => {
         
         let y = 0;
         
-        __EM__.completedStatement("test.ts", 1, 1);
+        __EM__.completedStatement("test.ts", 1, 1);        
     `);
 });
 
@@ -113,6 +117,8 @@ test("return void", () => {
 
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002"]);
+
         __EM__.enteringStatement("test.ts", 1, 0);
         
         const x = function () {
@@ -121,7 +127,7 @@ test("return void", () => {
           return;
         };
         
-        __EM__.completedStatement("test.ts", 1, 0);
+        __EM__.completedStatement("test.ts", 1, 0);        
     `);
 });
 
@@ -144,6 +150,8 @@ test("simple multi lines", () => {
         //File instrumented with EvoMaster
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00003", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00009"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -171,7 +179,7 @@ test("simple multi lines", () => {
         
         const k = sum(x, y);
         
-        __EM__.completedStatement("test.ts", 9, 4);
+        __EM__.completedStatement("test.ts", 9, 4);        
     `);
 });
 
@@ -186,6 +194,8 @@ test("< branch distance", () => {
         //File instrumented with EvoMaster
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -206,6 +216,8 @@ test("! branch distance", () => {
         //File instrumented with EvoMaster
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
+
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -229,6 +241,8 @@ test("|| branch distance", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+
         __EM__.enteringStatement("test.ts", 1, 0);
         
         const x = __EM__.or(() => true, () => false, false, "test.ts", 1, 0);
@@ -249,6 +263,8 @@ test("&& branch distance", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+
         __EM__.enteringStatement("test.ts", 1, 0);
         
         const x = __EM__.and(() => 4, () => foo.bar(), false, "test.ts", 1, 0);
@@ -268,6 +284,8 @@ test("for loop", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+
         __EM__.enteringStatement("test.ts", 1, 0);
         
         for (let i = 0; __EM__.cmp(i, "<", 5, "test.ts", 1, 0); i++) {
@@ -278,7 +296,7 @@ test("for loop", () => {
           __EM__.completedStatement("test.ts", 1, 1);
         }
         
-        __EM__.completedStatement("test.ts", 1, 0);          
+        __EM__.completedStatement("test.ts", 1, 0);        
     `);
 });
 

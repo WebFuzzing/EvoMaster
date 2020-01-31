@@ -3,14 +3,13 @@ import * as BabelTypes from "@babel/types";
 import {
     BinaryExpression,
     IfStatement,
-    LogicalExpression,
+    LogicalExpression, Program,
     ReturnStatement,
     Statement,
     UnaryExpression
 } from "@babel/types";
 import template from "@babel/template";
 import InjectedFunctions from "./InjectedFunctions";
-import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
 import ObjectiveNaming from "./ObjectiveNaming";
 
 /*
@@ -43,6 +42,7 @@ export default function evomasterPlugin(
 
     let statementCounter = 0;
     let branchCounter = 0;
+    const objectives = Array<string>();
 
     let fileName = "filename";
 
@@ -145,6 +145,9 @@ export default function evomasterPlugin(
                 t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter)]
         );
 
+        objectives.push(ObjectiveNaming.branchObjectiveName(fileName, l, branchCounter, true));
+        objectives.push(ObjectiveNaming.branchObjectiveName(fileName, l, branchCounter, false));
+
         path.replaceWith(call);
         branchCounter++;
     }
@@ -180,6 +183,9 @@ export default function evomasterPlugin(
                 t.stringLiteral(fileName), t.numericLiteral(l), t.numericLiteral(branchCounter)]
         );
 
+        objectives.push(ObjectiveNaming.branchObjectiveName(fileName, l, branchCounter, true));
+        objectives.push(ObjectiveNaming.branchObjectiveName(fileName, l, branchCounter, false));
+
         path.replaceWith(call);
         branchCounter++;
     }
@@ -208,8 +214,7 @@ export default function evomasterPlugin(
         const l = stmt.loc.start.line;
 
         //TODO stmt as well
-        //FIXME: can't call directly, as instrumentation could be offline :( must inject at beginning of file
-        //ObjectiveRecorder.registerTarget(ObjectiveNaming.lineObjectiveName(fileName,l));
+        objectives.push(ObjectiveNaming.lineObjectiveName(fileName,l));
 
         if( (t.isReturnStatement(stmt) && !stmt.argument)
             || t.isContinueStatement(stmt)
@@ -261,6 +266,7 @@ export default function evomasterPlugin(
 
                     statementCounter = 0;
                     branchCounter = 0;
+                    objectives.length = 0;
 
                     //@ts-ignore
                     const srcFilePath: string = state.file.opts.filename;
@@ -277,12 +283,27 @@ export default function evomasterPlugin(
                         "const "+ref+" = require(\"evomaster-client-js\").InjectedFunctions;"
                     );
 
-                    //TODO
-                    //ObjectiveRecorder.registerTarget(ObjectiveNaming.fileObjectiveName(fileName));
-
                     path.unshiftContainer('body', emImport);
+
+                    objectives.push(ObjectiveNaming.fileObjectiveName(fileName));
+
                 },
-                exit(path) {
+                exit(path: NodePath) {
+                    //once the whole program is instrumented, the content of "objectives" array will be ready to be injected
+
+                    const unique = Array.from(new Set<string>(objectives)).sort();
+
+                    const call = t.callExpression(
+                        t.memberExpression(t.identifier(ref), t.identifier(InjectedFunctions.registerTargets.name)),
+                        [t.arrayExpression(unique.map(e => t.stringLiteral(e)))]
+                    );
+                    const stmt = t.expressionStatement(call);
+
+                    const p = path.node as Program
+                    p.body.splice(1, 0, stmt);
+                    path.replaceWith(p);
+
+                    //path.pushContainer("body", call);
                 }
             },
             BinaryExpression:{
