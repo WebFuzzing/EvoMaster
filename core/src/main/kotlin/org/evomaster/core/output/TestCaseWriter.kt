@@ -15,7 +15,6 @@ import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.UsedObjects
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
@@ -31,7 +30,6 @@ import javax.ws.rs.core.MediaType
 class TestCaseWriter {
 
     private var counter = 0
-    private var usedObjects = UsedObjects()
     private var previousChained = false
     private var previousId = ""
     private var chained = false
@@ -90,6 +88,10 @@ class TestCaseWriter {
             val ind = test.test.individual
 
             if (ind is RestIndividual) {
+                // BMR: test.test should have the used objects attached (if any).
+                //if (config.enableCompleteObjects) {
+                //    usedObjects = ind.usedObjects.copy()
+                //}
                 if(configuration.expectationsActive){
                     expectationsWriter.addDeclarations(lines)
                 }
