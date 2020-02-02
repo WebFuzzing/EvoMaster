@@ -1,7 +1,7 @@
 # Build EvoMaster
 
 
-To compile the project, you need Maven and JDK __8__.
+To compile the project, you need Maven and the JDK (either __8__ or __11__).
 
 Use the Maven command:
 
