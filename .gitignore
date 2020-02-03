@@ -58,3 +58,4 @@ experiments/target/
 /client-js/integration-tests/coverage/
 
 /e2e-tests/spring-rest-openapi-v3/target
+/client-js/integration-tests/build/

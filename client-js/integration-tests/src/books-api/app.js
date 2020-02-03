@@ -242,7 +242,7 @@ app.get("/swagger.json", (req, res) => {
                     id: {type: "string", description: "TODO"},
                     title: {type: "string", description: "TODO"},
                     author: {type: "string", description: "TODO"},
-                    year: {type: "numberic", description: "TODO"},
+                    year: {type: "numeric", description: "TODO"},
                 },
                 title: "BookDto"
             }

@@ -21,10 +21,13 @@
   },
   "scripts": {
     "check": "babel src -d check",
+    "build": "babel  tests src -d build/src --copy-files",
     "test": "jest --coverage"
   },
   "babel": {
-    "only": ["src"],
+    "only": [
+      "src"
+    ],
     "plugins": [
       "module:evomaster-client-js"
     ]
@@ -32,10 +35,13 @@
   "jest": {
     "testEnvironment": "node",
     "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
-    "//TODO":  "should be fixed to point to other module, if possible...",
+    "//TODO": "should be fixed to point to other module, if possible...",
     "collectCoverageFrom": [
       "src/**/.*(js|jsx|ts|tsx)"
     ],
-    "transformIgnorePatterns": ["/node_modules/", "/tests/"]
+    "transformIgnorePatterns": [
+      "/node_modules/",
+      "/tests/"
+    ]
   }
 }
