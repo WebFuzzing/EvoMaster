@@ -213,8 +213,8 @@ export default function evomasterPlugin(
 
         const l = stmt.loc.start.line;
 
-        //TODO stmt as well
         objectives.push(ObjectiveNaming.lineObjectiveName(fileName,l));
+        objectives.push(ObjectiveNaming.statementObjectiveName(fileName, l, statementCounter));
 
         if( (t.isReturnStatement(stmt) && !stmt.argument)
             || t.isContinueStatement(stmt)
@@ -299,11 +299,9 @@ export default function evomasterPlugin(
                     );
                     const stmt = t.expressionStatement(call);
 
-                    const p = path.node as Program
+                    const p = path.node as Program;
                     p.body.splice(1, 0, stmt);
                     path.replaceWith(p);
-
-                    //path.pushContainer("body", call);
                 }
             },
             BinaryExpression:{

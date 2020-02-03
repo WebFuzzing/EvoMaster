@@ -218,10 +218,11 @@ export default class ExecutionTracer {
 
         const lineId = ObjectiveNaming.lineObjectiveName(fileName, line);
         const fileId = ObjectiveNaming.fileObjectiveName(fileName);
+        const stmtId = ObjectiveNaming.statementObjectiveName(fileName, line, statementId);
         ExecutionTracer.updateObjective(lineId, 1);
         ExecutionTracer.updateObjective(fileId, 1);
+        ExecutionTracer.updateObjective(stmtId, 0.5);
 
-        //TODO statement target 0.5
 
         const lastLine = fileName + "_" + line + "_" + statementId;
 
@@ -230,7 +231,8 @@ export default class ExecutionTracer {
 
     public static completedStatement(fileName: string, line: number, statementId: number) {
 
-        //TODO statement target 1
+        const stmtId = ObjectiveNaming.statementObjectiveName(fileName, line, statementId);
+        ExecutionTracer.updateObjective(stmtId, 1);
 
         const lastLine = fileName + "_" + line + "_" + statementId;
 

@@ -26,7 +26,7 @@ test("simple", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
         
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -88,7 +88,7 @@ test("simple multi assignment, same line", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0", "Statement_test.ts_00001_1"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -117,7 +117,7 @@ test("return void", () => {
 
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002"]);
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00002", "Statement_test.ts_00001_0", "Statement_test.ts_00002_1"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -151,7 +151,7 @@ test("simple multi lines", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00003", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00009"]);
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Line_test.ts_00003", "Line_test.ts_00005", "Line_test.ts_00006", "Line_test.ts_00009", "Statement_test.ts_00001_0", "Statement_test.ts_00003_1", "Statement_test.ts_00005_2", "Statement_test.ts_00006_3", "Statement_test.ts_00009_4"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -195,7 +195,7 @@ test("< branch distance", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -217,7 +217,7 @@ test("! branch distance", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -241,7 +241,7 @@ test("|| branch distance", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -263,7 +263,7 @@ test("&& branch distance", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         
@@ -284,7 +284,7 @@ test("for loop", () => {
         
         const __EM__ = require("evomaster-client-js").InjectedFunctions;
 
-        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001"]);
+        __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0", "Statement_test.ts_00001_1"]);
 
         __EM__.enteringStatement("test.ts", 1, 0);
         

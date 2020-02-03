@@ -14,6 +14,11 @@ export default class ObjectiveNaming {
     static readonly LINE: string = "Line";
 
     /**
+     * Prefix identifier for statement coverage objectives
+     */
+    static readonly STATEMENT: string = "Statement";
+
+    /**
      * Prefix identifier for branch coverage objectives
      */
     static readonly BRANCH: string = "Branch";
@@ -35,6 +40,7 @@ export default class ObjectiveNaming {
     static readonly METHOD_REPLACEMENT: string = "MethodReplacement";
 
 
+    //FIXME: with statement objective, this maybe is not so important?
     /**
      * Prefix identifier for objectives related to calling methods without exceptions
      */
@@ -47,6 +53,11 @@ export default class ObjectiveNaming {
 
     static lineObjectiveName(fileId: string, line: number): string {
         return ObjectiveNaming.LINE + "_" + fileId + "_" + ObjectiveNaming.padNumber(line);
+    }
+
+    static statementObjectiveName(fileId: string, line: number, index: number): string {
+        return ObjectiveNaming.STATEMENT + "_" + fileId + "_"
+            + ObjectiveNaming.padNumber(line) + "_" + index;
     }
 
     static successCallObjectiveName(fileId: string, line: number, index: number): string {
