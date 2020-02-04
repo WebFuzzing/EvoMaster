@@ -286,7 +286,7 @@ test("for loop", () => {
 
         __EM__.registerTargets(["Branch_at_test.ts_at_line_00001_position_0_falseBranch", "Branch_at_test.ts_at_line_00001_position_0_trueBranch", "File_test.ts", "Line_test.ts_00001", "Statement_test.ts_00001_0", "Statement_test.ts_00001_1"]);
 
-        __EM__.enteringStatement("test.ts", 1, 0);
+        __EM__.markStatementForCompletion("test.ts", 1, 0);
         
         for (let i = 0; __EM__.cmp(i, "<", 5, "test.ts", 1, 0); i++) {
           __EM__.enteringStatement("test.ts", 1, 1);
@@ -294,9 +294,7 @@ test("for loop", () => {
           x = i;
 
           __EM__.completedStatement("test.ts", 1, 1);
-        }
-        
-        __EM__.completedStatement("test.ts", 1, 0);        
+        }        
     `);
 });
 

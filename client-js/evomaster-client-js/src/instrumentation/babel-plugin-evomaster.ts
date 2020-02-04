@@ -218,7 +218,15 @@ export default function evomasterPlugin(
 
         if( (t.isReturnStatement(stmt) && !stmt.argument)
             || t.isContinueStatement(stmt)
-            || t.isThrowStatement(stmt)){
+            || t.isThrowStatement(stmt)
+            /*
+                The following are tricky. They might have inside return stmts
+                or labeled jumps (continue/break) to outer-loops.
+             */
+            || t.isFor(stmt)
+            || t.isWhile(stmt)
+            || t.isIfStatement(stmt)
+        ){
 
             const mark = template.ast(
                 `${ref}.${InjectedFunctions.markStatementForCompletion.name}("${fileName}",${l},${statementCounter})`);
@@ -246,9 +254,9 @@ export default function evomasterPlugin(
                     `${ref}.${InjectedFunctions.completedStatement.name}("${fileName}",${l},${statementCounter})`);
                 path.insertAfter(completed);
             }
-
-            statementCounter++;
         }
+
+        statementCounter++;
     }
 
 

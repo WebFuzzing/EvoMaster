@@ -60,8 +60,10 @@ test("simple block", () => {
 
     expect(x).toBe(42);
 
-    expect(ET.getNumberOfObjectives()).toBe(3); // 2 lines and 1 file
+    expect(ET.getNumberOfObjectives()).toBe(5); // 2 lines, 1 file and 2 stmt
     expect(ET.getNumberOfObjectives(ON.LINE)).toBe(2);
+    expect(ET.getNumberOfObjectives(ON.FILE)).toBe(1);
+    expect(ET.getNumberOfObjectives(ON.STATEMENT)).toBe(2);
 });
 
 
@@ -104,4 +106,25 @@ test("=== number", () => {
     f(42);
     const h42 = ET.getValue(id);
     expect(h42).toBe(1);
+});
+
+
+
+test("issue in IF handling", () => {
+
+    expect(ET.getNumberOfObjectives(ON.BRANCH)).toBe(0);
+
+    const code = dedent`
+       const k = function(x){ 
+            if(x === 42) return true;
+            else return false;          
+       };
+       
+       const t = k(42);
+    `;
+
+    const instrumented = runPlugin(code).code;
+
+    //should not crash
+    eval(instrumented);
 });
