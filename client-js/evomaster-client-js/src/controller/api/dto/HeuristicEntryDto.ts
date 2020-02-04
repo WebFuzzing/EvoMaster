@@ -2,7 +2,7 @@
  * The type of extra heuristic.
  * Note: for the moment, we only have heuristics on SQL commands
  */
-export enum Type {SQL}
+export enum Type {SQL = "SQL"}
 
 /**
  * Should we try to minimize or maximize the heuristic?
@@ -12,7 +12,7 @@ export enum Objective {
      * The lower the better.
      * Minimum is 0. It can be considered as a "distance" to minimize.
      */
-    MINIMIZE_TO_ZERO,
+    MINIMIZE_TO_ZERO = "MINIMIZE_TO_ZERO",
     /**
      * The higher the better.
      * Note: given x, we could rather considered the value
@@ -20,7 +20,7 @@ export enum Objective {
      * and also would make debugging more difficult (ie better to
      * look at the raw, non-transformed values).
      */
-    MAXIMIZE
+    MAXIMIZE = "MAXIMIZE"
 }
 
 export class HeuristicEntryDto {

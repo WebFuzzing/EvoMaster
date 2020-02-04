@@ -1,9 +1,9 @@
 enum ContentType {
-    JSON, X_WWW_FORM_URLENCODED
+    JSON= "JSON", X_WWW_FORM_URLENCODED = "X_WWW_FORM_URLENCODED"
 }
 
 enum HttpVerb {
-    GET, POST
+    GET = "GET", POST = "POST"
 }
 
 /**

@@ -9,7 +9,7 @@ export default class UnitsInfoDto {
     /**
      * Then name of all the units (eg classes) in the SUT
      */
-    public unitNames = new Set<string>();
+    public unitNames = new Array<string>();
 
     /**
      * The total number of lines/statements/instructions in all

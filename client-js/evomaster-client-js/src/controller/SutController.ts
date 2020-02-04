@@ -9,6 +9,8 @@ import ExecutionTracer from "../instrumentation/staticstate/ExecutionTracer";
 import ObjectiveRecorder from "../instrumentation/staticstate/ObjectiveRecorder";
 import TargetInfo from "../instrumentation/TargetInfo";
 import Action from "../instrumentation/Action";
+import UnitsInfoRecorder from "../instrumentation/staticstate/UnitsInfoRecorder";
+
 
 export default abstract class SutController implements SutHandler {
 
@@ -64,16 +66,22 @@ export default abstract class SutController implements SutHandler {
     }
 
     public getUnitsInfoDto(): UnitsInfoDto {
-        return null; // TODO
+
+        const dto = new UnitsInfoDto();
+        dto.unitNames = Array.from(UnitsInfoRecorder.getUnitNames());
+        dto.numberOfLines = UnitsInfoRecorder.getNumberOfLines();
+        dto.numberOfBranches = UnitsInfoRecorder.getNumberOfBranches();
+
+        return dto;
     }
 
     /**
-     * Check if bytecode instrumentation is on.
+     * Check if instrumentation is on.
      *
      * @return true if the instrumentation is on
      */
     public isInstrumentationActivated(): boolean {
-        return false; // TODO
+        return ObjectiveRecorder.getNumberOfTargets() > 0;
     }
 
     /**

@@ -41,6 +41,7 @@ export default class EMController {
         return new Promise<boolean>( (resolve) => {
             this.server = this.app.listen(this.controllerPort, this.controllerHost, () => {
                 this.actualPort = (this.server.address() as AddressInfo).port;
+                console.log("Started EM Controller on port " + this.actualPort);
                 resolve(true);
             });
         });
@@ -240,8 +241,8 @@ export default class EMController {
 
             additionalInfos.forEach(a => {
                     const info = new AdditionalInfoDto();
-                    info.queryParameters = new Set<string>(a.getQueryParametersView());
-                    info.headers = new Set<string>(a.getHeadersView());
+                    info.queryParameters = Array.from(a.getQueryParametersView());
+                    info.headers = Array.from(a.getHeadersView());
                     info.lastExecutedStatement = a.getLastExecutedStatement();
 
                     // info.stringSpecializations = new HashMap<>();

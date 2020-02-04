@@ -7,10 +7,10 @@ import UnitsInfoDto from "./UnitsInfoDto";
     org.evomaster.core.output.OutputFormat
  */
 export enum OutputFormat {
-    JAVA_JUNIT_5,
-    JAVA_JUNIT_4,
-    KOTLIN_JUNIT_4,
-    KOTLIN_JUNIT_5,
+    JAVA_JUNIT_5 = "JAVA_JUNIT_5",
+    JAVA_JUNIT_4 = "JAVA_JUNIT_4",
+    KOTLIN_JUNIT_4 = "KOTLIN_JUNIT_4",
+    KOTLIN_JUNIT_5 = "KOTLIN_JUNIT_5",
     // JS_JEST //TODO
 }
 

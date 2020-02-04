@@ -51,6 +51,11 @@ export default class ObjectiveNaming {
         return ObjectiveNaming.FILE + "_" + fileId;
     }
 
+    static getFileIdFromFileObjectiveName(target: string) : string{
+        const prefix = ObjectiveNaming.FILE + "_";
+        return target.substr(prefix.length);
+    }
+
     static lineObjectiveName(fileId: string, line: number): string {
         return ObjectiveNaming.LINE + "_" + fileId + "_" + ObjectiveNaming.padNumber(line);
     }

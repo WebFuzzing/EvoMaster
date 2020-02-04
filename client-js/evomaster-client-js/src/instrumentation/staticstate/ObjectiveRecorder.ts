@@ -1,3 +1,6 @@
+import ObjectiveNaming from "../ObjectiveNaming";
+import UnitsInfoRecorder from "./UnitsInfoRecorder";
+
 export default class ObjectiveRecorder {
 
 
@@ -89,6 +92,10 @@ export default class ObjectiveRecorder {
         }
     }
 
+    public static getNumberOfTargets() : number{
+        return ObjectiveRecorder.allTargets.size;
+    }
+
 
     /**
      * Mark the existence of a testing target.
@@ -105,6 +112,14 @@ export default class ObjectiveRecorder {
             throw new Error("Empty target name");
         }
         ObjectiveRecorder.allTargets.add(target);
+
+        if(target.startsWith(ObjectiveNaming.FILE)){
+            UnitsInfoRecorder.markNewUnit(ObjectiveNaming.getFileIdFromFileObjectiveName(target));
+        } else if(target.startsWith(ObjectiveNaming.LINE)){
+            UnitsInfoRecorder.markNewLine();
+        } else if(target.startsWith(ObjectiveNaming.BRANCH)){
+            UnitsInfoRecorder.markNewBranch();
+        }
     }
 
     /**

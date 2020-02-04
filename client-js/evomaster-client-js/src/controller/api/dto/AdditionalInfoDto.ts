@@ -9,7 +9,7 @@ export default class AdditionalInfoDto {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    public queryParameters: Set<string>  = new Set<string>();
+    public queryParameters: Array<string>  = new Array<string>();
 
     /**
      * In REST APIs, it can happen that some HTTP headers do not
@@ -18,7 +18,7 @@ export default class AdditionalInfoDto {
      * But we can track at runtime when such kind of objects are used
      * to access the query parameters
      */
-    public headers: Set<string> = new Set<string>();
+    public headers: Array<string> = new Array<string>();
 
     /**
      * Information for taint analysis.
