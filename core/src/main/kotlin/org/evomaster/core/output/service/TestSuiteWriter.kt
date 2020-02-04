@@ -33,8 +33,10 @@ class TestSuiteWriter {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
-        private const val responseStructureOracle = "responseStructureOracle"
-        private const val activeExpectations = "activeExpectations"
+        //private const val responseStructureOracle = "responseStructureOracle"
+        //private const val activeExpectations = "activeExpectations"
+        private val testCaseWriter = TestCaseWriter()
+        private val partialOracles = PartialOracles()
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
     }
@@ -64,8 +66,11 @@ class TestSuiteWriter {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
-        val testCaseWriter = TestCaseWriter()
+        partialOracles.setFormat(config.outputFormat)
         if(::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
+        testCaseWriter.setPartialOracles(partialOracles)
+
+
 
         header(solution, testSuiteFileName, lines)
 
@@ -151,7 +156,10 @@ class TestSuiteWriter {
         lines.add(" * Used time: ${searchTimeController.getElapsedTime()}")
         classDescriptionEmptyLine(lines)
         lines.add(" * Needed budget for current results: ${searchTimeController.neededBudget()}")
+        classDescriptionEmptyLine(lines)
+        lines.add(" * ${solution.termination.comment}")
         lines.add(" */")
+
     }
 
     private fun header(solution: Solution<*>,
@@ -244,7 +252,9 @@ class TestSuiteWriter {
                         "individual test cases")
                 lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
                 //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
-                lines.add("private static boolean $responseStructureOracle = false;")
+
+                //lines.add("private static boolean $responseStructureOracle = false;")
+
             }
 
         } else if(config.outputFormat.isKotlin()) {
@@ -260,9 +270,10 @@ class TestSuiteWriter {
                 lines.add("// ems - expectations master switch - is the variable that activates/deactivates expectations " +
                         "individual test cases")
                 lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                lines.add("private val $responseStructureOracle = false")
+                //lines.add("private val $responseStructureOracle = false")
             }
         }
+        partialOracles.variableDeclaration(lines, config.outputFormat)
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.
     }

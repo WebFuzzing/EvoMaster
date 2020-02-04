@@ -3,10 +3,10 @@ package org.evomaster.core.output.service
 import com.google.gson.Gson
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.problem.rest.HttpVerb
+import org.evomaster.core.output.oracles.ResponseStructureOracle
+import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 
 /**
@@ -30,93 +30,42 @@ import org.evomaster.core.search.gene.OptionalGene
 class PartialOracles {
     private lateinit var objectGenerator: ObjectGenerator
     private lateinit var format: OutputFormat
+    private var oracles = mutableListOf(SupportedCodeOracle(), ResponseStructureOracle())
+    private val expectationsMasterSwitch = "ems"
 
-    /**
-     * The [responseStructure] method. If a response is successful and returns an object. The [responseStructure]
-     * method checks that the returned object is of the appropriate type and structure (not content). I.e., the method
-     * checks that the returned object has all the compulsory field that the type has (according to the
-     * swagger definition) and that all the optional fields present are included in the definition.
-     */
-    fun setGenerator(objGen: ObjectGenerator){
-        objectGenerator = objGen
-    }
-    fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
-        this.format = format
-    }
-
-    fun responseStructure(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
-        if (res.failedCall()
-                || res.getStatusCode() == 500) {
-            return
+    fun variableDeclaration(lines: Lines, format: OutputFormat){
+        for (oracle in oracles){
+            oracle.variableDeclaration(lines, format)
         }
-        val oracleName = "responseStructureOracle"
-        val bodyString = res.getBody()
-        when (bodyString?.first()) {
-            '[' -> {
-                // TODO: Handle arrays of objects
-                val responseObject = Gson().fromJson(bodyString, ArrayList::class.java)
-            }
-            '{' -> {
-                // TODO: Handle individual objects
-                call.responseRefs.forEach{
-                    if (res.getStatusCode().toString() != it.key) return@forEach
-                    val referenceObject = objectGenerator.getNamedReference(it.value)
-                    //Expect that the response has all the compulsory (i.e. non-optional) fields
+    }
 
-                    val referenceKeys = referenceObject.fields
-                            .filterNot { it is OptionalGene }
-                            .map { "\"${it.name}\"" }
-                            .joinToString(separator = ", ")
-
-                    //this differs between kotlin and java
-                    when{
-                        format.isJava() ->lines.add(".that($oracleName, json_$name.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
-                        format.isKotlin() -> lines.add(".that($oracleName, json_$name.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
-                    }
-
-
-
-                    //Expect that the reference contains all the optional field in the response
-                    //referenceObject.fields.filter{ it is OptionalGene}.map { it.name }.containsAll(responseObject.keys)
-                    val referenceOptionalKeys = referenceObject.fields
-                            .filter { it is OptionalGene }
-                            .map { "\"${it.name}\"" }
-                            .joinToString(separator = ", ")
-
-                    when {
-                        format.isJava() -> lines.add(".that($oracleName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap(\"\").keySet()))")
-                        format.isKotlin() -> lines.add(".that($oracleName, listOf<Any>($referenceOptionalKeys).containsAll(json_$name.getMap<Any, Any>(\"\").keys))")
-                    }
-
+    fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
+        val generates = oracles.any {
+            it.generatesExpectation(call, lines, res, name, format)
+        }
+        if (!generates) return
+        lines.add("expectationHandler")
+        lines.indented {
+            lines.add(".expect($expectationsMasterSwitch)")
+        for (oracle in oracles) {
+                oracle.addExpectations(call, lines, res, name, format)
+                if (format.isJava()) {
+                    lines.append(";")
                 }
             }
         }
     }
 
-    fun supportedCode(call: RestCallAction, lines: Lines, res: RestCallResult, name: String): Boolean{
-        val code = res.getStatusCode().toString()
-        val validCodes = getSupportedCode(call)
-        return !validCodes.contains(code)
-    }
 
-    fun getSupportedCode(call: RestCallAction): MutableSet<String>{
-        val verb = call.verb
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
-        val result = when (verb){
-            HttpVerb.GET -> path?.get?.responses?.keys ?: mutableSetOf()
-            HttpVerb.POST -> path?.post?.responses?.keys ?: mutableSetOf()
-            HttpVerb.PUT -> path?.put?.responses?.keys ?: mutableSetOf()
-            HttpVerb.DELETE -> path?.delete?.responses?.keys ?: mutableSetOf()
-            HttpVerb.PATCH -> path?.patch?.responses?.keys ?: mutableSetOf()
-            HttpVerb.HEAD -> path?.head?.responses?.keys ?: mutableSetOf()
-            HttpVerb.OPTIONS -> path?.options?.responses?.keys ?: mutableSetOf()
-            HttpVerb.TRACE -> path?.trace?.responses?.keys ?: mutableSetOf()
-            else -> mutableSetOf()
+    fun setGenerator(objGen: ObjectGenerator){
+        objectGenerator = objGen
+        oracles.forEach {
+            it.setObjectGenerator(objectGenerator)
         }
-        return result
     }
 
-    fun relevantExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String): Boolean{
-        return supportedCode(call, lines, res, name)
+    fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
+        this.format = format
     }
+
 }

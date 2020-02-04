@@ -39,6 +39,7 @@ class TestCaseWriter {
     private lateinit var configuration: EMConfig
     private lateinit var expectationsWriter: ExpectationsWriter
     private lateinit var swagger: OpenAPI
+    private lateinit var partialOracles: PartialOracles
 
     companion object{
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
@@ -59,7 +60,7 @@ class TestCaseWriter {
         expectationsWriter.setFormat(this.format)
 
         val objGenerator = ObjectGenerator()
-        val partialOracles = PartialOracles()
+
 
         if(config.expectationsActive
                 && ::swagger.isInitialized){
@@ -404,7 +405,6 @@ class TestCaseWriter {
         // Having them at the end of a test makes some sense...
         if(configuration.expectationsActive){
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
-            expectationsWriter.handleExpectations(call, lines, res, true, name)
         }
         //TODO: BMR expectations from partial oracles here?
 
@@ -819,6 +819,10 @@ class TestCaseWriter {
 
     fun setSwagger(sw: OpenAPI){
         swagger = sw
+    }
+
+    fun setPartialOracles(oracles: PartialOracles){
+        partialOracles = oracles
     }
 
     fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int){
