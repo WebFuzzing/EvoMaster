@@ -61,4 +61,8 @@ object Clusterer {
         val clusters = clu2.performCLustering()
         return clusters
     }
+
+    fun selectForClustering(): Boolean {
+        return true
+    }
 }

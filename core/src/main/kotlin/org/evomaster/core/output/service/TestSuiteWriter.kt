@@ -266,11 +266,13 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
-                lines.add("private val $expectationsMasterSwitch = false")
-                lines.add("// ems - expectations master switch - is the variable that activates/deactivates expectations " +
+                lines.add("/**")
+                lines.add("* $expectationsMasterSwitch - expectations master switch - is the variable that activates/deactivates expectations " +
                         "individual test cases")
-                lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                //lines.add("private val $responseStructureOracle = false")
+                lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+                lines.add("*/")
+                lines.add("private val $expectationsMasterSwitch = false")
+
             }
         }
         partialOracles.variableDeclaration(lines, config.outputFormat)

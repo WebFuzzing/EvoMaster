@@ -6,6 +6,8 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.ObjectGenerator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.OptionalGene
 
 
@@ -25,7 +27,9 @@ class ResponseStructureOracle : ImplementedOracle() {
     private lateinit var objectGenerator: ObjectGenerator
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
-        lines.add("// $variableName - response structure oracle - checking that the response objects match the responses defined in the schema")
+        lines.add("/**")
+        lines.add("* $variableName - response structure oracle - checking that the response objects match the responses defined in the schema")
+        lines.add("*/")
         when{
             format.isJava() -> {
                 lines.add("private static boolean $variableName = false;")
@@ -89,6 +93,12 @@ class ResponseStructureOracle : ImplementedOracle() {
     }
 
     override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
+        // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         return !(res.failedCall() || res.getStatusCode() == 500)
+    }
+
+    override fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean {
+        //TODO: Bogdan - both this and generates expectations need updating
+        return true
     }
 }

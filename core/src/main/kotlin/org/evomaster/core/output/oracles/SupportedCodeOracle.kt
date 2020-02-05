@@ -6,6 +6,8 @@ import org.evomaster.core.output.service.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 
 /**
  * The [SupportedCodeOracle] class generates an expectation and writes it to the code.
@@ -20,7 +22,9 @@ class SupportedCodeOracle : ImplementedOracle() {
     private lateinit var objectGenerator: ObjectGenerator
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
-        lines.add("// $variableName - supported code oracle - checking that the response status code is among those supported according to the schema")
+        lines.add("/**")
+        lines.add("* $variableName - supported code oracle - checking that the response status code is among those supported according to the schema")
+        lines.add("*/")
         when{
             format.isJava() -> {
                 lines.add("private static boolean $variableName = false;")
@@ -33,17 +37,17 @@ class SupportedCodeOracle : ImplementedOracle() {
     }
 
     override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
-        if(supportedCode(call, lines, res, name)){
+        if(!supportedCode(call, res)){
             // The code is not among supported codes, so an expectation will be generated
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
             lines.add(".that($variableName, Arrays.asList(${getSupportedCode(call).joinToString(", ")}).contains($name.extract().statusCode()))")
         }
     }
-    fun supportedCode(call: RestCallAction, lines: Lines, res: RestCallResult, name: String): Boolean{
+    fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{
         val code = res.getStatusCode().toString()
         val validCodes = getSupportedCode(call)
-        return !validCodes.contains(code)
+        return validCodes.contains(code)
     }
 
     fun getSupportedCode(call: RestCallAction): MutableSet<String>{
@@ -68,6 +72,13 @@ class SupportedCodeOracle : ImplementedOracle() {
     }
 
     override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
-        return supportedCode(call, lines, res, name)
+        return !supportedCode(call, res)
+    }
+
+    override fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean {
+        return individual.evaluatedActions().any { ac ->
+            !supportedCode(ac.action as RestCallAction,
+                    ac.result as RestCallResult)
+        }
     }
 }
