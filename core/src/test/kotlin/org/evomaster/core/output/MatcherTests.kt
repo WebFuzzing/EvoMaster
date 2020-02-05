@@ -3,9 +3,11 @@ package org.evomaster.core.output
 import org.evomaster.client.java.controller.contentMatchers.NumberMatcher.numbersMatch
 import org.evomaster.client.java.controller.contentMatchers.StringMatcher.stringsMatch
 import org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.subStringsMatch
+import org.evomaster.client.java.controller.contentMatchers.StringCollectionMatcher.collectionContains
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
+import java.util.*
 
 class MatcherTests{
 
@@ -55,5 +57,15 @@ class MatcherTests{
         assertFalse(numbersMatch(404.0, "404.1"))
         assertFalse(numbersMatch(404.1, "404.0"))
     }
+
+    /**
+     * The [testStringCollectionMatcher]
+     */
+    @Test
+    fun testStringCollectionMatcher(){
+        assertTrue(collectionContains(Arrays.asList("mup", "tup", "vup"), "vup"))
+        assertFalse(collectionContains(Arrays.asList("mup", "tup", "vup"), "mjup"))
+    }
+
 
 }

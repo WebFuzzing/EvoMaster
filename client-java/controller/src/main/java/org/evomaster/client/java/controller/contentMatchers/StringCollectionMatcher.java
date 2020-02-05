@@ -2,8 +2,6 @@ package org.evomaster.client.java.controller.contentMatchers;
 
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
-
-import java.util.Arrays;
 import java.util.Collection;
 
 public class StringCollectionMatcher extends TypeSafeMatcher<Collection<String>> {

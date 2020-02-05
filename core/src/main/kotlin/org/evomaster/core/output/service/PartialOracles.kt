@@ -47,12 +47,8 @@ class PartialOracles {
         lines.add("expectationHandler")
         lines.indented {
             lines.add(".expect($expectationsMasterSwitch)")
-        for (oracle in oracles) {
-                oracle.addExpectations(call, lines, res, name, format)
-                if (format.isJava()) {
-                    lines.append(";")
-                }
-            }
+            for (oracle in oracles) { oracle.addExpectations(call, lines, res, name, format) }
+            if (format.isJava()) { lines.append(";") }
         }
     }
 
