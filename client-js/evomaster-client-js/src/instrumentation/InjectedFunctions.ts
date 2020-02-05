@@ -17,7 +17,7 @@ import ObjectiveRecorder from "./staticstate/ObjectiveRecorder";
 export default class InjectedFunctions {
 
     public static registerTargets(idArray: Array<string>){
-        for(let id in idArray){
+        for(let id of idArray){
             ObjectiveRecorder.registerTarget(id);
         }
     }

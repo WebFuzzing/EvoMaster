@@ -7,9 +7,9 @@ export default class UnitsInfoRecorder {
 
     //see entries in UnitsInfoDto
 
-    private static readonly unitNames: Set<string>;
-    private static numberOfLines: number;
-    private static numberOfBranches: number;
+    private static readonly unitNames: Set<string> = new Set<string>();
+    private static numberOfLines: number = 0;
+    private static numberOfBranches: number = 0;
     // private static readonly numberOfReplacedMethodsInSut: number;
     // private static readonly numberOfReplacedMethodsInThirdParty: number;
     // private static readonly numberOfTrackedMethods: number;
