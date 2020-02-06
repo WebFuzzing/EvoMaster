@@ -12,8 +12,9 @@ public class StringCollectionMatcher extends TypeSafeMatcher<Collection<String>>
     }
 
     @Override
-    protected boolean matchesSafely(Collection<String> item) {
-        return item.containsAll(value) && value.containsAll(item);
+    protected boolean matchesSafely(Collection<String> stringCollection) {
+        if (value == null || stringCollection == null) return false;
+        else return stringCollection.containsAll(value) && value.containsAll(stringCollection);
     }
 
     @Override
@@ -23,19 +24,20 @@ public class StringCollectionMatcher extends TypeSafeMatcher<Collection<String>>
     }
 
     public boolean collectionContains(String item){
-        return value.contains(item);
+        if (value == null) return false;
+        else return value.contains(item);
     }
 
-    public static boolean collectionsMatch(Collection<String> item1, Collection<String> item2){
-        if(item1 == null || item2 == null) return false;
-        StringCollectionMatcher n1 = new StringCollectionMatcher(item1);
-        return n1.matchesSafely(item2);
+    public static boolean collectionsMatch(Collection<String> firstCollection, Collection<String> secondCollection){
+        if(firstCollection == null || secondCollection == null) return false;
+        StringCollectionMatcher n1 = new StringCollectionMatcher(firstCollection);
+        return n1.matchesSafely(secondCollection);
     }
 
-    public static boolean collectionContains(Collection<String> item1, String item2){
-        if(item1 == null || item2 == null) return false;
-        StringCollectionMatcher n1 = new StringCollectionMatcher(item1);
-        return n1.collectionContains(item2);
+    public static boolean collectionContains(Collection<String> stringCollection, String stringItem){
+        if(stringCollection == null || stringItem == null) return false;
+        StringCollectionMatcher n1 = new StringCollectionMatcher(stringCollection);
+        return n1.collectionContains(stringItem);
     }
 
 }

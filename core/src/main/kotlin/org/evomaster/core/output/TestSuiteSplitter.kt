@@ -156,8 +156,6 @@ object TestSuiteSplitter {
             it.evaluatedActions().all { ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
                 (code != null && code < 400)
-                //if(code!=null) code < 400
-                //else false
             }
         }.toMutableList()
 

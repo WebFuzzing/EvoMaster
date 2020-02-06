@@ -14,10 +14,10 @@ import org.evomaster.core.problem.rest.RestCallResult
  */
 
 class DistanceMetricLastLine : DistanceMetric<RestCallResult>() {
-    override fun calculateDistance(val1: RestCallResult, val2: RestCallResult): Double {
+    override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        val lastLine1 = val1.getLastStatementWhen500() ?: ""
-        val lastLine2 = val2.getLastStatementWhen500() ?: ""
+        val lastLine1 = first.getLastStatementWhen500() ?: ""
+        val lastLine2 = second.getLastStatementWhen500() ?: ""
         return LevenshteinDistance.distance(lastLine1, lastLine2)
     }
 }
