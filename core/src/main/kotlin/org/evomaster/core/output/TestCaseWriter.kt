@@ -1,7 +1,7 @@
 package org.evomaster.core.output
 
 import com.google.gson.Gson
-import io.swagger.models.Swagger
+import io.swagger.v3.oas.models.OpenAPI
 import org.apache.commons.lang3.StringEscapeUtils
 import org.evomaster.core.EMConfig
 import org.evomaster.core.Lazy
@@ -38,7 +38,8 @@ class TestCaseWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
     private lateinit var expectationsWriter: ExpectationsWriter
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
+    private lateinit var partialOracles: PartialOracles
 
     companion object{
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
@@ -59,7 +60,7 @@ class TestCaseWriter {
         expectationsWriter.setFormat(this.format)
 
         val objGenerator = ObjectGenerator()
-        val partialOracles = PartialOracles()
+
 
         if(config.expectationsActive
                 && ::swagger.isInitialized){
@@ -404,7 +405,6 @@ class TestCaseWriter {
         // Having them at the end of a test makes some sense...
         if(configuration.expectationsActive){
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
-            expectationsWriter.handleExpectations(call, lines, res, true, name)
         }
         //TODO: BMR expectations from partial oracles here?
 
@@ -817,8 +817,12 @@ class TestCaseWriter {
         return returnMap
     }
 
-    fun setSwagger(sw: Swagger){
+    fun setSwagger(sw: OpenAPI){
         swagger = sw
+    }
+
+    fun setPartialOracles(oracles: PartialOracles){
+        partialOracles = oracles
     }
 
     fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int){
@@ -848,6 +852,7 @@ class TestCaseWriter {
                     format.isJava() -> lines.add("String id_$counter = $extract")
                     format.isKotlin() -> lines.add("val id_$counter: String = $extract")
                 }
+                appendSemicolon(lines)
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter")
                 appendSemicolon(lines)
             }

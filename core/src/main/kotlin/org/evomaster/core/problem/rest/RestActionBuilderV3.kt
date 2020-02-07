@@ -582,5 +582,26 @@ object RestActionBuilderV3 {
             }
         }
     }
+    fun getModelsFromSwagger(swagger: OpenAPI,
+                             modelCluster: MutableMap<String, ObjectGene>) {
+        modelCluster.clear()
+
+
+        if (swagger.components.schemas != null) {
+            swagger.components.schemas
+                    .forEach {
+                        val model = createObjectFromReference(it.key,
+                                it.component1(),
+                                swagger
+                        )
+                        when (model) {
+                            //BMR: the modelCluster expects an ObjectGene. If the result is not that, it is wrapped in one.
+                            is ObjectGene -> modelCluster.put(it.component1(), (model as ObjectGene))
+                            is MapGene<*> -> modelCluster.put(it.component1(), ObjectGene(it.component1(), listOf(model)))
+                        }
+
+                    }
+        }
+    }
 
 }

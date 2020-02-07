@@ -2,6 +2,7 @@ package org.evomaster.core.output
 
 import org.evomaster.core.output.clustering.DBSCANClusterer
 import org.evomaster.core.output.clustering.metrics.DistanceMetricAction
+import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.Solution
@@ -30,8 +31,7 @@ object Clusterer {
         val sol1 = solution.individuals.filter{
             it.evaluatedActions().any{ ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if (code!=null) (code == 500)
-                else false
+                (code != null && code == 500)
             }
         }
 
@@ -51,7 +51,18 @@ object Clusterer {
                 metric = DistanceMetricAction()
         )
 
-        val clusters = clu.performCLustering()
+        val clu2 = DBSCANClusterer<RestCallResult>(
+                values = clusterableActions,
+                epsilon = 0.1,
+                minimumMembers = 2,
+                metric = DistanceMetricLastLine()
+        )
+
+        val clusters = clu2.performCLustering()
         return clusters
+    }
+
+    fun selectForClustering(): Boolean {
+        return true
     }
 }

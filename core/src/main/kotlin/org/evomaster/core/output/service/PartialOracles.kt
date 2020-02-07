@@ -3,9 +3,10 @@ package org.evomaster.core.output.service
 import com.google.gson.Gson
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
+import org.evomaster.core.output.oracles.ResponseStructureOracle
+import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 
 /**
@@ -29,66 +30,37 @@ import org.evomaster.core.search.gene.OptionalGene
 class PartialOracles {
     private lateinit var objectGenerator: ObjectGenerator
     private lateinit var format: OutputFormat
+    private var oracles = mutableListOf(SupportedCodeOracle(), ResponseStructureOracle())
+    private val expectationsMasterSwitch = "ems"
 
-    /**
-     * The [responseStructure] method. If a response is successful and returns an object. The [responseStructure]
-     * method checks that the returned object is of the appropriate type and structure (not content). I.e., the method
-     * checks that the returned object has all the compulsory field that the type has (according to the
-     * swagger definition) and that all the optional fields present are included in the definition.
-     */
+    fun variableDeclaration(lines: Lines, format: OutputFormat){
+        for (oracle in oracles){
+            oracle.variableDeclaration(lines, format)
+        }
+    }
+
+    fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
+        val generates = oracles.any {
+            it.generatesExpectation(call, lines, res, name, format)
+        }
+        if (!generates) return
+        lines.add("expectationHandler.expect($expectationsMasterSwitch)")
+        lines.indented {
+            for (oracle in oracles) { oracle.addExpectations(call, lines, res, name, format) }
+            if (format.isJava()) { lines.append(";") }
+        }
+    }
+
+
     fun setGenerator(objGen: ObjectGenerator){
         objectGenerator = objGen
+        oracles.forEach {
+            it.setObjectGenerator(objectGenerator)
+        }
     }
+
     fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
         this.format = format
     }
 
-    fun responseStructure(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
-        if (res.failedCall()
-                || res.getStatusCode() == 500) {
-            return
-        }
-        val oracleName = "responseStructureOracle"
-        val bodyString = res.getBody()
-        when (bodyString?.first()) {
-            '[' -> {
-                // TODO: Handle arrays of objects
-                val responseObject = Gson().fromJson(bodyString, ArrayList::class.java)
-            }
-            '{' -> {
-                // TODO: Handle individual objects
-                call.responseRefs.forEach{
-                    if (res.getStatusCode().toString() != it.key) return@forEach
-                    val referenceObject = objectGenerator.getNamedReference(it.value)
-                    //Expect that the response has all the compulsory (i.e. non-optional) fields
-
-                    val referenceKeys = referenceObject.fields
-                            .filterNot { it is OptionalGene }
-                            .map { "\"${it.name}\"" }
-                            .joinToString(separator = ", ")
-
-                    //this differs between kotlin and java
-                    when{
-                        format.isJava() ->lines.add(".that($oracleName, json_$name.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
-                        format.isKotlin() -> lines.add(".that($oracleName, json_$name.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
-                    }
-
-
-
-                    //Expect that the reference contains all the optional field in the response
-                    //referenceObject.fields.filter{ it is OptionalGene}.map { it.name }.containsAll(responseObject.keys)
-                    val referenceOptionalKeys = referenceObject.fields
-                            .filter { it is OptionalGene }
-                            .map { "\"${it.name}\"" }
-                            .joinToString(separator = ", ")
-
-                    when {
-                        format.isJava() -> lines.add(".that($oracleName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap(\"\").keySet()))")
-                        format.isKotlin() -> lines.add(".that($oracleName, listOf<Any>($referenceOptionalKeys).containsAll(json_$name.getMap<Any, Any>(\"\").keys))")
-                    }
-
-                }
-            }
-        }
-    }
 }
