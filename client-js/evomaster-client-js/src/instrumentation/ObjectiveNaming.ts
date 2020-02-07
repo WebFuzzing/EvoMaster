@@ -1,3 +1,5 @@
+import {ReplacementType} from "./methodreplacement/ReplacementType";
+
 export default class ObjectiveNaming {
 
     /**
@@ -51,7 +53,7 @@ export default class ObjectiveNaming {
         return ObjectiveNaming.FILE + "_" + fileId;
     }
 
-    static getFileIdFromFileObjectiveName(target: string) : string{
+    static getFileIdFromFileObjectiveName(target: string): string {
         const prefix = ObjectiveNaming.FILE + "_";
         return target.substr(prefix.length);
     }
@@ -75,13 +77,12 @@ export default class ObjectiveNaming {
             + ObjectiveNaming.padNumber(line) + "_" + index;
     }
 
-    // static methodReplacementObjectiveName(String template, boolean result, ReplacementType type){
-    //    if(template==null || !template.startsWith(METHOD_REPLACEMENT)){
-    //        throw new IllegalArgumentException("Invalid template for boolean method replacement: " + template);
-    //    }
-    //     String name = template + "_" + type.name() + "_" + result;
-    //     return name.intern();
-    //    }
+    static methodReplacementObjectiveName(template: string, result: boolean, type: ReplacementType) {
+        if (!template || !template.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)) {
+            throw new Error("Invalid template for boolean method replacement: " + template);
+        }
+        return template + "_" + type + "_" + result;
+    }
 
 
     static branchObjectiveName(fileId: string, line: number, branchId: number, thenBranch: boolean): string {

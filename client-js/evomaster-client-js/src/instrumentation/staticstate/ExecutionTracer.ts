@@ -9,6 +9,7 @@ import AdditionalInfo from "../AdditionalInfo";
 import ObjectiveRecorder from "./ObjectiveRecorder";
 import Truthness from "../heuristic/Truthness";
 import HeuristicsForBooleans from "../heuristic/HeuristicsForBooleans";
+import {ReplacementType} from "../methodreplacement/ReplacementType";
 
 export default class ExecutionTracer {
 
@@ -197,14 +198,14 @@ export default class ExecutionTracer {
         ObjectiveRecorder.update(id, value);
     }
 
-// public static executedReplacedMethod(idTemplate: string, ReplacementType type, Truthness t){
-//
-//     String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
-//     String idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
-//
-//     updateObjective(idTrue, t.getOfTrue());
-//     updateObjective(idFalse, t.getOfFalse());
-// }
+    public static executedReplacedMethod(idTemplate: string, type: ReplacementType, t: Truthness) {
+
+        const idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
+        const idFalse = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, false, type);
+
+        ExecutionTracer.updateObjective(idTrue, t.getOfTrue());
+        ExecutionTracer.updateObjective(idFalse, t.getOfFalse());
+    }
 
 
     /**
