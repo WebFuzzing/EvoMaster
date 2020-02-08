@@ -1,7 +1,6 @@
 package org.evomaster.core.output
 
 import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 

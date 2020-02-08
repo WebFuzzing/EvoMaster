@@ -10,8 +10,6 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.CookieLogin
-import org.evomaster.core.output.service.ObjectGenerator
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual

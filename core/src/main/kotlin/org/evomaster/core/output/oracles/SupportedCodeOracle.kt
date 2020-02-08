@@ -2,7 +2,7 @@ package org.evomaster.core.output.oracles
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
