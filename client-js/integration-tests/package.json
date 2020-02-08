@@ -40,8 +40,10 @@
       "src/**/.*(js|jsx|ts|tsx)"
     ],
     "transformIgnorePatterns": [
-      "/node_modules/",
-      "/tests/"
+      "<rootDir>/node_modules/",
+      "<rootDir>/tests/",
+      "<rootDir>/check/",
+      "<rootDir>/build/"
     ]
   }
 }
