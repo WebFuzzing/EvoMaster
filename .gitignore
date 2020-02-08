@@ -46,4 +46,16 @@ experiments/target/
 /e2e-tests/spring-rest-postgres/target/
 /core/testWithEMB.sh
 /resource-rest-experiments/api-generator/target/
+/client-js/node_modules/
+/client-js/dist/
+/client-js/yarn-error.log
+/client-js/coverage/
+/client-js/integration-tests/node_modules/
+/client-js/evomaster-client-js/coverage/
+/client-js/evomaster-client-js/node_modules/
+/client-js/evomaster-client-js/dist/
+/client-js/integration-tests/check/
+/client-js/integration-tests/coverage/
+
 /e2e-tests/spring-rest-openapi-v3/target
+/client-js/integration-tests/build/
