@@ -8,16 +8,19 @@ import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.formatter.OutputFormatter
-import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.CookieLogin
+import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.rest.ContentType
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.problem.rest.auth.CookieLogin
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.gene.Gene
+import org.evomaster.core.search.gene.GeneUtils
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.sql.SqlForeignKeyGene
 import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.gene.sql.SqlWrapperGene
@@ -32,6 +35,7 @@ class TestCaseWriter {
     private var previousId = ""
     private var chained = false
 
+
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
     private lateinit var configuration: EMConfig
@@ -39,7 +43,7 @@ class TestCaseWriter {
     private lateinit var swagger: OpenAPI
     private lateinit var partialOracles: PartialOracles
 
-    companion object{
+    companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
 
         const val NOT_COVERED_YET = "NotCoveredYet"
@@ -60,8 +64,7 @@ class TestCaseWriter {
         val objGenerator = ObjectGenerator()
 
 
-        if(config.expectationsActive
-                && ::swagger.isInitialized){
+        if (config.expectationsActive && ::swagger.isInitialized) {
             objGenerator.setSwagger(swagger)
             partialOracles.setGenerator(objGenerator)
             partialOracles.setFormat(format)
@@ -80,6 +83,7 @@ class TestCaseWriter {
         when {
             format.isJava() -> lines.add("public void ${test.name}() throws Exception {")
             format.isKotlin() -> lines.add("fun ${test.name}()  {")
+            format.isJavaScript() -> lines.add("test(\"${test.name}\", async () => {")
         }
 
         lines.indented {
@@ -91,7 +95,7 @@ class TestCaseWriter {
                 //if (config.enableCompleteObjects) {
                 //    usedObjects = ind.usedObjects.copy()
                 //}
-                if(configuration.expectationsActive){
+                if (configuration.expectationsActive) {
                     expectationsWriter.addDeclarations(lines)
                 }
                 if (ind.dbInitialization.isNotEmpty()) {
@@ -113,6 +117,7 @@ class TestCaseWriter {
                             when {
                                 format.isJava() -> lines.add("String $name = \"\";")
                                 format.isKotlin() -> lines.add("var $name : String? = \"\"")
+                                format.isJavaScript() -> lines.add("let $name = \"\";")
                             }
                         }
             }
@@ -128,33 +133,39 @@ class TestCaseWriter {
         }
         lines.add("}")
 
+        if (format.isJavaScript()) {
+            lines.append(";")
+        }
+
         return lines
     }
 
-    private fun cookiesName(info: CookieLogin) : String = "cookies_${info.username}"
+    private fun cookiesName(info: CookieLogin): String = "cookies_${info.username}"
 
 
     private fun handleGettingCookies(ind: EvaluatedIndividual<*>,
                                      lines: Lines,
-                                     baseUrlOfSut: String){
+                                     baseUrlOfSut: String) {
 
         val cookiesInfo = (ind.individual as RestIndividual).getCookieLoginAuth()
 
-        if(cookiesInfo.isNotEmpty()){
+        if (cookiesInfo.isNotEmpty()) {
             lines.addEmpty()
         }
 
-        for(k in cookiesInfo){
+        for (k in cookiesInfo) {
 
             when {
                 format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
                 format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
             }
 
+            //TODO JS
+
             lines.append("given()")
             lines.indented {
 
-                if(k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
+                if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
                     lines.add(".formParam(\"${k.usernameField}\", \"${k.username}\")")
                     lines.add(".formParam(\"${k.passwordField}\", \"${k.password}\")")
                 } else {
@@ -162,7 +173,7 @@ class TestCaseWriter {
                 }
 
                 lines.add(".post(")
-                if(format.isJava()) {
+                if (format.isJava()) {
                     lines.append("$baseUrlOfSut + \"")
                 } else {
                     lines.append("\"\${$baseUrlOfSut}")
@@ -178,7 +189,7 @@ class TestCaseWriter {
     }
 
     private fun appendSemicolon(lines: Lines) {
-        if (format.isJava()) {
+        if (format.isJava() || format.isJavaScript()) {
             lines.append(";")
         }
     }
@@ -276,7 +287,7 @@ class TestCaseWriter {
                 .filter { it.representExistingData }
                 .flatMap { it.seeGenes() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey}
+                .find { it.uniqueId == uniqueIdOfPrimaryKey }
 
         /*
            This FK might point to a PK of data already existing in the database.
@@ -285,7 +296,7 @@ class TestCaseWriter {
            We need to put the actual value data in a "d()"
         */
 
-        if(pkExisting != null){
+        if (pkExisting != null) {
             val pk = getPrintableValue(pkExisting)
             return ".d(\"$variableName\", \"$pk\")"
         }
@@ -294,8 +305,8 @@ class TestCaseWriter {
             Check if this is a reference to an auto-increment
          */
         val keepAutoGeneratedValue = action.selectedColumns
-                .filter { it.name == fkg.name }
-                .first().foreignKeyToAutoIncrement
+                .first { it.name == fkg.name }
+                .foreignKeyToAutoIncrement
 
         if (keepAutoGeneratedValue) {
             return ".r(\"$variableName\", ${uniqueIdOfPrimaryKey}L)"
@@ -305,7 +316,7 @@ class TestCaseWriter {
         val pkg = allActions
                 .flatMap { it.seeGenes() }
                 .filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey}!!
+                .find { it.uniqueId == uniqueIdOfPrimaryKey }!!
 
         val pk = getPrintableValue(pkg)
         return ".d(\"$variableName\", \"$pk\")"
@@ -341,7 +352,13 @@ class TestCaseWriter {
                                       res: RestCallResult,
                                       baseUrlOfSut: String) {
 
-        lines.add("try{")
+        //TODO JS
+
+        when {
+            format.isJavaOrKotlin() -> lines.add("try{")
+            //format.isJavaScript() -> lines.add("expect(() => {")
+        }
+
         lines.indented {
             addRestCallLines(call, lines, res, baseUrlOfSut)
 
@@ -350,11 +367,21 @@ class TestCaseWriter {
                 Fail test if exception is not thrown, but not if it was a timeout,
                 otherwise the test would become flaky
               */
-                lines.add("fail(\"Expected exception\");")
+                if (!format.isJavaScript()) {
+                    /*
+                        TODO need a way to do it for JS, see
+                        https://github.com/facebook/jest/issues/2129
+                        what about expect(false).toBe(true)?
+                     */
+                    lines.add("fail(\"Expected exception\");")
+                }
             }
         }
 
-        lines.add("} catch(Exception e){")
+        when {
+            format.isJavaOrKotlin() -> lines.add("} catch(Exception e){")
+            format.isJavaScript() -> lines.add("} catch(e){")
+        }
 
         res.getErrorMessage()?.let {
             lines.indented {
@@ -364,6 +391,7 @@ class TestCaseWriter {
         lines.add("}")
     }
 
+
     private fun addRestCallLines(call: RestCallAction,
                                  lines: Lines,
                                  res: RestCallResult,
@@ -372,11 +400,10 @@ class TestCaseWriter {
         //first handle the first line
         val name = "call_$counter"
 
-        if(configuration.expectationsActive){
+        if (configuration.expectationsActive) {
             val header = getAcceptHeader(call, res)
             expectationsWriter.handleGenericFirstLine(call, lines, res, name, header)
-        }
-        else {
+        } else {
             handleFirstLine(call, lines, res)
         }
 
@@ -388,26 +415,27 @@ class TestCaseWriter {
         handleResponse(lines, res)
 
         //finally, handle the last line(s)
-        if(configuration.expectationsActive){
+        if (configuration.expectationsActive) {
+            /*
+                TODO what is the reason for the "Generic" version here???
+                And why counter is increased only for expectationsActive???
+             */
+
             handleGenericLastLine(call, res, lines, counter)
 
             previousChained = res.getHeuristicsForChainedLocation()
-            if(previousChained) previousId = "id_$counter"
+            if (previousChained) previousId = "id_$counter"
             counter++
-        }
-        else {
+        } else {
             handleLastLine(call, res, lines)
         }
 
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
-        if(configuration.expectationsActive){
+        if (configuration.expectationsActive) {
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
         }
         //TODO: BMR expectations from partial oracles here?
-
-
-
     }
 
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines) {
@@ -415,10 +443,24 @@ class TestCaseWriter {
         if (call.saveLocation && !res.stopping) {
 
             if (!res.getHeuristicsForChainedLocation()) {
-                lines.add(".extract().header(\"location\");")
-                lines.addEmpty()
-                lines.deindent(2)
-                lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
+
+                when {
+                    format.isJavaOrKotlin() -> {
+                        lines.add(".extract().header(\"location\")")
+                        appendSemicolon(lines)
+                        lines.addEmpty()
+                        lines.deindent(2)
+                        lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
+                    }
+                    format.isJavaScript() -> {
+                        lines.add(".extract().header(\"location\");") //FIXME
+                        lines.addEmpty()
+                        lines.deindent(2)
+                        val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty(${locationVar(call.path.lastElement())})"
+                        lines.add("expect($validCheck).toBe(true);")
+                    }
+                }
+
             } else {
                 //TODO BMR: this is a less-than-subtle way to try to fix a problem in ScoutAPI
                 // The test generated in java causes a fail due to .path<Object>
@@ -439,7 +481,7 @@ class TestCaseWriter {
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter;")
 
                 previousChained = res.getHeuristicsForChainedLocation()
-                if(previousChained) previousId = "id_$counter"
+                if (previousChained) previousId = "id_$counter"
                 counter++
             }
         } else {
@@ -453,17 +495,27 @@ class TestCaseWriter {
         if (call.saveLocation && !res.stopping) {
 
             if (!res.getHeuristicsForChainedLocation()) {
-                lines.append("${locationVar(call.path.lastElement())} = ")
+                if(format.isJavaOrKotlin()) {
+                    lines.append("${locationVar(call.path.lastElement())} = ")
+                }
             } else {
-                if (format.isJava()) {
-                    lines.append("String id_$counter = ")
-                } else {
-                    lines.append("val id_$counter: String = ")
+                when {
+                    format.isJava() -> lines.append("String id_$counter = ")
+                    format.isKotlin() -> lines.append("val id_$counter: String = ")
+                    format.isJavaScript() -> {
+                        lines.append("let id_$counter;")
+                        lines.addEmpty()
+                    }
                 }
                 chained = res.getHeuristicsForChainedLocation()
             }
         }
-        lines.append("given()" + getAcceptHeader(call, res))
+
+        when {
+            format.isJavaOrKotlin() -> lines.append("given()")
+            format.isJavaScript() -> lines.append("await superagent")
+        }
+        lines.append(getAcceptHeader(call, res))
     }
 
     private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines) {
@@ -474,10 +526,10 @@ class TestCaseWriter {
 
         } else {
 
-            if(format.isJava()) {
-                lines.append("$baseUrlOfSut + \"")
-            } else {
+            if (format.isKotlin()) {
                 lines.append("\"\${$baseUrlOfSut}")
+            } else {
+                lines.append("$baseUrlOfSut + \"")
             }
 
             if (call.path.numberOfUsableQueryParams(call.parameters) <= 1) {
@@ -501,20 +553,24 @@ class TestCaseWriter {
 
     private fun handleResponse(lines: Lines, res: RestCallResult) {
         if (!res.failedCall()) {
-            lines.add(".then()")
 
             val code = res.getStatusCode()
-            lines.add(".statusCode($code)")
-            if(code == 500){
-                lines.append(" // " + res.getLastStatementWhen500())
+
+            when {
+                format.isJavaOrKotlin() -> {
+                    lines.add(".then()")
+                    lines.add(".statusCode($code)")
+                }
+                format.isJavaScript() -> lines.add(".expect($code)")
             }
 
+            if (code == 500) {
+                lines.append(" // " + res.getLastStatementWhen500())
+            }
 
             if (configuration.enableBasicAssertions) {
                 handleResponseContents(lines, res)
             }
-
-            //TODO check on body
         }
     }
 
@@ -538,8 +594,8 @@ class TestCaseWriter {
         * */
     }
 
-    private fun handleMapLines(index: Int, map: Map<*,*>, lines: Lines){
-        map.keys.forEach{
+    private fun handleMapLines(index: Int, map: Map<*, *>, lines: Lines) {
+        map.keys.forEach {
             val printableTh = handleFieldValues(map[it])
             if (printableTh != "null"
                     && printableTh != NOT_COVERED_YET
@@ -551,14 +607,20 @@ class TestCaseWriter {
     }
 
     private fun handleResponseContents(lines: Lines, res: RestCallResult) {
+
+        if (format.isJavaScript()) {
+            //TODO
+            return
+        }
+
+
         lines.add(".assertThat()")
 
         if (res.getBodyType() == null) {
             lines.add(".contentType(\"\")")
-            if(res.getBody().isNullOrBlank() && res.getStatusCode()!=400) lines.add(".body(isEmptyOrNullString())")
+            if (res.getBody().isNullOrBlank() && res.getStatusCode() != 400) lines.add(".body(isEmptyOrNullString())")
 
-        }
-        else lines.add(".contentType(\"${res.getBodyType()
+        } else lines.add(".contentType(\"${res.getBodyType()
                 .toString()
                 .split(";").first() //TODO this is somewhat unpleasant. A more elegant solution is needed.
         }\")")
@@ -574,12 +636,11 @@ class TestCaseWriter {
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
                         //assertions on contents
-                        if(resContents.size > 0){
+                        if (resContents.size > 0) {
                             resContents.forEachIndexed { test_index, value ->
-                                if (value is Map<*, *>){
+                                if (value is Map<*, *>) {
                                     handleMapLines(test_index, value, lines)
-                                }
-                                else {
+                                } else {
                                     val printableTh = handleFieldValues(value)
                                     if (printableTh != "null"
                                             && printableTh != NOT_COVERED_YET
@@ -590,10 +651,9 @@ class TestCaseWriter {
                                     }
                                 }
                             }
-                        }
-                        else{
+                        } else {
                             // the object is empty
-                            if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
+                            if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
                             else lines.add(".body(\"isEmpty()\", is(true))")
                         }
                     }
@@ -612,16 +672,15 @@ class TestCaseWriter {
                             bodyString.isNullOrBlank() -> lines.add(".body(isEmptyOrNullString())")
 
                             else -> lines.add(".body(containsString(\"${
-                                        GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
-                                    }\"))")
+                            GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.BODY, format = format)
+                            }\"))")
                         }
                     }
                 }
-            }
-            else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)){
-                if(bodyString.isNullOrBlank()){
+            } else if (type.isCompatible(MediaType.TEXT_PLAIN_TYPE)) {
+                if (bodyString.isNullOrBlank()) {
                     lines.add(".body(isEmptyOrNullString())")
-                }else {
+                } else {
                     lines.add(".body(containsString(\"${
                     GeneUtils.applyEscapes(bodyString, mode = GeneUtils.EscapeMode.TEXT, format = format)
                     }\"))")
@@ -630,11 +689,11 @@ class TestCaseWriter {
         }
     }
 
-    private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
-        if (resContents.isEmpty()){
+    private fun addObjectAssertions(resContents: Map<*, *>, lines: Lines) {
+        if (resContents.isEmpty()) {
             // If this executes, the result contains an empty collection.
             //lines.add(".body(\"size()\", numberMatches(0))")
-            if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
+            if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
 
@@ -642,12 +701,12 @@ class TestCaseWriter {
         // Removed size checks for objects.
         //lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
         flatContent.keys
-                .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
-                .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
+                .filter { !it.contains("timestamp") } //needed since timestamps will change between runs
+                .filter { !it.contains("self") } //TODO: temporary hack. Needed since ports might change between runs.
                 .forEach {
                     val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
-                    if(actualValue!=null){
+                    if (actualValue != null) {
                         val printableTh = handleFieldValues(actualValue)
                         if (printableTh != "null"
                                 && printableTh != NOT_COVERED_YET
@@ -655,23 +714,23 @@ class TestCaseWriter {
                                 && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
-                            if(stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
-                            else{
-                                if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
+                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            else {
+                                if (!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
                             }
                         }
                     }
                 }
 
 
-                /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
-                * Even relatively minor timing changes (one second either way) could cause tests to fail
-                * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
-                * Note that this is a temporary (and somewhat hacky) solution.
-                * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
-                *
-                * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
-                */
+        /* TODO: BMR - We want to avoid time-based fields (timestamps and the like) as they could lead to flaky tests.
+        * Even relatively minor timing changes (one second either way) could cause tests to fail
+        * as a result, we are now avoiding generating assertions for fields explicitly labeled as "timestamp"
+        * Note that this is a temporary (and somewhat hacky) solution.
+        * A more elegant and permanent solution could be handled via the flaky test handling (when that will be ready).
+        *
+        * NOTE: if we have chained locations, then the "id" should be taken from the chained id rather than the test case?
+        */
     }
 
     private fun handleBody(call: RestCallAction, lines: Lines) {
@@ -687,9 +746,18 @@ class TestCaseWriter {
             throw IllegalStateException("Issue: both Body and FormData present")
         }
 
+        val send = when {
+            format.isJavaOrKotlin() -> "body"
+            format.isJavaScript() -> "send"
+            else -> throw IllegalArgumentException("Format not supported $format")
+        }
+
         if (bodyParam != null && bodyParam is BodyParam) {
 
-            lines.add(".contentType(\"${bodyParam.contentType()}\")")
+            when {
+                format.isJavaOrKotlin() -> lines.add(".contentType(\"${bodyParam.contentType()}\")")
+                format.isJavaScript() -> lines.add(".set('Content-Type','${bodyParam.contentType()}')")
+            }
 
             if (bodyParam.isJson()) {
 
@@ -701,13 +769,13 @@ class TestCaseWriter {
 
                 //needed as JSON uses ""
                 val bodyLines = body.split("\n").map { s ->
-                     "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
+                    "\" " + GeneUtils.applyEscapes(s.trim(), mode = GeneUtils.EscapeMode.BODY, format = format) + " \""
                 }
 
                 if (bodyLines.size == 1) {
-                    lines.add(".body(${bodyLines.first()})")
+                    lines.add(".$send(${bodyLines.first()})")
                 } else {
-                    lines.add(".body(${bodyLines.first()} + ")
+                    lines.add(".$send(${bodyLines.first()} + ")
                     lines.indented {
                         (1 until bodyLines.lastIndex).forEach { i ->
                             lines.add("${bodyLines[i]} + ")
@@ -719,18 +787,18 @@ class TestCaseWriter {
             } else if (bodyParam.isTextPlain()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.TEXT, targetFormat = format)
                 if (body != "\"\"") {
-                    lines.add(".body($body)")
+                    lines.add(".$send($body)")
                 } else {
-                    lines.add(".body(\"${"""\"\""""}\")")
+                    lines.add(".$send(\"${"""\"\""""}\")")
                 }
 
                 //BMR: this is needed because, if the string is empty, it causes a 400 (bad request) code on the test end.
                 // inserting \"\" should prevent that problem
                 // TODO: get some tests done of this
 
-            } else if(bodyParam.isForm()) {
+            } else if (bodyParam.isForm()) {
                 val body = bodyParam.gene.getValueAsPrintableString(mode = GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED, targetFormat = format)
-                lines.add(".body(\"$body\")")
+                lines.add(".$send(\"$body\")")
 
             } else {
                 //TODO XML
@@ -740,8 +808,11 @@ class TestCaseWriter {
         }
 
         if (form != null) {
-            lines.add(".contentType(\"application/x-www-form-urlencoded\")")
-            lines.add(".body(\"$form\")")
+            when {
+                format.isJavaOrKotlin() -> lines.add(".contentType(\"application/x-www-form-urlencoded\")")
+                format.isJavaScript() -> lines.add(".set('Content-Type','application/x-www-form-urlencoded')")
+            }
+            lines.add(".$send(\"$form\")")
         }
     }
 
@@ -749,19 +820,28 @@ class TestCaseWriter {
 
         val prechosenAuthHeaders = call.auth.headers.map { it.name }
 
+        val set = when {
+            format.isJavaOrKotlin() -> "header"
+            format.isJavaScript() -> "set"
+            else -> throw IllegalArgumentException("Not supported format: $format")
+        }
+
         call.auth.headers.forEach {
-            lines.add(".header(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
+            lines.add(".$set(\"${it.name}\", \"${it.value}\") // ${call.auth.name}")
         }
 
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".header(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                    lines.add(".set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                 }
 
         val cookieLogin = call.auth.cookieLogin
-        if(cookieLogin != null){
-            lines.add(".cookies(${cookiesName(cookieLogin)})")
+        if (cookieLogin != null) {
+            when {
+                format.isJavaOrKotlin() -> lines.add(".cookies(${cookiesName(cookieLogin)})")
+                format.isJavaScript() -> lines.add(".set('Cookies', ${cookiesName(cookieLogin)})")
+            }
         }
     }
 
@@ -774,17 +854,23 @@ class TestCaseWriter {
          *  TODO: get the type from the REST call
          */
 
-        if (call.produces.isEmpty() || res.getBodyType() == null){
-            return ".accept(\"*/*\")"
+        val accept = when {
+            format.isJavaOrKotlin() -> ".accept("
+            format.isJavaScript() -> ".set('Accept', "
+            else -> throw IllegalArgumentException("Invalid format: $format")
+        }
+
+        if (call.produces.isEmpty() || res.getBodyType() == null) {
+            return "$accept\"*/*\")"
         }
 
         val accepted = call.produces.filter { res.getBodyType().toString().contains(it, true) }
 
         if (accepted.size == 1)
-            return ".accept(\"${accepted.first()}\")"
+            return "$accept\"${accepted.first()}\")"
         else
-            //FIXME: there seems to have been something or a problem
-            return ".accept(\"*/*\")"
+        //FIXME: there seems to have been something or a problem
+            return "$accept\"*/*\")"
     }
 
     /**
@@ -795,39 +881,39 @@ class TestCaseWriter {
      * For example, .body("page.size", numberMatches(20.0)) -> in the payload, access the page field, the size field,
      * and assert that the value there is 20.
      */
-    private fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any>{
+    private fun flattenForAssert(k: MutableList<*>, v: Any): Map<MutableList<*>, Any> {
         val returnMap = mutableMapOf<MutableList<*>, Any>()
-        if (v is Map<*,*>){
+        if (v is Map<*, *>) {
             v.forEach { key, value ->
-                if (value == null){
+                if (value == null) {
                     return@forEach
-                }
-                else{
+                } else {
                     val innerkey = k.plus(key) as MutableList
                     val innerMap = flattenForAssert(innerkey, value)
                     returnMap.putAll(innerMap)
                 }
             }
-        }
-        else{
+        } else {
             returnMap[k] = v
         }
         return returnMap
     }
 
-    fun setSwagger(sw: OpenAPI){
+    fun setSwagger(sw: OpenAPI) {
         swagger = sw
     }
 
-    fun setPartialOracles(oracles: PartialOracles){
+    fun setPartialOracles(oracles: PartialOracles) {
         partialOracles = oracles
     }
 
-    fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int){
-        if(format.isJava()) {lines.append(";")}
+    private fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int) {
+        if (format.isJava()) {
+            lines.append(";")
+        }
         lines.deindent(2)
 
-        if (call.saveLocation && !res.stopping){
+        if (call.saveLocation && !res.stopping) {
 
             var extract: String = ""
             val baseUri: String = if (call.locationId != null) {
@@ -835,12 +921,11 @@ class TestCaseWriter {
             } else {
                 call.path.resolveOnlyPath(call.parameters)
             }
-            if (!res.getHeuristicsForChainedLocation()){
+            if (!res.getHeuristicsForChainedLocation()) {
                 extract = "call_$counter.extract().header(\"location\")"
                 lines.add("${locationVar(call.path.lastElement())} = $extract")
                 appendSemicolon(lines)
-            }
-            else {
+            } else {
                 val extraTypeInfo = when {
                     format.isKotlin() -> "<Object>"
                     else -> ""

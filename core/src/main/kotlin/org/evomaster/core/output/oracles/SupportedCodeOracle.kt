@@ -26,12 +26,9 @@ class SupportedCodeOracle : ImplementedOracle() {
         lines.add("* $variableName - supported code oracle - checking that the response status code is among those supported according to the schema")
         lines.add("*/")
         when{
-            format.isJava() -> {
-                lines.add("private static boolean $variableName = false;")
-            }
-            format.isKotlin() -> {
-                lines.add("private val $variableName = false")
-            }
+            format.isJava() -> lines.add("private static boolean $variableName = false;")
+            format.isKotlin() -> lines.add("private val $variableName = false")
+            format.isJavaScript() -> lines.add("const $variableName = false;")
         }
 
     }
