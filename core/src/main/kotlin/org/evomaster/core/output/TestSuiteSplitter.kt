@@ -28,7 +28,10 @@ object TestSuiteSplitter {
 
         val errs = solution.individuals.filter {ind ->
             if (ind.individual is RestIndividual) {
-                assessFailed(ind as EvaluatedIndividual<RestIndividual>, oracles)
+                ind.evaluatedActions().any {ac ->
+                    assessFailed(ac, oracles)
+                }
+                //assessFailed(ind as EvaluatedIndividual<RestIndividual>, oracles)
             }
             else false
         }.toMutableList()
@@ -36,9 +39,9 @@ object TestSuiteSplitter {
         if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return splitByCode(solution)
         return when(type){
             EMConfig.TestSuiteSplitType.NONE  -> listOf(solution)
-            EMConfig.TestSuiteSplitType.CLUSTER -> splitByClusters(solution as Solution<RestIndividual>)
-            EMConfig.TestSuiteSplitType.SUMMARY_ONLY -> executiveSummary(solution as Solution<RestIndividual>)
-            EMConfig.TestSuiteSplitType.CODE -> splitByCode(solution)
+            EMConfig.TestSuiteSplitType.CLUSTER -> splitByClusters(solution as Solution<RestIndividual>, oracles)
+            EMConfig.TestSuiteSplitType.SUMMARY_ONLY -> executiveSummary(solution as Solution<RestIndividual>, oracles)
+            EMConfig.TestSuiteSplitType.CODE -> splitByCode(solution, oracles)
         }
     }
 
@@ -89,10 +92,12 @@ object TestSuiteSplitter {
      * The individual selected is the shortest (by action count) or random.
      */
 
-    fun executiveSummary(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
+    fun executiveSummary(solution: Solution<RestIndividual>,
+                         oracles: PartialOracles = PartialOracles()): List<Solution<RestIndividual>>{
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                (ac.result as RestCallResult).getStatusCode() == 500
+                //(ac.result as RestCallResult).getStatusCode() == 500
+                assessFailed(ac, oracles)
             }
         }.toMutableList()
 
@@ -153,10 +158,12 @@ object TestSuiteSplitter {
      * Nevertheless, it is up to individual test engineers to look at these test cases in more depth and decide
      * if any further action or investigation is required.
      */
-    private fun <T:Individual> splitByCode(solution: Solution<T>): List<Solution<T>>{
+    private fun <T:Individual> splitByCode(solution: Solution<T>,
+                                           oracles: PartialOracles = PartialOracles()): List<Solution<T>>{
         val s500 = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                (ac.result as RestCallResult).getStatusCode() == 500
+                //(ac.result as RestCallResult).getStatusCode() == 500
+                assessFailed(ac, oracles)
             // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
             // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
             // "remainder" subset - as they are neither errors, nor successful runs.
@@ -194,10 +201,12 @@ object TestSuiteSplitter {
      * for getting all the additional test cases related to that fault (i.e. belonging to the same cluster).
      */
 
-    fun splitByClusters(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
+    fun splitByClusters(solution: Solution<RestIndividual>,
+                        oracles: PartialOracles = PartialOracles()): List<Solution<RestIndividual>>{
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
-                (ac.result as RestCallResult).getStatusCode() == 500
+                //(ac.result as RestCallResult).getStatusCode() == 500
+                assessFailed(ac, oracles)
             }
         }.toMutableList()
 
@@ -261,19 +270,14 @@ object TestSuiteSplitter {
                 solRemainder)
     }
 
-    fun assessFailed(individual: EvaluatedIndividual<RestIndividual>, oracles: PartialOracles): Boolean{
-        // A RestCallResult has failed if it has code 500
-        val codeSelect = individual.evaluatedActions().any { ac ->
-            if (ac.result is RestCallResult){
-                val code = (ac.result as RestCallResult).getStatusCode()
-                (code != null && code == 500)
-            }
-            else false
-        }
+    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles): Boolean{
+        val codeSelect = if(action.result is RestCallResult){
+            val code = (action.result as RestCallResult).getStatusCode()
+            (code != null && code == 500)
+        } else false
 
-        val oracleSelect = oracles.selectForClustering(individual)
+        val oracleSelect = oracles.selectForClustering(action)
         return codeSelect || oracleSelect
-        // Additional failure criteria could/should be added somewhere here?
     }
 
 }

@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 
 /**
@@ -75,10 +76,9 @@ class SupportedCodeOracle : ImplementedOracle() {
         return !supportedCode(call, res)
     }
 
-    override fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean {
-        return individual.evaluatedActions().any { ac ->
-            !supportedCode(ac.action as RestCallAction,
-                    ac.result as RestCallResult)
-        }
+    override fun selectForClustering(action: EvaluatedAction): Boolean {
+        return if (action.result is RestCallResult && action.action is RestCallAction)
+            !supportedCode(action.action, action.result)
+        else false
     }
 }

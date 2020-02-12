@@ -8,6 +8,7 @@ import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.OptionalGene
 
@@ -66,10 +67,10 @@ class PartialOracles {
         this.format = format
     }
 
-    fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean{
+    fun selectForClustering(action: EvaluatedAction): Boolean{
         if (::objectGenerator.isInitialized){
             return oracles.any { oracle ->
-                oracle.selectForClustering(individual)
+                oracle.selectForClustering(action)
             }
         }
         else return false;

@@ -7,6 +7,7 @@ import org.evomaster.core.output.service.ObjectGenerator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.OptionalGene
 
@@ -97,8 +98,8 @@ class ResponseStructureOracle : ImplementedOracle() {
         return !(res.failedCall() || res.getStatusCode() == 500)
     }
 
-    override fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean {
-        //TODO: Bogdan - both this and generates expectations need updating
+    override fun selectForClustering(action: EvaluatedAction): Boolean {
+        //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         return true
     }
 }
