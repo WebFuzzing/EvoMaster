@@ -47,20 +47,12 @@ class TestCaseWriter {
         const val NOT_COVERED_YET = "NotCoveredYet"
     }
 
-    fun convertToCompilableTestCode(
-            config: EMConfig,
-            test: TestCase,
-            baseUrlOfSut: String)
-            : Lines {
-
+    fun setupWriter(config: EMConfig, objGenerator: ObjectGenerator){
         //TODO: refactor remove once changes merged
         configuration = config
         this.format = config.outputFormat
         this.expectationsWriter = ExpectationsWriter()
         expectationsWriter.setFormat(this.format)
-
-        val objGenerator = ObjectGenerator()
-
 
         if(config.expectationsActive
                 && ::swagger.isInitialized){
@@ -70,7 +62,17 @@ class TestCaseWriter {
             expectationsWriter.setSwagger(swagger)
             expectationsWriter.setPartialOracles(partialOracles)
         }
+    }
 
+    fun convertToCompilableTestCode(
+            config: EMConfig,
+            test: TestCase,
+            baseUrlOfSut: String,
+            objectGenerator: ObjectGenerator = ObjectGenerator())
+            : Lines {
+
+
+        setupWriter(config, objectGenerator)
         counter = 0
 
         val lines = Lines()
@@ -520,13 +522,16 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleFieldValues(resContentsItem: Any?): String {
+    private fun handleFieldValues(resContentsItem: Any?, inArray: Boolean = false): String {
         if (resContentsItem == null) {
             return "nullValue()"
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
+                String::class -> {
+                    if(inArray) return "hasItem(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
+                    else return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
+                }
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -582,13 +587,14 @@ class TestCaseWriter {
                                     handleMapLines(test_index, value, lines)
                                 }
                                 else {
-                                    val printableTh = handleFieldValues(value)
+                                    val printableTh = handleFieldValues(value, inArray = true)
                                     if (printableTh != "null"
                                             && printableTh != NOT_COVERED_YET
                                             && !printableTh.contains("logged")
                                             && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                                     ) {
-                                        lines.add(".body(\"get($test_index)\", $printableTh)")
+                                        //lines.add(".body(\"get($test_index)\", $printableTh)")
+                                        lines.add(".body(\"\", $printableTh)")
                                     }
                                 }
                             }

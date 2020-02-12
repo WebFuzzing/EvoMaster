@@ -1,6 +1,8 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.output.service.Termination
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -11,17 +13,24 @@ import org.evomaster.core.search.*
  * Created by arcuri82 on 11-Nov-19.
  */
 object TestSuiteSplitter {
+    fun split(solution: Solution<*>,
+              type: EMConfig.TestSuiteSplitType) : List<Solution<*>>{
+        return split(solution, type, PartialOracles())
+    }
     /**
      * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
      * No test must be lost, and combining/aggregating all those smaller solutions should give back
      * the original [Solution]
      */
-    fun split(solution: Solution<*>, type: EMConfig.TestSuiteSplitType) : List<Solution<*>>{
+    fun split(solution: Solution<*>,
+              type: EMConfig.TestSuiteSplitType,
+              oracles: PartialOracles) : List<Solution<*>>{
 
-        val errs = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
-                (ac.result as RestCallResult).getStatusCode() == 500
+        val errs = solution.individuals.filter {ind ->
+            if (ind.individual is RestIndividual) {
+                assessFailed(ind as EvaluatedIndividual<RestIndividual>, oracles)
             }
+            else false
         }.toMutableList()
 
         if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return splitByCode(solution)
@@ -45,6 +54,7 @@ object TestSuiteSplitter {
      *
      */
 
+    /*
     fun sortByClusters(solution: Solution<RestIndividual>) : Solution<RestIndividual>{
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
@@ -69,6 +79,8 @@ object TestSuiteSplitter {
         val sortedSolution = Solution(individuals, solution.testSuiteName, Termination.CLUSTERED)
         return sortedSolution
     }
+
+     */
 
     /**
      * The [executiveSummary] function takes in a solution, clusters individuals containing errors by error messsage,
@@ -249,10 +261,18 @@ object TestSuiteSplitter {
                 solRemainder)
     }
 
-    fun assessFailed(ac: ActionResult): Boolean{
+    fun assessFailed(individual: EvaluatedIndividual<RestIndividual>, oracles: PartialOracles): Boolean{
         // A RestCallResult has failed if it has code 500
-        return (ac is RestCallResult && ac.getStatusCode() == 500)
+        val codeSelect = individual.evaluatedActions().any { ac ->
+            if (ac.result is RestCallResult){
+                val code = (ac.result as RestCallResult).getStatusCode()
+                (code != null && code == 500)
+            }
+            else false
+        }
 
+        val oracleSelect = oracles.selectForClustering(individual)
+        return codeSelect || oracleSelect
         // Additional failure criteria could/should be added somewhere here?
     }
 

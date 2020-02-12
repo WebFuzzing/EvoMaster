@@ -5,6 +5,7 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetricAction
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 
 
@@ -58,11 +59,8 @@ object Clusterer {
                 metric = DistanceMetricLastLine()
         )
 
-        val clusters = clu2.performCLustering()
+        val clusters = clu.performCLustering()
         return clusters
     }
 
-    fun selectForClustering(): Boolean {
-        return true
-    }
 }

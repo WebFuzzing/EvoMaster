@@ -7,6 +7,8 @@ import org.evomaster.core.output.oracles.ResponseStructureOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.OptionalGene
 
 /**
@@ -30,7 +32,8 @@ import org.evomaster.core.search.gene.OptionalGene
 class PartialOracles {
     private lateinit var objectGenerator: ObjectGenerator
     private lateinit var format: OutputFormat
-    private var oracles = mutableListOf(SupportedCodeOracle(), ResponseStructureOracle())
+    private var oracles = mutableListOf(SupportedCodeOracle())
+    //private var oracles = mutableListOf(SupportedCodeOracle(), ResponseStructureOracle())
     private val expectationsMasterSwitch = "ems"
 
     fun variableDeclaration(lines: Lines, format: OutputFormat){
@@ -61,6 +64,15 @@ class PartialOracles {
 
     fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
         this.format = format
+    }
+
+    fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean{
+        if (::objectGenerator.isInitialized){
+            return oracles.any { oracle ->
+                oracle.selectForClustering(individual)
+            }
+        }
+        else return false;
     }
 
 }

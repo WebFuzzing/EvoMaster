@@ -28,15 +28,16 @@ class TestSuiteWriter {
     private lateinit var searchTimeController: SearchTimeController
 
     private lateinit var swagger: OpenAPI
+    private lateinit var partialOracles: PartialOracles
+    private lateinit var objectGenerator: ObjectGenerator
 
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
-        //private const val responseStructureOracle = "responseStructureOracle"
-        //private const val activeExpectations = "activeExpectations"
+
         private val testCaseWriter = TestCaseWriter()
-        private val partialOracles = PartialOracles()
+
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
     }
@@ -49,6 +50,8 @@ class TestSuiteWriter {
             solution: Solution<*>,
             controllerName: String?
     ) {
+
+        if(!::partialOracles.isInitialized) partialOracles = PartialOracles()
 
         val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
 
@@ -96,7 +99,7 @@ class TestSuiteWriter {
                 // catch writing problems on an individual test case basis
                 val testLines = try {
                     testCaseWriter
-                            .convertToCompilableTestCode(config, test, baseUrlOfSut)
+                            .convertToCompilableTestCode(config, test, baseUrlOfSut, objectGenerator)
 
                 }
                 catch (ex: Exception){
@@ -425,5 +428,12 @@ class TestSuiteWriter {
         if (config.outputFormat.isJava()) {
             lines.append(";")
         }
+    }
+
+    fun setPartialOracles(oracles: PartialOracles){
+        partialOracles = oracles
+    }
+    fun setObjectGenerator(generator: ObjectGenerator){
+        objectGenerator = generator
     }
 }
