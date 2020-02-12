@@ -3,6 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.core.output.clustering.DBSCANClusterer
 import org.evomaster.core.output.clustering.metrics.DistanceMetricAction
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
+import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedIndividual
@@ -24,15 +25,17 @@ import org.evomaster.core.search.Solution
  */
 object Clusterer {
     fun cluster(solution: Solution<RestIndividual>,
-                epsilon: Double = 0.6): MutableList<MutableList<RestCallResult>>{
+                epsilon: Double = 0.6,
+                oracles: PartialOracles = PartialOracles()): MutableList<MutableList<RestCallResult>>{
 
         /*
         In order to be clustered, an individual must have at least one failed result.
          */
         val sol1 = solution.individuals.filter{
             it.evaluatedActions().any{ ac ->
-                val code = (ac.result as RestCallResult).getStatusCode()
-                (code != null && code == 500)
+                //val code = (ac.result as RestCallResult).getStatusCode()
+                //(code != null && code == 500)
+                TestSuiteSplitter.assessFailed(ac, oracles)
             }
         }
 
@@ -41,9 +44,16 @@ object Clusterer {
         and it must be a failed result (i.e. a 500 call).
          */
 
-        val clusterableActions = sol1.flatMap { it.evaluatedActions().map { ac-> ac.result } }
+        val clusterableActions_old = sol1.flatMap { it.evaluatedActions().map { ac-> ac.result } }
                 .filterIsInstance<RestCallResult>()
                 .filter { ac -> ac.getStatusCode() == 500 }
+
+        val clusterableActions = sol1.flatMap {
+            it.evaluatedActions().filter { ac ->
+                TestSuiteSplitter.assessFailed(ac, oracles)
+            }
+        }.map { ac -> ac.result }
+                .filterIsInstance<RestCallResult>()
 
         val clu = DBSCANClusterer<RestCallResult>(
                 values = clusterableActions,

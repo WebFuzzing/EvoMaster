@@ -69,11 +69,6 @@ class ResponseStructureOracle : ImplementedOracle() {
                         format.isJava() ->lines.add(".that($variableName, json_$name.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
                         format.isKotlin() -> lines.add(".that($variableName, json_$name.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
                     }
-
-
-
-                    //Expect that the reference contains all the optional field in the response
-                    //referenceObject.fields.filter{ it is OptionalGene}.map { it.name }.containsAll(responseObject.keys)
                     val referenceOptionalKeys = referenceObject.fields
                             .filter { it is OptionalGene }
                             .map { "\"${it.name}\"" }

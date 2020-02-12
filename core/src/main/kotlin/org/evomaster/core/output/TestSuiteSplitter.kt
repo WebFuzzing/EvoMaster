@@ -108,7 +108,7 @@ object TestSuiteSplitter {
             1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         }
 
-        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.SUMMARY), oracles = oracles)
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -236,7 +236,7 @@ object TestSuiteSplitter {
             1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.FAULTS), solSuccesses, solRemainder)
         }
 
-        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS), oracles = oracles)
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
