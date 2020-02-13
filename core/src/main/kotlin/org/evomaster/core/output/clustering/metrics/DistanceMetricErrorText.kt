@@ -15,7 +15,7 @@ import javax.ws.rs.core.MediaType
  *
  */
 
-class DistanceMetricAction : DistanceMetric<RestCallResult>() {
+class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val message1 = if (first.getBodyType() != null
                 && (first.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {

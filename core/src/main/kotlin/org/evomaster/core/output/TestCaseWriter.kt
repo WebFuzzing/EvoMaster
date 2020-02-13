@@ -77,6 +77,8 @@ class TestCaseWriter {
 
         val lines = Lines()
 
+        clusterComment(lines, test)
+
         if (format.isJUnit()) {
             lines.add("@Test")
         }
@@ -91,10 +93,6 @@ class TestCaseWriter {
             val ind = test.test.individual
 
             if (ind is RestIndividual) {
-                // BMR: test.test should have the used objects attached (if any).
-                //if (config.enableCompleteObjects) {
-                //    usedObjects = ind.usedObjects.copy()
-                //}
                 if(configuration.expectationsActive){
                     expectationsWriter.addDeclarations(lines)
                 }
@@ -522,16 +520,13 @@ class TestCaseWriter {
         }
     }
 
-    private fun handleFieldValues(resContentsItem: Any?, inArray: Boolean = false): String {
+    private fun handleFieldValues(resContentsItem: Any?): String {
         if (resContentsItem == null) {
             return "nullValue()"
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> {
-                    if(inArray) return "hasItem(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
-                    else return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
-                }
+                String::class ->  return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -582,22 +577,25 @@ class TestCaseWriter {
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
                         //assertions on contents
                         if(resContents.size > 0){
+                            var longArray = false
                             resContents.forEachIndexed { test_index, value ->
-                                if (value is Map<*, *>){
-                                    handleMapLines(test_index, value, lines)
-                                }
-                                else {
-                                    val printableTh = handleFieldValues(value, inArray = true)
-                                    if (printableTh != "null"
-                                            && printableTh != NOT_COVERED_YET
-                                            && !printableTh.contains("logged")
-                                            && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
-                                    ) {
-                                        //lines.add(".body(\"get($test_index)\", $printableTh)")
-                                        lines.add(".body(\"\", $printableTh)")
+                                when {
+                                    (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
+                                    (value is String) -> longArray = true
+                                    else -> {
+                                        val printableTh = handleFieldValues(value)
+                                        if (printableTh != "null"
+                                                && printableTh != NOT_COVERED_YET
+                                                && !printableTh.contains("logged")
+                                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                                        ) {
+                                            //lines.add(".body(\"get($test_index)\", $printableTh)")
+                                            lines.add(".body(\"\", $printableTh)")
+                                        }
                                     }
                                 }
                             }
+                            if(longArray) lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
                         }
                         else{
                             // the object is empty
@@ -641,14 +639,12 @@ class TestCaseWriter {
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
         if (resContents.isEmpty()){
             // If this executes, the result contains an empty collection.
-            //lines.add(".body(\"size()\", numberMatches(0))")
             if(format.isKotlin())  lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
 
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
         // Removed size checks for objects.
-        //lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
         flatContent.keys
                 .filter{ !it.contains("timestamp")} //needed since timestamps will change between runs
                 .filter{ !it.contains("self")} //TODO: temporary hack. Needed since ports might change between runs.
@@ -662,7 +658,6 @@ class TestCaseWriter {
                                 && !printableTh.contains("logged")
                                 && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                         ) {
-                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
                             if(stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
                             else{
                                 if(!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
@@ -863,5 +858,12 @@ class TestCaseWriter {
                 appendSemicolon(lines)
             }
         }
+    }
+
+    fun clusterComment(lines: Lines, test: TestCase){
+        if(test.test.clusterAssignments.size <= 1) return
+        lines.add("/**")
+        lines.add("* [${test.name}] is a part of several clusters, as defined by the selected clustering options. ")
+        lines.add("*/")
     }
 }
