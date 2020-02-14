@@ -18,14 +18,16 @@ import javax.ws.rs.core.MediaType
 class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val message1 = if (first.getBodyType() != null
-                && (first.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+                && (first.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)
+                && (first.getBody()?.trim()?.first()?.equals('[') == true || first.getBody()?.trim()?.first()?.equals('{') == true)) {
             Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
             first.getBody()
         }
         val message2 = if(second.getBodyType() != null
-                && (second.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+                && (second.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)
+                && (second.getBody()?.trim()?.first()?.equals('[') == true || second.getBody()?.trim()?.first()?.equals('{') == true)) {
             Gson().fromJson(second.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
