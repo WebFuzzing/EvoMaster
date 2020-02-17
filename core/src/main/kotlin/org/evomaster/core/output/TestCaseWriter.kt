@@ -570,7 +570,7 @@ class TestCaseWriter {
         if (res.getBodyType() != null) {
             val type = res.getBodyType()!!
             if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
-                when (bodyString?.first()) {
+                when (bodyString?.trim()?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
