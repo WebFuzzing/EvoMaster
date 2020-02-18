@@ -15,7 +15,7 @@ public class ExpectationsEMTest extends ExpectationsTestBase {
         runTestHandlingFlakyAndCompilation(
                 "ExpectationsEM",
                 "org.bar.ExpectationsEM",
-                1_000,
+                10_000,
                 (args) -> {
                     Solution<RestIndividual> solution = initAndRun(args);
 
@@ -23,7 +23,7 @@ public class ExpectationsEMTest extends ExpectationsTestBase {
 
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/expectations/getExpectations/{b}", "True");
 
-                    //assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/getExpectations/{b}", "False");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/expectations/getExpectations/{b}", "");
                 }
         );
     }

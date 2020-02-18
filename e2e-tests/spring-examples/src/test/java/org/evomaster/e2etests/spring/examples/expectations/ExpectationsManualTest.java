@@ -31,6 +31,8 @@ public class ExpectationsManualTest extends ExpectationsTestBase{
                 .get(baseUrlOfSut + "/api/expectations/getExpectations/false")
                 .then()
                 .statusCode(500);
+
+        // BMR: since I'm trying to make sure that that particular assertion fails (since a 500 is not among supported status codes, I've wrapped it thus. Will refactor as soon as I can think of a more elegant option.
         try {
             expectationHandler.expect(true)
                     .that(true, Arrays.asList(200, 401, 403, 404).contains(call_1.extract().statusCode()));
