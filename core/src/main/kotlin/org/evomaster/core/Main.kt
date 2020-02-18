@@ -335,8 +335,7 @@ class Main {
 
 
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-            //FIXME
-            //writer.setSwagger(swagger)
+            writer.setSwagger(swagger)
 
             val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
             solutions.filter { !it.individuals.isNullOrEmpty() }
@@ -344,10 +343,6 @@ class Main {
 
             if(config.executiveSummary){
                 writeExecutiveSummary(injector, solution, controllerInfoDto)
-            }
-
-            if(config.sortFaultsByCluster){
-                writeClusteredSolution(injector, solution, controllerInfoDto)
             }
         }
 
@@ -437,7 +432,7 @@ class Main {
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
 
-            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY)
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY_ONLY)
             if(executiveSummary.isNotEmpty()) {
                 executiveSummary.forEach {
                     writer.writeTests(it, controllerInfoDto?.fullName)

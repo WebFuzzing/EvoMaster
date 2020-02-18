@@ -3,7 +3,6 @@ package org.evomaster.core.output.clustering.metrics
 import com.google.gson.Gson
 import org.evomaster.core.problem.rest.RestCallResult
 import javax.ws.rs.core.MediaType
-import kotlin.math.max
 
 
 /**
@@ -17,20 +16,20 @@ import kotlin.math.max
  */
 
 class DistanceMetricAction : DistanceMetric<RestCallResult>() {
-    override fun calculateDistance(val1: RestCallResult, val2: RestCallResult): Double {
-        val message1 = if (val1.getBodyType() != null
-                && (val1.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
-            Gson().fromJson(val1.getBody(), Map::class.java)?.get("message") ?: ""
+    override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
+        val message1 = if (first.getBodyType() != null
+                && (first.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+            Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
-            val1.getBody()
+            first.getBody()
         }
-        val message2 = if(val2.getBodyType() != null
-                && (val2.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
-            Gson().fromJson(val2.getBody(), Map::class.java)?.get("message") ?: ""
+        val message2 = if(second.getBodyType() != null
+                && (second.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)) {
+            Gson().fromJson(second.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
-            val2.getBody()
+            second.getBody()
         }
         return LevenshteinDistance.distance(message1.toString(), message2.toString())
     }

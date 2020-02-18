@@ -1,7 +1,7 @@
 package org.evomaster.core.output.service
 
 import com.google.inject.Inject
-import io.swagger.models.Swagger
+import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.client.java.controller.api.dto.database.operations.InsertionDto
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
@@ -27,19 +27,21 @@ class TestSuiteWriter {
     @Inject
     private lateinit var searchTimeController: SearchTimeController
 
-    private lateinit var swagger: Swagger
+    private lateinit var swagger: OpenAPI
 
     companion object {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
-        private const val expectationsMasterSwitch = "expectationsMasterSwitch"
-        private const val responseStructureOracle = "responseStructureOracle"
-        private const val activeExpectations = "activeExpectations"
+        private const val expectationsMasterSwitch = "ems"
+        //private const val responseStructureOracle = "responseStructureOracle"
+        //private const val activeExpectations = "activeExpectations"
+        private val testCaseWriter = TestCaseWriter()
+        private val partialOracles = PartialOracles()
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
 
     }
 
-    fun setSwagger(sw: Swagger){
+    fun setSwagger(sw: OpenAPI){
         swagger = sw
     }
 
@@ -48,21 +50,10 @@ class TestSuiteWriter {
             controllerName: String?
     ) {
 
-        val name = TestSuiteFileName(solution.testSuiteName)
+        val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
 
         val content = convertToCompilableTestCode(solution, name, controllerName)
         saveToDisk(content, config, name)
-
-        /*if (config.expectationsActive || config.enableBasicAssertions){
-            val numberMatcher = addAdditionalNumberMatcher(name)
-            if (name.hasPackage() && config.outputFormat.isJavaOrKotlin()) {
-                saveToDisk(numberMatcher, config, TestSuiteFileName("${name.getPackage()}.NumberMatcher"))
-            }
-            else{
-                saveToDisk(numberMatcher, config, TestSuiteFileName("NumberMatcher"))
-            }
-        }*/
-
     }
 
 
@@ -75,8 +66,11 @@ class TestSuiteWriter {
 
         val lines = Lines()
         val testSuiteOrganizer = TestSuiteOrganizer()
-        val testCaseWriter = TestCaseWriter()
+        partialOracles.setFormat(config.outputFormat)
         if(::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
+        testCaseWriter.setPartialOracles(partialOracles)
+
+
 
         header(solution, testSuiteFileName, lines)
 
@@ -162,7 +156,10 @@ class TestSuiteWriter {
         lines.add(" * Used time: ${searchTimeController.getElapsedTime()}")
         classDescriptionEmptyLine(lines)
         lines.add(" * Needed budget for current results: ${searchTimeController.neededBudget()}")
+        classDescriptionEmptyLine(lines)
+        lines.add(" * ${solution.termination.comment}")
         lines.add(" */")
+
     }
 
     private fun header(solution: Solution<*>,
@@ -251,8 +248,13 @@ class TestSuiteWriter {
 
             if(config.expectationsActive){
                 lines.add("private static boolean $expectationsMasterSwitch = false;")
+                lines.add("// ems - expectations master switch - is the variable that activates/deactivates expectations " +
+                        "individual test cases")
+                lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
                 //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
-                lines.add("private static boolean $responseStructureOracle = false;")
+
+                //lines.add("private static boolean $responseStructureOracle = false;")
+
             }
 
         } else if(config.outputFormat.isKotlin()) {
@@ -264,10 +266,16 @@ class TestSuiteWriter {
             }
 
             if(config.expectationsActive){
+                lines.add("/**")
+                lines.add("* $expectationsMasterSwitch - expectations master switch - is the variable that activates/deactivates expectations " +
+                        "individual test cases")
+                lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+                lines.add("*/")
                 lines.add("private val $expectationsMasterSwitch = false")
-                lines.add("private val $responseStructureOracle = false")
+
             }
         }
+        partialOracles.variableDeclaration(lines, config.outputFormat)
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.
     }

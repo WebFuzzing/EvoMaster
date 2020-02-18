@@ -83,7 +83,7 @@ public class StringsRest {
         throw new NopeException("Nope");
     }
 
-    class NopeException extends Exception{
+    static class NopeException extends Exception{
         NopeException(String text){
             super(text);
         }

@@ -1,21 +1,16 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.RestAction
+import org.evomaster.core.output.service.Termination
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.Individual
-import org.evomaster.core.search.Solution
+import org.evomaster.core.search.*
 
 
 /**
  * Created by arcuri82 on 11-Nov-19.
  */
 object TestSuiteSplitter {
-
-
     /**
      * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
      * No test must be lost, and combining/aggregating all those smaller solutions should give back
@@ -29,54 +24,16 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
-        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return listOf(solution)
-        // no clustering is attempted if there are not enough individuals containing errors
-
+        if( type == EMConfig.TestSuiteSplitType.CLUSTER && errs.size <= 1) return splitByCode(solution)
         return when(type){
             EMConfig.TestSuiteSplitType.NONE  -> listOf(solution)
-            EMConfig.TestSuiteSplitType.CLUSTER -> listOf(sortByClusters(solution as Solution<RestIndividual>))
-            EMConfig.TestSuiteSplitType.SUMMARY -> executiveSummary(solution as Solution<RestIndividual>)
+            EMConfig.TestSuiteSplitType.CLUSTER -> splitByClusters(solution as Solution<RestIndividual>)
+            EMConfig.TestSuiteSplitType.SUMMARY_ONLY -> executiveSummary(solution as Solution<RestIndividual>)
             EMConfig.TestSuiteSplitType.CODE -> splitByCode(solution)
-                //splitByClusters(solution as Solution<RestIndividual>)
         }
     }
 
-    /**
-     * [splitByClusters] splits a given Solution object into a List of several Solution objects, each
-     * containing a cluster of (error - i.e. containing 500s) [EvaluatedIndividual<RestIndividual>]. Each such solution
-     * can be printed as a separate test file.
-     *
-     * NOTE: This is currently not in use, as having lots of small files may be a problem for the potential users,
-     * though it can be activated if a need/requirement for such information can be determined.
-     *
-     * Futhermore, if a particular type of fault is found to be of greater interest, this could be the starting point
-     * for getting all the additional test cases related to that fault (i.e. belonging to the same cluster).
-     */
 
-    fun splitByClusters(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
-        val errs = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
-                (ac.result as RestCallResult).getStatusCode() == 500
-            }
-        }.toMutableList()
-
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
-        val clusteredSolutions = mutableListOf<Solution<RestIndividual>>()
-        val individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
-
-        clusters.forEachIndexed { index, clu ->
-            val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac ->
-                    clu.contains(ac.result as RestCallResult)
-                }
-            }.map {
-                it.assignToCluster(index)
-            }.toMutableList()
-            clusteredSolutions.add(index, Solution(inds, "C_$index"))
-            individuals.addAll(inds)
-        }
-        return clusteredSolutions
-    }
     /**
      * [sortByClusters] filters the error (i.e. containing 500s) [EvaluatedIndividual] and sorts them based on their
      * membership in the various clusters. The idea is to provide a single [Solution] that contains all the error
@@ -95,7 +52,7 @@ object TestSuiteSplitter {
             }
         }.toMutableList()
 
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS))
         val individuals = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -109,9 +66,16 @@ object TestSuiteSplitter {
             individuals.addAll(inds)
         }
 
-        val sortedSolution = Solution(individuals, "${solution.testSuiteName}_clustered")
+        val sortedSolution = Solution(individuals, solution.testSuiteName, Termination.CLUSTERED)
         return sortedSolution
     }
+
+    /**
+     * The [executiveSummary] function takes in a solution, clusters individuals containing errors by error messsage,
+     * then picks from each cluster one individual.
+     *
+     * The individual selected is the shortest (by action count) or random.
+     */
 
     fun executiveSummary(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
         val errs = solution.individuals.filter {
@@ -124,10 +88,10 @@ object TestSuiteSplitter {
         // If only one individual has a 500 result, clustering is skipped, and the relevant individual is returned
         when (errs.size){
             0 -> return mutableListOf()
-            1 -> return mutableListOf(Solution(errs, "${solution.testSuiteName}_executiveSummary"))
+            1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         }
 
-        val clusters = Clusterer.cluster(Solution(errs, "${solution.testSuiteName}_errs"))
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
 
         clusters.forEachIndexed { index, clu ->
@@ -158,7 +122,7 @@ object TestSuiteSplitter {
             sumSol.add(it)
         }
 
-        val sumSolution = Solution(sumSol, "${solution.testSuiteName}_executiveSummary")
+        val sumSolution = Solution(sumSol, solution.testSuiteName, Termination.SUMMARY)
         return mutableListOf(sumSolution)
     }
 
@@ -191,8 +155,7 @@ object TestSuiteSplitter {
             !s500.contains(it) &&
             it.evaluatedActions().all { ac ->
                 val code = (ac.result as RestCallResult).getStatusCode()
-                if(code!=null) code < 400
-                else false
+                (code != null && code < 400)
             }
         }.toMutableList()
 
@@ -201,10 +164,96 @@ object TestSuiteSplitter {
                     !successses.contains(it)
         }.toMutableList()
 
-        return listOf(Solution(s500, "${solution.testSuiteName}_500s"),
-                Solution(successses, "${solution.testSuiteName}_successes"),
-                Solution(remainder, "${solution.testSuiteName}_remainder")
+        return listOf(Solution(s500, solution.testSuiteName, Termination.FAULTS),
+                Solution(successses, solution.testSuiteName, Termination.SUCCESSES),
+                Solution(remainder, solution.testSuiteName, Termination.OTHER)
         )
+    }
+
+    /**
+     * [splitByClusters] splits a given Solution object into a List of several Solution objects, each
+     * containing a cluster of (error - i.e. containing 500s) [EvaluatedIndividual<RestIndividual>]. Each such solution
+     * can be printed as a separate test file.
+     *
+     * NOTE: This is currently not in use, as having lots of small files may be a problem for the potential users,
+     * though it can be activated if a need/requirement for such information can be determined.
+     *
+     * Futhermore, if a particular type of fault is found to be of greater interest, this could be the starting point
+     * for getting all the additional test cases related to that fault (i.e. belonging to the same cluster).
+     */
+
+    fun splitByClusters(solution: Solution<RestIndividual>): List<Solution<RestIndividual>>{
+        val errs = solution.individuals.filter {
+            it.evaluatedActions().any { ac ->
+                (ac.result as RestCallResult).getStatusCode() == 500
+            }
+        }.toMutableList()
+
+        val successses = solution.individuals.filter {
+            !errs.contains(it) &&
+                    it.evaluatedActions().all { ac ->
+                        val code = (ac.result as RestCallResult).getStatusCode()
+                        (code != null && code < 400)
+                        //if(code!=null) code < 400
+                        //else false
+                    }
+        }.toMutableList()
+
+        val solSuccesses = Solution(successses, solution.testSuiteName, Termination.SUCCESSES)
+
+        val remainder = solution.individuals.filter {
+            !errs.contains(it) &&
+                    !successses.contains(it)
+        }.toMutableList()
+
+        val solRemainder = Solution(remainder, solution.testSuiteName, Termination.OTHER)
+
+        // If no individuals have a 500 result, the summary is empty
+        // If only one individual has a 500 result, clustering is skipped, and the relevant individual is returned
+        when (errs.size){
+            0 -> return mutableListOf(solSuccesses, solRemainder)
+            1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.FAULTS), solSuccesses, solRemainder)
+        }
+
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS))
+        val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+        clusters.forEachIndexed { index, clu ->
+            val inds = solution.individuals.filter { ind ->
+                ind.evaluatedActions().any { ac ->
+                    clu.contains(ac.result as RestCallResult)
+                }
+            }.map {
+                it.assignToCluster(index)
+            }.toMutableList()
+            sumSol.addAll(inds)
+        }
+
+        val skipped = solution.individuals.filter { ind ->
+            ind.evaluatedActions().any { ac ->
+                (ac.result as RestCallResult).getStatusCode() == 500
+            }
+        }.filterNot { ind ->
+            ind.evaluatedActions().any { ac ->
+                clusters.any { it.contains(ac.result as RestCallResult) }
+            }
+        }
+        // add any Individuals that have a 500 action and belong to no cluster to the executive summary too.
+        skipped.forEach {
+            sumSol.add(it)
+        }
+
+        val solErrors = Solution(sumSol, solution.testSuiteName, Termination.FAULTS)
+        return mutableListOf(solErrors,
+                solSuccesses,
+                solRemainder)
+    }
+
+    fun assessFailed(ac: ActionResult): Boolean{
+        // A RestCallResult has failed if it has code 500
+        return (ac is RestCallResult && ac.getStatusCode() == 500)
+
+        // Additional failure criteria could/should be added somewhere here?
     }
 
 }

@@ -6,8 +6,6 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.compiler.CompilerForTestGenerated
 import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.service.RestSampler
-import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Solution
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -39,7 +37,8 @@ class TestSuiteWriterTest{
 
         val solution = Solution<RestIndividual>(
                 mutableListOf(),
-                config.testSuiteFileName
+                config.testSuiteFileName,
+                Termination.NONE
         )
 
 

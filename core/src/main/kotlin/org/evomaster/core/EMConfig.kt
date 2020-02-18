@@ -648,7 +648,7 @@ class EMConfig {
     enum class TestSuiteSplitType {
         NONE,
         CLUSTER,
-        SUMMARY,
+        SUMMARY_ONLY,
         CODE
     }
 
@@ -659,10 +659,6 @@ class EMConfig {
     @Experimental
     @Cfg("Generate an executive summary, containing an example of each category of potential fault found")
     var executiveSummary = false
-
-    @Experimental
-    @Cfg(" Sort potential faults based on their similarity (i.e. the cluster they belong to).")
-    var sortFaultsByCluster = false
 
     @Cfg("The seed for the random generator used during the search. " +
             "A negative value means the CPU clock time will be rather used as seed")

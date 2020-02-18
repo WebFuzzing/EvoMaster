@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.FOCUSED_QUICKEST
 import org.evomaster.core.EMConfig.FeedbackDirectedSampling.LAST
 import org.evomaster.core.Lazy
+import org.evomaster.core.output.service.Termination
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
@@ -14,7 +15,6 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
 import java.lang.Integer.min
-import java.lang.StringBuilder
 
 
 class Archive<T> where T : Individual {
@@ -93,7 +93,7 @@ class Archive<T> where T : Individual {
             }
         }
 
-        return Solution(uniques.toMutableList(), config.testSuiteFileName)
+        return Solution(uniques.toMutableList(), config.testSuiteFileName, Termination.NONE)
     }
 
 

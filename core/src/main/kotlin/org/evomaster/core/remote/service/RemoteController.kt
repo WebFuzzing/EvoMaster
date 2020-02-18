@@ -261,7 +261,7 @@ class RemoteController() : DatabaseExecutor {
             getWebTarget()
                     .path(ControllerConstants.NEW_SEARCH)
                     .request()
-                    .post(Entity.entity("{\"newSearch\"=true}", MediaType.APPLICATION_JSON_TYPE))
+                    .post(Entity.entity("{\"newSearch\":true}", MediaType.APPLICATION_JSON_TYPE))
         }
 
         return checkResponse(response, "Failed to inform SUT of new search")

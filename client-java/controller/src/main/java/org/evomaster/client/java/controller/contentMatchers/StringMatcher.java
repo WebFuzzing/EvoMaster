@@ -20,7 +20,7 @@ public class StringMatcher extends TypeSafeMatcher<String> {
 
     @Override
     protected boolean matchesSafely(String item){
-        if(item == null) return false;
+        if(item == null || value == null) return false;
         else return value.equals(item.toString());
     }
 
