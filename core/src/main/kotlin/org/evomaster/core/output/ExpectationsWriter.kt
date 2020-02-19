@@ -28,10 +28,8 @@ class ExpectationsWriter {
         when{
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-
         }
-        //lines.indented { lines.add(".expect($expectationsMasterSwitch)") }
-        if (format.isJava()) lines.append(";")
+        lines.appendSemicolon(format)
     }
 
     fun handleGenericFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, header: String){
@@ -51,7 +49,7 @@ class ExpectationsWriter {
         }
 
         lines.append(".extract().response().jsonPath()")
-        if(format.isJava()) {lines.append(";")}
+        lines.appendSemicolon(format)
         partialOracles.addExpectations(call, lines, res, name, format)
     }
 }

@@ -30,7 +30,17 @@ import javax.ws.rs.core.MediaType
 
 class TestCaseWriter {
 
+    /**
+     * In the tests, we might need to generate new variables.
+     * We must guarantee that no 2 variables have the same name.
+     * Easiest approach is to just use a counter that is incremented
+     * at each new generated variable
+     */
     private var counter = 0
+
+    /*
+        TODO explain what these variables are for
+     */
     private var previousChained = false
     private var previousId = ""
     private var chained = false
@@ -46,6 +56,7 @@ class TestCaseWriter {
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
 
+        //TODO what is this for???
         const val NOT_COVERED_YET = "NotCoveredYet"
     }
 
@@ -62,7 +73,6 @@ class TestCaseWriter {
         expectationsWriter.setFormat(this.format)
 
         val objGenerator = ObjectGenerator()
-
 
         if (config.expectationsActive && ::swagger.isInitialized) {
             objGenerator.setSwagger(swagger)
@@ -91,15 +101,11 @@ class TestCaseWriter {
             val ind = test.test.individual
 
             if (ind is RestIndividual) {
-                // BMR: test.test should have the used objects attached (if any).
-                //if (config.enableCompleteObjects) {
-                //    usedObjects = ind.usedObjects.copy()
-                //}
                 if (configuration.expectationsActive) {
                     expectationsWriter.addDeclarations(lines)
                 }
                 if (ind.dbInitialization.isNotEmpty()) {
-                    handleDbInitialization(format, ind.dbInitialization, lines)
+                    SqlWriter.handleDbInitialization(format, ind.dbInitialization, lines)
                 }
             }
 
@@ -122,7 +128,7 @@ class TestCaseWriter {
                         }
             }
 
-            handleGettingCookies(test.test, lines, baseUrlOfSut)
+            CookieWriter.handleGettingCookies(format, test.test, lines, baseUrlOfSut)
 
             test.test.evaluatedActions().forEach { a ->
                 when (a.action) {
@@ -138,188 +144,6 @@ class TestCaseWriter {
         }
 
         return lines
-    }
-
-    private fun cookiesName(info: CookieLogin): String = "cookies_${info.username}"
-
-
-    private fun handleGettingCookies(ind: EvaluatedIndividual<*>,
-                                     lines: Lines,
-                                     baseUrlOfSut: String) {
-
-        val cookiesInfo = (ind.individual as RestIndividual).getCookieLoginAuth()
-
-        if (cookiesInfo.isNotEmpty()) {
-            lines.addEmpty()
-        }
-
-        for (k in cookiesInfo) {
-
-            when {
-                format.isJava() -> lines.add("final Map<String,String> ${cookiesName(k)} = ")
-                format.isKotlin() -> lines.add("val ${cookiesName(k)} : Map<String,String> = ")
-            }
-
-            //TODO JS
-
-            lines.append("given()")
-            lines.indented {
-
-                if (k.contentType == ContentType.X_WWW_FORM_URLENCODED) {
-                    lines.add(".formParam(\"${k.usernameField}\", \"${k.username}\")")
-                    lines.add(".formParam(\"${k.passwordField}\", \"${k.password}\")")
-                } else {
-                    throw IllegalStateException("Currently not supporting yet ${k.contentType} in login")
-                }
-
-                lines.add(".post(")
-                if (format.isJava()) {
-                    lines.append("$baseUrlOfSut + \"")
-                } else {
-                    lines.append("\"\${$baseUrlOfSut}")
-                }
-                lines.append("${k.loginEndpointUrl}\")")
-
-                lines.add(".then().extract().cookies()") //TODO check response status and cookie headers?
-                appendSemicolon(lines)
-
-                lines.addEmpty()
-            }
-        }
-    }
-
-    private fun appendSemicolon(lines: Lines) {
-        if (format.isJava() || format.isJavaScript()) {
-            lines.append(";")
-        }
-    }
-
-    private fun handleDbInitialization(format: OutputFormat, dbInitialization: List<DbAction>, lines: Lines) {
-
-        if (dbInitialization.isEmpty() || dbInitialization.none { !it.representExistingData }) {
-            return
-        }
-
-        dbInitialization
-                .filter { !it.representExistingData }
-                .forEachIndexed { index, dbAction ->
-
-                    lines.add(when {
-                        index == 0 && format.isJava() -> "List<InsertionDto> insertions = sql()"
-                        index == 0 && format.isKotlin() -> "val insertions = sql()"
-                        else -> ".and()"
-                    } + ".insertInto(\"${dbAction.table.name}\", ${dbAction.geInsertionId()}L)")
-
-                    if (index == 0) {
-                        lines.indent()
-                    }
-
-                    lines.indented {
-                        dbAction.seeGenes()
-                                .filter { it.isPrintable() }
-                                .forEach { g ->
-                                    when {
-                                        g is SqlWrapperGene && g.getForeignKey() != null -> {
-                                            val line = handleFK(g.getForeignKey()!!, dbAction, dbInitialization)
-                                            lines.add(line)
-                                        }
-                                        g is ObjectGene -> {
-                                            val variableName = g.getVariableName()
-                                            val printableValue = getPrintableValue(g)
-                                            lines.add(".d(\"$variableName\", \"'$printableValue'\")")
-                                        }
-                                        else -> {
-                                            val variableName = g.getVariableName()
-                                            val printableValue = getPrintableValue(g)
-                                            lines.add(".d(\"$variableName\", \"$printableValue\")")
-                                        }
-                                    }
-                                }
-
-                    }
-                }
-
-        lines.add(".dtos()")
-        appendSemicolon(lines)
-
-        lines.deindent()
-
-        lines.add("controller.execInsertionsIntoDatabase(insertions)")
-        appendSemicolon(lines)
-    }
-
-    private fun getPrintableValue(g: Gene): String {
-        if (g is SqlPrimaryKeyGene) {
-
-            return getPrintableValue(g.gene)
-
-        } else {
-            return StringEscapeUtils.escapeJava(g.getValueAsPrintableString(targetFormat = format))
-            //TODO this is an atypical treatment of escapes. Should we run all escapes through the same procedure?
-            // or is this special enough to be justified?
-        }
-    }
-
-    private fun handleFK(fkg: SqlForeignKeyGene, action: DbAction, allActions: List<DbAction>): String {
-
-
-        /*
-            TODO: why the code here is not relying on SqlForeignKeyGene#getValueAsPrintableString ???
-         */
-
-        val variableName = fkg.getVariableName()
-        /**
-         * At this point all pk Ids should be valid
-         * (despite they being NULL or not)
-         **/
-        Lazy.assert { fkg.hasValidUniqueIdOfPrimaryKey() }
-        if (fkg.isNull()) {
-            return ".d(\"$variableName\", \"NULL\")"
-        }
-
-
-        val uniqueIdOfPrimaryKey = fkg.uniqueIdOfPrimaryKey
-
-        /*
-            TODO: the code here is not handling multi-column PKs/FKs
-         */
-        val pkExisting = allActions
-                .filter { it.representExistingData }
-                .flatMap { it.seeGenes() }
-                .filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey }
-
-        /*
-           This FK might point to a PK of data already existing in the database.
-           In such cases, the PK will not be part of the generated SQL commands, and
-           we cannot use a "r()" reference to it.
-           We need to put the actual value data in a "d()"
-        */
-
-        if (pkExisting != null) {
-            val pk = getPrintableValue(pkExisting)
-            return ".d(\"$variableName\", \"$pk\")"
-        }
-
-        /*
-            Check if this is a reference to an auto-increment
-         */
-        val keepAutoGeneratedValue = action.selectedColumns
-                .first { it.name == fkg.name }
-                .foreignKeyToAutoIncrement
-
-        if (keepAutoGeneratedValue) {
-            return ".r(\"$variableName\", ${uniqueIdOfPrimaryKey}L)"
-        }
-
-
-        val pkg = allActions
-                .flatMap { it.seeGenes() }
-                .filterIsInstance<SqlPrimaryKeyGene>()
-                .find { it.uniqueId == uniqueIdOfPrimaryKey }!!
-
-        val pk = getPrintableValue(pkg)
-        return ".d(\"$variableName\", \"$pk\")"
     }
 
 
@@ -351,12 +175,12 @@ class TestCaseWriter {
                                       lines: Lines,
                                       res: RestCallResult,
                                       baseUrlOfSut: String) {
-
-        //TODO JS
-
         when {
+            /*
+                TODO do we need to handle differently in JS due to Promises?
+             */
             format.isJavaOrKotlin() -> lines.add("try{")
-            //format.isJavaScript() -> lines.add("expect(() => {")
+            format.isJavaScript() -> lines.add("try{")
         }
 
         lines.indented {
@@ -447,7 +271,7 @@ class TestCaseWriter {
                 when {
                     format.isJavaOrKotlin() -> {
                         lines.add(".extract().header(\"location\")")
-                        appendSemicolon(lines)
+                        lines.appendSemicolon(format)
                         lines.addEmpty()
                         lines.deindent(2)
                         lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
@@ -485,7 +309,7 @@ class TestCaseWriter {
                 counter++
             }
         } else {
-            appendSemicolon(lines)
+            lines.appendSemicolon(format)
             lines.deindent(2)
         }
     }
@@ -522,6 +346,9 @@ class TestCaseWriter {
         val verb = call.verb.name.toLowerCase()
         lines.add(".$verb(")
         if (call.locationId != null) {
+            if(format.isJavaScript()){
+                lines.append("${TestSuiteWriter.jsImport}")
+            }
             lines.append("resolveLocation(${locationVar(call.locationId!!)}, $baseUrlOfSut + \"${call.resolvedPath()}\")")
 
         } else {
@@ -839,8 +666,8 @@ class TestCaseWriter {
         val cookieLogin = call.auth.cookieLogin
         if (cookieLogin != null) {
             when {
-                format.isJavaOrKotlin() -> lines.add(".cookies(${cookiesName(cookieLogin)})")
-                format.isJavaScript() -> lines.add(".set('Cookies', ${cookiesName(cookieLogin)})")
+                format.isJavaOrKotlin() -> lines.add(".cookies(${CookieWriter.cookiesName(cookieLogin)})")
+                format.isJavaScript() -> lines.add(".set('Cookies', ${CookieWriter.cookiesName(cookieLogin)})")
             }
         }
     }
@@ -924,7 +751,7 @@ class TestCaseWriter {
             if (!res.getHeuristicsForChainedLocation()) {
                 extract = "call_$counter.extract().header(\"location\")"
                 lines.add("${locationVar(call.path.lastElement())} = $extract")
-                appendSemicolon(lines)
+                lines.appendSemicolon(format)
             } else {
                 val extraTypeInfo = when {
                     format.isKotlin() -> "<Object>"
@@ -935,9 +762,9 @@ class TestCaseWriter {
                     format.isJava() -> lines.add("String id_$counter = $extract")
                     format.isKotlin() -> lines.add("val id_$counter: String = $extract")
                 }
-                appendSemicolon(lines)
+                lines.appendSemicolon(format)
                 lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter")
-                appendSemicolon(lines)
+                lines.appendSemicolon(format)
             }
         }
     }
