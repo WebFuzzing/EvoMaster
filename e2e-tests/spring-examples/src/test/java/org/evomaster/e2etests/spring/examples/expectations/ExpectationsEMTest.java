@@ -17,6 +17,10 @@ public class ExpectationsEMTest extends ExpectationsTestBase {
                 "org.bar.ExpectationsEM",
                 10_000,
                 (args) -> {
+                    args.add("--expectationsActive");
+                    args.add("TRUE");
+
+
                     Solution<RestIndividual> solution = initAndRun(args);
 
                     assertTrue(solution.getIndividuals().size() >= 1);

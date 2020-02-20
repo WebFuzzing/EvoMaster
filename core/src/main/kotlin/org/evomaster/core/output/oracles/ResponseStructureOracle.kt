@@ -1,9 +1,11 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
+import io.swagger.v3.oas.models.media.ArraySchema
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -47,10 +49,12 @@ class ResponseStructureOracle : ImplementedOracle() {
             return
         }
         val bodyString = res.getBody()
+        val supportedResponses = getSupportedResponse(call).map { objectGenerator.getNamedReference(it) }
         when (bodyString?.first()) {
             '[' -> {
                 // TODO: Handle arrays of objects
                 val responseObject = Gson().fromJson(bodyString, ArrayList::class.java)
+
             }
             '{' -> {
                 // TODO: Handle individual objects
@@ -82,6 +86,26 @@ class ResponseStructureOracle : ImplementedOracle() {
                 }
             }
         }
+    }
+
+    fun getSupportedResponse(call: RestCallAction): MutableSet<String>{
+        val verb = call.verb
+        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val specificPath = when(verb){
+            HttpVerb.GET -> path?.get
+            HttpVerb.POST -> path?.post
+            HttpVerb.PUT -> path?.put
+            HttpVerb.DELETE -> path?.delete
+            HttpVerb.PATCH -> path?.patch
+            HttpVerb.HEAD -> path?.head
+            HttpVerb.OPTIONS -> path?.options
+            HttpVerb.TRACE -> path?.trace
+            else -> null
+        }
+        val result = specificPath?.responses?.values?.flatMap { va -> va.content.values.map { it.schema.type } }?.toMutableSet() ?: mutableSetOf()
+        val contentRefs = specificPath?.responses?.values?.flatMap { va -> va.content.values.map { (it.schema as ArraySchema).items.`$ref`.split("/").last()} }?.toMutableSet() ?: mutableSetOf()
+
+        return contentRefs
     }
 
     override fun setObjectGenerator(gen: ObjectGenerator){

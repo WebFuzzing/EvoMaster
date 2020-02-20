@@ -6,20 +6,10 @@ import org.evomaster.core.output.service.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
-import org.evomaster.core.search.EvaluatedIndividual
 
-/**
- * The [SupportedCodeOracle] class generates an expectation and writes it to the code.
- *
- * A comparison is made between the status code of the [RestCallResult] and the supported return codes as defined
- * by the schema. If the actual code is not supported by the schema, the relevant expectation is generated and added
- * to the code.
- */
-
-class SupportedCodeOracle : ImplementedOracle() {
-    private val variableName = "sco"
+class SchemaOracle : ImplementedOracle() {
+    private val variableName = "sch"
     private lateinit var objectGenerator: ObjectGenerator
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
@@ -34,27 +24,16 @@ class SupportedCodeOracle : ImplementedOracle() {
                 lines.add("private val $variableName = false")
             }
         }
-
     }
 
     override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
-        if(!supportedCode(call, res)){
-            // The code is not among supported codes, so an expectation will be generated
-            //val actualCode = res.getStatusCode() ?: 0
-            //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
-            lines.add(".that($variableName, Arrays.asList(${getSupportedCode(call).joinToString(", ")}).contains($name.extract().statusCode()))")
-        }
-    }
-    fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{
-        val code = res.getStatusCode().toString()
-        val validCodes = getSupportedCode(call)
-        return validCodes.contains(code)
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    fun getSupportedCode(call: RestCallAction): MutableSet<String>{
+    fun getSupportedResponse(call: RestCallAction): MutableSet<String>{
         val verb = call.verb
         val path = objectGenerator.getSwagger().paths.get(call.path.toString())
-        val result = when (verb){
+        val specificPath = when(verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
             HttpVerb.PUT -> path?.put
@@ -65,20 +44,21 @@ class SupportedCodeOracle : ImplementedOracle() {
             HttpVerb.TRACE -> path?.trace
             else -> null
         }
-        return result?.responses?.keys ?: mutableSetOf()
+        val result = specificPath?.responses?.values?.flatMap { va -> va.content.values.map { it.schema.type } }?.toMutableSet() ?: mutableSetOf()
+        return result
     }
 
-    override fun setObjectGenerator(gen: ObjectGenerator){
+    override fun setObjectGenerator(gen: ObjectGenerator) {
         objectGenerator = gen
     }
 
     override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
-        return !supportedCode(call, res)
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        return if (action.result is RestCallResult && action.action is RestCallAction)
-            !supportedCode(action.action, action.result)
-        else false
+
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
+
 }

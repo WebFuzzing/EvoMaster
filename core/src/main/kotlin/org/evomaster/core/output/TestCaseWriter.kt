@@ -636,6 +636,24 @@ class TestCaseWriter {
         }
     }
 
+    private fun supportedTypes(call: RestCallAction): List<String>{
+        val verb = call.verb
+        val path = swagger.paths.get(call.path.toString())
+        val specificPath = when (verb) {
+            HttpVerb.GET -> path?.get
+            HttpVerb.POST -> path?.post
+            HttpVerb.PUT -> path?.put
+            HttpVerb.DELETE -> path?.delete
+            HttpVerb.PATCH -> path?.patch
+            HttpVerb.HEAD -> path?.head
+            HttpVerb.OPTIONS -> path?.options
+            HttpVerb.TRACE -> path?.trace
+            else -> null
+        }
+        val result = specificPath?.responses?.values?.flatMap { va -> va.content.values.map { it.schema.type } } ?: mutableListOf()
+        return result
+    }
+
     private fun addObjectAssertions(resContents: Map<*,*>, lines: Lines){
         if (resContents.isEmpty()){
             // If this executes, the result contains an empty collection.
