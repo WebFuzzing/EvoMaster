@@ -32,15 +32,6 @@ class ExpectationsWriter {
         lines.appendSemicolon(format)
     }
 
-    fun handleGenericFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, header: String){
-        lines.addEmpty()
-        when {
-            format.isKotlin() -> lines.append("val $name: ValidatableResponse = ")
-            format.isJava() -> lines.append("ValidatableResponse $name = ")
-        }
-        lines.append("given()$header")
-    }
-
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
         when{

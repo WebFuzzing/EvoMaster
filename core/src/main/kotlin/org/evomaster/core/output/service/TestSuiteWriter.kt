@@ -198,6 +198,7 @@ class TestSuiteWriter {
         if (format.isJavaOrKotlin()) {
             addImport("io.restassured.RestAssured", lines)
             addImport("io.restassured.RestAssured.given", lines, true)
+            addImport("io.restassured.response.ValidatableResponse", lines)
             addImport("org.evomaster.client.java.controller.api.EMTestUtils.*", lines, true)
             addImport("org.evomaster.client.java.controller.SutHandler", lines)
             addImport("org.evomaster.client.java.controller.db.dsl.SqlDsl.sql", lines, true)
@@ -220,7 +221,6 @@ class TestSuiteWriter {
             if (config.expectationsActive) {
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler.expectationHandler", lines, true)
                 addImport("org.evomaster.client.java.controller.expect.ExpectationHandler", lines)
-                addImport("io.restassured.response.ValidatableResponse", lines)
                 addImport("io.restassured.path.json.JsonPath", lines)
                 addImport("java.util.Arrays", lines)
             }

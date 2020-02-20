@@ -38,13 +38,6 @@ class TestCaseWriter {
      */
     private var counter = 0
 
-    /*
-        TODO explain what these variables are for
-     */
-    private var previousChained = false
-    private var previousId = ""
-    private var chained = false
-
 
     //TODO: refactor in constructor, and take out of convertToCompilableTestCode
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
@@ -56,9 +49,20 @@ class TestCaseWriter {
     companion object {
         private val log = LoggerFactory.getLogger(TestCaseWriter::class.java)
 
-        //TODO what is this for???
+        /*
+            Internal flag to mark cases which do not support yet
+         */
         const val NOT_COVERED_YET = "NotCoveredYet"
     }
+
+    fun setSwagger(sw: OpenAPI) {
+        swagger = sw
+    }
+
+    fun setPartialOracles(oracles: PartialOracles) {
+        partialOracles = oracles
+    }
+
 
     fun convertToCompilableTestCode(
             config: EMConfig,
@@ -110,6 +114,13 @@ class TestCaseWriter {
             }
 
             if (test.hasChainedLocations()) {
+                /*
+                    If the "location" header of a HTTP response is used in a following
+                    call, we need to save it in a variable.
+                    We declare all such variables at the beginning of the test.
+
+                    TODO: rather declare variable first time we access it?
+                 */
                 lines.addEmpty()
 
                 test.test.evaluatedActions().asSequence()
@@ -216,20 +227,21 @@ class TestCaseWriter {
     }
 
 
+    private fun createUniqueResponseVariableName() : String {
+        val name = "res_$counter"
+        counter++
+        return name
+    }
+
     private fun addRestCallLines(call: RestCallAction,
                                  lines: Lines,
                                  res: RestCallResult,
                                  baseUrlOfSut: String) {
 
         //first handle the first line
-        val name = "call_$counter"
+        val name = createUniqueResponseVariableName()
 
-        if (configuration.expectationsActive) {
-            val header = getAcceptHeader(call, res)
-            expectationsWriter.handleGenericFirstLine(call, lines, res, name, header)
-        } else {
-            handleFirstLine(call, lines, res)
-        }
+        handleFirstLine(call, lines, res, name)
 
         lines.indent(2)
 
@@ -237,22 +249,7 @@ class TestCaseWriter {
         handleBody(call, lines)
         handleVerb(baseUrlOfSut, call, lines)
         handleResponse(lines, res)
-
-        //finally, handle the last line(s)
-        if (configuration.expectationsActive) {
-            /*
-                TODO what is the reason for the "Generic" version here???
-                And why counter is increased only for expectationsActive???
-             */
-
-            handleGenericLastLine(call, res, lines, counter)
-
-            previousChained = res.getHeuristicsForChainedLocation()
-            if (previousChained) previousId = "id_$counter"
-            counter++
-        } else {
-            handleLastLine(call, res, lines)
-        }
+        handleLastLine(call, res, lines, name)
 
         //BMR should expectations be here?
         // Having them at the end of a test makes some sense...
@@ -262,76 +259,22 @@ class TestCaseWriter {
         //TODO: BMR expectations from partial oracles here?
     }
 
-    private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines) {
+    /**
+     * When we make a HTTP call, do we need to store the response in a variable for following HTTP calls?
+     */
+    private fun needsResponseVariable(call: RestCallAction, res: RestCallResult) : Boolean{
 
-        if (call.saveLocation && !res.stopping) {
-
-            if (!res.getHeuristicsForChainedLocation()) {
-
-                when {
-                    format.isJavaOrKotlin() -> {
-                        lines.add(".extract().header(\"location\")")
-                        lines.appendSemicolon(format)
-                        lines.addEmpty()
-                        lines.deindent(2)
-                        lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
-                    }
-                    format.isJavaScript() -> {
-                        lines.add(".extract().header(\"location\");") //FIXME
-                        lines.addEmpty()
-                        lines.deindent(2)
-                        val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty(${locationVar(call.path.lastElement())})"
-                        lines.add("expect($validCheck).toBe(true);")
-                    }
-                }
-
-            } else {
-                //TODO BMR: this is a less-than-subtle way to try to fix a problem in ScoutAPI
-                // The test generated in java causes a fail due to .path<Object>
-                val extraTypeInfo = when {
-                    format.isKotlin() -> "<Object>"
-                    else -> ""
-                }
-                lines.add(".extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString();")
-                lines.addEmpty()
-                lines.deindent(2)
-
-                val baseUri: String = if (call.locationId != null) {
-                    locationVar(call.locationId!!)
-                } else {
-                    call.path.resolveOnlyPath(call.parameters)
-                }
-
-                lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter;")
-
-                previousChained = res.getHeuristicsForChainedLocation()
-                if (previousChained) previousId = "id_$counter"
-                counter++
-            }
-        } else {
-            lines.appendSemicolon(format)
-            lines.deindent(2)
-        }
+        return configuration.expectationsActive || (call.saveLocation && !res.stopping)
     }
 
-    private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult) {
-        lines.addEmpty()
-        if (call.saveLocation && !res.stopping) {
+    private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, resVarName: String) {
 
-            if (!res.getHeuristicsForChainedLocation()) {
-                if(format.isJavaOrKotlin()) {
-                    lines.append("${locationVar(call.path.lastElement())} = ")
-                }
-            } else {
-                when {
-                    format.isJava() -> lines.append("String id_$counter = ")
-                    format.isKotlin() -> lines.append("val id_$counter: String = ")
-                    format.isJavaScript() -> {
-                        lines.append("let id_$counter;")
-                        lines.addEmpty()
-                    }
-                }
-                chained = res.getHeuristicsForChainedLocation()
+        lines.addEmpty()
+        if(needsResponseVariable(call, res)) {
+            when {
+                format.isKotlin() -> lines.append("val $resVarName: ValidatableResponse = ")
+                format.isJava() -> lines.append("ValidatableResponse $resVarName = ")
+                //TODO JavaScript
             }
         }
 
@@ -340,6 +283,59 @@ class TestCaseWriter {
             format.isJavaScript() -> lines.append("await superagent")
         }
         lines.append(getAcceptHeader(call, res))
+    }
+
+    private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
+
+        lines.appendSemicolon(format)
+        lines.deindent(2)
+
+        if (call.saveLocation && !res.stopping) {
+
+            if (!res.getHeuristicsForChainedLocation()) {
+                val extract = "$resVarName.extract().header(\"location\")"
+                lines.add("${locationVar(call.path.lastElement())} = $extract")
+                lines.appendSemicolon(format)
+
+                /*
+                    If there is a "location" header, then it must be either empty or a valid URI.
+                    If that is not the case, it would be a bug.
+                    But we do not really handle it as "found fault" during the search.
+                    Plus the test should not fail, although clearly a bug.
+                    But in any case, if invalid URL, following HTTP calls would fail anyway
+
+                    FIXME: should handle it as an extra oracle during the search
+                 */
+
+                when {
+                    format.isJavaOrKotlin() -> {
+                        lines.add("assertTrue(isValidURIorEmpty(${locationVar(call.path.lastElement())}));")
+                    }
+                    format.isJavaScript() -> {
+                        val validCheck = "${TestSuiteWriter.jsImport}.isValidURIorEmpty(${locationVar(call.path.lastElement())})"
+                        lines.add("expect($validCheck).toBe(true);")
+                    }
+                }
+
+
+            } else {
+
+                val extraTypeInfo = when {
+                    format.isKotlin() -> "<Object>"
+                    else -> ""
+                }
+                val baseUri: String = if (call.locationId != null) {
+                    locationVar(call.locationId!!)
+                } else {
+                    call.path.resolveOnlyPath(call.parameters)
+                }
+
+                val extract = "$resVarName.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
+
+                lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + $extract")
+                lines.appendSemicolon(format)
+            }
+        }
     }
 
     private fun handleVerb(baseUrlOfSut: String, call: RestCallAction, lines: Lines) {
@@ -541,10 +537,11 @@ class TestCaseWriter {
                                 && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
                         ) {
                             //lines.add(".body(\"\'${it}\'\", ${printableTh})")
+                            /*
+                                There are some fields like "id" which are often non-deterministic,
+                                which unfortunately would lead to flaky tests
+                             */
                             if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
-                            else {
-                                if (!chained && previousChained) lines.add(".body(\"${stringKey}\", numberMatches($previousId))")
-                            }
                         }
                     }
                 }
@@ -726,46 +723,5 @@ class TestCaseWriter {
         return returnMap
     }
 
-    fun setSwagger(sw: OpenAPI) {
-        swagger = sw
-    }
 
-    fun setPartialOracles(oracles: PartialOracles) {
-        partialOracles = oracles
-    }
-
-    private fun handleGenericLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, counter: Int) {
-        if (format.isJava()) {
-            lines.append(";")
-        }
-        lines.deindent(2)
-
-        if (call.saveLocation && !res.stopping) {
-
-            var extract: String = ""
-            val baseUri: String = if (call.locationId != null) {
-                locationVar(call.locationId!!)
-            } else {
-                call.path.resolveOnlyPath(call.parameters)
-            }
-            if (!res.getHeuristicsForChainedLocation()) {
-                extract = "call_$counter.extract().header(\"location\")"
-                lines.add("${locationVar(call.path.lastElement())} = $extract")
-                lines.appendSemicolon(format)
-            } else {
-                val extraTypeInfo = when {
-                    format.isKotlin() -> "<Object>"
-                    else -> ""
-                }
-                extract = "call_$counter.extract().body().path$extraTypeInfo(\"${res.getResourceIdName()}\").toString()"
-                when {
-                    format.isJava() -> lines.add("String id_$counter = $extract")
-                    format.isKotlin() -> lines.add("val id_$counter: String = $extract")
-                }
-                lines.appendSemicolon(format)
-                lines.add("${locationVar(call.path.lastElement())} = \"$baseUri/\" + id_$counter")
-                lines.appendSemicolon(format)
-            }
-        }
-    }
 }
