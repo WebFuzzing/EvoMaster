@@ -2,7 +2,7 @@ package org.evomaster.e2etests.spring.examples.splitter;
 
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.output.TestSuiteSplitter;
-import org.evomaster.core.output.service.Termination;
+import org.evomaster.core.output.Termination;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;

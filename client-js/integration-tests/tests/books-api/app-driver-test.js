@@ -28,6 +28,7 @@ let sutUrl;
 beforeAll( async () => {
     controller.setPort(0);
     await controller.startTheControllerServer();
+    expect(controller).toBeTruthy();
     controllerPort = controller.getActualPort();
     controllerUrl = "http://localhost:" + controllerPort + c.BASE_PATH;
 

@@ -34,6 +34,7 @@ class TestSuiteFileName(
         return name.replace('.', '/') + when{
             format.isJava() -> ".java"
             format.isKotlin() -> ".kt"
+            format.isJavaScript() -> ".js"
             else -> ".txt"
         }
     }

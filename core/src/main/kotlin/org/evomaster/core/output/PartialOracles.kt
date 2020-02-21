@@ -1,13 +1,9 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output
 
-import com.google.gson.Gson
-import org.evomaster.core.output.Lines
-import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.oracles.ResponseStructureOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
-import org.evomaster.core.search.gene.OptionalGene
 
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
