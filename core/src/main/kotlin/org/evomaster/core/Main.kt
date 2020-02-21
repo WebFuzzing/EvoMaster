@@ -12,8 +12,8 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteSplitter
-import org.evomaster.core.output.service.ObjectGenerator
-import org.evomaster.core.output.service.PartialOracles
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.PartialOracles
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*

@@ -1,4 +1,4 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output
 
 enum class Termination(val suffix: String,
                        val comment: String){

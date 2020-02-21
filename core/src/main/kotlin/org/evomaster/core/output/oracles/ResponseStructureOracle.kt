@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import io.swagger.v3.oas.models.media.ArraySchema
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -49,12 +49,10 @@ class ResponseStructureOracle : ImplementedOracle() {
             return
         }
         val bodyString = res.getBody()
-        val supportedResponses = getSupportedResponse(call).map { objectGenerator.getNamedReference(it) }
         when (bodyString?.first()) {
             '[' -> {
                 // TODO: Handle arrays of objects
                 val responseObject = Gson().fromJson(bodyString, ArrayList::class.java)
-
             }
             '{' -> {
                 // TODO: Handle individual objects

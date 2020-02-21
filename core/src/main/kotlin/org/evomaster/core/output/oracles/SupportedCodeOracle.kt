@@ -2,7 +2,7 @@ package org.evomaster.core.output.oracles
 
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -27,12 +27,9 @@ class SupportedCodeOracle : ImplementedOracle() {
         lines.add("* $variableName - supported code oracle - checking that the response status code is among those supported according to the schema")
         lines.add("*/")
         when{
-            format.isJava() -> {
-                lines.add("private static boolean $variableName = false;")
-            }
-            format.isKotlin() -> {
-                lines.add("private val $variableName = false")
-            }
+            format.isJava() -> lines.add("private static boolean $variableName = false;")
+            format.isKotlin() -> lines.add("private val $variableName = false")
+            format.isJavaScript() -> lines.add("const $variableName = false;")
         }
 
     }

@@ -1,4 +1,4 @@
-package org.evomaster.core.output.service
+package org.evomaster.core.output
 
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.RestActionBuilderV3
