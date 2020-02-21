@@ -94,8 +94,14 @@ class RestActionBuilderV3Test{
     // ----------- V2 --------------
 
     @Test
+    fun testCyclotron() {
+        loadAndAssertActions("/swagger/sut/cyclotron.json", 7)
+    }
+
+
+    @Test
     fun testPetStore() {
-        val map = loadAndAssertActions("/swagger/others/petstore.json", 20)
+        loadAndAssertActions("/swagger/others/petstore.json", 20)
     }
 
 
