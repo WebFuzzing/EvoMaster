@@ -95,7 +95,7 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testCyclotron() {
-        loadAndAssertActions("/swagger/sut/cyclotron.json", 7)
+        loadAndAssertActions("/swagger/sut/cyclotron.json", 50)
     }
 
 
