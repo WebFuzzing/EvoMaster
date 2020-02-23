@@ -1040,6 +1040,12 @@ class EMConfig {
     @Cfg("Specify a format to organize the covered targets by the search")
     var coveredTargetSortedBy = SortCoveredTargetBy.NAME
 
+
+    @FilePath
+    @Cfg("When generating tests in JavaScript, there is the need to know where the driver is located in respect to" +
+            " the generated tests")
+    var jsControllerPath = "./app-driver.js"
+
     enum class SortCoveredTargetBy {
         /**
          * sorted by ids of targets alphabetically
