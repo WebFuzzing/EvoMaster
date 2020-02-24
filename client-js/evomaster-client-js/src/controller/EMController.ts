@@ -116,7 +116,7 @@ export default class EMController {
         this.app.get(c.BASE_PATH + c.CONTROLLER_INFO, (req, res) => {
 
             const dto = new ControllerInfoDto();
-            dto.fullName = (typeof this.sutController);
+            dto.fullName = this.sutController.constructor.name;
             dto.isInstrumentationOn = this.sutController.isInstrumentationActivated();
 
             // TODO will need something to identify the file to import

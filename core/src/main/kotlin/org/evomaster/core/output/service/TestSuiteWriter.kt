@@ -74,7 +74,7 @@ class TestSuiteWriter {
         if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
         testCaseWriter.setPartialOracles(partialOracles)
 
-        header(solution, testSuiteFileName, lines)
+        header(solution, testSuiteFileName, lines, controllerName)
 
         if (config.outputFormat.isJavaOrKotlin()) {
             /*
@@ -171,7 +171,8 @@ class TestSuiteWriter {
 
     private fun header(solution: Solution<*>,
                        name: TestSuiteFileName,
-                       lines: Lines) {
+                       lines: Lines,
+                       controllerName: String?) {
 
         val format = config.outputFormat
 
@@ -234,7 +235,9 @@ class TestSuiteWriter {
         if (format.isJavaScript()) {
             lines.add("const superagent = require(\"superagent\");")
             lines.add("const $jsImport = require(\"evomaster-client-js\");")
-            //TODO require controller
+            if(controllerName != null) {
+                lines.add("const $controllerName = require(\"${config.jsControllerPath}\");")
+            }
         }
 
         lines.addEmpty(4)
@@ -325,9 +328,13 @@ class TestSuiteWriter {
 
         lines.block {
             if (!config.blackBox) {
-                addStatement("$controller.setupForGeneratedTest()", lines)
-                addStatement("baseUrlOfSut = $controller.startSut()", lines)
-
+                if(config.outputFormat.isJavaScript()){
+                    addStatement("await $controller.setupForGeneratedTest()", lines)
+                    addStatement("baseUrlOfSut = await $controller.startSut()", lines)
+                } else {
+                    addStatement("$controller.setupForGeneratedTest()", lines)
+                    addStatement("baseUrlOfSut = $controller.startSut()", lines)
+                }
 
                 when {
                     format.isJavaOrKotlin() -> addStatement("assertNotNull(baseUrlOfSut)", lines)
@@ -378,7 +385,11 @@ class TestSuiteWriter {
         }
 
         lines.block {
-            addStatement("$controller.stopSut()", lines)
+            if(format.isJavaScript()){
+                addStatement("await $controller.stopSut()", lines)
+            } else {
+                addStatement("$controller.stopSut()", lines)
+            }
         }
 
         if (format.isJavaScript()) {
@@ -407,7 +418,11 @@ class TestSuiteWriter {
         }
 
         lines.block {
-            addStatement("$controller.resetStateOfSUT()", lines)
+            if(format.isJavaScript()){
+                addStatement("await $controller.resetStateOfSUT()", lines)
+            } else {
+                addStatement("$controller.resetStateOfSUT()", lines)
+            }
         }
 
         if (format.isJavaScript()) {

@@ -163,7 +163,7 @@ class TestCaseWriter {
         lines.add("}")
 
         if (format.isJavaScript()) {
-            lines.append(";")
+            lines.append(");")
         }
 
         return lines
@@ -187,7 +187,9 @@ class TestCaseWriter {
         val call = evaluatedAction.action as RestCallAction
         val res = evaluatedAction.result as RestCallResult
 
-        if (res.failedCall()) {
+        if (res.failedCall()
+                || format.isJavaScript() //looks like even 400 throws exception with SuperAgent... :(
+        ) {
             addRestCallInTryCatch(call, lines, res, baseUrlOfSut)
         } else {
             addRestCallLines(call, lines, res, baseUrlOfSut)
@@ -257,9 +259,21 @@ class TestCaseWriter {
 
         lines.indent(2)
 
-        handleHeaders(call, lines)
-        handleBody(call, lines)
-        handleVerb(baseUrlOfSut, call, lines)
+        when{
+            format.isJavaOrKotlin() -> {
+                handleHeaders(call, lines)
+                handleBody(call, lines)
+                handleVerb(baseUrlOfSut, call, lines)
+            }
+            format.isJavaScript() ->{
+                //in SuperAgent, verb must be first
+                handleVerb(baseUrlOfSut, call, lines)
+                lines.append(getAcceptHeader(call, res))
+                handleHeaders(call, lines)
+                handleBody(call, lines)
+            }
+        }
+
         handleResponse(lines, res)
         handleLastLine(call, res, lines, name)
 
@@ -294,7 +308,10 @@ class TestCaseWriter {
             format.isJavaOrKotlin() -> lines.append("given()")
             format.isJavaScript() -> lines.append("await superagent")
         }
-        lines.append(getAcceptHeader(call, res))
+
+        if(!format.isJavaScript()) {
+            lines.append(getAcceptHeader(call, res))
+        }
     }
 
     private fun handleLastLine(call: RestCallAction, res: RestCallResult, lines: Lines, resVarName: String) {
@@ -396,7 +413,8 @@ class TestCaseWriter {
                     lines.add(".then()")
                     lines.add(".statusCode($code)")
                 }
-                format.isJavaScript() -> lines.add(".expect($code)")
+                // This does not work in Superagent. TODO will need after the HTTP call
+                //format.isJavaScript() -> lines.add(".expect($code)")
             }
 
             if (code == 500) {
