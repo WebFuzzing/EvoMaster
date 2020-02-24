@@ -124,7 +124,15 @@ export default class ExecutionTracer {
     public static completedLastExecutedStatement(lastLine: string) {
         const stmt = ExecutionTracer.additionalInfoList[ExecutionTracer.actionIndex].popLastExecutedStatement();
         if (stmt !== lastLine) {
-            throw Error(`Expected to pop ${lastLine} instead of ${stmt}`);
+            /*
+                actually we cannot have such check. We might end in such situation:
+
+                X calls F in non-instrumented framework, which then call Y (both X and Y being of SUT).
+                If Y crashes with a catch in F, then X will wrongly pop for Y.
+
+                TODO could have such check with a parameter, to have only in the tests
+             */
+            //throw Error(`Expected to pop ${lastLine} instead of ${stmt}`);
         }
     }
 
