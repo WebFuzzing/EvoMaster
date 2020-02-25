@@ -690,7 +690,7 @@ class TestCaseWriter {
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                 }
 
         val cookieLogin = call.auth.cookieLogin
