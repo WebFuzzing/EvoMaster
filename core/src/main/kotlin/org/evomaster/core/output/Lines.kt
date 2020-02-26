@@ -12,6 +12,12 @@ class Lines {
     var indentation = 0
         private set
 
+    fun appendSemicolon(format: OutputFormat) {
+        if (format.isJava() || format.isJavaScript()) {
+            append(";")
+        }
+    }
+
     fun block(indentention: Int = 1, expression: () -> Any){
         append(" {")
         indented(indentention, expression)

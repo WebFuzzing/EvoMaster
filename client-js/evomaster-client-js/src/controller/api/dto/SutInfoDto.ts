@@ -11,7 +11,7 @@ export enum OutputFormat {
     JAVA_JUNIT_4 = "JAVA_JUNIT_4",
     KOTLIN_JUNIT_4 = "KOTLIN_JUNIT_4",
     KOTLIN_JUNIT_5 = "KOTLIN_JUNIT_5",
-    // JS_JEST //TODO
+    JS_JEST = "JS_JEST"
 }
 
 export class SutInfoDto {

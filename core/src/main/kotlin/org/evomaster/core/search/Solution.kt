@@ -1,6 +1,6 @@
 package org.evomaster.core.search
 
-import org.evomaster.core.output.service.Termination
+import org.evomaster.core.output.Termination
 
 
 class Solution<T>(

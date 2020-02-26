@@ -3,7 +3,7 @@ package org.evomaster.core.output.oracles
 import com.google.gson.Gson
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.output.service.ObjectGenerator
+import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual

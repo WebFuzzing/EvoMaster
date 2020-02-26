@@ -50,9 +50,9 @@ object RestActionBuilderV3 {
             have different base paths
          */
         val serverUrl = swagger.servers[0].url
-        val basePath : String = try{
+        val basePath: String = try {
             URI(serverUrl).path.trim()
-        } catch (e: URISyntaxException){
+        } catch (e: URISyntaxException) {
             LoggingUtil.uniqueWarn(log, "Invalid URI used in schema to define servers: $serverUrl")
             ""
         }
@@ -75,7 +75,7 @@ object RestActionBuilderV3 {
                         like a "host+basePath"
                      */
 
-                    val restPath = RestPath(if(basePath=="/") e.key else (basePath + e.key))
+                    val restPath = RestPath(if (basePath == "/") e.key else (basePath + e.key))
 
                     if (e.value.`$ref` != null) {
                         //TODO
@@ -219,7 +219,7 @@ object RestActionBuilderV3 {
                 }
 
                 if (!fixed) {
-                   //just create a string
+                    //just create a string
                     val k = PathParam(n, DisruptiveGene("d_", StringGene(n), 1.0))
                     params.add(k)
                 }
@@ -253,8 +253,12 @@ object RestActionBuilderV3 {
                 Had issue with SpringFox in Proxyprint generating wrong schemas
                 when WebRequest and Principal are used
              */
-            val reference = it.value.schema.`$ref`
-            reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
+            if (it.value.schema == null) {
+                false
+            } else {
+                val reference = it.value.schema.`$ref`
+                reference.isNullOrBlank() || getLocalObjectSchema(swagger, reference) != null
+            }
         }
 
         if (bodies.isEmpty()) {
@@ -395,14 +399,23 @@ object RestActionBuilderV3 {
             }
             "array" -> {
                 if (schema is ArraySchema) {
-                    val template = getGene(name + "_item", schema.items, swagger, history)
+
+                    val arrayType: Schema<*> = if (schema.items == null) {
+                        LoggingUtil.uniqueWarn(log, "Array type '$name' is missing mandatory field 'items' to define its type." +
+                                " Defaulting to 'string'")
+                        Schema<Any>().also { it.type = "string" }
+                    } else {
+                        schema.items
+                    }
+
+                    val template = getGene(name + "_item", arrayType, swagger, history)
 
                     if (template is CycleObjectGene) {
                         return CycleObjectGene("<array> ${template.name}")
                     }
                     return ArrayGene(name, template)
                 } else {
-                    log.warn("Invalid 'array' definition for '$name'")
+                    LoggingUtil.uniqueWarn(log, "Invalid 'array' definition for '$name'")
                 }
             }
 
@@ -420,6 +433,10 @@ object RestActionBuilderV3 {
             return createObjectGene(name, schema, swagger, history)
         }
 
+        if (type == null && format == null) {
+            LoggingUtil.uniqueWarn(log, "No type/format information provided for '$name'. Defaulting to 'string'")
+            return StringGene(name)
+        }
 
         throw IllegalArgumentException("Cannot handle combination $type/$format")
     }
@@ -456,8 +473,8 @@ object RestActionBuilderV3 {
                 Using a map is just a temp solution
              */
 
-            if(fields.isEmpty()){
-                return MapGene(name, getGene(name+"_field", additional, swagger, history))
+            if (fields.isEmpty()) {
+                return MapGene(name, getGene(name + "_field", additional, swagger, history))
             }
         }
 
@@ -582,6 +599,7 @@ object RestActionBuilderV3 {
             }
         }
     }
+
     fun getModelsFromSwagger(swagger: OpenAPI,
                              modelCluster: MutableMap<String, ObjectGene>) {
         modelCluster.clear()

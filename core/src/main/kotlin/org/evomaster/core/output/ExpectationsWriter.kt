@@ -1,7 +1,6 @@
 package org.evomaster.core.output
 
 import io.swagger.v3.oas.models.OpenAPI
-import org.evomaster.core.output.service.PartialOracles
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 
@@ -29,19 +28,8 @@ class ExpectationsWriter {
         when{
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
             format.isKotlin() -> lines.append("val expectationHandler: ExpectationHandler = expectationHandler()")
-
         }
-        //lines.indented { lines.add(".expect($expectationsMasterSwitch)") }
-        if (format.isJava()) lines.append(";")
-    }
-
-    fun handleGenericFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, header: String){
-        lines.addEmpty()
-        when {
-            format.isKotlin() -> lines.append("val $name: ValidatableResponse = ")
-            format.isJava() -> lines.append("ValidatableResponse $name = ")
-        }
-        lines.append("given()$header")
+        lines.appendSemicolon(format)
     }
 
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
@@ -52,7 +40,7 @@ class ExpectationsWriter {
         }
 
         lines.append(".extract().response().jsonPath()")
-        if(format.isJava()) {lines.append(";")}
+        lines.appendSemicolon(format)
         partialOracles.addExpectations(call, lines, res, name, format)
     }
 }

@@ -226,6 +226,7 @@ export default function evomasterPlugin(
             || t.isFor(stmt)
             || t.isWhile(stmt)
             || t.isIfStatement(stmt)
+            || t.isTryStatement(stmt)
         ){
 
             const mark = template.ast(

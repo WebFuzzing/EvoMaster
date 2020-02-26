@@ -1,7 +1,6 @@
 package org.evomaster.core.output
 
 import org.evomaster.core.EMConfig
-import org.evomaster.core.output.service.Termination
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.*
