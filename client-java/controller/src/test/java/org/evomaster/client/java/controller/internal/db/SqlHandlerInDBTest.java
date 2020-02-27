@@ -130,4 +130,50 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
             starter.stop();
         }
     }
+
+
+    /**
+     * When creating an object in a table which includes an auto-incremental id,
+     * then the select currval is used to calculate the id for the new object
+     * @throws Exception
+     */
+    @Test
+    public void testSelectCurrval() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE SEQUENCE foo_id_seq;");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE foo (id integer NOT NULL DEFAULT nextval('foo_id_seq'));");
+//        SqlScriptRunner.execCommand(getConnection(), "ALTER SEQUENCE foo_id_seq OWNED BY foo.id;");
+//        SqlScriptRunner.execCommand(getConnection(), "ALTER TABLE Foo ADD PRIMARY KEY (id)");
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+            String url = start(starter);
+            url += BASE_PATH;
+
+            startNewTest(url);
+
+            ExecutionDto dto = getSqlExecutionDto(0,url);
+
+            assertTrue(dto == null || dto.updatedData == null || dto.updatedData.isEmpty());
+
+            startNewActionInSameTest(url, 1);
+
+
+            // 6SPY_SQL: select currval('welcomes_id_seq')
+            // ERROR - Thrown exception: Cannot handle FromItem for: SELECT currval('welcomes_id_seq')
+            SqlScriptRunner.execCommand(getConnection(), "SELECT currval('foo_id_seq')");
+
+            dto = getSqlExecutionDto(1,url);
+
+            assertNotNull(dto);
+            assertNotNull(dto.queriedData);
+            assertEquals(1, dto.queriedData.size());
+            assertTrue(dto.queriedData.containsKey("Foo"));
+
+        } finally {
+            starter.stop();
+        }
+    }
+
 }
