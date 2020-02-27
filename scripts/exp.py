@@ -139,6 +139,21 @@ else:
     print("ERROR: target folder already exists")
     exit(1)
 
+
+JDK_8 = "JDK_8"
+JDK_11 = "JDK_11"
+JS = "JS"
+
+class Sut:
+    def __init__(self, name, timeWeight, platform):
+        self.name = name
+        # the higher value, the more time it will need compared to the other SUTS
+        self.timeWeight = timeWeight
+        # Java? JS? NodeJS
+        self.platform = platform
+
+
+
 ### We need different settings based on whether we are running the
 ### scripts on cluster or locally.
 if CLUSTER:
@@ -151,13 +166,13 @@ if CLUSTER:
     # of the SUTs (eg, by commenting them out)
 
     SUTS = [
-        ("features-service", 1),
-        ("scout-api", 2),
-        ("proxyprint", 2),
-        ("rest-ncs", 2),
-        ("rest-scs", 1),
-        ("rest-news", 1),
-        ("catwatch", 1)
+        Sut("features-service", 1, JDK_8),
+        Sut("scout-api", 2, JDK_8),
+        Sut("proxyprint", 2, JDK_8),
+        Sut("rest-ncs", 2, JDK_8),
+        Sut("rest-scs", 1, JDK_8),
+        Sut("rest-news", 1, JDK_8),
+        Sut("catwatch", 1, JDK_8)
     ]
 
     HOME = os.environ['HOME']
@@ -170,8 +185,10 @@ if CLUSTER:
 else:
     # These SUTs requires Docker
     SUTS = [
-        ("ind0", 1),
-        ("ocvn-rest", 1)
+        Sut("ind0", 1, JDK_8),
+        Sut("ocvn-rest", 1, JDK_8),
+        # Sut("ncs-js", 1, JS),
+        # Sut("scs-js", 1, JS)
     ]
 
     # You will need to define environment variables on your OS
@@ -239,13 +256,21 @@ if not CLUSTER:
 
     #Due to Windows limitations (ie crappy FS), we need to copy JARs over
     for sut in SUTS:
-        sut_name = sut[0]
-        shutil.copy(os.path.join(CASESTUDY_DIR, sut_name + EM_POSTFIX), BASE_DIR)
-        shutil.copy(os.path.join(CASESTUDY_DIR, sut_name + SUT_POSTFIX), BASE_DIR)
+        if sut.platform == JDK_8 or sut.platform == JDK_11:
+            # copy jar files
+            shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX), BASE_DIR)
+            shutil.copy(os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX), BASE_DIR)
+        elif sut.platform == JS:
+            # copy folders, which include both SUT and EM Controller
+            shutil.copytree(os.path.join(CASESTUDY_DIR, sut.name), os.path.join(BASE_DIR, sut.name))
+
     shutil.copy(os.path.join(CASESTUDY_DIR, AGENT), BASE_DIR)
     shutil.copy(os.path.join(EVOMASTER_DIR, "evomaster.jar"), BASE_DIR)
 
 
+
+# We could end up with many scripts, up to the max number of jobs we can run in parallel, eg. 400.
+# But those scripts still need to be submitted. So, we create a script to do that.
 def createRunallScript():
     script_path = BASE_DIR + "/runall.sh"
     script = open(script_path, "w")
@@ -267,8 +292,8 @@ def createRunallScript():
 
 
 
-def writeScript(code, port, sut_name):
-    script_path = SCRIPT_DIR + "/evomaster_" + str(port) + "_" + sut_name + ".sh"
+def writeScript(code, port, sut):
+    script_path = SCRIPT_DIR + "/evomaster_" + str(port) + "_" + sut.name + ".sh"
     script = open(script_path, "w")
     script.write(code)
 
@@ -278,6 +303,7 @@ def writeScript(code, port, sut_name):
     return script
 
 
+# A cluster can have several configurations, which can be set with #SBATCH comments
 def getScriptHead(timeoutMinutes):
     s = "#!/bin/bash \n"
 
@@ -290,51 +316,69 @@ def getScriptHead(timeoutMinutes):
     return s
 
 
-def createJobHead(port, sut_name, timeoutMinutes):
+def createJobHead(port, sut, timeoutMinutes):
     script = io.StringIO()
 
     script.write(getScriptHead(timeoutMinutes))
 
-    sut_log = LOG_DIR + "/log_sut_" + sut_name + "_" + str(port) + ".txt"
+    sut_log = LOG_DIR + "/log_sut_" + sut.name + "_" + str(port) + ".txt"
 
     # Start SUT as background process on the given port
     controllerPort = str(port)
     sutPort = str(port + 1)
 
-    em_runner = sut_name + EM_POSTFIX
-    em_sut = sut_name + SUT_POSTFIX
-
     if CLUSTER:
-        sut_em_path = os.path.join(CASESTUDY_DIR, em_runner)
-        sut_jar_path = os.path.join(CASESTUDY_DIR, em_sut)
-        agent_path = os.path.join(CASESTUDY_DIR, AGENT)
 
-        script.write("\nmodule load Java/1.8.0_212\n\n")
+        if sut.platform == JDK_8:
+            script.write("\nmodule load Java/1.8.0_212\n\n")
+        else:
+            print("ERROR: currently not handling " + sut.platform)
+            exit(1)
+
+        # To speed-up I/O, copy files over to SCRATCH folder
         script.write("cd $SCRATCH \n")
         script.write("cp " + EVOMASTER_DIR + "/evomaster.jar . \n")
-        script.write("cp " + sut_em_path + " . \n")
-        script.write("cp " + sut_jar_path + " . \n")
-        script.write("cp " + agent_path + " . \n")
-        script.write("\n")
 
+        # Not sure if great idea to copy 1000s of files for JS intro SCRATCH
+        if sut.platform == JDK_8 or sut.platform == JDK_11:
+            sut_em_path = os.path.join(CASESTUDY_DIR, sut.name + EM_POSTFIX)
+            sut_jar_path = os.path.join(CASESTUDY_DIR, sut.name + SUT_POSTFIX)
+            agent_path = os.path.join(CASESTUDY_DIR, AGENT)
+            script.write("cp " + sut_em_path + " . \n")
+            script.write("cp " + sut_jar_path + " . \n")
+            script.write("cp " + agent_path + " . \n")
+
+        script.write("\n")
 
     script.write("\n")
 
     timeoutStart = TIMEOUT_SUT_START_MINUTES * 60
 
-    params = " " + controllerPort + " " + sutPort + " " + em_sut + " " + str(timeoutStart)
+    command = ""
 
-    # JVM properties
-    jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
+    if sut.platform == JDK_8 or sut.platform == JDK_11:
+        params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart)
+        jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
+        command = "java " + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
 
-    command = "java " + jvm + " -jar " + em_runner + " " + params + " > " + sut_log + " 2>&1 &"
+    elif sut.platform == JS:
+        # TODO sutPort
+        before = "pushd " + sut.name + "\n"
+        command = " EM_PORT=" + controllerPort + " npm run em > " + sut_log + " 2>&1 & "
+        command = before + command
+
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EM Runner with: " + command + "\"\n")
         script.write("echo\n\n")
 
     script.write(command + "\n\n")
+    # FIXME: this does not work for JS... as the process running NPM dies immediately after spawning Node
     script.write(CONTROLLER_PID + "=$! \n\n")  # store pid of process, so can kill it
+
+    if sut.platform == JS:
+        script.write("popd\n\n")
+
     script.write("sleep 20 \n\n")  # wait a bit to be sure the SUT handler can respond
 
     return script.getvalue()
@@ -387,42 +431,42 @@ class State:
         return self.jobsLeft > self.sutsLeft
 
 
-def writeWithHeadAndFooter(code, port, sut_name, timeout):
-    head = createJobHead(port, sut_name, timeout)
-    footer = closeJob(port, sut_name)
+def writeWithHeadAndFooter(code, port, sut, timeout):
+    head = createJobHead(port, sut, timeout)
+    footer = closeJob(port, sut)
     code = head + code + footer
-    writeScript(code, port, sut_name)
+    writeScript(code, port, sut)
 
 
 
-def createOneJob(state, sut_name, seed, weight, config):
-    code = addJobBody(state.port, sut_name, seed, config, weight)
-    state.updateBudget(weight)
+def createOneJob(state, sut, seed, config):
+    code = addJobBody(state.port, sut, seed, config)
+    state.updateBudget(sut.timeWeight)
     state.jobsLeft -= 1
     state.opened = True
     state.generated += 1
     return code
 
 
-def addJobBody(port, sut_name, seed, config, weight):
+def addJobBody(port, sut, seed, config):
     script = io.StringIO()
 
-    em_log = LOG_DIR + "/log_em_" + sut_name + "_" + str(port) + ".txt"
+    em_log = LOG_DIR + "/log_em_" + sut.name + "_" + str(port) + ".txt"
 
     params = customParameters(seed, config)
 
     ### standard
     params += " --stoppingCriterion=FITNESS_EVALUATIONS"
     params += " --maxActionEvaluations=" + str(MAX_ACTIONS)
-    params += " --statisticsColumnId=" + sut_name
+    params += " --statisticsColumnId=" + sut.name
     params += " --seed=" + str(seed)
     params += " --sutControllerPort=" + str(port)
-    params += " --outputFolder=" + TEST_DIR + "/" + sut_name
+    params += " --outputFolder=" + TEST_DIR + "/" + sut.name
     params += " --statisticsFile=" + \
-              REPORT_DIR + "/statistics_" + sut_name + "_" + str(seed) + ".csv"
+              REPORT_DIR + "/statistics_" + sut.name + "_" + str(seed) + ".csv"
     params += " --snapshotInterval=5"
     params += " --snapshotStatisticsFile=" + \
-              REPORT_DIR + "/snapshot_" + sut_name + "_" + str(seed) + ".csv"
+              REPORT_DIR + "/snapshot_" + sut.name + "_" + str(seed) + ".csv"
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
@@ -430,12 +474,12 @@ def addJobBody(port, sut_name, seed, config, weight):
     command = EVOMASTER + params + " >> " + em_log + " 2>&1"
 
     if not CLUSTER:
-        script.write("\n\necho \"Starting SUT with: " + command + "\"\n")
+        script.write("\n\necho \"Starting EvoMaster with: " + command + "\"\n")
         script.write("echo\n\n")
 
     if CLUSTER:
-        timeout = int(math.ceil(1.1 * weight * MINUTES_PER_RUN * 60))
-        errorMsg = "ERROR: timeout for " + sut_name
+        timeout = int(math.ceil(1.1 * sut.timeWeight * MINUTES_PER_RUN * 60))
+        errorMsg = "ERROR: timeout for " + sut.name
         command = "timeout " +str(timeout) + "  " + command \
                   + " || ([ $? -eq 124 ] && echo " + errorMsg + " >> " + em_log + " 2>&1" + ")"
 
@@ -449,15 +493,13 @@ def createJobs():
     CONFIGS = getConfigs()
 
     NRUNS_PER_SUT = (1 + MAX_SEED - MIN_SEED) * len(CONFIGS)
-    SUT_WEIGHTS = sum(map(lambda x: x[1], SUTS))
+    SUT_WEIGHTS = sum(map(lambda x: x.timeWeight, SUTS))
 
     state = State(NRUNS_PER_SUT * SUT_WEIGHTS)
 
-    SUTS.sort(key=lambda x: -x[1])
+    SUTS.sort(key=lambda x: -x.timeWeight)
 
     for sut in SUTS:
-        sut_name = sut[0]
-        weight = sut[1]
 
         state.sutsLeft -= 1
         state.resetTmpForNewRun()
@@ -472,22 +514,22 @@ def createJobs():
             for config in CONFIGS:
 
                 if state.counter == 0:
-                    code = createOneJob(state, sut_name, seed, weight, config)
+                    code = createOneJob(state, sut, seed, config)
 
-                elif (state.counter + weight) < state.perJob \
+                elif (state.counter + sut.timeWeight) < state.perJob \
                         or not state.hasSpareJobs() or \
-                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / weight):
-                    code += addJobBody(state.port, sut_name, seed, config, weight)
-                    state.updateBudget(weight)
+                        (NRUNS_PER_SUT - completedForSut < 0.3 * state.perJob / sut.timeWeight):
+                    code += addJobBody(state.port, sut, seed, config)
+                    state.updateBudget(sut.timeWeight)
 
                 else:
-                    writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
+                    writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
                     state.resetTmpForNewRun()
-                    code = createOneJob(state, sut_name, seed, weight, config)
+                    code = createOneJob(state, sut, seed, config)
                 completedForSut += 1
 
         if state.opened:
-            writeWithHeadAndFooter(code, state.port, sut_name, state.getTimeoutMinutes())
+            writeWithHeadAndFooter(code, state.port, sut, state.getTimeoutMinutes())
 
     print("Generated scripts: " + str(state.generated))
     print("Max wait for a job: " + str(max(state.waits)) + " minutes")
@@ -517,7 +559,7 @@ def customParameters(seed, config):
 
     params = ""
 
-    label = str(config.blackBox)
+    label = str(config.algorithm)
 
     ### Custom for these experiments
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
@@ -534,7 +576,7 @@ def getConfigs():
     # these configurations
     CONFIGS = []
 
-    CONFIGS.append(Config(True, "RANDOM"))
+    CONFIGS.append(Config(False, "RANDOM"))
     CONFIGS.append(Config(False, "MIO"))
 
     return CONFIGS
