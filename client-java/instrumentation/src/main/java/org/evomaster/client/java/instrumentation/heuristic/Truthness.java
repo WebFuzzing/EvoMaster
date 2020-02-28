@@ -35,24 +35,6 @@ public class Truthness {
         return new Truthness(ofFalse, ofTrue);
     }
 
-    /**
-     * scales to a positive double value to the [0,1] range
-     *
-     * @param v a non-negative double value
-     * @return
-     */
-    public static double normalizeValue(double v) {
-        if (v < 0) {
-            throw new IllegalArgumentException("Negative value: " + v);
-        }
-
-        //normalization function from old ICST/STVR paper
-        double normalized = v / (v + 1d);
-
-        assert normalized >= 0 && normalized <= 1;
-
-        return normalized;
-    }
 
     /**
      * @return a value in [0,1], where 1 means the expression evaluated to true
