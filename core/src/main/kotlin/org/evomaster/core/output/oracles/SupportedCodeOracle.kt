@@ -39,7 +39,11 @@ class SupportedCodeOracle : ImplementedOracle() {
             // The code is not among supported codes, so an expectation will be generated
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
-            lines.add(".that($variableName, Arrays.asList(${getSupportedCode(call).joinToString(", ")}).contains($name.extract().statusCode()))")
+            val supportedCode = getSupportedCode(call).joinToString(", ")
+            if(supportedCode.equals("default", ignoreCase = true)){
+                lines.add("/* Note: this call is handled via a default code. If this is intended behaviour, ignore this comment */")
+            }
+            else lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
         }
     }
     fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{

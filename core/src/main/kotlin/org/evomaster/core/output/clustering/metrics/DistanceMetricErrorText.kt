@@ -16,6 +16,7 @@ import javax.ws.rs.core.MediaType
  */
 
 class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
+    private val name = "ErrorText"
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val message1 = if (first.getBodyType() != null
                 && (first.getBodyType() as MediaType).isCompatible(MediaType.APPLICATION_JSON_TYPE)
@@ -35,4 +36,9 @@ class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
         }
         return LevenshteinDistance.distance(message1.toString(), message2.toString())
     }
+
+    override fun getName(): String {
+        return name
+    }
+
 }

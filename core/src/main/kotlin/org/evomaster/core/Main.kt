@@ -452,6 +452,7 @@ class Main {
             }
         }
 
+        /*
         private fun writeClusteredSolution(injector: Injector,
                                            solution: Solution<*>,
                                            controllerInfoDto: ControllerInfoDto?,
@@ -471,6 +472,8 @@ class Main {
                 }
             }
         }
+
+         */
     }
 }
 

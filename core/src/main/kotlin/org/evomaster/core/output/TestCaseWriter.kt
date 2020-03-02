@@ -757,9 +757,11 @@ class TestCaseWriter {
     }
 
     fun clusterComment(lines: Lines, test: TestCase){
-        if(test.test.clusterAssignments.size <= 1) return
         lines.add("/**")
-        lines.add("* [${test.name}] is a part of several clusters, as defined by the selected clustering options. ")
+        if(test.test.clusterAssignments.size > 0) lines.add("* [${test.name}] is a part of several clusters, as defined by the selected clustering options. ")
+        for (c in test.test.clusterAssignments){
+            lines.add("* $c")
+        }
         lines.add("*/")
     }
 }

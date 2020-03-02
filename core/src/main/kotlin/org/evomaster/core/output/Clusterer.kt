@@ -27,7 +27,7 @@ object Clusterer {
     fun cluster(solution: Solution<RestIndividual>,
                 epsilon: Double = 0.6,
                 oracles: PartialOracles = PartialOracles(),
-                metric: DistanceMetric<RestCallResult> = DistanceMetricErrorText()): MutableList<MutableList<RestCallResult>>{
+                metric: DistanceMetric<RestCallResult>): MutableList<MutableList<RestCallResult>>{
 
         /*
         In order to be clustered, an individual must have at least one failed result.
@@ -58,6 +58,15 @@ object Clusterer {
         )
 
         val clusters = clu.performCLustering()
+        clusters.forEachIndexed { index, clu ->
+            val inds = solution.individuals.filter { ind ->
+                ind.evaluatedActions().any { ac ->
+                    clu.contains(ac.result as RestCallResult)
+                }
+            }.map {
+                it.assignToCluster("${metric.getName()}_$index")
+            }.toMutableSet()
+        }
         return clusters
     }
 
