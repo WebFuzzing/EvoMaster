@@ -55,7 +55,7 @@ public class ObjectiveNaming {
     }
 
     public static String numericComparisonObjectiveName(String id, int res){
-        String name = NUMERIC_COMPARISON + "_" + id + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
+        String name = NUMERIC_COMPARISON + "_" + id + "_" + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
         return name.intern();
     }
 

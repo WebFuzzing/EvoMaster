@@ -1,7 +1,6 @@
 package org.evomaster.client.java.instrumentation.coverage.noninteger;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.DistanceHelper;
-import org.evomaster.client.java.instrumentation.heuristic.Truthness;
 import org.evomaster.client.java.instrumentation.heuristic.TruthnessUtils;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -14,6 +13,12 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
  * Created by arcuri82 on 28-Feb-20.
  */
 public class NonIntegerComparisons {
+
+    /*
+        WARN: all the names of the public methods here are used in the
+        bytecode instrumentation. If change any name, should also change
+        the instrumentator
+     */
 
     private static final double REACHED = 0.2d;
 
@@ -48,11 +53,11 @@ public class NonIntegerComparisons {
         } else if(a < b){
             less = 1d;
             eq = heuristic(distance);
-            greater = heuristic(distance+1);
+            greater = heuristic(DistanceHelper.increasedDistance(distance, 1));
             res = -1;
         } else {
             assert  a > b;
-            less = heuristic(distance+1);
+            less = heuristic(DistanceHelper.increasedDistance(distance, 1));
             eq = heuristic(distance);
             greater = 1d;
             res = +1;
@@ -63,4 +68,61 @@ public class NonIntegerComparisons {
         return res;
     }
 
+    public static int replaceDCMPG(double a, double b, String id) {
+        return replaceDCMP(a, b, id, 1);
+    }
+
+    public static int replaceDCMPL(double a, double b, String id) {
+        return replaceDCMP(a, b, id, -1);
+    }
+
+    public static int replaceFCMPG(float a, float b, String id) {
+        return replaceDCMP(a, b, id, 1);
+    }
+
+    public static int replaceFCMPL(float a, float b, String id) {
+        return replaceDCMP(a, b, id, -1);
+    }
+
+    private static int replaceDCMP(double a, double b, String id, int resWhenNotFinite){
+
+
+        double less = 0;
+        double eq = 0;
+        double greater = 0;
+
+        int res;
+
+        if (!Double.isFinite(a) || !Double.isFinite(b)) {
+            less = REACHED;
+            eq = REACHED;
+            greater = REACHED;
+            res = resWhenNotFinite;
+        } else {
+
+            double distance = DistanceHelper.getDistanceToEquality(a, b);
+
+            if (a == b) {
+                less = REACHED;
+                eq = 1d;
+                greater = REACHED;
+                res = 0;
+            } else if (a < b) {
+                less = 1d;
+                eq = heuristic(distance);
+                greater = heuristic(DistanceHelper.increasedDistance(distance, 1));
+                res = -1;
+            } else {
+                assert a > b;
+                less = heuristic(DistanceHelper.increasedDistance(distance, 1));
+                eq = heuristic(distance);
+                greater = 1d;
+                res = +1;
+            }
+        }
+
+        ExecutionTracer.executedNumericComparison(id, less, eq, greater);
+
+        return res;
+    }
 }

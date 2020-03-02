@@ -15,6 +15,10 @@ public class TruthnessUtils {
             throw new IllegalArgumentException("Negative value: " + v);
         }
 
+        if(Double.isInfinite(v) || v == Double.MAX_VALUE){
+            return 1d;
+        }
+
         //normalization function from old ICST/STVR paper
         double normalized = v / (v + 1d);
 
@@ -22,6 +26,7 @@ public class TruthnessUtils {
 
         return normalized;
     }
+
 
 
     public static Truthness getEqualityTruthness(int a, int b) {
