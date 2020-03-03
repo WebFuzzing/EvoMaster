@@ -23,6 +23,19 @@ public class DistanceHelper {
     public static final int MAX_CHAR_DISTANCE = 65_536;
 
 
+    public static double increasedDistance(double distance, double delta){
+        if(Double.isInfinite(distance) || distance == Double.MAX_VALUE){
+            return distance;
+        }
+
+        if(distance > (Double.MAX_VALUE - delta)){
+            return Double.MAX_VALUE;
+        }
+
+        return distance + delta;
+    }
+
+
     public static int distanceToDigit(char c) {
         return distanceToRange(c, '0', '9');
     }
