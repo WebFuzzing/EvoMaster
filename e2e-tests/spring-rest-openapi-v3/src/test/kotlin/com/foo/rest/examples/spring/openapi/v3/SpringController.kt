@@ -25,7 +25,7 @@ abstract class SpringController(protected val applicationClass: Class<*>) : Embe
     }
 
     protected val sutPort: Int
-        protected get() = (ctx!!.environment
+        get() = (ctx!!.environment
                 .propertySources["server.ports"].source as Map<*, *>)["local.server.port"] as Int
 
     override fun isSutRunning(): Boolean {
