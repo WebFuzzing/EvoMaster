@@ -1,10 +1,7 @@
 package org.evomaster.core.output.oracles
 
 import com.google.gson.Gson
-import io.swagger.v3.oas.models.media.ArraySchema
-import io.swagger.v3.oas.models.media.MapSchema
-import io.swagger.v3.oas.models.media.Schema
-import io.swagger.v3.oas.models.media.StringSchema
+import io.swagger.v3.oas.models.media.*
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
@@ -163,6 +160,8 @@ class SchemaOracle : ImplementedOracle() {
                     is ArraySchema -> valueSchema.items.`$ref` ?: valueSchema.items.type
                     is MapSchema -> (cva.schema.additionalProperties as StringSchema).type ?: (cva.schema.additionalProperties as Schema<*>).`$ref`
                     is StringSchema -> valueSchema.type
+                    is IntegerSchema -> valueSchema.format
+                    is ObjectSchema -> ""
                     is Schema -> valueSchema.`$ref`
                     else -> ""
                 }
