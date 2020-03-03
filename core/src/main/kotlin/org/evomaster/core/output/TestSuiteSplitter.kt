@@ -1,20 +1,24 @@
 package org.evomaster.core.output
 
+import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.clustering.metrics.DistanceMetric
 import org.evomaster.core.output.clustering.metrics.DistanceMetricErrorText
 import org.evomaster.core.output.clustering.metrics.DistanceMetricLastLine
-import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.*
+import org.evomaster.core.search.service.SearchTimeController
 
 
 /**
  * Created by arcuri82 on 11-Nov-19.
  */
 object TestSuiteSplitter {
+    @Inject
+    private lateinit var time: SearchTimeController
+
     fun split(solution: Solution<*>,
               type: EMConfig.TestSuiteSplitType) : SplitResult { //List<Solution<*>>{
         return split(solution as Solution<RestIndividual>, type, PartialOracles())
@@ -46,15 +50,13 @@ object TestSuiteSplitter {
         when(type){
             EMConfig.TestSuiteSplitType.NONE  -> splitResult.splitOutcome = listOf(sol)
             EMConfig.TestSuiteSplitType.CLUSTER -> {
-                val clusters = conductClustering(sol, oracles, metrics)
+                val clusters = conductClustering(sol, oracles, metrics, splitResult)
                 splitByCluster(clusters, sol, oracles, splitResult)
-                execSummary(clusters, sol, splitResult)
             }
             EMConfig.TestSuiteSplitType.SUMMARY_ONLY -> {
-                val clusters = conductClustering(sol, oracles, metrics)
+                val clusters = conductClustering(sol, oracles, metrics, splitResult)
                 //splitResult.splitOutcome = listOf(sol)
                 splitResult.splitOutcome = splitByCode(sol, oracles)
-                execSummary(clusters, sol, splitResult)
             }
             EMConfig.TestSuiteSplitType.CODE -> splitResult.splitOutcome = splitByCode(sol, oracles)
         }
@@ -62,17 +64,12 @@ object TestSuiteSplitter {
         return splitResult
     }
 
-    /**
-     * The [executiveSummary] function takes in a solution, clusters individuals containing errors by error messsage,
-     * then picks from each cluster one individual.
-     *
-     * The individual selected is the shortest (by action count) or random.
-     */
-
-
     private fun conductClustering(solution: Solution<RestIndividual>,
                                   oracles: PartialOracles = PartialOracles(),
-                                  metrics: List<DistanceMetric<RestCallResult>>) : MutableMap<String, MutableList<MutableList<RestCallResult>>> {
+                                  metrics: List<DistanceMetric<RestCallResult>>,
+                                  splitResult: SplitResult) : MutableMap<String, MutableList<MutableList<RestCallResult>>> {
+
+        val clusteringStart = System.currentTimeMillis()
         val errs = solution.individuals.filter {
             it.evaluatedActions().any { ac ->
                 assessFailed(ac, oracles)
@@ -82,30 +79,10 @@ object TestSuiteSplitter {
         // If no individuals have a failed result, the summary is empty
         // If only one individual has a failed result, clustering is skipped, and the relevant individual is returned
 
-        val successses = solution.individuals.filter {
-            !errs.contains(it) &&
-                    it.evaluatedActions().all { ac ->
-                        val code = (ac.result as RestCallResult).getStatusCode()
-                        (code != null && code < 400)
-                    }
-        }.toMutableList()
-
-        val solSuccesses = Solution(successses, solution.testSuiteName, Termination.SUCCESSES)
-
-        val remainder = solution.individuals.filter {
-            !errs.contains(it) &&
-                    !successses.contains(it)
-        }.toMutableList()
-
-        val solRemainder = Solution(remainder, solution.testSuiteName, Termination.OTHER)
-
-        val splitResult = SplitResult()
         when (errs.size) {
             0 -> splitResult.splitOutcome = mutableListOf()
             1 -> splitResult.splitOutcome = mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
         }
-        val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
-
         val clusters = mutableMapOf<String, MutableList<MutableList<RestCallResult>>>()
         val clusteringSol = Solution(errs, solution.testSuiteName, Termination.SUMMARY)
 
@@ -116,13 +93,23 @@ object TestSuiteSplitter {
                     oracles = oracles,
                     metric = metric)
         }
+        solution.clusteringTime = ((System.currentTimeMillis() - clusteringStart) / 1000).toInt()
+        //If clustering is done, the executive summary is, essentially, for free.
+        splitResult.executiveSummary = execSummary(clusters, solution, splitResult)
         return clusters
     }
+
+    /**
+     * The [execSummary] function takes in a solution, clusters individuals containing errors by error messsage,
+     * then picks from each cluster one individual.
+     *
+     * The individual selected is the shortest (by action count) or random.
+     */
 
     private fun execSummary(clusters : MutableMap<String, MutableList<MutableList<RestCallResult>>>,
                             solution: Solution<RestIndividual>,
                             splitResult: SplitResult
-            ) : SplitResult {
+            ) : Solution<RestIndividual> {
         val execSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
@@ -130,8 +117,7 @@ object TestSuiteSplitter {
             }.toMutableList()
             execSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
         } }
-        splitResult.executiveSummary = Solution(execSol, solution.testSuiteName, Termination.SUMMARY)
-        return splitResult
+        return Solution(execSol, solution.testSuiteName, Termination.SUMMARY)
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<RestCallResult>>>,
@@ -187,71 +173,6 @@ object TestSuiteSplitter {
         return splitResult
     }
 
-    private fun executiveSummary(solution: Solution<RestIndividual>,
-                         oracles: PartialOracles = PartialOracles(),
-                         metric: DistanceMetric<RestCallResult>): List<Solution<RestIndividual>>{
-        val errs = solution.individuals.filter {
-            it.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
-            }
-        }.toMutableList()
-
-        // If no individuals have a failed result, the summary is empty
-        // If only one individual has a failed result, clustering is skipped, and the relevant individual is returned
-        when (errs.size){
-            0 -> return mutableListOf()
-            1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
-        }
-        val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
-
-        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.SUMMARY), oracles = oracles, metric = metric)
-
-
-        clusters.forEachIndexed { index, clu ->
-            val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac ->
-                    clu.contains(ac.result as RestCallResult)
-                }
-            }.toMutableList()
-            // Add a random individual from each cluster.
-            // Other selection criteria than random might be added at some later date.
-            // For example, one might want the smallest individual in a cluster (i.e. the smallest test case that
-            // shows a particular type of behaviour).
-            sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
-        }
-
-        val metric2 = DistanceMetricLastLine()
-        val clusters2 = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS), oracles = oracles, metric = metric2)
-
-        clusters2.forEachIndexed { index, clu ->
-            val inds = solution.individuals.filter { ind ->
-                ind.evaluatedActions().any { ac ->
-                    clu.contains(ac.result as RestCallResult)
-                }
-            }.map {
-                it.assignToCluster("${metric2.getName()}_$index")
-            }.toMutableSet()
-            sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
-        }
-
-        val skipped = solution.individuals.filter { ind ->
-            ind.evaluatedActions().any { ac ->
-                assessFailed(ac, oracles)
-            }
-        }.filterNot { ind ->
-            ind.evaluatedActions().any { ac ->
-                clusters.any { it.contains(ac.result as RestCallResult) }
-            }
-        }
-        // add any Individuals that have a failed action and belong to no cluster to the executive summary too.
-        skipped.forEach {
-            sumSol.add(it)
-        }
-
-        val sumSolution = Solution(sumSol, solution.testSuiteName, Termination.SUMMARY)
-        return mutableListOf(sumSolution)
-    }
-
 
     /**
      * [splitByCode] splits the Solution into several subsets based on the HTTP codes found in the actions.
@@ -295,6 +216,20 @@ object TestSuiteSplitter {
         )
     }
 
+    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles): Boolean{
+        val codeSelect = if(action.result is RestCallResult){
+            val code = (action.result as RestCallResult).getStatusCode()
+            (code != null && code == 500)
+            // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
+            // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
+            // "remainder" subset - as they are neither errors, nor successful runs.
+        } else false
+
+        val oracleSelect = oracles.selectForClustering(action)
+        return codeSelect || oracleSelect
+    }
+
+
     /**
      * [splitByClusters] splits a given Solution object into a List of several Solution objects, each
      * containing a cluster of (error - i.e. containing 500s) [EvaluatedIndividual<RestIndividual>]. Each such solution
@@ -306,6 +241,7 @@ object TestSuiteSplitter {
      * Futhermore, if a particular type of fault is found to be of greater interest, this could be the starting point
      * for getting all the additional test cases related to that fault (i.e. belonging to the same cluster).
      */
+    /*
 
     private fun splitByClusters(solution: Solution<RestIndividual>,
                         oracles: PartialOracles = PartialOracles(),
@@ -371,16 +307,74 @@ object TestSuiteSplitter {
                 solRemainder)
     }
 
-    fun assessFailed(action: EvaluatedAction, oracles: PartialOracles): Boolean{
-        val codeSelect = if(action.result is RestCallResult){
-            val code = (action.result as RestCallResult).getStatusCode()
-            (code != null && code == 500)
-            // Note: we only check for 500 - Internal Server Error. Other 5xx codes are possible, but they're not really
-            // related to bug finding. Test cases that have other errors from the 5xx series will end up in the
-            // "remainder" subset - as they are neither errors, nor successful runs.
-        } else false
 
-        val oracleSelect = oracles.selectForClustering(action)
-        return codeSelect || oracleSelect
+    private fun executiveSummary(solution: Solution<RestIndividual>,
+                                 oracles: PartialOracles = PartialOracles(),
+                                 metric: DistanceMetric<RestCallResult>): List<Solution<RestIndividual>>{
+        val errs = solution.individuals.filter {
+            it.evaluatedActions().any { ac ->
+                assessFailed(ac, oracles)
+            }
+        }.toMutableList()
+
+        // If no individuals have a failed result, the summary is empty
+        // If only one individual has a failed result, clustering is skipped, and the relevant individual is returned
+        when (errs.size){
+            0 -> return mutableListOf()
+            1 -> return mutableListOf(Solution(errs, solution.testSuiteName, Termination.SUMMARY))
+        }
+        val sumSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+
+        val clusters = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.SUMMARY), oracles = oracles, metric = metric)
+
+
+        clusters.forEachIndexed { index, clu ->
+            val inds = solution.individuals.filter { ind ->
+                ind.evaluatedActions().any { ac ->
+                    clu.contains(ac.result as RestCallResult)
+                }
+            }.toMutableList()
+            // Add a random individual from each cluster.
+            // Other selection criteria than random might be added at some later date.
+            // For example, one might want the smallest individual in a cluster (i.e. the smallest test case that
+            // shows a particular type of behaviour).
+            sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
+        }
+
+        val metric2 = DistanceMetricLastLine()
+        val clusters2 = Clusterer.cluster(Solution(errs, solution.testSuiteName, Termination.FAULTS), oracles = oracles, metric = metric2)
+
+        clusters2.forEachIndexed { index, clu ->
+            val inds = solution.individuals.filter { ind ->
+                ind.evaluatedActions().any { ac ->
+                    clu.contains(ac.result as RestCallResult)
+                }
+            }.map {
+                it.assignToCluster("${metric2.getName()}_$index")
+            }.toMutableSet()
+            sumSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
+        }
+
+        val skipped = solution.individuals.filter { ind ->
+            ind.evaluatedActions().any { ac ->
+                assessFailed(ac, oracles)
+            }
+        }.filterNot { ind ->
+            ind.evaluatedActions().any { ac ->
+                clusters.any { it.contains(ac.result as RestCallResult) }
+            }
+        }
+        // add any Individuals that have a failed action and belong to no cluster to the executive summary too.
+        skipped.forEach {
+            sumSol.add(it)
+        }
+
+        val sumSolution = Solution(sumSol, solution.testSuiteName, Termination.SUMMARY)
+        return mutableListOf(sumSolution)
     }
+
+
+
+
+     */
 }

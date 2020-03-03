@@ -7,4 +7,5 @@ import org.evomaster.core.search.Solution
 class SplitResult {
     lateinit var splitOutcome: List<Solution<out Individual>>
     lateinit var executiveSummary: Solution<out Individual>
+    var clusteringTime: Long = 0L
 }

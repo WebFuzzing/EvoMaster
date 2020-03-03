@@ -11,7 +11,7 @@ class Solution<T>(
 where T : Individual {
 
     val overall: FitnessValue = FitnessValue(0.0)
-
+    var clusteringTime = 0
 
     init{
         individuals.forEach {
