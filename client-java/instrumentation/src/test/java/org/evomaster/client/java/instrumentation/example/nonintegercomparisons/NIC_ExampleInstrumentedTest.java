@@ -163,11 +163,11 @@ public class NIC_ExampleInstrumentedTest {
         );
     }
 
-    private void testPosX(Supplier<Integer> firstCall,
-                         Supplier<Integer> secondCall,
-                         Supplier<Integer> thirdCall){
+    private void testPosX(Supplier<Integer> firstCall_positiveX,
+                         Supplier<Integer> secondCall_worseX,
+                         Supplier<Integer> thirdCall_betterX){
 
-        int res = firstCall.get();
+        int res = firstCall_positiveX.get();
         //first branch should had been taken
         assertEquals(0, res);
 
@@ -183,20 +183,14 @@ public class NIC_ExampleInstrumentedTest {
             assertTrue(h > 0 ); // it has been reached though
         }
 
-        List<Double> first = nonCovered.stream()
-                .sorted()
-                .map(id -> ExecutionTracer.getValue(id))
-                .collect(Collectors.toList());
+        List<Double> first = extractHeuristicsSorted(nonCovered);
 
 
-        secondCall.get(); //worse value, should have no impact
+        secondCall_worseX.get(); //worse value, should have no impact
         nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
         assertEquals(2, nonCovered.size());
 
-        List<Double> second = nonCovered.stream()
-                .sorted()
-                .map(id -> ExecutionTracer.getValue(id))
-                .collect(Collectors.toList());
+        List<Double> second = extractHeuristicsSorted(nonCovered);
 
         for(int i=0; i<first.size(); i++) {
             //no impact, the same
@@ -204,14 +198,11 @@ public class NIC_ExampleInstrumentedTest {
         }
 
 
-        thirdCall.get(); //better value
+        thirdCall_betterX.get(); //better value
         nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
         assertEquals(2, nonCovered.size());
 
-        List<Double> third = nonCovered.stream()
-                .sorted()
-                .map(id -> ExecutionTracer.getValue(id))
-                .collect(Collectors.toList());
+        List<Double> third = extractHeuristicsSorted(nonCovered);
 
         for(int i=0; i<first.size(); i++) {
             //better
@@ -219,165 +210,319 @@ public class NIC_ExampleInstrumentedTest {
             //but still not covered
             assertTrue(third.get(i) < 1);
         }
-
     }
 
 
 
-//    @Test
-//    public void testPosY() {
-//
-//        assertEquals(0d, ObjectiveRecorder.computeCoverage(ObjectiveNaming.BRANCH));
-//
-//        int res;
-//        res = evalPos(10, 0);
-//        assertEquals(0, res);
-//
-//        res = evalPos(-5, 4);
-//        assertEquals(1, res);
-//
-//        //seen 2 "if", but returned on the second "if"
-//        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//
-//        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
-//        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
-//        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
-//
-//        double first = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(first < 1d); // not covered
-//
-//        evalPos(-8, 8); //worse value, should have no impact
-//        double second = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(second < 1d); // still not covered
-//        assertEquals(first, second, 0.001);
-//
-//        evalPos(-8, 0); //better value, but still not covered
-//        double third = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(third < 1d); // still not covered
-//        assertTrue(third > second);
-//
-//        //all branches covered
-//        res = evalPos(-89, -45);
-//        assertEquals(2, res);
-//
-//        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//
-//        assertTrue(ObjectiveRecorder.computeCoverage(ObjectiveNaming.BRANCH) > 0);
-//    }
-//
-//
-//    @Test
-//    public void testNegX(){
-//
-//        int res = evalNeg(-10, 0);
-//        //first branch should had been taken
-//        assertEquals(3, res);
-//
-//        //so far, seen only first "if", of which the else is not covered
-//        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//
-//        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
-//        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
-//        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
-//
-//        double first = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(first < 1d); // not covered
-//
-//
-//        evalNeg(-15, 0); //worse value, should have no impact
-//        double second = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(second < 1d); // still not covered
-//        assertEquals(first, second, 0.001);
-//
-//        evalNeg(-8, 0); //better value
-//        double third = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(third < 1d); // still not covered
-//        assertTrue(third > first);
-//    }
-//
-//
-//    @Test
-//    public void testNegY() {
-//
-//        int res;
-//        res = evalNeg(-10, 0);
-//        assertEquals(3, res);
-//
-//        res = evalNeg(5, -4);
-//        assertEquals(4, res);
-//
-//        //seen 2 "if", but returned on the second "if"
-//        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//
-//        String elseBranch = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.BRANCH).iterator().next();
-//        assertTrue(elseBranch.contains(ObjectiveNaming.FALSE_BRANCH));
-//        assertFalse(elseBranch.contains(ObjectiveNaming.TRUE_BRANCH));
-//
-//        double first = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(first < 1d); // not covered
-//
-//        evalNeg(8, -8); //worse value, should have no impact
-//        double second = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(second < 1d); // still not covered
-//        assertEquals(first, second, 0.001);
-//
-//        evalNeg(8, 0); //better value, but still not covered
-//        double third = ExecutionTracer.getValue(elseBranch);
-//        assertTrue(third < 1d); // still not covered
-//        assertTrue(third > second);
-//
-//        //all branches covered
-//        res = evalNeg(89, 45);
-//        assertEquals(5, res);
-//
-//        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//    }
-//
-//
-//    @Test
-//    public void testEq(){
-//
-//        int res;
-//        res = evalEq(0, 0);
-//        assertEquals(6, res);
-//
-//        assertEquals(2, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//
-//        res = evalEq(2, 5);
-//        assertEquals(7, res);
-//
-//        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//
-//        res = evalEq(2, 0);
-//        assertEquals(8, res);
-//
-//        assertEquals(4, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//    }
-//
-//    @Test
-//    public void testAll(){
-//
-//        evalPos(1,1);
-//        evalPos(-1, 1);
-//        evalPos(-1, -1);
-//
-//        evalNeg(-1, -1);
-//        evalNeg(1, -1);
-//        evalNeg(1, 1);
-//
-//        evalEq(0, 0);
-//        evalEq(4, 0);
-//        evalEq(5, 5);
-//
-//        assertEquals(12, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.BRANCH));
-//        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.BRANCH));
-//    }
+    @Test
+    public void testPosYLong(){
+
+        testPosY(
+                () -> evalPos(10L, 0L),
+                () -> evalPos(-2L, 10L),
+                () -> evalPos(-2L, 14L),
+                () -> evalPos(-2L, 3L),
+                () -> evalPos(-8L, -20L)
+        );
+    }
+
+    @Test
+    public void testPosYDouble(){
+
+        testPosY(
+                () -> evalPos(10.1d, 0d),
+                () -> evalPos(-2.42d, 10.3d),
+                () -> evalPos(-2.42d, 14.333d),
+                () -> evalPos(-2.42d, 3.1d),
+                () -> evalPos(-8d, -20d)
+        );
+    }
+
+    @Test
+    public void testPosYFloat(){
+
+        testPosY(
+                () -> evalPos(10.1f, 0f),
+                () -> evalPos(-2.42f, 10.3f),
+                () -> evalPos(-2.42f, 14.333f),
+                () -> evalPos(-2.42f, 3.1f),
+                () -> evalPos(-8f, -20f)
+        );
+    }
+
+    private void testPosY(Supplier<Integer> firstCall_positiveX,
+                          Supplier<Integer> secondCall_negativeX,
+                          Supplier<Integer> thirdCall_negativeX_but_worseY,
+                          Supplier<Integer> fourthCall_negativeX_and_betterY,
+                          Supplier<Integer> fifthCall_bothNegative
+    ){
+
+        int res = firstCall_positiveX.get();
+        //first branch should had been taken
+        assertEquals(0, res);
+
+
+        res = secondCall_negativeX.get();
+        //second branch should had been taken
+        assertEquals(1, res);
+
+
+        //so far, 2 comparisons, each one with its own 3 targets
+        assertEquals(6, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+        Set<String> nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        //on CMP for 0 on first IF, and then 2 for second if
+        assertEquals(3, nonCovered.size());
+
+        for(String id : nonCovered) {
+            double h = ExecutionTracer.getValue(id);
+            assertTrue(h < 1d); // not covered
+            assertTrue(h > 0 ); // it has been reached though
+        }
+
+        List<Double> second = extractHeuristicsSorted(nonCovered);
+
+
+        thirdCall_negativeX_but_worseY.get(); //worse value, should have no impact
+        nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        assertEquals(3, nonCovered.size());
+
+        List<Double> third = extractHeuristicsSorted(nonCovered);
+
+        for(int i=0; i<second.size(); i++) {
+            //no impact, the same
+            assertEquals(third.get(i), second.get(i), 0.0001);
+        }
+
+
+        fourthCall_negativeX_and_betterY.get(); //better value
+        nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        assertEquals(3, nonCovered.size());
+
+        List<Double> fourth = extractHeuristicsSorted(nonCovered);
+
+        int better = 0;
+
+        for(int i=0; i<third.size(); i++) {
+            //better or equal
+            assertTrue(fourth.get(i) >= third.get(i));
+            //but still not covered
+            assertTrue(fourth.get(i) < 1);
+
+            if(fourth.get(i) > third.get(i)){
+                better++;
+            }
+        }
+
+        //2 objectives (< and =0) should had gotten better
+        assertEquals(2, better);
+
+
+        res = fifthCall_bothNegative.get();
+        assertEquals(2, res);
+        nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        //the cases of 0 were not covered
+        assertEquals(2, nonCovered.size());
+    }
+
+    private List<Double> extractHeuristicsSorted(Set<String> nonCovered) {
+        return nonCovered.stream()
+                .sorted()
+                .map(id -> ExecutionTracer.getValue(id))
+                .collect(Collectors.toList());
+    }
+
+
+    @Test
+    public void testNegXLong(){
+
+        testNegX(
+                () -> evalNeg(-15L, 0L),
+                () -> evalNeg(-2215L, 0L),
+                () -> evalNeg(-2L, 0L)
+        );
+    }
+
+    @Test
+    public void testNegXDouble(){
+
+        testNegX(
+                () -> evalNeg(-15.4d, 0d),
+                () -> evalNeg(-2215.16, 0d),
+                () -> evalNeg(-2.11111, 0d)
+        );
+    }
+
+    @Test
+    public void testNegXFloat(){
+
+        testNegX(
+                () -> evalNeg(-15f, 0f),
+                () -> evalNeg(-2215.4444444f, 0f),
+                () -> evalNeg(-2.3f, 0f)
+        );
+    }
+
+
+    private void testNegX(Supplier<Integer> firstCall_negativeX,
+                          Supplier<Integer> secondCall_worseX,
+                          Supplier<Integer> thirdCall_betterX){
+
+        int res = firstCall_negativeX.get();
+        //first branch should had been taken
+        assertEquals(3, res);
+
+        //so far, seen only first comparison,
+        assertEquals(3, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+        Set<String> nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        assertEquals(2, nonCovered.size());
+
+        for(String id : nonCovered) {
+            double h = ExecutionTracer.getValue(id);
+            assertTrue(h < 1d); // not covered
+            assertTrue(h > 0 ); // it has been reached though
+        }
+
+        List<Double> first = extractHeuristicsSorted(nonCovered);
+
+
+        secondCall_worseX.get(); //worse value, should have no impact
+        nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        assertEquals(2, nonCovered.size());
+
+        List<Double> second = extractHeuristicsSorted(nonCovered);
+
+        for(int i=0; i<first.size(); i++) {
+            //no impact, the same
+            assertEquals(first.get(i), second.get(i), 0.0001);
+        }
+
+
+        thirdCall_betterX.get(); //better value
+        nonCovered = ExecutionTracer.getNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON);
+        assertEquals(2, nonCovered.size());
+
+        List<Double> third = extractHeuristicsSorted(nonCovered);
+
+        for(int i=0; i<first.size(); i++) {
+            //better
+            assertTrue(third.get(i) > second.get(i));
+            //but still not covered
+            assertTrue(third.get(i) < 1);
+        }
+    }
+
+
+
+    @Test
+    public void testEqLong(){
+
+        testEq(
+                () -> evalEq(0L, 0L),
+                () -> evalEq(5L, 7L),
+                () -> evalEq(-2L, 0L),
+                () -> evalEq(-2L, -4L)
+        );
+    }
+
+    @Test
+    public void testEqDouble(){
+
+        testEq(
+                () -> evalEq(0d, 0.0d),
+                () -> evalEq(5.222d, 7.1d),
+                () -> evalEq(-2.11111d, 0d),
+                () -> evalEq(-2d, -4.3d)
+        );
+    }
+
+    @Test
+    public void testEqFloat(){
+
+        testEq(
+                () -> evalEq(0.00f, 0f),
+                () -> evalEq(5.3f, 7f),
+                () -> evalEq(-2f, 0f),
+                () -> evalEq(-2.9999f, -4.7777f)
+        );
+    }
+
+
+    private void testEq(Supplier<Integer> firstCall_both0,
+                          Supplier<Integer> secondCall_bothGreaterThan0,
+                          Supplier<Integer> thirdCall_negativeAnd0,
+                        Supplier<Integer> fourthCall_bothNegative) {
+
+        int res;
+        res = firstCall_both0.get();
+        assertEquals(6, res);
+
+        assertEquals(3, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(2, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+
+        res = secondCall_bothGreaterThan0.get();
+        assertEquals(7, res);
+
+        assertEquals(6, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(3, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+
+        res = thirdCall_negativeAnd0.get();
+        assertEquals(8, res);
+
+        assertEquals(6, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(1, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+        res = fourthCall_bothNegative.get();
+        assertEquals(7, res);
+
+        assertEquals(6, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+    }
+
+
+    @Test
+    public void testAllPos(){
+
+        assertEquals(0, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+        evalPos(1L,1L);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(0L, 1L);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1L, 1L);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1L, -1L);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1L, 0L);
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(6, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+        evalPos(1d,1d);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(0d, 1d);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1d, 1d);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1d, -1d);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1d, 0d);
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(12, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+
+        evalPos(1f,1f);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(0f, 1f);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1f, 1f);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1f, -1f);
+        assertTrue(0 < ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        evalPos(-1f, 0f);
+        assertEquals(0, ExecutionTracer.getNumberOfNonCoveredObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+        assertEquals(18, ExecutionTracer.getNumberOfObjectives(ObjectiveNaming.NUMERIC_COMPARISON));
+    }
 }
