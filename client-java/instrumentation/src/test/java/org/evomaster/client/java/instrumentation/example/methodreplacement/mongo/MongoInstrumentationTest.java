@@ -1,5 +1,6 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement.mongo;
 
+import com.foo.somedifferentpackage.examples.methodreplacement.mongo.MockedFindIterable;
 import com.foo.somedifferentpackage.examples.methodreplacement.mongo.MockedMongoCollection;
 import com.foo.somedifferentpackage.examples.methodreplacement.mongo.MongoInstrumentedImpl;
 import com.mongodb.MongoNamespace;
@@ -36,6 +37,8 @@ public class MongoInstrumentationTest {
         MongoInstrumented mongoInstrumented = getInstance();
 
         MockedMongoCollection mockedMongoCollection = new MockedMongoCollection();
+        MockedFindIterable mockedFindIterable = new MockedFindIterable();
+        mockedMongoCollection.setFindIterable(mockedFindIterable);
         mockedMongoCollection.setNamespace(new MongoNamespace("mydb.mycollection"));
 
         MongoLogger.getInstance().reset();
@@ -57,6 +60,9 @@ public class MongoInstrumentationTest {
         MongoInstrumented mongoInstrumented = getInstance();
 
         MockedMongoCollection mockedMongoCollection = new MockedMongoCollection();
+        MockedFindIterable mockedFindIterable = new MockedFindIterable();
+        mockedMongoCollection.setFindIterable(mockedFindIterable);
+
         mockedMongoCollection.setNamespace(new MongoNamespace("mydb.mycollection"));
 
         MongoLogger.getInstance().reset();

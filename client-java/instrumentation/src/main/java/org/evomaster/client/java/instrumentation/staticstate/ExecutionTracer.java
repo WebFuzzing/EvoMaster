@@ -204,6 +204,13 @@ public class ExecutionTracer {
         ObjectiveRecorder.update(id, value);
     }
 
+    public static void executedNumericComparison(String idTemplate, double lt, double eq, double gt){
+
+        updateObjective(ObjectiveNaming.numericComparisonObjectiveName(idTemplate, -1), lt);
+        updateObjective(ObjectiveNaming.numericComparisonObjectiveName(idTemplate, 0), eq);
+        updateObjective(ObjectiveNaming.numericComparisonObjectiveName(idTemplate, +1), gt);
+    }
+
     public static void executedReplacedMethod(String idTemplate, ReplacementType type, Truthness t){
 
         String idTrue = ObjectiveNaming.methodReplacementObjectiveName(idTemplate, true, type);
