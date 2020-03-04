@@ -116,7 +116,7 @@ There are 3 types of options:
 |`exportCoveredTarget`| __Boolean__. Specify whether to export covered targets info. *Default value*: `false`.|
 |`exportDependencies`| __Boolean__. Specify whether to export derived dependencies among resources. *Default value*: `false`.|
 |`exportImpacts`| __Boolean__. Specify whether to export derived impacts among genes. *Default value*: `false`.|
-|`extractMongoExecutionInfo`| __Boolean__. Enable extracting MongoDB execution info. *Default value*: `false`.|
+|`extractMongoExecutionInfo`| __Boolean__. Enable extracting MongoDB execution info. *Default value*: `true`.|
 |`geneSelectionMethod`| __Enum__. Specify whether to enable archive-based selection for selecting genes to mutate. *Valid values*: `NONE, AWAY_NOIMPACT, APPROACH_IMPACT, APPROACH_LATEST_IMPACT, APPROACH_LATEST_IMPROVEMENT, BALANCE_IMPACT_NOIMPACT, ALL_FIXED_RAND`. *Default value*: `NONE`.|
 |`generateMongoDataWithSearch`| __Boolean__. Enable EvoMaster to generate MongoDB data with direct accesses to the database. Use a search algorithm. *Default value*: `false`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
