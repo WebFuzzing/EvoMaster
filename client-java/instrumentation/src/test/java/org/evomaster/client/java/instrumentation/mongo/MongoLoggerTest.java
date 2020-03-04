@@ -20,7 +20,7 @@ public class MongoLoggerTest {
         MongoLogger.getInstance().setOutputStream(new PrintStream(byteArrayOutputStream));
         MockedMongoCollection mockedMongoCollection = new MockedMongoCollection();
         mockedMongoCollection.setNamespace(new MongoNamespace("mydb.mycollection"));
-        MongoLogger.getInstance().logFind(mockedMongoCollection,new BsonDocument());
+        MongoLogger.getInstance().logFind(mockedMongoCollection,new BsonDocument(), true);
         String output = new String(byteArrayOutputStream.toByteArray(), StandardCharsets.UTF_8);
         assertTrue(output.startsWith(MongoLogger.PREFIX));
     }

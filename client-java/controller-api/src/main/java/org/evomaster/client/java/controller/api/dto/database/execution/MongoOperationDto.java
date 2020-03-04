@@ -8,4 +8,5 @@ public class MongoOperationDto {
 
     public String operationJsonStr;
 
+    public boolean hasOperationFoundAnyDocuments;
 }

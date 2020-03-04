@@ -44,13 +44,13 @@ public class MongoLogger {
 
     public static final String PREFIX = "MONGO_LOGGER";
 
-    public void logFind(MongoCollection mongoCollection, Bson bson) {
+    public void logFind(MongoCollection mongoCollection, Bson bson, boolean hasOperationFoundAnyDocument) {
         String dbName = mongoCollection.getNamespace().getDatabaseName();
         String collectionName = mongoCollection.getNamespace().getCollectionName();
         BsonDocument query = bson.toBsonDocument(BsonDocument.class, mongoCollection.getCodecRegistry());
         Document queryDoc = new DocumentCodec().decode(query.asBsonReader(), DecoderContext.builder().build());
 
-        MongoFindOperation op = new MongoFindOperation(dbName, collectionName, queryDoc);
+        MongoFindOperation op = new MongoFindOperation(dbName, collectionName, queryDoc, hasOperationFoundAnyDocument);
         String jsonString = new Gson().toJson(op);
         String mongoOperation = String.format("%s:%s", PREFIX, jsonString);
         outputStream.println(mongoOperation);

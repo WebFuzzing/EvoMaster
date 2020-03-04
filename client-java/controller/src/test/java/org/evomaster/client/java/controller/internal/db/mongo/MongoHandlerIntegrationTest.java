@@ -58,7 +58,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
 
         // find({}) returns no element
-        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
+        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
 
         assertEquals(1, sutController.getMongoHandler().getMongoExecutionDto().mongoOperations.size());
     }
@@ -72,12 +72,12 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
 
         // log find({}) operation
-        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
+        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
 
         assertEquals(1, sutController.getMongoHandler().getMongoExecutionDto().mongoOperations.size());
 
         // log find({}) operation
-        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
+        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
 
         assertEquals(2, sutController.getMongoHandler().getMongoExecutionDto().mongoOperations.size());
     }
@@ -91,14 +91,14 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
 
         // find({}) returns no element
-        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
+        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
 
         assertEquals(1, sutController.getMongoHandler().getMongoExecutionDto().mongoOperations.size());
 
         mongoCollection.insertOne(new Document());
 
         // log find({}) that returns an element
-        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument());
+        MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
         assertEquals(2, sutController.getMongoHandler().getMongoExecutionDto().mongoOperations.size());
     }
 

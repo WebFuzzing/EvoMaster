@@ -826,7 +826,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Enable extracting MongoDB execution info")
-    var extractMongoExecutionInfo = false
+    var extractMongoExecutionInfo = true
 
     @Experimental
     @Cfg("Enable EvoMaster to generate MongoDB data with direct accesses to the database. Use a search algorithm")

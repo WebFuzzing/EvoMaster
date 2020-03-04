@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MyMongoAppManualTest extends SpringRestMongoTestBase {
+public class MongoFooAppManualTest extends SpringRestMongoTestBase {
 
     private static final MyMongoAppEmbeddedController sutController = new MyMongoAppEmbeddedController();
 
@@ -119,5 +119,6 @@ public class MyMongoAppManualTest extends SpringRestMongoTestBase {
                 .then()
                 .statusCode(400);
     }
+
 
 }

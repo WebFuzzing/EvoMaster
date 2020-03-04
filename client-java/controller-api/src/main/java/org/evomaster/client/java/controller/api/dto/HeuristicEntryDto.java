@@ -9,12 +9,12 @@ public class HeuristicEntryDto {
      * The type of extra heuristic.
      * Note: for the moment, we only have heuristics on SQL commands
      */
-    public enum Type {SQL, MONGO_DB}
+    public enum Type {SQL}
 
     /**
      * Should we try to minimize or maximize the heuristic?
      */
-    public enum Objective{
+    public enum Objective {
         /**
          * The lower the better.
          * Minimum is 0. It can be considered as a "distance" to minimize.

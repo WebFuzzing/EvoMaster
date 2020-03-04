@@ -16,13 +16,15 @@ public class MongoReplacementClass implements MethodReplacementClass {
 
     public static FindIterable<?> find(MongoCollection mongoCollection, Bson bson, Class<?> documentClass) {
         FindIterable<?> rv = mongoCollection.find(bson, documentClass);
-        MongoLogger.getInstance().logFind(mongoCollection, bson);
+        boolean operationReturnedDocuments = rv.iterator().hasNext();
+        MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
         return rv;
     }
 
     public static FindIterable<?> find(MongoCollection mongoCollection, ClientSession clientSession, Bson bson, Class<?> documentClass) {
         FindIterable<?> rv = mongoCollection.find(clientSession, bson, documentClass);
-        MongoLogger.getInstance().logFind(mongoCollection, bson);
+        boolean operationReturnedDocuments = rv.iterator().hasNext();
+        MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
         return rv;
     }
 }

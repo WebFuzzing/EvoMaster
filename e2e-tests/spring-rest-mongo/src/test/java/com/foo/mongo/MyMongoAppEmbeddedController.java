@@ -5,7 +5,7 @@ import com.foo.spring.rest.mongo.SpringRestMongoController;
 public class MyMongoAppEmbeddedController extends SpringRestMongoController {
 
     public MyMongoAppEmbeddedController() {
-        super(MyMongoApp.class);
+        super(MongoFooApp.class);
     }
 
     @Override

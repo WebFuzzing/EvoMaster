@@ -7,23 +7,19 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping(path = "/api/mymongoapp/foo")
-public class MyMongoRest {
+@RequestMapping(path = "/api/mongobar")
+public class MongoBarController {
 
     @Autowired
-    private MyMongoRepository repository;
+    private MongoFooRepository repository;
 
     @RequestMapping(
             method = RequestMethod.POST
     )
     public ResponseEntity post() {
-        if (repository.findAll().isEmpty()) {
-            MongoFooEntity entity = new MongoFooEntity("Alice", "Smith");
-            repository.save(entity);
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().build();
-        }
+        MongoFooEntity entity = new MongoFooEntity("Alice", "Smith");
+        repository.save(entity);
+        return ResponseEntity.ok().build();
     }
 
 
@@ -38,16 +34,5 @@ public class MyMongoRest {
         }
     }
 
-    @RequestMapping(
-            method = RequestMethod.DELETE
-    )
-    public ResponseEntity delete() {
-        if (repository.findAll().isEmpty()) {
-        return ResponseEntity.notFound().build();
-        } else {
-            repository.deleteAll();
-            return ResponseEntity.ok().build();
-        }
-    }
 }
 

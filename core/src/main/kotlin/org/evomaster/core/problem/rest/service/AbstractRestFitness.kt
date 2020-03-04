@@ -1,13 +1,17 @@
 package org.evomaster.core.problem.rest.service
 
+import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.database.execution.MongoOperationDto
+import org.evomaster.client.java.instrumentation.shared.mongo.MongoFindOperation
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -106,6 +110,11 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
     }
 
     protected fun handleExtra(dto: TestResultsDto, fv: FitnessValue) {
+        handleSqlExtra(dto, fv)
+        handleMongoExtra(dto, fv)
+    }
+
+    private fun handleSqlExtra(dto: TestResultsDto, fv: FitnessValue) {
         if (configuration.heuristicsForSQL) {
 
             for (i in 0 until dto.extraHeuristics.size) {
@@ -143,12 +152,44 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 fv.setDatabaseExecution(i, DatabaseExecution.fromDto(extra.databaseExecutionDto))
             }
         }
+    }
 
+    private fun handleMongoExtra(dto: TestResultsDto, fv: FitnessValue) {
         if (configuration.heuristicsForMongo) {
-            // TODO
-        } else if (configuration.extractMongoExecutionInfo) {
-            // TODO
+            for (actionIndex in 0 until dto.extraHeuristics.size) {
+
+                val extra = dto.extraHeuristics[actionIndex]
+
+                val toMinimize = mutableListOf<Double>()
+                extra.mongoExecutionDto?.mongoOperations?.forEach {
+                    val json = it.operationJsonStr
+                    val operationType = it.operationType
+                    val findOperation = Gson().fromJson(json, MongoFindOperation::class.java)
+                    val distance =
+                            if (findOperation.hasOperationFoundAnyDocuments()) {
+                                // Operation has found at least one document, therefore distance is 0.0
+                                0.0
+                            } else {
+                                // compute distance
+                                computeDistance(operationType, findOperation)
+                            }
+                    toMinimize += distance
+                }
+                if (toMinimize.isNotEmpty()) {
+                    fv.setExtraToMinimize(actionIndex, toMinimize)
+                }
+            }
         }
+        if (configuration.extractMongoExecutionInfo) {
+            for (i in 0 until dto.extraHeuristics.size) {
+                val mongoExecutionDto = dto.extraHeuristics[i].mongoExecutionDto
+                fv.setMongoExecution(i, MongoExecution.fromDto(mongoExecutionDto))
+            }
+        }
+    }
+
+    private fun computeDistance(operationType: MongoOperationDto.Type?, findOperation: MongoFindOperation?): Double {
+        return Double.MAX_VALUE
     }
 
     /**
@@ -370,14 +411,14 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 } else {
                     LoggingUtil.uniqueWarn(log,
                             "A very large response body was retrieved from the endpoint '${a.path}'." +
-                            " If that was expected, increase the 'maxResponseByteSize' threshold" +
-                            " in the configurations.")
+                                    " If that was expected, increase the 'maxResponseByteSize' threshold" +
+                                    " in the configurations.")
                     rcr.setTooLargeBody(true)
                 }
             }
         } catch (e: Exception) {
 
-            if(e is ProcessingException && TcpUtils.isTimeout(e)){
+            if (e is ProcessingException && TcpUtils.isTimeout(e)) {
                 rcr.setTimedout(true)
                 statistics.reportTimeout()
                 return false
@@ -424,7 +465,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 }
 
 
-        val builder = if(a.produces.isEmpty()){
+        val builder = if (a.produces.isEmpty()) {
             log.debug("No 'produces' type defined for {}", path)
             client.target(fullUri).request("*/*")
 
