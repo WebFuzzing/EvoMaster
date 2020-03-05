@@ -22,13 +22,36 @@ class OptionalGene(name: String,
                    val activeMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1))
     : Gene(name) {
 
+
     companion object{
         private val log: Logger = LoggerFactory.getLogger(OptionalGene::class.java)
         private const val INACTIVE = 0.01
     }
 
+    /**
+     * In some cases, we might want to prevent this gene from being active
+     */
+    private var selectable = true
+
+
+    init{
+        gene.parent = this
+    }
+
+
+    fun forbidSelection(){
+        selectable = false
+        isActive = false
+    }
+
     override fun copy(): Gene {
-        return OptionalGene(name, gene.copy(), isActive, activeMutationInfo.copy())
+        val copy = OptionalGene(name, gene.copy(), isActive, activeMutationInfo.copy())
+        copy.selectable = this.selectable
+        return copy
+    }
+
+    override fun isMutable(): Boolean {
+        return selectable
     }
 
     override fun copyValueFrom(other: Gene) {

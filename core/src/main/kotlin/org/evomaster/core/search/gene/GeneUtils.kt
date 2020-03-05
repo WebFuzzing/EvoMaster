@@ -3,11 +3,15 @@ package org.evomaster.core.search.gene
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import java.net.URLEncoder
 import kotlin.math.pow
 import org.apache.commons.lang3.StringEscapeUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 object GeneUtils {
+
+    private val log: Logger = LoggerFactory.getLogger(GeneUtils::class.java)
+
 
     /**
      * List where each element at position "i" has value "2^i"
@@ -278,6 +282,71 @@ object GeneUtils {
                 //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
+    }
+
+
+    /**
+     * Given an input gene, prevent any [CycleObjectGene] from affecting the phenotype.
+     * For example, if [CycleObjectGene] is inside an [OptionalGene], then such gene
+     * should never be selectable.
+     * An array of [CycleObjectGene] would always be empty.
+     * Etc.
+     * However, it is not necessarily trivial. An [CycleObjectGene] might be required,
+     * and so we would need to scan to its first ancestor in the tree which is an optional
+     * or an array.
+     */
+    fun preventCycles(gene: Gene) {
+
+        val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
+        if(cycles.isEmpty()){
+            //nothing to do
+            return
+        }
+
+        for(c in cycles){
+
+            var p = c.parent
+            loop@ while(p != null){
+                when(p){
+                    is OptionalGene -> { p.forbidSelection(); break@loop}
+                    is ArrayGene<*> -> { p.forceToOnlyEmpty(); break@loop}
+                    else -> p = p.parent
+                }
+            }
+
+            if(p == null){
+                log.warn("Could not prevent cycle in ${gene.name} gene")
+            }
+        }
+    }
+
+
+    /**
+     * If the input gene is a root of a tree of genes (ie, it contains inside other genes),
+     * then verify that the top ancestor of each child and their children is indeed this root.
+     * Note: this is just testing for an invariant
+     */
+    fun verifyRootInvariant(gene: Gene): Boolean{
+
+        if(gene.parent != null){
+            //not a root
+            return true
+        }
+
+        val all = gene.flatView()
+        if(all.size == 1){
+            //no child
+            return true
+        }
+
+        for(g in all){
+            val root = g.getRoot()
+            if(root != gene){
+                return false
+            }
+        }
+
+        return true
     }
 }
 

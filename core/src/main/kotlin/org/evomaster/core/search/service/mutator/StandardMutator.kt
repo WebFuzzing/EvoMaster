@@ -124,7 +124,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             if (isDb){
                 mutatedGene?.mutatedDbGenes?.add(gene)
                 mutatedGene?.mutatedDbActionPosition?.add(copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) })
-            }else{
+            } else{
                 mutatedGene?.mutatedGenes?.add(gene)
                 mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
             }
@@ -133,8 +133,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 val impact = individual.getImpactOfGenes()[id]
                 gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual,targets )
-            }else
+            } else {
                 gene.standardMutation(randomness, apc, allGenes)
+            }
         }
 
         return copy
@@ -155,6 +156,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         Lazy.assert {
             DbActionUtils.verifyForeignKeys(
                     mutatedIndividual.seeInitializingActions().filterIsInstance<DbAction>())
+        }
+
+        Lazy.assert {
+            mutatedIndividual.seeActions()
+                    .flatMap { it.seeGenes() }
+                    .all { GeneUtils.verifyRootInvariant(it) }
         }
 
         // repair the initialization actions (if needed)

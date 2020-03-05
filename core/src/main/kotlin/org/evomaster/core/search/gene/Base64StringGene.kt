@@ -19,8 +19,12 @@ class Base64StringGene(
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(Base64StringGene::class.java)
-
     }
+
+    init {
+        data.parent = this
+    }
+
     override fun copy(): Gene = Base64StringGene(name, data.copy() as StringGene)
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {

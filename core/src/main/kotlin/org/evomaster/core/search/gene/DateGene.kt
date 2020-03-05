@@ -37,6 +37,13 @@ class DateGene(
         ISO_LOCAL_DATE_FORMAT
     }
 
+    init {
+        year.parent = this
+        month.parent = this
+        day.parent = this
+    }
+
+
     override fun copy(): Gene = DateGene(name,
             year.copy() as IntegerGene,
             month.copy() as IntegerGene,

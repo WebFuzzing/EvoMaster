@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 class ArrayGene<T>(
         name: String,
         val template: T,
-        val maxSize: Int = 5,
+        var maxSize: Int = 5,
         var elements: MutableList<T> = mutableListOf()
 ) : Gene(name)
         where T : Gene {
@@ -25,12 +25,22 @@ class ArrayGene<T>(
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
+
+        for(e in elements){
+            e.parent = this
+        }
     }
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
 
         private const val MODIFY_SIZE = 0.1
+    }
+
+
+    fun forceToOnlyEmpty(){
+        maxSize = 0
+        elements.clear()
     }
 
     override fun copy(): Gene {
@@ -54,7 +64,7 @@ class ArrayGene<T>(
         }
         return this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
-        }.all { it == true }
+        }.all { it }
     }
 
 
@@ -71,6 +81,7 @@ class ArrayGene<T>(
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
+            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
         }
@@ -80,6 +91,7 @@ class ArrayGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
+            gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
         } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){

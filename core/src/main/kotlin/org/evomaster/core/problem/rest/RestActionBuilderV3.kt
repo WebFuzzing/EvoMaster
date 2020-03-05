@@ -16,6 +16,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URISyntaxException
+import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -301,7 +302,7 @@ object RestActionBuilderV3 {
             name: String,
             schema: Schema<*>,
             swagger: OpenAPI,
-            history: MutableList<String> = mutableListOf()
+            history: Deque<String> = ArrayDeque<String>()
     ): Gene {
 
         if (!schema.`$ref`.isNullOrBlank()) {
@@ -441,7 +442,7 @@ object RestActionBuilderV3 {
         throw IllegalArgumentException("Cannot handle combination $type/$format")
     }
 
-    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: MutableList<String>): Gene {
+    private fun createObjectGene(name: String, schema: Schema<*>, swagger: OpenAPI, history: Deque<String>): Gene {
 
         val fields = schema.properties?.entries?.map {
             possiblyOptional(
@@ -492,19 +493,24 @@ object RestActionBuilderV3 {
     private fun createObjectFromReference(name: String,
                                           reference: String,
                                           swagger: OpenAPI,
-                                          history: MutableList<String> = mutableListOf()
+                                          history: Deque<String> = ArrayDeque()
     ): Gene {
+
+        val isRoot = history.isEmpty()
 
         /*
             We need to avoid cycles like A.B.A...
+            From root to leaves, how many repeated object should appear on a path?
+            Maybe this should be config to experiment with.
+            Anyway, it is a problem in scout-api
          */
-        if (history.contains(reference)) {
+        val cycleDepth = 2
+
+        if (history.count { r -> r == reference } > cycleDepth) {
             return CycleObjectGene("Cycle for: $reference")
         }
-        history.add(reference)
 
-
-        if (refCache.containsKey(reference)) {
+        if (isRoot && refCache.containsKey(reference)) {
             return refCache[reference]!!.copy()
         }
 
@@ -525,8 +531,17 @@ object RestActionBuilderV3 {
             return ObjectGene(name, listOf(), classDef)
         }
 
+        history.push(reference)
+
         val gene = getGene(name, schema, swagger, history)
-        refCache[reference] = gene
+
+        if(isRoot) {
+            GeneUtils.preventCycles(gene)
+            refCache[reference] = gene
+        }
+
+        history.pop()
+
         return gene
     }
 

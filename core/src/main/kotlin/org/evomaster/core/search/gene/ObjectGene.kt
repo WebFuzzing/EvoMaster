@@ -27,6 +27,13 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     }
 
+    init {
+        for(f in fields){
+            f.parent = this
+        }
+    }
+
+
     override fun copy(): Gene {
         return ObjectGene(name, fields.map(Gene::copy), refType)
     }
