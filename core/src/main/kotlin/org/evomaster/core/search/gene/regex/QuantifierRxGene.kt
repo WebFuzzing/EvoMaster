@@ -68,7 +68,7 @@ class QuantifierRxGene(
         copy.atoms.clear()
         this.atoms.forEach {
             val a = it.copy() as RxAtom
-            a.parent = this
+            a.parent = copy
             copy.atoms.add(a)
         }
 
