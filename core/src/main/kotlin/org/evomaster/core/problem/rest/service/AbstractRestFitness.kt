@@ -1,16 +1,14 @@
 package org.evomaster.core.problem.rest.service
 
-import com.google.gson.Gson
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoOperationDto
-import org.evomaster.client.java.instrumentation.shared.mongo.MongoFindOperation
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.mongo.FindOperation
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
@@ -161,17 +159,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 val extra = dto.extraHeuristics[actionIndex]
 
                 val toMinimize = mutableListOf<Double>()
-                extra.mongoExecutionDto?.mongoOperations?.forEach {
-                    val json = it.operationJsonStr
-                    val operationType = it.operationType
-                    val findOperation = Gson().fromJson(json, MongoFindOperation::class.java)
+                extra.mongoExecutionDto?.executedFindOperationDtos?.forEach {
+
                     val distance =
-                            if (findOperation.hasOperationFoundAnyDocuments()) {
+                            if (it.findResultDto.hasReturnedAnyDocument) {
                                 // Operation has found at least one document, therefore distance is 0.0
                                 0.0
                             } else {
+                                val findOperation = FindOperation.fromDto(it.findOperationDto)
                                 // compute distance
-                                computeDistance(operationType, findOperation)
+                                computeDistance(findOperation)
                             }
                     toMinimize += distance
                 }
@@ -188,7 +185,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         }
     }
 
-    private fun computeDistance(operationType: MongoOperationDto.Type?, findOperation: MongoFindOperation?): Double {
+    private fun computeDistance(findOperation: FindOperation): Double {
         return Double.MAX_VALUE
     }
 

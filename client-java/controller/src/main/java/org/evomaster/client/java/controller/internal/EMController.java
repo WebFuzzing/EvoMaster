@@ -1,12 +1,20 @@
 package org.evomaster.client.java.controller.internal;
 
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto;
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.mongo.FindOperation;
+import org.evomaster.client.java.controller.mongo.FindResult;
+import org.evomaster.client.java.controller.mongo.SummaryFindResult;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -353,6 +361,41 @@ public class EMController {
         return Response.status(204).entity(WrappedResponseDto.withNoData()).build();
     }
 
+
+    @Path(ControllerConstants.MONGO_COMMAND)
+    @Consumes(Formats.JSON_V1)
+    @POST
+    public Response executeMongoOperation(FindOperationDto dto, @Context HttpServletRequest httpServletRequest) {
+
+        assert trackRequestSource(httpServletRequest);
+
+        try {
+
+            FindOperation findOperation = FindOperation.fromDto(dto);
+            MongoDatabase database = this.sutController.getMongoClient().getDatabase(findOperation.getDatabaseName());
+            MongoCollection collection = database.getCollection(findOperation.getCollectionName());
+            FindIterable findIterable = collection.find(findOperation.getQuery());
+
+            boolean isNotEmpty = findIterable.iterator().hasNext();
+
+            FindResult findResult = new SummaryFindResult(isNotEmpty);
+
+            WrappedResponseDto<FindResultDto> wrappedResponse = WrappedResponseDto.withData(findResult.toDto());
+            return Response.status(200).entity(wrappedResponse).build();
+
+        } catch (RuntimeException e) {
+            /*
+                FIXME: ideally, would not need to do a try/catch on each single endpoint,
+                as could configure Jetty/Jackson to log all errors.
+                But even after spending hours googling it, haven't managed to configure it
+             */
+
+            String msg = "Thrown exception: " + e.getMessage();
+            SimpleLogger.error(msg, e);
+            return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
+        }
+
+    }
 
     @Path(ControllerConstants.DATABASE_COMMAND)
     @Consumes(Formats.JSON_V1)

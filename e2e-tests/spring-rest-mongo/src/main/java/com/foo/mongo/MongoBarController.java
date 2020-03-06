@@ -34,5 +34,13 @@ public class MongoBarController {
         }
     }
 
+    @RequestMapping(
+            method = RequestMethod.DELETE
+    )
+    public ResponseEntity delete() {
+        repository.deleteAll();
+        return ResponseEntity.ok().build();
+    }
+
 }
 

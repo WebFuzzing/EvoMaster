@@ -63,7 +63,7 @@ class FitnessValue(
     /**
      * Key -> action Id
      *
-     * Value -> info on how the Mongo database was accessed
+     * Value -> info on how the Mongo database was accessed during that action
      */
     private val mongoExecutions: MutableMap<Int, MongoExecution> = mutableMapOf()
 

@@ -7,7 +7,6 @@ import org.bson.Document;
 import org.bson.codecs.DecoderContext;
 import org.bson.codecs.DocumentCodec;
 import org.bson.conversions.Bson;
-import org.evomaster.client.java.instrumentation.shared.mongo.MongoFindOperation;
 
 import java.io.PrintStream;
 
@@ -50,8 +49,8 @@ public class MongoLogger {
         BsonDocument query = bson.toBsonDocument(BsonDocument.class, mongoCollection.getCodecRegistry());
         Document queryDoc = new DocumentCodec().decode(query.asBsonReader(), DecoderContext.builder().build());
 
-        MongoFindOperation op = new MongoFindOperation(dbName, collectionName, queryDoc, hasOperationFoundAnyDocument);
-        String jsonString = new Gson().toJson(op);
+        LoggedExecutedFindOperation log = new LoggedExecutedFindOperation(dbName, collectionName, queryDoc, hasOperationFoundAnyDocument);
+        String jsonString = new Gson().toJson(log);
         String mongoOperation = String.format("%s:%s", PREFIX, jsonString);
         outputStream.println(mongoOperation);
     }

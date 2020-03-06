@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Created by arcuri82 on 27-Jun-19.
+ * Created by jgaleotti
  */
 public class MongoInstrumentationTest {
 

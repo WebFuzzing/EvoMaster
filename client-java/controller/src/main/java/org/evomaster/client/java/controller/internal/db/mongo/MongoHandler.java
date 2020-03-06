@@ -1,7 +1,11 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
+import com.google.gson.Gson;
+import org.evomaster.client.java.controller.api.dto.database.execution.ExecutedFindOperationDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto;
+import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoOperationDto;
+import org.evomaster.client.java.instrumentation.mongo.LoggedExecutedFindOperation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +33,6 @@ public class MongoHandler {
     public void handle(String mongoOperation) {
         Objects.requireNonNull(mongoOperation);
 
-
         if (!extractMongoExecution) {
             return;
         }
@@ -53,14 +56,25 @@ public class MongoHandler {
         }
 
         MongoExecutionDto dto = new MongoExecutionDto();
-        dto.mongoOperations.addAll(mongoOperations.stream().map(MongoHandler::toDto).collect(Collectors.toList()));
+        dto.executedFindOperationDtos.addAll(mongoOperations.stream().map(MongoHandler::toDto).collect(Collectors.toList()));
         return dto;
     }
 
-    private static MongoOperationDto toDto(String op) {
-        MongoOperationDto dto = new MongoOperationDto();
-        dto.operationType = MongoOperationDto.Type.MONGO_FIND;
-        dto.operationJsonStr = op;
+    private static ExecutedFindOperationDto toDto(String loggedExecutedFindOperationJsonStr) {
+        LoggedExecutedFindOperation loggedExecutedFindOperation = new Gson().fromJson(loggedExecutedFindOperationJsonStr, LoggedExecutedFindOperation.class);
+
+        FindOperationDto findOperationDto = new FindOperationDto();
+        findOperationDto.databaseName = loggedExecutedFindOperation.getDatabaseName();
+        findOperationDto.collectionName = loggedExecutedFindOperation.getCollectionName();
+        findOperationDto.queryJsonStr =  new Gson().toJson(loggedExecutedFindOperation.getQueryDocument());
+
+        FindResultDto findResultDto = new FindResultDto();
+        findResultDto.findResultType = FindResultDto.FindResultType.SUMMARY;
+        findResultDto.hasReturnedAnyDocument = loggedExecutedFindOperation.hasReturnedAnyDocument();
+
+        ExecutedFindOperationDto dto = new ExecutedFindOperationDto();
+        dto.findOperationDto = findOperationDto;
+        dto.findResultDto = findResultDto;
         return dto;
     }
 }

@@ -54,8 +54,6 @@ public class MongoFooAppExtraFitnessTest extends SpringRestMongoTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "1",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForSQL", "true",
-                "--generateSqlDataWithSearch", "true",
                 "--heuristicsForMongo", "true",
                 "--maxTestSize", "1"
         };
@@ -86,7 +84,7 @@ public class MongoFooAppExtraFitnessTest extends SpringRestMongoTestBase {
         FitnessValue fv = ei.getFitness();
 
         //as no data in database, should get distance greater than zero
-        assertTrue(fv.averageExtraDistancesToMinimize(0)>0.0);
+        assertTrue(fv.averageExtraDistancesToMinimize(0) > 0.0);
 
     }
 
@@ -99,8 +97,6 @@ public class MongoFooAppExtraFitnessTest extends SpringRestMongoTestBase {
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "2",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForSQL", "true",
-                "--generateSqlDataWithSearch", "true",
                 "--heuristicsForMongo", "true",
                 "--maxTestSize", "1"
         };
@@ -112,7 +108,7 @@ public class MongoFooAppExtraFitnessTest extends SpringRestMongoTestBase {
                 }));
 
 
-        RestCallAction postAction = new RestCallAction("GET/api/mongobar",
+        RestCallAction postAction = new RestCallAction("POST/api/mongobar",
                 HttpVerb.POST, new RestPath("/api/mongobar"),
                 new LinkedList<Param>(),
                 new NoAuth(),
@@ -144,5 +140,130 @@ public class MongoFooAppExtraFitnessTest extends SpringRestMongoTestBase {
         assertEquals(0, fv.averageExtraDistancesToMinimize(1));
 
     }
+
+    @Test
+    public void testManyGets() {
+
+        String[] args = new String[]{
+                "--createTests", "true",
+                "--seed", "42",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxActionEvaluations", "2",
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--heuristicsForMongo", "true",
+                "--maxTestSize", "1"
+        };
+
+        Injector injector = Main.init(args);
+
+        FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
+                new TypeLiteral<FitnessFunction<RestIndividual>>() {
+                }));
+
+        RestCallAction getAction0 = new RestCallAction("GET/api/mongobar",
+                HttpVerb.GET, new RestPath("/api/mongobar"),
+                new LinkedList<Param>(),
+                new NoAuth(),
+                false,
+                null,
+                new LinkedList<String>(),
+                new HashMap<String, String>());
+
+        RestCallAction getAction1 = new RestCallAction("GET/api/mongobar",
+                HttpVerb.GET, new RestPath("/api/mongobar"),
+                new LinkedList<Param>(),
+                new NoAuth(),
+                false,
+                null,
+                new LinkedList<String>(),
+                new HashMap<String, String>());
+
+        RestIndividual individual = new RestIndividual(Arrays.asList(getAction0, getAction1),
+                SampleType.RANDOM,
+                new LinkedList<DbAction>(),
+                null,
+                null);
+
+        EvaluatedIndividual ei = ff.calculateCoverage(individual);
+        FitnessValue fv = ei.getFitness();
+
+        //as documents were not found, the distances should be non zero for both actions
+        assertTrue(fv.averageExtraDistancesToMinimize(0) > 0);
+        assertTrue(fv.averageExtraDistancesToMinimize(1) > 0);
+
+    }
+
+    @Test
+    public void testPostGetDeleteGet() {
+
+        String[] args = new String[]{
+                "--createTests", "true",
+                "--seed", "42",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxActionEvaluations", "4",
+                "--stoppingCriterion", "FITNESS_EVALUATIONS",
+                "--heuristicsForMongo", "true",
+                "--maxTestSize", "1"
+        };
+
+        Injector injector = Main.init(args);
+
+        FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
+                new TypeLiteral<FitnessFunction<RestIndividual>>() {
+                }));
+
+        RestCallAction postAction = new RestCallAction("POST/api/mongobar",
+                HttpVerb.POST, new RestPath("/api/mongobar"),
+                new LinkedList<Param>(),
+                new NoAuth(),
+                false,
+                null,
+                new LinkedList<String>(),
+                new HashMap<String, String>());
+
+
+        RestCallAction getAction0 = new RestCallAction("GET/api/mongobar",
+                HttpVerb.GET, new RestPath("/api/mongobar"),
+                new LinkedList<Param>(),
+                new NoAuth(),
+                false,
+                null,
+                new LinkedList<String>(),
+                new HashMap<String, String>());
+
+        RestCallAction deleteAction = new RestCallAction("DELETE/api/mongobar",
+                HttpVerb.DELETE, new RestPath("/api/mongobar"),
+                new LinkedList<Param>(),
+                new NoAuth(),
+                false,
+                null,
+                new LinkedList<String>(),
+                new HashMap<String, String>());
+
+        RestCallAction getAction1 = new RestCallAction("GET/api/mongobar",
+                HttpVerb.GET, new RestPath("/api/mongobar"),
+                new LinkedList<Param>(),
+                new NoAuth(),
+                false,
+                null,
+                new LinkedList<String>(),
+                new HashMap<String, String>());
+
+
+        RestIndividual individual = new RestIndividual(Arrays.asList(postAction, getAction0, deleteAction, getAction1),
+                SampleType.RANDOM,
+                new LinkedList<DbAction>(),
+                null,
+                null);
+
+        EvaluatedIndividual ei = ff.calculateCoverage(individual);
+        FitnessValue fv = ei.getFitness();
+
+        //as documents were not found, the distances should be non zero for both actions
+        assertTrue(fv.averageExtraDistancesToMinimize(1) == 0);
+        assertTrue(fv.averageExtraDistancesToMinimize(3) > 0);
+
+    }
+
 
 }
