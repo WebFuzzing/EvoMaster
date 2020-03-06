@@ -73,8 +73,8 @@ class RemoteController() : DatabaseExecutor {
         this.extractMongoExecutionInfo = computeMongoHeuristics || extractMongoExecutionInfo
     }
 
-    constructor(host: String, port: Int, computeSqlHeuristics: Boolean) :
-            this(host, port, computeSqlHeuristics, computeSqlHeuristics, false, false)
+    constructor(host: String, port: Int, computeSqlHeuristics: Boolean, computeMongoHeuristics: Boolean) :
+            this(host, port, computeSqlHeuristics, computeSqlHeuristics, computeMongoHeuristics, computeMongoHeuristics)
 
     @PostConstruct
     private fun initialize() {
@@ -82,6 +82,7 @@ class RemoteController() : DatabaseExecutor {
         port = config.sutControllerPort
         computeSqlHeuristics = config.heuristicsForSQL
         extractSqlExecutionInfo = config.extractSqlExecutionInfo
+        extractMongoExecutionInfo = config.extractMongoExecutionInfo
     }
 
     @PreDestroy
