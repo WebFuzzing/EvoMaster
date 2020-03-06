@@ -161,7 +161,10 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         Lazy.assert {
             mutatedIndividual.seeActions()
                     .flatMap { it.seeGenes() }
-                    .all { GeneUtils.verifyRootInvariant(it) }
+                    .all {
+                        GeneUtils.verifyRootInvariant(it) &&
+                                !GeneUtils.hasNonHandledCycles(it)
+                    }
         }
 
         // repair the initialization actions (if needed)

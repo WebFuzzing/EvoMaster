@@ -155,22 +155,22 @@ object GeneUtils {
     }
 
     /**
-        [applyEscapes] - applies various escapes needed for assertion generation.
-     Moved here to allow extension to other purposes (SQL escapes, for example) and to
-     allow a more consistent way of making changes.
+    [applyEscapes] - applies various escapes needed for assertion generation.
+    Moved here to allow extension to other purposes (SQL escapes, for example) and to
+    allow a more consistent way of making changes.
 
      * This includes escaping special chars for java and kotlin.
      * Currently, Strings containing "@" are split, on the assumption (somewhat premature, admittedly) that
      * the symbol signifies an object reference (which would likely cause the assertion to fail).
      * TODO: Tests are needed to make sure this does not break.
      * Escapes may have to be applied differently between:
-         * Java and Kotlin
-         * calls and assertions
+     * Java and Kotlin
+     * calls and assertions
 
      */
 
-    fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat): String{
-        val ret = when (mode){
+    fun applyEscapes(string: String, mode: EscapeMode = EscapeMode.NONE, format: OutputFormat): String {
+        val ret = when (mode) {
             EscapeMode.URI -> applyUriEscapes(string, format)
             EscapeMode.SQL -> applySqlEscapes(string, format)
             EscapeMode.ASSERTION -> applyAssertionEscapes(string, format)
@@ -186,7 +186,7 @@ object GeneUtils {
         return ret
     }
 
-    fun applyJsonEscapes(string: String, format: OutputFormat):String{
+    fun applyJsonEscapes(string: String, format: OutputFormat): String {
         val ret = string
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"")
@@ -197,28 +197,29 @@ object GeneUtils {
 
         return ret
     }
-    fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4):String{
+
+    fun applyExpectationEscapes(string: String, format: OutputFormat = OutputFormat.JAVA_JUNIT_4): String {
         val ret = string.replace("\\", """\\\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
 
-        when{
+        when {
             format.isKotlin() -> return ret.replace("\$", "\\\$")
             else -> return ret
         }
     }
 
-    fun applyUriEscapes(string: String, format: OutputFormat):String{
+    fun applyUriEscapes(string: String, format: OutputFormat): String {
         //val ret = URLEncoder.encode(string, "utf-8")
         val ret = string.replace("\\", "%5C")
                 .replace("\"", "%22")
                 .replace("\n", "%0A")
 
-        if(format.isKotlin()) return ret.replace("\$", "%24")
+        if (format.isKotlin()) return ret.replace("\$", "%24")
         else return ret
     }
 
-    fun applyTextEscapes(string: String, format: OutputFormat):String{
+    fun applyTextEscapes(string: String, format: OutputFormat): String {
         val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\"")
                 .replace("\n", "\\n")
@@ -226,7 +227,7 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        when{
+        when {
             format.isKotlin() -> return ret.replace("\$", "\\\$")
             else -> return ret
         }
@@ -245,7 +246,7 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+        if (format.isKotlin()) return ret.replace("\$", "\\\$")
         else return ret
     }
 
@@ -257,9 +258,9 @@ object GeneUtils {
                 .replace("\b", "\\b")
                 .replace("\t", "\\t")
 
-        if (format.isKotlin())  return ret.replace("\$", "\\\$")
+        if (format.isKotlin()) return ret.replace("\$", "\\\$")
                 .replace("\\\\u", "\\u")
-                //.replace("\$", "\${\'\$\'}")
+        //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret.replace("\\\\u", "\\u")
 
@@ -275,11 +276,11 @@ object GeneUtils {
     }
 
     fun applySqlEscapes(string: String, format: OutputFormat): String {
-        val ret =  string.replace("\\", """\\""")
+        val ret = string.replace("\\", """\\""")
                 .replace("\"", "\\\\\"")
 
-        if (format.isKotlin())  return ret.replace("\$", "\\\$")
-                //.replace("\$", "\${\'\$\'}")
+        if (format.isKotlin()) return ret.replace("\$", "\\\$")
+        //.replace("\$", "\${\'\$\'}")
         //ret.replace("\$", "\\\$")
         else return ret
     }
@@ -298,50 +299,82 @@ object GeneUtils {
     fun preventCycles(gene: Gene) {
 
         val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
-        if(cycles.isEmpty()){
+        if (cycles.isEmpty()) {
             //nothing to do
             return
         }
 
-        for(c in cycles){
+        for (c in cycles) {
 
             var p = c.parent
-            loop@ while(p != null){
-                when(p){
-                    is OptionalGene -> { p.forbidSelection(); break@loop}
-                    is ArrayGene<*> -> { p.forceToOnlyEmpty(); break@loop}
+            loop@ while (p != null) {
+                when (p) {
+                    is OptionalGene -> {
+                        p.forbidSelection(); break@loop
+                    }
+                    is ArrayGene<*> -> {
+                        p.forceToOnlyEmpty(); break@loop
+                    }
                     else -> p = p.parent
                 }
             }
 
-            if(p == null){
+            if (p == null) {
                 log.warn("Could not prevent cycle in ${gene.name} gene")
             }
         }
     }
 
+    fun hasNonHandledCycles(gene: Gene): Boolean {
+
+        val cycles = gene.flatView().filterIsInstance<CycleObjectGene>()
+        if (cycles.isEmpty()) {
+            return false
+        }
+
+        for (c in cycles) {
+
+            var p = c.parent
+            loop@ while (p != null) {
+                when {
+                    (p is OptionalGene && !p.selectable) ||
+                            (p is ArrayGene<*> && p.maxSize == 0)
+                    -> {
+                        break@loop
+                    }
+                    else -> p = p.parent
+                }
+            }
+
+            if(p==null) {
+                return true
+            }
+        }
+
+        return false
+    }
 
     /**
      * If the input gene is a root of a tree of genes (ie, it contains inside other genes),
      * then verify that the top ancestor of each child and their children is indeed this root.
      * Note: this is just testing for an invariant
      */
-    fun verifyRootInvariant(gene: Gene): Boolean{
+    fun verifyRootInvariant(gene: Gene): Boolean {
 
-        if(gene.parent != null){
+        if (gene.parent != null) {
             //not a root
             return true
         }
 
         val all = gene.flatView()
-        if(all.size == 1){
+        if (all.size == 1) {
             //no child
             return true
         }
 
-        for(g in all){
+        for (g in all) {
             val root = g.getRoot()
-            if(root != gene){
+            if (root != gene) {
                 return false
             }
         }

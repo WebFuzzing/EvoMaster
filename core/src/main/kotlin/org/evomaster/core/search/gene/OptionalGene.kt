@@ -31,7 +31,8 @@ class OptionalGene(name: String,
     /**
      * In some cases, we might want to prevent this gene from being active
      */
-    private var selectable = true
+    var selectable = true
+        private set
 
 
     init{
@@ -72,6 +73,9 @@ class OptionalGene(name: String,
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
+        if(!selectable){
+            return
+        }
 
         if (!forceNewValue) {
             isActive = randomness.nextBoolean()
@@ -88,6 +92,10 @@ class OptionalGene(name: String,
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
 
+        if(!selectable){
+            return
+        }
+
         if (!isActive) {
             isActive = true
         } else {
@@ -101,6 +109,11 @@ class OptionalGene(name: String,
     }
 
     override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+
+        if(!selectable){
+            return
+        }
+
         if(!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
             return
@@ -174,11 +187,11 @@ class OptionalGene(name: String,
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is OptionalGene){
-                log.warn("original ({}) should be DisruptiveGene", original::class.java.simpleName)
+                log.warn("original ({}) should be OptionalGene", original::class.java.simpleName)
                 return
             }
             if (mutated !is OptionalGene){
-                log.warn("mutated ({}) should be DisruptiveGene", mutated::class.java.simpleName)
+                log.warn("mutated ({}) should be OptionalGene", mutated::class.java.simpleName)
                 return
             }
             if (original.isActive == mutated.isActive && mutated.isActive)

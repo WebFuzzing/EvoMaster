@@ -411,9 +411,10 @@ object RestActionBuilderV3 {
 
                     val template = getGene(name + "_item", arrayType, swagger, history)
 
-                    if (template is CycleObjectGene) {
-                        return CycleObjectGene("<array> ${template.name}")
-                    }
+                    //Could still have an empty []
+//                    if (template is CycleObjectGene) {
+//                        return CycleObjectGene("<array> ${template.name}")
+//                    }
                     return ArrayGene(name, template)
                 } else {
                     LoggingUtil.uniqueWarn(log, "Invalid 'array' definition for '$name'")
@@ -504,9 +505,9 @@ object RestActionBuilderV3 {
             Maybe this should be config to experiment with.
             Anyway, it is a problem in scout-api
          */
-        val cycleDepth = 2
+        val cycleDepth = 1
 
-        if (history.count { r -> r == reference } > cycleDepth) {
+        if (history.count { it == reference } > cycleDepth) {
             return CycleObjectGene("Cycle for: $reference")
         }
 
