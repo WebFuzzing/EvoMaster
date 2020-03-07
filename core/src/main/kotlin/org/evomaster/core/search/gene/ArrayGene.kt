@@ -21,6 +21,11 @@ class ArrayGene<T>(
         where T : Gene {
 
     init {
+        if(template is CycleObjectGene){
+            maxSize = 0
+            elements.clear()
+        }
+
         if (elements.size > maxSize) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
@@ -74,6 +79,11 @@ class ArrayGene<T>(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+
+        if(maxSize == 0){
+            //nothing to do
+            return
+        }
 
         //maybe not so important here to complicate code to enable forceNewValue
 

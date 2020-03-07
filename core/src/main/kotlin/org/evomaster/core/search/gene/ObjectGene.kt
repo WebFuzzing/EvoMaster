@@ -59,7 +59,8 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
 
-        fields.forEach { it.randomize(randomness, forceNewValue, allGenes) }
+        fields.filter { it.isMutable()}
+                .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {

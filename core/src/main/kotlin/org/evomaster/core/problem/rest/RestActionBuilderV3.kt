@@ -292,7 +292,7 @@ object RestActionBuilderV3 {
     private fun possiblyOptional(gene: Gene, required: Boolean?): Gene {
 
         if (required != true) {
-            return OptionalGene(gene.name, gene)
+            return OptionalGene(gene.name, gene).also { GeneUtils.preventCycles(it) }
         }
 
         return gene
@@ -507,7 +507,7 @@ object RestActionBuilderV3 {
          */
         val cycleDepth = 1
 
-        if (history.count { it == reference } > cycleDepth) {
+        if (history.count { it == reference } >= cycleDepth) {
             return CycleObjectGene("Cycle for: $reference")
         }
 
