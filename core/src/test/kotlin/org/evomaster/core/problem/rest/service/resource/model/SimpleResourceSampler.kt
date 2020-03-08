@@ -1,9 +1,7 @@
 package org.evomaster.core.problem.rest.service.resource.model
 
 import io.swagger.parser.OpenAPIParser
-import io.swagger.parser.SwaggerParser
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.problem.rest.RestActionBuilder
 import org.evomaster.core.problem.rest.RestActionBuilderV3
 import org.evomaster.core.problem.rest.service.ResourceSampler
 import org.evomaster.core.search.Action

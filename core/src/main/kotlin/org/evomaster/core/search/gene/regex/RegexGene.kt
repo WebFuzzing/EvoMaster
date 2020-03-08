@@ -14,6 +14,10 @@ class RegexGene(
         val disjunctions: DisjunctionListRxGene
 ) : Gene(name) {
 
+    init {
+        disjunctions.parent = this
+    }
+
     override fun copy(): Gene {
         return RegexGene(name, disjunctions.copy() as DisjunctionListRxGene)
     }
