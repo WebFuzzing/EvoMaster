@@ -112,7 +112,7 @@ class StringGene(
     }
 
     override fun copy(): Gene {
-        return StringGene(name, value, minLength, maxLength, invalidChars, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy())
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy())
                 .also {
                     it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
                     it.specializations.addAll(this.specializations)
@@ -121,6 +121,8 @@ class StringGene(
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
                     it.mutatedIndex = this.mutatedIndex
                 }
+        copy.specializationGenes.forEach { it.parent = copy }
+        return copy
     }
 
     fun getSpecializationGene() : Gene?{
@@ -313,7 +315,10 @@ class StringGene(
 
         if(toAddGenes.size > 0){
             selectionUpdatedSinceLastMutation = true
-            toAddGenes.forEach { it.randomize(randomness, false, listOf()) }
+            toAddGenes.forEach {
+                it.randomize(randomness, false, listOf())
+                it.parent = this
+            }
             specializationGenes.addAll(toAddGenes)
             specializations.addAll(toAddSpecs)
         }

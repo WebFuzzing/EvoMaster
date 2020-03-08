@@ -28,6 +28,12 @@ class DisjunctionRxGene(
      */
     var extraPostfix = false
 
+    init {
+        for(t in terms){
+            t.parent = this
+        }
+    }
+
 
     override fun copy(): Gene {
         val copy = DisjunctionRxGene(name, terms.map { it.copy() as RxTerm }, matchStart, matchEnd)

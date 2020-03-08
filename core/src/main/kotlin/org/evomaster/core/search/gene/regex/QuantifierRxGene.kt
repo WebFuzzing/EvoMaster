@@ -49,7 +49,9 @@ class QuantifierRxGene(
                 this means this whole gene is immutable. still need to initialize it
              */
             for(i in 0 until min){
-                atoms.add(template.copy() as RxAtom)
+                val a = template.copy() as RxAtom
+                a.parent = this
+                atoms.add(a)
             }
         }
     }
@@ -64,7 +66,11 @@ class QuantifierRxGene(
                 max
         )
         copy.atoms.clear()
-        this.atoms.forEach { copy.atoms.add(it.copy() as RxAtom) }
+        this.atoms.forEach {
+            val a = it.copy() as RxAtom
+            a.parent = copy
+            copy.atoms.add(a)
+        }
 
         return copy
     }
@@ -110,6 +116,7 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
         val base = template.copy() as RxAtom
+        base.parent = this
         if (base.isMutable()) {
             base.randomize(randomness, forceNewValue, allGenes)
         }
@@ -135,7 +142,11 @@ class QuantifierRxGene(
         } else {
             //different size, so clear and create new copies
             this.atoms.clear()
-            other.atoms.forEach{this.atoms.add(it.copy() as RxAtom)}
+            other.atoms.forEach{
+                val a = it.copy() as RxAtom
+                a.parent = this
+                this.atoms.add(a)
+            }
         }
     }
 

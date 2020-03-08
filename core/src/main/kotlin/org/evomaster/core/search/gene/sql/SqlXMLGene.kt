@@ -20,6 +20,10 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
         private val log: Logger = LoggerFactory.getLogger(SqlXMLGene::class.java)
     }
 
+    init {
+        objectGene.parent = this
+    }
+
     override fun copy(): Gene = SqlXMLGene(
             name,
             objectGene = this.objectGene.copy() as ObjectGene)
