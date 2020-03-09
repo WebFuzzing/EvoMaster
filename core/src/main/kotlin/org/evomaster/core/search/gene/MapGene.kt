@@ -33,6 +33,10 @@ class MapGene<T>(
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
         }
+
+        for(e in elements){
+            e.parent = this
+        }
     }
 
     companion object{
@@ -62,7 +66,7 @@ class MapGene<T>(
         return this.elements.size == other.elements.size
                 && this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
-        }.all { it == true }
+        }.all { it }
     }
 
 
@@ -74,6 +78,7 @@ class MapGene<T>(
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
+            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
@@ -89,6 +94,7 @@ class MapGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
+            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)

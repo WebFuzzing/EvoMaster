@@ -10,7 +10,11 @@ import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
 
-class BooleanGene(name: String, var value: Boolean = true, val valueMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1)) : Gene(name) {
+class BooleanGene(
+        name: String,
+        var value: Boolean = true,
+        val valueMutationInfo : IntMutationUpdate = IntMutationUpdate(0, 1)
+) : Gene(name) {
 
 
     override fun copy(): Gene {

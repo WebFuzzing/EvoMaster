@@ -21,6 +21,33 @@ abstract class Gene(var name: String) {
         }
     }
 
+    /**
+     *  A gene could be inside a gene, in a tree-like structure.
+     *  So for each gene, but the root, we keep track of its parent.
+     *
+     *  When a gene X is created with a child Y, then X is responsible
+     *  to mark itself as parent of Y
+     */
+    var parent : Gene? = null
+
+    /**
+     * Follow the parent's path until the root of gene tree,
+     * which could be this same gene
+     */
+    fun getRoot() : Gene{
+        var curr = this
+        while(curr.parent != null){
+            curr = curr.parent!!
+        }
+        return curr
+    }
+
+    /**
+     * Make a copy of this gene.
+     *
+     * Note: the [parent] of this gene will be [null], but all children
+     * will have the correct parent
+     */
     abstract fun copy() : Gene
 
     /**

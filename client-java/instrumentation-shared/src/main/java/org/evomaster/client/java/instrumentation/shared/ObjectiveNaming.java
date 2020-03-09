@@ -43,9 +43,19 @@ public class ObjectiveNaming {
      */
     public static final String SUCCESS_CALL = "Success_Call";
 
+    /**
+     * Numeric comparison for non-integers, ie long, double and float
+     */
+    public static final String NUMERIC_COMPARISON = "NumericComparison";
+
 
     public static String classObjectiveName(String className){
         String name = CLASS + "_" + ClassName.get(className).getFullNameWithDots();
+        return name.intern();
+    }
+
+    public static String numericComparisonObjectiveName(String id, int res){
+        String name = NUMERIC_COMPARISON + "_" + id + "_" + (res == 0 ? "EQ" : (res < 0 ? "LT" : "GT"));
         return name.intern();
     }
 
