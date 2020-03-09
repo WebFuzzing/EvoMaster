@@ -4,7 +4,6 @@ import org.evomaster.client.java.controller.api.dto.database.execution.MongoExec
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutedFindOperationDto
 import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto
 import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto
-import org.evomaster.client.java.controller.mongo.ExecutedFindOperation
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
