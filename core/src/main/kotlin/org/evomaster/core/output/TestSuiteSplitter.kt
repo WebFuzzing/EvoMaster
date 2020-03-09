@@ -16,9 +16,6 @@ import org.evomaster.core.search.service.SearchTimeController
  * Created by arcuri82 on 11-Nov-19.
  */
 object TestSuiteSplitter {
-    @Inject
-    private lateinit var time: SearchTimeController
-
     fun split(solution: Solution<*>,
               type: EMConfig.TestSuiteSplitType) : SplitResult { //List<Solution<*>>{
         return split(solution as Solution<RestIndividual>, type, PartialOracles())
@@ -94,6 +91,7 @@ object TestSuiteSplitter {
                     metric = metric)
         }
         solution.clusteringTime = ((System.currentTimeMillis() - clusteringStart) / 1000).toInt()
+        splitResult.clusteringTime = System.currentTimeMillis() - clusteringStart
         //If clustering is done, the executive summary is, essentially, for free.
         splitResult.executiveSummary = execSummary(clusters, solution, splitResult)
         return clusters

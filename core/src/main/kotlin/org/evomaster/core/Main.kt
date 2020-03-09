@@ -154,11 +154,13 @@ class Main {
 
             writeImpacts(injector, solution)
 
-            writeStatistics(injector, solution)
+            //writeStatistics(injector, solution)
 
             writeCoveredTargets(injector, solution)
 
             writeTests(injector, solution, controllerInfo)
+
+            writeStatistics(injector, solution)
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
@@ -348,6 +350,8 @@ class Main {
             writer.setObjectGenerator(objGenerator)
 
             val splitResult = TestSuiteSplitter.split(solution, config.testSuiteSplitType, partialOracles)
+
+            solution.clusteringTime = splitResult.clusteringTime.toInt()
 
             splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
