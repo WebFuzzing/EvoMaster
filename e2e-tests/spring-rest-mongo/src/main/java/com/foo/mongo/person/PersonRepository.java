@@ -14,4 +14,19 @@ public interface PersonRepository extends PagingAndSortingRepository<Person, Lon
 
     Person findByAddress(Address address);
 
+    List<Person> findByAgeGreaterThan(int age);
+
+    List<Person> findByAgeLessThan(int age);
+
+    List<Person> findByAgeBetween(int from, int to);
+
+    List<Person> findByFirstNameNotNull();
+
+    List<Person> findByFirstNameNull();
+
+    List<Person> findByFirstNameLike(String name);
+
+    List<Person> findByFirstNameRegex(String name);
+
+    List<Person> findByAge(int age);
 }

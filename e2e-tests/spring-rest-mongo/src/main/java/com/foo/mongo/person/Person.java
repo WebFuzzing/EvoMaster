@@ -9,6 +9,15 @@ public class Person {
     private String firstName;
     private String lastName;
     private Address address;
+    private int age;
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+
+    public int getAge() {
+        return age;
+    }
 
     public Address getAddress() {
         return address;
@@ -47,6 +56,7 @@ public class Person {
         dto.firstName = this.firstName;
         dto.lastName = this.lastName;
         dto.address = this.address.toDto();
+        dto.age = this.age;
         return dto;
     }
 
@@ -55,6 +65,7 @@ public class Person {
         p.firstName = dto.firstName;
         p.lastName= dto.lastName;
         p.address = Address.fromDto(dto.address);
+        p.age = dto.age;
         return p;
     }
 }

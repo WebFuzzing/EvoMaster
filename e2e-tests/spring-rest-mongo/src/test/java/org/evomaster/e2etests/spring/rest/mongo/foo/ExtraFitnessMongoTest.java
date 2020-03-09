@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ExtraFitnessMongoFooAppTest extends SpringRestMongoTestBase {
+public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
 
     private static final MyMongoAppEmbeddedController sutController = new MyMongoAppEmbeddedController();
 

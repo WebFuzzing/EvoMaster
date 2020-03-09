@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ManualMongoFooAppTest extends SpringRestMongoTestBase {
+public class ManualMongoTest extends SpringRestMongoTestBase {
 
     private static final MyMongoAppEmbeddedController sutController = new MyMongoAppEmbeddedController();
 
