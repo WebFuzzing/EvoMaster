@@ -1,13 +1,9 @@
-package org.evomaster.e2etests.spring.rest.mongo.customer;
+package org.evomaster.e2etests.spring.rest.mongo.foo;
 
 import com.foo.mongo.MyMongoAppEmbeddedController;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import io.swagger.models.Swagger;
-import io.swagger.parser.SwaggerParser;
-import org.evomaster.client.java.controller.api.Formats;
-import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
 import org.evomaster.core.Main;
 import org.evomaster.core.database.DbAction;
@@ -27,11 +23,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 
-import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MongoFooAppTest extends SpringRestMongoTestBase {
+public class ExtraFitnessMongoFooAppTest extends SpringRestMongoTestBase {
 
     private static final MyMongoAppEmbeddedController sutController = new MyMongoAppEmbeddedController();
 
@@ -49,92 +44,6 @@ public class MongoFooAppTest extends SpringRestMongoTestBase {
     @AfterEach
     public void turnOffTracker() {
         StandardOutputTracker.setTracker(false, sutController);
-    }
-
-    @Test
-    public void testSwaggerJSON() {
-
-        SutInfoDto dto = remoteController.getSutInfo();
-
-        String swaggerJson = given().accept(Formats.JSON_V1)
-                .get(dto.restProblem.swaggerJsonUrl)
-                .then()
-                .statusCode(200)
-                .extract().asString();
-
-        Swagger swagger = new SwaggerParser().parse(swaggerJson);
-
-        assertEquals("/", swagger.getBasePath());
-        assertEquals(3, swagger.getPaths().size());
-    }
-
-    @Test
-    public void testManualPostAndThenGet() {
-        String url = baseUrlOfSut + "/api/mymongoapp/foo";
-
-        given().post(url)
-                .then()
-                .statusCode(200);
-
-        given().get(url)
-                .then()
-                .statusCode(200);
-    }
-
-    @Test
-    public void testManualGetOnEmpty() {
-        String url = baseUrlOfSut + "/api/mymongoapp/foo";
-
-        given()
-                .get(url)
-                .then()
-                .statusCode(404);
-    }
-
-    @Test
-    public void testManualPostGetDeleteGet() {
-        String url = baseUrlOfSut + "/api/mymongoapp/foo";
-
-        given().post(url)
-                .then()
-                .statusCode(200);
-
-        given().get(url)
-                .then()
-                .statusCode(200);
-
-        given().delete(url)
-                .then()
-                .statusCode(200);
-
-        given().get(url)
-                .then()
-                .statusCode(404);
-
-    }
-
-    @Test
-    public void testManualDeleteOnEmpty() {
-        String url = baseUrlOfSut + "/api/mymongoapp/foo";
-
-        given()
-                .delete(url)
-                .then()
-                .statusCode(404);
-    }
-
-
-    @Test
-    public void testManualDuplicatePost() {
-        String url = baseUrlOfSut + "/api/mymongoapp/foo";
-
-        given().post(url)
-                .then()
-                .statusCode(200);
-
-        given().post(url)
-                .then()
-                .statusCode(400);
     }
 
     @Test

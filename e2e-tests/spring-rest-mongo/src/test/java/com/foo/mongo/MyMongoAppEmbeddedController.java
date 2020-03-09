@@ -10,6 +10,6 @@ public class MyMongoAppEmbeddedController extends SpringRestMongoController {
 
     @Override
     public String getPackagePrefixesToCover() {
-        return "com.foo.customer";
+        return "com.foo.mongo";
     }
 }

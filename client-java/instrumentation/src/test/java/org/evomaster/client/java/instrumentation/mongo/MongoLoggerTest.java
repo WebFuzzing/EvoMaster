@@ -17,6 +17,7 @@ public class MongoLoggerTest {
     public void testLogFind() {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         MongoLogger.getInstance().reset();
+
         MongoLogger.getInstance().setOutputStream(new PrintStream(byteArrayOutputStream));
         MockedMongoCollection mockedMongoCollection = new MockedMongoCollection();
         mockedMongoCollection.setNamespace(new MongoNamespace("mydb.mycollection"));

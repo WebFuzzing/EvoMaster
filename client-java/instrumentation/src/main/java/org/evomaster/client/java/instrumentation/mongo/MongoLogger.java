@@ -12,11 +12,9 @@ import java.io.PrintStream;
 
 public class MongoLogger {
 
-    private static final PrintStream DEFAULT_OUT = System.out;
+    private static MongoLogger instance = null;
 
-    private static MongoLogger instance;
-
-    private PrintStream outputStream;
+    private PrintStream outputStream = null;
 
     public synchronized static MongoLogger getInstance() {
         if (instance == null) {
@@ -26,19 +24,16 @@ public class MongoLogger {
     }
 
     public void setOutputStream(PrintStream os) {
-        outputStream = os;
+        this.outputStream = os;
     }
 
     private MongoLogger() {
-        initLogger();
+
     }
 
-    private void initLogger() {
-        outputStream = DEFAULT_OUT;
-    }
 
     public void reset() {
-        initLogger();
+        this.outputStream = null;
     }
 
     public static final String PREFIX = "MONGO_LOGGER";
@@ -52,6 +47,12 @@ public class MongoLogger {
         LoggedExecutedFindOperation log = new LoggedExecutedFindOperation(dbName, collectionName, queryDoc, hasOperationFoundAnyDocument);
         String jsonString = new Gson().toJson(log);
         String mongoOperation = String.format("%s:%s", PREFIX, jsonString);
-        outputStream.println(mongoOperation);
+
+        if (outputStream == null) {
+            // System.out could be changed during execution
+            System.out.println(mongoOperation);
+        } else {
+            outputStream.println(mongoOperation);
+        }
     }
 }
