@@ -23,6 +23,7 @@ public class PersonRest {
     }
 
     @RequestMapping(path = "/api/mongoperson/findByLastName",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
             method = {RequestMethod.GET})
     public List<PersonDto> findByLastName(@RequestBody String lastName) {
         List<Person> persons = repository.findByLastName(lastName);
@@ -31,6 +32,7 @@ public class PersonRest {
     }
 
     @RequestMapping(path = "/api/mongoperson/findByAgeGreaterThan",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
             method = {RequestMethod.GET})
     public List<PersonDto> findByAgeGreaterThan(@RequestBody int age) {
         List<Person> persons = repository.findByAgeGreaterThan(age);
@@ -48,6 +50,7 @@ public class PersonRest {
     }
 
     @RequestMapping(path = "/api/mongoperson/findByAgeLessThan",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
             method = {RequestMethod.GET})
     public List<PersonDto> findByAgeLessThan(@RequestBody int age) {
         List<Person> persons = repository.findByAgeLessThan(age);
@@ -55,9 +58,9 @@ public class PersonRest {
         return personDtos;
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByAge",
+    @RequestMapping(path = "/api/mongoperson/findByAge/{age}",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByAge(@RequestBody int age) {
+    public List<PersonDto> findByAge(@PathVariable int age) {
         List<Person> persons = repository.findByAge(age);
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
@@ -89,6 +92,7 @@ public class PersonRest {
     }
 
     @RequestMapping(path = "/api/mongoperson/findByFirstNameLike",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
             method = {RequestMethod.GET})
     public List<PersonDto> findByFirstNameLike(@RequestBody String name) {
         List<Person> persons = repository.findByFirstNameLike(name);
@@ -97,6 +101,7 @@ public class PersonRest {
     }
 
     @RequestMapping(path = "/api/mongoperson/findByFirstNameRegex",
+            consumes = MediaType.APPLICATION_JSON_VALUE,
             method = {RequestMethod.GET})
     public List<PersonDto> findByFirstNameRegex(@RequestBody String name) {
         List<Person> persons = repository.findByFirstNameRegex(name);

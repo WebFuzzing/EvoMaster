@@ -124,9 +124,8 @@ public class MongoQueryTest extends SpringRestMongoTestBase {
 
     private static PersonDto[] findByAge(int age) {
         return given()
-                .contentType(ContentType.JSON)
-                .body(age)
-                .get(baseUrlOfSut + "/api/mongoperson/findByAge")
+                .accept("*/*")
+                .get(baseUrlOfSut + "/api/mongoperson/findByAge/{age}", age)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -147,7 +146,7 @@ public class MongoQueryTest extends SpringRestMongoTestBase {
     private static PersonDto[] findByAgeBetween(int from, int to) {
         return given()
                 .accept("*/*")
-                .get(baseUrlOfSut + "/api/mongoperson/findByAgeBetween/{from}/{to}",from,to)
+                .get(baseUrlOfSut + "/api/mongoperson/findByAgeBetween/{from}/{to}", from, to)
                 .then()
                 .statusCode(200)
                 .extract()
