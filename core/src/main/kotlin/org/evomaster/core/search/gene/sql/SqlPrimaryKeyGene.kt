@@ -33,6 +33,8 @@ class SqlPrimaryKeyGene(name: String,
         if (uniqueId < 0) {
             throw IllegalArgumentException("Negative unique id")
         }
+
+        gene.parent = this
     }
 
     companion object{

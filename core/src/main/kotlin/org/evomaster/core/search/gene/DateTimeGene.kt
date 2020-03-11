@@ -34,6 +34,13 @@ open class DateTimeGene(
         val log : Logger = LoggerFactory.getLogger(DateTimeGene::class.java)
     }
 
+    init {
+        date.parent = this
+        time.parent = this
+    }
+
+
+
     override fun copy(): Gene = DateTimeGene(
             name,
             date.copy() as DateGene,

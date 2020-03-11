@@ -13,6 +13,13 @@ class DisjunctionListRxGene(
 
     var activeDisjunction: Int = 0
 
+    init {
+        for(d in disjunctions){
+            d.parent = this
+        }
+    }
+
+
     override fun copy(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
         copy.activeDisjunction = this.activeDisjunction
