@@ -108,4 +108,16 @@ public class PersonRest {
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
     }
+
+    @RequestMapping(path = "/api/mongoperson/addJoeBlack",
+            method = {RequestMethod.POST})
+    public void addJoeBlack() {
+        Person person = new Person();
+        person.setFirstName("Joe");
+        person.setLastName("Black");
+        person.setAge(33);
+        repository.save(person);
+    }
+
+
 }

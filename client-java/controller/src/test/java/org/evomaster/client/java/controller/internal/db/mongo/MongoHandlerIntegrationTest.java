@@ -1,11 +1,9 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
-import com.google.gson.Gson;
 import com.mongodb.client.MongoCollection;
 import io.restassured.http.ContentType;
 import org.apache.http.HttpStatus;
-import org.bson.BsonDocument;
-import org.bson.Document;
+import org.bson.*;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.WrappedResponseDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto;
@@ -13,12 +11,18 @@ import org.evomaster.client.java.controller.api.dto.database.execution.FindResul
 import org.evomaster.client.java.instrumentation.mongo.MongoLogger;
 import org.junit.jupiter.api.*;
 
+import java.util.List;
+import java.util.Map;
+
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
 import static org.evomaster.client.java.controller.api.ControllerConstants.MONGO_COMMAND;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MongoHandlerIntegrationTest extends MongoTestTemplate {
+
+    public static final String DATABASE_NAME = "testdb";
 
     private static InstrumentedSutStarter starter;
     private static MongoFakeSutController sutController;
@@ -34,7 +38,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
 
     @BeforeEach
     public void dropMongoDatabase() {
-        mongoClient.getDatabase("testdb").drop();
+        mongoClient.getDatabase(DATABASE_NAME).drop();
         sutController.initMongoClient();
     }
 
@@ -62,7 +66,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         startNewTest(url);
         assertTrue(sutController.getMongoHandler().getMongoExecutionDto().executedFindOperationDtos.isEmpty());
 
-        MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
+        MongoCollection<Document> mongoCollection = mongoClient.getDatabase(DATABASE_NAME).getCollection("customers");
 
         // find({}) returns no element
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
@@ -76,7 +80,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         startNewTest(url);
         assertTrue(sutController.getMongoHandler().getMongoExecutionDto().executedFindOperationDtos.isEmpty());
 
-        MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
+        MongoCollection<Document> mongoCollection = mongoClient.getDatabase(DATABASE_NAME).getCollection("customers");
 
         // log find({}) operation
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
@@ -95,7 +99,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         startNewTest(url);
         assertTrue(sutController.getMongoHandler().getMongoExecutionDto().executedFindOperationDtos.isEmpty());
 
-        MongoCollection<Document> mongoCollection = mongoClient.getDatabase("testdb").getCollection("customers");
+        MongoCollection<Document> mongoCollection = mongoClient.getDatabase(DATABASE_NAME).getCollection("customers");
 
         // find({}) returns no element
         MongoLogger.getInstance().logFind(mongoCollection, new BsonDocument(), true);
@@ -114,23 +118,25 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         startNewTest(url);
 
         FindOperationDto requestDto = new FindOperationDto();
-        requestDto.databaseName = "mydb";
+        requestDto.databaseName = DATABASE_NAME;
         requestDto.collectionName = "mycollection";
         requestDto.queryJsonStr = new BsonDocument().toJson();
 
-        this.mongoClient.getDatabase("mydb").getCollection("mycollection").deleteMany(new BsonDocument());
+        this.mongoClient.getDatabase(DATABASE_NAME).getCollection("mycollection").deleteMany(new BsonDocument());
 
-        String jsonString = given().contentType(ContentType.JSON)
+        Object dataResponse = given().contentType(ContentType.JSON)
                 .body(requestDto)
                 .post(url + MONGO_COMMAND)
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .extract()
-                .as(WrappedResponseDto.class).data.toString();
+                .as(WrappedResponseDto.class).data;
 
-        FindResultDto responseDto = new Gson().fromJson(jsonString, FindResultDto.class);
+        assertTrue(dataResponse instanceof Map);
+        Map responseMap = (Map) dataResponse;
 
-        assertFalse(responseDto.hasReturnedAnyDocument);
+
+        assertEquals(false, responseMap.get(FindResultDto.HAS_RETURNED_ANY_DOCUMENT_FIELD_NAME));
     }
 
     @Test
@@ -138,23 +144,75 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         startNewTest(url);
 
         Document anEmptyDocument = new Document();
-        this.mongoClient.getDatabase("mydb").getCollection("mycollection").insertOne(anEmptyDocument);
+        this.mongoClient.getDatabase(DATABASE_NAME).getCollection("mycollection").insertOne(anEmptyDocument);
 
         FindOperationDto requestDto = new FindOperationDto();
-        requestDto.databaseName = "mydb";
+        requestDto.databaseName = DATABASE_NAME;
         requestDto.collectionName = "mycollection";
         requestDto.queryJsonStr = new BsonDocument().toJson();
 
-        String jsonString = given().contentType(ContentType.JSON)
+        Object responseData = given().contentType(ContentType.JSON)
                 .body(requestDto)
                 .post(url + MONGO_COMMAND)
                 .then()
                 .statusCode(HttpStatus.SC_OK)
                 .extract()
-                .as(WrappedResponseDto.class).data.toString();
+                .as(WrappedResponseDto.class).data;
 
-        FindResultDto responseDto = new Gson().fromJson(jsonString, FindResultDto.class);
+        assertTrue(responseData instanceof Map);
+        Map responseMap = (Map) responseData;
 
-        assertTrue(responseDto.hasReturnedAnyDocument);
+        assertEquals(true, responseMap.get(FindResultDto.HAS_RETURNED_ANY_DOCUMENT_FIELD_NAME));
+
+        assertTrue(responseMap.get(FindResultDto.DOCUMENTS_FIELD_NAME) instanceof List);
+        List documents = (List) responseMap.get(FindResultDto.DOCUMENTS_FIELD_NAME);
+        assertEquals(1, documents.size());
+    }
+
+    @Test
+    public void postMongoCommandOnNonEmptyDocuments() {
+        startNewTest(url);
+
+        Document aDocument = new Document();
+        aDocument.append("firstName", new BsonString("John"));
+        aDocument.append("lastName", new BsonString("Doe"));
+        aDocument.append("age", new BsonInt32(32));
+        aDocument.append("address", new BsonNull());
+        this.mongoClient.getDatabase(DATABASE_NAME).getCollection("mycollection").insertOne(aDocument);
+
+        FindOperationDto requestDto = new FindOperationDto();
+        requestDto.databaseName = DATABASE_NAME;
+        requestDto.collectionName = "mycollection";
+        requestDto.queryJsonStr = new BsonDocument().toJson();
+
+        WrappedResponseDto response = given().contentType(ContentType.JSON)
+                .body(requestDto)
+                .post(url + MONGO_COMMAND)
+                .then()
+                .statusCode(HttpStatus.SC_OK)
+                .extract()
+                .as(WrappedResponseDto.class);
+
+        assertTrue(response.data instanceof Map);
+
+        BasicBSONObject doc = new BasicBSONObject();
+        doc.putAll((Map) response.data);
+
+        assertTrue(doc.getBoolean(FindResultDto.HAS_RETURNED_ANY_DOCUMENT_FIELD_NAME));
+        assertTrue(doc.get(FindResultDto.DOCUMENTS_FIELD_NAME) instanceof List);
+
+        List documents = (List) doc.get(FindResultDto.DOCUMENTS_FIELD_NAME);
+        assertEquals(1, documents.size());
+
+        assertTrue(documents.get(0) instanceof Map);
+
+        BasicBSONObject storedDoc = new BasicBSONObject();
+        storedDoc.putAll((Map) documents.get(0));
+
+        assertEquals("John", storedDoc.get("firstName"));
+        assertEquals("Doe", storedDoc.get("lastName"));
+        assertEquals(null, storedDoc.get("address"));
+        assertEquals(32, storedDoc.get("age"));
+
     }
 }

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
+import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto
+import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig
@@ -299,6 +301,9 @@ class RemoteController() : DatabaseExecutor {
         return checkResponse(response, "Failed to register new action")
     }
 
+
+
+
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
 
         val response = makeHttpCall {
@@ -340,6 +345,24 @@ class RemoteController() : DatabaseExecutor {
         }
 
         return true
+    }
+
+    fun executeMongoOperationAndGetQueryResults(findOperationDto: FindOperationDto): FindResultDto? {
+
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.MONGO_COMMAND)
+                    .request()
+                    .post(Entity.entity(findOperationDto, MediaType.APPLICATION_JSON_TYPE))
+        }
+
+        val wrappedResponseDto = getDto(response, object : GenericType<WrappedResponseDto<FindResultDto>>() {})
+
+        if (!checkResponse(response, wrappedResponseDto, "Failed to execute Mongo command")) {
+            return null
+        }
+
+        return wrappedResponseDto?.data
     }
 
     override fun executeDatabaseCommandAndGetQueryResults(dto: DatabaseCommandDto): QueryResultDto? {

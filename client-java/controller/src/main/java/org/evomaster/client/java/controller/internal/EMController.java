@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.internal;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
@@ -12,9 +13,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Database
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.evomaster.client.java.controller.mongo.DetailedFindResult;
 import org.evomaster.client.java.controller.mongo.FindOperation;
-import org.evomaster.client.java.controller.mongo.FindResult;
-import org.evomaster.client.java.controller.mongo.SummaryFindResult;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -31,6 +31,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 /**
  * Note: usually a RESTful webservice would be stateless.
@@ -374,11 +375,11 @@ public class EMController {
             FindOperation findOperation = FindOperation.fromDto(dto);
             MongoDatabase database = this.sutController.getMongoClient().getDatabase(findOperation.getDatabaseName());
             MongoCollection collection = database.getCollection(findOperation.getCollectionName());
-            FindIterable findIterable = collection.find(findOperation.getQuery());
+            //FindIterable<Document> findIterable = collection.find(findOperation.getQuery());
+            FindIterable<Document> findIterable = collection.find();
 
-            boolean isNotEmpty = findIterable.iterator().hasNext();
-
-            FindResult findResult = new SummaryFindResult(isNotEmpty);
+            DetailedFindResult findResult = new DetailedFindResult();
+            StreamSupport.stream(findIterable.spliterator(), false).forEach(findResult::addDocument);
 
             WrappedResponseDto<FindResultDto> wrappedResponse = WrappedResponseDto.withData(findResult.toDto());
             return Response.status(200).entity(wrappedResponse).build();

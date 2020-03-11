@@ -1,15 +1,19 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import com.mongodb.client.model.Filters
+import org.bson.Document
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.FindOperation
 import org.evomaster.core.mongo.MongoExecution
+import org.evomaster.core.mongo.MongoHeuristicCalculator
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -168,7 +172,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                             } else {
                                 val findOperation = FindOperation.fromDto(it.findOperationDto)
                                 // compute distance
-                                computeDistance(findOperation)
+                                computeMinDistance(findOperation.databaseName,
+                                        findOperation.collectionName,
+                                        findOperation.queryDocument)
                             }
                     toMinimize += distance
                 }
@@ -185,8 +191,23 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         }
     }
 
-    private fun computeDistance(findOperation: FindOperation): Double {
-        return Double.MAX_VALUE
+    private fun computeMinDistance(databaseName: String, collectionName: String, filter: Document): Double {
+
+        val findAllDocumentsDto = FindOperationDto()
+        findAllDocumentsDto.databaseName = databaseName
+        findAllDocumentsDto.collectionName = collectionName
+        findAllDocumentsDto.queryJsonStr = "{}"
+
+        val retrievedDocumentsDto = this.rc.executeMongoOperationAndGetQueryResults(findAllDocumentsDto)
+
+        return retrievedDocumentsDto
+                ?.documents
+                ?.toList()
+                ?.map {
+                    MongoHeuristicCalculator().computeDistance(it, filter)
+                }
+                ?.toList()?.min()
+                ?: Double.MAX_VALUE
     }
 
     /**
