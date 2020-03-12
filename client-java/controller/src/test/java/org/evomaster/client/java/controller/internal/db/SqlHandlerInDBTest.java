@@ -6,12 +6,14 @@ import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.TestResultsDto;
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.evomaster.client.java.controller.api.ControllerConstants.BASE_PATH;
 import static org.evomaster.client.java.controller.api.ControllerConstants.TEST_RESULTS;
 import static org.junit.jupiter.api.Assertions.*;
+import java.sql.SQLException;
 
 /**
  * Created by arcuri82 on 24-Apr-19.
@@ -39,20 +41,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
-            String url = start(starter);
-            url += BASE_PATH;
-
-            startNewTest(url);
-
-            ExecutionDto dto = getSqlExecutionDto(0,url);
-
-            assertTrue(dto == null || dto.deletedData == null || dto.deletedData.isEmpty());
-
-            startNewActionInSameTest(url, 1);
-
-            SqlScriptRunner.execCommand(getConnection(), "Delete FROM Foo");
-
-            dto = getSqlExecutionDto(1,url);
+            ExecutionDto dto = executeCommand(starter, "Delete FROM Foo");
 
             assertNotNull(dto);
             assertNotNull(dto.deletedData);
@@ -64,7 +53,6 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         }
     }
 
-
     @Test
     public void testInsertTable() throws Exception {
 
@@ -73,20 +61,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
-            String url = start(starter);
-            url += BASE_PATH;
-
-            startNewTest(url);
-
-            ExecutionDto dto = getSqlExecutionDto(0,url);
-
-            assertTrue(dto == null || dto.insertedData == null || dto.insertedData.isEmpty());
-
-            startNewActionInSameTest(url, 1);
-
-            SqlScriptRunner.execCommand(getConnection(), "insert into Foo (x) values (42)");
-
-            dto = getSqlExecutionDto(1,url);
+            ExecutionDto dto = executeCommand(starter, "insert into Foo (x) values (42)");
 
             assertNotNull(dto);
             assertNotNull(dto.insertedData);
@@ -98,6 +73,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         }
     }
 
+
     @Test
     public void testUpdateTable() throws Exception {
 
@@ -106,20 +82,7 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         InstrumentedSutStarter starter = getInstrumentedSutStarter();
 
         try {
-            String url = start(starter);
-            url += BASE_PATH;
-
-            startNewTest(url);
-
-            ExecutionDto dto = getSqlExecutionDto(0,url);
-
-            assertTrue(dto == null || dto.updatedData == null || dto.updatedData.isEmpty());
-
-            startNewActionInSameTest(url, 1);
-
-            SqlScriptRunner.execCommand(getConnection(), "update Foo set x=42");
-
-            dto = getSqlExecutionDto(1,url);
+            ExecutionDto dto = executeCommand(starter, "update Foo set x=42");
 
             assertNotNull(dto);
             assertNotNull(dto.updatedData);
@@ -129,5 +92,71 @@ public class SqlHandlerInDBTest extends DatabaseTestTemplate {
         } finally {
             starter.stop();
         }
+    }
+
+
+    /**
+     * When creating an object in a table which includes an auto-incremental id,
+     * then the select currval is used to calculate the id for the new object
+     * @throws Exception
+     */
+    @Test
+    public void givenASelectNextValueInASequenceThenTheQueryIsIgnoredToCalculateHeuristics() throws Exception {
+
+        SqlScriptRunner.execCommand(getConnection(), "CREATE SEQUENCE foo_id_seq;");
+        SqlScriptRunner.execCommand(getConnection(), "CREATE TABLE foo (id integer NOT NULL DEFAULT nextval('foo_id_seq'));");
+
+        InstrumentedSutStarter starter = getInstrumentedSutStarter();
+
+        try {
+
+            ExecutionDto dto = executeCommand(starter, "SELECT currval('foo_id_seq')");
+
+            assertNotNull(dto);
+            assertNotNull(dto.queriedData);
+            assertEquals(0, dto.queriedData.size());
+
+        } finally {
+            starter.stop();
+        }
+    }
+
+    private ExecutionDto executeCommand(InstrumentedSutStarter starter, String sqlCommand) throws SQLException {
+        String url = startInstrumentedSutStarterAndNewTest(starter);
+        ExecutionDto dto = getSqlExecutionDto(0, url);
+
+        assertDataIsEmpty(dto);
+
+        startNewActionInSameTest(url, 1);
+
+        SqlScriptRunner.execCommand(getConnection(), sqlCommand);
+
+        return getSqlExecutionDto(1, url);
+    }
+
+    private void assertDataIsEmpty(ExecutionDto dto) {
+        assertUpdatedDataIsEmpty(dto);
+        assertDeletedDataIsEmpty(dto);
+        assertInsertedDataIsEmpty(dto);
+    }
+
+    @NotNull
+    private String startInstrumentedSutStarterAndNewTest(InstrumentedSutStarter starter) {
+        String url = start(starter);
+        url += BASE_PATH;
+        startNewTest(url);
+        return url;
+    }
+
+    private void assertUpdatedDataIsEmpty(ExecutionDto dto) {
+        assertTrue(dto == null || dto.updatedData == null || dto.updatedData.isEmpty());
+    }
+
+    private void assertDeletedDataIsEmpty(ExecutionDto dto) {
+        assertTrue(dto == null || dto.deletedData == null || dto.deletedData.isEmpty());
+    }
+
+    private void assertInsertedDataIsEmpty(ExecutionDto dto) {
+        assertTrue(dto == null || dto.insertedData == null || dto.insertedData.isEmpty());
     }
 }
