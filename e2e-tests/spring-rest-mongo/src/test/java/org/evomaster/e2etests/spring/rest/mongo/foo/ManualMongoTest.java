@@ -49,7 +49,7 @@ public class ManualMongoTest extends SpringRestMongoTestBase {
         Swagger swagger = new SwaggerParser().parse(swaggerJson);
 
         assertEquals("/", swagger.getBasePath());
-        assertEquals(14, swagger.getPaths().size());
+        assertEquals(15, swagger.getPaths().size());
     }
 
     @Test

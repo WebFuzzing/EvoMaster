@@ -134,7 +134,7 @@ public class ExtraFitnessMongoQueryTest extends SpringRestMongoTestBase {
                 "--maxActionEvaluations", "2",
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
                 "--heuristicsForMongo", "true",
-                "--maxTestSize", "1"
+                "--maxTestSize", "2"
         };
 
         Injector injector = Main.init(args);
@@ -189,7 +189,7 @@ public class ExtraFitnessMongoQueryTest extends SpringRestMongoTestBase {
         FitnessValue fv = ei.getFitness();
 
         //as no data in database, should get distance greater than zero
-        assertTrue(fv.averageExtraDistancesToMinimize(0) < Double.MAX_VALUE);
+        assertTrue(fv.averageExtraDistancesToMinimize(1) > 0);
 
         FindIterable<Document> findIterable1 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
         assertFalse(findIterable1.iterator().hasNext());

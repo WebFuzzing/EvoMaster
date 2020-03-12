@@ -11,9 +11,11 @@ import org.junit.jupiter.api.Test
 
 class MongoHeuristicCalculatorTest {
 
-    private fun toDocument(filter: Bson): Document {
-        val bsonDocument = filter.toBsonDocument(BsonDocument::class.java, MongoClient.getDefaultCodecRegistry())!!
-        return DocumentCodec().decode(bsonDocument.asBsonReader(), DecoderContext.builder().build())
+    companion object {
+        private fun toDocument(filter: Bson): Document {
+            val bsonDocument = filter.toBsonDocument(BsonDocument::class.java, MongoClient.getDefaultCodecRegistry())!!
+            return DocumentCodec().decode(bsonDocument.asBsonReader(), DecoderContext.builder().build())
+        }
     }
 
     @Test
