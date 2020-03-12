@@ -100,7 +100,12 @@ class OptionalGene(name: String,
             isActive = true
         } else {
 
-            if (randomness.nextBoolean(INACTIVE)) {
+            if (randomness.nextBoolean(INACTIVE) || !gene.isMutable()) {
+                /*
+                    the idea here is that we deactivate an element only with small
+                    probability. however, if a gene is not mutable, the only mutation
+                    we can do is to switch from active to inactive, and vice-versa
+                 */
                 isActive = false
             } else {
                 gene.standardMutation(randomness, apc, allGenes)
