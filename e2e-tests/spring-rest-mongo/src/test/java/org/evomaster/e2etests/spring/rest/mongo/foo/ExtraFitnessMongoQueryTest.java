@@ -188,11 +188,11 @@ public class ExtraFitnessMongoQueryTest extends SpringRestMongoTestBase {
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
 
-        //as no data in database, should get distance greater than zero
+        //as no data in database meets criterion, should get distance greater than zero
         assertTrue(fv.averageExtraDistancesToMinimize(1) > 0);
 
-        FindIterable<Document> findIterable1 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable1.iterator().hasNext());
+//        FindIterable<Document> findIterable1 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
+//        assertFalse(findIterable1.iterator().hasNext());
 
     }
 
