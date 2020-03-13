@@ -47,6 +47,10 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }
     }
 
+    override fun isMutable(): Boolean {
+        return fields.any { it.isMutable() }
+    }
+
     override fun containsSameValueAs(other: Gene): Boolean {
         if (other !is ObjectGene) {
             throw IllegalArgumentException("Invalid gene type ${other.javaClass}")
