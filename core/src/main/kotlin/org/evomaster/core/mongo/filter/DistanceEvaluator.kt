@@ -52,4 +52,16 @@ class DistanceEvaluator: FilterVisitor<Double,Document>() {
         TODO("Not yet implemented")
     }
 
+    override fun visit(filter: SearchFilter, arg: Document): Double {
+        TODO("Not yet implemented")
+    }
+
+    override fun visit(filter: WhereFilter, arg: Document): Double {
+        TODO("Not yet implemented")
+    }
+
+    override fun visit(filter: ModFilter, argument: Document): Double {
+        TODO("Not yet implemented")
+    }
+
 }

@@ -34,11 +34,34 @@ class DocumentToASTFilterConverter {
 
         private val EXISTS_OPERATOR = "\$exists"
 
+        private val TEXT_OPERATOR = "\$text"
+
+        private val SEARCH_OPERATOR = "\$search"
+
+        private val WHERE_OPERATOR = "\$where"
+
+        private val MOD_OPERATOR = "\$mod"
+
     }
 
     fun translate(filterDocument: Document): ASTNodeFilter {
 
         var filter: ASTNodeFilter?
+
+        filter = handleMod(filterDocument)
+        if (filter != null) {
+            return filter
+        }
+
+        filter = handleWhere(filterDocument)
+        if (filter != null) {
+            return filter
+        }
+
+        filter = handleText(filterDocument)
+        if (filter != null) {
+            return filter
+        }
 
         filter = handleAll(filterDocument)
         if (filter != null) {
@@ -137,6 +160,66 @@ class DocumentToASTFilterConverter {
 
     }
 
+    private fun handleWhere(document: Document): ASTNodeFilter? {
+        if (!isUniqueEntry(document)) {
+            // root of all filters must have one entry
+            return null
+        }
+
+        val whereOperator = document.keys.first()
+
+        if (whereOperator != WHERE_OPERATOR) {
+            return null
+        }
+
+        val javaScriptExpression = document[whereOperator]
+
+        if (javaScriptExpression !is String) {
+            return null
+        }
+
+        return WhereFilter(javaScriptExpression)
+    }
+
+
+    private fun handleText(document: Document): ASTNodeFilter? {
+        if (!isUniqueEntry(document)) {
+            // root of all filters must have one entry
+            return null
+        }
+
+        val textOperator = document.keys.first()
+
+        if (textOperator != TEXT_OPERATOR) {
+            return null
+        }
+
+        val child = document[textOperator]
+
+        if (child !is Document) {
+            return null
+        }
+
+        if (!isUniqueEntry(child)) {
+            return null
+        }
+
+        val searchOperator = child.keys.first()
+
+        if (searchOperator != SEARCH_OPERATOR) {
+            return null
+        }
+
+        val text = child[searchOperator]
+
+        if (text !is String) {
+            return null
+        }
+
+        return SearchFilter(text)
+    }
+
+
     private fun handleAll(document: Document): ASTNodeFilter? {
         if (!isUniqueEntry(document)) {
             // root of all filters must have one entry
@@ -169,6 +252,52 @@ class DocumentToASTFilterConverter {
         }
 
         return AllFilter(keyName, values)
+    }
+
+
+    private fun handleMod(document: Document): ASTNodeFilter? {
+        if (!isUniqueEntry(document)) {
+            // root of all filters must have one entry
+            return null
+        }
+
+        val keyName = document.keys.first()
+
+
+        val child = document[keyName]
+
+        if (child !is Document) {
+            return null
+        }
+
+        if (!isUniqueEntry(child)) {
+            return null
+        }
+
+        val modOperator = child.keys.first()
+
+        if (modOperator != MOD_OPERATOR) {
+            return null
+        }
+
+        val values = child[modOperator]
+
+        if (values !is List<*>) {
+            return null
+        }
+
+        if (values.size != 2) {
+            return null
+        }
+
+        if (values[0] !is Long || values[1] !is Long) {
+            return null
+        }
+
+        val divisor = values[0] as Long
+        val remainder = values[1] as Long
+
+        return ModFilter(keyName, divisor, remainder)
     }
 
 

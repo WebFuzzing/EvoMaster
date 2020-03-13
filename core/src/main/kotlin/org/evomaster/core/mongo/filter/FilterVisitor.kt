@@ -26,4 +26,10 @@ abstract class FilterVisitor<T, K>() {
 
     abstract fun visit(filter: RegexFilter, argument: K): T
 
+    abstract fun visit(filter: SearchFilter, arg: K): T
+
+    abstract fun visit(filter: WhereFilter, arg: K): T
+
+    abstract fun visit(filter: ModFilter, argument: K): T
+
 }

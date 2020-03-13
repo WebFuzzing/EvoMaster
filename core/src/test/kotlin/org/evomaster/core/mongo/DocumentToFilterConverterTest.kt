@@ -23,8 +23,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertEquals() {
-        val filterBson = Filters.eq("age", 0)
-        val filterDocument = toDocument(filterBson)
+        val eqFilter = Filters.eq("age", 0)
+        val filterDocument = toDocument(eqFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is ComparisonFilter<*>)
@@ -35,8 +35,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertGreaterThan() {
-        val filterBson = Filters.gt("age", 0)
-        val filterDocument = toDocument(filterBson)
+        val gtFilter = Filters.gt("age", 0)
+        val filterDocument = toDocument(gtFilter)
         val converter = DocumentToASTFilterConverter()
         val query = converter.translate(filterDocument)
         assertTrue(query is ComparisonFilter<*>)
@@ -48,8 +48,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertGreaterEqualsThan() {
-        val filterBson = Filters.gte("age", 0)
-        val filterDocument = toDocument(filterBson)
+        val gteFilter = Filters.gte("age", 0)
+        val filterDocument = toDocument(gteFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is ComparisonFilter<*>)
@@ -62,8 +62,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertLessThan() {
-        val filterBson = Filters.lt("age", 0)
-        val filterDocument = toDocument(filterBson)
+        val ltFilter = Filters.lt("age", 0)
+        val filterDocument = toDocument(ltFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is ComparisonFilter<*>)
@@ -75,8 +75,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertLessThanEquals() {
-        val filterBson = Filters.lte("age", 0)
-        val filterDocument = toDocument(filterBson)
+        val lteFilter = Filters.lte("age", 0)
+        val filterDocument = toDocument(lteFilter)
         val converter = DocumentToASTFilterConverter()
         val query = converter.translate(filterDocument)
         assertTrue(query is ComparisonFilter<*>)
@@ -88,8 +88,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertStringEquals() {
-        val filterBson = Filters.eq("name", "John")
-        val filterDocument = toDocument(filterBson)
+        val eqFilter = Filters.eq("name", "John")
+        val filterDocument = toDocument(eqFilter)
         val parser = DocumentToASTFilterConverter()
         val filter = parser.translate(filterDocument)
         assertTrue(filter is ComparisonFilter<*>)
@@ -100,10 +100,10 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertAnd() {
-        val filterBson = Filters.and(
+        val andFilter = Filters.and(
                 Filters.lte("age", 0),
                 Filters.eq("name", "John"))
-        val filterDocument = toDocument(filterBson)
+        val filterDocument = toDocument(andFilter)
         val converter = DocumentToASTFilterConverter()
         val query = converter.translate(filterDocument)
         assertTrue(query is AndFilter)
@@ -118,10 +118,10 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertOr() {
-        val filterBson = Filters.or(
+        val orFilter = Filters.or(
                 Filters.lte("age", 0),
                 Filters.eq("name", "John"))
-        val filterDocument = toDocument(filterBson)
+        val filterDocument = toDocument(orFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is OrFilter)
@@ -173,8 +173,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertSize() {
-        val elemMatchFilter = Filters.size("entries", 10)
-        val filterDocument = toDocument(elemMatchFilter)
+        val sizeFilter = Filters.size("entries", 10)
+        val filterDocument = toDocument(sizeFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is SizeFilter)
@@ -186,8 +186,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertNotEquals() {
-        val filterBson = Filters.ne("name", "John")
-        val filterDocument = toDocument(filterBson)
+        val neFilter = Filters.ne("name", "John")
+        val filterDocument = toDocument(neFilter)
         val parser = DocumentToASTFilterConverter()
         val filter = parser.translate(filterDocument)
         assertTrue(filter is ComparisonFilter<*>)
@@ -199,8 +199,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertIn() {
-        val allFilter = Filters.`in`("colors", "Blue", "White", "Red")
-        val filterDocument = toDocument(allFilter)
+        val inFilter = Filters.`in`("colors", "Blue", "White", "Red")
+        val filterDocument = toDocument(inFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is InFilter)
@@ -215,8 +215,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertNotIn() {
-        val allFilter = Filters.nin("colors", "Blue", "White", "Red")
-        val filterDocument = toDocument(allFilter)
+        val ninFilter = Filters.nin("colors", "Blue", "White", "Red")
+        val filterDocument = toDocument(ninFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is NotInFilter)
@@ -231,10 +231,10 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertNor() {
-        val filterBson = Filters.nor(
+        val norFilter = Filters.nor(
                 Filters.lte("age", 0),
                 Filters.eq("name", "John"))
-        val filterDocument = toDocument(filterBson)
+        val filterDocument = toDocument(norFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is NorFilter)
@@ -249,8 +249,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertExists() {
-        val filterBson = Filters.exists("age")
-        val filterDocument = toDocument(filterBson)
+        val existsFilter = Filters.exists("age")
+        val filterDocument = toDocument(existsFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is ExistsFilter)
@@ -261,8 +261,8 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertRegex() {
-        val elemMatchFilter = Filters.regex("email", ".*,*", "")
-        val filterDocument = toDocument(elemMatchFilter)
+        val regexFilter = Filters.regex("email", ".*,*", "")
+        val filterDocument = toDocument(regexFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
         assertTrue(filter is RegexFilter)
@@ -271,6 +271,47 @@ class DocumentToFilterConverterTest {
         assertEquals("email", filter.fieldName)
         assertEquals(".*,*", filter.pattern)
         assertEquals("", filter.options)
+
+    }
+
+    @Test
+    fun convertText() {
+        val searchFilter = Filters.text("search")
+        val filterDocument = toDocument(searchFilter)
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(filterDocument)
+        assertTrue(filter is SearchFilter)
+        filter as SearchFilter
+
+        assertEquals("search", filter.search)
+
+    }
+
+    @Test
+    fun convertWhere() {
+        val whereFilter = Filters.where("javaScriptExpression")
+        val filterDocument = toDocument(whereFilter)
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(filterDocument)
+        assertTrue(filter is WhereFilter)
+        filter as WhereFilter
+
+        assertEquals("javaScriptExpression", filter.javaScriptExpression)
+    }
+
+    @Test
+    fun convertMod() {
+        val whereFilter = Filters.mod("salary",10L, 5L)
+        val filterDocument = toDocument(whereFilter)
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(filterDocument)
+        assertTrue(filter is ModFilter)
+        filter as ModFilter
+
+        assertEquals("salary", filter.fieldName)
+        assertEquals(10L, filter.divisor)
+        assertEquals(5L, filter.remainder)
+
 
     }
 }
