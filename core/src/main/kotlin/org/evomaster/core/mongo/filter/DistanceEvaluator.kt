@@ -5,63 +5,71 @@ import org.bson.Document
 class DistanceEvaluator: FilterVisitor<Double,Document>() {
 
     override fun visit(comparisonFilter: ComparisonFilter<*>, argument: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: AndFilter, argument: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: OrFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(allFilter: AllFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(elemMatchFilter: ElemMatchFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: SizeFilter, argument: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: InFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: NotInFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: NorFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: ExistsFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: NotExistsFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: RegexFilter, argument: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: SearchFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: WhereFilter, arg: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
     }
 
     override fun visit(filter: ModFilter, argument: Document): Double {
-        TODO("Not yet implemented")
+        return Double.MAX_VALUE
+    }
+
+    override fun visit(filter: TypeFilter, argument: Document): Double {
+        return Double.MAX_VALUE
+    }
+
+    override fun visit(filter: NotFilter, arg: Document): Double {
+        return Double.MAX_VALUE
     }
 
 }

@@ -1,6 +1,7 @@
 package org.evomaster.core.mongo.filter
 
 import org.bson.BsonRegularExpression
+import org.bson.BsonType
 import org.bson.Document
 
 class DocumentToASTFilterConverter {
@@ -42,11 +43,25 @@ class DocumentToASTFilterConverter {
 
         private val MOD_OPERATOR = "\$mod"
 
+        private val TYPE_OPERATOR = "\$type"
+
+        private val NOT_OPERATOR = "\$not"
+
     }
 
     fun translate(filterDocument: Document): ASTNodeFilter {
 
         var filter: ASTNodeFilter?
+
+        filter = handleNot(filterDocument)
+        if (filter != null) {
+            return filter
+        }
+
+        filter = handleType(filterDocument)
+        if (filter != null) {
+            return filter
+        }
 
         filter = handleMod(filterDocument)
         if (filter != null) {
@@ -370,6 +385,68 @@ class DocumentToASTFilterConverter {
         return NotInFilter(keyName, values)
     }
 
+    private fun handleType(document: Document): ASTNodeFilter? {
+
+        if (!isUniqueEntry(document)) {
+            // root of all filters must have one entry
+            return null
+        }
+
+        val keyName = document.keys.first()
+
+
+        val child = document[keyName]
+
+        if (child !is Document) {
+            return null
+        }
+
+        if (!isUniqueEntry(child)) {
+            return null
+        }
+
+        val typeOperator = child.keys.first()
+
+        if (typeOperator != TYPE_OPERATOR) {
+            return null
+        }
+
+        val typeCode = child[typeOperator]
+
+        if (typeCode !is Integer) {
+            return null
+        }
+
+        val type = when (typeCode) {
+            0 -> BsonType.END_OF_DOCUMENT
+            1 -> BsonType.DOUBLE
+            2 -> BsonType.STRING
+            3 -> BsonType.DOCUMENT
+            4 -> BsonType.ARRAY
+            5 -> BsonType.BINARY
+            6 -> BsonType.UNDEFINED
+            7 -> BsonType.OBJECT_ID
+            8 -> BsonType.BOOLEAN
+            9 -> BsonType.DATE_TIME
+            10 -> BsonType.NULL
+            11 -> BsonType.REGULAR_EXPRESSION
+            12 -> BsonType.DB_POINTER
+            13 -> BsonType.JAVASCRIPT
+            14 -> BsonType.SYMBOL
+            15 -> BsonType.JAVASCRIPT_WITH_SCOPE
+            16 -> BsonType.INT32
+            17 -> BsonType.TIMESTAMP
+            18 -> BsonType.INT64
+            19 -> BsonType.DECIMAL128
+            255 -> BsonType.MIN_KEY
+            127 -> BsonType.MAX_KEY
+            else ->
+                throw IllegalArgumentException("Unsupported bson type code $typeCode")
+        }
+
+        return TypeFilter(keyName, type)
+    }
+
     private fun handleSize(document: Document): ASTNodeFilter? {
 
         if (!isUniqueEntry(document)) {
@@ -419,6 +496,41 @@ class DocumentToASTFilterConverter {
             queries.add(query)
         }
         return AndFilter(queries.toList())
+    }
+
+    private fun handleNot(document: Document): ASTNodeFilter? {
+        if (!isUniqueEntry(document)) {
+            // or operations must have one entry
+            return null
+        }
+
+        val fieldName = document.keys.first()
+
+        val child = document[fieldName]
+        if (child !is Document) {
+            return null
+        }
+
+        if (!isUniqueEntry(child)) {
+            // or operations must have one entry
+            return null
+        }
+
+        val notOperator = child.keys.first()
+
+        if (notOperator != NOT_OPERATOR) {
+            return null
+        }
+
+        val innerDocument = child[notOperator]
+
+        if (innerDocument !is Document) {
+            return null
+        }
+
+        val innerFilter = translate(innerDocument)
+
+        return NotFilter(innerFilter)
     }
 
     private fun handleOr(document: Document): ASTNodeFilter? {

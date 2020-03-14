@@ -32,4 +32,8 @@ abstract class FilterVisitor<T, K>() {
 
     abstract fun visit(filter: ModFilter, argument: K): T
 
+    abstract fun visit(filter: TypeFilter, argument: K): T
+
+    abstract fun visit(filter: NotFilter, arg: K): T
+
 }

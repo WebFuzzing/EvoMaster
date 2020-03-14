@@ -3,6 +3,7 @@ package org.evomaster.core.mongo
 import com.mongodb.MongoClient
 import com.mongodb.client.model.Filters
 import org.bson.BsonDocument
+import org.bson.BsonType
 import org.bson.Document
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
@@ -301,7 +302,7 @@ class DocumentToFilterConverterTest {
 
     @Test
     fun convertMod() {
-        val whereFilter = Filters.mod("salary",10L, 5L)
+        val whereFilter = Filters.mod("salary", 10L, 5L)
         val filterDocument = toDocument(whereFilter)
         val converter = DocumentToASTFilterConverter()
         val filter = converter.translate(filterDocument)
@@ -311,7 +312,30 @@ class DocumentToFilterConverterTest {
         assertEquals("salary", filter.fieldName)
         assertEquals(10L, filter.divisor)
         assertEquals(5L, filter.remainder)
+    }
 
+    @Test
+    fun convertType() {
+        val typeFilter = Filters.type("salary", BsonType.INT32)
+        val filterDocument = toDocument(typeFilter)
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(filterDocument)
+        assertTrue(filter is TypeFilter)
+        filter as TypeFilter
 
+        assertEquals("salary", filter.fieldName)
+        assertEquals(BsonType.INT32, filter.type)
+    }
+
+    @Test
+    fun convertNot() {
+        val typeFilter = Filters.not(Filters.lte("age", 0))
+        val filterDocument = toDocument(typeFilter)
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(filterDocument)
+        assertTrue(filter is NotFilter)
+        filter as NotFilter
+
+        assertTrue(filter.filter is ComparisonFilter<*>)
     }
 }

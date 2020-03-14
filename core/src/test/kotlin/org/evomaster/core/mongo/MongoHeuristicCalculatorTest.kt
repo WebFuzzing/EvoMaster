@@ -7,14 +7,17 @@ import org.bson.Document
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
 import org.bson.conversions.Bson
+import org.evomaster.core.mongo.filter.ASTNodeFilter
+import org.evomaster.core.mongo.filter.DocumentToASTFilterConverter
 import org.junit.jupiter.api.Test
 
 class MongoHeuristicCalculatorTest {
 
     companion object {
-        private fun toDocument(filter: Bson): Document {
+        private fun toFilter(filter: Bson): ASTNodeFilter {
             val bsonDocument = filter.toBsonDocument(BsonDocument::class.java, MongoClient.getDefaultCodecRegistry())!!
-            return DocumentCodec().decode(bsonDocument.asBsonReader(), DecoderContext.builder().build())
+            val document = DocumentCodec().decode(bsonDocument.asBsonReader(), DecoderContext.builder().build())
+            return DocumentToASTFilterConverter().translate(document)
         }
     }
 
@@ -24,7 +27,7 @@ class MongoHeuristicCalculatorTest {
         document.append("age", 32)
 
         val filterBson = Filters.eq("age", 0)
-        val filterDocument = toDocument(filterBson)
+        val filterDocument = toFilter(filterBson)
 
         val distance = MongoHeuristicCalculator().computeDistance(document, filterDocument)
 

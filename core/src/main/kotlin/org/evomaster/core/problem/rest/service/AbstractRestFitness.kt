@@ -1,7 +1,6 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import com.mongodb.client.model.Filters
 import org.bson.Document
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
@@ -14,6 +13,8 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.mongo.FindOperation
 import org.evomaster.core.mongo.MongoExecution
 import org.evomaster.core.mongo.MongoHeuristicCalculator
+import org.evomaster.core.mongo.filter.ASTNodeFilter
+import org.evomaster.core.mongo.filter.DocumentToASTFilterConverter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -200,14 +201,20 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         val retrievedDocumentsDto = this.rc.executeMongoOperationAndGetQueryResults(findAllDocumentsDto)
 
+        val filterNode = toASTNodeFilter(filter)
+
         return retrievedDocumentsDto
                 ?.documents
                 ?.toList()
                 ?.map {
-                    MongoHeuristicCalculator().computeDistance(it, filter)
+                    MongoHeuristicCalculator().computeDistance(it, filterNode)
                 }
                 ?.toList()?.min()
                 ?: Double.MAX_VALUE
+    }
+
+    private fun toASTNodeFilter(filterDocument: Document): ASTNodeFilter {
+        return DocumentToASTFilterConverter().translate(filterDocument)
     }
 
     /**
