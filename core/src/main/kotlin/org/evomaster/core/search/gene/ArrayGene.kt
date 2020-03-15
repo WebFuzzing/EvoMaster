@@ -10,6 +10,7 @@ import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.lang.IllegalStateException
 
 
 class ArrayGene<T>(
@@ -74,7 +75,11 @@ class ArrayGene<T>(
 
 
     override fun isMutable(): Boolean {
-        //it wouldn't make much sense to have 0, but let's just be safe here
+        /*
+            if maxSize is 0, then array cannot be mutated, as it will always be empty.
+            If it is greater than 0, it can always be mutated, regardless of whether the
+            elements can be mutated: we can mutate between empty and 1-element arrays
+         */
         return maxSize > 0
     }
 
@@ -98,6 +103,10 @@ class ArrayGene<T>(
     }
 
     override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+
+        if(!isMutable()){
+            throw IllegalStateException("Cannot mutate a immutable array")
+        }
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
@@ -123,6 +132,10 @@ class ArrayGene<T>(
             evi: EvaluatedIndividual<*>,
             targets: Set<Int>
     ) {
+
+        if(!isMutable()){
+            throw IllegalStateException("Cannot mutate a immutable array")
+        }
 
         if (!archiveMutator.enableArchiveMutation()){
             standardMutation(randomness, apc, allGenes)
