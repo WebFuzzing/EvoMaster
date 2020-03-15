@@ -9,11 +9,10 @@ import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
 import org.bson.conversions.Bson
 import org.evomaster.core.mongo.filter.*
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
-class DocumentToFilterConverterTest {
+class DocumentToASTFilterConverterTest {
 
     companion object {
         private fun toDocument(filter: Bson): Document {
@@ -337,5 +336,59 @@ class DocumentToFilterConverterTest {
         filter as NotFilter
 
         assertTrue(filter.filter is ComparisonFilter<*>)
+    }
+
+    @Test
+    fun convertCompoundAnd() {
+        val innerDocument = Document()
+        innerDocument["\$gt"] = 18
+        innerDocument["\$lt"] = 65
+
+        val outerDocument = Document()
+        outerDocument["age"] = innerDocument
+
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(outerDocument)
+        assertTrue(filter is AndFilter)
+        filter as AndFilter
+
+        assertTrue(filter.filters[0] is ComparisonFilter<*>)
+        assertTrue(filter.filters[1] is ComparisonFilter<*>)
+
+    }
+
+    @Test
+    fun testNotNull() {
+        //{ "firstName" : { "$ne" : null}}
+        val innerDocument = Document()
+        innerDocument["\$ne"] = null
+        val outerDocument = Document()
+        outerDocument["firstName"] = innerDocument
+
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(outerDocument)
+        assertTrue(filter is ComparisonFilter<*>)
+        filter as ComparisonFilter<*>
+
+        assertEquals("firstName", filter.fieldName)
+        assertEquals(ComparisonFilter.ComparisonQueryOperator.NOT_EQUALS, filter.operator)
+
+        assertNull(filter.value)
+    }
+
+    @Test
+    fun testIsNull() {
+        //{ "firstName" : { } }
+        val document = Document()
+        document["firstName"] = Document()
+
+        val converter = DocumentToASTFilterConverter()
+        val filter = converter.translate(document)
+        assertTrue(filter is ComparisonFilter<*>)
+        filter as ComparisonFilter<*>
+
+        assertEquals("firstName", filter.fieldName)
+        assertEquals(ComparisonFilter.ComparisonQueryOperator.EQUALS, filter.operator)
+        assertNull(filter.value)
     }
 }

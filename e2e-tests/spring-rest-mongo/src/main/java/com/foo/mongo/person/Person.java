@@ -55,7 +55,7 @@ public class Person {
         PersonDto dto = new PersonDto();
         dto.firstName = this.firstName;
         dto.lastName = this.lastName;
-        dto.address = this.address.toDto();
+        dto.address = this.address==null ? null : this.address.toDto();
         dto.age = this.age;
         return dto;
     }

@@ -22,19 +22,17 @@ public class PersonRest {
         repository.save(person);
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByLastName",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
+    @RequestMapping(path = "/api/mongoperson/findByLastName/{lastName}",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByLastName(@RequestBody String lastName) {
+    public List<PersonDto> findByLastName(@PathVariable String lastName) {
         List<Person> persons = repository.findByLastName(lastName);
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByAgeGreaterThan",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
+    @RequestMapping(path = "/api/mongoperson/findByAgeGreaterThan/{age}",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByAgeGreaterThan(@RequestBody int age) {
+    public List<PersonDto> findByAgeGreaterThan(@PathVariable int age) {
         List<Person> persons = repository.findByAgeGreaterThan(age);
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
@@ -49,10 +47,9 @@ public class PersonRest {
         return personDtos;
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByAgeLessThan",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
+    @RequestMapping(path = "/api/mongoperson/findByAgeLessThan/{age}",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByAgeLessThan(@RequestBody int age) {
+    public List<PersonDto> findByAgeLessThan(@PathVariable int age) {
         List<Person> persons = repository.findByAgeLessThan(age);
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
@@ -75,10 +72,10 @@ public class PersonRest {
         return personDtos;
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByFirstNameNotNull",
+    @RequestMapping(path = "/api/mongoperson/findByAddressNotNull",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByFirstNameNotNull() {
-        List<Person> persons = repository.findByFirstNameNotNull();
+    public List<PersonDto> findByAddressNotNull() {
+        List<Person> persons = repository.findByAddressNotNull();
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
     }
@@ -91,19 +88,17 @@ public class PersonRest {
         return personDtos;
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByFirstNameLike",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
+    @RequestMapping(path = "/api/mongoperson/findByFirstNameLike/{name}",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByFirstNameLike(@RequestBody String name) {
+    public List<PersonDto> findByFirstNameLike(@PathVariable String name) {
         List<Person> persons = repository.findByFirstNameLike(name);
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;
     }
 
-    @RequestMapping(path = "/api/mongoperson/findByFirstNameRegex",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
+    @RequestMapping(path = "/api/mongoperson/findByFirstNameRegex/{name}",
             method = {RequestMethod.GET})
-    public List<PersonDto> findByFirstNameRegex(@RequestBody String name) {
+    public List<PersonDto> findByFirstNameRegex(@PathVariable String name) {
         List<Person> persons = repository.findByFirstNameRegex(name);
         List<PersonDto> personDtos = persons.stream().map(Person::toDto).collect(Collectors.toList());
         return personDtos;

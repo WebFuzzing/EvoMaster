@@ -75,9 +75,8 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
 
     private static PersonDto[] findByLastName(String lastName) {
         return given()
-                .contentType(ContentType.JSON)
-                .body(lastName)
-                .get(baseUrlOfSut + "/api/mongoperson/findByLastName")
+                .accept("*/*")
+                .get(baseUrlOfSut + "/api/mongoperson/findByLastName/{lastName}",lastName)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -93,9 +92,9 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
                 .as(PersonDto[].class);
     }
 
-    private static PersonDto[] findByFirstNameNotNull() {
+    private static PersonDto[] findByAddressNotNull() {
         return given()
-                .get(baseUrlOfSut + "/api/mongoperson/findByFirstNameNotNull")
+                .get(baseUrlOfSut + "/api/mongoperson/findByAddressNotNull")
                 .then()
                 .statusCode(200)
                 .extract()
@@ -113,9 +112,9 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
 
     private static PersonDto[] findByAgeGreaterThan(int age) {
         return given()
-                .contentType(ContentType.JSON)
+                .accept("*/*")
                 .body(age)
-                .get(baseUrlOfSut + "/api/mongoperson/findByAgeGreaterThan")
+                .get(baseUrlOfSut + "/api/mongoperson/findByAgeGreaterThan/{age}", age)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -134,9 +133,8 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
 
     private static PersonDto[] findByAgeLessThan(int age) {
         return given()
-                .contentType(ContentType.JSON)
-                .body(age)
-                .get(baseUrlOfSut + "/api/mongoperson/findByAgeLessThan")
+                .accept("*/*")
+                .get(baseUrlOfSut + "/api/mongoperson/findByAgeLessThan/{age}",age)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -155,9 +153,8 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
 
     private static PersonDto[] findByFirstNameLike(String name) {
         return given()
-                .contentType(ContentType.JSON)
-                .body(name)
-                .get(baseUrlOfSut + "/api/mongoperson/findByFirstNameLike")
+                .accept("*/*")
+                .get(baseUrlOfSut + "/api/mongoperson/findByFirstNameLike/{name}",name)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -166,9 +163,8 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
 
     private static PersonDto[] findByFirstNameRegex(String name) {
         return given()
-                .contentType(ContentType.JSON)
-                .body(name)
-                .get(baseUrlOfSut + "/api/mongoperson/findByFirstNameRegex")
+                .accept("*/*")
+                .get(baseUrlOfSut + "/api/mongoperson/findByFirstNameRegex/{name}",name)
                 .then()
                 .statusCode(200)
                 .extract()
@@ -294,7 +290,7 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testManualFindByFirstNameNotNull() {
 
-        PersonDto[] personDtos = findByFirstNameNotNull();
+        PersonDto[] personDtos = findByAddressNotNull();
 
         assertNotNull(personDtos);
         assertEquals(0, personDtos.length);
@@ -304,7 +300,7 @@ public class MongoFilterTest extends SpringRestMongoTestBase {
         add(johnDoeDto);
 
 
-        personDtos = findByFirstNameNotNull();
+        personDtos = findByAddressNotNull();
 
         assertNotNull(personDtos);
         assertEquals(1, personDtos.length);

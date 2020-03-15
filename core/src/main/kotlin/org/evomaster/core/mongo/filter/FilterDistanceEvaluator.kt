@@ -2,7 +2,7 @@ package org.evomaster.core.mongo.filter
 
 import org.bson.Document
 
-class DistanceEvaluator: FilterVisitor<Double,Document>() {
+class FilterDistanceEvaluator: FilterVisitor<Double,Document>() {
 
     override fun visit(comparisonFilter: ComparisonFilter<*>, argument: Document): Double {
         return Double.MAX_VALUE

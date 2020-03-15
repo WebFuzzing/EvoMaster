@@ -20,7 +20,7 @@ public interface PersonRepository extends PagingAndSortingRepository<Person, Lon
 
     List<Person> findByAgeBetween(int from, int to);
 
-    List<Person> findByFirstNameNotNull();
+    List<Person> findByAddressNotNull();
 
     List<Person> findByFirstNameNull();
 

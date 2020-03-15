@@ -53,6 +53,11 @@ class DocumentToASTFilterConverter {
 
         var filter: ASTNodeFilter?
 
+        filter = handleNull(filterDocument)
+        if (filter != null) {
+            return filter
+        }
+
         filter = handleNot(filterDocument)
         if (filter != null) {
             return filter
@@ -124,6 +129,11 @@ class DocumentToASTFilterConverter {
         }
 
         filter = handleRegex(filterDocument)
+        if (filter != null) {
+            return filter
+        }
+
+        filter = handleCompoundAnd(filterDocument)
         if (filter != null) {
             return filter
         }
@@ -533,6 +543,24 @@ class DocumentToASTFilterConverter {
         return NotFilter(innerFilter)
     }
 
+    private fun handleNull(document: Document): ASTNodeFilter? {
+        if (!isUniqueEntry(document)) {
+            // or operations must have one entry
+            return null
+        }
+
+        val fieldName = document.keys.first()
+
+        val child = document[fieldName]
+        if (child !is Document) {
+            return null
+        }
+        if (child.isNotEmpty()) {
+            return null
+        }
+        return ComparisonFilter(fieldName,ComparisonFilter.ComparisonQueryOperator.EQUALS,null)
+    }
+
     private fun handleOr(document: Document): ASTNodeFilter? {
         if (!isUniqueEntry(document)) {
             // or operations must have one entry
@@ -632,6 +660,44 @@ class DocumentToASTFilterConverter {
         }
 
         return RegexFilter(fieldName, value.pattern, value.options)
+    }
+
+    private fun handleCompoundAnd(document: Document): ASTNodeFilter? {
+        if (!isUniqueEntry(document)) {
+            return null
+        }
+
+        val fieldName = document.keys.first()
+        val value = document[fieldName]
+
+        if (value !is Map<*, *>) {
+            return null
+        }
+
+        if (value.size < 2) {
+            return null
+        }
+
+        val filters = mutableListOf<ASTNodeFilter>()
+
+        value.keys.forEach {
+            if (it !is String) {
+                return null
+            }
+
+            val innerDocument = Document()
+            innerDocument[it] = value[it]
+
+            val outerDocument = Document()
+            outerDocument[fieldName] = innerDocument
+
+            val filter = translate(outerDocument)
+
+            filters.add(filter)
+        }
+
+
+        return AndFilter(filters.toList())
     }
 
     private fun handleSimpleEquality(document: Document): ASTNodeFilter? {
