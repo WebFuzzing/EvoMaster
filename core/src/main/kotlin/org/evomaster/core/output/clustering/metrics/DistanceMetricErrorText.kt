@@ -13,6 +13,9 @@ import javax.ws.rs.core.MediaType
  *  The intended use is to cluster error messages coming from REST APIs to enable similar
  *  faults to be grouped together for easier debugging/analysis.
  *
+ *  Note! Since only results with a 500 code have an error message, only those are considered for this
+ *  clustering metric.
+ *
  */
 
 class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
@@ -25,7 +28,7 @@ class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
             Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
-            first.getBody()
+            "" //first.getBody()
         }
         val message2 = if(second.getBodyType() != null
                 && second.getStatusCode() == 500
@@ -34,7 +37,7 @@ class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
             Gson().fromJson(second.getBody(), Map::class.java)?.get("message") ?: ""
         }
         else {
-            second.getBody()
+            "" //second.getBody()
         }
         return LevenshteinDistance.distance(message1.toString(), message2.toString())
     }
