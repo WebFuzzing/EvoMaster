@@ -53,6 +53,9 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                     Termination.OTHER.getSuffix());
         }
 
+        EMConfig em = new EMConfig();
+        em.setTestSuiteSplitType(splitType);
+
         runTestHandlingFlakyAndCompilation(
                 "SplitterEM",
                 "org.bar.splitter.Split_" + splitType,
@@ -63,13 +66,16 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                     args.add("" + splitType);
                     Solution<RestIndividual> solution = initAndRun(args);
                     assertTrue(solution.getIndividuals().size() >= 1);
-                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, splitType);
+                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
                     assertTrue(splits.splitOutcome.size() >= 1);
                 }
         );
     }
 
     private void testRunEM(EMConfig.TestSuiteSplitType splitType) throws Throwable {
+        EMConfig em = new EMConfig();
+        em.setTestSuiteSplitType(splitType);
+
         runTestHandlingFlakyAndCompilation(
                 "SplitterEM",
                 "org.bar.splitter.Split_" + splitType,
@@ -82,7 +88,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, splitType);
+                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
 
                     assertTrue(splits.splitOutcome.size() >= 1);
 

@@ -17,8 +17,8 @@ import org.evomaster.core.search.service.SearchTimeController
  */
 object TestSuiteSplitter {
     fun split(solution: Solution<*>,
-              type: EMConfig.TestSuiteSplitType) : SplitResult { //List<Solution<*>>{
-        return split(solution as Solution<RestIndividual>, type, PartialOracles())
+              config: EMConfig) : SplitResult { //List<Solution<*>>{
+        return split(solution as Solution<RestIndividual>, config, PartialOracles())
     }
     /**
      * Given a [Solution], split it into several smaller solutions, based on the given [type] strategy.
@@ -26,9 +26,10 @@ object TestSuiteSplitter {
      * the original [Solution]
      */
     fun split(solution: Solution<*>,
-              type: EMConfig.TestSuiteSplitType,
+              config: EMConfig,
               oracles: PartialOracles) : SplitResult { //List<Solution<*>>{
 
+        val type = config.testSuiteSplitType
         val sol = solution as Solution<RestIndividual>
         val metrics = mutableListOf(DistanceMetricErrorText(), DistanceMetricLastLine())
         val errs = sol.individuals.filter {ind ->

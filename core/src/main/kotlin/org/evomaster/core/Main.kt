@@ -349,7 +349,7 @@ class Main {
             writer.setPartialOracles(partialOracles)
             writer.setObjectGenerator(objGenerator)
 
-            val splitResult = TestSuiteSplitter.split(solution, config.testSuiteSplitType, partialOracles)
+            val splitResult = TestSuiteSplitter.split(solution, config, partialOracles)
 
             solution.clusteringTime = splitResult.clusteringTime.toInt()
 
