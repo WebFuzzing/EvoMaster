@@ -61,7 +61,7 @@ __Known limitations__:
 
 * To be used for _whitebox_ testing, users need to write a [driver manually](docs/write_driver.md).
   We recommend to try _blackbox_ mode first (should just need a few minutes to get it up and running) to get
-  an idea of what _EvoMaster_ can do for your.  
+  an idea of what _EvoMaster_ can do for you.  
 
 * Execution time: to get good results, you might need to run the search for several hours. 
   We recommend to first try the search for 10 minutes, just to get an idea of what type of tests can be generated.
