@@ -162,7 +162,10 @@ class Main {
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
-                info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+
+                if(!config.avoidNonDeterministicLogs) {
+                    info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+                }
 
                 if(!config.blackBox || config.bbExperiments) {
                     val rc = injector.getInstance(RemoteController::class.java)

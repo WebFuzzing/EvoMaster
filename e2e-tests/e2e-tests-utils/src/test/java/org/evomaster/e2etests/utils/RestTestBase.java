@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.utils;
 
+import kotlin.Unit;
 import org.apache.commons.io.FileUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
@@ -7,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
+import org.evomaster.core.logging.LoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
 import org.evomaster.core.problem.rest.*;
@@ -71,6 +73,30 @@ public abstract class RestTestBase {
     }
 
 
+    protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){
+
+        List<String> args =  new ArrayList<>(Arrays.asList(
+                "--createTests", "false",
+                "--seed", "42",
+                "--showProgress", "false",
+                "--avoidNonDeterministicLogs", "true",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxActionEvaluations", "" + iterations,
+                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+        ));
+
+        String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
+                () -> {lambda.accept(args); return Unit.INSTANCE;}
+        );
+
+        String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
+                () -> {lambda.accept(args); return Unit.INSTANCE;}
+        );
+
+        assertEquals(firstRun, secondRun);
+    }
+
+
     protected void runTestHandlingFlaky(
             String outputFolderName,
             String fullClassName,
@@ -80,6 +106,7 @@ public abstract class RestTestBase {
 
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests, lambda, 3);
     }
+
 
     protected void runTestHandlingFlaky(
             String outputFolderName,
