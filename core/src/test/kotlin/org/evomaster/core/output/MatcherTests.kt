@@ -3,7 +3,7 @@ package org.evomaster.core.output
 import org.evomaster.client.java.controller.contentMatchers.NumberMatcher.numbersMatch
 import org.evomaster.client.java.controller.contentMatchers.StringMatcher.stringsMatch
 import org.evomaster.client.java.controller.contentMatchers.SubStringMatcher.subStringsMatch
-import org.evomaster.client.java.controller.contentMatchers.StringCollectionMatcher.collectionContains
+import org.evomaster.client.java.controller.contentMatchers.StringCollectionMatcher.*
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Test
@@ -63,8 +63,23 @@ class MatcherTests{
      */
     @Test
     fun testStringCollectionMatcher(){
-        assertTrue(collectionContains(Arrays.asList("mup", "tup", "vup"), "vup"))
-        assertFalse(collectionContains(Arrays.asList("mup", "tup", "vup"), "mjup"))
+        //Check that a collection contains an item
+        assertTrue(collectionContains(Arrays.asList("mup", "nup", "vup"), "vup"))
+        assertFalse(collectionContains(Arrays.asList("mup", "nup", "vup"), "mjup"))
+
+        // Check that the first collection contains the second collection
+        assertTrue(collectionContains(Arrays.asList("mup", "nup", "vup"), Arrays.asList("mup", "vup")))
+        assertFalse(collectionContains(Arrays.asList("mup", "nup", "vup"), Arrays.asList("mup", "zup")))
+
+        // Check that the second collection contains the first
+        assertTrue(collectionIsContained(Arrays.asList("mup", "vup"), Arrays.asList("mup", "vup", "zup")))
+        assertFalse(collectionIsContained(Arrays.asList("mup", "nup", "vup"), Arrays.asList("mup", "zup")))
+
+        // Check that the two collections match (i.e. have the same elements). NOTE: the order of the elements is not relevant.
+        assertTrue(collectionsMatch(Arrays.asList("mup", "nup", "vup"), Arrays.asList("mup", "vup", "nup")))
+        assertFalse(collectionsMatch(Arrays.asList("mup", "nup"), Arrays.asList("mup", "vup", "nup")))
+        assertFalse(collectionsMatch(Arrays.asList("mup", "nup", "vup"), Arrays.asList("mup", "nup")))
+
     }
 
 

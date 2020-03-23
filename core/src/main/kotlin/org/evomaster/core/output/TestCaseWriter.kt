@@ -63,11 +63,28 @@ class TestCaseWriter {
         partialOracles = oracles
     }
 
+    fun setupWriter(config: EMConfig, objGenerator: ObjectGenerator){
+        //TODO: refactor remove once changes merged
+        configuration = config
+        this.format = config.outputFormat
+        this.expectationsWriter = ExpectationsWriter()
+        expectationsWriter.setFormat(this.format)
+
+        if(config.expectationsActive
+                && ::swagger.isInitialized){
+            objGenerator.setSwagger(swagger)
+            partialOracles.setGenerator(objGenerator)
+            partialOracles.setFormat(format)
+            expectationsWriter.setSwagger(swagger)
+            expectationsWriter.setPartialOracles(partialOracles)
+        }
+    }
 
     fun convertToCompilableTestCode(
             config: EMConfig,
             test: TestCase,
-            baseUrlOfSut: String)
+            baseUrlOfSut: String,
+            objectGenerator: ObjectGenerator = ObjectGenerator())
             : Lines {
 
         //TODO: refactor remove once changes merged
@@ -78,18 +95,14 @@ class TestCaseWriter {
 
         val objGenerator = ObjectGenerator()
 
-        if (config.expectationsActive && ::swagger.isInitialized) {
-            objGenerator.setSwagger(swagger)
-            partialOracles.setGenerator(objGenerator)
-            partialOracles.setFormat(format)
-            expectationsWriter.setSwagger(swagger)
-            expectationsWriter.setPartialOracles(partialOracles)
-        }
-
+        setupWriter(config, objectGenerator)
         counter = 0
 
         val lines = Lines()
 
+        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+            clusterComment(lines, test)
+        }
         if (format.isJUnit()) {
             lines.add("@Test")
         }
@@ -421,7 +434,7 @@ class TestCaseWriter {
         } else {
             when (resContentsItem::class) {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
-                String::class -> return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
+                String::class ->  return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
                 ArrayList::class -> return NOT_COVERED_YET
                 else -> return NOT_COVERED_YET
@@ -471,28 +484,34 @@ class TestCaseWriter {
         if (res.getBodyType() != null) {
             val type = res.getBodyType()!!
             if (type.isCompatible(MediaType.APPLICATION_JSON_TYPE) || type.toString().toLowerCase().contains("+json")) {
-                when (bodyString?.first()) {
+                when (bodyString?.trim()?.first()) {
                     '[' -> {
                         // This would be run if the JSON contains an array of objects.
                         val resContents = Gson().fromJson(res.getBody(), ArrayList::class.java)
                         lines.add(".body(\"size()\", equalTo(${resContents.size}))")
                         //assertions on contents
-                        if (resContents.size > 0) {
+                        if(resContents.size > 0){
+                            var longArray = false
                             resContents.forEachIndexed { test_index, value ->
-                                if (value is Map<*, *>) {
-                                    handleMapLines(test_index, value, lines)
-                                } else {
-                                    val printableTh = handleFieldValues(value)
-                                    if (printableTh != "null"
-                                            && printableTh != NOT_COVERED_YET
-                                            && !printableTh.contains("logged")
-                                            && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
-                                    ) {
-                                        lines.add(".body(\"get($test_index)\", $printableTh)")
+                                when {
+                                    (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
+                                    (value is String) -> longArray = true
+                                    else -> {
+                                        val printableTh = handleFieldValues(value)
+                                        if (printableTh != "null"
+                                                && printableTh != NOT_COVERED_YET
+                                                && !printableTh.contains("logged")
+                                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                                        ) {
+                                            //lines.add(".body(\"get($test_index)\", $printableTh)")
+                                            lines.add(".body(\"\", $printableTh)")
+                                        }
                                     }
                                 }
                             }
-                        } else {
+                            if(longArray) lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
+                        }
+                        else{
                             // the object is empty
                             if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
                             else lines.add(".body(\"isEmpty()\", is(true))")
@@ -532,15 +551,12 @@ class TestCaseWriter {
 
     private fun addObjectAssertions(resContents: Map<*, *>, lines: Lines) {
         if (resContents.isEmpty()) {
-            // If this executes, the result contains an empty collection.
-            //lines.add(".body(\"size()\", numberMatches(0))")
             if (format.isKotlin()) lines.add(".body(\"isEmpty()\", `is`(true))")
             else lines.add(".body(\"isEmpty()\", is(true))")
         }
 
         val flatContent = flattenForAssert(mutableListOf<String>(), resContents)
         // Removed size checks for objects.
-        //lines.add(".body(\"size()\", numberMatches(${resContents.size}))")
         flatContent.keys
                 .filter { !it.contains("timestamp") } //needed since timestamps will change between runs
                 .filter { !it.contains("self") } //TODO: temporary hack. Needed since ports might change between runs.
@@ -675,7 +691,7 @@ class TestCaseWriter {
         call.parameters.filterIsInstance<HeaderParam>()
                 .filter { !prechosenAuthHeaders.contains(it.name) }
                 .forEach {
-                    lines.add(".set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
+                    lines.add(".$set(\"${it.name}\", ${it.gene.getValueAsPrintableString(targetFormat = format)})")
                 }
 
         val cookieLogin = call.auth.cookieLogin
@@ -741,5 +757,12 @@ class TestCaseWriter {
         return returnMap
     }
 
-
+    fun clusterComment(lines: Lines, test: TestCase){
+        lines.add("/**")
+        if(test.test.clusterAssignments.size > 0) lines.add("* [${test.name}] is a part of several clusters, as defined by the selected clustering options. ")
+        for (c in test.test.clusterAssignments){
+            lines.add("* $c")
+        }
+        lines.add("*/")
+    }
 }
