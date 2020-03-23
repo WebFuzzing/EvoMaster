@@ -88,6 +88,12 @@ class ServiceClazz(
          */
         val ownedResourceService : Map<String, PropertySpecification>,
 
+        /**
+         * key is type of owned dto
+         * value is corresponding post type (POST or POST_ID) for creation
+         */
+        val ownedCreation : Map<String, RestMethod>,
+
         val restMethods : List<RestMethod>,
         rootPackage: String,
         outputFolder: String,

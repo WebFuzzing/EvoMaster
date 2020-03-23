@@ -10,7 +10,7 @@ object Utils {
     fun generateRestMethodName(method : RestMethod, resource : String) : String{
         return when(method){
             RestMethod.POST_VALUE ->"create${resource}ByValues"
-            RestMethod.POST -> "create$resource"
+            RestMethod.POST, RestMethod.POST_ID -> "create$resource"
             RestMethod.GET_ID ->  "get${resource}ById"
             RestMethod.GET_ALL -> "getAll$resource"
             RestMethod.GET_ALL_CON -> "getAllWithCondition$resource"

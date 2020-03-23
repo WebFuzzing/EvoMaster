@@ -15,7 +15,6 @@ class JavaResourceAPI(specification: ServiceClazz) : JavaClass<ServiceClazz>(spe
 
     private val methods = mutableListOf<MethodScript>()
 
-
     override fun getImports(): List<String> {
         return listOf(
                 "${specification.entity.rootPackage}.*",

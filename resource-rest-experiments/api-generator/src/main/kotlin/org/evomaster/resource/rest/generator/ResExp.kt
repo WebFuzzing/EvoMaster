@@ -51,7 +51,13 @@ object ResExp{
         config.outputContent = GenConfig.OutputContent.CS_EM_EX
         config.nameStrategy = StrategyNameResource.RAND_FIXED_LENGTH
         config.hideExistsDependency = hideDep
-        config.restMethods = RestMethod.values().filter { it != RestMethod.POST_VALUE }
+        val methods = RestMethod.values().filter { it != RestMethod.POST_VALUE}
+        config.restMethods = if(hideDep){
+            methods.filter {  it != RestMethod.POST_ID }
+        }else{
+            methods.filter {  it != RestMethod.POST }
+        }
+
         if (enablePropertyDependency)
             config.dependencyKind = ConditionalDependencyKind.PROPERTY
         return config
@@ -94,7 +100,7 @@ object ResExp{
 
 fun main(args : Array<String>){
 
-    val parent = "rest-n5-set"
+    val parent = "rest-n5-set-v1"
     val evomaster_version = "0.4.1-SNAPSHOT"
     DependencyManager.defined_version.replace(DependencyManager.EVOMASTER_CLIENT_JAVA_INSTRUMENTATION.versionKey, evomaster_version)
 

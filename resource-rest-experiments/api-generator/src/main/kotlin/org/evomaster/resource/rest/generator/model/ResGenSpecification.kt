@@ -13,6 +13,7 @@ class ResGenSpecification(
         val outputFolder : String,
         val resourceFolder : String,
         val restMethods : List<RestMethod>,
+        val createMethod: RestMethod,
         val idProperty : PropertySpecification ,
         val defaultProperties : List<PropertySpecification> = listOf(),
         val plusProperties: Boolean = true,
@@ -226,6 +227,9 @@ class ResGenSpecification(
                             allowNull = false,
                             impactful = true
                     ))
+                }.toMap(),
+                ownedCreation = ownOthers.map {r->
+                    Pair(r.nameDtoClass(), r.createMethod)
                 }.toMap(),
                 restMethods = restMethods,
                 rootPackage = nameApiServicePackage(),

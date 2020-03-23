@@ -2,6 +2,9 @@ package org.evomaster.resource.rest.generator.implementation.java
 
 import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippet
 import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippetType
+import org.evomaster.resource.rest.generator.implementation.java.service.Utils
+import org.evomaster.resource.rest.generator.model.ResServiceTypedPropertySpecification
+import org.evomaster.resource.rest.generator.model.RestMethod
 
 /**
  * created by manzh on 2019-08-16
@@ -156,4 +159,5 @@ interface SpringRestAPI {
 
     fun returnStatus(code : Int = 201, msg : String? = null) = "return ResponseEntity.status($code)${if (msg == null) ".build()" else ".body($msg)"};"
 
+    fun createOwnedEntityWithServiceApi(statusCode : String, apiVar: ResServiceTypedPropertySpecification, method: RestMethod, inputs : List<String>) = "int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(method, apiVar.resourceName)}(${inputs.joinToString(",")}).getStatusCode().value();"
 }

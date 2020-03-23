@@ -197,6 +197,7 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
                    outputFolder = config.getCsOutputFolder(),
                    resourceFolder = config.getCsResourceFolder(),
                    restMethods = getMethods(node),
+                   createMethod = getCreation(),
                    dependencyKind = config.dependencyKind,
                    idProperty = PropertySpecification(config.idName, config.idType.name, isId = true, autoGen = false, allowNull = false, impactful = true),
                    defaultProperties = if (config.numOfExtraProperties == -1) mutableListOf(
@@ -219,6 +220,12 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
         if(config.hideExistsDependency || node.outgoing.isEmpty())
             return config.restMethods.filter { it != RestMethod.DELETE_CON && it != RestMethod.GET_ALL_CON }
         return config.restMethods.filter { it != RestMethod.DELETE && it != RestMethod.GET_ALL }
+    }
+
+    private fun getCreation() : RestMethod{
+        val post = config.restMethods.filter { it == RestMethod.POST_ID || it == RestMethod.POST || it == RestMethod.POST_VALUE }
+        if (post.size == 1) return post.first()
+        throw IllegalArgumentException("incorrect rest methods setting")
     }
 
     private fun generateProperties(config: GenConfig) : List<PropertySpecification>{

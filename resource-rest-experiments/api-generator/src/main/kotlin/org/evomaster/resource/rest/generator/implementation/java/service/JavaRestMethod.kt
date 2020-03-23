@@ -37,7 +37,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
             RestMethod.POST ->{
                 extraPathParamsTags(mapOf(dtoVar to SpringAnnotation.REQUEST_BODY.getText()).toMutableMap(), skip = listOf(idVar))
             }
-            RestMethod.PUT ->{
+            RestMethod.PUT, RestMethod.POST_ID ->{
                 extraPathParamsTags(mapOf(
                         idVar to SpringAnnotation.PATH_VAR.getText(mapOf("name" to idVar)),
                         dtoVar to SpringAnnotation.REQUEST_BODY.getText()
@@ -100,7 +100,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
             RestMethod.POST ->{
                 extraPathParams(mapOf(dtoVar to "${specification.dto.name}").toMutableMap(), skip = listOf(idVar))
             }
-            RestMethod.PUT -> {
+            RestMethod.PUT, RestMethod.POST_ID-> {
                 extraPathParams(mapOf(
                         idVar to specification.dto.idProperty.type,
                         dtoVar to "${specification.dto.name}"
@@ -174,18 +174,21 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
         val created = "node"
 
-        val inputIsObject = (method == RestMethod.POST || method == RestMethod.PUT )
+        val inputIsObject = (method == RestMethod.POST || method == RestMethod.PUT || method == RestMethod.POST_ID)
 
 
         //check id
         val idValue = if(!inputIsObject) idVar else entityId
 
         when(method){
-            RestMethod.POST, RestMethod.POST_VALUE ->{
+            RestMethod.POST, RestMethod.POST_VALUE, RestMethod.POST_ID ->{
+                if (method == RestMethod.POST_ID)
+                    content.add(setIdOnPathToDto(idValue, idVar))
                 content.add(assertNonExistence(specification.entityRepository.name, idValue, ifsnippet, IfSnippetType.CHECK_SELF_EXISTENCE, exceptionStatusCode = 400))
                 content.add(formatInstanceClassAndAssigned(specification.entity.name, created, listOf()))
                 content.add("$created.${specification.entity.idProperty.nameSetterName()}($idValue);")
             }
+
             RestMethod.PUT ->{
                 content.add(setIdOnPathToDto(idValue, idVar))
                 content.add(findOrCreateEntityByIdAndAssigned(
@@ -214,7 +217,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
         val referredEntity = mutableListOf<String>()
         val createdDtos = mutableListOf<String>()
         when(method){
-            RestMethod.POST_VALUE, RestMethod.POST, RestMethod.PUT->{
+            RestMethod.POST_VALUE, RestMethod.POST, RestMethod.PUT, RestMethod.POST_ID->{
                 //handling owned resources
                 val ownedId = specification.dto.ownOthers
                 if(ownedId.isNotEmpty()){
@@ -224,14 +227,18 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                         createdDtos.add(createdDtoVar)
                         content.add(formatInstanceClassAndAssigned( specification.dto.ownOthersTypes[index], createdDtoVar, listOf()))
                         val statusCode = "${createdDtoVar}Code"
+
                         if (inputIsObject){
                             specification.dto.ownOthersProperties[index].plus(ownedId[index]).forEach { op->
                                 val opp = op as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
                                 content.add("$createdDtoVar.${opp.itsIdProperty.name}=$dtoVar.${op.name};")//check
                             }
-                            val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
-                                    ?:throw IllegalArgumentException("cannot find service to create the owned entity")
-                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
+//                            val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
+//                                    ?:throw IllegalArgumentException("cannot find service to create the owned entity")
+////                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
+//                            val post = specification.ownedCreation[specification.dto.ownOthersTypes[index]]?: throw IllegalArgumentException("fail to find a creation for the owned entity")
+//                            val inputs = if(post==RestMethod.POST) listOf(createdDtoVar) else if(post==RestMethod.POST_ID) listOf(idValue, createdDtoVar) else throw IllegalArgumentException("invalid post")
+//                            content.add(createOwnedEntityWithServiceApi(statusCode, apiVar, post, inputs))
                         }else{
                             val varsOnParams = ownedPVars[index]
                             val opid = ownedId[index] as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
@@ -241,11 +248,22 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
                                 val opp = op as? ResNodeTypedPropertySpecification?:throw IllegalArgumentException("wrong property spec")
                                 content.add("$createdDtoVar.${opp.itsIdProperty.name}=${varsOnParams[pi].first};")
                             }
-                            val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
-                                    ?:throw IllegalArgumentException("cannot find service to create the owned entity")
-
-                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
+//                            val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
+//                                    ?:throw IllegalArgumentException("cannot find service to create the owned entity")
+//
+////                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
+//                            val post = specification.ownedCreation[specification.dto.ownOthersTypes[index]]?: throw IllegalArgumentException("fail to find a creation for the owned entity")
+//                            val inputs = if(post==RestMethod.POST) listOf(createdDtoVar) else if(post==RestMethod.POST_ID) listOf(idValue, createdDtoVar) else throw IllegalArgumentException("invalid post")
+//                            content.add(createOwnedEntityWithServiceApi(statusCode, apiVar, post, inputs))
                         }
+
+                        val apiVar = specification.ownedResourceService[specification.dto.ownOthersTypes[index]] as? ResServiceTypedPropertySpecification
+                                ?:throw IllegalArgumentException("cannot find service to create the owned entity")
+//                            content.add("int $statusCode = ${apiVar.name}.${Utils.generateRestMethodName(RestMethod.POST, apiVar.resourceName)}($createdDtoVar).getStatusCode().value();")
+                        val post = specification.ownedCreation[specification.dto.ownOthersTypes[index]]?: throw IllegalArgumentException("fail to find a creation for the owned entity")
+                        val inputs = if(post==RestMethod.POST) listOf(createdDtoVar) else if(post==RestMethod.POST_ID) listOf(idValue, createdDtoVar) else throw IllegalArgumentException("invalid post")
+                        content.add(createOwnedEntityWithServiceApi(statusCode, apiVar, post, inputs))
+
                         val entityProperty = specification.entity.ownOthers[index]
                         val found = "ownedEntity${entityProperty.type}"
                         val id = if(inputIsObject) "$dtoVar.${ownedId[index].name}" else ownedVars[index].first
@@ -417,7 +435,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
         val statusCode = when(method){
             RestMethod.PATCH_VALUE -> 200
-            RestMethod.POST_VALUE, RestMethod.POST, RestMethod.PUT -> 201
+            RestMethod.POST_VALUE, RestMethod.POST, RestMethod.POST_ID, RestMethod.PUT -> 201
             else -> throw IllegalArgumentException("NOT IMPLEMENT $method")
         }
         if (!withImpact) content.add(returnStatus(statusCode)) else content.add(returnStatus(statusCode, msg = getBranchMsg()))
@@ -427,7 +445,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
     fun getPath(): String{
         return when(method){
             RestMethod.GET_ALL_CON,RestMethod.POST -> specification.pathWithId
-            RestMethod.PUT, RestMethod.GET_ID, RestMethod.DELETE_CON,RestMethod.POST_VALUE,RestMethod.PATCH_VALUE -> "${specification.pathWithId}/{$idVar}"
+            RestMethod.PUT,  RestMethod.POST_ID, RestMethod.GET_ID, RestMethod.DELETE_CON,RestMethod.POST_VALUE,RestMethod.PATCH_VALUE -> "${specification.pathWithId}/{$idVar}"
             RestMethod.GET_ALL-> "/${specification.resourceOnPath}"
             RestMethod.DELETE-> "/${specification.resourceOnPath}/{$idVar}"
         }
@@ -435,7 +453,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
     override fun getTags(): List<String> {
         val map = when(method){
-            RestMethod.POST, RestMethod.PUT -> mapOf("value" to getPath(), "method" to "RequestMethod.${method.text}", "consumes" to "MediaType.APPLICATION_JSON")
+            RestMethod.POST,  RestMethod.POST_ID, RestMethod.PUT -> mapOf("value" to getPath(), "method" to "RequestMethod.${method.text}", "consumes" to "MediaType.APPLICATION_JSON")
             else -> mapOf("value" to getPath(), "method" to "RequestMethod.${method.text}", "produces" to "MediaType.APPLICATION_JSON")
         }
         return listOf(
@@ -445,7 +463,7 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
     override fun getReturn(): String? {
         return when(method){
-            RestMethod.POST, RestMethod.POST_VALUE, RestMethod.PUT, RestMethod.PATCH_VALUE, RestMethod.DELETE, RestMethod.DELETE_CON -> "ResponseEntity"
+            RestMethod.POST, RestMethod.POST_ID, RestMethod.POST_VALUE, RestMethod.PUT, RestMethod.PATCH_VALUE, RestMethod.DELETE, RestMethod.DELETE_CON -> "ResponseEntity"
             RestMethod.GET_ALL, RestMethod.GET_ALL_CON -> "ResponseEntity<List<${specification.dto.name}>>"
             RestMethod.GET_ID -> "ResponseEntity<${specification.dto.name}>"
         }
