@@ -100,8 +100,9 @@ class TestCaseWriter {
 
         val lines = Lines()
 
-        clusterComment(lines, test)
-
+        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+            clusterComment(lines, test)
+        }
         if (format.isJUnit()) {
             lines.add("@Test")
         }

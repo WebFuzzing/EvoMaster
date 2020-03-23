@@ -335,24 +335,11 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            // Some initialization to handle test suite splitting and relevant partial oracles
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-            val swagger = injector.getInstance(RestSampler::class.java).getOpenAPI()
-            val partialOracles = PartialOracles()
-            val objGenerator = ObjectGenerator()
-            objGenerator.setSwagger(swagger)
-            partialOracles.setGenerator(objGenerator)
-            partialOracles.setFormat(config.outputFormat)
+            val writer = setupPartialOracles(injector, config, controllerInfoDto)
 
-            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-            writer.setSwagger(swagger)
-            writer.setPartialOracles(partialOracles)
-            writer.setObjectGenerator(objGenerator)
-
-            val splitResult = TestSuiteSplitter.split(solution, config, partialOracles)
+            val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
             solution.clusteringTime = splitResult.clusteringTime.toInt()
-
             splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
                     .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
 
@@ -360,6 +347,24 @@ class Main {
                 writeExecSummary(injector, controllerInfoDto, splitResult)
                 //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
             }
+        }
+
+        private fun setupPartialOracles(injector: Injector, config: EMConfig, controllerInfoDto: ControllerInfoDto?): TestSuiteWriter{
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            if(config.problemType == EMConfig.ProblemType.REST){
+                // Some initialization to handle test suite splitting and relevant partial oracles
+                val partialOracles = PartialOracles()
+                val swagger = injector.getInstance(RestSampler::class.java).getOpenAPI()
+                val objGenerator = ObjectGenerator()
+                objGenerator.setSwagger(swagger)
+                partialOracles.setGenerator(objGenerator)
+                partialOracles.setFormat(config.outputFormat)
+                assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+                writer.setSwagger(swagger)
+                writer.setPartialOracles(partialOracles)
+                writer.setObjectGenerator(objGenerator)
+            }
+            return writer
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {

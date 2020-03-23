@@ -38,8 +38,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             add("}")
@@ -74,8 +72,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -143,8 +139,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -194,8 +188,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -242,8 +234,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -292,8 +282,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -349,8 +337,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -402,8 +388,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -456,8 +440,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -511,8 +493,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -563,8 +543,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -626,8 +604,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -691,8 +667,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -741,8 +715,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -788,8 +760,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -835,8 +805,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -883,8 +851,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -929,8 +895,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()
@@ -975,8 +939,6 @@ class TestCaseWriterTest {
         val lines = writer.convertToCompilableTestCode(config, test, baseUrlOfSut)
 
         val expectedLines = Lines().apply {
-            add("/**")
-            add("*/")
             add("@Test")
             add("public void test() throws Exception {")
             indent()

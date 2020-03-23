@@ -500,6 +500,9 @@ class TestSuiteWriter {
     fun setPartialOracles(oracles: PartialOracles){
         partialOracles = oracles
     }
+    fun getPartialOracles(): PartialOracles{
+        return partialOracles
+    }
     fun setObjectGenerator(generator: ObjectGenerator){
         objectGenerator = generator
     }
