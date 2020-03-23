@@ -25,7 +25,7 @@
 
     <logger name="org.evomaster" level="TRACE" />
 
-    <root level="warn">
+    <root level="OFF"> <!-- Disable all logging but in EvoMaster code-->
         <appender-ref ref="REGULAR_STDOUT" />
     </root>
 

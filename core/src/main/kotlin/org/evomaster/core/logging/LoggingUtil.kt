@@ -93,13 +93,16 @@ class LoggingUtil {
             System.setOut(outStream)
 
             changeLogbackFile("logback_for_determinism_check.xml")
-            lambda()
+
+            try {
+                lambda()
+            } finally {
+                //before returning the logs, restore the default settings
+                changeLogbackFile("logback.xml")
+                System.setOut(latestOut)
+            }
 
             val logs = byteStream.toString()
-
-            //before returning the logs, restore the default settings
-            changeLogbackFile("logback.xml")
-            System.setOut(latestOut)
 
             return logs
         }
