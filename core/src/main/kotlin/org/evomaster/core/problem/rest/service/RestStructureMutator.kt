@@ -14,9 +14,15 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StructureMutator
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 
 class RestStructureMutator : StructureMutator() {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(RestStructureMutator::class.java)
+    }
 
     @Inject
     private lateinit var archiveMutator: ArchiveMutator
@@ -225,6 +231,7 @@ class RestStructureMutator : StructureMutator() {
         if (randomness.nextBoolean() || ind.seeActions().size == config.maxTestSize) {
 
             //delete one at random
+            log.trace("Deleting action from test")
             val chosen = randomness.nextInt(ind.seeActions().size)
 
             //save mutated genes
@@ -239,6 +246,7 @@ class RestStructureMutator : StructureMutator() {
         } else {
 
             //add one at random
+            log.trace("Adding action to test")
             val sampledAction = sampler.sampleRandomAction(0.05)
             val chosen = randomness.nextInt(ind.seeActions().size)
             //ind.seeActions().add(chosen, sampledAction)

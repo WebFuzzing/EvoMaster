@@ -75,6 +75,7 @@ class MapGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
 
         elements.clear()
+        log.trace("Randomizing MapGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
@@ -99,6 +100,7 @@ class MapGene<T>(
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
         } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
+            log.trace("Removing gene in mutation")
             elements.removeAt(randomness.nextInt(elements.size))
         } else {
             val gene = randomness.choose(elements)
@@ -156,6 +158,7 @@ class MapGene<T>(
                 return
             }
             delete ->{
+                log.trace("Deleting gene")
                 elements.removeAt(randomness.nextInt(elements.size))
                 return
             }

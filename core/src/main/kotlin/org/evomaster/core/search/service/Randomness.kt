@@ -79,7 +79,7 @@ class Randomness {
 
     fun nextInt(bound: Int): Int {
         val k = random.nextInt(bound)
-        log.trace("nextInt(): {}", k)
+        log.trace("nextInt(bound): {} , {}", k, bound)
         return k
     }
 
@@ -94,7 +94,7 @@ class Randomness {
         while (k == exclude) {
             k = nextInt(min, max)
         }
-        log.trace("nextInt(): {}", k)
+        log.trace("nextInt(min,max,exclude): {}", k)
         return k
     }
 
@@ -110,7 +110,7 @@ class Randomness {
         }
 
         val k = (min.toLong() + random.nextDouble() * (max.toLong() - min + 1)).toInt()
-        log.trace("nextInt(): {}", k)
+        log.trace("nextInt(min,max): {}", k)
         return k
     }
 
@@ -207,6 +207,9 @@ class Randomness {
             }
             temp += v
         }
+
+        log.trace("Chosen: {}", found)
+
         return found
     }
 
@@ -255,7 +258,11 @@ class Randomness {
         selection.addAll(list)
         selection.shuffle(random)
 
-        return selection.subList(0, n)
+        val k =  selection.subList(0, n)
+
+        if(log.isTraceEnabled) log.trace("Chosen: {}", k.joinToString(" "))
+
+        return k
     }
 
     /**
@@ -270,7 +277,11 @@ class Randomness {
         selection.addAll(set)
         selection.shuffle(random)
 
-        return selection.subList(0, n).toSet()
+        val k = selection.subList(0, n).toSet()
+
+        if(log.isTraceEnabled) log.trace("Chosen: {}", k.joinToString(" "))
+
+        return k
     }
 
 
@@ -292,6 +303,10 @@ class Randomness {
             iter.next()
             i++
         }
-        return iter.next()
+
+        val k = iter.next()
+        log.trace("Chosen: {}", k)
+
+        return k
     }
 }

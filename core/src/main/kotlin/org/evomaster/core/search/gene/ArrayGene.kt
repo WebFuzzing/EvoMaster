@@ -93,6 +93,7 @@ class ArrayGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
 
         elements.clear()
+        log.trace("Randomizing ArrayGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
@@ -114,6 +115,7 @@ class ArrayGene<T>(
             gene.randomize(randomness, false)
             elements.add(gene)
         } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
+            log.trace("Remvoving gene in mutation")
             elements.removeAt(randomness.nextInt(elements.size))
         } else {
             val gene = randomness.choose(elements)
@@ -173,6 +175,7 @@ class ArrayGene<T>(
                 elements.add(gene)
             }
             delete ->{
+                log.trace("Removing gene")
                 elements.removeAt(randomness.nextInt(elements.size))
             }
             else -> {

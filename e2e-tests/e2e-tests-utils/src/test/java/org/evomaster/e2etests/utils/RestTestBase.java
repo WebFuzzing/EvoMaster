@@ -8,6 +8,7 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
+import org.evomaster.core.StaticCounter;
 import org.evomaster.core.logging.LoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
@@ -40,6 +41,8 @@ public abstract class RestTestBase {
     protected static SutController controller;
     protected static RemoteController remoteController;
     protected static int controllerPort;
+
+    protected int defaultSeed = 42;
 
 
     @AfterAll
@@ -85,10 +88,12 @@ public abstract class RestTestBase {
                 "--stoppingCriterion", "FITNESS_EVALUATIONS"
         ));
 
+        StaticCounter.Companion.reset();
         String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
 
+        StaticCounter.Companion.reset();
         String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
                 () -> {lambda.accept(args); return Unit.INSTANCE;}
         );
@@ -308,7 +313,7 @@ public abstract class RestTestBase {
 
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
-                "--seed", "42",
+                "--seed", "" + defaultSeed,
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",
