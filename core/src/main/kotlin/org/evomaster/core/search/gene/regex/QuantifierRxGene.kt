@@ -5,6 +5,8 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
 
 
@@ -14,6 +16,11 @@ class QuantifierRxGene(
         val min: Int = 1,
         val max: Int = 1
 ) : RxTerm(name) {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
+    }
+
 
     val atoms = mutableListOf<RxAtom>()
 
@@ -101,6 +108,7 @@ class QuantifierRxGene(
         val length = atoms.size
 
         if( length > min  && randomness.nextBoolean(0.1)){
+            log.trace("Removing atom")
             atoms.removeAt(randomness.nextInt(length))
         } else if(length < limitedMax && randomness.nextBoolean(0.1)){
             addNewAtom(randomness, false, listOf())

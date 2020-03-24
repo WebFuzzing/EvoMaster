@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
+import org.evomaster.core.StaticCounter
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
@@ -54,13 +55,6 @@ class StringGene(
     companion object {
 
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
-
-        /*
-            WARNING
-            mutable static state.
-            only used to create unique names
-         */
-        private var counter: Int = 0
 
         private const val NEVER_ARCHIVE_MUTATION = -2
         private const val CHAR_MUTATION_INITIALIZED = -1
@@ -177,7 +171,7 @@ class StringGene(
         if (!TaintInputName.isTaintInput(value)
                 && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
 
-            value = TaintInputName.getTaintName(counter++)
+            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
             return
         }
 
@@ -206,6 +200,7 @@ class StringGene(
             p < 0.8 && s.isNotEmpty() -> {
                 val delta = getDelta(randomness, apc, start = 6, end = 3)
                 val sign = randomness.choose(listOf(-1, +1))
+                log.trace("Changing char in: {}", s)
                 val i = randomness.nextInt(s.length)
                 val array = s.toCharArray()
                 array[i] = s[i] + (sign * delta)
@@ -220,6 +215,7 @@ class StringGene(
                 if (s.isEmpty() || randomness.nextBoolean(0.8)) {
                     s + randomness.nextWordChar()
                 } else {
+                    log.trace("Appending char")
                     val i = randomness.nextInt(s.length)
                     if (i == 0) {
                         randomness.nextWordChar() + s
@@ -496,7 +492,7 @@ class StringGene(
         if (!TaintInputName.isTaintInput(value)
                 && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
 
-            value = TaintInputName.getTaintName(counter++)
+            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
             return
         }
 

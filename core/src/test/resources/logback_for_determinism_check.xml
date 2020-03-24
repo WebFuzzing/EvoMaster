@@ -1,0 +1,37 @@
+<configuration>
+
+    <!--
+        This should be similar to logback.html.
+        However, it should print more (e.g., TRACE level), and avoid putting
+        time-stamps
+    -->
+
+    <!--  Enable logs that can be printed only once  -->
+    <turboFilter class="org.evomaster.core.logging.UniqueTurboFilter" />
+
+    <appender name="REGULAR_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="INFO_STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>* %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="com.netflix.governator.lifecycle.ClasspathScanner" level="ERROR" />
+
+    <logger name="org.evomaster" level="TRACE" />
+
+    <root level="OFF"> <!-- Disable all logging but in EvoMaster code-->
+        <appender-ref ref="REGULAR_STDOUT" />
+    </root>
+
+    <logger name="info_logger" level="INFO" additivity="false">
+        <appender-ref ref="INFO_STDOUT" />
+    </logger>
+
+
+</configuration>

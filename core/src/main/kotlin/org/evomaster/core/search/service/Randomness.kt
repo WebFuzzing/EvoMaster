@@ -2,11 +2,17 @@ package org.evomaster.core.search.service
 
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.*
 import javax.annotation.PostConstruct
 
 
 class Randomness {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(Randomness::class.java)
+    }
 
     @Inject
     private lateinit var configuration: EMConfig
@@ -14,50 +20,81 @@ class Randomness {
     private val random = Random()
 
     @PostConstruct
-    private fun initialize(){
+    private fun initialize() {
         updateSeed(configuration.seed)
     }
 
-    private val wordChars = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY".map { it.toInt() }.sorted()
+    private val wordChars = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+            .map { it.toInt() }.sorted()
+
     /**
      * A negative value means the current CPU time clock is used instead
      */
     fun updateSeed(seed: Long) {
-        if(seed < 0 ){
+        if (seed < 0) {
             random.setSeed(System.currentTimeMillis())
         } else {
             random.setSeed(seed)
         }
     }
 
-    fun nextBoolean() = random.nextBoolean()
+    fun nextBoolean(): Boolean {
+        val k = random.nextBoolean()
+        log.trace("nextBoolean(): {}", k)
+        return k
+    }
 
     /**
      * Return true with probability P
      */
-    fun nextBoolean(p: Double) = random.nextDouble() < p
+    fun nextBoolean(p: Double): Boolean {
+        val k = random.nextDouble() < p
+        log.trace("nextBoolean(): {}", k)
+        return k
+    }
 
-    fun nextInt() = random.nextInt()
+    fun nextInt(): Int {
+        val k = random.nextInt()
+        log.trace("nextInt(): {}", k)
+        return k
+    }
 
-    fun nextDouble() = random.nextDouble()
+    fun nextDouble(): Double {
+        val k = random.nextDouble()
+        log.trace("nextDouble(): {}", k)
+        return k
+    }
 
-    fun nextGaussian() = random.nextGaussian()
+    fun nextGaussian(): Double {
+        val k = random.nextGaussian()
+        log.trace("nextGaussian(): {}", k)
+        return k
+    }
 
-    fun nextFloat() = random.nextFloat()
+    fun nextFloat(): Float {
+        val k = random.nextFloat()
+        log.trace("nextFloat(): {}", k)
+        return k
+    }
 
-    fun nextInt(bound: Int) = random.nextInt(bound)
+    fun nextInt(bound: Int): Int {
+        val k = random.nextInt(bound)
+        log.trace("nextInt(bound): {} , {}", k, bound)
+        return k
+    }
 
 
     fun nextInt(min: Int, max: Int, exclude: Int): Int {
 
-        if(min == max && max == exclude){
+        if (min == max && max == exclude) {
             throw IllegalArgumentException("Nothing to select, as min/max/exclude are all equal")
         }
 
         var k = nextInt(min, max)
-        while(k == exclude){
+        while (k == exclude) {
             k = nextInt(min, max)
         }
+        log.trace("nextInt(min,max,exclude): {}", k)
         return k
     }
 
@@ -72,14 +109,19 @@ class Randomness {
             throw IllegalArgumentException("Min $min is bigger than max $max")
         }
 
-        return (min.toLong() + Math.random() * (max.toLong() - min + 1)).toInt()
+        val k = (min.toLong() + random.nextDouble() * (max.toLong() - min + 1)).toInt()
+        log.trace("nextInt(min,max): {}", k)
+        return k
     }
 
 
-    fun nextLong() = random.nextLong()
+    fun nextLong(): Long {
+        val k = random.nextLong()
+        log.trace("nextLong(): {}", k)
+        return k
+    }
 
-
-    fun nextWordString(min: Int = 0, max: Int = 10) : String {
+    fun nextWordString(min: Int = 0, max: Int = 10): String {
 
         val n = nextInt(min, max)
 
@@ -88,30 +130,37 @@ class Randomness {
             chars[it] = nextWordChar()
         }
 
-        return kotlin.text.String(chars)
+        val k = String(chars)
+        log.trace("nextWordString(): {}", k)
+        return k
     }
 
-    fun nextLetter() : Char{
 
-        val characters =
-                "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-        return characters[random.nextInt(characters.length)]
+    fun nextLetter(): Char {
+
+        val characters = "abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+
+        val k = characters[random.nextInt(characters.length)]
+        log.trace("nextLetter(): {}", k)
+        return k
     }
 
-    fun nextWordChar() : Char{
+    fun nextWordChar(): Char {
 
-        val characters =
-                "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
-        return characters[random.nextInt(characters.length)]
+        val characters = "_0123456789abcdefghilmnopqrstuvzjkwxyABCDEFGHILMNOPQRSTUVZJKWXY"
+
+        val k = characters[random.nextInt(characters.length)]
+        log.trace("nextWordChar(): {}", k)
+        return k
     }
 
     fun wordCharPool() = wordChars
 
-    fun validNextWordChars(min: Int, max: Int) : List<Int>{
+    fun validNextWordChars(min: Int, max: Int): List<Int> {
         return wordChars.filter { it in min..max }
     }
 
-    fun nextChar(min : Int = Char.MIN_VALUE.toInt(), max : Int = Char.MAX_VALUE.toInt()) : Char{
+    fun nextChar(min: Int = Char.MIN_VALUE.toInt(), max: Int = Char.MAX_VALUE.toInt()): Char {
         if (min < Char.MIN_VALUE.toInt())
             throw IllegalArgumentException("$min is less than MIN_VALUE of Char")
         if (max > Char.MAX_VALUE.toInt())
@@ -123,13 +172,13 @@ class Randomness {
         return choose((min..max).toList()).toChar()
     }
 
-    fun nextChar(start: Char, endInclusive: Char) : Char{
+    fun nextChar(start: Char, endInclusive: Char): Char {
 
-        if(start > endInclusive){
+        if (start > endInclusive) {
             throw IllegalArgumentException("Start '$start' is after end '$endInclusive'")
         }
 
-        if(start == endInclusive){
+        if (start == endInclusive) {
             return start
         }
 
@@ -147,17 +196,20 @@ class Randomness {
      */
     fun <K> chooseByProbability(map: Map<K, Float>): K {
 
-        val randFl = random.nextFloat()*map.values.sum()
+        val randFl = random.nextFloat() * map.values.sum()
         var temp = 0.toFloat()
         var found = map.keys.first()
 
-        for((k, v) in map){
-            if(randFl <= (v + temp)){
+        for ((k, v) in map) {
+            if (randFl <= (v + temp)) {
                 found = k
                 break
             }
             temp += v
         }
+
+        log.trace("Chosen: {}", found)
+
         return found
     }
 
@@ -169,7 +221,7 @@ class Randomness {
      * Note: as [K] is used as a key, make sure that [equals] and [hashCode]
      * are well defined for it (eg, no problem if it is a [Int] or a [String])
      */
-    fun <K,V> chooseProportionally(list: List<K>, weights: Map<K,V>): K {
+    fun <K, V> chooseProportionally(list: List<K>, weights: Map<K, V>): K {
 
         throw IllegalStateException("Not implemented yet")
     }
@@ -179,7 +231,7 @@ class Randomness {
      * Ie, consider only the first [index] elements
      */
     fun <T> chooseUpTo(list: List<T>, index: Int): T {
-        if(index <= 0 || index > list.size){
+        if (index <= 0 || index > list.size) {
             throw IllegalArgumentException("Invalid index $index in list of size ${list.size}")
         }
 
@@ -197,42 +249,49 @@ class Randomness {
     /**
      * Randomly choose (without replacement) up to [n] values from the [list]
      */
-    fun <T> choose(list: List<T>, n: Int): List<T>{
-        if(list.size <= n){
+    fun <T> choose(list: List<T>, n: Int): List<T> {
+        if (list.size <= n) {
             return list
         }
 
         val selection: MutableList<T> = mutableListOf()
         selection.addAll(list)
-        Collections.shuffle(selection, random)
+        selection.shuffle(random)
 
-        return selection.subList(0, n)
+        val k =  selection.subList(0, n)
+
+        if(log.isTraceEnabled) log.trace("Chosen: {}", k.joinToString(" "))
+
+        return k
     }
 
     /**
      * Randomly choose (without replacement) up to [n] values from the [set]
      */
-    fun <T> choose(set: Set<T>, n: Int): Set<T>{
-        if(set.size <= n){
+    fun <T> choose(set: Set<T>, n: Int): Set<T> {
+        if (set.size <= n) {
             return set
         }
 
         val selection: MutableList<T> = mutableListOf()
         selection.addAll(set)
-        Collections.shuffle(selection, random)
+        selection.shuffle(random)
 
-        return selection.subList(0, n).toSet()
+        val k = selection.subList(0, n).toSet()
+
+        if(log.isTraceEnabled) log.trace("Chosen: {}", k.joinToString(" "))
+
+        return k
     }
 
 
-
-    fun <K,V> choose(map: Map<K,V>): V = choose(map.values)
+    fun <K, V> choose(map: Map<K, V>): V = choose(map.values)
 
 
     /**
      * Randomly choose one element
      */
-    fun <V> choose(collection: Collection<V>) : V{
+    fun <V> choose(collection: Collection<V>): V {
         if (collection.isEmpty()) {
             throw IllegalArgumentException("Empty map to choose from")
         }
@@ -240,10 +299,14 @@ class Randomness {
         var i = 0
 
         val iter = collection.iterator()
-        while(iter.hasNext() && i<index){
+        while (iter.hasNext() && i < index) {
             iter.next()
             i++
         }
-        return iter.next()
+
+        val k = iter.next()
+        log.trace("Chosen: {}", k)
+
+        return k
     }
 }
