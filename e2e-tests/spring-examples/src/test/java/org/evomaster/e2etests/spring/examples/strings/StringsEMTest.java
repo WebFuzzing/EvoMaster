@@ -21,6 +21,8 @@ public class StringsEMTest extends StringsTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 13;
+
         runTestHandlingFlakyAndCompilation(
                 "StringsEM",
                 "org.bar.StringsEM",
