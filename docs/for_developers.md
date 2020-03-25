@@ -176,6 +176,30 @@ When writing a new class (or re-factoring a current one), fields should come fir
 followed by class constructors and then the other methods.
 
 
+### NON-DETERMINISM
+
+_EvoMaster_ uses randomized algorithms. Running it twice on the same application can give 
+different results. 
+This is a problem for testing and debugging _EvoMaster_ itself, as for example the test cases 
+will be _flaky_.
+To avoid such issues, we must control the source of non-determinism.
+All randomness sources __MUST__ come from the `Randomness` class.
+Some data-structures could lead to non-deterministic behavior (e.g., iteration over a `Set` does not 
+guarantee the order).
+This does not seem the case for the default data-structures in Kotlin, but it is definitively 
+a problem in Java, e.g., `HashSet` vs. `LinkedHashSet`.
+
+In _EvoMaster_ we do have checks for its determinism. This is achieved by running some E2E tests twice
+with verbose logging, and then compare the logs for an _exact_ match.
+If some logs are not deterministic (e.g., printing out for how many seconds the search ran), those should
+be inside a check for `EMConfig.avoidNonDeterministicLogs`.
+  
+
+When running _EvoMaster_ on an application, the _seed_ for the random generator is taken from
+the CPU clock.
+To make a run deterministic, you will need to use the `--seed` option to specify a constant seed. 
+
+
 ### NAMING CONVENTION
 We follow the typical naming convention used in `Java`: class names start in capital letter
 (e.g., `class Foo`), whereas we use camel-case for variables and 

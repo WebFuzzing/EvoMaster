@@ -25,6 +25,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
+
+    @Test
+    public void testDeterminism(){
+
+        runAndCheckDeterminism(100, (args) -> {
+            initAndRun(args);
+        });
+    }
+
     /*
         In the SUT, there are 2 endpoints:
         1) a POST that generates some data into the DB

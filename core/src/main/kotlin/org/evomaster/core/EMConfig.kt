@@ -622,6 +622,11 @@ class EMConfig {
 
     //-------- other options -------------
 
+
+    @Cfg("At times, we need to run EvoMaster with printed logs that are deterministic." +
+            " For example, this means avoiding printing out time-stamps.")
+    var avoidNonDeterministicLogs = false
+
     enum class Algorithm {
         MIO, RANDOM, WTS, MOSA
     }

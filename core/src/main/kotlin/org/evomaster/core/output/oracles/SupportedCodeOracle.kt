@@ -7,6 +7,7 @@ import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
 
 /**
@@ -38,7 +39,11 @@ class SupportedCodeOracle : ImplementedOracle() {
             // The code is not among supported codes, so an expectation will be generated
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
-            lines.add(".that($variableName, Arrays.asList(${getSupportedCode(call).joinToString(", ")}).contains($name.extract().statusCode()))")
+            val supportedCode = getSupportedCode(call).joinToString(", ")
+            if(supportedCode.equals("default", ignoreCase = true)){
+                lines.add("/* Note: this call is handled via a default code. If this is intended behaviour, ignore this comment */")
+            }
+            else lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
         }
     }
     fun supportedCode(call: RestCallAction, res: RestCallResult): Boolean{
@@ -51,17 +56,17 @@ class SupportedCodeOracle : ImplementedOracle() {
         val verb = call.verb
         val path = objectGenerator.getSwagger().paths.get(call.path.toString())
         val result = when (verb){
-            HttpVerb.GET -> path?.get?.responses?.keys ?: mutableSetOf()
-            HttpVerb.POST -> path?.post?.responses?.keys ?: mutableSetOf()
-            HttpVerb.PUT -> path?.put?.responses?.keys ?: mutableSetOf()
-            HttpVerb.DELETE -> path?.delete?.responses?.keys ?: mutableSetOf()
-            HttpVerb.PATCH -> path?.patch?.responses?.keys ?: mutableSetOf()
-            HttpVerb.HEAD -> path?.head?.responses?.keys ?: mutableSetOf()
-            HttpVerb.OPTIONS -> path?.options?.responses?.keys ?: mutableSetOf()
-            HttpVerb.TRACE -> path?.trace?.responses?.keys ?: mutableSetOf()
-            else -> mutableSetOf()
+            HttpVerb.GET -> path?.get
+            HttpVerb.POST -> path?.post
+            HttpVerb.PUT -> path?.put
+            HttpVerb.DELETE -> path?.delete
+            HttpVerb.PATCH -> path?.patch
+            HttpVerb.HEAD -> path?.head
+            HttpVerb.OPTIONS -> path?.options
+            HttpVerb.TRACE -> path?.trace
+            else -> null
         }
-        return result
+        return result?.responses?.keys ?: mutableSetOf()
     }
 
     override fun setObjectGenerator(gen: ObjectGenerator){
@@ -72,10 +77,9 @@ class SupportedCodeOracle : ImplementedOracle() {
         return !supportedCode(call, res)
     }
 
-    override fun selectForClustering(individual: EvaluatedIndividual<RestIndividual>): Boolean {
-        return individual.evaluatedActions().any { ac ->
-            !supportedCode(ac.action as RestCallAction,
-                    ac.result as RestCallResult)
-        }
+    override fun selectForClustering(action: EvaluatedAction): Boolean {
+        return if (action.result is RestCallResult && action.action is RestCallAction)
+            !supportedCode(action.action, action.result)
+        else false
     }
 }

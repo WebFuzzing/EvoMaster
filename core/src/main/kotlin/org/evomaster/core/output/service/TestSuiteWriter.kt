@@ -28,6 +28,8 @@ class TestSuiteWriter {
     private lateinit var searchTimeController: SearchTimeController
 
     private lateinit var swagger: OpenAPI
+    private lateinit var partialOracles: PartialOracles
+    private lateinit var objectGenerator: ObjectGenerator
 
     companion object {
         const val jsImport = "EM";
@@ -35,8 +37,9 @@ class TestSuiteWriter {
         private const val controller = "controller"
         private const val baseUrlOfSut = "baseUrlOfSut"
         private const val expectationsMasterSwitch = "ems"
+
         private val testCaseWriter = TestCaseWriter()
-        private val partialOracles = PartialOracles()
+
         private val log: Logger = LoggerFactory.getLogger(TestSuiteWriter::class.java)
     }
 
@@ -48,6 +51,8 @@ class TestSuiteWriter {
             solution: Solution<*>,
             controllerName: String?
     ) {
+
+        if(!::partialOracles.isInitialized) partialOracles = PartialOracles()
 
         val name = TestSuiteFileName("${solution.testSuiteName}${solution.termination.suffix}")
 
@@ -255,11 +260,13 @@ class TestSuiteWriter {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
 
-            if (config.expectationsActive) {
-                lines.add("private static boolean $expectationsMasterSwitch = false;")
-                lines.add("// ems - expectations master switch - is the variable that activates/deactivates expectations " +
+            if(config.expectationsActive){
+                lines.add("/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
                         "individual test cases")
-                lines.add(("// by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+                lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+                lines.add("*/")
+                lines.add("private static boolean $expectationsMasterSwitch = false;")
+
                 //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
 
                 //lines.add("private static boolean $responseStructureOracle = false;")
@@ -488,5 +495,15 @@ class TestSuiteWriter {
         if (config.outputFormat.let { it.isJava() || it.isJavaScript() }) {
             lines.append(";")
         }
+    }
+
+    fun setPartialOracles(oracles: PartialOracles){
+        partialOracles = oracles
+    }
+    fun getPartialOracles(): PartialOracles{
+        return partialOracles
+    }
+    fun setObjectGenerator(generator: ObjectGenerator){
+        objectGenerator = generator
     }
 }

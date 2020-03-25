@@ -11,7 +11,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class StringsEMTest extends StringsTestBase {
 
     @Test
+    public void testDeterminism(){
+
+        runAndCheckDeterminism(1_000, (args) -> {
+            initAndRun(args);
+        });
+    }
+
+    @Test
     public void testRunEM() throws Throwable {
+
+        defaultSeed = 13;
 
         runTestHandlingFlakyAndCompilation(
                 "StringsEM",

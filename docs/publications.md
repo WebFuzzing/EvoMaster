@@ -12,7 +12,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 * A. Arcuri, J.P. Galeotti.
   *Testability Transformations For Existing APIs*.
   IEEE Conference on Software Testing, Validation and Verification (ICST).
-  _To appear_.
+  [[PDF](publications/2020_icst.pdf)]
 
 ### 2019
 

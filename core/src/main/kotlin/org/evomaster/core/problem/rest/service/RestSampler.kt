@@ -457,6 +457,7 @@ class RestSampler : Sampler<RestIndividual>(){
                  Therefore, to properly test the GET, we might
                  need to be able to create many elements.
                  */
+                log.trace("Creating POSTs on collection before a GET")
                 val k = 1 + randomness.nextInt(available)
 
                 (0 until k).forEach {

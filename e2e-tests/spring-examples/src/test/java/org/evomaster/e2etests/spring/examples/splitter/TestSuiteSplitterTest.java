@@ -3,6 +3,7 @@ package org.evomaster.e2etests.spring.examples.splitter;
 import org.evomaster.core.EMConfig;
 import org.evomaster.core.output.TestSuiteSplitter;
 import org.evomaster.core.output.Termination;
+import org.evomaster.core.output.clustering.SplitResult;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
         List<String> terminations = Arrays.asList();
 
         if(splitType == EMConfig.TestSuiteSplitType.SUMMARY_ONLY){
-            terminations = Arrays.asList(Termination.SUMMARY.getSuffix());
+            terminations = Arrays.asList();
         }
         if(splitType == EMConfig.TestSuiteSplitType.CODE){
             terminations = Arrays.asList(Termination.FAULTS.getSuffix(),
@@ -52,6 +53,9 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                     Termination.OTHER.getSuffix());
         }
 
+        EMConfig em = new EMConfig();
+        em.setTestSuiteSplitType(splitType);
+
         runTestHandlingFlakyAndCompilation(
                 "SplitterEM",
                 "org.bar.splitter.Split_" + splitType,
@@ -62,13 +66,16 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
                     args.add("" + splitType);
                     Solution<RestIndividual> solution = initAndRun(args);
                     assertTrue(solution.getIndividuals().size() >= 1);
-                    List<Solution<?>> splits = TestSuiteSplitter.INSTANCE.split(solution, splitType);
-                    assertTrue(splits.size() >= 1);
+                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
+                    assertTrue(splits.splitOutcome.size() >= 1);
                 }
         );
     }
 
     private void testRunEM(EMConfig.TestSuiteSplitType splitType) throws Throwable {
+        EMConfig em = new EMConfig();
+        em.setTestSuiteSplitType(splitType);
+
         runTestHandlingFlakyAndCompilation(
                 "SplitterEM",
                 "org.bar.splitter.Split_" + splitType,
@@ -81,9 +88,9 @@ public class TestSuiteSplitterTest extends SplitterTestBase {
 
                     assertTrue(solution.getIndividuals().size() >= 1);
 
-                    List<Solution<?>> splits = TestSuiteSplitter.INSTANCE.split(solution, splitType);
+                    SplitResult splits = TestSuiteSplitter.INSTANCE.split(solution, em);
 
-                    assertTrue(splits.size() >= 1);
+                    assertTrue(splits.splitOutcome.size() >= 1);
 
                 }
         );

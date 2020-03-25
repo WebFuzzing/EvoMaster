@@ -1,9 +1,11 @@
 package org.evomaster.core.output
 
-import org.evomaster.core.output.oracles.ResponseStructureOracle
+
+import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.search.EvaluatedAction
 
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
@@ -26,7 +28,8 @@ import org.evomaster.core.problem.rest.RestCallResult
 class PartialOracles {
     private lateinit var objectGenerator: ObjectGenerator
     private lateinit var format: OutputFormat
-    private var oracles = mutableListOf(SupportedCodeOracle(), ResponseStructureOracle())
+    //private var oracles = mutableListOf(SupportedCodeOracle())
+    private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
     private val expectationsMasterSwitch = "ems"
 
     fun variableDeclaration(lines: Lines, format: OutputFormat){
@@ -57,6 +60,15 @@ class PartialOracles {
 
     fun setFormat(format: OutputFormat = OutputFormat.KOTLIN_JUNIT_5){
         this.format = format
+    }
+
+    fun selectForClustering(action: EvaluatedAction): Boolean{
+        if (::objectGenerator.isInitialized){
+            return oracles.any { oracle ->
+                oracle.selectForClustering(action)
+            }
+        }
+        else return false;
     }
 
 }

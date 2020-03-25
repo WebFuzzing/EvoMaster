@@ -1,6 +1,5 @@
 package org.evomaster.e2etests.spring.openapi.v3.double
 
-import com.foo.rest.examples.spring.openapi.v3.base.BaseController
 import com.foo.rest.examples.spring.openapi.v3.double.DoubleController
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
@@ -21,6 +20,11 @@ class DoubleEMTest : SpringTestBase() {
         }
     }
 
+
+    @Test
+    fun testDeterminism() {
+        runAndCheckDeterminism(1000) { args: List<String> -> initAndRun(args) }
+    }
 
     @Test
     fun testRunEM() {

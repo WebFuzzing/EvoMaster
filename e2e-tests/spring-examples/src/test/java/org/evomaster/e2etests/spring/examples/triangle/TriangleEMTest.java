@@ -26,6 +26,15 @@ public class TriangleEMTest extends SpringTestBase {
         SpringTestBase.initClass(new TriangleController());
     }
 
+
+    @Test
+    public void testDeterminism(){
+
+        runAndCheckDeterminism(50, (args) -> {
+           initAndRun(args);
+        });
+    }
+
     @Test
     public void testRunEM() throws Throwable {
 
