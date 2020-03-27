@@ -4,7 +4,7 @@ import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.CookieLoginDto;
 import org.evomaster.client.java.controller.api.dto.HeaderDto;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -15,7 +15,7 @@ public class AuthUtils {
 
         Objects.requireNonNull(value);
 
-        byte[] data = value.getBytes(Charset.forName("UTF-8"));
+        byte[] data = value.getBytes(StandardCharsets.UTF_8);
         byte[] encoded = Base64.getEncoder().encode(data);
 
         return new String(encoded);
