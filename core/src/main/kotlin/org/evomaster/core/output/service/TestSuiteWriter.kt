@@ -112,11 +112,11 @@ class TestSuiteWriter {
             lines.add(testLines)
         }
 
-        footer(lines)
-
         if(config.outputFormat.isJavaOrKotlin()){
             lines.deindent()
         }
+
+        footer(lines)
 
         return lines.toString()
     }
@@ -301,9 +301,11 @@ class TestSuiteWriter {
             }
         }
 
-        if(config.outputFormat.isJavaOrKotlin()) {
-            //TODO JS
-            partialOracles.variableDeclaration(lines, config.outputFormat)
+        if(config.expectationsActive) {
+            if (config.outputFormat.isJavaOrKotlin()) {
+                //TODO JS
+                partialOracles.variableDeclaration(lines, config.outputFormat)
+            }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default
         // for generated code should be false.
