@@ -1,6 +1,6 @@
 package org.evomaster.core.mongo
 
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto
+import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto
 
 
 class MongoExecution(val executedFindOperations: List<ExecutedFindOperation> = mutableListOf()) {

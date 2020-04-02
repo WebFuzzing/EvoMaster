@@ -1,6 +1,8 @@
-package org.evomaster.client.java.controller.api.dto.database.execution;
+package org.evomaster.client.java.controller.api.dto.mongo;
 
 import org.bson.Document;
+
+import java.util.List;
 
 public class FindResultDto {
 
@@ -14,6 +16,6 @@ public class FindResultDto {
 
     public boolean hasReturnedAnyDocument;
 
-    public Document[] documents;
+    public List<Document> documents;
 
 }

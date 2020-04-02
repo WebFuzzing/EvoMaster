@@ -2,7 +2,7 @@ package org.evomaster.core.mongo
 
 import com.google.gson.Gson
 import org.bson.Document
-import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto
 
 class FindOperation(val databaseName: String,
                     val collectionName: String,

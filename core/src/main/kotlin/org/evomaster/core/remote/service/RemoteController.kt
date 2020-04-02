@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException
 import com.google.inject.Inject
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.client.java.controller.api.dto.*
-import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto
-import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto
+import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto
 import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto
 import org.evomaster.client.java.controller.api.dto.database.operations.QueryResultDto
 import org.evomaster.core.EMConfig

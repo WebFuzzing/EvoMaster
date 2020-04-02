@@ -27,7 +27,7 @@ public class MongoFakeSutController extends EmbeddedSutController {
 
     @Override
     public String getDatabaseDriverName() {
-        return "org.h2.Driver";
+        return null;
     }
 
     @Override

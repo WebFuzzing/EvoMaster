@@ -1,6 +1,6 @@
 package org.evomaster.core.mongo
 
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutedFindOperationDto
+import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto
 
 class ExecutedFindOperation(val findOperation: FindOperation, val isResultNotEmpty: Boolean) {
 

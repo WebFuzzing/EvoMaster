@@ -1,6 +1,6 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
+import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

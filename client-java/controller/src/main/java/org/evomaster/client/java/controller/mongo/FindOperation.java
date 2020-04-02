@@ -2,7 +2,7 @@ package org.evomaster.client.java.controller.mongo;
 
 import com.google.gson.Gson;
 import org.bson.Document;
-import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 
 import java.util.Objects;
 

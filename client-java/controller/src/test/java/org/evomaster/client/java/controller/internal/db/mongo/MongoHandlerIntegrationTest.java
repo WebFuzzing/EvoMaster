@@ -6,8 +6,8 @@ import org.apache.http.HttpStatus;
 import org.bson.*;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.WrappedResponseDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
 import org.evomaster.client.java.instrumentation.mongo.MongoLogger;
 import org.junit.jupiter.api.*;
 

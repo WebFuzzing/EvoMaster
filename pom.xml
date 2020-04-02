@@ -113,6 +113,8 @@
         <nlp.version>3.9.2</nlp.version>
         <dk.brics.automaton.version>1.11-8</dk.brics.automaton.version>
         <jgrapht.version>0.8.3</jgrapht.version>
+        <mongodb.version>3.11.2</mongodb.version>
+
     </properties>
 
 

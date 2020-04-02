@@ -1,10 +1,10 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
 import com.google.gson.Gson;
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutedFindOperationDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
+import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
+import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto;
 import org.evomaster.client.java.instrumentation.mongo.LoggedExecutedFindOperation;
 
 import java.util.ArrayList;

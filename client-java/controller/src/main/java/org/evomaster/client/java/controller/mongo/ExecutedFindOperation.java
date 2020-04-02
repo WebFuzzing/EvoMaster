@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.mongo;
 
 
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutedFindOperationDto;
+import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto;
 
 import java.util.Objects;
 

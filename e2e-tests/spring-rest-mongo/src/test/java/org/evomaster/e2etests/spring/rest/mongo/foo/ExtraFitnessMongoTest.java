@@ -5,6 +5,7 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
 import org.evomaster.core.database.DbAction;
 import org.evomaster.core.problem.rest.*;
@@ -14,6 +15,7 @@ import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.FitnessValue;
 import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.e2etests.spring.rest.mongo.SpringRestMongoTestBase;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -49,15 +52,7 @@ public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
     @Test
     public void testExtraFitnessNoDocumentsFound() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "1"
-        };
+        String[] args = buildEvoMasterArguments(1);
 
         Injector injector = Main.init(args);
 
@@ -89,18 +84,20 @@ public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
 
     }
 
+    @NotNull
+    private String[] buildEvoMasterArguments(int maxActionEvaluations) {
+        ClassName unusedTestClassName = new ClassName("org.UnusedTestClassName");
+        List<String> argsWithCompilation = this.getArgsWithCompilation(maxActionEvaluations, "unusedOutputFolder", unusedTestClassName);
+        argsWithCompilation.addAll(Arrays.asList(
+                "--heuristicsForMongo", "true",
+                "--maxTestSize", "1"));
+        return argsWithCompilation.toArray(new String[]{});
+    }
+
     @Test
     public void testExtraFitnessOneDocumentFound() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "1"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -145,15 +142,7 @@ public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
     @Test
     public void testExtraFitnessManyGets() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "1"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -199,15 +188,7 @@ public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
     @Test
     public void testExtraFitnessPostGetDeleteGet() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "4",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "1"
-        };
+        String[] args = buildEvoMasterArguments(4);
 
         Injector injector = Main.init(args);
 

@@ -1,7 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import org.evomaster.client.java.controller.api.dto.database.execution.ExecutionDto;
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto;
+import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto;
 
 import java.util.ArrayList;
 import java.util.List;

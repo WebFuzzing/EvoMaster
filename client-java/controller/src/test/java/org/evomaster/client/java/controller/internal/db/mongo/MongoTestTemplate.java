@@ -6,6 +6,7 @@ import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.SutRunDto;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.testcontainers.containers.GenericContainer;
 
 import static io.restassured.RestAssured.given;
@@ -30,6 +31,13 @@ public abstract class MongoTestTemplate {
     public static void stopMongoContainer() {
         if (mongo != null) {
             mongo.stop();
+        }
+    }
+
+    @BeforeEach
+    public void dropAllDatabases() {
+        for (String databaseName : mongoClient.listDatabaseNames()) {
+            mongoClient.getDatabase(databaseName).drop();
         }
     }
 
@@ -59,7 +67,7 @@ public abstract class MongoTestTemplate {
                 .statusCode(204);
     }
 
-    protected void startNewActionInSameTest(String url, int index){
+    protected void startNewActionInSameTest(String url, int index) {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
@@ -69,11 +77,11 @@ public abstract class MongoTestTemplate {
                 .statusCode(204);
     }
 
-    protected void startNewTest(String url){
+    protected void startNewTest(String url) {
 
         given().accept(ContentType.ANY)
                 .contentType(ContentType.JSON)
-                .body(new SutRunDto(true, true, true, true,true))
+                .body(new SutRunDto(true, true, true, true, true))
                 .put(url + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);

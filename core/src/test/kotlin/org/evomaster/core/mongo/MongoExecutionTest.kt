@@ -1,11 +1,10 @@
 package org.evomaster.core.mongo
 
-import org.evomaster.client.java.controller.api.dto.database.execution.MongoExecutionDto
-import org.evomaster.client.java.controller.api.dto.database.execution.ExecutedFindOperationDto
-import org.evomaster.client.java.controller.api.dto.database.execution.FindOperationDto
-import org.evomaster.client.java.controller.api.dto.database.execution.FindResultDto
+import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto
+import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto
+import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class MongoExecutionTest {

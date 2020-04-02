@@ -10,6 +10,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import org.bson.Document;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.*;
 import org.evomaster.core.problem.rest.auth.NoAuth;
@@ -25,6 +26,7 @@ import org.evomaster.core.search.service.FitnessFunction;
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator;
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate;
 import org.evomaster.e2etests.spring.rest.mongo.SpringRestMongoTestBase;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -70,15 +73,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByAgeNoDocuments() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "1",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "1"
-        };
+        String[] args = buildEvoMasterArguments(1);
 
         Injector injector = Main.init(args);
 
@@ -126,18 +121,22 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
 
     }
 
+
+
+    @NotNull
+    private String[] buildEvoMasterArguments(int maxActionEvaluations) {
+        ClassName unusedTestClassName = new ClassName("org.UnusedTestClassName");
+        List<String> argsWithCompilation = this.getArgsWithCompilation(maxActionEvaluations, "unusedOutputFolder", unusedTestClassName);
+        argsWithCompilation.addAll(Arrays.asList(
+                "--heuristicsForMongo", "true",
+                "--maxTestSize", String.valueOf(maxActionEvaluations)));
+        return argsWithCompilation.toArray(new String[]{});
+    }
+
     @Test
     public void testFindByAge() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -202,15 +201,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByAgeBetween() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -285,15 +276,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByLastName() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -357,15 +340,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByAgeGreaterThan() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -426,15 +401,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByAgeLessThan() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -495,15 +462,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByFirstNameLike() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -567,15 +526,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByFirstNameNotNull() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -622,15 +573,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByFirstNameNull() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 
@@ -677,15 +620,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     @Test
     public void testFindByFirstNameRegex() {
 
-        String[] args = new String[]{
-                "--createTests", "true",
-                "--seed", "42",
-                "--sutControllerPort", "" + controllerPort,
-                "--maxActionEvaluations", "2",
-                "--stoppingCriterion", "FITNESS_EVALUATIONS",
-                "--heuristicsForMongo", "true",
-                "--maxTestSize", "2"
-        };
+        String[] args = buildEvoMasterArguments(2);
 
         Injector injector = Main.init(args);
 

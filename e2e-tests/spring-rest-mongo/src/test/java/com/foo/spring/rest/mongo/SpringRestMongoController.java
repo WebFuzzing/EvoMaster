@@ -79,7 +79,7 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
 
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
-                "--spring.mongodb.embedded.version=3.2",
+ //               "--spring.mongodb.embedded.version=3.2",
                 "--spring.data.mongodb.host=" + host,
                 "--spring.data.mongodb.port=" + port,
                 "--spring.data.mongodb.database=testdb",
