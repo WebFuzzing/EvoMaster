@@ -145,27 +145,27 @@ class MapGene<T>(
         }
 
         //strcuture mutation
-        if (add && (add == delete))
-            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
-
-        when{
-            add ->{
-                val gene = template.copy() as T
-                gene.randomize(randomness, false)
-                gene.name = "key_${keyCounter++}"
-                elements.add(gene)
-                return
-            }
-            delete ->{
-                log.trace("Deleting gene")
-                elements.removeAt(randomness.nextInt(elements.size))
-                return
-            }
-            else -> {
-                val gene = randomness.choose(elements)
-                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
-            }
-        }
+//        if (add && (add == delete))
+//            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
+//
+//        when{
+//            add ->{
+//                val gene = template.copy() as T
+//                gene.randomize(randomness, false)
+//                gene.name = "key_${keyCounter++}"
+//                elements.add(gene)
+//                return
+//            }
+//            delete ->{
+//                log.trace("Deleting gene")
+//                elements.removeAt(randomness.nextInt(elements.size))
+//                return
+//            }
+//            else -> {
+//                val gene = randomness.choose(elements)
+//                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
+//            }
+//        }
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

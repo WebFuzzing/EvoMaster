@@ -157,45 +157,45 @@ class ArrayGene<T>(
         }
 
         //structure mutation
-        var add = elements.isEmpty()
-        var delete = elements.size == maxSize
-
-        val fmodifySize =
-                if (add || delete) false
-                else if (archiveMutator.applyArchiveSelection()
-                        && impact != null
-                        && impact is ArrayGeneImpact
-                        && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
-                ){
-                    randomness.nextBoolean(0.3)
-                }else {
-                    randomness.nextBoolean(MODIFY_SIZE)
-                }
-
-        if (fmodifySize){
-            val p = randomness.nextBoolean()
-            add = add || p
-            delete = delete || !p
-        }
-
-        if (add && add == delete)
-            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
-
-        when{
-            add ->{
-                val gene = template.copy() as T
-                gene.randomize(randomness, false)
-                elements.add(gene)
-            }
-            delete ->{
-                log.trace("Removing gene")
-                elements.removeAt(randomness.nextInt(elements.size))
-            }
-            else -> {
-                val gene = randomness.choose(elements)
-                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
-            }
-        }
+//        var add = elements.isEmpty()
+//        var delete = elements.size == maxSize
+//
+//        val fmodifySize =
+//                if (add || delete) false
+//                else if (archiveMutator.applyArchiveSelection()
+//                        && impact != null
+//                        && impact is ArrayGeneImpact
+//                        && impact.sizeImpact.getNoImpactsFromImpactCounter().values.any { it < 2 } //if there is recent improvement by manipulating size
+//                ){
+//                    randomness.nextBoolean(0.3)
+//                }else {
+//                    randomness.nextBoolean(MODIFY_SIZE)
+//                }
+//
+//        if (fmodifySize){
+//            val p = randomness.nextBoolean()
+//            add = add || p
+//            delete = delete || !p
+//        }
+//
+//        if (add && add == delete)
+//            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
+//
+//        when{
+//            add ->{
+//                val gene = template.copy() as T
+//                gene.randomize(randomness, false)
+//                elements.add(gene)
+//            }
+//            delete ->{
+//                log.trace("Removing gene")
+//                elements.removeAt(randomness.nextInt(elements.size))
+//            }
+//            else -> {
+//                val gene = randomness.choose(elements)
+//                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
+//            }
+//        }
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
