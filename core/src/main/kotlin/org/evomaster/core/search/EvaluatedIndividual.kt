@@ -38,6 +38,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     var hasImprovement = false
 
     var mutatedGeneSpecification : MutatedGeneSpecification? = null
+    val clusterAssignments : MutableSet<String> = mutableSetOf<String>()
 
     init{
         if(individual.seeActions().size < results.size){
@@ -581,5 +582,18 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     fun getGeneImpact(geneId : String) : List<GeneImpact>{
         impactInfo?:return listOf()
         return impactInfo.getGeneImpact(geneId)
+    }
+
+    fun assignToCluster(cluster : String) : EvaluatedIndividual<T>{
+        clusterAssignments.add(cluster)
+        return this
+    }
+
+    fun getClusters(): MutableSet<String> {
+        return clusterAssignments
+    }
+
+    fun belongsToCluster(cluster: String) : Boolean{
+        return clusterAssignments.contains(cluster)
     }
 }

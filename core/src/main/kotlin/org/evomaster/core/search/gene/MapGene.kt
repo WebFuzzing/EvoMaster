@@ -4,6 +4,7 @@ import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.value.collection.MapGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
@@ -11,6 +12,12 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 
+/**
+ * FIXME: this needs to be refactored, as at the moment the
+ * keys are strings that are fixed.
+ * Keys should be of any basic type, and should be modifiable.
+ *
+ */
 class MapGene<T>(
         name: String,
         val template: T,
@@ -25,6 +32,10 @@ class MapGene<T>(
         if (elements.size > maxSize) {
             throw IllegalArgumentException(
                     "More elements (${elements.size}) than allowed ($maxSize)")
+        }
+
+        for(e in elements){
+            e.parent = this
         }
     }
 
@@ -55,7 +66,7 @@ class MapGene<T>(
         return this.elements.size == other.elements.size
                 && this.elements.zip(other.elements) { thisElem, otherElem ->
             thisElem.containsSameValueAs(otherElem)
-        }.all { it == true }
+        }.all { it }
     }
 
 
@@ -64,9 +75,11 @@ class MapGene<T>(
         //maybe not so important here to complicate code to enable forceNewValue
 
         elements.clear()
+        log.trace("Randomizing MapGene")
         val n = randomness.nextInt(maxSize)
         (0 until n).forEach {
             val gene = template.copy() as T
+            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
@@ -82,10 +95,12 @@ class MapGene<T>(
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
+            gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
         } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
+            log.trace("Removing gene in mutation")
             elements.removeAt(randomness.nextInt(elements.size))
         } else {
             val gene = randomness.choose(elements)
@@ -129,45 +144,28 @@ class MapGene<T>(
             gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
         }
 
-//        var add = elements.isEmpty()
-//        var delete = (elements.size == maxSize)
-//
-//        val fmodifySize = if (add || delete) false
-//        else if (archiveMutator.applyArchiveSelection()
-//                && impact != null
-//                && impact is MapGeneImpact
-//                && impact.sizeImpact.getNoImprovementCounter().any { it.value < 2 } //if there is recent improvement by manipulating size
-//        ){
-//            randomness.nextBoolean(0.3)
-//        }else {
-//            randomness.nextBoolean(MODIFY_SIZE)
-//        }
-//        if (fmodifySize){
-//            val p = randomness.nextBoolean()
-//            add = add || p
-//            delete = delete || !p
-//        }
-//
-//        if (add && (add == delete))
-//            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
-//
-//        when{
-//            add ->{
-//                val gene = template.copy() as T
-//                gene.randomize(randomness, false)
-//                gene.name = "key_${keyCounter++}"
-//                elements.add(gene)
-//                return
-//            }
-//            delete ->{
-//                elements.removeAt(randomness.nextInt(elements.size))
-//                return
-//            }
-//            else -> {
-//                val gene = randomness.choose(elements)
-//                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
-//            }
-//        }
+        //strcuture mutation
+        if (add && (add == delete))
+            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
+
+        when{
+            add ->{
+                val gene = template.copy() as T
+                gene.randomize(randomness, false)
+                gene.name = "key_${keyCounter++}"
+                elements.add(gene)
+                return
+            }
+            delete ->{
+                log.trace("Deleting gene")
+                elements.removeAt(randomness.nextInt(elements.size))
+                return
+            }
+            else -> {
+                val gene = randomness.choose(elements)
+                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
+            }
+        }
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

@@ -14,22 +14,21 @@ import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
 
-class RestIndividual (
+class RestIndividual(
         //val actions: MutableList<RestAction>,
         private val resourceCalls: MutableList<RestResourceCalls>,
         val sampleType: SampleType,
-        val sampleSpec : SamplerSpecification? = null,
+        val sampleSpec: SamplerSpecification? = null,
         val dbInitialization: MutableList<DbAction> = mutableListOf(),
-        val usedObjects: UsedObjects = UsedObjects(),
         trackOperator: TrackOperator? = null,
-        traces : MutableList<out RestIndividual>? = null
+        traces: MutableList<out RestIndividual>? = null
 ): Individual (trackOperator, traces) {
 
     constructor(
             actions: MutableList<out Action>,
             sampleType: SampleType,
             dbInitialization: MutableList<DbAction> = mutableListOf(),
-            usedObjects: UsedObjects = UsedObjects(),
+            //usedObjects: UsedObjects = UsedObjects(),
             trackOperator: TrackOperator? = null,
             traces: MutableList<out RestIndividual>? = null) :
             this(
@@ -37,7 +36,6 @@ class RestIndividual (
                     sampleType,
                     null,
                     dbInitialization,
-                    usedObjects,
                     trackOperator,
                     traces
             )
@@ -118,7 +116,6 @@ class RestIndividual (
                 sampleType,
                 sampleSpec?.copy(),
                 dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                usedObjects,
                 trackOperator,
                 if (getTracking() == null)
                     mutableListOf()
@@ -139,7 +136,6 @@ class RestIndividual (
                         sampleType,
                         sampleSpec?.copy(),
                         dbInitialization.map { d -> d.copy() as DbAction } as MutableList<DbAction>,
-                        usedObjects,
                         trackOperator,
                         getTracking()!!.map { (it as RestIndividual).copy() as RestIndividual }.toMutableList()
                 )
@@ -152,6 +148,8 @@ class RestIndividual (
      * This function copies the new (mutated) values of the parameters into the respective used objects, to ensure that the objects and parameters are coherent.
      * The return value is true if everything went well, and false if some values could not be copied. It is there for debugging only.
      */
+
+    /*
     fun enforceCoherence(): Boolean {
 
         //BMR: not sure I can use flatMap here. I am using a reference to the action object to get the relevant gene.
@@ -183,6 +181,10 @@ class RestIndividual (
         }
         return true
     }
+
+     */
+
+
 
     fun getResourceCalls() : List<RestResourceCalls> = resourceCalls.toList()
 

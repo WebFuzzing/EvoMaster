@@ -3,19 +3,18 @@
 
 ![](docs/img/carl-cerstrand-136810_compressed.jpg  "Photo by Carl Cerstrand on Unsplash")
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
 [![Build Status](https://travis-ci.org/EMResearch/EvoMaster.svg?branch=master)](https://travis-ci.org/EMResearch/EvoMaster)
 [![CircleCI](https://circleci.com/gh/EMResearch/EvoMaster.svg?style=svg)](https://circleci.com/gh/EMResearch/EvoMaster)
-[![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.evomaster/evomaster-client-java)
+[![codecov](https://codecov.io/gh/EMResearch/EvoMaster/branch/master/graph/badge.svg)](https://codecov.io/gh/EMResearch/EvoMaster)
 <!---
 Needs auth :(
 [[JaCoCo]](https://circleci.com/api/v1.1/project/github/arcuri82/evomaster/latest/artifacts/0/home/circleci/evomaster-build/report/target/site/jacoco-aggregate/index.html)
 -->
 
-<!--
-<b>HIRING</b>: we are hiring postdocs to work on this project.
-For more information and for applying, see [here]().
-<br>
--->
+
+
+### Summary 
 
 _EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
 that automatically *generates* system-level test cases.
@@ -26,22 +25,74 @@ The approach is to *evolve* test cases from an initial population of
 random ones, trying to maximize measures like code coverage and fault detection.
 
 
-At the moment, _EvoMaster_ targets RESTful APIs compiled to 
-JVM 8 bytecode.
-The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) format.
-The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
+__Key features__:
+
+* At the moment, _EvoMaster_ targets RESTful APIs compiled to 
+  JVM __8__ and __11__ bytecode. Might work on other JVM versions, but we provide __NO__ support for it.
+
+* The APIs must provide a schema in [OpenAPI/Swagger](https://swagger.io) 
+  format (either _v2_ or _v3_).
+
+* The tool generates _JUnit_ (version 4 or 5) tests, written in either Java or Kotlin.
+
+* _Fault detection_: _EvoMaster_ can generate tests cases that reveal faults/bugs in the tested applications.
+  Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas. 
+
+* Self-contained tests: the generated tests do start/stop the application, binding to an ephemeral port.
+  This means that the generated tests can be used for _regression testing_ (e.g., added to the Git repository
+  of the application, and run with any build tool such as Maven and Gradle). 
+
+* Advanced _whitebox_ heuristics: _EvoMaster_ analyses the bytecode of the tested applications, and uses
+  several heuristics such as _testability transformations_ and _taint analysis_ to be able to generate 
+  more effective test cases. 
+
+* SQL handling: _EvoMaster_ can intercept and analyse all communications done with SQL databases, and use
+  such information to generate higher code coverage test cases. Furthermore, it can generate data directly
+  into the databases, and have such initialization automatically added in the generated tests. 
+  At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.  
+
+* _Blackbox_ testing mode: can run on any API (regardless of its programming language), 
+  as long as an OpenAPI schema is provided. However, results will be worse than whitebox testing (e.g., due
+  to lack of bytecode analysis).
 
 
-A short [video](https://youtu.be/7zTLUlH-BNI) shows the use of _EvoMaster_ on one of the 
+
+__Known limitations__:
+
+* To be used for _whitebox_ testing, users need to write a [driver manually](docs/write_driver.md).
+  We recommend to try _blackbox_ mode first (should just need a few minutes to get it up and running) to get
+  an idea of what _EvoMaster_ can do for you.  
+
+* Execution time: to get good results, you might need to run the search for several hours. 
+  We recommend to first try the search for 10 minutes, just to get an idea of what type of tests can be generated.
+  But, then, you should run _EvoMaster_ for something like between 1 and 24 hours (the longer the better, but
+  it is unlikely to get better results after 24 hours).
+  
+* External services (e.g., other RESTful APIs): currently there is no support for them (e.g., to automatically mock them).
+  It is work in progress.
+  
+* NoSQL databases (e.g., MongoDB): currently no support. It is work in progress.    
+
+<!--### Videos---> 
+<!-- 
+<div>Icons made by <a href="https://www.flaticon.com/authors/freepik" title="Freepik">Freepik</a> from <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a></div> 
+-->
+
+[![](docs/img/video-player-flaticon.png)](https://youtu.be/3mYxjgnhLEo) 
+
+A [short video](https://youtu.be/3mYxjgnhLEo) (5 minutes)
+shows the use of _EvoMaster_ on one of the 
 case studies in [EMB](https://github.com/EMResearch/EMB). 
 
 
-_EvoMaster_ is currently (2018-2021) funded by a 7.8 million Norwegian Kroner grant 
-by the Research Council of Norway (RCN), as part of the 
-Frinatek project <i>Evolutionary Enterprise Testing</i>.  
+### Hiring
 
+Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
+When such positions are available, the job ads will be posted here (e.g., links to _LinkedIn_). 
 
+* 2020: PhD positions. Calls will be out later during spring/summer.
 
+* 2020: [Postdoc positions. Currently hiring.](https://www.linkedin.com/jobs/view/1771600197/)
 
 ### Examples
 
@@ -134,7 +185,7 @@ such start/reset/stop.
 A generated test is not only going to be a sequence of HTTP calls toward a running application.
 _EvoMaster_ can also set up the _environment_ of the application, like automatically adding all the
 needed data into a SQL database.
-At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.
+
 
 
 
@@ -143,8 +194,8 @@ At the moment, _EvoMaster_ supports _H2_ and _Postgres_ databases.
 
 * [Download EvoMaster](docs/download.md)
 * [Build EvoMaster from source](docs/build.md)
-* [Main console options](docs/options_main.md)
-    * [All console options](docs/options_all.md)
+* [Console options](docs/options.md)
+* [OpenApi/Swagger Schema](docs/openapi.md)
 * [Using EvoMaster for Black-Box Testing (easier to setup, but worse results)](docs/blackbox.md)
 * [Using EvoMaster for White-Box Testing (harder to setup, but better results)](docs/whitebox.md)
     * [Write an EvoMaster Driver for White-Box Testing](docs/write_driver.md)
@@ -177,7 +228,7 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   we are very keen to receive feature requests, although of course we cannot
   guarantee when they are going to be implemented, if implemented at all. 
   As researchers, we want to know what are the problems that engineers in industry
-  do face, and that could be done to improve _EvoMaster_ to help them.
+  do face, and what could be done to improve _EvoMaster_ to help them.
   
   
 * *Pull Requests*: we are keen to receive PRs, as long as you agree
@@ -209,6 +260,16 @@ the [issues](https://github.com/EMResearch/EvoMaster/issues) page:
   but rather by email, directly to Prof. A. Arcuri. 
 
 
+
+
+### Funding
+
+_EvoMaster_ has been funded by: 
+* 2020-2025: a 2 million Euro grant by the European Research Council (ERC),
+as part of the *ERC Consolidator* project 
+<i>Using Evolutionary Algorithms to Understand and Secure Web/Enterprise Systems</i>.
+*  2018-2021: a 7.8 million Norwegian Kroner grant  by the Research Council of Norway (RCN), 
+as part of the Frinatek project <i>Evolutionary Enterprise Testing</i>.  
 
 
 ### License

@@ -368,6 +368,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
+            HttpVerb.TRACE -> builder.build("TRACE")
         }
 
         val rcr = RestCallResult()

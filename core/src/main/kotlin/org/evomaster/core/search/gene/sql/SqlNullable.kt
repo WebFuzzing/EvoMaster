@@ -27,6 +27,8 @@ class SqlNullable(name: String,
             throw IllegalStateException("SqlNullable should not contain a FK, " +
                     "as its nullability is handled directly in SqlForeignKeyGene")
         }
+
+        gene.parent = this
     }
 
     companion object{

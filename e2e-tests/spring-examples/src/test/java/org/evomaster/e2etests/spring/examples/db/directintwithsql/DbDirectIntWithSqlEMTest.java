@@ -26,6 +26,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
+
+    @Test
+    public void testDeterminism(){
+
+        runAndCheckDeterminism(100, (args) -> {
+            initAndRun(args);
+        });
+    }
+
     /*
         In the SUT, there are 2 endpoints:
         1) a POST that generates some data into the DB
@@ -135,7 +144,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, ind.getUsedObjects(), null, null);
+        RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, null);
 
         ei = ff.calculateCoverage(withSQL, new HashSet<>());
         assertNotNull(ei);

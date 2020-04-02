@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.utils;
 
+import kotlin.Unit;
 import org.apache.commons.io.FileUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
@@ -7,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto;
 import org.evomaster.client.java.controller.internal.SutController;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
+import org.evomaster.core.StaticCounter;
+import org.evomaster.core.logging.LoggingUtil;
 import org.evomaster.core.output.OutputFormat;
 import org.evomaster.core.output.compiler.CompilerForTestGenerated;
 import org.evomaster.core.problem.rest.*;
@@ -25,6 +28,7 @@ import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -37,6 +41,8 @@ public abstract class RestTestBase {
     protected static SutController controller;
     protected static RemoteController remoteController;
     protected static int controllerPort;
+
+    protected int defaultSeed = 42;
 
 
     @AfterAll
@@ -70,6 +76,32 @@ public abstract class RestTestBase {
     }
 
 
+    protected void runAndCheckDeterminism(int iterations, Consumer<List<String>> lambda){
+
+        List<String> args =  new ArrayList<>(Arrays.asList(
+                "--createTests", "false",
+                "--seed", "42",
+                "--showProgress", "false",
+                "--avoidNonDeterministicLogs", "true",
+                "--sutControllerPort", "" + controllerPort,
+                "--maxActionEvaluations", "" + iterations,
+                "--stoppingCriterion", "FITNESS_EVALUATIONS"
+        ));
+
+        StaticCounter.Companion.reset();
+        String firstRun = LoggingUtil.Companion.runWithDeterministicLogger(
+                () -> {lambda.accept(args); return Unit.INSTANCE;}
+        );
+
+        StaticCounter.Companion.reset();
+        String secondRun = LoggingUtil.Companion.runWithDeterministicLogger(
+                () -> {lambda.accept(args); return Unit.INSTANCE;}
+        );
+
+        assertEquals(firstRun, secondRun);
+    }
+
+
     protected void runTestHandlingFlaky(
             String outputFolderName,
             String fullClassName,
@@ -79,6 +111,7 @@ public abstract class RestTestBase {
 
         runTestHandlingFlaky(outputFolderName, fullClassName, iterations, createTests, lambda, 3);
     }
+
 
     protected void runTestHandlingFlaky(
             String outputFolderName,
@@ -104,17 +137,85 @@ public abstract class RestTestBase {
         });
     }
 
+    protected void runTestHandlingFlaky(
+            String outputFolderName,
+            String fullClassName,
+            List<String> terminations,
+            int iterations,
+            boolean createTests,
+            Consumer<List<String>> lambda,
+            int timeoutMinutes) throws Throwable{
+
+        /*
+            Years have passed, still JUnit 5 does not handle global test timeouts :(
+            https://github.com/junit-team/junit5/issues/80
+         */
+        //
+
+        List<ClassName> classNames = new ArrayList<ClassName>(Collections.emptyList());
+
+        for (String termination : terminations) {
+            classNames.add(new ClassName(fullClassName + termination));
+        }
+
+
+        assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
+            ClassName className = new ClassName(fullClassName);
+            clearGeneratedFiles(outputFolderName, classNames);
+
+            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
+
+            handleFlaky(
+                    () -> lambda.accept(new ArrayList<>(args))
+            );
+        });
+    }
+
+
+
     protected void runTestHandlingFlakyAndCompilation(
             String outputFolderName,
             String fullClassName,
             int iterations,
             Consumer<List<String>> lambda) throws Throwable {
 
-        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, iterations, true, lambda, 3);
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, Arrays.asList(""), iterations, true, lambda, 3);
     }
 
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            List<String> terminations,
+            int iterations,
+            Consumer<List<String>> lambda) throws Throwable {
+
+        runTestHandlingFlakyAndCompilation(outputFolderName, fullClassName, terminations, iterations, true, lambda, 3);
+    }
+
+    protected void runTestHandlingFlakyAndCompilation(
+            String outputFolderName,
+            String fullClassName,
+            List<String> terminations,
+            int iterations,
+            boolean createTests,
+            Consumer<List<String>> lambda,
+            int timeoutMinutes) throws Throwable {
+
+        runTestHandlingFlaky(outputFolderName, fullClassName, terminations, iterations, createTests,lambda, timeoutMinutes);
 
 
+        //BMR: this is where I should handle multiples???
+        if (createTests){
+            for (String termination : terminations) {
+                assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
+                    ClassName className = new ClassName(fullClassName + termination);
+                    clearCompiledFiles(className);
+                    //the first one goes through, but for the second generated files appear to not be clean.
+                    compileRunAndVerifyTests(outputFolderName, className);
+                });
+            }
+        }
+    }
 
     protected void runTestHandlingFlakyAndCompilation(
             String outputFolderName,
@@ -147,7 +248,7 @@ public abstract class RestTestBase {
         PrintWriter pw = new PrintWriter(writer);
 
         TestExecutionSummary summary = JUnitTestRunner.runTestsInClass(klass);
-        summary.printFailuresTo(pw);
+        summary.printFailuresTo(pw, 100);
         String failures = writer.toString();
 
         assertTrue(summary.getContainersFoundCount() > 0);
@@ -158,7 +259,7 @@ public abstract class RestTestBase {
         assertTrue(summary.getTestsSucceededCount() > 0);
     }
 
-    protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
+    protected void clearGeneratedFiles(String outputFolderName, List<ClassName> testClassNames){
 
         File folder = new File(outputFolderPath(outputFolderName));
         try{
@@ -167,9 +268,24 @@ public abstract class RestTestBase {
             throw new RuntimeException(e);
         }
 
-        String bytecodePath = "target/test-classes/" + testClassName.getAsResourcePath();
-        File compiledFile = new File(bytecodePath);
-        compiledFile.delete();
+        for (ClassName testClassName : testClassNames){
+            clearCompiledFiles(testClassName);
+        }
+
+    }
+
+    protected void clearGeneratedFiles(String outputFolderName, ClassName testClassName){
+        List<ClassName> classNames = new ArrayList<ClassName>();
+        classNames.add(testClassName);
+
+        clearGeneratedFiles(outputFolderName, classNames);
+    }
+
+    protected void clearCompiledFiles(ClassName testClassName){
+        String byteCodePath = "target/test-classes/" + testClassName.getAsResourcePath();
+        File compiledFile = new File(byteCodePath);
+        boolean result = compiledFile.delete();
+
     }
 
     protected Class<?> loadClass(ClassName className){
@@ -197,7 +313,7 @@ public abstract class RestTestBase {
 
         return new ArrayList<>(Arrays.asList(
                 "--createTests", "" + createTests,
-                "--seed", "42",
+                "--seed", "" + defaultSeed,
                 "--sutControllerPort", "" + controllerPort,
                 "--maxActionEvaluations", "" + iterations,
                 "--stoppingCriterion", "FITNESS_EVALUATIONS",

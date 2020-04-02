@@ -37,6 +37,13 @@ class TimeGene(
         TIME_WITH_MILLISECONDS
     }
 
+    init {
+        hour.parent = this
+        minute.parent = this
+        second.parent = this
+    }
+
+
     /*
         Note: would need to handle timezone and second fractions,
         but not sure how important for testing purposes

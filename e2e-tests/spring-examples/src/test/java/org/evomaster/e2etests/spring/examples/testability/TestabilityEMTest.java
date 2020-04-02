@@ -14,7 +14,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Created by arcuri82 on 06-Sep-19.
  */
-@Disabled("Too flaky, and getting too expensive to increase budget. Should check-out again once improved mutation strategies")
 public class TestabilityEMTest extends SpringTestBase {
 
     @BeforeAll
@@ -29,7 +28,7 @@ public class TestabilityEMTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
                 "org.bar.TestabilityEM",
-                30_000,
+                15_000,
                 true,
                 (args) -> {
 

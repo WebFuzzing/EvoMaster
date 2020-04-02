@@ -432,6 +432,7 @@ class ArchiveMutator {
                 if (it != -1) return it
             }
         }
+        log.trace("Deciding index")
         return randomness.nextInt(gene.value.length)
     }
 

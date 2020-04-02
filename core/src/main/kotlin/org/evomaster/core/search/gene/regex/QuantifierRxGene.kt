@@ -5,6 +5,8 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
 
 
@@ -14,6 +16,11 @@ class QuantifierRxGene(
         val min: Int = 1,
         val max: Int = 1
 ) : RxTerm(name) {
+
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
+    }
+
 
     val atoms = mutableListOf<RxAtom>()
 
@@ -49,7 +56,9 @@ class QuantifierRxGene(
                 this means this whole gene is immutable. still need to initialize it
              */
             for(i in 0 until min){
-                atoms.add(template.copy() as RxAtom)
+                val a = template.copy() as RxAtom
+                a.parent = this
+                atoms.add(a)
             }
         }
     }
@@ -64,7 +73,11 @@ class QuantifierRxGene(
                 max
         )
         copy.atoms.clear()
-        this.atoms.forEach { copy.atoms.add(it.copy() as RxAtom) }
+        this.atoms.forEach {
+            val a = it.copy() as RxAtom
+            a.parent = copy
+            copy.atoms.add(a)
+        }
 
         return copy
     }
@@ -95,6 +108,7 @@ class QuantifierRxGene(
         val length = atoms.size
 
         if( length > min  && randomness.nextBoolean(0.1)){
+            log.trace("Removing atom")
             atoms.removeAt(randomness.nextInt(length))
         } else if(length < limitedMax && randomness.nextBoolean(0.1)){
             addNewAtom(randomness, false, listOf())
@@ -110,6 +124,7 @@ class QuantifierRxGene(
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
         val base = template.copy() as RxAtom
+        base.parent = this
         if (base.isMutable()) {
             base.randomize(randomness, forceNewValue, allGenes)
         }
@@ -135,7 +150,11 @@ class QuantifierRxGene(
         } else {
             //different size, so clear and create new copies
             this.atoms.clear()
-            other.atoms.forEach{this.atoms.add(it.copy() as RxAtom)}
+            other.atoms.forEach{
+                val a = it.copy() as RxAtom
+                a.parent = this
+                this.atoms.add(a)
+            }
         }
     }
 

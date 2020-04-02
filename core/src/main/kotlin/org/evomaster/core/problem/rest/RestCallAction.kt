@@ -41,7 +41,7 @@ class RestCallAction(
          * path coming from a previous POST
          */
         var locationId: String? = null,
-        var produces: List<String> = listOf(),
+        val produces: List<String> = listOf(),
         val responseRefs : MutableMap<String, String> = mutableMapOf()
 ) : RestAction {
 
@@ -128,6 +128,7 @@ class RestCallAction(
     https://url.spec.whatwg.org/#concept-urlencoded-byte-serializer
 
      */
+    @Deprecated("No needed anymore with OpenAPI v3")
     fun getBodyFormData(): String? {
 
         val forms = parameters.filterIsInstance<FormParam>()

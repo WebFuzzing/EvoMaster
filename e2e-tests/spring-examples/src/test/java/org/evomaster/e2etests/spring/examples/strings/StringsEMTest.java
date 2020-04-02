@@ -11,7 +11,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class StringsEMTest extends StringsTestBase {
 
     @Test
+    public void testDeterminism(){
+
+        runAndCheckDeterminism(1_000, (args) -> {
+            initAndRun(args);
+        });
+    }
+
+    @Test
     public void testRunEM() throws Throwable {
+
+        defaultSeed = 13;
 
         runTestHandlingFlakyAndCompilation(
                 "StringsEM",
@@ -27,9 +37,11 @@ public class StringsEMTest extends StringsTestBase {
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/contains/{s}", "false");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/startEnds/{s}", "false");
 
+
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/equalsFoo/{s}", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/contains/{s}", "true");
                     assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/strings/startEnds/{s}", "true");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 500);
                 });
     }
 }

@@ -1,0 +1,49 @@
+{
+  "name": "evomaster-client-js-integration-tests",
+  "version": "0.4.1",
+  "description": "Integration tests for EvoMaster support for JavaScript",
+  "main": "index.js",
+  "repository": {},
+  "author": "EvoMaster Team",
+  "license": "LGPL-3.0-only",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.7.5",
+    "@babel/core": "^7.7.5",
+    "evomaster-client-js": "file:../evomaster-client-js",
+    "jest": "^24.9.0",
+    "babel-jest": "^24.9.0",
+    "dedent": "^0.7.0",
+    "superagent": "^5.1.1",
+    "supertest": "^4.0.2"
+  },
+  "scripts": {
+    "check": "babel src -d check",
+    "build": "babel  tests src -d build/src --copy-files",
+    "test": "jest --coverage"
+  },
+  "babel": {
+    "only": [
+      "src"
+    ],
+    "plugins": [
+      "module:evomaster-client-js"
+    ]
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
+    "//TODO": "should be fixed to point to other module, if possible...",
+    "collectCoverageFrom": [
+      "src/**/.*(js|jsx|ts|tsx)"
+    ],
+    "transformIgnorePatterns": [
+      "<rootDir>/node_modules/",
+      "<rootDir>/tests/",
+      "<rootDir>/check/",
+      "<rootDir>/build/"
+    ]
+  }
+}

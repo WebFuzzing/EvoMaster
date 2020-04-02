@@ -470,13 +470,14 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         val forms = a.getBodyFormData()
 
         if (body != null && forms != null) {
-            throw IllegalStateException("Issue in Swagger configuration: both Body and FormData definitions in the same endpoint")
+            throw IllegalStateException("Issue in OpenAPI configuration: both Body and FormData definitions in the same endpoint")
         }
 
         val bodyEntity = if (body != null && body is BodyParam) {
             val mode = when {
                 body.isJson() -> GeneUtils.EscapeMode.JSON
-                //body.isXml() -> "xml" // might have to handle here: <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+                body.isXml() -> GeneUtils.EscapeMode.XML
+                body.isForm() -> GeneUtils.EscapeMode.X_WWW_FORM_URLENCODED
                 body.isTextPlain() -> GeneUtils.EscapeMode.TEXT
                 else -> throw IllegalStateException("Cannot handle body type: " + body.contentType())
             }
@@ -501,6 +502,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             HttpVerb.PATCH -> builder.build("PATCH", bodyEntity)
             HttpVerb.OPTIONS -> builder.build("OPTIONS")
             HttpVerb.HEAD -> builder.build("HEAD")
+            HttpVerb.TRACE -> builder.build("TRACE")
         }
         return invocation
     }

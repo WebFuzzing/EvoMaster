@@ -3,7 +3,7 @@ package org.evomaster.core.problem.rest.service.resource
 class CatwatchResourceBasedTest : ResourceTestBase() {
 
     override fun getSchemaLocation() = "/sql_schema/catwatch.sql"
-    override fun getSwaggerLocation() = "/swagger/catwatch.json"
+    override fun getSwaggerLocation() = "/swagger/sut/catwatch.json"
 
     override fun testInitializedNumOfResourceCluster() {
         testSizeResourceCluster(17)

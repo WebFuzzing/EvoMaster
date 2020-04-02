@@ -22,12 +22,22 @@ public class TaintMultiEMTest extends SpringTestBase {
     }
 
     @Test
+    public void testDeterminism(){
+
+        runAndCheckDeterminism(500, (args) -> {
+            initAndRun(args);
+        });
+    }
+
+    @Test
     public void testRunEM() throws Throwable {
+
+        defaultSeed = 13;
 
         runTestHandlingFlakyAndCompilation(
                 "TaintMultiEM",
                 "org.bar.TaintMultiEM",
-                5000,
+                5_000,
                 (args) -> {
 
                     args.add("--baseTaintAnalysisProbability");

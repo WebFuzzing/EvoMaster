@@ -12,6 +12,9 @@ import org.evomaster.core.AnsiColor.Companion.inRed
 import org.evomaster.core.AnsiColor.Companion.inYellow
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.TestSuiteSplitter
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.PartialOracles
+import org.evomaster.core.output.clustering.SplitResult
 import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.service.*
@@ -151,20 +154,23 @@ class Main {
 
             writeImpacts(injector, solution)
 
-            writeStatistics(injector, solution)
+            //writeStatistics(injector, solution)
 
             writeCoveredTargets(injector, solution)
 
             writeTests(injector, solution, controllerInfo)
 
-
+            writeStatistics(injector, solution)
 
             LoggingUtil.getInfoLogger().apply {
                 val stc = injector.getInstance(SearchTimeController::class.java)
                 info("Evaluated tests: ${stc.evaluatedIndividuals}")
                 info("Evaluated actions: ${stc.evaluatedActions}")
                 info("Needed budget: ${stc.neededBudget()}")
-                info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+
+                if(!config.avoidNonDeterministicLogs) {
+                    info("Passed time (seconds): ${stc.getElapsedSeconds()}")
+                }
 
                 if(!config.blackBox || config.bbExperiments) {
                     val rc = injector.getInstance(RemoteController::class.java)
@@ -332,17 +338,36 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-            val swagger = injector.getInstance(RestSampler::class.java).getSwagger()
+            val writer = setupPartialOracles(injector, config, controllerInfoDto)
 
+            val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
-            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+            solution.clusteringTime = splitResult.clusteringTime.toInt()
+            splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
 
-            val solutions = TestSuiteSplitter.split(solution, config.testSuiteSplitType)
-            writer.setSwagger(swagger)
-            solutions.forEach {
-                writer.writeTests(it, controllerInfoDto?.fullName)
+            if(config.executiveSummary){
+                writeExecSummary(injector, controllerInfoDto, splitResult)
+                //writeExecutiveSummary(injector, solution, controllerInfoDto, partialOracles)
             }
+        }
+
+        private fun setupPartialOracles(injector: Injector, config: EMConfig, controllerInfoDto: ControllerInfoDto?): TestSuiteWriter{
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            if(config.problemType == EMConfig.ProblemType.REST){
+                // Some initialization to handle test suite splitting and relevant partial oracles
+                val partialOracles = PartialOracles()
+                val swagger = injector.getInstance(RestSampler::class.java).getOpenAPI()
+                val objGenerator = ObjectGenerator()
+                objGenerator.setSwagger(swagger)
+                partialOracles.setGenerator(objGenerator)
+                partialOracles.setFormat(config.outputFormat)
+                assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+                writer.setSwagger(swagger)
+                writer.setPartialOracles(partialOracles)
+                writer.setObjectGenerator(objGenerator)
+            }
+            return writer
         }
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
@@ -421,6 +446,44 @@ class Main {
             val statistics = injector.getInstance(Statistics::class.java)
             statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
+        /*
+        private fun writeExecutiveSummary(injector: Injector,
+                                          solution: Solution<*>,
+                                          controllerInfoDto: ControllerInfoDto?,
+                                          partialOracles: PartialOracles){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+
+            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY_ONLY, partialOracles)
+            if(executiveSummary.isNotEmpty()) {
+                executiveSummary.forEach {
+                    writer.writeTests(it, controllerInfoDto?.fullName)
+                }
+            }
+        }
+
+         */
+
+        private fun writeExecSummary(injector: Injector,
+                                     controllerInfoDto: ControllerInfoDto?,
+                                     splitResult: SplitResult){
+            val config = injector.getInstance(EMConfig::class.java)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val writer = injector.getInstance(TestSuiteWriter::class.java)
+            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+            writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
+        }
+
     }
 }
 

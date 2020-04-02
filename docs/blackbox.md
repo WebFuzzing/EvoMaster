@@ -15,7 +15,7 @@ structure of the body payloads).
 
 To do this kind of testing, there is only the need to have an API up and running, and specify
 where the schema can be found.
-For example, [`https://apis.guru/`]() lists many APIs online. 
+For example, [https://apis.guru](https://apis.guru/) lists many APIs online. 
 Such website provides an API itself to query info on existing APIs.
 Such small API (only 2 endpoints) can be easily tested by running the following on a command-line: 
 

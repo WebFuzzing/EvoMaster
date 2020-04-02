@@ -26,7 +26,8 @@ public class SutInfoDto {
         JAVA_JUNIT_5,
         JAVA_JUNIT_4,
         KOTLIN_JUNIT_4,
-        KOTLIN_JUNIT_5
+        KOTLIN_JUNIT_5,
+        JS_JEST
     }
 
     /**

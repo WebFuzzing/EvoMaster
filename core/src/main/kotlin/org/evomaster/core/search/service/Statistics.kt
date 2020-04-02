@@ -194,6 +194,8 @@ class Statistics : SearchListener {
             add(Pair("testTimeouts", "$timeouts"))
             add(Pair("coverageFailures", "$coverageFailures"))
 
+            add(Pair("ClusteringTime", "${solution.clusteringTime}"))
+
             add(Pair("id", config.statisticsColumnId))
         }
         addConfig(list)

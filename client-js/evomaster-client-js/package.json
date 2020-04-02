@@ -1,0 +1,51 @@
+{
+  "name": "evomaster-client-js",
+  "version": "0.4.1",
+  "description": "Client library for EvoMaster for JavaScript",
+  "main": "dist/index.js",
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "repository": {},
+  "author": "EvoMaster Team",
+  "license": "LGPL-3.0-only",
+  "dependencies": {
+    "express": "^4.17.1"
+  },
+  "devDependencies": {
+    "@babel/traverse": "^7.8.3",
+    "@babel/types": "^7.8.3",
+    "@babel/template": "^7.8.3",
+    "@types/babel__traverse": "^7.0.8",
+    "@types/babel__template": "^7.0.2",
+    "@types/dedent": "^0.7.0",
+    "@types/express": "^4.17.2",
+    "@types/jest": "^24.9.0",
+    "@types/node": "^12.12.25",
+    "@types/superagent": "^4.1.4",
+    "@types/supertest": "^2.0.8",
+    "dedent": "^0.7.0",
+    "jest": "^24.9.0",
+    "superagent": "^5.2.1",
+    "supertest": "^4.0.2",
+    "ts-jest": "^24.3.0",
+    "tslint": "^5.20.1",
+    "typescript": "^3.7.5"
+  },
+  "scripts": {
+    "//prebuild": "tslint -c tslint.json -p tsconfig.json --fix",
+    "build": "tsc",
+    "test": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testRegex": "tests/.*-test\\.(js|jsx|ts|tsx)$",
+    "collectCoverageFrom": [
+      "src/**/*\\.(js|jsx|ts|tsx)"
+    ],
+    "transform": {
+      "^.+\\.(ts|tsx)?$": "ts-jest"
+    }
+  }
+}

@@ -20,6 +20,10 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
         private val log: Logger = LoggerFactory.getLogger(SqlJSONGene::class.java)
     }
 
+    init {
+        objectGene.parent = this
+    }
+
     override fun copy(): Gene = SqlJSONGene(
             name,
             objectGene = this.objectGene.copy() as ObjectGene)

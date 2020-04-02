@@ -39,7 +39,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
         doInitializingActions(individual)
 
-        individual.enforceCoherence()
+        //individual.enforceCoherence()
 
         val fv = FitnessValue(individual.size().toDouble())
 
