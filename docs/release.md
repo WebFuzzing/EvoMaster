@@ -133,7 +133,7 @@ occurrences of the release version in the project (e.g., all `pom.xml` and
 `dist.py` files) by using `./scripts/version.py`.  
 However, before doing this, it can be good to test the non-SNAPSHOT version of _EvoMaster_.
 The reasoning is to force the downloading of all the dependencies from Maven Central,
-to check if anying is missing.
+to check if anything is missing.
 And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
 
 
