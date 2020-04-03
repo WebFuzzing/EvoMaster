@@ -16,7 +16,7 @@ Needs auth :(
 
 ### Summary 
 
-_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool prototype 
+_EvoMaster_ ([www.evomaster.org](http://evomaster.org)) is a tool 
 that automatically *generates* system-level test cases.
 Internally, it uses an [Evolutionary Algorithm](https://en.wikipedia.org/wiki/Evolutionary_algorithm) 
 and [Dynamic Program Analysis](https://en.wikipedia.org/wiki/Dynamic_program_analysis)  to be 
