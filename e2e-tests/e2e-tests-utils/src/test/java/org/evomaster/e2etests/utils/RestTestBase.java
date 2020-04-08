@@ -42,7 +42,9 @@ public abstract class RestTestBase {
     protected static RemoteController remoteController;
     protected static int controllerPort;
 
-    protected int defaultSeed = 42;
+
+    private final static int STARTING_SEED = 42;
+    protected int defaultSeed = STARTING_SEED;
 
 
     @AfterAll
@@ -59,6 +61,9 @@ public abstract class RestTestBase {
 
     @BeforeEach
     public void initTest() {
+
+        //in case it was modified in a previous test in the same class
+        defaultSeed = STARTING_SEED;
 
         assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
             boolean reset = remoteController.resetSUT();
@@ -121,20 +126,7 @@ public abstract class RestTestBase {
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
 
-        /*
-            Years have passed, still JUnit 5 does not handle global test timeouts :(
-            https://github.com/junit-team/junit5/issues/80
-         */
-        assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
-            ClassName className = new ClassName(fullClassName);
-            clearGeneratedFiles(outputFolderName, className);
-
-            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
-
-            handleFlaky(
-                    () -> lambda.accept(new ArrayList<>(args))
-            );
-        });
+        runTestHandlingFlaky(outputFolderName, fullClassName, null, iterations, createTests, lambda, timeoutMinutes);
     }
 
     protected void runTestHandlingFlaky(
@@ -146,27 +138,30 @@ public abstract class RestTestBase {
             Consumer<List<String>> lambda,
             int timeoutMinutes) throws Throwable{
 
-        /*
+        List<ClassName> classNames = new ArrayList<>();
+
+        if(terminations == null || terminations.isEmpty()){
+            classNames.add(new ClassName(fullClassName));
+        } else {
+            for (String termination : terminations) {
+                classNames.add(new ClassName(fullClassName + termination));
+            }
+        }
+
+         /*
             Years have passed, still JUnit 5 does not handle global test timeouts :(
             https://github.com/junit-team/junit5/issues/80
          */
-        //
-
-        List<ClassName> classNames = new ArrayList<ClassName>(Collections.emptyList());
-
-        for (String termination : terminations) {
-            classNames.add(new ClassName(fullClassName + termination));
-        }
-
-
         assertTimeoutPreemptively(Duration.ofMinutes(timeoutMinutes), () -> {
             ClassName className = new ClassName(fullClassName);
             clearGeneratedFiles(outputFolderName, classNames);
 
-            List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
-
             handleFlaky(
-                    () -> lambda.accept(new ArrayList<>(args))
+                    () -> {
+                        List<String> args = getArgsWithCompilation(iterations, outputFolderName, className, createTests);
+                        defaultSeed++;
+                        lambda.accept(new ArrayList<>(args));
+                    }
             );
         });
     }
@@ -502,7 +497,9 @@ public abstract class RestTestBase {
      * See https://github.com/junit-team/junit5/issues/1558#issuecomment-414701182
      *
      * TODO: once that issue is fixed (if it will ever be fixed), then this method
-     * will no longer be needed
+     * will no longer be needed.
+     * Actually no... as we change the seed at each re-execution... so we still need
+     * this code
      *
      * @param lambda
      * @throws Throwable

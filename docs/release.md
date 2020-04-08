@@ -48,7 +48,10 @@ The Java client needs to be deployed on Maven Central.
 First, you need to set a new version number for the new release.
 We use semantic versioning `x.y.z`: `x` for major releases, `y` for minor releases, and 
 `z` for patches.
-Note: as long as we are on `x=0`, we do not guarantee backward compatibility on new `0.y.z` releases.
+Note: a patch `z` should never break backward compatibility. Breaking changes should only 
+happen in  `x` major releases, and avoided if possible in `y` minor releases.
+Recall that if there is a breaking change, still all the SUT drivers in EMB would need to be
+updated, manually...  
 
 Given a current snapshot version `0.3.1-SNAPSHOT`, a new release could be `0.4.0`, i.e.,
 increase minor version `y` by 1, and reset patch version `z` to 0.
@@ -81,7 +84,10 @@ Build the whole `EvoMaster` from project root folder with:
 mvn clean package -DskipTests
 ``` 
 
-Make sure to use `package` and __NOT__ `install`.
+Make sure to use `package` and __NOT__ `install` (more on this later).
+Furthermore, compilation __MUST__ be done with the _lowest_ JDK version currently
+supported in _EvoMaster_.
+
 From the [release](https://github.com/EMResearch/EvoMaster/releases) page
 on GitHub, create a new release.
 It needs to be tagged, with `v` prefix, e.g., `v0.4.0`.
@@ -116,13 +122,19 @@ However, there are some other places in which the version number needs to be upd
 dependency is used (until we automate this task with a script, you will need to search
 for those dependencies manually from your IDE).
 
+To simplify all these previous steps, you can simply run `./scripts/version.py`.
+
 Once those changes are pushed, create a new [release](https://github.com/EMResearch/EMB/releases) 
 on GitHub.
 Tag it with the same version as `EvoMaster`, but no need to attach/upload any file.
 
 After this is done, update to a new SNAPSHOT version, by replacing __ALL__ the 
 occurrences of the release version in the project (e.g., all `pom.xml` and 
-`dist.py` files).  
+`dist.py` files) by using `./scripts/version.py`.  
+However, before doing this, it can be good to test the non-SNAPSHOT version of _EvoMaster_.
+The reasoning is to force the downloading of all the dependencies from Maven Central,
+to check if anything is missing.
+And this is why it was important to build the non-SNAPSHOT with `package` instead of `install`. 
 
 
 
