@@ -175,7 +175,7 @@ public abstract class SutController implements SutHandler {
         sqlHandler.setExtractSqlExecution(enableSqlHeuristics || enableSqlExecution);
     }
 
-    public final void enableExtractMongoExecution(boolean enableMongoExecution) {
+    public final void enableExtractMongoExecutionInfo(boolean enableMongoExecution) {
         mongoHandler.setExtractMongoExecution(enableMongoExecution);
     }
 

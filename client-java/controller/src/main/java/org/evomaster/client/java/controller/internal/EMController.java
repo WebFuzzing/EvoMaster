@@ -184,7 +184,7 @@ public class EMController {
             boolean mongoExecution = dto.extractMongoExecutionInfo != null && dto.extractMongoExecutionInfo;
 
             sutController.enableComputeSqlHeuristicsOrExtractExecution(sqlHeuristics, sqlExecution);
-            sutController.enableExtractMongoExecution(mongoExecution);
+            sutController.enableExtractMongoExecutionInfo(mongoExecution);
 
             boolean doReset = dto.resetState != null && dto.resetState;
 
