@@ -29,7 +29,9 @@ public class ReplacementList {
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
                 new ByteClassReplacement(),
-                new CharacterClassReplacement()
+                new CharacterClassReplacement(),
+                new ServletRequestClassReplacement(),
+                new WebRequestClassReplacement()
         );
     }
 
@@ -37,7 +39,18 @@ public class ReplacementList {
         Objects.requireNonNull(target);
 
         return getList().stream()
-                .filter(t -> t.getTargetClass().isAssignableFrom(target))
+                .filter(t -> t.isAvailable())
+                .filter(t -> {
+                    /*
+                        TODO: this is tricky, due to how "super" calls are
+                        handled. For now, we just allow subclasses if they
+                        are of standard JDK.
+                    */
+                            boolean jdk = target.getName().startsWith("java");
+                            return jdk ? t.getTargetClass().isAssignableFrom(target)
+                                    : t.getTargetClass().equals(target);
+                        }
+                )
                 .collect(Collectors.toList());
     }
 }

@@ -73,7 +73,7 @@ public class Instrumentator {
                 we don't want these extra methods added as part of
                 targets to cover
              */
-            cv = new TrackerClassVisitor(cv, className);
+            //cv = new TrackerClassVisitor(cv, className);
 
         } else {
 
