@@ -217,7 +217,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         ?.documents
                         ?.toList()
                         ?.map {
-                            MongoHeuristicCalculator().computeDistance(it, filterNode)
+                            filterNode.accept(MongoHeuristicCalculator(), it)
                         }
                         ?.toList()
                         ?.min()!!
