@@ -203,24 +203,32 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
         val filterNode = toASTNodeFilter(filter)
 
-        if (filterNode==null) {
+        if (filterNode == null) {
+            // query was not supported
             return Double.MAX_VALUE
         } else {
-            return retrievedDocumentsDto
-                    ?.documents
-                    ?.toList()
-                    ?.map {
-                        MongoHeuristicCalculator().computeDistance(it, filterNode)
-                    }
-                    ?.toList()?.min()
-                    ?: Double.MAX_VALUE
+
+            if (retrievedDocumentsDto?.documents.isNullOrEmpty()) {
+                // Collection is empty
+                return Double.MAX_VALUE
+            } else {
+                // collection is not empty
+                return retrievedDocumentsDto
+                        ?.documents
+                        ?.toList()
+                        ?.map {
+                            MongoHeuristicCalculator().computeDistance(it, filterNode)
+                        }
+                        ?.toList()
+                        ?.min()!!
+            }
         }
     }
 
     private fun toASTNodeFilter(filter: Document): ASTNodeFilter? {
         try {
             return DocumentToASTFilterConverter().translate(filter)
-        } catch (ex : IllegalArgumentException) {
+        } catch (ex: IllegalArgumentException) {
             log.warn("Could not translate document $filter")
             return null
         }

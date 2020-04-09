@@ -41,13 +41,11 @@ class RemoteController() : DatabaseExecutor {
     lateinit var host: String
     var port: Int = 0
 
-    private var computeSqlHeuristics = true
+    private var computeSqlHeuristics = false
 
-    private var extractSqlExecutionInfo = true
+    private var extractSqlExecutionInfo = false
 
-    private var computeMongoHeuristics = true
-
-    private var extractMongoExecutionInfo = true
+    private var extractMongoExecutionInfo = false
 
 
     @Inject
@@ -64,15 +62,11 @@ class RemoteController() : DatabaseExecutor {
         if (computeSqlHeuristics && !extractSqlExecutionInfo)
             throw IllegalArgumentException("'extractSqlExecutionInfo' should be enabled when 'computeSqlHeuristics' is enabled")
 
-        if (computeMongoHeuristics && !extractMongoExecutionInfo)
-            throw IllegalArgumentException("'extractMongoExecutionInfo' should be enabled when 'computeMongoHeuristics' is enabled")
-
         this.host = host
         this.port = port
         this.computeSqlHeuristics = computeSqlHeuristics
         this.extractSqlExecutionInfo = computeSqlHeuristics || extractSqlExecutionInfo
-        this.computeMongoHeuristics = computeMongoHeuristics
-        this.extractMongoExecutionInfo = computeMongoHeuristics || extractMongoExecutionInfo
+        this.extractMongoExecutionInfo = extractMongoExecutionInfo
     }
 
     constructor(host: String, port: Int, computeSqlHeuristics: Boolean, computeMongoHeuristics: Boolean) :
@@ -96,12 +90,12 @@ class RemoteController() : DatabaseExecutor {
         return client.target("http://$host:$port" + ControllerConstants.BASE_PATH)
     }
 
-    private fun makeHttpCall(lambda:  () -> Response) : Response{
+    private fun makeHttpCall(lambda: () -> Response): Response {
 
-        return  try{
+        return try {
             lambda.invoke()
-        } catch (e: ProcessingException){
-            if(TcpUtils.isOutOfEphemeralPorts(e)){
+        } catch (e: ProcessingException) {
+            if (TcpUtils.isOutOfEphemeralPorts(e)) {
                 /*
                     This could happen if for any reason we run out of ephemeral ports.
                     In such a case, we wait X seconds, and try again, as OS might have released ports
@@ -124,7 +118,7 @@ class RemoteController() : DatabaseExecutor {
         client.close()
     }
 
-    private fun checkResponse(response: Response, msg: String) : Boolean{
+    private fun checkResponse(response: Response, msg: String): Boolean {
 
         val dto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
@@ -136,8 +130,8 @@ class RemoteController() : DatabaseExecutor {
         return checkResponse(response, dto, msg)
     }
 
-    private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String) : Boolean{
-        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL  || dto?.error != null) {
+    private fun checkResponse(response: Response, dto: WrappedResponseDto<*>?, msg: String): Boolean {
+        if (response.statusInfo.family != Response.Status.Family.SUCCESSFUL || dto?.error != null) {
             log.warn("{}. HTTP status {}. Error: '{}'", msg, response.status, dto?.error)
             return false
         }
@@ -145,17 +139,17 @@ class RemoteController() : DatabaseExecutor {
         return true
     }
 
-     private  fun <T> getData(dto: WrappedResponseDto<T>?) : T?{
-         if (dto?.data == null) {
-             log.warn("Missing DTO")
-             return null
-         }
-         return dto.data
+    private fun <T> getData(dto: WrappedResponseDto<T>?): T? {
+        if (dto?.data == null) {
+            log.warn("Missing DTO")
+            return null
+        }
+        return dto.data
     }
 
-    private fun <T> getDto(response: Response, type: GenericType<WrappedResponseDto<T>>) : WrappedResponseDto<T>?{
+    private fun <T> getDto(response: Response, type: GenericType<WrappedResponseDto<T>>): WrappedResponseDto<T>? {
 
-        if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
+        if (response.mediaType == MediaType.TEXT_PLAIN_TYPE) {
             //something weird is going on... possibly a bug in the Driver?
 
             val res = response.readEntity(String::class.java)
@@ -186,7 +180,7 @@ class RemoteController() : DatabaseExecutor {
 
         val dto = getDto(response, object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
 
-        if(!checkResponse(response, dto, "Failed to retrieve SUT info")){
+        if (!checkResponse(response, dto, "Failed to retrieve SUT info")) {
             return null
         }
 
@@ -205,7 +199,7 @@ class RemoteController() : DatabaseExecutor {
 
         val dto = getDto(response, object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
 
-        if(!checkResponse(response, dto, "Failed to retrieve EM controller info")){
+        if (!checkResponse(response, dto, "Failed to retrieve EM controller info")) {
             return null
         }
 
@@ -219,7 +213,10 @@ class RemoteController() : DatabaseExecutor {
                 getWebTarget()
                         .path(ControllerConstants.RUN_SUT_PATH)
                         .request()
-                        .put(Entity.json(SutRunDto(run, reset, computeSqlHeuristics, extractSqlExecutionInfo, extractMongoExecutionInfo)))
+                        .put(Entity.json(SutRunDto(run, reset,
+                                computeSqlHeuristics,
+                                extractSqlExecutionInfo,
+                                extractMongoExecutionInfo)))
             }
         } catch (e: Exception) {
             log.warn("Failed to connect to SUT: ${e.message}")
@@ -282,14 +279,14 @@ class RemoteController() : DatabaseExecutor {
 
         val dto = getDto(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
-        if(!checkResponse(response, dto, "Failed to retrieve target coverage")){
+        if (!checkResponse(response, dto, "Failed to retrieve target coverage")) {
             return null
         }
 
         return getData(dto)
     }
 
-    fun registerNewAction(actionDto: ActionDto) : Boolean{
+    fun registerNewAction(actionDto: ActionDto): Boolean {
 
         val response = makeHttpCall {
             getWebTarget()
@@ -300,8 +297,6 @@ class RemoteController() : DatabaseExecutor {
 
         return checkResponse(response, "Failed to register new action")
     }
-
-
 
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
@@ -316,7 +311,7 @@ class RemoteController() : DatabaseExecutor {
         if (!wasSuccess(response)) {
             LoggingUtil.uniqueWarn(log, "Failed to execute database command. HTTP status: {}.", response.status)
 
-            if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
+            if (response.mediaType == MediaType.TEXT_PLAIN_TYPE) {
                 //something weird is going on... possibly a bug in the Driver?
 
                 val res = response.readEntity(String::class.java)
@@ -331,7 +326,7 @@ class RemoteController() : DatabaseExecutor {
                 return false
             }
 
-            if(responseDto.error != null) {
+            if (responseDto.error != null) {
                 //this can happen if we do not handle all constraints
                 LoggingUtil.uniqueWarn(log, "Error message: " + responseDto.error)
             }
@@ -396,9 +391,9 @@ class RemoteController() : DatabaseExecutor {
         return response?.statusInfo?.family?.equals(Response.Status.Family.SUCCESSFUL) ?: false
     }
 
-    private fun handleFailedDtoParsing(exception: Exception){
+    private fun handleFailedDtoParsing(exception: Exception) {
 
-        if(exception is ProcessingException && exception.cause is UnrecognizedPropertyException){
+        if (exception is ProcessingException && exception.cause is UnrecognizedPropertyException) {
 
             val version = this.javaClass.`package`?.implementationVersion
                     ?: "(cannot determine, likely due to EvoMaster being run directly from IDE and not as a packaged uber jar)"

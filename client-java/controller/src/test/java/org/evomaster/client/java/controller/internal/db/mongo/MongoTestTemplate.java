@@ -60,8 +60,11 @@ public abstract class MongoTestTemplate {
     }
 
     protected static void startSut(int port) {
+        boolean calculateSqlHeuristics = false;
+        boolean enableMongoExtraction = true;
+
         given().contentType(ContentType.JSON)
-                .body(new SutRunDto(true, false, true))
+                .body(new SutRunDto(true, false, calculateSqlHeuristics, enableMongoExtraction))
                 .put("http://localhost:" + port + BASE_PATH + RUN_SUT_PATH)
                 .then()
                 .statusCode(204);

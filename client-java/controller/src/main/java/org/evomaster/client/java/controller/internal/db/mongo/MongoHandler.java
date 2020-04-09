@@ -20,7 +20,7 @@ public class MongoHandler {
 
     private final List<String> mongoOperations;
 
-    private volatile boolean extractMongoExecution;
+    private volatile boolean extractMongoExecution = false;
 
     public MongoHandler() {
         mongoOperations = new ArrayList<>();
