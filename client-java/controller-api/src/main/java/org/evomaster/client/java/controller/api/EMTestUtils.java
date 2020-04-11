@@ -37,7 +37,7 @@ public class EMTestUtils {
         try{
             locationURI = URI.create(locationHeader);
         } catch (Exception e){
-            return expectedTemplate;
+            return locationHeader;
         }
         String locationPath = locationURI.getPath();
         String[] locationTokens = locationPath.split("/");
