@@ -54,7 +54,7 @@ public class EMTestUtilsTest {
 
         String resolvedLocation = EMTestUtils.resolveLocation(locationHeader, expectedTemplate);
 
-        assertEquals(expectedTemplate, resolvedLocation);
+        assertEquals(locationHeader, resolvedLocation);
     }
 
     @Test
