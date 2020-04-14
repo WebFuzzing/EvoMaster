@@ -5,6 +5,8 @@ import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * created by manzh on 2019-10-31
@@ -50,6 +52,9 @@ class ImpactsOfIndividual private constructor(
 
     constructor(abstractInitializationGeneToMutate: Boolean) : this(InitializationActionImpacts(abstractInitializationGeneToMutate), mutableListOf(), maxSqlInitActionsPerMissingData = 0)
 
+    companion object {
+        private val log: Logger = LoggerFactory.getLogger(ImpactsOfIndividual::class.java)
+    }
     /**
      * @param groupedActions actions are grouped
      * @param sequenceSensitive when it is true, complete sequence structure, otherwise, only keep uniques ones
@@ -123,6 +128,7 @@ class ImpactsOfIndividual private constructor(
         //for initialization due to db action fixing
         val diff = individual.seeInitializingActions().size - initializationGeneImpacts.getOriginalSize()
         if (diff != 0) { //truncation
+            log.warn("structure of initializingAction should not be changed")
             initializationGeneImpacts.truncation(mutatedGene.addedInitializationGroup, individual.seeInitializingActions())
         }
 
@@ -154,6 +160,7 @@ class ImpactsOfIndividual private constructor(
 
 
     fun initInitializationImpacts(groupedActions: List<List<Action>>) {
+
         initializationGeneImpacts.initInitializationActions(groupedActions)
     }
 

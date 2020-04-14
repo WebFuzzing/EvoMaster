@@ -526,7 +526,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
-    fun updateGeneDueToAddedInitializationGenes(group: List<List<Action>>){
+    fun updateImpactGeneDueToAddedInitializationGenes(group: List<List<Action>>){
         impactInfo!!.initInitializationImpacts(group)
     }
 

@@ -146,11 +146,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             structureMutator.addInitializingActions(current, mutatedGenes)
 
-            if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
-                current.updateGeneDueToAddedInitializationGenes(
-                        group = mutatedGenes.addedInitializationGroup
-                )
-            }
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutatedInd = mutate(current, targets, mutatedGenes)
