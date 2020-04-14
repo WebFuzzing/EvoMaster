@@ -217,8 +217,7 @@ class IndividualGeneImpactTest {
 
             return EvaluatedIndividual(
                     fitness = fv1, individual = ind1, results = listOf(),
-                    enableTracking = true, trackOperator = this, enableImpact = true
-            )
+                    trackOperator = this)
         }
 
     }

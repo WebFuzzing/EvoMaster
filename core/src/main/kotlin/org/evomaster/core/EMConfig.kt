@@ -1007,6 +1007,10 @@ class EMConfig {
     @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
     var prioritizeNotVisit = false
 
+    @Experimental
+    @Cfg("whether to abstract genes that exist initialization actions to mutate")
+    var abstractInitializationGeneToMutate = false
+
     enum class ImpactGeneSelection{
         PROBABILITY,
         SUBSET_PROBABILITY,

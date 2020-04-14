@@ -44,6 +44,8 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         val ids = if (targetIds.isEmpty()) defaultTargetForCoverageCalculation() else targetIds
 
+
+
         var ei = time.measureTimeMillis(
                 {time.reportExecutedIndividualTime(it, a)},
                 {doCalculateCoverage(individual, ids)}

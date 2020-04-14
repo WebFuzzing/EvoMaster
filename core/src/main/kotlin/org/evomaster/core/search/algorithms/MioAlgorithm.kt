@@ -40,6 +40,7 @@ class MioAlgorithm<T> : SearchAlgorithm<T>() where T : Individual {
                 }
 
                 ff.calculateCoverage(ind)?.run {
+
                     archive.addIfNeeded(this)
                     sampler.feedback(this)
                 }

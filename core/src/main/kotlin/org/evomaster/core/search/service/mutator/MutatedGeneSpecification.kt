@@ -1,5 +1,6 @@
 package org.evomaster.core.search.service.mutator
 
+import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
@@ -21,6 +22,7 @@ open class MutatedGeneSpecification (
         val mutatedDbGenes : MutableList<Gene> = mutableListOf(),
         val addedGenes : MutableList<Gene> = mutableListOf(),
         val addedInitializationGenes : MutableList<Gene> = mutableListOf(),
+        val addedInitializationGroup: MutableList<List<Action>> = mutableListOf(),
         val removedGene: MutableList<Gene> = mutableListOf(),
         val mutatedPosition : MutableList<Int> = mutableListOf(),
         val mutatedDbActionPosition : MutableList<Int> = mutableListOf()

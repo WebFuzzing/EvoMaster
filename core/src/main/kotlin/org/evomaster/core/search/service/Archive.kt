@@ -11,6 +11,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
+import org.evomaster.core.search.impact.ImpactsOfIndividual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
@@ -482,5 +483,19 @@ class Archive<T> where T : Individual {
                 .map { t->
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
+    }
+
+    /**
+     * @return an existing ImpactsOfIndividual which includes same action with [other]
+     */
+    fun findImpactInfo(other: Individual) : ImpactsOfIndividual?{
+        return populations.values.find {
+            it.any { i-> i.individual.sameActions(other) }
+        }.run {
+            if (this == null || this.isEmpty())
+                null
+            else
+                find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()
+        }
     }
 }

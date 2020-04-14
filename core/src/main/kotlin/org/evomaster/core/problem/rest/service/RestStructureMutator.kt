@@ -72,6 +72,14 @@ class RestStructureMutator : StructureMutator() {
                  */
                 val position = sampler.existingSqlData.size
                 ind.dbInitialization.addAll(position, insertions)
+
+                /*
+                    record dbactions group for mutation
+                 */
+                mutatedGenes?.addedInitializationGroup?.add(position, insertions)
+                /*
+                    record newly added genes with db initialization
+                 */
                 mutatedGenes?.addedInitializationGenes?.addAll(insertions.flatMap { it.seeGenes() })
             }
 

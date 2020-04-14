@@ -148,7 +148,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
                 current.updateGeneDueToAddedInitializationGenes(
-                        genes = mutatedGenes.addedInitializationGenes
+                        group = mutatedGenes.addedInitializationGroup
                 )
             }
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}

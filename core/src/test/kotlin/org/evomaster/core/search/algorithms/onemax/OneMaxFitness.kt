@@ -20,6 +20,7 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
         (0 until individual.n)
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
-        return EvaluatedIndividual(fv, individual.copy(if(!config.enableTrackIndividual) TraceableElementCopyFilter.NONE else TraceableElementCopyFilter.WITH_TRACK) as OneMaxIndividual, listOf(), enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
+        return EvaluatedIndividual(fv,
+                individual.copy(if(!config.enableTrackIndividual) TraceableElementCopyFilter.NONE else TraceableElementCopyFilter.WITH_TRACK) as OneMaxIndividual, listOf(), trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, config = config)
     }
 }
