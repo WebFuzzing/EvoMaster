@@ -1,5 +1,18 @@
 package org.evomaster.core.search.impact
 
+
+/**
+ * @property shared shared impacts. over a course of mutation, some gene impact info (e.g., times of manipulating the gene) should be shared that are collected by [shared].
+ * @property specific there exist some impact info specific to 'current' gene, e.g., times of no impact from impact
+ *
+ * for instance, an evolution of a gene is 0:A-1:B-2:(C)-3:D-4:(E)-5:F-6:G-7:(H)-8:(I)-9:($J$), where
+ *      (*) represents a gene is mutated, but no improvement
+ *      $*$ represents a gene is mutated, but no impact
+ *      number represents the order to mutate during search, and a gene is originated from sampling, represented by 0.
+ *
+ * regarding genes A, B, D, F, G, timesToManipulate (i.e.,9), timesOfNoImpact (i.e.,1), timesOfImpact(i.e.,8) are shared,
+ * regarding gene G, noImpactFromImpact(i.e., 1) and noImprovement(i.e.,3) are specific
+ */
 open class Impact(
         val shared : SharedImpactInfo,
         val specific : SpecificImpactInfo

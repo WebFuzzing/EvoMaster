@@ -22,6 +22,7 @@ open class MutatedGeneSpecification (
         val mutatedDbGenes : MutableList<Gene> = mutableListOf(),
         val addedGenes : MutableList<Gene> = mutableListOf(),
         val addedInitializationGenes : MutableList<Gene> = mutableListOf(),
+        val addedExistingDataInitialization: MutableList<Action> = mutableListOf(),
         val addedInitializationGroup: MutableList<List<Action>> = mutableListOf(),
         val removedGene: MutableList<Gene> = mutableListOf(),
         val mutatedPosition : MutableList<Int> = mutableListOf(),

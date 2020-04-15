@@ -8,6 +8,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -526,8 +527,16 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         )
     }
 
-    fun updateImpactGeneDueToAddedInitializationGenes(group: List<List<Action>>){
-        impactInfo!!.initInitializationImpacts(group)
+    fun updateImpactGeneDueToAddedInitializationGenes(group: List<List<Action>>, existingSize : Int){
+        impactInfo!!.updateInitializationImpactsAtBeginning(group, existingSize)
+    }
+
+    fun initAddedInitializationGenes(group: List<List<Action>>, existingSize : Int){
+        impactInfo!!.initInitializationImpacts(group, existingSize)
+    }
+
+    fun updateExistingSQLSize(existingSize : Int){
+        impactInfo!!.updateExistingSQLData(existingSize)
     }
 
     fun anyImpactInfo() : Boolean{

@@ -2,6 +2,7 @@ package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
 import org.evomaster.core.Lazy
+import org.evomaster.core.database.DbAction
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
@@ -46,18 +47,23 @@ class RestStructureMutator : StructureMutator() {
             return
         }
 
+        val old = mutableListOf<Action>().plus(ind.seeInitializingActions())
+
         if(ind.dbInitialization.isEmpty()
                 || ! ind.dbInitialization.any { it.representExistingData }) {
             //add existing data only once
             ind.dbInitialization.addAll(0, sampler.existingSqlData)
-            mutatedGenes?.addedInitializationGenes?.addAll( sampler.existingSqlData.flatMap { it.seeGenes() })
+
+            //record newly added existing sql data
+            mutatedGenes?.addedExistingDataInitialization?.addAll(sampler.existingSqlData)
         }
 
         val max = config.maxSqlInitActionsPerMissingData
 
         var missing = findMissing(fw, ind)
 
-        val group = if (mutatedGenes != null ) mutableListOf<List<Action>>() else null
+        val addedInsertions = if (mutatedGenes != null) mutableListOf<List<Action>>() else null
+
         while (!missing.isEmpty()) {
 
             val first = missing.entries.first()
@@ -73,8 +79,8 @@ class RestStructureMutator : StructureMutator() {
                 val position = sampler.existingSqlData.size
                 ind.dbInitialization.addAll(position, insertions)
 
-                group?.add(position, insertions)
-
+                //record newly added insertions
+                addedInsertions?.add(0, insertions)
             }
 
             /*
@@ -93,34 +99,49 @@ class RestStructureMutator : StructureMutator() {
 
         ind.repairInitializationActions(randomness)
 
-        // update gene impact due to newly added initialization actions
-        if(group != null){
-            val list = ind.seeInitializingActions()
+        // update added gene
+        if(mutatedGenes != null){
+            val allExistingData = ind.seeInitializingActions().filter { it is DbAction && it.representExistingData }
+            val diff = ind.seeInitializingActions().filter { !old.contains(it) || (it is DbAction && it.representExistingData)}
 
-            val modified =  if (group.flatten().size == list.size)
-                group
-            else if (group.flatten().size > list.size){
-                group.mapNotNull {
-                    val m = it.filter { a-> list.contains(a) }
-                    if (m.isEmpty()) null else m
+            if (diff.isEmpty()) {
+                if (allExistingData.isNotEmpty())
+                    individual.updateExistingSQLSize(allExistingData.size)
+                return
+            }
+            mutatedGenes.addedInitializationGenes.addAll(diff.flatMap { it.seeGenes() })
+
+            // update impact due to newly added initialization actions
+            if(archiveMutator.enableArchiveSelection()){
+                val modified =  if (addedInsertions!!.flatten().size == diff.size)
+                    addedInsertions
+                else if (addedInsertions.flatten().size > diff.size){
+                    addedInsertions.mapNotNull {
+                        val m = it.filter { a-> diff.contains(a) }
+                        if (m.isEmpty()) null else m
+                    }
+                }else{
+                    log.warn("unexpected handling on Initialization Action after repair")
+                    return
+                    //throw IllegalArgumentException("unexpected handling on Initialization Action")
                 }
-            }else{
-                log.warn("unexpected handling on Initialization Action")
-                return
-                //throw IllegalArgumentException("unexpected handling on Initialization Action")
-            }
 
-            if(modified.flatten().size != list.size){
-                log.warn("unexpected handling on Initialization Action")
-                return
-            }
-            if (archiveMutator.enableArchiveSelection())
-                individual.updateImpactGeneDueToAddedInitializationGenes(modified)
+                if(modified.flatten().size != diff.size){
+                    log.warn("unexpected handling on Initialization Action")
+                    return
+                }
+                if (archiveMutator.enableArchiveSelection()){
+                    if(old.isEmpty()){
+                        individual.initAddedInitializationGenes(modified, allExistingData.size)
+                    }else{
+                        individual.updateImpactGeneDueToAddedInitializationGenes(modified, allExistingData.size)
+                    }
 
-            mutatedGenes!!.addedInitializationGroup.addAll(modified)
-            mutatedGenes.addedInitializationGenes.addAll(list.flatMap { it.seeGenes() })
+                }
+
+                mutatedGenes.addedInitializationGroup.addAll(modified)
+            }
         }
-
     }
 
     private fun findMissing(fw: Map<String, Set<String>>, ind: RestIndividual): Map<String, Set<String>> {
