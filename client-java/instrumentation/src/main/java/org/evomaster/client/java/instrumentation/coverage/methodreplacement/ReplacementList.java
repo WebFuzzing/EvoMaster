@@ -35,6 +35,7 @@ public class ReplacementList {
         );
     }
 
+    @Deprecated
     public static List<MethodReplacementClass> getReplacements(Class<?> target) {
         Objects.requireNonNull(target);
 
@@ -49,6 +50,36 @@ public class ReplacementList {
                             boolean jdk = target.getName().startsWith("java");
                             return jdk ? t.getTargetClass().isAssignableFrom(target)
                                     : t.getTargetClass().equals(target);
+                        }
+                )
+                .collect(Collectors.toList());
+    }
+
+
+    public static List<MethodReplacementClass> getReplacements(String targetClassName) {
+        Objects.requireNonNull(targetClassName);
+
+        return getList().stream()
+                .filter(t -> t.isAvailable())
+                .filter(t -> {
+                    /*
+                        TODO: this is tricky, due to how "super" calls are
+                        handled. For now, we just allow subclasses if they
+                        are of standard JDK.
+                        Furthermore, issues with classloading of non-JDK APIs
+                    */
+                            boolean jdk = targetClassName.startsWith("java.");
+                            if(jdk){
+                                Class<?> klass;
+                                try{
+                                   klass = Class.forName(targetClassName);
+                                }catch (Exception e){
+                                    throw new RuntimeException(e);
+                                }
+                                return t.getTargetClass().isAssignableFrom(klass);
+                            }
+
+                            return t.getTargetClassName().equals(targetClassName);
                         }
                 )
                 .collect(Collectors.toList());

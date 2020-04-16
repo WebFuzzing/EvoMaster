@@ -63,11 +63,6 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
-//        if (!owner.startsWith("java/")) {
-//            super.visitMethodInsn(opcode, owner, name, desc, itf);
-//            return;
-//        }
-
 
         /*
          * This is a very special case. This can happen when we replace a method
@@ -87,19 +82,25 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
             return;
         }
 
-        /*
-            Loading class here could have side-effects if code is executed in static initializer.
-         */
-        Class<?> klass = null;
-        try {
-            klass = this.getClass().getClassLoader().loadClass(ClassName.get(owner).getFullNameWithDots());
-        } catch (ClassNotFoundException e) {
-            //shouldn't really happen
-            SimpleLogger.error(e.toString());
-            throw new RuntimeException(e);
-        }
 
-        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(klass);
+//        if (!owner.startsWith("java/")) {
+//            super.visitMethodInsn(opcode, owner, name, desc, itf);
+//            return;
+//        }
+//
+//        /*
+//            Loading class here could have side-effects if code is executed in static initializer.
+//         */
+//        Class<?> klass = null;
+//        try {
+//            klass = this.getClass().getClassLoader().loadClass(ClassName.get(owner).getFullNameWithDots());
+//        } catch (ClassNotFoundException e) {
+//            //shouldn't really happen
+//            SimpleLogger.error(e.toString());
+//            throw new RuntimeException(e);
+//        }
+
+        List<MethodReplacementClass> candidateClasses = ReplacementList.getReplacements(owner);
 
         if (candidateClasses.isEmpty()) {
             super.visitMethodInsn(opcode, owner, name, desc, itf);
