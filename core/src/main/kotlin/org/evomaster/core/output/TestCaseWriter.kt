@@ -100,7 +100,8 @@ class TestCaseWriter {
 
         val lines = Lines()
 
-        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+                && test.test.getClusters().size != 0){
             clusterComment(lines, test)
         }
         if (format.isJUnit()) {

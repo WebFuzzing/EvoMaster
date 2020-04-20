@@ -40,8 +40,13 @@ class SupportedCodeOracle : ImplementedOracle() {
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
             val supportedCode = getSupportedCode(call).joinToString(", ")
+            //BMR: this will be a problem if supportedCode contains both codes and default...
             if(supportedCode.equals("default", ignoreCase = true)){
-                lines.add("/* Note: this call is handled via a default code. If this is intended behaviour, ignore this comment */")
+                lines.add("/*")
+                lines.add(" Note: The default code seems to be the only one defined. https://swagger.io/docs/specification/describing-responses/.")
+                lines.add(" This is somewhat unexpected, so the code below is likely to lead to a failed expectation")
+                lines.add("*/")
+                lines.add(".that($variableName, Arrays.asList().contains($name.extract().statusCode()))")
             }
             else lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
         }

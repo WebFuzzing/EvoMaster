@@ -48,13 +48,14 @@ class SchemaOracle : ImplementedOracle() {
             return
         }
 
-        try {
-            getSupportedResponse(call)
-        }
-        catch (e: Exception){
+        //try {
+            //getSupportedResponse(call)
+        //}
+        //catch (e: Exception){
 
-        }
+        //}
 
+        getSupportedResponse(call)
         val bodyString = res.getBody()
         when (bodyString?.first()) {
             '[' -> {
@@ -65,41 +66,56 @@ class SchemaOracle : ImplementedOracle() {
                 // TODO: Handle individual objects
                 val supportedObjs = getSupportedResponse(call)
                 val expectedObject = supportedObjs.get("${res.getStatusCode()}")
+
                 when {
                     expectedObject.isNullOrEmpty() -> return //No expectations can be made (possibly another fault exists).
                     expectedObject.equals("string", ignoreCase = true) -> return
                     // handling single values appears to be a known problem with RestAssured and Groovy
                     // see https://github.com/rest-assured/rest-assured/issues/949
                     else -> {
-                        // if the contents are objects with a ref in the schema
-                        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
-                        val isItThough = supportedObject(referenceObject, call)
-
-                        val referenceKeys = referenceObject.fields
-                                .filterNot { it is OptionalGene }
-                                .map { "\"${it.name}\"" }
-                                .joinToString(separator = ", ")
-
-                        //this differs between kotlin and java
-                        when{
-                            format.isJava() ->lines.add(".that($variableName, json_$name.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
-                            format.isKotlin() -> lines.add(".that($variableName, json_$name.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
-                        }
-                        val referenceOptionalKeys = referenceObject.fields
-                                .filter { it is OptionalGene }
-                                .map { "\"${it.name}\"" }
-                                .joinToString(separator = ", ")
-
-                        when {
-                            format.isJava() -> lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys).containsAll(json_$name.getMap(\"\").keySet()))")
-                            format.isKotlin() -> lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys).containsAll(json_$name.getMap<Any, Any>(\"\").keys))")
-                        }
+                        writeExpectation(call, lines, name, format, expectedObject)
                     }
                 }
             }
         }
     }
 
+    fun writeExpectation(call: RestCallAction, lines: Lines,  name: String, format: OutputFormat, expectedObject: String?){
+        // if the contents are objects with a ref in the schema
+        val json_ref = "$name.extract().response().jsonPath()"
+        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
+
+
+        val referenceKeys = referenceObject.fields
+                .filterNot { it is OptionalGene }
+                .map { "\"${it.name}\"" }
+                .joinToString(separator = ", ")
+
+        //this differs between kotlin and java
+        when{
+            format.isJava() ->lines.add(".that($variableName, $json_ref.getMap(\"\").keySet().containsAll(Arrays.asList($referenceKeys)))")
+            format.isKotlin() -> lines.add(".that($variableName, $json_ref.getMap<Any, Any>(\"\").keys.containsAll(Arrays.asList($referenceKeys)))")
+        }
+        val referenceOptionalKeys = referenceObject.fields
+                .filter { it is OptionalGene }
+                .map { "\"${it.name}\"" }
+                .joinToString(separator = ", ")
+
+        when {
+            format.isJava() -> {
+                lines.add(".that($variableName, Arrays.asList($referenceOptionalKeys)")
+                lines.indented {
+                    lines.add(".containsAll($json_ref.getMap(\"\").keySet()))")
+                }
+            }
+            format.isKotlin() -> {
+                lines.add(".that($variableName, listOf<Any>($referenceOptionalKeys)")
+                lines.indented {
+                    lines.add(".containsAll($json_ref.getMap<Any, Any>(\"\").keys))")
+                }
+            }
+        }
+    }
 
     fun supportedObject(obj: ObjectGene, call: RestCallAction): Boolean{
         val supportedObjects = getSupportedResponse(call)
@@ -179,7 +195,13 @@ class SchemaOracle : ImplementedOracle() {
     override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
         // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         //return !(res.failedCall() || res.getStatusCode() == 500)
-        return true
+
+        val supportedObjs = getSupportedResponse(call)
+        val expectedObject = supportedObjs.get("${res.getStatusCode()}")
+
+        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
+        val supported = supportedObject(referenceObject, call)
+        return !supported
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {

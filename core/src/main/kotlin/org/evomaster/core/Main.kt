@@ -446,29 +446,6 @@ class Main {
             val statistics = injector.getInstance(Statistics::class.java)
             statistics.writeCoveredTargets(solution, config.coveredTargetSortedBy)
         }
-        /*
-        private fun writeExecutiveSummary(injector: Injector,
-                                          solution: Solution<*>,
-                                          controllerInfoDto: ControllerInfoDto?,
-                                          partialOracles: PartialOracles){
-            val config = injector.getInstance(EMConfig::class.java)
-
-            if (!config.createTests) {
-                return
-            }
-
-            val writer = injector.getInstance(TestSuiteWriter::class.java)
-            assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
-
-            val executiveSummary = TestSuiteSplitter.split(solution, EMConfig.TestSuiteSplitType.SUMMARY_ONLY, partialOracles)
-            if(executiveSummary.isNotEmpty()) {
-                executiveSummary.forEach {
-                    writer.writeTests(it, controllerInfoDto?.fullName)
-                }
-            }
-        }
-
-         */
 
         private fun writeExecSummary(injector: Injector,
                                      controllerInfoDto: ControllerInfoDto?,

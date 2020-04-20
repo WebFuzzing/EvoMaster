@@ -34,13 +34,13 @@ class ExpectationsWriter {
 
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
-        when{
-            format.isKotlin() -> lines.add("val json_$name: JsonPath = $name")
-            format.isJava() -> lines.add("JsonPath json_$name = $name")
-        }
+        //when{
+        //    format.isKotlin() -> lines.add("val json_$name: JsonPath = $name")
+        //    format.isJava() -> lines.add("JsonPath json_$name = $name")
+        //}
 
-        lines.append(".extract().response().jsonPath()")
-        lines.appendSemicolon(format)
+        //lines.append(".extract().response().jsonPath()")
+        //lines.appendSemicolon(format)
         partialOracles.addExpectations(call, lines, res, name, format)
     }
 }
