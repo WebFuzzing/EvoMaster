@@ -53,7 +53,7 @@ interface JavaTemplate {
         val commonType = CommonTypes.values().find { it.name == type }?:return ""
         val local = "response$index"
         return when(commonType){
-            CommonTypes.INT -> {
+            CommonTypes.INT, CommonTypes.OBJ_INT -> {
                 val content = StringBuilder("int $local = -1;")
                 val distance = (Int.MAX_VALUE / numOfBranches) * 2;
                 (0 until numOfBranches).forEach { b->

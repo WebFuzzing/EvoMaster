@@ -131,7 +131,12 @@ interface ClassTemplate : ScriptTemplate {
     }
 
     fun detectAndSaveBranchIds(content: String){
-        val allIf = getMethods().flatMap { m -> m.getIfSnippets().also { it.forEach { e-> e.methodName = m.getName() } } }
+        val allIf = getMethods().flatMap {
+            m -> m.getIfSnippets()
+                .also {
+                    it.forEach { e-> e.methodName = m.getName() }
+                }
+        }
         if (allIf.isEmpty()) return
 
         val lines = content.split(System.lineSeparator())

@@ -59,5 +59,5 @@ interface MethodScript : ScriptTemplate{
         return content.toString()
     }
 
-    open fun getIfSnippets() : List<IfSnippet> = listOf()
+    fun getIfSnippets() : List<IfSnippet>
 }
