@@ -219,7 +219,7 @@ class GenerateREST(val config: GenConfig, private var resourceGraph : ResourceGr
     private fun getMethods(node: ResNode) : List<RestMethod>{
         if(config.hideExistsDependency || node.outgoing.isEmpty())
             return config.restMethods.filter { it != RestMethod.DELETE_CON && it != RestMethod.GET_ALL_CON }
-        return config.restMethods.filter { it != RestMethod.DELETE && it != RestMethod.GET_ALL }
+        return config.restMethods//.filter { it != RestMethod.DELETE && it != RestMethod.GET_ALL }
     }
 
     private fun getCreation() : RestMethod{

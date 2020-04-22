@@ -12,12 +12,16 @@ import org.junit.jupiter.api.Test
  */
 class TestServiceWithEndpoints {
     private val graph = ObjectsForTest.getGraph()
+    private val usedmethods = listOf(RestMethod.GET_ID, RestMethod.GET_ALL, RestMethod.GET_ALL_CON, RestMethod.PUT, RestMethod.DELETE, RestMethod.DELETE_CON ,RestMethod.PATCH_VALUE)
+    private val methodsWithPostId = listOf(RestMethod.POST_ID).plus(usedmethods)
+    private val methodsWithPostObj= listOf(RestMethod.POST).plus(usedmethods)
+
 
     @Test
     fun testServiceAPIWithShown(){
         val config = GenConfig()
         config.saveGraph = GraphExportFormat.NONE
-        config.restMethods = RestMethod.values().toList()
+        config.restMethods = methodsWithPostId
         config.hideExistsDependency = false
 
         val gen = GenerateREST(config, graph).getResourceCluster()
@@ -50,8 +54,8 @@ class TestServiceWithEndpoints {
 
         val apiD = JavaResourceAPI(serviceD)
         val methodsD = apiD.getMethods()
-        //since D does not have outgoings, a number of applied method should be 7, i.e., prohibit get all con and delete con
-        assertEquals(7, methodsD.size)
+        //since D does not have outgoings, prohibit get all con and delete con
+        assertEquals(methodsWithPostId.size - 2, methodsD.size)
 
         val expectedAPath = "${
         referredNode.reversed()
@@ -65,7 +69,7 @@ class TestServiceWithEndpoints {
         val apiA = JavaResourceAPI(serviceA)
         val methods = apiA.getMethods()
         //since A has outgoings, a number of applied method should be all
-        assertEquals(config.restMethods.size, methods.size)
+        assertEquals(methodsWithPostId.size, methods.size)
 
         //for all methods, num of tags and num of params should be same
         methods.forEach {
@@ -73,22 +77,17 @@ class TestServiceWithEndpoints {
             assertEquals(m.getParamTag().size, m.getParamTag().size)
         }
 
-        //post obj
-        val postObj = methods.find { it is JavaRestMethod && it.method == RestMethod.POST } as? JavaRestMethod
+        //post id
+        val postObj = methods.find { it is JavaRestMethod && it.method == RestMethod.POST_ID } as? JavaRestMethod
         assertNotNull(postObj)
-        assertEquals(expectedAPath, postObj!!.getPath())
+        assertEquals(expectedAPathWithId, postObj!!.getPath())
         assert(postObj.getParams().keys.containsAll(referredNodeId))
 
-        //post values
-        val postVal = methods.find { it is JavaRestMethod && it.method == RestMethod.POST_VALUE } as? JavaRestMethod
-        assertNotNull(postVal)
-        assertEquals(expectedAPathWithId, postVal!!.getPath())
-        assert(postVal.getParams().keys.containsAll(referredNodeId.plus(FormatUtil.formatResourceIdAsPathParam(a, config.idName))))
 
         //put obj
         val putObj = methods.find { it is JavaRestMethod && it.method == RestMethod.PUT } as? JavaRestMethod
         assertNotNull(putObj)
-        assertEquals(expectedAPath, putObj!!.getPath())
+        assertEquals(expectedAPathWithId, putObj!!.getPath())
         assert(putObj.getParams().keys.containsAll(referredNodeId))
 
         //patch values
@@ -132,8 +131,8 @@ class TestServiceWithEndpoints {
     fun testServiceAPIWithHide(){
         val config = GenConfig()
         config.saveGraph = GraphExportFormat.NONE
-        config.restMethods = RestMethod.values().toList()
         config.hideExistsDependency = true
+        config.restMethods = methodsWithPostObj
 
         val gen = GenerateREST(config, graph).getResourceCluster()
 
@@ -173,15 +172,11 @@ class TestServiceWithEndpoints {
         assertNotNull(postObj)
         assertEquals(expectedAPath, postObj!!.getPath())
 
-        //post values
-        val postVal = methods.find { it is JavaRestMethod && it.method == RestMethod.POST_VALUE } as? JavaRestMethod
-        assertNotNull(postVal)
-        assertEquals(expectedAPathWithId, postVal!!.getPath())
 
         //put obj
         val putObj = methods.find { it is JavaRestMethod && it.method == RestMethod.PUT } as? JavaRestMethod
         assertNotNull(putObj)
-        assertEquals(expectedAPath, putObj!!.getPath())
+        assertEquals(expectedAPathWithId, putObj!!.getPath())
 
         //patch values
         val patchVal = methods.find { it is JavaRestMethod && it.method == RestMethod.PATCH_VALUE } as? JavaRestMethod

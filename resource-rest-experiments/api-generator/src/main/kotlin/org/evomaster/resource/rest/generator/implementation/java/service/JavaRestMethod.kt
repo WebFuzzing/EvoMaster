@@ -23,8 +23,8 @@ class JavaRestMethod (val specification: ServiceClazz, val method : RestMethod):
 
     //by values
     private val values = specification.entity.defaultProperties.map{it.name}
-    protected val idVar = "${specification.resourceOnPath}Id"
-    private val valueVars = values.map { "${specification.resourceOnPath}$it" }
+    protected val idVar = "${FormatUtil.lowerFirst(specification.resourceName)}Id"
+    private val valueVars = values.map { "${FormatUtil.lowerFirst(specification.resourceName)}$it" }
 
     private val referVars = specification.dto.referToOthers.map { Pair(it.name, it.type) }
     private val ownedVars = specification.dto.ownOthers.map { Pair(it.name, it.type)}

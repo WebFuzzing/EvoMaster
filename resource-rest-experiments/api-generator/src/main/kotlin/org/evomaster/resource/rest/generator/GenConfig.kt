@@ -67,7 +67,7 @@ class GenConfig {
         JAVA_SPRING_SWAGGER("java", "resources")
     }
 
-    var restMethods = RestMethod.values().toList()//listOf(RestMethod.POST, RestMethod.GET_ID, RestMethod.GET_ALL, RestMethod.PUT, RestMethod.DELETE, RestMethod.PATCH_VALUE, RestMethod.PATCH)
+    var restMethods = listOf(RestMethod.POST_ID, RestMethod.GET_ID, RestMethod.GET_ALL, RestMethod.PUT, RestMethod.DELETE, RestMethod.DELETE_CON ,RestMethod.PATCH_VALUE)
 
     var numOfNodes = 10
 
@@ -131,4 +131,5 @@ class GenConfig {
         val p = parents.plus(projectName).drop(1).joinToString("/"){it}
         return if (p.isBlank()) p else "$p/"
     }
+
 }
