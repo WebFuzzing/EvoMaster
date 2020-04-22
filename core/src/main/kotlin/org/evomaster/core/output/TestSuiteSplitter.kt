@@ -94,7 +94,7 @@ object TestSuiteSplitter {
         solution.clusteringTime = ((System.currentTimeMillis() - clusteringStart) / 1000).toInt()
         splitResult.clusteringTime = System.currentTimeMillis() - clusteringStart
         //If clustering is done, the executive summary is, essentially, for free.
-        splitResult.executiveSummary = execSummary(clusters, solution, splitResult)
+        splitResult.executiveSummary = execSummary(clusters, solution, oracles, splitResult)
         return clusters
     }
 
@@ -107,16 +107,27 @@ object TestSuiteSplitter {
 
     private fun execSummary(clusters : MutableMap<String, MutableList<MutableList<RestCallResult>>>,
                             solution: Solution<RestIndividual>,
+                            oracles: PartialOracles,
                             splitResult: SplitResult
             ) : Solution<RestIndividual> {
-        val execSol = mutableListOf<EvaluatedIndividual<RestIndividual>>()
+        val execSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
                 ind.evaluatedActions().any { ac -> clu.contains(ac.result as RestCallResult) }
             }.toMutableList()
-            execSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
+            inds.sortBy { it.individual.seeActions().size }
+            inds.firstOrNull { execSol.add(it) }
+
+            //execSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
         } }
-        return Solution(execSol, solution.testSuiteName, Termination.SUMMARY)
+
+        val oracleInds = oracles.failByOracle(solution.individuals)
+        oracleInds.forEach { key, ind ->
+            ind.firstOrNull { execSol.add(it) }
+        }
+
+        val execSolList = execSol.toMutableList()
+        return Solution(execSolList, solution.testSuiteName, Termination.SUMMARY)
     }
 
     private fun splitByCluster(clusters: MutableMap<String, MutableList<MutableList<RestCallResult>>>,

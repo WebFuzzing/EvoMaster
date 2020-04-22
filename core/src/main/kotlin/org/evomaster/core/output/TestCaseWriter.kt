@@ -93,8 +93,6 @@ class TestCaseWriter {
         this.expectationsWriter = ExpectationsWriter()
         expectationsWriter.setFormat(this.format)
 
-        val objGenerator = ObjectGenerator()
-
         setupWriter(config, objectGenerator)
         counter = 0
 

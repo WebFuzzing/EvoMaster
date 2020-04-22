@@ -79,12 +79,21 @@ class SupportedCodeOracle : ImplementedOracle() {
     }
 
     override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
-        return !supportedCode(call, res)
+        return if(this::objectGenerator.isInitialized){
+             !supportedCode(call, res)
+        }
+        else false
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        return if (action.result is RestCallResult && action.action is RestCallAction)
+        return if (action.result is RestCallResult
+                && action.action is RestCallAction
+                &&this::objectGenerator.isInitialized)
             !supportedCode(action.action, action.result)
         else false
+    }
+
+    override fun getName(): String {
+        return "CodeOracle"
     }
 }

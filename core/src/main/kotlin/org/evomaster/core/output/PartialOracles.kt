@@ -5,7 +5,9 @@ import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 
 /**
  * [PartialOracles] are meant to be a way to handle different types of soft assertions/expectations (name may change in future)
@@ -69,6 +71,18 @@ class PartialOracles {
             }
         }
         else return false;
+    }
+
+    fun failByOracle(individuals: MutableList<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
+        val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
+        oracles.forEach { oracle ->
+            val failindInds = individuals.filter {
+                it.evaluatedActions().any { oracle.selectForClustering(it) }
+            }.toMutableList()
+            failindInds.sortBy { it.evaluatedActions().size }
+            oracleInds.put(oracle.getName(), failindInds)
+        }
+        return oracleInds
     }
 
 }

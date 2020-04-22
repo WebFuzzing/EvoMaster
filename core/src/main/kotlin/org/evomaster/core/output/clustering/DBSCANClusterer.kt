@@ -37,7 +37,7 @@ import org.evomaster.core.output.clustering.metrics.DistanceMetric
  */
 
 class DBSCANClusterer<V>(values: Collection<V>, epsilon: Double = 0.5, minimumMembers: Int = 2, metric: DistanceMetric<V>) {
-    private var epsilon: Double = 0.5
+    private var epsilon: Double = 1.0
     private var minimumNumberOfClusterMembers: Int = 2
     private lateinit var metric: DistanceMetric<V>
     private lateinit var inputValues: List<V>

@@ -15,4 +15,5 @@ abstract class ImplementedOracle {
     abstract fun setObjectGenerator(gen: ObjectGenerator)
     abstract fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean
     abstract fun selectForClustering(action: EvaluatedAction): Boolean
+    abstract fun getName(): String
 }

@@ -208,4 +208,8 @@ class SchemaOracle : ImplementedOracle() {
         //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         return false
     }
+
+    override fun getName():String {
+        return "SchemaOracle"
+    }
 }
