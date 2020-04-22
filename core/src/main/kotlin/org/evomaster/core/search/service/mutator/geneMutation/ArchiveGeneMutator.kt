@@ -14,6 +14,7 @@ import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -29,6 +30,9 @@ import kotlin.math.max
  * - besides, string mutation is designed regarding fitness evaluation using LeftAlignmentDistance
  */
 class ArchiveMutator {
+
+    @Inject
+    private lateinit var time : SearchTimeController
 
     @Inject
     private lateinit var randomness: Randomness
@@ -618,6 +622,7 @@ class ArchiveMutator {
     /**************************** utilities ********************************************/
 
     fun applyArchiveSelection() = enableArchiveSelection()
+            && time.percentageUsedBudget() > config.startArchiveMutation //fixed time to start archive-based mio or based on how many impacts have been collected?
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
     fun disableArchiveSelectionForGene() = !config.enableGeneSelectionMethodForGene

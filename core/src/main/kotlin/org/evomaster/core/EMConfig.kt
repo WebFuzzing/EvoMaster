@@ -986,6 +986,11 @@ class EMConfig {
     var probOfArchiveMutation = 0.0
 
     @Experimental
+    @Cfg("Specify a percentage of used budget to start archive-based mutation when archive-based mutation is enabled")
+    @PercentageAsProbability
+    var startArchiveMutation = 0.0
+
+    @Experimental
     @Cfg("Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
     @PercentageAsProbability(false)
     var startPerOfCandidateGenesToMutate = 0.9
@@ -1005,7 +1010,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
-    var prioritizeNotVisit = false
+    var prioritizeNotVisit = true
 
     @Experimental
     @Cfg("whether to abstract genes that exist initialization actions to mutate")
