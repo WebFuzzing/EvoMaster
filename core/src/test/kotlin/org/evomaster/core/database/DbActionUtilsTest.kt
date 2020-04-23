@@ -1,5 +1,6 @@
 package org.evomaster.core.database
 
+import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
@@ -12,6 +13,9 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import java.util.*
+import java.util.Arrays.asList
+import kotlin.collections.HashSet
 
 class DbActionUtilsTest {
 
@@ -537,6 +541,8 @@ class DbActionUtilsTest {
         assertEquals(true, listWasNotTruncated)
         assertTrue(DbActionUtils.verifyActions(actions))
     }
+
+
 
 
 }
