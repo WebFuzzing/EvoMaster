@@ -7,11 +7,18 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ReplacementListTest {
 
+    @Test
+    public void testIntegerReplacement(){
+
+        List<MethodReplacementClass> list = ReplacementList.getReplacements("java/lang/Integer");
+        assertTrue(list.size() > 0);
+    }
 
     @Test
     public void testReplacementMethods() {

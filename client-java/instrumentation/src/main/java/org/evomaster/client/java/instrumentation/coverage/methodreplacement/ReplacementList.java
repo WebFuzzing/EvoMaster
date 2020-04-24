@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.*;
+import org.evomaster.client.java.instrumentation.shared.ClassName;
 
 import java.util.Arrays;
 import java.util.List;
@@ -56,8 +57,9 @@ public class ReplacementList {
     }
 
 
-    public static List<MethodReplacementClass> getReplacements(String targetClassName) {
-        Objects.requireNonNull(targetClassName);
+    public static List<MethodReplacementClass> getReplacements(String target) {
+        Objects.requireNonNull(target);
+        final String targetClassName = ClassName.get(target).getFullNameWithDots();
 
         return getList().stream()
                 .filter(t -> t.isAvailable())
