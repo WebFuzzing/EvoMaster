@@ -51,8 +51,7 @@ aimed at, for example, maximizing code coverage and fault detection.
 
 Our SBST tool called ``EvoMaster`` addresses these challenges by using evolutionary techniques to 
 automatically generate test cases.
-It currently focuses on RESTful web services, which are the pillars of modern web and enterprise applications  
-[@fielding2000architectural][@allamaraju2010restful]. 
+It currently focuses on RESTful web services, which are the pillars of modern web and enterprise applications  [@fielding2000architectural][@allamaraju2010restful]. 
 
  
 The ``EvoMaster`` tool is aimed  at:
