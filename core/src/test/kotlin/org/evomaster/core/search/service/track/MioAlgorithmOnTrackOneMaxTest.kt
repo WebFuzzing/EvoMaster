@@ -8,6 +8,7 @@ import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
 import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
@@ -72,7 +73,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
-        val solution = mio.search()
+        val solution = mio.search { _: Solution<*>, _: String ->  }
 
         solution.individuals.forEach { s->
             assertNull(s.tracking)
@@ -110,7 +111,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
         assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
 
-        val solution = mio.search()
+        val solution = mio.search { _: Solution<*>, _: String ->  }
 
         solution.individuals.forEach {  s->
             assertNull(s.individual.tracking)
@@ -151,7 +152,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
         assert(tracker.exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED))
 
-        val solution = mio.search()
+        val solution = mio.search { _: Solution<*>, _: String ->  }
 
         assert(solution.individuals.count { it.tracking != null } > 0)
 
@@ -200,7 +201,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_CLONE_IMPACT))
         assert(tracker.exists(EvaluatedIndividual.ONLY_WITH_COPY_IMPACT))
 
-        val solution = mio.search()
+        val solution = mio.search { _: Solution<*>, _: String ->  }
 
         solution.individuals.forEach {  s->
             assertNull(s.individual.tracking)
@@ -228,7 +229,7 @@ class MioAlgorithmOnTrackOneMaxTest {
         assert(tracker.exists(TraceableElementCopyFilter.WITH_TRACK.name))
         assert(tracker.exists(TraceableElementCopyFilter.DEEP_TRACK.name))
 
-        val solution = mio.search()
+        val solution = mio.search { _: Solution<*>, _: String ->  }
 
         solution.individuals.forEach { s->
             assertNull(s.tracking)

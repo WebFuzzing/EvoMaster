@@ -89,7 +89,7 @@ class Main {
             val manager = a.first.getInstance(LifecycleManager::class.java)
 
             manager.start()
-            val sol = a.second.search()
+            val sol = a.second.searchOnce()
             manager.close()
 
             val size = optimaX.size + optimaY.size

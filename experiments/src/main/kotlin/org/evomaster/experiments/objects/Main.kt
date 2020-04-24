@@ -112,7 +112,7 @@ class Main {
             println("===============================================>")
             println("The search:")
 
-            val solution = imp.search()
+            val solution = imp.searchOnce()
             println("Solution: ${solution}:")
             for (individual in solution.individuals) {
                 println(" --- ")

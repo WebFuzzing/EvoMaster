@@ -147,7 +147,8 @@ class Main {
 
             val writer = setupPartialOracles(injector, config)
 
-            val solution = run(injector)
+            val solution = run(injector, controllerInfo)
+
             val faults = solution.overall.potentialFoundFaults(idMapper)
 
             writeOverallProcessData(injector)
@@ -248,7 +249,7 @@ class Main {
         }
 
 
-        fun run(injector: Injector): Solution<*> {
+        fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -279,7 +280,7 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
 
-            return imp.search()
+            return imp.search { solution: Solution<*>, snapshot: String -> writeTests(injector, solution, controllerInfo, snapshot) }
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
@@ -327,7 +328,7 @@ class Main {
         }
 
 
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?) {
+        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
 
             val config = injector.getInstance(EMConfig::class.java)
 
@@ -344,9 +345,10 @@ class Main {
 
             val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
+
             solution.clusteringTime = splitResult.clusteringTime.toInt()
             splitResult.splitOutcome.filter { !it.individuals.isNullOrEmpty() }
-                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName) }
+                    .forEach { writer.writeTests(it, controllerInfoDto?.fullName, snapshot) }
 
             if(config.executiveSummary){
                 writeExecSummary(injector, controllerInfoDto, splitResult)

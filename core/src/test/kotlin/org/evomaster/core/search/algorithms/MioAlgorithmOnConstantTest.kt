@@ -7,9 +7,12 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.Main
+import org.evomaster.core.search.Solution
 import org.evomaster.core.search.algorithms.constant.ConstantIndividual
 import org.evomaster.core.search.algorithms.constant.ConstantModule
 import org.evomaster.core.search.service.Randomness
+import org.jetbrains.kotlin.utils.identity
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -35,7 +38,7 @@ class MioAlgorithmOnConstantTest {
         config.maxActionEvaluations = 200
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
 
-        val solution = mio.search()
+        val solution = mio.search { _: Solution<*>, _: String ->  }
 
         Assertions.assertEquals(1.0, solution.overall.computeFitnessScore(), 0.001);
         Assertions.assertEquals(1, solution.individuals.size)
