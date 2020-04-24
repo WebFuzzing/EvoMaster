@@ -13,9 +13,6 @@ import org.evomaster.core.search.gene.sql.SqlPrimaryKeyGene
 import org.evomaster.core.search.service.Randomness
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
-import java.util.*
-import java.util.Arrays.asList
-import kotlin.collections.HashSet
 
 class DbActionUtilsTest {
 
