@@ -1,6 +1,5 @@
 package org.evomaster.core.database
 
-import org.evomaster.client.java.controller.api.dto.database.schema.ColumnDto
 import org.evomaster.client.java.controller.api.dto.database.schema.DatabaseType
 import org.evomaster.core.database.schema.Column
 import org.evomaster.core.database.schema.ColumnDataType
