@@ -36,25 +36,25 @@ public class ReplacementList {
         );
     }
 
-    @Deprecated
-    public static List<MethodReplacementClass> getReplacements(Class<?> target) {
-        Objects.requireNonNull(target);
-
-        return getList().stream()
-                .filter(t -> t.isAvailable())
-                .filter(t -> {
-                    /*
-                        TODO: this is tricky, due to how "super" calls are
-                        handled. For now, we just allow subclasses if they
-                        are of standard JDK.
-                    */
-                            boolean jdk = target.getName().startsWith("java");
-                            return jdk ? t.getTargetClass().isAssignableFrom(target)
-                                    : t.getTargetClass().equals(target);
-                        }
-                )
-                .collect(Collectors.toList());
-    }
+//    @Deprecated
+//    public static List<MethodReplacementClass> getReplacements(Class<?> target) {
+//        Objects.requireNonNull(target);
+//
+//        return getList().stream()
+//                .filter(t -> t.isAvailable())
+//                .filter(t -> {
+//                    /*
+//                        TODO: this is tricky, due to how "super" calls are
+//                        handled. For now, we just allow subclasses if they
+//                        are of standard JDK.
+//                    */
+//                            boolean jdk = target.getName().startsWith("java");
+//                            return jdk ? t.getTargetClass().isAssignableFrom(target)
+//                                    : t.getTargetClass().equals(target);
+//                        }
+//                )
+//                .collect(Collectors.toList());
+//    }
 
 
     public static List<MethodReplacementClass> getReplacements(String target) {
@@ -69,13 +69,23 @@ public class ReplacementList {
                         handled. For now, we just allow subclasses if they
                         are of standard JDK.
                         Furthermore, issues with classloading of non-JDK APIs
+
+                        This gives major issues if class loads other non-JDK classes.
+                        This for example happens with SQL stuff possibly loading drivers, eg H2.
+                        So we cannot load JDK libraries indiscriminately here.
                     */
-                            boolean jdk = targetClassName.startsWith("java.");
-                            if(jdk){
+
+//                            boolean jdk = targetClassName.startsWith("java.");
+                            //TODO based on actual packages used in the list
+                            boolean jdk = targetClassName.startsWith("java.lang.") ||
+                                    targetClassName.startsWith("java.util.") ||
+                                    targetClassName.startsWith("java.time.");
+
+                            if (jdk) {
                                 Class<?> klass;
-                                try{
-                                   klass = Class.forName(targetClassName);
-                                }catch (Exception e){
+                                try {
+                                    klass = Class.forName(targetClassName);
+                                } catch (Exception e) {
                                     throw new RuntimeException(e);
                                 }
                                 return t.getTargetClass().isAssignableFrom(klass);

@@ -11,6 +11,9 @@ import java.io.PrintWriter;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
+import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -133,20 +136,41 @@ public class InstrumentingAgent {
 
     private static class TransformerForTests implements ClassFileTransformer {
 
+        private final static Method m;
+
+        static {
+            try {
+                m = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+            m.setAccessible(true);
+        }
+
+        private static boolean isAlreadyLoaded(ClassLoader loader, String classNameWithDots){
+            try {
+                return m.invoke(loader, classNameWithDots) != null;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         @Override
         public byte[] transform(ClassLoader loader, String className,
                                 Class<?> classBeingRedefined,
                                 ProtectionDomain protectionDomain,
                                 byte[] classfileBuffer) throws IllegalClassFormatException {
 
-            if (!ClassesToExclude.checkIfCanInstrument(ClassName.get(className))) {
+            ClassName cn = ClassName.get(className);
+
+            if (!ClassesToExclude.checkIfCanInstrument(cn) ||
+                isAlreadyLoaded(loader, cn.getFullNameWithDots())) {
                 return classfileBuffer;
             }
 
-
             ClassReader reader = new ClassReader(classfileBuffer);
 
-            return instrumentator.transformBytes(loader, ClassName.get(className), reader);
+            return instrumentator.transformBytes(loader, cn, reader);
         }
     }
 }
