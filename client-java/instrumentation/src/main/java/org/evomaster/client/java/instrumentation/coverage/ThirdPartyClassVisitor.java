@@ -41,7 +41,7 @@ public class ThirdPartyClassVisitor extends ClassVisitor {
             return mv;
         }
 
-        mv = new MethodReplacementMethodVisitor(false, mv, bytecodeClassName, name, descriptor);
+        mv = new MethodReplacementMethodVisitor(false, false, mv, bytecodeClassName, name, descriptor);
 
         return mv;
     }
