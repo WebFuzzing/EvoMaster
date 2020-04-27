@@ -1058,6 +1058,7 @@ class EMConfig {
     var disableStructureMutationDuringFocusSearch = false
 
     @Cfg("Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT")
+    @Probability
     var baseTaintAnalysisProbability = 0.9
 
 

@@ -10,7 +10,7 @@ There are 3 types of options:
 
 * __Internal__: these are low-level tuning options, which most users do not need
                 to modify. These were mainly introduced when experimenting with 
-                different configuration to maximize the performance of _EvoMaster_.
+                different configurations to maximize the performance of _EvoMaster_.
                 
 * __Experimental__: these are work-in-progress options, for features still under development
                     and testing.        
@@ -20,7 +20,7 @@ There are 3 types of options:
 
  `java -jar evomaster.jar --help`
   
-  Options might also have *constraints*, e.g. a numeric value within a defined range,
+  Options might also have *constraints*, e.g., a numeric value within a defined range,
   or a string being an URL.
   In some cases, strings might only be chosen within a specific set of possible values (i.e., an Enum).
   If any constraint is not satisfied, _EvoMaster_ will fail with an error message.
@@ -47,7 +47,7 @@ There are 3 types of options:
 |`appendToStatisticsFile`| __Boolean__. Whether should add to an existing statistics file, instead of replacing it. *Default value*: `false`.|
 |`archiveTargetLimit`| __Int__. Limit of number of individuals per target to keep in the archive. *Constraints*: `min=1.0`. *Default value*: `10`.|
 |`avoidNonDeterministicLogs`| __Boolean__. At times, we need to run EvoMaster with printed logs that are deterministic. For example, this means avoiding printing out time-stamps. *Default value*: `false`.|
-|`baseTaintAnalysisProbability`| __Double__. Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT. *Default value*: `0.9`.|
+|`baseTaintAnalysisProbability`| __Double__. Probability to use input tracking (i.e., a simple base form of taint-analysis) to determine how inputs are used in the SUT. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.9`.|
 |`bbExperiments`| __Boolean__. Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment. *Default value*: `false`.|
 |`bloatControlForSecondaryObjective`| __Boolean__. Whether secondary objectives are less important than test bloat control. *Default value*: `false`.|
 |`createTests`| __Boolean__. Specify if test classes should be created as output of the tool. Usually, you would put it to 'false' only when debugging EvoMaster itself. *Default value*: `true`.|

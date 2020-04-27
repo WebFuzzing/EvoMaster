@@ -20,6 +20,7 @@ public class SubclassExmImp implements SubclassExm {
         map.containsKey("foo");
 
 
+        //this call should not be replaced
         MyIdentityMap<String, String> ident = new MyIdentityMap<>();
         ident.containsKey("bar");
 

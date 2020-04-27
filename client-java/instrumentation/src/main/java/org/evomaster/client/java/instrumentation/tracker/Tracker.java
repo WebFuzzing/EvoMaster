@@ -5,6 +5,7 @@ import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 /**
  * Tracking methods injected into the bytecode
  */
+@Deprecated
 public class Tracker {
 
     public static final String TRACK_QUERY_PARAMETER_METHOD_NAME = "trackQueryParameter";
@@ -29,4 +30,11 @@ public class Tracker {
     }
 
 
+    public static final String TRACK_INPUT_STREAM_METHOD_NAME = "trackInputStream";
+    public static final String TRACK_INPUT_STREAM_DESCRIPTOR = "()V";
+
+    public static void trackInputStream(){
+
+        //TODO
+    }
 }

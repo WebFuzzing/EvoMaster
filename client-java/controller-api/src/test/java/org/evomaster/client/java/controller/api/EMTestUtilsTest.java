@@ -1,8 +1,10 @@
 package org.evomaster.client.java.controller.api;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class EMTestUtilsTest {
 
@@ -43,6 +45,16 @@ public class EMTestUtilsTest {
 
         String res = EMTestUtils.resolveLocation(location, template);
         assertEquals(template, res);
+    }
+
+    @Test
+    public void givenAnInvalidLocationHeaderWhenResolveLocationThenTheExpectedTemplateIsReturned() {
+        String expectedTemplate = "http://localhost:12345/a/x";
+        String locationHeader = "/a/\"52\"";
+
+        String resolvedLocation = EMTestUtils.resolveLocation(locationHeader, expectedTemplate);
+
+        assertEquals(locationHeader, resolvedLocation);
     }
 
     @Test
