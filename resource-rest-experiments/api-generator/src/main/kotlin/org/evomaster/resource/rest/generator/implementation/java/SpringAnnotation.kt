@@ -31,7 +31,6 @@ object SpringAnnotation {
          */
         private val params = mapOf("consumes" to true,"headers" to false,"method" to true,"name" to false,"params" to false,"path" to false,"produces" to true, "value" to false)
         override fun validateParams(param: String): Boolean = params.containsKey(param)
-
         override fun withoutQuotation(param: String): Boolean = params.getValue(param)
     }
     /**
