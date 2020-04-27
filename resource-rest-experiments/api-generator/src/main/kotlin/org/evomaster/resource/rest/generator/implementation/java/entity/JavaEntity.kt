@@ -19,7 +19,7 @@ class JavaEntity (specification: EntityClazz): JavaClass<EntityClazz>(specificat
             methods.add(JavaSetterMethod(specification.idProperty))
             methods.add(JavaGetterMethod(specification.idProperty))
         }
-        specification.defaultProperties.plus(specification.referToOthers).plus(specification.ownOthers).forEach{p->
+        specification.defaultProperties.plus(specification.referToOthers).plus(specification.ownOthers).forEach{ p->
             methods.add(JavaSetterMethod(p))
             methods.add(JavaGetterMethod(p))
         }
