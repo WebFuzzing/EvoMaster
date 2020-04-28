@@ -20,7 +20,7 @@ public class GsonClassReplacement extends ThirdPartyMethodReplacementClass {
     // TODO all versions of fromJson
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "fromJson_string_class")
-    public static Object fromJson(Object caller, String json, Class<?> classOfT){
+    public Object fromJson(Object caller, String json, Class<?> classOfT){
 
         if(classOfT != null) {
             String schema = ClassToSchema.getOrDeriveSchema(classOfT);
