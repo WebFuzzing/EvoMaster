@@ -87,6 +87,18 @@ but it is not implemented yet.
 
 
 
+## TCP Ports
+
+When writing an _EvoMaster_ driver, there are 2 TCP ports that you need to consider:
+
+* the port of the driver itself, whose default value is 40100. This can be changed when instantiating
+  a `SutController`. However, the _EvoMaster_ core process would need to be informed of this different
+  port value (e.g., by using the `--sutControllerPort` option).
+
+* the port of the SUT. In general, you will want to set up an ephemeral port (i.e., a free, un-used one) 
+  for this (e.g., by using the value 0, and then read back in the driver which port was actually 
+  assigned to the server).   
+
 ## SpringBoot Example
 
 How to start/reset/stop the SUT depends on the chosen framework used to implement the SUT. 
