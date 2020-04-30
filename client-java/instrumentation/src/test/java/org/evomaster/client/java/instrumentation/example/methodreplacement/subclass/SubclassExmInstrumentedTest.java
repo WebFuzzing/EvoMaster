@@ -1,9 +1,7 @@
 package org.evomaster.client.java.instrumentation.example.methodreplacement.subclass;
 
-import com.foo.somedifferentpackage.examples.methodreplacement.TestabilityExcImp;
 import com.foo.somedifferentpackage.examples.methodreplacement.subclass.SubclassExmImp;
 import org.evomaster.client.java.instrumentation.InstrumentingClassLoader;
-import org.evomaster.client.java.instrumentation.example.methodreplacement.TestabilityExc;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
@@ -23,8 +21,7 @@ public class SubclassExmInstrumentedTest {
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
-        return (SubclassExm)
-                cl.loadClass(SubclassExmImp.class.getName()).newInstance();
+        return (SubclassExm) cl.loadClass(SubclassExmImp.class.getName()).newInstance();
     }
 
     @BeforeAll

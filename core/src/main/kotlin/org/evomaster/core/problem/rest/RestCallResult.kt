@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import com.google.common.annotations.VisibleForTesting
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import org.evomaster.core.search.ActionResult
@@ -9,7 +10,8 @@ import javax.ws.rs.core.MediaType
 class RestCallResult : ActionResult {
 
     constructor(stopping: Boolean = false) : super(stopping)
-    private constructor(other: ActionResult) : super(other)
+    @VisibleForTesting
+    internal constructor(other: ActionResult) : super(other)
 
     companion object {
         const val STATUS_CODE = "STATUS_CODE"
@@ -53,7 +55,7 @@ class RestCallResult : ActionResult {
                     TODO: "id" is the most common word, but could check
                     if others are used as well.
                  */
-                Gson().fromJson(it, JsonObject::class.java).get(getResourceIdName())?.toString()
+                Gson().fromJson(it, JsonObject::class.java).get(getResourceIdName())?.asString
             } catch (e: Exception){
                 //nothing to do
                 null

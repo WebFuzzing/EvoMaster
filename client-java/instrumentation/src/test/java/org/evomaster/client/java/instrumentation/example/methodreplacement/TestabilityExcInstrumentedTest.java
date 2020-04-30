@@ -29,8 +29,7 @@ public class TestabilityExcInstrumentedTest  {
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
-        return (TestabilityExc)
-                cl.loadClass(TestabilityExcImp.class.getName()).newInstance();
+        return (TestabilityExc) cl.loadClass(TestabilityExcImp.class.getName()).newInstance();
     }
 
     @BeforeAll

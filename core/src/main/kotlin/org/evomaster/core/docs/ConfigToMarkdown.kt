@@ -53,7 +53,7 @@ object ConfigToMarkdown {
             
             * __Internal__: these are low-level tuning options, which most users do not need
                             to modify. These were mainly introduced when experimenting with 
-                            different configuration to maximize the performance of _EvoMaster_.
+                            different configurations to maximize the performance of _EvoMaster_.
                             
             * __Experimental__: these are work-in-progress options, for features still under development
                                 and testing.        
@@ -63,7 +63,7 @@ object ConfigToMarkdown {
 
              `java -jar evomaster.jar --help`
               
-              Options might also have *constraints*, e.g. a numeric value within a defined range,
+              Options might also have *constraints*, e.g., a numeric value within a defined range,
               or a string being an URL.
               In some cases, strings might only be chosen within a specific set of possible values (i.e., an Enum).
               If any constraint is not satisfied, _EvoMaster_ will fail with an error message.

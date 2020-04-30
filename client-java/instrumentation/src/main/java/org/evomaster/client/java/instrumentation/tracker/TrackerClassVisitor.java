@@ -9,6 +9,7 @@ import org.objectweb.asm.MethodVisitor;
  * Instrumentation done to keep track of when some specific methods
  * are called
  */
+@Deprecated
 public class TrackerClassVisitor extends ClassVisitor {
 
     private final String bytecodeClassName;
@@ -32,6 +33,9 @@ public class TrackerClassVisitor extends ClassVisitor {
         /*
             Methods added by the compiler (eg synthetics and bridges) are
             not interesting, so we can just skip them. More info:
+
+            https://docs.oracle.com/javase/tutorial/java/generics/bridgeMethods.html
+            http://www.javaworld.com/article/2073578/java-s-synthetic-methods.html
          */
         if (Constants.isMethodSyntheticOrBridge(methodAccess)) {
             return mv;

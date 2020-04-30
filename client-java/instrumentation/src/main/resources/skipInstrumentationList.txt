@@ -5,6 +5,7 @@ apple.
 com.apple.
 com_cenqua_clover.
 com.cenqua.
+com.p6spy.
 com.sun.
 com.vladium.emma.
 com.yourkit.
@@ -24,6 +25,7 @@ org.powermock.
 org.xml.
 org.w3c.
 mockit.
+shaded.
 sun.
 com.mongodb.client.MongoCollection
 com.mongodb.client.FindIterable

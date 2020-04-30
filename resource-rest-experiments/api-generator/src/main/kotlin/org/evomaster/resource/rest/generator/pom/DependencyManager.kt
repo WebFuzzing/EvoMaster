@@ -1,7 +1,9 @@
 package org.evomaster.resource.rest.generator.pom
 
-import org.apache.maven.model.*
-
+import org.apache.maven.model.Dependency
+import org.apache.maven.model.Exclusion
+import org.apache.maven.model.Plugin
+import org.apache.maven.model.PluginExecution
 import org.codehaus.plexus.util.xml.Xpp3Dom
 
 /**
@@ -18,7 +20,8 @@ object DependencyManager{
             "kotlin.compiler.incremental" to "true",
             "junit.jupiter.version" to "5.5.0",
             "junit.platform.version" to "1.5.0",
-            "springboot.version" to "2.1.0.RELEASE",
+            "springboot.version" to "2.0.3.RELEASE",
+            //"springframework.version" to "2.0.3.RELEASE",
             "springfox.version" to "2.9.2",
             "swagger.version" to "1.5.21",
             "swagger.parser.version" to "1.0.39",
@@ -41,6 +44,7 @@ object DependencyManager{
     val SPRING_BOOT_STARTER_WEB = ArtifactTemplate("org.springframework.boot", "spring-boot-starter-web", "springboot.version")
     val SPRING_BOOT_STARTER_DATA_JPA = ArtifactTemplate("org.springframework.boot", "spring-boot-starter-data-jpa", "springboot.version")
     val SPRING_BOOT_STARTER_SECURITY = ArtifactTemplate("org.springframework.boot", "spring-boot-starter-security", "springboot.version")
+
     val SPRING_BOOT_MAVEN_PLUGIN = ArtifactTemplate("org.springframework.boot", "spring-boot-maven-plugin", "springboot.version")
 
     val IO_SPRINGFOX_SWAGGER2 = ArtifactTemplate("io.springfox", "springfox-swagger2", "springfox.version")
@@ -58,6 +62,7 @@ object DependencyManager{
     val EVOMASTER_CORE = ArtifactTemplate("org.evomaster", "evomaster-core", "evomaster.version")
     val EVOMASTER_CLIENT_JAVA_CONTROLLER = ArtifactTemplate("org.evomaster", "evomaster-client-java-controller", "evomaster.version")
     val EVOMASTER_CLIENT_JAVA_INSTRUMENTATION = ArtifactTemplate("org.evomaster", "evomaster-client-java-instrumentation", "evomaster.version")
+    val EVOMASTER_CLIENT_DADABASE_SPY = ArtifactTemplate("org.evomaster", "evomaster-client-database-spy", "evomaster.version")
 
     val IO_REST_ASSURED = ArtifactTemplate("io.rest-assured", "rest-assured", "restassured.version")
 
@@ -69,9 +74,15 @@ object DependencyManager{
 
     val MAVEN_PLUGINS_SHADE = ArtifactTemplate("org.apache.maven.plugins", "maven-shade-plugin", "maven.shade.version")
 
+    val JUNIT_JUPITER_PARAMS = ArtifactTemplate("org.junit.jupiter", "junit-jupiter-params", "junit.jupiter.version")
+
+    val JUNIT_JUPITER_ENGINE = ArtifactTemplate("org.junit.jupiter", "junit-jupiter-engine", "junit.jupiter.version")
+
+    val JUNIT_JUPITER_PLATFORM = ArtifactTemplate("org.junit.platform", "junit-platform-launcher", "junit.platform.version")
+
 }
 
-class ArtifactTemplate(val groupId : String, val artifactId : String, val versionKey : String = "") {
+class ArtifactTemplate(val groupId : String, val artifactId : String, val versionKey : String = "", val scope: String = Scope.ALL.name) {
 
     fun getPluginExecution(phase : String = "", id :String = "", goals : MutableList<String> = mutableListOf(), configuration : MutableMap<String, String> = mutableMapOf()) : PluginExecution{
         return PluginExecution().also {
@@ -114,4 +125,10 @@ class ArtifactTemplate(val groupId : String, val artifactId : String, val versio
         }
         return dep
     }
+}
+
+enum class Scope(name : String){
+    ALL(""),
+    TEST("test"),
+    PROVIDED ("provided")
 }

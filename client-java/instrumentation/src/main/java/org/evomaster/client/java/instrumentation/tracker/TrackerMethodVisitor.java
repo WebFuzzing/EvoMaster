@@ -6,6 +6,7 @@ import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+@Deprecated
 public class TrackerMethodVisitor extends MethodVisitor {
 
     private final String className;
@@ -79,7 +80,19 @@ public class TrackerMethodVisitor extends MethodVisitor {
 
                 UnitsInfoRecorder.markNewTrackedMethod();
             }
-        }
+        } else if(owner.equals("javax/servlet/http/ServletRequest")){
 
+            if(name.equals("getInputStream") && desc.equals("()V")){
+
+                mv.visitMethodInsn(
+                        Opcodes.INVOKESTATIC,
+                        ClassName.get(Tracker.class).getBytecodeName(),
+                        Tracker.TRACK_INPUT_STREAM_METHOD_NAME,
+                        Tracker.TRACK_INPUT_STREAM_DESCRIPTOR,
+                        Tracker.class.isInterface()); //false
+
+                UnitsInfoRecorder.markNewTrackedMethod();
+            }
+        }
     }
 }

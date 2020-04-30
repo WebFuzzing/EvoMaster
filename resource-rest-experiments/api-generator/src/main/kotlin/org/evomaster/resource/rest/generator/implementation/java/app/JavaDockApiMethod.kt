@@ -2,6 +2,7 @@ package org.evomaster.resource.rest.generator.implementation.java.app
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.implementation.java.SpringAnnotation
+import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippet
 import org.evomaster.resource.rest.generator.template.Boundary
 
 /**
@@ -28,4 +29,6 @@ class JavaDockApiMethod : JavaMethod() {
     override fun getBoundary(): Boundary = Boundary.PUBLIC
 
     override fun getTags(): List<String> = listOf(SpringAnnotation.BEAN.getText()).map { "@$it" }
+
+    override fun getIfSnippets(): List<IfSnippet> = listOf()
 }
