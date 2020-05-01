@@ -50,4 +50,11 @@ public @interface Replacement {
      * access the original replaced method via reflection
      */
     String id() default ""; //very annoyingly, Java does not allow null here :(
+
+    /**
+     * Specify where the transformation can be applied.
+     * Sometimes we might want transformations only in the SUT, or sometime only
+     * in the third-party libraries.
+     */
+    UsageFilter usageFilter() default UsageFilter.ANY;
 }

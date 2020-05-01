@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
@@ -18,7 +19,7 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getParameter")
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getParameter", usageFilter = UsageFilter.ONLY_SUT)
     public static String getParameter(Object caller, String param){
 
         ExecutionTracer.addQueryParameter(param);
@@ -32,7 +33,7 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         }
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getParameterValues")
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getParameterValues", usageFilter = UsageFilter.ONLY_SUT)
     public static String[] getParameterValues(Object caller, String param){
 
         ExecutionTracer.addQueryParameter(param);
@@ -47,7 +48,7 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
     }
 
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getHeader")
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getHeader", usageFilter = UsageFilter.ONLY_SUT)
     public static String getHeader(Object caller, String header){
 
         ExecutionTracer.addHeader(header);
@@ -61,7 +62,7 @@ public class WebRequestClassReplacement extends ThirdPartyMethodReplacementClass
         }
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getHeaderValues")
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getHeaderValues", usageFilter = UsageFilter.ONLY_SUT)
     public static String[] getHeaderValues(Object caller, String header){
 
         ExecutionTracer.addHeader(header);

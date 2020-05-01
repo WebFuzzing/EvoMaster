@@ -4,12 +4,11 @@ import org.evomaster.client.java.instrumentation.Constants;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.MethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ReplacementList;
-import org.evomaster.client.java.instrumentation.shared.ClassName;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ObjectiveRecorder;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
-import org.evomaster.client.java.utils.SimpleLogger;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -25,13 +24,13 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
     private final String className;
     private final String methodName;
     private final boolean registerNewTargets;
-    private final boolean applyTrackingMethods;
+    private final boolean isInSUT;
 
     private int currentLine;
     private int currentIndex;
 
     public MethodReplacementMethodVisitor(boolean registerNewTargets,
-                                          boolean applyTrackingMethods,
+                                          boolean isInSUT,
                                           MethodVisitor mv,
                                           String className,
                                           String methodName,
@@ -41,7 +40,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         this.className = className;
         this.methodName = methodName;
         this.registerNewTargets = registerNewTargets;
-        this.applyTrackingMethods = applyTrackingMethods;
+        this.isInSUT = isInSUT;
         currentLine = 0;
     }
 
@@ -113,7 +112,10 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
                 .filter(m -> m.getName().equals(name))
                 .filter(m -> {
                     Replacement br = m.getAnnotation(Replacement.class);
-                    if(!applyTrackingMethods && br.type() == ReplacementType.TRACKER){
+                    if(isInSUT && br.usageFilter() == UsageFilter.ONLY_THIRD_PARTY){
+                        return false;
+                    }
+                    if(!isInSUT && br.usageFilter() == UsageFilter.ONLY_SUT){
                         return false;
                     }
 
@@ -135,7 +137,7 @@ public class MethodReplacementMethodVisitor extends MethodVisitor {
         if (a.type() == ReplacementType.TRACKER) {
             UnitsInfoRecorder.markNewTrackedMethod();
         } else {
-            if (registerNewTargets) {
+            if (isInSUT) {
                 UnitsInfoRecorder.markNewReplacedMethodInSut();
             } else {
                 UnitsInfoRecorder.markNewReplacedMethodInThirdParty();
