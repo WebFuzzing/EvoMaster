@@ -13,11 +13,14 @@ public class ReplacementList {
     public static List<MethodReplacementClass> getList() {
         return Arrays.asList(
                 new BooleanClassReplacement(),
+                new ByteClassReplacement(),
+                new CharacterClassReplacement(),
                 new CollectionClassReplacement(),
                 new DateClassReplacement(),
                 new DateFormatClassReplacement(),
                 new DoubleClassReplacement(),
                 new FloatClassReplacement(),
+                new GsonClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
                 new LocalDateTimeClassReplacement(),
@@ -29,8 +32,6 @@ public class ReplacementList {
                 new PatternClassReplacement(),
                 new StringClassReplacement(),
                 new ShortClassReplacement(),
-                new ByteClassReplacement(),
-                new CharacterClassReplacement(),
                 new ServletRequestClassReplacement(),
                 new WebRequestClassReplacement()
         );

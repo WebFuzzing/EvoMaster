@@ -401,6 +401,7 @@ public abstract class SutController implements SutHandler {
         dto.numberOfReplacedMethodsInThirdParty = recorder.getNumberOfReplacedMethodsInThirdParty();
         dto.numberOfTrackedMethods = recorder.getNumberOfTrackedMethods();
         dto.unitNames = recorder.getUnitNames();
+        dto.parsedDtos = recorder.getParsedDtos();
         return dto;
     }
 }

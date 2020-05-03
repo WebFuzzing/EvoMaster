@@ -2,7 +2,9 @@ package org.evomaster.client.java.instrumentation.staticstate;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -30,6 +32,12 @@ public class UnitsInfoRecorder implements Serializable {
     private AtomicInteger numberOfReplacedMethodsInSut;
     private AtomicInteger numberOfReplacedMethodsInThirdParty;
     private AtomicInteger numberOfTrackedMethods;
+    /*
+        Key -> DTO full name
+        Value -> OpenAPI object schema
+        TODO should consider if also adding info on type, eg JSON vs XML
+     */
+    private Map<String,String> parsedDtos;
 
     private UnitsInfoRecorder(){
         unitNames = new CopyOnWriteArraySet<>();
@@ -38,6 +46,7 @@ public class UnitsInfoRecorder implements Serializable {
         numberOfReplacedMethodsInSut = new AtomicInteger(0);
         numberOfReplacedMethodsInThirdParty = new AtomicInteger(0);
         numberOfTrackedMethods = new AtomicInteger(0);
+        parsedDtos = new ConcurrentHashMap<>();
     }
 
     /**
@@ -75,7 +84,18 @@ public class UnitsInfoRecorder implements Serializable {
         singleton.numberOfTrackedMethods.incrementAndGet();
     }
 
+    public static void registerNewParsedDto(String name, String schema){
+        if(name == null || name.isEmpty()){
+            throw new IllegalArgumentException("Empty dto name");
+        }
+        if(schema == null || schema.isEmpty()){
+            throw new IllegalArgumentException("Empty schema");
+        }
 
+        if(! singleton.parsedDtos.containsKey(name)){
+            singleton.parsedDtos.put(name, schema);
+        }
+    }
 
     public  int getNumberOfUnits() {
         return unitNames.size();
@@ -83,6 +103,10 @@ public class UnitsInfoRecorder implements Serializable {
 
     public  Set<String> getUnitNames() {
         return Collections.unmodifiableSet(unitNames);
+    }
+
+    public Map<String,String> getParsedDtos(){
+        return Collections.unmodifiableMap(parsedDtos);
     }
 
     public  int getNumberOfLines() {
