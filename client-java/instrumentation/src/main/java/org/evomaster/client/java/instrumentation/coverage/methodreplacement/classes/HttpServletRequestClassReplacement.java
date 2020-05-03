@@ -7,18 +7,19 @@ import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import javax.servlet.ServletInputStream;
-import javax.servlet.ServletRequest;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class ServletRequestClassReplacement extends ThirdPartyMethodReplacementClass {
+public class HttpServletRequestClassReplacement extends ThirdPartyMethodReplacementClass {
 
-    private static final ServletRequestClassReplacement singleton = new ServletRequestClassReplacement();
+    private static final HttpServletRequestClassReplacement singleton = new HttpServletRequestClassReplacement();
+
+
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "javax.servlet.ServletRequest";
+        return "javax.servlet.http.HttpServletRequest";
     }
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getInputStream", usageFilter = UsageFilter.ONLY_SUT)

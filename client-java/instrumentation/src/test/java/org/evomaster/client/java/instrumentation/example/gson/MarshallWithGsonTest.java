@@ -24,7 +24,7 @@ public class MarshallWithGsonTest {
 
 
     @Test
-    public void testFromItem() throws Exception{
+    public void testFromJson() throws Exception{
 
         UnitsInfoRecorder.reset();
         ObjectiveRecorder.reset(true);
