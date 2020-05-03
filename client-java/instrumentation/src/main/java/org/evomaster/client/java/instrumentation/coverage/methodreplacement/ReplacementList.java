@@ -21,6 +21,7 @@ public class ReplacementList {
                 new DoubleClassReplacement(),
                 new FloatClassReplacement(),
                 new GsonClassReplacement(),
+                new HttpServletRequestClassReplacement(),
                 new IntegerClassReplacement(),
                 new LocalDateClassReplacement(),
                 new LocalDateTimeClassReplacement(),
@@ -36,26 +37,6 @@ public class ReplacementList {
                 new WebRequestClassReplacement()
         );
     }
-
-//    @Deprecated
-//    public static List<MethodReplacementClass> getReplacements(Class<?> target) {
-//        Objects.requireNonNull(target);
-//
-//        return getList().stream()
-//                .filter(t -> t.isAvailable())
-//                .filter(t -> {
-//                    /*
-//                        TODO: this is tricky, due to how "super" calls are
-//                        handled. For now, we just allow subclasses if they
-//                        are of standard JDK.
-//                    */
-//                            boolean jdk = target.getName().startsWith("java");
-//                            return jdk ? t.getTargetClass().isAssignableFrom(target)
-//                                    : t.getTargetClass().equals(target);
-//                        }
-//                )
-//                .collect(Collectors.toList());
-//    }
 
 
     public static List<MethodReplacementClass> getReplacements(String target) {
