@@ -197,6 +197,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     .forEach { name ->
                         action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
                     }
+
+            if(info.rawAccessOfHttpBodyPayload){
+               val dtoNames = info.parsedDtoNames;
+
+            }
+
         }
     }
 
@@ -396,8 +402,6 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
-
-
 
         if (response.status == 401 && a.auth !is NoAuth) {
             //this would likely be a misconfiguration in the SUT controller

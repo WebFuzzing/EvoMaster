@@ -93,9 +93,6 @@ class RestSampler : Sampler<RestIndividual>(){
         actionCluster.clear()
         RestActionBuilderV3.addActionsFromSwagger(swagger, actionCluster, infoDto.restProblem?.endpointsToSkip ?: listOf())
 
-        //modelCluster.clear()
-       // RestActionBuilder.getModelsFromSwagger(swagger, modelCluster)
-
         setupAuthentication(infoDto)
 
         initAdHocInitialIndividuals()
@@ -194,13 +191,12 @@ class RestSampler : Sampler<RestIndividual>(){
         val actions = mutableListOf<RestAction>()
         val n = randomness.nextInt(1, config.maxTestSize)
 
-        //usedObjects.clear()
         (0 until n).forEach {
             actions.add(sampleRandomAction(0.05))
         }
-        val objInd =  RestIndividual(actions, SampleType.RANDOM, mutableListOf()//, usedObjects.copy()
-                , if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null, if(config.enableTrackIndividual) mutableListOf() else null)
-        //usedObjects.clear()
+        val objInd =  RestIndividual(actions, SampleType.RANDOM, mutableListOf(),
+                if(config.enableTrackEvaluatedIndividual || config.enableTrackIndividual) this else null,
+                if(config.enableTrackIndividual) mutableListOf() else null)
         return objInd
     }
 
