@@ -78,7 +78,7 @@ class SupportedCodeOracle : ImplementedOracle() {
         objectGenerator = gen
     }
 
-    override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
+    override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
         return if(this::objectGenerator.isInitialized){
              !supportedCode(call, res)
         }

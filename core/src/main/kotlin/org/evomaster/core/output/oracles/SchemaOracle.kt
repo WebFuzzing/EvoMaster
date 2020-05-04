@@ -171,10 +171,17 @@ class SchemaOracle : ImplementedOracle() {
         val mapResponses = mutableMapOf<String, String>()
         specificPath?.responses?.forEach { key, value ->
             value.content.values.map { cva ->
+                //TODO: BMR the schema may need additions here
                 val valueSchema = cva.schema
                 val rez = when (valueSchema) {
                     is ArraySchema -> valueSchema.items.`$ref` ?: valueSchema.items.type
-                    is MapSchema -> (cva.schema.additionalProperties as StringSchema).type ?: (cva.schema.additionalProperties as Schema<*>).`$ref`
+                    is MapSchema -> {
+                        when(cva.schema.additionalProperties) {
+                            is StringSchema -> (cva.schema.additionalProperties as StringSchema).type
+                            is ObjectSchema -> (cva.schema.additionalProperties as ObjectSchema).type
+                            else -> (cva.schema.additionalProperties as Schema<*>).`$ref`
+                        }
+                    }
                     is StringSchema -> valueSchema.type
                     is IntegerSchema -> valueSchema.format
                     is ObjectSchema -> ""
@@ -192,14 +199,14 @@ class SchemaOracle : ImplementedOracle() {
         objectGenerator = gen
     }
 
-    override fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean {
+    override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
         // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         //return !(res.failedCall() || res.getStatusCode() == 500)
 
         val supportedObjs = getSupportedResponse(call)
-        val expectedObject = supportedObjs.get("${res.getStatusCode()}")
-
-        val referenceObject = objectGenerator.getNamedReference("$expectedObject")
+        val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
+        if(!objectGenerator.containsKey(expectedObject)) return true
+        val referenceObject = objectGenerator.getNamedReference(expectedObject)
         val supported = supportedObject(referenceObject, call)
         return !supported
     }

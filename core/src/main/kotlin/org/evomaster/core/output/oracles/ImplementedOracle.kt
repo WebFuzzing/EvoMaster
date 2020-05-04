@@ -13,7 +13,7 @@ abstract class ImplementedOracle {
     abstract fun variableDeclaration(lines: Lines, format: OutputFormat)
     abstract fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat)
     abstract fun setObjectGenerator(gen: ObjectGenerator)
-    abstract fun generatesExpectation(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat): Boolean
+    abstract fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean
     abstract fun selectForClustering(action: EvaluatedAction): Boolean
     abstract fun getName(): String
 }

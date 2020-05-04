@@ -114,14 +114,15 @@ class TestCaseWriter {
 
         lines.indented {
 
-            val ind = test.test.individual
+            val ind = test.test
 
-            if (ind is RestIndividual) {
+            if (ind.individual is RestIndividual) {
                 if (configuration.expectationsActive) {
-                    expectationsWriter.addDeclarations(lines)
+                    expectationsWriter.addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
+                    //TODO: -> also check expectation generation before adding declarations
                 }
-                if (ind.dbInitialization.isNotEmpty()) {
-                    SqlWriter.handleDbInitialization(format, ind.dbInitialization, lines)
+                if (ind.individual.dbInitialization.isNotEmpty()) {
+                    SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
                 }
             }
 
@@ -134,6 +135,7 @@ class TestCaseWriter {
                     TODO: rather declare variable first time we access it?
                  */
                 lines.addEmpty()
+
 
                 test.test.evaluatedActions().asSequence()
                         .map { it.action }

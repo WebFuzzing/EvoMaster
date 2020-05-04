@@ -34,15 +34,17 @@ class PartialOracles {
     private var oracles = mutableListOf(SupportedCodeOracle(), SchemaOracle())
     private val expectationsMasterSwitch = "ems"
 
-    fun variableDeclaration(lines: Lines, format: OutputFormat){
+    fun variableDeclaration(lines: Lines, format: OutputFormat, active: MutableMap<String, Boolean>){
         for (oracle in oracles){
-            oracle.variableDeclaration(lines, format)
+            if(active.get(oracle.getName()) == true) {
+                        oracle.variableDeclaration(lines, format)
+            }
         }
     }
 
     fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
         val generates = oracles.any {
-            it.generatesExpectation(call, lines, res, name, format)
+            it.generatesExpectation(call, res)
         }
         if (!generates) return
         lines.add("expectationHandler.expect($expectationsMasterSwitch)")
@@ -73,6 +75,17 @@ class PartialOracles {
         else return false;
     }
 
+    fun generatesExpectation(individual: EvaluatedIndividual<RestIndividual>): Boolean{
+        return oracles.any { oracle ->
+            individual.evaluatedActions().any {
+                oracle.generatesExpectation(
+                        (it.action as RestCallAction),
+                        (it.result as RestCallResult)
+                )
+            }
+        }
+    }
+
     fun failByOracle(individuals: MutableList<EvaluatedIndividual<RestIndividual>>): MutableMap<String, MutableList<EvaluatedIndividual<RestIndividual>>>{
         val oracleInds = mutableMapOf<String, MutableList<EvaluatedIndividual<RestIndividual>>>()
         oracles.forEach { oracle ->
@@ -83,6 +96,20 @@ class PartialOracles {
             oracleInds.put(oracle.getName(), failindInds)
         }
         return oracleInds
+    }
+
+    fun activeOracles(individuals: MutableList<EvaluatedIndividual<RestIndividual>>): MutableMap<String, Boolean>{
+        val active = mutableMapOf<String, Boolean>()
+        oracles.forEach { oracle ->
+            active.put(oracle.getName(), individuals.any { individual ->
+                individual.evaluatedActions().any {
+                    oracle.generatesExpectation(
+                            (it.action as RestCallAction),
+                            (it.result as RestCallResult)
+                    )
+                } })
+        }
+        return active
     }
 
 }
