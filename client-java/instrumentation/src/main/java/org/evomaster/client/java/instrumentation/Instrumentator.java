@@ -5,7 +5,6 @@ package org.evomaster.client.java.instrumentation;
 import org.evomaster.client.java.instrumentation.coverage.CoverageClassVisitor;
 import org.evomaster.client.java.instrumentation.coverage.ThirdPartyClassVisitor;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
-import org.evomaster.client.java.instrumentation.tracker.TrackerClassVisitor;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
