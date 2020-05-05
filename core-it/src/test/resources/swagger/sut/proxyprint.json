@@ -1,0 +1,5693 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "Api Documentation",
+    "version": "1.0",
+    "title": "Api Documentation",
+    "termsOfService": "urn:tos",
+    "contact": {},
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0"
+    }
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "register-request-controller",
+      "description": "Register Request Controller"
+    },
+    {
+      "name": "notifications-controller",
+      "description": "Notifications Controller"
+    },
+    {
+      "name": "admin-controller",
+      "description": "Admin Controller"
+    },
+    {
+      "name": "endpoint-mvc-adapter",
+      "description": "Endpoint Mvc Adapter"
+    },
+    {
+      "name": "print-request-controller",
+      "description": "Print Request Controller"
+    },
+    {
+      "name": "printing-schema-controller",
+      "description": "Printing Schema Controller"
+    },
+    {
+      "name": "consumer-controller",
+      "description": "Consumer Controller"
+    },
+    {
+      "name": "manager-controller",
+      "description": "Manager Controller"
+    },
+    {
+      "name": "metrics-mvc-endpoint",
+      "description": "Metrics Mvc Endpoint"
+    },
+    {
+      "name": "print-shop-controller",
+      "description": "Print Shop Controller"
+    },
+    {
+      "name": "default-controller",
+      "description": "Default Controller"
+    },
+    {
+      "name": "employee-controller",
+      "description": "Employee Controller"
+    },
+    {
+      "name": "basic-error-controller",
+      "description": "Basic Error Controller"
+    },
+    {
+      "name": "pay-pal-controller",
+      "description": "Pay Pal Controller"
+    },
+    {
+      "name": "review-controller",
+      "description": "Review Controller"
+    },
+    {
+      "name": "environment-mvc-endpoint",
+      "description": "Environment Mvc Endpoint"
+    },
+    {
+      "name": "health-mvc-endpoint",
+      "description": "Health Mvc Endpoint"
+    },
+    {
+      "name": "price-table-controller",
+      "description": "Price Table Controller"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": [
+          "default-controller"
+        ],
+        "summary": "index",
+        "operationId": "indexUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "map",
+            "description": "map",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/*": {
+      "options": {
+        "tags": [
+          "default-controller"
+        ],
+        "summary": "handleOptions",
+        "operationId": "handleOptionsUsingOPTIONS",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ResponseEntity"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/admin/printshops": {
+      "get": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Returns the list of all printshops.",
+        "description": "This method allows the admin entity to access all printshop's information registered in the platform.",
+        "operationId": "getPrinShopsListUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/admin/register": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows the register of an admin entity.",
+        "operationId": "newAdminUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "admin",
+            "description": "admin",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Admin"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Admin"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/admin/seed": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Returns nothing.",
+        "description": "This method allows developers to fill in the database with fake but consistent data.",
+        "operationId": "seedUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/admin/useed": {
+      "post": {
+        "tags": [
+          "admin-controller"
+        ],
+        "summary": "Returns nothing.",
+        "description": "This method allows developers to fill in the database with fake consumer accounts.",
+        "operationId": "useedUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/secured": {
+      "get": {
+        "tags": [
+          "default-controller"
+        ],
+        "summary": "secured",
+        "operationId": "securedUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "map",
+            "description": "map",
+            "required": false,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/autoconfig": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/autoconfig.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/beans": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_2",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/beans.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_3",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/configprops": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_4",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/configprops.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_5",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/balance": {
+      "get": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns a certain consumer's balance.",
+        "description": "Returns the consumer's balance, normaly used for update purposes.",
+        "operationId": "getConsumerBalanceUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/budget": {
+      "post": {
+        "tags": [
+          "print-request-controller"
+        ],
+        "summary": "Returns a set of budgets",
+        "description": "This method calculates budgets for a given and already specified print request. The budgets are calculated for specific printshops also passed along as parameters.",
+        "operationId": "calcBudgetForPrintRequestUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "name": "requestJSON",
+            "in": "formData",
+            "description": "requestJSON",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/info": {
+      "get": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns all the user information",
+        "description": "This method allows consumers to get their personal information.",
+        "operationId": "getConsumerInfoUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/info/update": {
+      "put": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Updates the consumer information",
+        "description": "This method allows consumers to update their personal information.",
+        "operationId": "updateConsumerInfoUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/notifications": {
+      "get": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns list of notifications.",
+        "description": "This method retrieves to consumer his list of notifications.",
+        "operationId": "getConsumerNotificationsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Notification"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/printrequest/{printRequestID}/submit": {
+      "post": {
+        "tags": [
+          "print-request-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "This method allow clients to POST a print request and associate it to a given printshop with a given budget, the payment may or not occur according to the payment method.",
+        "operationId": "finishAndSubmitPrintRequestUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printRequestID",
+            "in": "path",
+            "description": "printRequestID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/register": {
+      "post": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "This method allows consumer registration.",
+        "operationId": "addUserUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/requests": {
+      "get": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns pending requests.",
+        "description": "This method retrieves to the consumer his pending requests.",
+        "operationId": "getRequestsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/requests/cancel/{id}": {
+      "delete": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows consumers to cancel a pending request.",
+        "operationId": "cancelRequestsUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/consumer/satisfied": {
+      "get": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns satisfied requests.",
+        "description": "This method retrieves the history of satisfied requests from a consumer.",
+        "operationId": "getPrintShopSatisfiedRequestsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/subscribe": {
+      "get": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingHEAD",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingOPTIONS",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a consumer to subscribe the SSE.",
+        "operationId": "subscribeUsingPATCH",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "text/event-stream"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/SseEmitter"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/consumer/{consumerID}/printingschemas": {
+      "get": {
+        "tags": [
+          "printing-schema-controller"
+        ],
+        "summary": "Returns a set of the printing schemas.",
+        "description": "This method allows consumers to get his PrintingSchemas.",
+        "operationId": "getConsumerPrintingSchemasUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "consumerID",
+            "in": "path",
+            "description": "consumerID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "printing-schema-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows consumers to add a new printing schema to his printing schemas collection.",
+        "operationId": "addNewConsumerPrintingSchemaUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "consumerID",
+            "in": "path",
+            "description": "consumerID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "ps",
+            "description": "ps",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PrintingSchema"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/{consumerID}/printingschemas/{printingSchemaID}": {
+      "put": {
+        "tags": [
+          "printing-schema-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows consumers to edit a printing schema from his printing schemas collection.",
+        "operationId": "editConsumerPrintingSchemaUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "consumerID",
+            "in": "path",
+            "description": "consumerID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "printingSchemaID",
+            "in": "path",
+            "description": "printingSchemaID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "pschema",
+            "description": "pschema",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PrintingSchema"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "printing-schema-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows consumers to delete a printing schema from his printing schemas collection.",
+        "operationId": "deleteConsumerPrintingSchemaUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "consumerID",
+            "in": "path",
+            "description": "consumerID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "printingSchemaID",
+            "in": "path",
+            "description": "printingSchemaID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/consumer/{id}/notify": {
+      "post": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns nothing",
+        "description": "This method sends a notification to a consumer.",
+        "operationId": "greetingUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/consumer/{username}/notifications": {
+      "put": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows consumers to mark as read all notifications.",
+        "operationId": "readAllNotificationsUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "username",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "consumer-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows consumers to remove all notifications.",
+        "operationId": "deleteAllNotificationsUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "description": "username",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/documents/{id}": {
+      "get": {
+        "tags": [
+          "employee-controller"
+        ],
+        "summary": "Returns a document",
+        "description": "This method allows employees to get a document by a given id.",
+        "operationId": "getEmployeesUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/FileSystemResource"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/dump": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_6",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/dump.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_7",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/env": {
+      "get": {
+        "tags": [
+          "environment-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_14",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/env.json": {
+      "get": {
+        "tags": [
+          "environment-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_15",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/env/{name}": {
+      "get": {
+        "tags": [
+          "environment-mvc-endpoint"
+        ],
+        "summary": "value",
+        "operationId": "valueUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/error": {
+      "get": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingHEAD",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingOPTIONS",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "basic-error-controller"
+        ],
+        "summary": "error",
+        "operationId": "errorUsingPATCH",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_16",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingHEAD",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingOPTIONS",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingPATCH",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/health.json": {
+      "get": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_17",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "head": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingHEAD_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingPOST_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingPUT_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingDELETE_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "options": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingOPTIONS_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "health-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingPATCH_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/info": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_8",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/info.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_9",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/login": {
+      "post": {
+        "tags": [
+          "default-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method validates the login data from a user.",
+        "operationId": "loginUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/mappings": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_10",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/mappings.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_11",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "tags": [
+          "metrics-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_18",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/metrics.json": {
+      "get": {
+        "tags": [
+          "metrics-mvc-endpoint"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_19",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/metrics/{name}": {
+      "get": {
+        "tags": [
+          "metrics-mvc-endpoint"
+        ],
+        "summary": "value",
+        "operationId": "valueUsingGET_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "description": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/notifications/{notificationId}": {
+      "put": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success.",
+        "description": "This method allows consumers to mark a notification as read.",
+        "operationId": "readNotificationUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "description": "notificationId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "notifications-controller"
+        ],
+        "summary": "Returns success.",
+        "description": "This method allows consumers to delete a notification.",
+        "operationId": "deleteNotificationUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "notificationId",
+            "in": "path",
+            "description": "notificationId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/paypal/ipn/consumer/{consumerID}": {
+      "post": {
+        "tags": [
+          "pay-pal-controller"
+        ],
+        "summary": "It confirms that a certain consumer has pay its load up on ProxyPrint.",
+        "description": "Its a route for being remotely called by PayPal servers.",
+        "operationId": "consumerLoadUpConfirmationUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "consumerID",
+            "in": "path",
+            "description": "consumerID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/paypal/ipn/{printRequestID}": {
+      "post": {
+        "tags": [
+          "pay-pal-controller"
+        ],
+        "summary": "Returns nothing",
+        "description": "This method implements the payment check mechanism given by PayPal. This method acts as callback, it reacts to the change of status of a transaction to Completed (eCheck - complete).",
+        "operationId": "someRequestPaymentConfirmationFromPaylPalUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printRequestID",
+            "in": "path",
+            "description": "printRequestID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printdocument": {
+      "post": {
+        "tags": [
+          "print-request-controller"
+        ],
+        "summary": "Returns a Print Request ID",
+        "description": "This method allows other platforms to print a document using ProxyPrint",
+        "operationId": "printDocumentUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printdocument/{id}": {
+      "get": {
+        "tags": [
+          "print-request-controller"
+        ],
+        "summary": "Returns a document",
+        "description": "This method returns the document from a print request ",
+        "operationId": "getDocumentUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printdocument/{id}/budget": {
+      "post": {
+        "tags": [
+          "print-request-controller"
+        ],
+        "summary": "Returns a set of budgets",
+        "description": "This method calculates budgets for a given and already specified print request. The budgets are calculated for specific printshops also passed along as parameters.",
+        "operationId": "calcBudgetForPrintRecipeUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshop": {
+      "get": {
+        "tags": [
+          "manager-controller"
+        ],
+        "summary": "Returns a printshop",
+        "description": "This method allows manager to get his printshop info",
+        "operationId": "getManagerPrintShopUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns a printshop",
+        "description": "This method returns a list of printshop with info from each one.",
+        "operationId": "getPrintShopsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/history": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns the history of requests.",
+        "description": "Returns the history of requests from a printshop.",
+        "operationId": "getPrintShopHistoryRequestsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/nearest": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns a list of printshops.",
+        "description": "This method returns a list of the nearest printshops.",
+        "operationId": "getNearestPrintShopsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/requests": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns pending requests.",
+        "description": "Returns the pending and in progress requests from a printshop.",
+        "operationId": "getPrintShopRequestsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/requests/cancel/{id}": {
+      "post": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a employee to cancel a print resquest.",
+        "operationId": "cancelPrintShopRequestsUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "in": "body",
+            "name": "motive",
+            "description": "motive",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/requests/{id}": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns a request.",
+        "description": "Returns the corresponding request from a printshop.",
+        "operationId": "getPrintShopRequestUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns the new status.",
+        "description": "Returns the new status of the corresponding print request.",
+        "operationId": "changeStatusPrintShopRequestsUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/satisfied": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns satisfied requests.",
+        "description": "Returns the satisfied requests from a printshop.",
+        "operationId": "getPrintShopSatisfiedRequestsUsingGET_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/stats": {
+      "get": {
+        "tags": [
+          "manager-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a manager to get the statistics info from his printshop.",
+        "operationId": "getPrintShopStatisticsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns a printshop",
+        "description": "This method returns the printshop info",
+        "operationId": "getPrintShopUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable": {
+      "get": {
+        "tags": [
+          "print-shop-controller"
+        ],
+        "summary": "Returns a pricetable",
+        "description": "This method returns a pricetable of a specific printshop.",
+        "operationId": "getPrintShopPriceTableUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable/covers": {
+      "post": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Add a new Cover Item to a price table of a certain print shop.",
+        "operationId": "addNewCoverItemUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "cti",
+            "description": "cti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CoverTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Edit an existent Cover Item to a price table of a certain print shop.",
+        "operationId": "editCoverItemUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "cti",
+            "description": "cti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CoverTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable/deletecover": {
+      "post": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Delete an existent Cover Item to a price table of a certain print shop.",
+        "operationId": "deleteCoverItemUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "cti",
+            "description": "cti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CoverTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable/deletepaper": {
+      "post": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Delete a new Paper Item from a price table of a certain print shop.",
+        "operationId": "deletePaperItemUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "pti",
+            "description": "pti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PaperTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable/deletering": {
+      "post": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Delete an existing Rings Item to a price table of a certain print shop.",
+        "operationId": "deleteRingItemUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "rti",
+            "description": "rti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RingTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable/papers": {
+      "post": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Addition of a new Paper Item to a price table of a certain print shop.",
+        "operationId": "addNewPaperItemUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "pti",
+            "description": "pti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PaperTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Edition of a new Paper Item from a price table of a certain print shop.",
+        "operationId": "editPaperItemUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "pti",
+            "description": "pti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PaperTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/pricetable/rings": {
+      "post": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Addition of a new Rings Item to a price table of a certain print shop.",
+        "operationId": "addNewRingsItemUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "rti",
+            "description": "rti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RingTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Edition of an existing Rings Item to a price table of a certain print shop.",
+        "operationId": "editRingsItemUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "rti",
+            "description": "rti",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RingTableItem"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{id}/reviews": {
+      "get": {
+        "tags": [
+          "review-controller"
+        ],
+        "summary": "Returns all printshop reviews",
+        "description": "404 if the printshop doesn't exist.",
+        "operationId": "getPrintShopReviewsUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "review-controller"
+        ],
+        "summary": "Add a review to a printshop with the given ID",
+        "description": "404 if the printshop doesn't exist.",
+        "operationId": "addPrintShopReviewUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "in": "body",
+            "name": "params",
+            "description": "params",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{printShopID}/employees": {
+      "get": {
+        "tags": [
+          "manager-controller"
+        ],
+        "summary": "Returns list of employees.",
+        "description": "This method allows a manager to get the list of employees from his printshop.",
+        "operationId": "getEmployeesUsingGET_1",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopID",
+            "in": "path",
+            "description": "printShopID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "manager-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a manager to add a employee to his printshop.",
+        "operationId": "addEmployeeUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopID",
+            "in": "path",
+            "description": "printShopID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "manager-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a manager to edit a employee from his printshop.",
+        "operationId": "editEmployeeUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopID",
+            "in": "path",
+            "description": "printShopID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{printShopID}/employees/{employeeID}": {
+      "delete": {
+        "tags": [
+          "manager-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows a manager to delete a employee from his printshop.",
+        "operationId": "deleteEmployeeUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopID",
+            "in": "path",
+            "description": "printShopID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "employeeID",
+            "in": "path",
+            "description": "employeeID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/printshops/{printShopID}/pricetable/editstapling": {
+      "put": {
+        "tags": [
+          "price-table-controller"
+        ],
+        "summary": "Returns success/insuccess",
+        "description": "Edit the stapling price property table of a certain print shop.",
+        "operationId": "editStaplingPriceUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopID",
+            "in": "path",
+            "description": "printShopID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "newStaplingPrice",
+            "description": "newStaplingPrice",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/printshops/{printShopId}/reviews/{reviewId}": {
+      "put": {
+        "tags": [
+          "review-controller"
+        ],
+        "summary": "Edit an existing printshop review",
+        "description": "404 if the printshop or the review doesn't exist.",
+        "operationId": "editPrintShopReviewUsingPUT",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopId",
+            "in": "path",
+            "description": "printShopId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "reviewId",
+            "in": "path",
+            "description": "reviewId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "review-controller"
+        ],
+        "summary": "Delete an existing printshop review",
+        "description": "404 if the printshop or the review doesn't exist.",
+        "operationId": "deletePrintShopReviewUsingDELETE",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printShopId",
+            "in": "path",
+            "description": "printShopId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "name": "reviewId",
+            "in": "path",
+            "description": "reviewId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "in": "body",
+            "name": "request",
+            "description": "request",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/WebRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        }
+      }
+    },
+    "/request/accept/{id}": {
+      "post": {
+        "tags": [
+          "register-request-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows the admin to accept a register request from a printshop.",
+        "operationId": "acceptRequestUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/request/register": {
+      "post": {
+        "tags": [
+          "register-request-controller"
+        ],
+        "summary": "Returns success.",
+        "description": "This method allows to add a register request to a new printshop.",
+        "operationId": "registerRequestUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "registerRequest",
+            "description": "registerRequest",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RegisterRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/RegisterRequest"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/request/reject/{printRequestID}": {
+      "post": {
+        "tags": [
+          "register-request-controller"
+        ],
+        "summary": "Returns success/insuccess.",
+        "description": "This method allows the admin to reject a register request from a printshop.",
+        "operationId": "rejectRequestUsingPOST",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "printRequestID",
+            "in": "path",
+            "description": "printRequestID",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "principal",
+            "description": "principal",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Principal"
+            }
+          },
+          {
+            "in": "body",
+            "name": "motive",
+            "description": "motive",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "201": {
+            "description": "Created"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/requests/pending": {
+      "get": {
+        "tags": [
+          "register-request-controller"
+        ],
+        "summary": "Returns a list of pending register requests.",
+        "description": "This method allows the admin to get a list of pending register requests.",
+        "operationId": "acceptRequestUsingGET",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RegisterRequest"
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/trace": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_12",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/trace.json": {
+      "get": {
+        "tags": [
+          "endpoint-mvc-adapter"
+        ],
+        "summary": "invoke",
+        "operationId": "invokeUsingGET_13",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Locale": {
+      "type": "object"
+    },
+    "RegisterRequest": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "managerEmail": {
+          "type": "string"
+        },
+        "managerName": {
+          "type": "string"
+        },
+        "managerPassword": {
+          "type": "string"
+        },
+        "managerUsername": {
+          "type": "string"
+        },
+        "pShopAddress": {
+          "type": "string"
+        },
+        "pShopDateRequest": {
+          "type": "string"
+        },
+        "pShopDateRequestAccepted": {
+          "type": "string"
+        },
+        "pShopLatitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "pShopLongitude": {
+          "type": "number",
+          "format": "double"
+        },
+        "pShopNIF": {
+          "type": "string"
+        },
+        "pShopName": {
+          "type": "string"
+        }
+      }
+    },
+    "InputStream": {
+      "type": "object"
+    },
+    "GrantedAuthority": {
+      "type": "object",
+      "properties": {
+        "authority": {
+          "type": "string"
+        }
+      }
+    },
+    "OutputStream": {
+      "type": "object"
+    },
+    "ModelAndView": {
+      "type": "object",
+      "properties": {
+        "empty": {
+          "type": "boolean"
+        },
+        "model": {
+          "type": "object"
+        },
+        "modelMap": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object"
+          }
+        },
+        "reference": {
+          "type": "boolean"
+        },
+        "view": {
+          "$ref": "#/definitions/View"
+        },
+        "viewName": {
+          "type": "string"
+        }
+      }
+    },
+    "GregorianCalendar": {
+      "type": "object",
+      "properties": {
+        "fieldsComputed": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "fieldsNormalized": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "firstDayOfWeek": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "lenient": {
+          "type": "boolean"
+        },
+        "minimalDaysInFirstWeek": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "time": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "timeInMillis": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "timeZone": {
+          "$ref": "#/definitions/TimeZone"
+        },
+        "weekCountData": {
+          "$ref": "#/definitions/Locale"
+        },
+        "zoneShared": {
+          "type": "boolean"
+        }
+      }
+    },
+    "FileSystemResource": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "file": {
+          "type": "file"
+        },
+        "filename": {
+          "type": "string"
+        },
+        "inputStream": {
+          "$ref": "#/definitions/InputStream"
+        },
+        "outputStream": {
+          "$ref": "#/definitions/OutputStream"
+        },
+        "path": {
+          "type": "string"
+        },
+        "readable": {
+          "type": "boolean"
+        },
+        "uri": {
+          "$ref": "#/definitions/URI"
+        },
+        "url": {
+          "$ref": "#/definitions/URL"
+        },
+        "writable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Admin": {
+      "type": "object",
+      "properties": {
+        "balance": {
+          "$ref": "#/definitions/Money"
+        },
+        "email": {
+          "type": "string"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "roles": {
+          "$ref": "#/definitions/Collection«GrantedAuthority»"
+        },
+        "rolesSet": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "username": {
+          "type": "string"
+        }
+      }
+    },
+    "Collection«GrantedAuthority»": {
+      "type": "object"
+    },
+    "View": {
+      "type": "object",
+      "properties": {
+        "contentType": {
+          "type": "string"
+        }
+      }
+    },
+    "URI": {
+      "type": "object",
+      "properties": {
+        "absolute": {
+          "type": "boolean"
+        },
+        "authority": {
+          "type": "string"
+        },
+        "fragment": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "opaque": {
+          "type": "boolean"
+        },
+        "path": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "query": {
+          "type": "string"
+        },
+        "rawAuthority": {
+          "type": "string"
+        },
+        "rawFragment": {
+          "type": "string"
+        },
+        "rawPath": {
+          "type": "string"
+        },
+        "rawQuery": {
+          "type": "string"
+        },
+        "rawSchemeSpecificPart": {
+          "type": "string"
+        },
+        "rawUserInfo": {
+          "type": "string"
+        },
+        "scheme": {
+          "type": "string"
+        },
+        "schemeSpecificPart": {
+          "type": "string"
+        },
+        "userInfo": {
+          "type": "string"
+        }
+      }
+    },
+    "URL": {
+      "type": "object",
+      "properties": {
+        "authority": {
+          "type": "string"
+        },
+        "content": {
+          "type": "object"
+        },
+        "defaultPort": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "file": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "protocol": {
+          "type": "string"
+        },
+        "query": {
+          "type": "string"
+        },
+        "ref": {
+          "type": "string"
+        },
+        "userInfo": {
+          "type": "string"
+        }
+      }
+    },
+    "Notification": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "message": {
+          "type": "string"
+        },
+        "readStatus": {
+          "type": "boolean"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "Money": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string"
+        },
+        "fractionalPart": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "integerPart": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "moneyAsDouble": {
+          "type": "number",
+          "format": "double"
+        },
+        "valid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ResponseEntity": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "object"
+        },
+        "statusCode": {
+          "type": "string",
+          "enum": [
+            "100",
+            "101",
+            "102",
+            "103",
+            "200",
+            "201",
+            "202",
+            "203",
+            "204",
+            "205",
+            "206",
+            "207",
+            "208",
+            "226",
+            "300",
+            "301",
+            "302",
+            "302",
+            "303",
+            "304",
+            "305",
+            "307",
+            "308",
+            "400",
+            "401",
+            "402",
+            "403",
+            "404",
+            "405",
+            "406",
+            "407",
+            "408",
+            "409",
+            "410",
+            "411",
+            "412",
+            "413",
+            "413",
+            "414",
+            "414",
+            "415",
+            "416",
+            "417",
+            "418",
+            "419",
+            "420",
+            "421",
+            "422",
+            "423",
+            "424",
+            "426",
+            "428",
+            "429",
+            "431",
+            "500",
+            "501",
+            "502",
+            "503",
+            "504",
+            "505",
+            "506",
+            "507",
+            "508",
+            "509",
+            "510",
+            "511"
+          ]
+        }
+      }
+    },
+    "TimeZone": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "rawOffset": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "PaperTableItem": {
+      "type": "object",
+      "properties": {
+        "colors": {
+          "type": "string"
+        },
+        "infLim": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "priceA3DUPLEX": {
+          "type": "string"
+        },
+        "priceA3SIMPLEX": {
+          "type": "string"
+        },
+        "priceA4DUPLEX": {
+          "type": "string"
+        },
+        "priceA4SIMPLEX": {
+          "type": "string"
+        },
+        "supLim": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "SseEmitter": {
+      "type": "object",
+      "properties": {
+        "timeout": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "CoverTableItem": {
+      "type": "object",
+      "properties": {
+        "coverType": {
+          "type": "string"
+        },
+        "priceA3": {
+          "type": "string"
+        },
+        "priceA4": {
+          "type": "string"
+        }
+      }
+    },
+    "File": {
+      "type": "object",
+      "properties": {
+        "absolute": {
+          "type": "boolean"
+        },
+        "absolutePath": {
+          "type": "string"
+        },
+        "canonicalPath": {
+          "type": "string"
+        },
+        "directory": {
+          "type": "boolean"
+        },
+        "file": {
+          "type": "boolean"
+        },
+        "freeSpace": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "hidden": {
+          "type": "boolean"
+        },
+        "name": {
+          "type": "string"
+        },
+        "parent": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "totalSpace": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "usableSpace": {
+          "type": "integer",
+          "format": "int64"
+        }
+      }
+    },
+    "RingTableItem": {
+      "type": "object",
+      "properties": {
+        "infLim": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "price": {
+          "type": "string"
+        },
+        "ringType": {
+          "type": "string"
+        },
+        "supLim": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "PrintingSchema": {
+      "type": "object",
+      "properties": {
+        "bindingSpecs": {
+          "type": "string"
+        },
+        "coverSpecs": {
+          "type": "string"
+        },
+        "deleted": {
+          "type": "boolean"
+        },
+        "id": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "paperSpecs": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

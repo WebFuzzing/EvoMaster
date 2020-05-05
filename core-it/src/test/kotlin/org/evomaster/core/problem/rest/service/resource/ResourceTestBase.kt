@@ -9,10 +9,8 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.database.SqlInsertBuilder
-import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
@@ -26,11 +24,36 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
+import java.sql.Connection
+import java.sql.DriverManager
 
-abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
+abstract class ResourceTestBase : ResourceBasedTestInterface {
+
+    companion object {
+
+        @JvmStatic
+        public lateinit var connection: Connection
+
+        private var sqlSchemaCommand : String? = null
+
+        @BeforeAll
+        @JvmStatic
+        fun initClass() {
+            connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "")
+        }
+
+        @AfterAll
+        @JvmStatic
+        fun clean(){
+            sqlSchemaCommand = null
+            connection.close()
+        }
+    }
 
     private lateinit var config: EMConfig
     private lateinit var sampler: SimpleResourceSampler
@@ -43,6 +66,16 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
 
     @BeforeEach
     fun init() {
+        //org.evomaster.core.database.extract.h2.ExtractTestBaseH2
+        SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
+
+        if(sqlSchemaCommand == null){
+            sqlSchemaCommand = this::class.java.getResource(getSchemaLocation()).readText()
+        }
+
+        SqlScriptRunner.execCommand(connection, sqlSchemaCommand)
+
+
         val injector = LifecycleInjector.builder()
                 .withModules(* arrayOf<Module>(SimpleResourceModule(), BaseModule()))
                 .build().createInjector()
@@ -71,6 +104,7 @@ abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterfac
         lifecycleManager.close()
     }
 
+    abstract fun getSchemaLocation() : String
     abstract fun getSwaggerLocation(): String
 
     private fun getDatabaseExecutor() : DatabaseExecutor = DirectDatabaseExecutor()
