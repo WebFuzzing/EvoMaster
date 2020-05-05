@@ -44,7 +44,8 @@ class SchemaOracle : ImplementedOracle() {
 
     override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
         if (res.failedCall()
-                || res.getStatusCode() == 500) {
+                || res.getStatusCode() == 500
+                || !generatesExpectation(call, res)) {
             return
         }
 
@@ -202,18 +203,20 @@ class SchemaOracle : ImplementedOracle() {
     override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
         // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
         //return !(res.failedCall() || res.getStatusCode() == 500)
-
+        if(!::objectGenerator.isInitialized) return false
         val supportedObjs = getSupportedResponse(call)
         val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
-        if(!objectGenerator.containsKey(expectedObject)) return true
+        if(!objectGenerator.containsKey(expectedObject)) return false
         val referenceObject = objectGenerator.getNamedReference(expectedObject)
         val supported = supportedObject(referenceObject, call)
         return !supported
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
-        //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        return false
+        if (action.action is RestCallAction && action.result is RestCallResult){
+            return generatesExpectation(action.action, action.result)
+        }
+        else return false
     }
 
     override fun getName():String {

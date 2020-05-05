@@ -79,10 +79,10 @@ class SupportedCodeOracle : ImplementedOracle() {
     }
 
     override fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean {
-        return if(this::objectGenerator.isInitialized){
-             !supportedCode(call, res)
+        if(this::objectGenerator.isInitialized){
+             return !supportedCode(call, res)
         }
-        else false
+        return false
     }
 
     override fun selectForClustering(action: EvaluatedAction): Boolean {
