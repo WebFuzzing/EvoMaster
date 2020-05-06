@@ -34,7 +34,13 @@
         <dependency>
             <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core</artifactId>
-            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core</artifactId>
+            <type>test-jar</type>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
@@ -86,5 +92,4 @@
             </build>
         </profile>
     </profiles>
-
 </project>

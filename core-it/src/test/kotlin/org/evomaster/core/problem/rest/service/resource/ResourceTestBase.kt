@@ -9,8 +9,10 @@ import org.evomaster.client.java.controller.db.SqlScriptRunner
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
+import org.evomaster.core.TestUtils
 import org.evomaster.core.database.DatabaseExecutor
 import org.evomaster.core.database.SqlInsertBuilder
+import org.evomaster.core.database.extract.h2.ExtractTestBaseH2
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.problem.rest.SampleType
@@ -32,28 +34,7 @@ import org.junit.jupiter.api.BeforeAll
 import java.sql.Connection
 import java.sql.DriverManager
 
-abstract class ResourceTestBase : ResourceBasedTestInterface {
-
-    companion object {
-
-        @JvmStatic
-        public lateinit var connection: Connection
-
-        private var sqlSchemaCommand : String? = null
-
-        @BeforeAll
-        @JvmStatic
-        fun initClass() {
-            connection = DriverManager.getConnection("jdbc:h2:mem:db_test", "sa", "")
-        }
-
-        @AfterAll
-        @JvmStatic
-        fun clean(){
-            sqlSchemaCommand = null
-            connection.close()
-        }
-    }
+abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
 
     private lateinit var config: EMConfig
     private lateinit var sampler: SimpleResourceSampler
@@ -66,16 +47,6 @@ abstract class ResourceTestBase : ResourceBasedTestInterface {
 
     @BeforeEach
     fun init() {
-        //org.evomaster.core.database.extract.h2.ExtractTestBaseH2
-        SqlScriptRunner.execCommand(connection, "DROP ALL OBJECTS;")
-
-        if(sqlSchemaCommand == null){
-            sqlSchemaCommand = this::class.java.getResource(getSchemaLocation()).readText()
-        }
-
-        SqlScriptRunner.execCommand(connection, sqlSchemaCommand)
-
-
         val injector = LifecycleInjector.builder()
                 .withModules(* arrayOf<Module>(SimpleResourceModule(), BaseModule()))
                 .build().createInjector()
@@ -104,7 +75,6 @@ abstract class ResourceTestBase : ResourceBasedTestInterface {
         lifecycleManager.close()
     }
 
-    abstract fun getSchemaLocation() : String
     abstract fun getSwaggerLocation(): String
 
     private fun getDatabaseExecutor() : DatabaseExecutor = DirectDatabaseExecutor()
