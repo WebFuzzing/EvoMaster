@@ -26,9 +26,13 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeAll
+import java.sql.Connection
+import java.sql.DriverManager
 
 abstract class ResourceTestBase : ExtractTestBaseH2(), ResourceBasedTestInterface {
 
