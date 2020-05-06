@@ -2,6 +2,7 @@ package org.evomaster.client.java.instrumentation.coverage.methodreplacement.cla
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
+import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
 import javax.servlet.ServletInputStream;
@@ -19,7 +20,7 @@ public class ServletRequestClassReplacement extends ThirdPartyMethodReplacementC
         return "javax.servlet.ServletRequest";
     }
 
-    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getInputStream")
+    @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getInputStream", usageFilter = UsageFilter.ONLY_SUT)
     public static ServletInputStream getInputStream(Object caller) throws IOException {
 
         //TODO

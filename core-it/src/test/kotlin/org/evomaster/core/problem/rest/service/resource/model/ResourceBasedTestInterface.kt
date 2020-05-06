@@ -1,6 +1,5 @@
 package org.evomaster.core.problem.rest.service.resource.model
 
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 interface ResourceBasedTestInterface {
@@ -89,8 +88,7 @@ interface ResourceBasedTestInterface {
 
     fun setupWithoutDatabaseAndDependency()
 
-    @Test //FIXME move to core-it
-    @Disabled("Started to fail since update to OpenApi V3")
+    @Test
     fun testInitializedResourceClusterAndApplicableSampleMethods(){
         setupWithoutDatabaseAndDependency()
 
@@ -105,7 +103,7 @@ interface ResourceBasedTestInterface {
 
     fun setupWithDatabaseAndNameAnalysis()
 
-    //FIXME move to core-it @Test
+    @Test
     fun testWithDatabaseAndNameAnalysis(){
         setupWithDatabaseAndNameAnalysis()
 
@@ -115,7 +113,7 @@ interface ResourceBasedTestInterface {
 
     fun setupWithDatabaseAndDependencyAndNameAnalysis()
 
-    //FIXME move to core-it @Test
+    @Test
     fun testWithDependencyAndNameAnalysis(){
         setupWithDatabaseAndDependencyAndNameAnalysis()
 
