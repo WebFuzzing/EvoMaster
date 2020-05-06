@@ -65,6 +65,9 @@
 
     <profiles>
         <profile>
+            <!--
+                run test with 'mvn test -Pintegration-test'
+            -->
             <id>integration-test</id>
             <activation>
                 <activeByDefault>false</activeByDefault>
