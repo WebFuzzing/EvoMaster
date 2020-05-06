@@ -980,6 +980,15 @@ class EMConfig {
     var SMdR: Double = 0.25
 
     @Experimental
+    @Cfg("Whether to enable an adaptive mutation rate")
+    var adaptiveMutationRate = false
+
+    @Experimental
+    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
+    @PercentageAsProbability(false)
+    var maxMutationRate = 0.9
+
+    @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
     var probOfArchiveMutation = 0.0

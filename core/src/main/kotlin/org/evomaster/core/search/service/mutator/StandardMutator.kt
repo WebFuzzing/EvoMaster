@@ -13,6 +13,8 @@ import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import kotlin.math.max
+import kotlin.math.min
 
 /**
  * make the standard mutator open for extending the mutator,
@@ -67,14 +69,23 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             ONE_OVER_N -> ALL
             ONE_OVER_N_BIASED_SQL -> NO_SQL
         }
-        val n = Math.max(1, individual.seeGenes(filterN).filter { it.isMutable() }.count())
-        return selectGenesByOneDivNum(genesToMutate, n)
+
+        val mutationSpace = max(1, individual.seeGenes(filterN).filter { it.isMutable() }.sumBy { it.mutationWeight() })
+
+        return selectGenesByOneDivNum(genesToMutate, calculateMutationRate(mutationSpace))
     }
 
-    private fun selectGenesByOneDivNum(genesToMutate : List<Gene>, n : Int): List<Gene>{
+    private fun calculateMutationRate(mutationSpace: Int) : Double{
+        val mr = 1.0/ mutationSpace
+        if (!config.adaptiveMutationRate) return mr
+
+        val delta = apc.getExploratoryValue(10, 1)
+        return min(config.maxMutationRate, delta * mr)
+    }
+
+    private fun selectGenesByOneDivNum(genesToMutate : List<Gene>, mmr : Double): List<Gene>{
         val genesToSelect = mutableListOf<Gene>()
 
-        val p = 1.0 / n
 
         var mutated = false
 
@@ -86,7 +97,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
             for (gene in genesToMutate) {
 
-                if (!randomness.nextBoolean(p)) {
+                if (!randomness.nextBoolean(min(mmr * gene.mutationWeight(), 1.0))) {
                     continue
                 }
 

@@ -51,6 +51,11 @@ abstract class Gene(var name: String) {
     abstract fun copy() : Gene
 
     /**
+     * weight for mutation
+     */
+    open fun mutationWeight() : Int = 1
+
+    /**
      * Specify if this gene can be mutated during the search.
      * Typically, it will be true, apart from some special cases.
      */

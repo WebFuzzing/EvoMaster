@@ -192,4 +192,6 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         return fields.all { it.reachOptimal() }
     }
 
+    override fun mutationWeight(): Int = fields.size
+
 }
