@@ -1,6 +1,7 @@
 package org.evomaster.client.java.instrumentation.coverage.methodreplacement;
 
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.classes.*;
+import org.evomaster.client.java.instrumentation.mongo.MongoReplacementClass;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 
 import java.util.Arrays;
@@ -32,7 +33,8 @@ public class ReplacementList {
                 new ByteClassReplacement(),
                 new CharacterClassReplacement(),
                 new ServletRequestClassReplacement(),
-                new WebRequestClassReplacement()
+                new WebRequestClassReplacement(),
+                new MongoReplacementClass()
         );
     }
 

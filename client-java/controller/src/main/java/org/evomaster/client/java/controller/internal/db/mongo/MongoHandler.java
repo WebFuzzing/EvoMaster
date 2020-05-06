@@ -1,12 +1,14 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
-import com.google.gson.Gson;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
 import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto;
 import org.evomaster.client.java.instrumentation.mongo.LoggedExecutedFindOperation;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -61,12 +63,25 @@ public class MongoHandler {
     }
 
     private static ExecutedFindOperationDto toDto(String loggedExecutedFindOperationJsonStr) {
-        LoggedExecutedFindOperation loggedExecutedFindOperation = new Gson().fromJson(loggedExecutedFindOperationJsonStr, LoggedExecutedFindOperation.class);
+        ObjectMapper jacksonMapper = new ObjectMapper();
+
+        LoggedExecutedFindOperation loggedExecutedFindOperation = null;
+        try {
+            loggedExecutedFindOperation = jacksonMapper.readValue(loggedExecutedFindOperationJsonStr, LoggedExecutedFindOperation.class);
+        } catch (IOException e) {
+            throw new RuntimeException("Could not read " + LoggedExecutedFindOperation.class.getName() + " instance from string " + loggedExecutedFindOperationJsonStr, e);
+        }
 
         FindOperationDto findOperationDto = new FindOperationDto();
         findOperationDto.databaseName = loggedExecutedFindOperation.getDatabaseName();
         findOperationDto.collectionName = loggedExecutedFindOperation.getCollectionName();
-        findOperationDto.queryJsonStr =  new Gson().toJson(loggedExecutedFindOperation.getQueryDocument());
+
+
+        try {
+            findOperationDto.queryJsonStr = jacksonMapper.writeValueAsString(loggedExecutedFindOperation.getQueryDocument());
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException("Could not write JSON from  " + loggedExecutedFindOperation.getQueryDocument().toString(), e);
+        }
 
         FindResultDto findResultDto = new FindResultDto();
         findResultDto.findResultType = FindResultDto.FindResultType.SUMMARY;

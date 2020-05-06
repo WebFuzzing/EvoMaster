@@ -4,13 +4,17 @@ import org.bson.Document;
 
 public class LoggedExecutedFindOperation {
 
-    private final String databaseName;
+    private String databaseName;
 
-    private final String collectionName;
+    private String collectionName;
 
-    private final Document queryDocument;
+    private Document queryDocument;
 
-    private final boolean hasReturnedAnyDocument;
+    private boolean hasReturnedAnyDocument;
+
+    public LoggedExecutedFindOperation() {
+
+    }
 
     public LoggedExecutedFindOperation(String databaseName, String collectionName, Document queryDocument, boolean hasReturnedAnyDocument) {
         this.databaseName = databaseName;

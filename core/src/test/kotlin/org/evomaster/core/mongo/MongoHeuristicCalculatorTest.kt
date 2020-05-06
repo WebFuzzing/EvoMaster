@@ -2,10 +2,7 @@ package org.evomaster.core.mongo
 
 import com.mongodb.MongoClient
 import com.mongodb.client.model.Filters
-import org.bson.BsonArray
-import org.bson.BsonDocument
-import org.bson.BsonInt32
-import org.bson.Document
+import org.bson.*
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.DocumentCodec
 import org.bson.conversions.Bson
@@ -240,5 +237,141 @@ class MongoHeuristicCalculatorTest {
         val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
 
         assertEquals(Double.MAX_VALUE, aDistance)
+    }
+
+    @Test
+    fun testInFilterIncompatibleTypes() {
+        val aDocument = Document()
+        aDocument.append("age", 32)
+
+        val filterBson = Filters.`in`("age", listOf("Hello", "World"))
+        val filterDocument = toFilter(filterBson)
+
+        val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
+
+        assertEquals(Double.MAX_VALUE, aDistance)
+    }
+
+    @Test
+    fun testInFilterBsonNullValue() {
+        val aDocument = Document()
+        aDocument.append("age", BsonNull())
+
+        val filterBson = Filters.`in`("age", listOf(18, 21, 65))
+        val filterDocument = toFilter(filterBson)
+
+        val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
+
+        assertEquals(Double.MAX_VALUE, aDistance)
+    }
+
+    @Test
+    fun testInFilterNullValue() {
+        val aDocument = Document()
+        aDocument.append("age", null)
+
+        val filterBson = Filters.`in`("age", listOf(18, 21, 65))
+        val filterDocument = toFilter(filterBson)
+
+        val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
+
+        assertEquals(Double.MAX_VALUE, aDistance)
+    }
+
+    @Test
+    fun testInFilterNullValueAndNullElement() {
+        val aDocument = Document()
+        aDocument.append("age", null)
+
+        val filterBson = Filters.`in`("age", listOf(null))
+        val filterDocument = toFilter(filterBson)
+
+        val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
+
+        assertEquals(0.0, aDistance)
+    }
+
+    @Test
+    fun testAndFilterOverflow() {
+        val document = Document()
+        document.append("age", Double.MIN_VALUE)
+        document.append("numberOfChildren", Double.MIN_VALUE)
+
+        val filterBson = Filters.and(Filters.eq("age", Double.MAX_VALUE),
+                Filters.eq("numberOfChildren", Double.MAX_VALUE))
+
+        val filterDocument = toFilter(filterBson)
+
+        val distance = filterDocument.accept(MongoHeuristicCalculator(), document)
+
+        assertEquals(Double.MAX_VALUE, distance)
+    }
+
+    @Test
+    fun testExistsFilter() {
+        val document = Document()
+        document.append("n_me", "John")
+
+        val filterBson = Filters.exists("name")
+
+        val filterDocument = toFilter(filterBson)
+
+        val distance = filterDocument.accept(MongoHeuristicCalculator(), document)
+
+        assertEquals(2.0, distance)
+    }
+
+    @Test
+    fun testExistsFilterNotClose() {
+        val document = Document()
+        document.append("age", 18)
+
+        val filterBson = Filters.exists("name")
+
+        val filterDocument = toFilter(filterBson)
+
+        val distance = filterDocument.accept(MongoHeuristicCalculator(), document)
+
+        assertEquals(65563.0, distance)
+    }
+
+    @Test
+    fun testExistsFilterNoFields() {
+        val document = Document()
+
+
+        val filterBson = Filters.exists("name")
+
+        val filterDocument = toFilter(filterBson)
+
+        val distance = filterDocument.accept(MongoHeuristicCalculator(), document)
+
+        assertEquals(Double.MAX_VALUE, distance)
+    }
+
+    @Test
+    fun testInFilterString() {
+        val aDocument = Document()
+        aDocument.append("name", "John")
+
+        val filterBson = Filters.`in`("name", listOf("Jack", "Jill", "Johnathan"))
+        val filterDocument = toFilter(filterBson)
+
+        val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
+
+        assertEquals(12.0, aDistance)
+    }
+
+    @Test
+    fun testInFilterStringCloser() {
+        val aDocument = Document()
+        aDocument.append("name", "John")
+
+        val filterBson = Filters.`in`("name", listOf("Johm", "Jill", "Jack"))
+        val filterDocument = toFilter(filterBson)
+
+        val aDistance = filterDocument.accept(MongoHeuristicCalculator(), aDocument)
+
+        assertEquals(1.0, aDistance)
     }
 }

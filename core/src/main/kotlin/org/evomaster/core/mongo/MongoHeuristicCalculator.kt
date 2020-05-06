@@ -3,17 +3,66 @@ package org.evomaster.core.mongo
 import org.bson.BsonArray
 import org.bson.Document
 import org.evomaster.core.mongo.filter.*
+import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.*
+import java.lang.Integer.min
 import java.util.stream.Collectors
-
-import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.EQUALS
-import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.GREATER_THAN_EQUALS
-import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.GREATER_THAN
-import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.LESS_THAN
-import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.LESS_THAN_EQUALS
-import org.evomaster.core.mongo.filter.ComparisonFilter.ComparisonQueryOperator.NOT_EQUALS
 import kotlin.math.abs
 
 class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
+
+    companion object {
+        //2^16=65536, max distance for a char
+        const val MAX_CHAR_DISTANCE = 65536
+    }
+
+    /**
+     * Returns a double value that represents the distance
+     * between two numbers
+     */
+    private fun computeDistance(a: Number, b: Number): Double {
+        return abs(a.toDouble() - b.toDouble())
+    }
+
+    /**
+     * Returns a double value that represents the distance
+     * between two strings. The value is greater than 0.
+     */
+    private fun computeDistance(a: String, b: String): Double {
+        val diff = abs(a.length - b.length).toLong()
+        var dist: Long = diff * MAX_CHAR_DISTANCE
+        for (i in 0 until min(a.length, b.length)) {
+            dist += abs(a[i] - b[i]).toLong()
+        }
+        return dist.toDouble()
+    }
+
+    private fun computerComparison(dif: Double, operator: ComparisonFilter.ComparisonQueryOperator): Double {
+        return when (operator) {
+            EQUALS -> abs(dif)
+            GREATER_THAN_EQUALS -> if (dif >= 0) 0.0 else -dif
+            GREATER_THAN -> if (dif > 0) 0.0 else 1.0 - dif
+            LESS_THAN_EQUALS -> if (dif <= 0) 0.0 else dif
+            LESS_THAN -> if (dif < 0) 0.0 else 1.0 + dif
+            NOT_EQUALS -> if (dif != 0.0) 0.0 else 1.0
+        }
+    }
+
+    private fun computeDistance(x: Any?, y: Any?): Double {
+
+        if (x != null && y != null) {
+            if (x is Number && y is Number) {
+                return computeDistance(x, y)
+            } else if (x is String && y is String) {
+                return computeDistance(x, y)
+            } else {
+                return Double.MAX_VALUE
+            }
+        } else if (x == null && y == null) {
+            return 0.0
+        } else {
+            return Double.MAX_VALUE
+        }
+    }
 
     /**
      * Computes a heuristic value for a fieldName op value comparison.
@@ -45,21 +94,6 @@ class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
         return Double.MAX_VALUE
     }
 
-    private fun computeDistance(x: Number, y: Number): Double {
-        return abs(x.toDouble() - y.toDouble())
-    }
-
-    private fun computerComparison(dif: Double, operator: ComparisonFilter.ComparisonQueryOperator): Double {
-        return when (operator) {
-            EQUALS -> abs(dif)
-            GREATER_THAN_EQUALS -> if (dif >= 0) 0.0 else -dif
-            GREATER_THAN -> if (dif > 0) 0.0 else 1.0 - dif
-            LESS_THAN_EQUALS -> if (dif <= 0) 0.0 else dif
-            LESS_THAN -> if (dif < 0) 0.0 else 1.0 + dif
-            NOT_EQUALS -> if (dif != 0.0) 0.0 else 1.0
-        }
-    }
-
     /**
      * The heuristic value for an AndFilter is the sum of all
      * distances for each inner filter.
@@ -70,7 +104,9 @@ class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
         var distance = 0.0;
         andFilter.filters.forEach {
             distance += it.accept(this, document)
-            if (distance < 0) {
+            if (distance < 0
+                    || distance == Double.POSITIVE_INFINITY
+                    || distance == Double.NEGATIVE_INFINITY) {
                 // overflow
                 return Double.MAX_VALUE
             }
@@ -115,21 +151,19 @@ class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
         }
     }
 
-    private fun computeDistance(x: Any?, y: Any?): Double {
-
-        if (x != null && y != null) {
-            if (x is Number && y is Number) {
-                return computeDistance(x, y)
-            } else {
-                return Double.MAX_VALUE
-            }
-        } else if (x == null && y == null) {
-            return 0.0
-        } else {
-            return Double.MAX_VALUE
-        }
-    }
-
+    /**
+     * Computes the heuristic value for an InFilter. An InFilter selects
+     * documents such that the value of the fieldName in the document
+     * is an array such that it contains an expected value.
+     *
+     * The heuristic value is the minimum distance to the expected value
+     * of all distances to elements in the array.
+     *
+     * If the fieldName is not defined or it is not an array, or if the
+     * array is defined but empty, or no distance can be computed to
+     * any element in the array (i.e. incompatible types), the heuristic
+     * distance is Double.MAX_VALUE.
+     */
     override fun visit(filter: InFilter, document: Document): Double {
         val fieldName = filter.fieldName
         val expectedValues = filter.values
@@ -148,6 +182,45 @@ class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
                 .min() ?: Double.MAX_VALUE
     }
 
+    /**
+     * Returns the minimum distance of the expected fieldName
+     * to field names in the document.
+     * If no fields are defined in the document, it returns
+     * the maximum double value.
+     */
+    override fun visit(filter: ExistsFilter, document: Document): Double {
+        val expectedFieldName = filter.fieldName
+        return document.keys
+                .stream()
+                .map { computeDistance(expectedFieldName, it) }
+                .collect(Collectors.toList())
+                .min() ?: Double.MAX_VALUE
+
+    }
+
+    override fun visit(allFilter: AllFilter, document: Document): Double {
+        val fieldName = allFilter.fieldName
+        val expectedValues = allFilter.values
+
+        if (!document.containsKey(fieldName)) {
+            // document has no field
+            return Double.MAX_VALUE
+        }
+
+        val value = document.get(fieldName)
+        if (value !is BsonArray) {
+            return Double.MAX_VALUE
+        }
+
+
+        return expectedValues
+                .stream()
+                .map { computeDistance(it, value) }
+                .collect(Collectors.toList())
+                .min() ?: Double.MAX_VALUE
+
+    }
+
     override fun visit(filter: NotInFilter, arg: Document): Double {
         return Double.MAX_VALUE
     }
@@ -156,9 +229,6 @@ class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
         return Double.MAX_VALUE
     }
 
-    override fun visit(filter: ExistsFilter, arg: Document): Double {
-        return Double.MAX_VALUE
-    }
 
     override fun visit(filter: NotExistsFilter, arg: Document): Double {
         return Double.MAX_VALUE
@@ -188,9 +258,7 @@ class MongoHeuristicCalculator : FilterVisitor<Double, Document>() {
         return Double.MAX_VALUE
     }
 
-    override fun visit(allFilter: AllFilter, arg: Document): Double {
-        return Double.MAX_VALUE
-    }
+
 
     override fun visit(elemMatchFilter: ElemMatchFilter, arg: Document): Double {
         return Double.MAX_VALUE

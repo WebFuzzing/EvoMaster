@@ -47,12 +47,6 @@
             <artifactId>mockito-core</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-        </dependency>
-
-
         <!-- Dependencies for Java Regex distances -->
         <dependency>
             <groupId>net.sf.jgrapht</groupId>
@@ -73,6 +67,10 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+        </dependency>
 
     </dependencies>
 
