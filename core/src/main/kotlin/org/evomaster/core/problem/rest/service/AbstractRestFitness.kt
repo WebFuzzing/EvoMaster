@@ -19,9 +19,7 @@ import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.SearchTimeController
@@ -178,6 +176,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 Those are OptionalGenes, which MUST be off by default.
                 We are changing the genotype, but MUST not change the phenotype.
                 Otherwise, the fitness value we just computed would be wrong.
+
+                TODO: should update default action templates in Sampler
              */
 
             info.headers
@@ -196,14 +196,59 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
                     }
 
-            if(info.rawAccessOfHttpBodyPayload){
-               val dtoNames = info.parsedDtoNames;
+            val dtoNames = info.parsedDtoNames;
 
+            if(info.rawAccessOfHttpBodyPayload
+                    && dtoNames.isNotEmpty()
+                    && action.parameters.none{ it is BodyParam}
+            ){
+                /*
+                    The SUT tried to read the HTTP body payload, but there is no info
+                    about it in the schema. This can happen when payloads are dynamically
+                    loaded directly in the business logic of the SUT, and automated tools
+                    like SpringDoc/SpringFox failed to infer what is read
+
+                    TODO could handle other types besides JSON
+                    TODO what to do if more than 1 DTO are registered?
+                         Likely need a new MultiOptionGene similar to DisjunctionListRxGene
+                 */
+                if(dtoNames.size > 1){
+                    LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
+                }
+                val name = dtoNames.first()
+                val obj = getObjectGeneForDto(name)
+
+                val body = BodyParam(
+                        OptionalGene("body", obj, false),
+                        EnumGene("contentType", listOf("application/json")))
+
+                action.parameters.add(body)
             }
 
         }
     }
 
+    private fun getObjectGeneForDto(name: String) : Gene{
+
+        if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+            /*
+                parsedDto info is update throughout the search.
+                so, if info is missing, we re-fetch the whole data.
+                Would be more efficient to just fetch new data, but,
+                as this will happens seldom (at most N times for N dtos),
+                no much point in optimizing it
+             */
+            infoDto = rc.getSutInfo()!!
+
+            if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+                throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
+            }
+        }
+
+        val schema : String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
+
+        return RestActionBuilderV3.createObjectGeneForDTO(name, schema)
+    }
 
     /**
      * Initializing Actions before evaluating its fitness if need
