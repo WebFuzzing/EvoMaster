@@ -16,25 +16,28 @@ public class MongoReplacementClass extends ThirdPartyMethodReplacementClass {
 
     private static final MongoReplacementClass singleton = new MongoReplacementClass();
 
+    public static final String MONGO_COLLECTION_CLASS_NAME = "com.mongodb.client.MongoCollection";
+    public static final String ITERATOR_METHOD_NAME = "iterator";
+    public static final String FIND_METHOD_NAME = "find";
+
     private static boolean invokeHasNext(Object findIterable) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method iteratorMethod = findIterable.getClass().getMethod("iterator");
+        Method iteratorMethod = findIterable.getClass().getMethod(ITERATOR_METHOD_NAME);
         Iterator iterator = (Iterator) iteratorMethod.invoke(findIterable);
         return iterator.hasNext();
     }
 
     @Override
     protected String getNameOfThirdPartyTargetClass() {
-        return "com.mongodb.client.MongoCollection";
+        return MONGO_COLLECTION_CLASS_NAME;
     }
 
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "find", usageFilter = UsageFilter.ANY)
     public static FindIterable<?> find(Object mongoCollection, Bson bson, Class documentClass) {
         try {
-            Method findMethod = getOriginal(singleton, "find");
+            Method findMethod = getOriginal(singleton, FIND_METHOD_NAME);
             Object findIterable = findMethod.invoke(mongoCollection, bson, documentClass);
-
             boolean operationReturnedDocuments = invokeHasNext(findIterable);
-            MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
+            logFind(mongoCollection, bson, operationReturnedDocuments);
             return (FindIterable<?>) findIterable;
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
@@ -46,13 +49,17 @@ public class MongoReplacementClass extends ThirdPartyMethodReplacementClass {
     public static FindIterable<?> find(Object mongoCollection, ClientSession clientSession, Bson bson, Class documentClass) {
 
         try {
-            Method findMethod = mongoCollection.getClass().getMethod("find", ClientSession.class, Bson.class, Class.class);
+            Method findMethod = mongoCollection.getClass().getMethod(FIND_METHOD_NAME, ClientSession.class, Bson.class, Class.class);
             Object findIterableInstance = findMethod.invoke(mongoCollection, clientSession, bson, documentClass);
             boolean operationReturnedDocuments = invokeHasNext(findIterableInstance);
-            MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
+            logFind(mongoCollection, bson, operationReturnedDocuments);
             return (FindIterable<?>) findIterableInstance;
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void logFind(Object mongoCollection, Bson bson, boolean operationReturnedDocuments) {
+        MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
     }
 }

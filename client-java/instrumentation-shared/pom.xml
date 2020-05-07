@@ -17,11 +17,7 @@
             <artifactId>junit-jupiter-engine</artifactId>
         </dependency>
 
-        <!-- Dependencies for tracking MongoDB queries -->
-        <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongodb-driver</artifactId>
-        </dependency>
+
     </dependencies>
 
 
