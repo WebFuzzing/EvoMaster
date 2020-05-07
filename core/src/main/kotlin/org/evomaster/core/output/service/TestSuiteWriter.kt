@@ -77,6 +77,7 @@ class TestSuiteWriter {
         partialOracles.setFormat(config.outputFormat)
         if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
         testCaseWriter.setPartialOracles(partialOracles)
+        active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
 
         header(solution, testSuiteFileName, lines, controllerName)
 
@@ -87,7 +88,6 @@ class TestSuiteWriter {
             lines.indent()
         }
 
-        active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
         beforeAfterMethods(controllerName, lines)
 
         //catch any sorting problems (see NPE is SortingHelper on Trello)

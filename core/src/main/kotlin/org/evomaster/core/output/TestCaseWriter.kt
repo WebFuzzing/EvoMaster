@@ -284,7 +284,6 @@ class TestCaseWriter {
         if (configuration.expectationsActive) {
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
         }
-        //TODO: BMR expectations from partial oracles here?
     }
 
     /**

@@ -3,6 +3,7 @@ package org.evomaster.core.output.oracles
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -85,6 +86,15 @@ class SupportedCodeOracle : ImplementedOracle() {
         return false
     }
 
+    override fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean {
+        if(individual.individual !is RestIndividual) return false
+        if(!this::objectGenerator.isInitialized) return false
+        val gens = individual.evaluatedActions().any {
+            !supportedCode(it.action as RestCallAction, it.result as RestCallResult)
+        }
+        return false
+    }
+
     override fun selectForClustering(action: EvaluatedAction): Boolean {
         return if (action.result is RestCallResult
                 && action.action is RestCallAction
@@ -96,4 +106,5 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun getName(): String {
         return "CodeOracle"
     }
+
 }

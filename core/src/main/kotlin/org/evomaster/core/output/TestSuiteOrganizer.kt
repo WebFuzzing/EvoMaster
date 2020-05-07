@@ -1,6 +1,8 @@
 package org.evomaster.core.output
 
+import com.sun.istack.Pool
 import org.evomaster.core.Lazy
+import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -23,6 +25,7 @@ class TestSuiteOrganizer {
 
     private val sortingHelper = SortingHelper()
     private val namingHelper = NamingHelper()
+    private var partialOracles = PartialOracles()
 
     private val defaultSorting = listOf(0, 1)
 
@@ -30,6 +33,11 @@ class TestSuiteOrganizer {
         //sortingHelper.selectCriteriaByIndex(defaultSorting)
         //TODO here in the future we will have something a bit smarter
         return sortingHelper.sort(solution, namingHelper, customNaming)
+    }
+
+    fun setPartialOracles(partialOracles: PartialOracles){
+        this.partialOracles = partialOracles
+        namingHelper.setPartialOracles(partialOracles)
     }
 
 }
@@ -73,8 +81,24 @@ class NamingHelper {
         else return ""
     }
 
-    private var namingCriteria =  listOf(::criterion1_500)
-    private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit)
+    private fun criterion5_partialOracle(individual: EvaluatedIndividual<*>): String{
+        var name = ""
+        partialOracles.adjustName().forEach {
+            if(!it.adjustName().isNullOrBlank()
+                    || it.generatesExpectation(individual)){
+                name = name + it.adjustName()
+            }
+        }
+        return name
+    }
+
+    fun setPartialOracles(partialOracles: PartialOracles){
+        this.partialOracles = partialOracles
+    }
+
+    private var partialOracles = PartialOracles()
+    private var namingCriteria =  listOf(::criterion1_500, ::criterion5_partialOracle)
+    private val availableCriteria = listOf(::criterion1_500, ::criterion2_hasPost, ::criterion3_sampling, ::criterion4_dbInit, ::criterion5_partialOracle)
 
 
     fun suggestName(individual: EvaluatedIndividual<*>): String{

@@ -1,6 +1,7 @@
 package org.evomaster.core.output
 
 
+import org.evomaster.core.output.oracles.ImplementedOracle
 import org.evomaster.core.output.oracles.SchemaOracle
 import org.evomaster.core.output.oracles.SupportedCodeOracle
 import org.evomaster.core.problem.rest.RestCallAction
@@ -110,6 +111,10 @@ class PartialOracles {
                 } })
         }
         return active
+    }
+
+    fun adjustName(): MutableList<ImplementedOracle>{
+        return oracles.filter { it.adjustName() != null }.toMutableList()
     }
 
 }

@@ -3,6 +3,7 @@ package org.evomaster.core.output.oracles
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
@@ -14,6 +15,10 @@ abstract class ImplementedOracle {
     abstract fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat)
     abstract fun setObjectGenerator(gen: ObjectGenerator)
     abstract fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean
+    abstract fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean
     abstract fun selectForClustering(action: EvaluatedAction): Boolean
     abstract fun getName(): String
+    open fun adjustName(): String?{
+        return null
+    }
 }

@@ -8,7 +8,9 @@ import org.evomaster.core.output.ObjectGenerator
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 
@@ -212,6 +214,23 @@ class SchemaOracle : ImplementedOracle() {
         return !supported
     }
 
+    override fun generatesExpectation(individual: EvaluatedIndividual<*>): Boolean {
+        // A check should be made if this should be the case (i.e. if (any of) the object(s) contained break the schema.
+        //return !(res.failedCall() || res.getStatusCode() == 500)
+        if(individual.individual !is RestIndividual) return false
+        if(!::objectGenerator.isInitialized) return false
+
+        return individual.evaluatedActions().any {
+            val call = it.action as RestCallAction
+            val res = it.result as RestCallResult
+            val supportedObjs = getSupportedResponse(call)
+            val expectedObject = supportedObjs.get("${res.getStatusCode()}") ?: return false
+            if(!objectGenerator.containsKey(expectedObject)) return false
+            val referenceObject = objectGenerator.getNamedReference(expectedObject)
+            !supportedObject(referenceObject, call)
+        }
+    }
+
     override fun selectForClustering(action: EvaluatedAction): Boolean {
         if (action.action is RestCallAction && action.result is RestCallResult){
             return generatesExpectation(action.action, action.result)
@@ -221,5 +240,9 @@ class SchemaOracle : ImplementedOracle() {
 
     override fun getName():String {
         return "SchemaOracle"
+    }
+
+    override fun adjustName(): String?{
+        return "_apiSchemaMismatch"
     }
 }
