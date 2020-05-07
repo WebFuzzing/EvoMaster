@@ -142,7 +142,7 @@ class Main {
 
             val controllerInfo = checkState(injector)
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
             val writer = setupPartialOracles(injector, config)
@@ -251,7 +251,7 @@ class Main {
 
         fun run(injector: Injector, controllerInfo: ControllerInfoDto?): Solution<*> {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             //TODO check problem type
 
@@ -280,12 +280,12 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Starting to generate test cases")
 
-            return imp.search { solution: Solution<*>, snapshot: String -> writeTests(injector, solution, controllerInfo, snapshot) }
+            return imp.search { solution: Solution<*>, snapshot: String -> writeTestsAsSnapshots(injector, solution, controllerInfo, snapshot) }
         }
 
         private fun checkExperimentalSettings(injector: Injector) {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             val experimental = config.experimentalFeatures()
 
@@ -303,7 +303,7 @@ class Main {
 
         private fun checkState(injector: Injector): ControllerInfoDto? {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if(config.blackBox && !config.bbExperiments){
                 return null
@@ -327,17 +327,36 @@ class Main {
             return dto
         }
 
+        private fun writeTestsAsSnapshots(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
 
-        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
-
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.createTests) {
                 return
             }
 
+            val tests = getAmountOfTestsAsString(solution)
+            LoggingUtil.getInfoLogger().info("Going to save snapshot $tests to ${config.outputFolder}")
+
+            val writer = setupPartialOracles(injector, config, controllerInfoDto)
+            writer.writeTests(solution, controllerInfoDto?.fullName, snapshot)
+        }
+
+        private fun getAmountOfTestsAsString(solution: Solution<*>): String {
             val n = solution.individuals.size
-            val tests = if (n == 1) "1 test" else "$n tests"
+            return if (n == 1) "1 test" else "$n tests"
+        }
+
+
+        private fun writeTests(injector: Injector, solution: Solution<*>, controllerInfoDto: ControllerInfoDto?, snapshot: String="") {
+
+            val config = getEmConfig(injector)
+
+            if (!config.createTests) {
+                return
+            }
+
+            val tests = getAmountOfTestsAsString(solution)
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
@@ -382,7 +401,7 @@ class Main {
 
         private fun writeStatistics(injector: Injector, solution: Solution<*>) {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.writeStatistics) {
                 return
@@ -399,7 +418,7 @@ class Main {
 
         private fun writeOverallProcessData(injector: Injector) {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.enableProcessMonitor) {
                 return
@@ -415,7 +434,7 @@ class Main {
          */
         private fun writeDependencies(injector: Injector) {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.exportDependencies) {
                 return
@@ -431,7 +450,7 @@ class Main {
          */
         private fun writeImpacts(injector: Injector, solution: Solution<*>) {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.exportImpacts) {
                 return
@@ -447,7 +466,7 @@ class Main {
          */
         private fun writeCoveredTargets(injector: Injector, solution: Solution<*>) {
 
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.exportCoveredTarget) {
                 return
@@ -460,7 +479,7 @@ class Main {
         private fun writeExecSummary(injector: Injector,
                                      controllerInfoDto: ControllerInfoDto?,
                                      splitResult: SplitResult){
-            val config = injector.getInstance(EMConfig::class.java)
+            val config = getEmConfig(injector)
 
             if (!config.createTests) {
                 return
@@ -470,6 +489,8 @@ class Main {
             assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
             writer.writeTests(splitResult.executiveSummary, controllerInfoDto?.fullName)
         }
+
+        private fun getEmConfig(injector: Injector) = injector.getInstance(EMConfig::class.java)
 
     }
 }
