@@ -40,8 +40,15 @@ class SupportedCodeOracle : ImplementedOracle() {
             // The code is not among supported codes, so an expectation will be generated
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
-            val supportedCode = getSupportedCode(call).joinToString(", ")
+            val supportedCodes = getSupportedCode(call)
             //BMR: this will be a problem if supportedCode contains both codes and default...
+            if(supportedCodes.contains("0")){
+                lines.add("// WARNING: the code list seems to contain an unsupported code. The issue has been logged.")
+                supportedCodes.remove("0")
+                //TODO: if a need arises for more involved checks, refactor this
+            }
+            val supportedCode = supportedCodes.joinToString(", ")
+
             if(supportedCode.equals("default", ignoreCase = true)){
                 lines.add("/*")
                 lines.add(" Note: The default code seems to be the only one defined. https://swagger.io/docs/specification/describing-responses/.")
@@ -49,6 +56,7 @@ class SupportedCodeOracle : ImplementedOracle() {
                 lines.add("*/")
                 lines.add(".that($variableName, Arrays.asList().contains($name.extract().statusCode()))")
             }
+            //TODO: check here if supported code contains 0 (or maybe check against a list of "acceptable" codes
             else lines.add(".that($variableName, Arrays.asList($supportedCode).contains($name.extract().statusCode()))")
         }
     }
