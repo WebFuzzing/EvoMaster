@@ -79,7 +79,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val mr = 1.0/ mutationSpace
         if (!config.adaptiveMutationRate) return mr
 
-        val delta = apc.getExploratoryValue(10, 1)
+        val delta = apc.getExploratoryValue(config.startingTimesMutationRate, 1)
         return min(config.maxMutationRate, delta * mr)
     }
 

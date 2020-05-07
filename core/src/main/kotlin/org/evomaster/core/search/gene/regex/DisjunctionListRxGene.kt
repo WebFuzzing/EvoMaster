@@ -93,4 +93,9 @@ class DisjunctionListRxGene(
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
     }
+
+    /**
+     * FIXME need to check if it is reasonable with the size of [disjunctions]
+     */
+    override fun mutationWeight(): Int = disjunctions.size
 }

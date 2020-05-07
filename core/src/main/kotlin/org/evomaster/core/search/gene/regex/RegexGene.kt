@@ -75,4 +75,9 @@ class RegexGene(
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(disjunctions.flatView(excludePredicate))
     }
+
+    /**
+     * use mutationweight of [disjunctions]
+     */
+    override fun mutationWeight(): Int = disjunctions.mutationWeight()
 }
