@@ -22,6 +22,10 @@ If you are compiling directly from the _EvoMaster_ source code, make sure to use
 install the snapshot version of the Java client into your local Maven repository 
 (e.g., under *~/.m2*). 
 
+Note: the core application `evomaster.jar` is independent from the driver library, and it contains none of 
+the driver's classes.
+
+
 Once the client library is imported, you need to create a class that extends either
 `org.evomaster.client.java.controller.EmbeddedSutController`
  or
