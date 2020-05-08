@@ -1,12 +1,16 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
+import org.bson.BsonDocument
 import org.bson.Document
+import org.bson.codecs.DecoderContext
+import org.bson.codecs.DocumentCodec
 import org.evomaster.client.java.controller.api.EMTestUtils
 import org.evomaster.client.java.controller.api.dto.AdditionalInfoDto
 import org.evomaster.client.java.controller.api.dto.HeuristicEntryDto
 import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
+import org.evomaster.client.java.controller.api.dto.mongo.DocumentDto
 import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
@@ -197,7 +201,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         val findAllDocumentsDto = FindOperationDto()
         findAllDocumentsDto.databaseName = databaseName
         findAllDocumentsDto.collectionName = collectionName
-        findAllDocumentsDto.queryJsonStr = "{}"
+        val documentDto = DocumentDto()
+        documentDto.documentAsJsonString= "{}"
+        findAllDocumentsDto.queryDocumentDto = documentDto
 
         val retrievedDocumentsDto = this.rc.executeMongoOperationAndGetQueryResults(findAllDocumentsDto)
 
@@ -216,6 +222,12 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 return retrievedDocumentsDto
                         ?.documents
                         ?.toList()
+                        ?.map{
+                            BsonDocument.parse(it.documentAsJsonString)
+                        }
+                        ?.map{
+                            DocumentCodec().decode(it.asBsonReader(), DecoderContext.builder().build())
+                        }
                         ?.map {
                             filterNode.accept(MongoHeuristicCalculator(), it)
                         }

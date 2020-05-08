@@ -6,11 +6,15 @@ import org.apache.http.HttpStatus;
 import org.bson.*;
 import org.evomaster.client.java.controller.InstrumentedSutStarter;
 import org.evomaster.client.java.controller.api.dto.WrappedResponseDto;
+import org.evomaster.client.java.controller.api.dto.mongo.DocumentDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
 import org.evomaster.client.java.instrumentation.mongo.MongoLogger;
 import org.junit.jupiter.api.*;
+import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -114,13 +118,15 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
     }
 
     @Test
-    public void postMongoCommand() {
+    public void postMongoCommand() throws JsonProcessingException {
         startNewTest(url);
 
         FindOperationDto requestDto = new FindOperationDto();
         requestDto.databaseName = DATABASE_NAME;
         requestDto.collectionName = "mycollection";
-        requestDto.queryJsonStr = new BsonDocument().toJson();
+        DocumentDto documentDto = new DocumentDto();
+        documentDto.documentAsJsonString = new ObjectMapper().writeValueAsString(new BsonDocument());
+        requestDto.queryDocumentDto = documentDto;
 
         this.mongoClient.getDatabase(DATABASE_NAME).getCollection("mycollection").deleteMany(new BsonDocument());
 
@@ -140,7 +146,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
     }
 
     @Test
-    public void postMongoCommandOnNonEmpty() {
+    public void postMongoCommandOnNonEmpty() throws JsonProcessingException {
         startNewTest(url);
 
         Document anEmptyDocument = new Document();
@@ -149,7 +155,9 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         FindOperationDto requestDto = new FindOperationDto();
         requestDto.databaseName = DATABASE_NAME;
         requestDto.collectionName = "mycollection";
-        requestDto.queryJsonStr = new BsonDocument().toJson();
+        DocumentDto documentDto = new DocumentDto();
+        documentDto.documentAsJsonString = new ObjectMapper().writeValueAsString(new BsonDocument());
+        requestDto.queryDocumentDto = documentDto;
 
         Object responseData = given().contentType(ContentType.JSON)
                 .body(requestDto)
@@ -170,7 +178,7 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
     }
 
     @Test
-    public void postMongoCommandOnNonEmptyDocuments() {
+    public void postMongoCommandOnNonEmptyDocuments() throws IOException {
         startNewTest(url);
 
         Document aDocument = new Document();
@@ -183,7 +191,9 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         FindOperationDto requestDto = new FindOperationDto();
         requestDto.databaseName = DATABASE_NAME;
         requestDto.collectionName = "mycollection";
-        requestDto.queryJsonStr = new BsonDocument().toJson();
+        DocumentDto documentDto = new DocumentDto();
+        documentDto.documentAsJsonString = new ObjectMapper().writeValueAsString(new BsonDocument());
+        requestDto.queryDocumentDto = documentDto;
 
         WrappedResponseDto response = given().contentType(ContentType.JSON)
                 .body(requestDto)
@@ -209,10 +219,13 @@ public class MongoHandlerIntegrationTest extends MongoTestTemplate {
         BasicBSONObject storedDoc = new BasicBSONObject();
         storedDoc.putAll((Map) documents.get(0));
 
-        assertEquals("John", storedDoc.get("firstName"));
-        assertEquals("Doe", storedDoc.get("lastName"));
-        assertEquals(null, storedDoc.get("address"));
-        assertEquals(32, storedDoc.get("age"));
+        String jsonString = (String) storedDoc.get("documentAsJsonString");
+        BsonDocument bson = BsonDocument.parse(jsonString);
+
+        assertEquals("John", bson.get("firstName").asString().getValue());
+        assertEquals("Doe", bson.get("lastName").asString().getValue());
+        assertEquals(new BsonNull(), bson.get("address"));
+        assertEquals(32, bson.get("age").asInt32().getValue());
 
     }
 }

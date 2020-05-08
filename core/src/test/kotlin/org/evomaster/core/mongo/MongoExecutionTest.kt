@@ -1,9 +1,6 @@
 package org.evomaster.core.mongo
 
-import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto
-import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto
-import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto
-import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto
+import org.evomaster.client.java.controller.api.dto.mongo.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -14,7 +11,9 @@ class MongoExecutionTest {
         val findOperationDto = FindOperationDto()
         findOperationDto.databaseName = "mydb"
         findOperationDto.collectionName = "mycollection"
-        findOperationDto.queryJsonStr = "{}"
+        val documentDto = DocumentDto()
+        documentDto.documentAsJsonString = "{}"
+        findOperationDto.queryDocumentDto = documentDto
 
         val findResultDto = FindResultDto()
         findResultDto.findResultType = FindResultDto.FindResultType.SUMMARY

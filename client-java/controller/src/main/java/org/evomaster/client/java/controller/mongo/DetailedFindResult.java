@@ -1,6 +1,9 @@
 package org.evomaster.client.java.controller.mongo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.Document;
+import org.evomaster.client.java.controller.api.dto.mongo.DocumentDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
 
 import java.util.ArrayList;
@@ -24,7 +27,20 @@ public class DetailedFindResult extends FindResult {
     public FindResultDto toDto() {
         FindResultDto dto = new FindResultDto();
         dto.findResultType = FindResultDto.FindResultType.DETAILED;
-        dto.documents = new ArrayList<>(this.documentList);
+        dto.documents = new ArrayList<>();
+
+        ObjectMapper mapper = new ObjectMapper();
+        for (Document document : this.documentList) {
+            DocumentDto documentDto = new DocumentDto();
+            try {
+                String documentStr = mapper.writeValueAsString(document);
+                documentDto.documentAsJsonString = documentStr;
+
+            } catch (JsonProcessingException e) {
+                documentDto.documentAsJsonString = null;
+            }
+            dto.documents.add(documentDto);
+        }
         dto.hasReturnedAnyDocument = !this.documentList.isEmpty();
         return dto;
     }

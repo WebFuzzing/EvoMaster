@@ -1,13 +1,17 @@
 package org.evomaster.client.java.instrumentation.mongo;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.FindIterable;
+import org.bson.BsonDocument;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
@@ -19,6 +23,7 @@ public class MongoReplacementClass extends ThirdPartyMethodReplacementClass {
     public static final String MONGO_COLLECTION_CLASS_NAME = "com.mongodb.client.MongoCollection";
     public static final String ITERATOR_METHOD_NAME = "iterator";
     public static final String FIND_METHOD_NAME = "find";
+    public static final String FIND_WITH_CLIENT_SESSION_METHOD_NAME = "findWithClientSession";
 
     private static boolean invokeHasNext(Object findIterable) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         Method iteratorMethod = findIterable.getClass().getMethod(ITERATOR_METHOD_NAME);
@@ -49,8 +54,8 @@ public class MongoReplacementClass extends ThirdPartyMethodReplacementClass {
     public static FindIterable<?> find(Object mongoCollection, ClientSession clientSession, Bson bson, Class documentClass) {
 
         try {
-            Method findMethod = mongoCollection.getClass().getMethod(FIND_METHOD_NAME, ClientSession.class, Bson.class, Class.class);
-            Object findIterableInstance = findMethod.invoke(mongoCollection, clientSession, bson, documentClass);
+            Method findWithClientSession = getOriginal(singleton, FIND_WITH_CLIENT_SESSION_METHOD_NAME);
+            Object findIterableInstance = findWithClientSession.invoke(mongoCollection, clientSession, bson, documentClass);
             boolean operationReturnedDocuments = invokeHasNext(findIterableInstance);
             logFind(mongoCollection, bson, operationReturnedDocuments);
             return (FindIterable<?>) findIterableInstance;
@@ -60,6 +65,20 @@ public class MongoReplacementClass extends ThirdPartyMethodReplacementClass {
     }
 
     private static void logFind(Object mongoCollection, Bson bson, boolean operationReturnedDocuments) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            String value = mapper.writeValueAsString(bson);
+            Bson other = mapper.readValue(value, BsonDocument.class);
+            if (!bson.equals(other)) {
+                throw new RuntimeException();
+            }
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
         MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
     }
 }

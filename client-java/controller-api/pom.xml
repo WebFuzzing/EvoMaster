@@ -21,6 +21,7 @@
             <groupId>org.mongodb</groupId>
             <artifactId>bson</artifactId>
             <version>${mongodb.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

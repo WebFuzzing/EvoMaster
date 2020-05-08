@@ -6,5 +6,5 @@ public class FindOperationDto {
 
     public String collectionName;
 
-    public String queryJsonStr;
+    public DocumentDto queryDocumentDto;
 }

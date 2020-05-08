@@ -19,12 +19,12 @@ public class MongoHandlerTest {
     public void testHandle() {
         MongoHandler mongoHandler = new MongoHandler();
         mongoHandler.setExtractMongoExecution(true);
-        mongoHandler.handle("{\"databaseName\":\"mydb\",\"collectionName\":\"mycollection\",\"queryDocument\":{}}\n");
+        mongoHandler.handle("{\"databaseName\":\"mydb\",\"collectionName\":\"mycollection\",\"queryDocumentAsJsonString\":\"{}\"}\n");
         MongoExecutionDto dto = mongoHandler.getMongoExecutionDto();
         assertEquals(1, dto.executedFindOperationDtos.size());
         assertEquals("mydb", dto.executedFindOperationDtos.get(0).findOperationDto.databaseName);
         assertEquals("mycollection", dto.executedFindOperationDtos.get(0).findOperationDto.collectionName);
-        assertEquals("{}", dto.executedFindOperationDtos.get(0).findOperationDto.queryJsonStr);
+        assertEquals("{}", dto.executedFindOperationDtos.get(0).findOperationDto.queryDocumentDto.documentAsJsonString);
     }
 
     @Test
@@ -33,7 +33,7 @@ public class MongoHandlerTest {
         mongoHandler.setExtractMongoExecution(true);
         assertEquals(0, mongoHandler.getMongoExecutionDto().executedFindOperationDtos.size());
 
-        mongoHandler.handle("{\"databaseName\":\"mydb\",\"collectionName\":\"mycollection\",\"queryDocument\":{}}\n");
+        mongoHandler.handle("{\"databaseName\":\"mydb\",\"collectionName\":\"mycollection\",\"queryDocumentAsJsonString\":\"{}\"}\n");
         assertEquals(1, mongoHandler.getMongoExecutionDto().executedFindOperationDtos.size());
 
         mongoHandler.reset();

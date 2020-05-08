@@ -3,6 +3,7 @@ package org.evomaster.client.java.controller.mongo;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.bson.Document;
+import org.evomaster.client.java.controller.api.dto.mongo.DocumentDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 
 import java.io.IOException;
@@ -32,11 +33,12 @@ public class FindOperation {
     public static FindOperation fromDto(FindOperationDto dto) {
         ObjectMapper mapper = new ObjectMapper();
         try {
+
             return new FindOperation(dto.databaseName,
                     dto.collectionName,
-                    mapper.readValue(dto.queryJsonStr, Document.class));
+                    mapper.readValue(dto.queryDocumentDto.documentAsJsonString, Document.class));
         } catch (IOException e) {
-            throw new RuntimeException("Could not read from " + Document.class.getName() + " from string " + dto.queryJsonStr);
+            throw new RuntimeException("Could not read from " + Document.class.getName() + " from string " + dto.queryDocumentDto);
         }
     }
 
@@ -58,7 +60,9 @@ public class FindOperation {
         dto.databaseName = this.databaseName;
         dto.collectionName = this.collectionName;
         try {
-            dto.queryJsonStr = mapper.writeValueAsString(this.query);
+            DocumentDto documentdto = new DocumentDto();
+            documentdto.documentAsJsonString = mapper.writeValueAsString(this.query);
+            dto.queryDocumentDto = documentdto;
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Could not write query into JSON string: " + this.query);
         }

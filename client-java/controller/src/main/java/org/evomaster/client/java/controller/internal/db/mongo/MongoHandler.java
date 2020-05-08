@@ -1,11 +1,7 @@
 package org.evomaster.client.java.controller.internal.db.mongo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.evomaster.client.java.controller.api.dto.mongo.ExecutedFindOperationDto;
-import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
-import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
-import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto;
+import org.evomaster.client.java.controller.api.dto.mongo.*;
 import org.evomaster.client.java.instrumentation.mongo.LoggedExecutedFindOperation;
 
 import java.io.IOException;
@@ -75,13 +71,9 @@ public class MongoHandler {
         FindOperationDto findOperationDto = new FindOperationDto();
         findOperationDto.databaseName = loggedExecutedFindOperation.getDatabaseName();
         findOperationDto.collectionName = loggedExecutedFindOperation.getCollectionName();
-
-
-        try {
-            findOperationDto.queryJsonStr = jacksonMapper.writeValueAsString(loggedExecutedFindOperation.getQueryDocument());
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Could not write JSON from  " + loggedExecutedFindOperation.getQueryDocument().toString(), e);
-        }
+        DocumentDto documentDto = new DocumentDto();
+        documentDto.documentAsJsonString = loggedExecutedFindOperation.getQueryDocumentAsJsonString();
+        findOperationDto.queryDocumentDto = documentDto;
 
         FindResultDto findResultDto = new FindResultDto();
         findResultDto.findResultType = FindResultDto.FindResultType.SUMMARY;

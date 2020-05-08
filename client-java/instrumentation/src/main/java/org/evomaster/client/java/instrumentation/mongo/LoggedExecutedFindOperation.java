@@ -1,6 +1,5 @@
 package org.evomaster.client.java.instrumentation.mongo;
 
-import org.bson.Document;
 
 public class LoggedExecutedFindOperation {
 
@@ -8,7 +7,7 @@ public class LoggedExecutedFindOperation {
 
     private String collectionName;
 
-    private Document queryDocument;
+    private String queryDocumentAsJsonString;
 
     private boolean hasReturnedAnyDocument;
 
@@ -16,10 +15,10 @@ public class LoggedExecutedFindOperation {
 
     }
 
-    public LoggedExecutedFindOperation(String databaseName, String collectionName, Document queryDocument, boolean hasReturnedAnyDocument) {
+    public LoggedExecutedFindOperation(String databaseName, String collectionName, String queryDocumentAsJsonString, boolean hasReturnedAnyDocument) {
         this.databaseName = databaseName;
         this.collectionName = collectionName;
-        this.queryDocument = queryDocument;
+        this.queryDocumentAsJsonString = queryDocumentAsJsonString;
         this.hasReturnedAnyDocument = hasReturnedAnyDocument;
     }
 
@@ -31,8 +30,8 @@ public class LoggedExecutedFindOperation {
         return collectionName;
     }
 
-    public Document getQueryDocument() {
-        return queryDocument;
+    public String getQueryDocumentAsJsonString() {
+        return queryDocumentAsJsonString;
     }
 
     public boolean hasReturnedAnyDocument() {
