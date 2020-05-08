@@ -10,6 +10,8 @@ import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.search.EvaluatedAction
 import org.evomaster.core.search.EvaluatedIndividual
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * The [SupportedCodeOracle] class generates an expectation and writes it to the code.
@@ -22,6 +24,7 @@ import org.evomaster.core.search.EvaluatedIndividual
 class SupportedCodeOracle : ImplementedOracle() {
     private val variableName = "sco"
     private lateinit var objectGenerator: ObjectGenerator
+    private val log: Logger = LoggerFactory.getLogger(SupportedCodeOracle::class.java)
 
     override fun variableDeclaration(lines: Lines, format: OutputFormat) {
         lines.add("/**")
@@ -45,6 +48,7 @@ class SupportedCodeOracle : ImplementedOracle() {
             if(supportedCodes.contains("0")){
                 lines.add("// WARNING: the code list seems to contain an unsupported code. The issue has been logged.")
                 supportedCodes.remove("0")
+                log.warn("The list of supported codes appears to contain an unsupported code. This could indicate a problem with the schema.")
                 //TODO: if a need arises for more involved checks, refactor this
             }
             val supportedCode = supportedCodes.joinToString(", ")
