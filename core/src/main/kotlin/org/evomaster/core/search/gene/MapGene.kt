@@ -195,4 +195,11 @@ class MapGene<T>(
             elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], doesCurrentBetter, archiveMutator)
         }
     }
+
+    /**
+     * 1 is for 'remove' or 'add' element
+     */
+    override fun mutationWeight(): Int {
+        return 1 + elements.size
+    }
 }

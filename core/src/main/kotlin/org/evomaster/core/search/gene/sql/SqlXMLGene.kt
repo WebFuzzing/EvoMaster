@@ -100,4 +100,9 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
         return objectGene.reachOptimal()
     }
 
+
+    override fun mutationWeight(): Int {
+        return  objectGene.mutationWeight()
+    }
+
 }

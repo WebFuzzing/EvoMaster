@@ -58,4 +58,6 @@ class ImmutableDataHolderGene(name: String, val value: String, val inQuotes: Boo
         }
         return value == other.value
     }
+
+    override fun mutationWeight(): Int = 0
 }

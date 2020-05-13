@@ -62,4 +62,6 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
+
+    override fun mutationWeight(): Int = 0
 }

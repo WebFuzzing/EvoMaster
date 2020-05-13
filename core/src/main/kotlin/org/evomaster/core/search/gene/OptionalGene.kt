@@ -206,4 +206,9 @@ class OptionalGene(name: String,
              */
         }
     }
+
+    /*
+        override fun mutationWeight(): Int
+        weight for optional gene might be 1 as default since it might be active or not.
+     */
 }

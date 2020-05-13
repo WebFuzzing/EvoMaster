@@ -183,4 +183,9 @@ class TimeGene(
                 && isValidMinuteRange(this.minute)
                 && isValidSecondRange(this.second)
 
+
+    /*
+     override fun mutationWeight(): Int
+     weight for time gene might be 1 as default since it is simple to solve
+    */
 }

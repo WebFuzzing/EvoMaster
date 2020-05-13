@@ -169,5 +169,8 @@ class DateGene(
         return year.reachOptimal() && month.reachOptimal() && day.reachOptimal()
     }
 
-    override fun mutationWeight(): Int = 1
+    /*
+     override fun mutationWeight(): Int
+     weight for date gene might be 1 as default since it is simple to solve
+    */
 }

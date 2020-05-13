@@ -223,4 +223,12 @@ class ArrayGene<T>(
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
+
+
+    /**
+     * 1 is for 'remove' or 'add' element
+     */
+    override fun mutationWeight(): Int {
+        return 1 + elements.size
+    }
 }

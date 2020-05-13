@@ -148,4 +148,9 @@ open class DateTimeGene(
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
     }
+
+    /*
+     override fun mutationWeight(): Int
+     weight for date time gene might be 1 as default since it is simple to solve
+    */
 }
