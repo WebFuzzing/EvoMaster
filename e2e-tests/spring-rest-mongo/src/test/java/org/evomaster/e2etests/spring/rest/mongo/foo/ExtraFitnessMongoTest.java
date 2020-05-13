@@ -150,7 +150,7 @@ public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
                 new TypeLiteral<FitnessFunction<RestIndividual>>() {
                 }));
 
-        sutController.enableMongoExtractExecution(true);
+        sutController.enableExtractMongoExecutionInfo(true);
 
         RestCallAction getAction0 = new RestCallAction("GET/api/mongobar",
                 HttpVerb.GET, new RestPath("/api/mongobar"),
