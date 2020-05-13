@@ -1,6 +1,7 @@
 package org.evomaster.core.search.service.mutator
 
 import com.google.inject.Inject
+import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL_WITH_SIZE
@@ -14,6 +15,7 @@ import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import kotlin.math.max
 
 /**
  * make the standard mutator open for extending the mutator,

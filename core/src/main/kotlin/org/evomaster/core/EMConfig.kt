@@ -768,8 +768,7 @@ class EMConfig {
 
     enum class GeneMutationStrategy {
         ONE_OVER_N,
-        ONE_OVER_N_BIASED_SQL,
-        ONE_OVER_N_BIASED_SQL_WITH_SIZE
+        ONE_OVER_N_BIASED_SQL
     }
 
     @Cfg("Strategy used to define the mutation probability")
@@ -1029,6 +1028,14 @@ class EMConfig {
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
     var geneSelectionMethod = GeneMutationSelectionMethod.NONE
+
+    @Experimental
+    @Cfg("Specify whether to save mutated genes during search")
+    var saveMutatedGene = false
+
+    @Experimental
+    @Cfg("Specify file path to save mutated genes")
+    var saveMutatedGeneFile = "mutatedGenes.csv"
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate inside a gene, e.g., ObjectGene")

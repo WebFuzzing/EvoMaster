@@ -17,11 +17,11 @@ enum class GeneMutationSelectionMethod(val archive: Boolean = true, val adaptive
      */
     APPROACH_IMPACT,
     /**
-     * reward function with a consideration of latest
+     * reward function with a consideration of latest impactful gene
      */
     APPROACH_LATEST_IMPACT,
     /**
-     * reward function with a consideration of latest
+     * reward function with a consideration of gene that achieves latest improvement
      */
     APPROACH_LATEST_IMPROVEMENT,
     /**

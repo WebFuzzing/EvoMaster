@@ -20,6 +20,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 import kotlin.math.abs
 import kotlin.math.max
 
@@ -84,13 +85,6 @@ class ArchiveMutator {
         val spaceSize = when (config.geneMutationStrategy) {
             EMConfig.GeneMutationStrategy.ONE_OVER_N -> individual.seeGenes(Individual.GeneFilter.ALL).filter { it.isMutable() }.count()
             EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL -> individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }.count()
-            EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL_WITH_SIZE -> {
-                val size = if (config.abstractInitializationGeneToMutate && evi.getInitializationGeneImpact().isNotEmpty()) {
-                    evi.getInitializationGeneImpact().size
-                } else individual.seeInitializingActions().size
-
-                individual.seeGenes(Individual.GeneFilter.NO_SQL).filter { it.isMutable() }.count() + size
-            }
         }
         return max(2, spaceSize)
     }
@@ -179,7 +173,7 @@ class ArchiveMutator {
         }
 
         val selected = selectWithSorted(group.subList(0, decideSize(group.size, percentage)), mutationSizeN)
-        return selected
+        return selected //listOf(randomness.choose(selected))
     }
 
     /**
@@ -667,6 +661,32 @@ class ArchiveMutator {
         if (content.size > 1) {
             Files.write(path, content)
         }
+    }
+
+    fun saveMutatedGene(mutatedGenes: MutatedGeneSpecification?, individual: Individual,index : Int, improve:Boolean){
+        mutatedGenes?:return
+        if(!config.saveMutatedGene) return
+
+        val path = Paths.get(config.saveMutatedGeneFile)
+        if (path.parent != null) Files.createDirectories(path.parent)
+        if (Files.notExists(path)) Files.createFile(path)
+
+        val content = mutableListOf<String>()
+        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, gene -> listOf(
+                index,
+                improve,
+                gene.name,
+                mutatedGenes.mutatedPosition[gindex],
+                individual.seeActions()[mutatedGenes.mutatedPosition[gindex]].getName()).joinToString(",")})
+
+        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, gene -> listOf(
+                index,
+                improve,
+                gene.name,
+                mutatedGenes.mutatedDbActionPosition[gindex],
+                individual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[gindex]].getName()).joinToString(",")})
+
+        if (content.isNotEmpty()) Files.write(path, content, StandardOpenOption.APPEND)
     }
 }
 

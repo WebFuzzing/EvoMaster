@@ -28,7 +28,6 @@ open class MutatedGeneSpecification (
         val mutatedPosition : MutableList<Int> = mutableListOf(),
         val mutatedDbActionPosition : MutableList<Int> = mutableListOf()
 ){
-
     var geneSelectionStrategy : GeneMutationSelectionMethod = GeneMutationSelectionMethod.NONE
 
     var mutatedIndividual: Individual? = null

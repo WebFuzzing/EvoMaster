@@ -157,6 +157,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     ?: continue
 
             val reachNew = archive.wouldReachNewTarget(mutated)
+            archiveMutator.saveMutatedGene(mutatedGenes, mutatedInd, time.evaluatedIndividuals, reachNew)
 
             /*
                 enable further actions for extracting
