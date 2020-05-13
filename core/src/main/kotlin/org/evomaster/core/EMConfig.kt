@@ -848,10 +848,6 @@ class EMConfig {
     var processInterval = 100
 
     @Experimental
-    @Cfg("Enable EvoMaster to generate, use, and attach complete objects to REST calls, rather than just the needed fields/values")
-    var enableCompleteObjects = false
-
-    @Experimental
     @Cfg("Whether to enable tracking the history of modifications of the individuals during the search")
     var enableTrackIndividual = false
 
