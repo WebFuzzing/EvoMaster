@@ -59,8 +59,8 @@ class IndividualMutationweightTest {
 
         val sql = individual.seeGenes(Individual.GeneFilter.ONLY_SQL)
         assertEquals(3, sql.size)
-        //1 sql key , 3 for date, 2 for info obj
-        assertEquals(1+3+2, sumWeight(sql))
+        //1 sql key , 1 for date, 2 for info obj
+        assertEquals(1+1+2, sumWeight(sql))
 
         val other = individual.seeGenes(Individual.GeneFilter.NO_SQL)
         assertEquals(1+1, other.size)
@@ -69,6 +69,6 @@ class IndividualMutationweightTest {
 
         val all = individual.seeGenes()
         assertEquals(5, all.size)
-        assertEquals(10, sumWeight(all))
+        assertEquals(8, sumWeight(all))
     }
 }
