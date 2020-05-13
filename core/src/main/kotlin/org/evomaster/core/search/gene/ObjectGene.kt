@@ -74,6 +74,11 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         }
 
         val gene = randomness.choose(fields)
+        /*
+            TODO: Man
+            add adaptive mutation rate to select fields
+            Shall we add this in 'standardMutation' or 'archiveMutation'
+         */
         gene.standardMutation(randomness, apc, allGenes)
     }
 
@@ -192,6 +197,6 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         return fields.all { it.reachOptimal() }
     }
 
-    override fun mutationWeight(): Int = fields.size
+    override fun mutationWeight(): Int = fields.sumBy { it.mutationWeight() }
 
 }

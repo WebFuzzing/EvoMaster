@@ -989,9 +989,9 @@ class EMConfig {
     var maxMutationRate = 0.9
 
     @Experimental
-    @Cfg("Specify a starting times of mutation rate")
-    @Min(1.0)
-    var startingTimesMutationRate = 10
+    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @PercentageAsProbability(false)
+    var startingPerOfGenesToMutate = 0.5
 
     @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")

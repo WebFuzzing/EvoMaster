@@ -54,6 +54,10 @@ class ArchiveMutator {
 
     /**************************** gene selection ********************************************/
 
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Int> ,individual: Individual, evi: EvaluatedIndividual<*>, targets : Set<Int>, mutatedGenes: MutatedGeneSpecification?){
+        TODO()
+    }
+
     /**
      * Apply archive-based mutation to select [genes] from [individual] to mutate regarding their impacts saved in [evi],
      * the applied selection method can be recorded in [mutatedGenes] if it is not null
