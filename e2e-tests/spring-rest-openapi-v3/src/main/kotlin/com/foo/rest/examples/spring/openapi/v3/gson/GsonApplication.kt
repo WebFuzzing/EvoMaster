@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import javax.servlet.http.HttpServletRequest
 
 @SpringBootApplication(exclude = [SecurityAutoConfiguration::class])
-@RequestMapping(path = ["/api/gson"])
 open class GsonApplication {
 
     companion object {
@@ -22,17 +21,6 @@ open class GsonApplication {
         }
     }
 
-    @PostMapping(consumes = [MediaType.APPLICATION_JSON_VALUE])
-    open fun post(request: HttpServletRequest) : ResponseEntity<String> {
 
-        val json = IOUtils.toString(request.inputStream)
-
-        val dto = Gson().fromJson(json, FooDto::class.java)
-
-        if (dto.x > 0) return ResponseEntity.ok("Hello World!!!")
-        else throw IllegalArgumentException("Failed Call")
-    }
 }
 
-
-class FooDto(var x : Int)
