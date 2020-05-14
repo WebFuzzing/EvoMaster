@@ -1,17 +1,13 @@
 package org.evomaster.client.java.instrumentation.mongo;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.FindIterable;
-import org.bson.BsonDocument;
 import org.bson.conversions.Bson;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Replacement;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
 
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Iterator;
@@ -65,20 +61,6 @@ public class MongoReplacementClass extends ThirdPartyMethodReplacementClass {
     }
 
     private static void logFind(Object mongoCollection, Bson bson, boolean operationReturnedDocuments) {
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            String value = mapper.writeValueAsString(bson);
-            Bson other = mapper.readValue(value, BsonDocument.class);
-            if (!bson.equals(other)) {
-                throw new RuntimeException();
-            }
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-
         MongoLogger.getInstance().logFind(mongoCollection, bson, operationReturnedDocuments);
     }
 }
