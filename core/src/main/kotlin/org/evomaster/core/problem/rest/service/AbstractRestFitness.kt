@@ -13,6 +13,7 @@ import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
@@ -152,7 +153,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      */
     open fun expandIndividual(
             individual: RestIndividual,
-            additionalInfoList: List<AdditionalInfoDto>
+            additionalInfoList: List<AdditionalInfoDto>,
+            actionResults: List<ActionResult>
     ) {
 
         if (individual.seeActions().size < additionalInfoList.size) {
@@ -173,6 +175,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             if (action !is RestCallAction) {
                 continue
             }
+
+            val result = actionResults[i] as RestCallResult
 
             /*
                 Those are OptionalGenes, which MUST be off by default.
@@ -198,11 +202,44 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
                     }
 
+            if(result.getStatusCode() == 415){
+                /*
+                    In theory, this should not happen.
+                    415 means the media type of the sent payload is wrong.
+                    There is no point for EvoMaster to do that, ie sending an XML to
+                    an endpoint that expects a JSON.
+                    Having such kind of test would be pretty pointless.
+
+                    However, a POST/PUT could expect a payload and, if that is not specified
+                    in OpenAPI, we could get a 415 when sending no data.
+                 */
+                if(action.parameters.none{ it is BodyParam}){
+
+                    val obj = ObjectGene("body", listOf())
+
+                    val body = BodyParam(obj,
+                             // TODO could look at "Accept" header instead of defaulting to JSON
+                            EnumGene("contentType", listOf("application/json")))
+
+                    val update = UpdateForBodyParam(body)
+
+                    action.parameters.add(update)
+                }
+            }
+
+
             val dtoNames = info.parsedDtoNames;
+
+            val noBody = action.parameters.none{ it is BodyParam}
+            val emptyObject = !noBody &&
+                    // this is the case of 415 handling
+                    action.parameters.find { it is BodyParam }!!.let {
+                        it.gene is ObjectGene && it.gene.fields.isEmpty()
+                    }
 
             if(info.rawAccessOfHttpBodyPayload
                     && dtoNames.isNotEmpty()
-                    && action.parameters.none{ it is BodyParam}
+                    && (noBody || emptyObject)
             ){
                 /*
                     The SUT tried to read the HTTP body payload, but there is no info
@@ -220,13 +257,10 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 val name = dtoNames.first()
                 val obj = getObjectGeneForDto(name)
 
-                val body = BodyParam(
-                        OptionalGene("body", obj, false),
-                        EnumGene("contentType", listOf("application/json")))
-
-                action.parameters.add(body)
+                val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
+                val update = UpdateForBodyParam(body)
+                action.parameters.add(update)
             }
-
         }
     }
 
