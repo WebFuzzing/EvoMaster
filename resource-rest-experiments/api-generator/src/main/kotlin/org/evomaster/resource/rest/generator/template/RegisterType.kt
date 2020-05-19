@@ -22,14 +22,22 @@ class RegisterType (constantTypes : ConstantTypeScript, clazz : Set<String>){
     }
 
     private fun registerType(key : String, value: String){
-        if (types.containsKey(key))
-            throw IllegalArgumentException("duplicate type ${key}")
+        //if (types.containsKey(key))
+            //throw IllegalArgumentException("duplicate type ${key}")
         types.putIfAbsent(key, value)
     }
 
     fun getType(type : String) : String{
-        validType(type)
-        return types.getValue(type)
+        //validType(type)
+
+        if (types.containsKey(type))
+            return types.getValue(type)
+
+        val keys = types.filterKeys { it.equals(type, ignoreCase = true) }.values
+        if (keys.toSet().size == 1) return keys.first()
+
+        throw IllegalArgumentException("$type does not exist")
+
     }
 
     fun validType(type: String) {

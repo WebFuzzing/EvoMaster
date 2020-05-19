@@ -1,5 +1,6 @@
 package org.evomaster.resource.rest.generator.implementation.java
 
+import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippet
 import org.evomaster.resource.rest.generator.template.MethodScript
 import org.evomaster.resource.rest.generator.template.RegisterType
 
@@ -14,5 +15,7 @@ abstract class JavaMethod : MethodScript, JavaTemplate {
     override fun generateEnding(types: RegisterType): String = methodEnd()
 
     override fun getInvocation(obj: String?, paramVars: List<String>): String = formatMethodInvocation(obj, getName(), paramVars)
+
+    override fun getIfSnippets(): List<IfSnippet> = listOf()
 
 }

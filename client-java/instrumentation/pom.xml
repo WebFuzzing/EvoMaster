@@ -57,6 +57,17 @@
             <artifactId>automaton</artifactId>
         </dependency>
 
+        <!--
+            "Provided" dependencies.
+            See ThirdPartyMethodReplacementClass for an explanation for why needed
+            -->
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+
     </dependencies>
 
     <build>

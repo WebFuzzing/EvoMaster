@@ -22,6 +22,12 @@ import java.lang.annotation.Target;
  * If the id template is {@code null}, then no new target should be registered.
  * However, we might still want to do taint analysis.
  * This is the case when instrumenting third-party libraries.
+ * <br>
+ * In the case of TRACKER methods, no id template is used, as those will never
+ * be testing targets. Furthermore, the first parameter must always be of
+ * type Object if it is from a third-party library
+ * <br>
+ * For replacement in third-party libraries, use {@link ThirdPartyMethodReplacementClass}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD})
@@ -32,5 +38,23 @@ public @interface Replacement {
      */
     boolean replacingStatic() default false;
 
+    /**
+     * There might be different reasons to replace a methods,
+     * like dealing with methods that return booleans, or might throw
+     * an exception
+     */
     ReplacementType type();
+
+    /**
+     * Give an id to this replacement method. This is used to then easily
+     * access the original replaced method via reflection
+     */
+    String id() default ""; //very annoyingly, Java does not allow null here :(
+
+    /**
+     * Specify where the transformation can be applied.
+     * Sometimes we might want transformations only in the SUT, or sometime only
+     * in the third-party libraries.
+     */
+    UsageFilter usageFilter() default UsageFilter.ANY;
 }
