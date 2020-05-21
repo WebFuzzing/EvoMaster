@@ -44,7 +44,7 @@ Unfortunately, due to its high cost, software testing is often left incomplete, 
 
 
 To address this problem, in *Software Engineering* (SE) research a lot of effort has been spent in trying 
-to design and implement novel techniques aimed at automating several different tasks in SE, where software testing is among the most studied tasks. 
+to design and implement novel techniques aimed at automating several different tasks, where software testing is among the most studied tasks. 
 *Search-Based Software Testing* (SBST) [@harman2012search] casts the problem of software testing as an optimization problem,
 aimed at, for example, maximizing code coverage and fault detection.   
 
