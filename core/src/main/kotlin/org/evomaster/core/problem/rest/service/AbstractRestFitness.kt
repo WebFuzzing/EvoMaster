@@ -30,6 +30,8 @@ import org.glassfish.jersey.client.ClientProperties
 import org.glassfish.jersey.client.HttpUrlConnectorProvider
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import java.net.MalformedURLException
+import java.net.URL
 import javax.annotation.PostConstruct
 import javax.ws.rs.ProcessingException
 import javax.ws.rs.client.Client
@@ -272,6 +274,21 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
             infoDto.baseUrlOfSUT
         } else {
             BlackBoxUtils.restUrl(config)
+        }
+
+        try{
+            /*
+                Note: this in theory should already been checked: either in EMConfig for
+                Black-box testing, on in the driver in White-Box testing
+             */
+            URL(baseUrl)
+        } catch (e: MalformedURLException){
+            val base = "Invalid 'baseUrl'."
+            val wb = "In the EvoMaster driver, in the startSut() method, you must make sure to return a valid URL."
+            val err = " ERROR: $e"
+
+            val msg = if(config.blackBox) "$base $err" else "$base $wb $err"
+            throw SutProblemException(msg)
         }
 
         if (baseUrl.endsWith("/")) {
