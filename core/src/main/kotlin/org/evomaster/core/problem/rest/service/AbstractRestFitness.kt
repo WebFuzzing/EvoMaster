@@ -279,7 +279,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         try{
             /*
                 Note: this in theory should already been checked: either in EMConfig for
-                Black-box testing, on in the driver in White-Box testing
+                Black-box testing, or already in the driver for White-Box testing
              */
             URL(baseUrl)
         } catch (e: MalformedURLException){
