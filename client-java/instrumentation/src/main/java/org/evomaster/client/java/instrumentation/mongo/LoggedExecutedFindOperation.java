@@ -34,7 +34,7 @@ public class LoggedExecutedFindOperation {
         return queryDocumentAsJsonString;
     }
 
-    public boolean hasReturnedAnyDocument() {
+    public boolean getHasReturnedAnyDocument() {
         return hasReturnedAnyDocument;
     }
 

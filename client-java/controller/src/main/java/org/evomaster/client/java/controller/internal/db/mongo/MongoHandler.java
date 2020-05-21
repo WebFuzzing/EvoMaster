@@ -77,7 +77,7 @@ public class MongoHandler {
 
         FindResultDto findResultDto = new FindResultDto();
         findResultDto.findResultType = FindResultDto.FindResultType.SUMMARY;
-        findResultDto.hasReturnedAnyDocument = loggedExecutedFindOperation.hasReturnedAnyDocument();
+        findResultDto.hasReturnedAnyDocument = loggedExecutedFindOperation.getHasReturnedAnyDocument();
 
         ExecutedFindOperationDto dto = new ExecutedFindOperationDto();
         dto.findOperationDto = findOperationDto;

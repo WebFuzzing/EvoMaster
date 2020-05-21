@@ -90,6 +90,7 @@ public class ExtraFitnessMongoTest extends SpringRestMongoTestBase {
         List<String> argsWithCompilation = this.getArgsWithCompilation(maxActionEvaluations, "unusedOutputFolder", unusedTestClassName);
         argsWithCompilation.addAll(Arrays.asList(
                 "--heuristicsForMongo", "true",
+                "--extractMongoExecutionInfo", "true",
                 "--maxTestSize", "1"));
         return argsWithCompilation.toArray(new String[]{});
     }
