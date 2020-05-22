@@ -102,6 +102,9 @@ object TestSuiteSplitter {
      * The [execSummary] function takes in a solution, clusters individuals containing errors by error messsage,
      * then picks from each cluster one individual.
      *
+     * The method uses [MutableSet] to ensure the uniqueness of [EvaluatedIndividual] objects
+     * selected for inclusion in the summary.
+     *
      * The individual selected is the shortest (by action count) or random.
      */
 
@@ -110,6 +113,8 @@ object TestSuiteSplitter {
                             oracles: PartialOracles,
                             splitResult: SplitResult
             ) : Solution<RestIndividual> {
+
+        // MutableSet is used here to ensure the uniqueness of TestCases selected for the executive summary.
         val execSol = mutableSetOf<EvaluatedIndividual<RestIndividual>>()
         clusters.values.forEach { it.forEachIndexed { index, clu ->
             val inds = solution.individuals.filter { ind ->
@@ -117,8 +122,6 @@ object TestSuiteSplitter {
             }.toMutableList()
             inds.sortBy { it.individual.seeActions().size }
             inds.firstOrNull { execSol.add(it) }
-
-            //execSol.add(index, inds.minBy { it.individual.seeActions().size } ?: inds.random())
         } }
 
         val oracleInds = oracles.failByOracle(solution.individuals)

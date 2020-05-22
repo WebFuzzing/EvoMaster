@@ -39,7 +39,8 @@ class SupportedCodeOracle : ImplementedOracle() {
     }
 
     override fun addExpectations(call: RestCallAction, lines: Lines, res: RestCallResult, name: String, format: OutputFormat) {
-        if(!supportedCode(call, res)){
+        //if(!supportedCode(call, res)){
+        if(generatesExpectation(call, res)){
             // The code is not among supported codes, so an expectation will be generated
             //val actualCode = res.getStatusCode() ?: 0
             //lines.add(".that($oracleName, Arrays.asList(${getSupportedCode(call)}).contains($actualCode))")
