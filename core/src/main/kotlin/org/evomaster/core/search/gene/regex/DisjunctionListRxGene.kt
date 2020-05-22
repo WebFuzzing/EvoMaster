@@ -97,5 +97,5 @@ class DisjunctionListRxGene(
     /**
      * FIXME need to check if it is reasonable with the size of [disjunctions]
      */
-    override fun mutationWeight(): Int = disjunctions.size
+    override fun mutationWeight(): Int = disjunctions.sumBy { it.mutationWeight() }
 }

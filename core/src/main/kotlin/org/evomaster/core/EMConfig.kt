@@ -994,6 +994,11 @@ class EMConfig {
     var startingPerOfGenesToMutate = 0.5
 
     @Experimental
+    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @PercentageAsProbability(false)
+    var d = 0.5
+
+    @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
     var probOfArchiveMutation = 0.0

@@ -64,11 +64,14 @@ class IndividualMutationweightTest {
 
         val other = individual.seeGenes(Individual.GeneFilter.NO_SQL)
         assertEquals(1+1, other.size)
-        // 3 for foo type, 1 for content type
-        assertEquals(3+1, sumWeight(other))
+        /*
+            by default, fields of object genes are OptionalGene that might increase the static weight
+         */
+        // 2+2+5 for foo type, 1 for content type
+        assertEquals(10, sumWeight(other))
 
         val all = individual.seeGenes()
         assertEquals(5, all.size)
-        assertEquals(8, sumWeight(all))
+        assertEquals(14, sumWeight(all))
     }
 }

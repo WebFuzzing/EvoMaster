@@ -109,8 +109,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         }
     }
 
-    /*
-     override fun mutationWeight(): Int
-     weight for DisruptiveGene might be 1 as default since it might be mutated with a probablity
-    */
+    override fun mutationWeight(): Int {
+        return 1 + (gene.mutationWeight() * probability).toInt()
+    }
 }

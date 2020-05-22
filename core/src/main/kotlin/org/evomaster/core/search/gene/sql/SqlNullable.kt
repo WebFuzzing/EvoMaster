@@ -166,8 +166,7 @@ class SqlNullable(name: String,
             listOf(this).plus(gene.flatView(excludePredicate))
     }
 
-    /*
-        override fun mutationWeight(): Int
-        weight for nullable gene might be 1 as default (similar with OptionalGene) since it might be active or not.
-     */
+    override fun mutationWeight(): Int {
+        return 1 + gene.mutationWeight()
+    }
 }

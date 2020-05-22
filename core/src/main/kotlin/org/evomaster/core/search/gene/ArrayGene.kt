@@ -229,6 +229,6 @@ class ArrayGene<T>(
      * 1 is for 'remove' or 'add' element
      */
     override fun mutationWeight(): Int {
-        return 1 + elements.size
+        return 1 + elements.sumBy { it.mutationWeight() }
     }
 }
