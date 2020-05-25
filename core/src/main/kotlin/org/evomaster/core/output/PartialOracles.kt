@@ -153,7 +153,7 @@ class PartialOracles {
     }
 
     fun adjustName(): MutableList<ImplementedOracle>{
-        return oracles.filter { it.adjustName() != null }.toMutableList()
+        return oracles.filter { !it.adjustName().isNullOrBlank() }.toMutableList()
     }
 
 }

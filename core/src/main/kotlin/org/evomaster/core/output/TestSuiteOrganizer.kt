@@ -85,7 +85,7 @@ class NamingHelper {
         var name = ""
         partialOracles.adjustName().forEach {
             if(!it.adjustName().isNullOrBlank()
-                    || it.generatesExpectation(individual)){
+                    && it.generatesExpectation(individual)){
                 name = name + it.adjustName()
             }
         }
