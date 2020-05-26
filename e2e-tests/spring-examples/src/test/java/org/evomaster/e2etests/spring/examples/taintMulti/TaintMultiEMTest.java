@@ -5,10 +5,12 @@ import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
+import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Created by arcuri82 on 06-Sep-19.
@@ -33,6 +35,8 @@ public class TaintMultiEMTest extends SpringTestBase {
 
     @Test
     public void testRunEM() throws Throwable {
+
+        CIUtils.skipIfOnCircleCI();
 
         defaultSeed = 13;
 

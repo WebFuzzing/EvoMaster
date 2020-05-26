@@ -39,6 +39,8 @@ jobs: # a collection of steps
       - run:
           command: mvn clean verify --fae
           no_output_timeout: 20m
+          environment:
+            - CI_env: CircleCI
 
       - store_artifacts: # store the uberjar as an artifact
           path: core/target/evomaster.jar
