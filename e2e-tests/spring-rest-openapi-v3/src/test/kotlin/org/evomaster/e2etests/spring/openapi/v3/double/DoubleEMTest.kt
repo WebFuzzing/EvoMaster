@@ -28,10 +28,13 @@ class DoubleEMTest : SpringTestBase() {
 
     @Test
     fun testRunEM() {
+
+        defaultSeed = 43
+
         runTestHandlingFlakyAndCompilation(
                 "DoubleEM",
                 "org.foo.DoubleEM",
-                10_000
+                1_000
         ) { args: List<String> ->
 
             val solution = initAndRun(args)
