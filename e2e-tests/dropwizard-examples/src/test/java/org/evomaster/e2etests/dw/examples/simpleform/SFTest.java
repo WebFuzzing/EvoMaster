@@ -27,7 +27,7 @@ public class SFTest extends RestTestBase {
         handleFlaky(() -> {
             String[] args = new String[]{
                     "--createTests", "false",
-                    "--seed", "42",
+                    "--seed", "" + defaultSeed++,
                     "--sutControllerPort", "" + controllerPort,
                     "--maxActionEvaluations", "500",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS"
