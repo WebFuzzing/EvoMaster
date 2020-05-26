@@ -19,8 +19,10 @@ notifications:
 services:
   - docker
 
-
-script: travis_wait 50 mvn clean verify --fae
+jobs:
+  include:
+    - script: travis_wait 50 mvn clean install --fae -P skipE2E_V2
+    - script: cd e2e-tests/spring-examples && mvn verify
 
 # After build is finished, upload coverage results to CodeCov
 after_success:
