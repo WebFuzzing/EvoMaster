@@ -1,10 +1,8 @@
 language: java
-sudo: false
+dist: xenial
+os: linux
 
-## We should try to support the main LTS (long-term-support) releases
-jdk:
-  - openjdk8
-  - openjdk11
+
 
 # As the build will download JAR files from Maven Central, optimize their storage,
 # so they do not get re-downloaded each time
@@ -19,10 +17,23 @@ notifications:
 services:
   - docker
 
+## We should try to support the main LTS (long-term-support) releases
+jdk:
+  - openjdk8
+#  - openjdk11
+
 jobs:
   include:
-    - script: travis_wait 50 mvn clean install --fae -P skipE2E_V2
-    - script: cd e2e-tests/spring-examples && mvn verify
+    - stage: init
+      script: mvn clean install --fae -P skipE2E_V2
+    - stage: e2e
+      script:
+        - cd e2e-tests/spring-examples
+        - mvn verify
+    - stage: jdk11
+      script:
+        - jdk_switcher use openjdk11
+        - mvn compile -DskipTests
 
 # After build is finished, upload coverage results to CodeCov
 after_success:
