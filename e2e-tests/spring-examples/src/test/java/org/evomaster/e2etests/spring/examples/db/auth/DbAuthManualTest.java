@@ -57,7 +57,7 @@ public class DbAuthManualTest extends DbAuthTestBase{
     }
 
 
-    @Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
+    //@Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
     @Test
     public void testAuthorizedButNoData(){
 
@@ -74,7 +74,7 @@ public class DbAuthManualTest extends DbAuthTestBase{
     }
 
 
-    @Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
+    //@Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
     @Test
     public void testAuthorizedWithData(){
 
