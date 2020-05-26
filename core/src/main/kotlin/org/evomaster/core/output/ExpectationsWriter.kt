@@ -26,7 +26,8 @@ class ExpectationsWriter {
     }
 
     fun addDeclarations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
-        if(!partialOracles.generatesExpectation(individual)) return
+        if(!this::partialOracles.isInitialized ||
+            !partialOracles.generatesExpectation(individual)) return
 
         lines.addEmpty()
         when{
@@ -38,6 +39,9 @@ class ExpectationsWriter {
 
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
-        partialOracles.addExpectations(call, lines, res, name, format)
+        if(this::partialOracles.isInitialized){
+            partialOracles.addExpectations(call, lines, res, name, format)
+        }
+
     }
 }
