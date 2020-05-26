@@ -11,7 +11,7 @@ jobs: # a collection of steps
     working_directory: ~/evomaster-build
 
     docker: # run the steps with Docker
-      - image: circleci/openjdk:8-jdk-browsers
+      - image: circleci/openjdk:11
 
     steps: # a collection of executable commands
 
