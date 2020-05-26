@@ -121,6 +121,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
             if(update != null){
                 a.parameters.removeIf{ it is BodyParam}
+                a.parameters.removeIf{ it is UpdateForBodyParam}
                 a.parameters.add(update.body)
             }
         }

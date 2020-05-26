@@ -33,7 +33,7 @@ class GsonEMTest : SpringTestBase() {
             val solution = initAndRun(args)
 
             assertTrue(solution.individuals.size >= 1)
-            assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/gson", "Hello World")
+            assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/gson", "Hello World!!!")
         }
     }
 }

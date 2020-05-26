@@ -124,7 +124,7 @@ object RestActionBuilderV3 {
         }
 
         if(dtoCache.containsKey(dtoSchema)){
-            return dtoCache[dtoSchema]!!
+            return dtoCache[dtoSchema]!!.copy()
         }
 
         //Note to simplify code, we just create a whole OpenAPI schema
@@ -142,7 +142,7 @@ object RestActionBuilderV3 {
         val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
         val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque())
         dtoCache[dtoSchema] = gene
-        return gene
+        return gene.copy()
     }
 
 
