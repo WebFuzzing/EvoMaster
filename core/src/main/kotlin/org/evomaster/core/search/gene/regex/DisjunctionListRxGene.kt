@@ -5,6 +5,7 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 
 
 class DisjunctionListRxGene(
@@ -46,7 +47,7 @@ class DisjunctionListRxGene(
         }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
         if(disjunctions.size > 1
                 && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(0.1))){
             //activate the next disjunction

@@ -12,9 +12,9 @@ import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  * make the standard mutator open for extending the mutator,
@@ -115,10 +115,12 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
             }
 
-            if (config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()){
+            val enableAdaptiveMutation = config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()
+
+            if (enableAdaptiveMutation){
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 val impact = individual.getImpactOfGenes()[id]
-                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual,targets )
+                gene.standardMutation(randomness,  apc, allGenes, enableAdaptiveMutation, AdditionalGeneMutationInfo(config.geneSelectionMethod, impact, id, archiveMutator, individual,targets ))
             } else {
                 gene.standardMutation(randomness, apc, allGenes)
             }

@@ -6,6 +6,7 @@ import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,8 +32,13 @@ class Base64StringGene(
         data.randomize(randomness, forceNewValue)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        data.standardMutation(randomness, apc, allGenes)
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+        if (!enableAdaptiveGeneMutation){
+            data.standardMutation(randomness, apc, allGenes)
+            return
+        }
+        additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+        data.standardMutation(randomness, apc, allGenes, enableAdaptiveGeneMutation, additionalGeneMutationInfo.copyFoInnerGene(null))
     }
 
     override fun reachOptimal(): Boolean {
@@ -50,14 +56,6 @@ class Base64StringGene(
             }
             data.archiveMutationUpdate(original.data, mutated.data, doesCurrentBetter, archiveMutator)
         }
-    }
-
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-        data.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

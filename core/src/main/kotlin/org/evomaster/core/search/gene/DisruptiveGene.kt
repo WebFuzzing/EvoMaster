@@ -7,6 +7,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.DisruptiveGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -43,19 +44,16 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         gene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        if(randomness.nextBoolean(probability)){
-            gene.standardMutation(randomness, apc, allGenes)
-        }
-    }
-
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness,apc, allGenes)
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+        if (!enableAdaptiveGeneMutation){
+            if(randomness.nextBoolean(probability)){
+                gene.standardMutation(randomness, apc, allGenes)
+            }
             return
         }
 
-        gene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is DisruptiveGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi,targets )
+        additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+        gene.standardMutation(randomness, apc, allGenes, enableAdaptiveGeneMutation, additionalGeneMutationInfo.copyFoInnerGene(if(additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is DisruptiveGeneImpact) null else additionalGeneMutationInfo.impact.geneImpact))
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

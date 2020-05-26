@@ -7,6 +7,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.OptionalGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.slf4j.Logger
@@ -90,9 +91,15 @@ class OptionalGene(name: String,
         }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
 
         if(!selectable){
+            return
+        }
+
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            archiveMutation(randomness,apc, allGenes, additionalGeneMutationInfo)
             return
         }
 
@@ -111,26 +118,20 @@ class OptionalGene(name: String,
                 gene.standardMutation(randomness, apc, allGenes)
             }
         }
+
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+    private fun archiveMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>,
+                                additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
 
-        if(!selectable){
-            return
-        }
 
-        if(!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-
-        val preferActive = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is OptionalGeneImpact) true
+        val preferActive = if (!additionalGeneMutationInfo.archiveMutator.applyArchiveSelection() || additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is OptionalGeneImpact) true
         else {
-            !impact.activeImpact.run {
+            !additionalGeneMutationInfo.impact.activeImpact.run {
                 //we only set 'active' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
                 this.timesToManipulate > 5
                         &&
-                        (this.falseValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+                        (this.falseValue.timesOfImpact.filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
             }
         }
 
@@ -147,7 +148,7 @@ class OptionalGene(name: String,
             }
         }else{
             //if preferPresent is false, it is not necessary to mutate the gene
-            activeMutationInfo.reached = archiveMutator.withinNormal()
+            activeMutationInfo.reached = additionalGeneMutationInfo.archiveMutator.withinNormal()
             if (activeMutationInfo.reached){
                 activeMutationInfo.preferMin = 0
                 activeMutationInfo.preferMax = 0
@@ -164,7 +165,12 @@ class OptionalGene(name: String,
                 return
             }
         }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is OptionalGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
+        gene.standardMutation(
+                randomness, apc, allGenes, true,
+                additionalGeneMutationInfo.copyFoInnerGene(
+                        if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is OptionalGeneImpact)
+                            null
+                        else additionalGeneMutationInfo.impact.geneImpact))
 
     }
 

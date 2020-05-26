@@ -9,6 +9,7 @@ import org.evomaster.core.search.impact.sql.SqlNullableImpact
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.slf4j.Logger
@@ -54,7 +55,7 @@ class SqlNullable(name: String,
         gene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
 
         if(! isPresent){
             isPresent = true
@@ -65,19 +66,16 @@ class SqlNullable(name: String,
         }
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if(!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
+    private fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl,
+                                additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
 
-        val preferPresent = if (!archiveMutator.applyArchiveSelection() || impact == null || impact !is SqlNullableImpact) true
+        val preferPresent = if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is SqlNullableImpact) true
                     else {
             //we only set 'present' false from true when the mutated times is more than 5 and its impact times of a falseValue is more than 1.5 times of a trueValue.
-            !impact.presentImpact.run {
+            !additionalGeneMutationInfo.impact.presentImpact.run {
                 this.timesToManipulate > 5
                         &&
-                        (this.falseValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
+                        (this.falseValue.timesOfImpact.filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) > ((this.trueValue.timesOfImpact.filter { additionalGeneMutationInfo.targets.contains(it.key) }.map { it.value }.max()?:0) * 1.5)
             }
         }
 
@@ -94,7 +92,7 @@ class SqlNullable(name: String,
             }
         }else{
             //if preferPresent is false, it is not necessary to mutate the gene
-            presentMutationInfo.reached = archiveMutator.withinNormal()
+            presentMutationInfo.reached = additionalGeneMutationInfo.archiveMutator.withinNormal()
             if (presentMutationInfo.reached){
                 presentMutationInfo.preferMin = 0
                 presentMutationInfo.preferMax = 0
@@ -111,7 +109,7 @@ class SqlNullable(name: String,
                 return
             }
         }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if (impact == null || impact !is SqlNullableImpact) null else impact.geneImpact, geneReference, archiveMutator, evi, targets)
+        gene.standardMutation(randomness,  apc, allGenes, true, additionalGeneMutationInfo.copyFoInnerGene(if (additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is SqlNullableImpact) null else additionalGeneMutationInfo.impact.geneImpact))
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

@@ -8,6 +8,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 /**
@@ -107,7 +108,7 @@ class SqlForeignKeyGene(
 
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
         randomize(randomness, true, allGenes)
     }
 
@@ -191,7 +192,4 @@ class SqlForeignKeyGene(
     fun hasValidUniqueIdOfPrimaryKey() = uniqueIdOfPrimaryKey >= 0 ||
             (nullable && uniqueIdOfPrimaryKey == -1L)
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        standardMutation(randomness, apc, allGenes)
-    }
 }

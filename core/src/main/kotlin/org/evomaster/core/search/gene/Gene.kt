@@ -7,6 +7,7 @@ import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 
 
 /**
@@ -90,38 +91,16 @@ abstract class Gene(var name: String) {
      *   @param randomness the source of non-determinism
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
+     *   @param enableAdaptiveMutation whether enable adaptive gene mutation, e.g., archive-based gene mutation
+     *   @param additionalGeneMutationInfo contains additional info for gene mutation
      */
     abstract fun standardMutation(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
-            allGenes: List<Gene> = listOf()
+            allGenes: List<Gene> = listOf(),
+            enableAdaptiveGeneMutation: Boolean = false,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
     )
-
-    /**
-     * Apply a archived-based mutation to the current gene.
-     *
-     * NOTE THAT if this method is not overridden, just default to standard mutation
-     *
-     *   @param randomness the source of non-determinism
-     *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
-     *          we need to refer to them
-     *   @param evi the evaluated individual contains an evolution of the gene with fitness values
-     *   @param selection how to select genes to mutate if [this] contains more than one genes(e.g., ObjectGene) or other characteristics(e.g., size of ArrayGene)
-     *   @param impact info of impact of the gene if it has, but in some case impact might be null, e.g., an element at ArrayGene
-     *   @param geneReference a reference (i.e., id generated) to find a gene in this history, which always refers to 'root' gene in the [evi]
-     *   @param archiveMutator mutate genes using archive-based methods if the method is enabled or supports this type of [this] gene.
-     */
-    open fun archiveMutation(randomness: Randomness,
-                             allGenes: List<Gene>,
-                             apc: AdaptiveParameterControl,
-                             selection: GeneMutationSelectionMethod,
-                             impact: GeneImpact?,
-                             geneReference: String,
-                             archiveMutator: ArchiveMutator,
-                             evi: EvaluatedIndividual<*>,
-                             targets: Set<Int>){
-        standardMutation(randomness, apc, allGenes)
-    }
 
     /**
      * Return the value as a printable string.

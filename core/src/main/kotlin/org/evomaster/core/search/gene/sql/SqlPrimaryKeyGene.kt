@@ -9,6 +9,7 @@ import org.evomaster.core.search.impact.sql.SqlPrimaryKeyGeneImpact
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -54,16 +55,8 @@ class SqlPrimaryKeyGene(name: String,
         gene.randomize(randomness, false, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        gene.standardMutation(randomness, apc, allGenes)
-    }
-
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-        gene.archiveMutation(randomness, allGenes, apc, selection, if(impact != null || impact !is SqlPrimaryKeyGeneImpact) null else (impact as SqlPrimaryKeyGeneImpact).geneImpact, geneReference, archiveMutator, evi, targets)
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+        gene.standardMutation(randomness, apc, allGenes, enableAdaptiveGeneMutation, additionalGeneMutationInfo?.copyFoInnerGene(if(additionalGeneMutationInfo.impact != null || additionalGeneMutationInfo.impact !is SqlPrimaryKeyGeneImpact) null else (additionalGeneMutationInfo.impact as SqlPrimaryKeyGeneImpact).geneImpact))
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

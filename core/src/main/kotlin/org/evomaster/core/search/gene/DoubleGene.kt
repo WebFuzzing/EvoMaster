@@ -8,6 +8,7 @@ import org.evomaster.core.search.impact.GeneImpact
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import java.math.BigDecimal
 import java.math.RoundingMode
 
@@ -24,7 +25,7 @@ class DoubleGene(name: String,
         value = randomness.nextDouble()
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
 
         //TODO min/max for Double
         value = when (randomness.choose(listOf(0, 1, 2))) {
@@ -36,11 +37,9 @@ class DoubleGene(name: String,
             2 -> BigDecimal(value).setScale(randomness.nextInt(15), RoundingMode.HALF_EVEN).toDouble()
             else -> throw IllegalStateException("Regression bug")
         }
+        return
 
-    }
-
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        standardMutation(randomness, apc, allGenes)
+        //TODO with archive-based mutation
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

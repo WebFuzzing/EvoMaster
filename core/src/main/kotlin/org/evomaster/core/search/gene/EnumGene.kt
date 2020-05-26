@@ -7,6 +7,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.collection.EnumGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 
@@ -83,23 +84,34 @@ class EnumGene<T : Comparable<T>>(
         index = k
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
 
+       if (!enableAdaptiveGeneMutation){
+           standardMutation()
+           return
+       }
+        additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+
+        archiveMutation(randomness, additionalGeneMutationInfo)
+    }
+
+    private fun standardMutation(){
         val next = (index+1) % values.size
         index = next
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.applyArchiveSelection() || values.size == 2 || impact == null || impact !is EnumGeneImpact){
-            standardMutation(randomness, apc, allGenes)
+    private fun archiveMutation(randomness: Randomness, additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
+
+        if (values.size == 2 || additionalGeneMutationInfo.impact == null || additionalGeneMutationInfo.impact !is EnumGeneImpact){
+            standardMutation()
             return
         }
 
         val candidates = (0 until values.size).filter { index != it }.map {
-            Pair(it, impact.values[it])
+            Pair(it, additionalGeneMutationInfo.impact.values[it])
         }
 
-        val selects = archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), targets)
+        val selects = additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), additionalGeneMutationInfo.targets)
         index = randomness.choose(selects)
 
     }

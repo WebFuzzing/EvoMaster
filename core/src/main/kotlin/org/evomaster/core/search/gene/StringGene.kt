@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 
 
 class StringGene(
@@ -140,7 +141,13 @@ class StringGene(
     }
 
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            archiveMutation(additionalGeneMutationInfo)
+            return
+        }
 
         val specializationGene = getSpecializationGene()
 
@@ -452,61 +459,18 @@ class StringGene(
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
     }
-    override fun archiveMutation(
-            randomness: Randomness,
-            allGenes: List<Gene>,
-            apc: AdaptiveParameterControl,
-            selection: GeneMutationSelectionMethod,
-            geneImpact: GeneImpact?,
-            geneReference: String,
-            archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>,
-            targets: Set<Int>
+
+    private fun archiveMutation(
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo
     ) {
-        val specializationGene = getSpecializationGene()
 
-        if (specializationGene == null && specializationGenes.isNotEmpty()) {
-            selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
-            selectionUpdatedSinceLastMutation = false
-            return
-
-        } else if (specializationGene != null) {
-            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
-                /*
-                    selection of most recent added gene, but only with a given
-                    probability, albeit high.
-                    point is, switching is not always going to be beneficial
-                 */
-                selectedSpecialization = specializationGenes.lastIndex
-            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
-                //choose another specialization, but with low probability
-                selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
-            } else{
-                //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, allGenes)
-            }
-            selectionUpdatedSinceLastMutation = false
-            return
+        dependencyInfo.mutatedtimes +=1
+        additionalGeneMutationInfo.archiveMutator.mutate(this)
+        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+            log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
         }
-
-        if (!TaintInputName.isTaintInput(value)
-                && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
-
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            return
-        }
-
-        if (archiveMutator.enableArchiveGeneMutation()){
-            dependencyInfo.mutatedtimes +=1
-            archiveMutator.mutate(this)
-            if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
-                log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
-            }
-            if (charsMutation.size != value.length){
-                log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
-            }
-        }else{
-            standardMutation(randomness, apc, allGenes)
+        if (charsMutation.size != value.length){
+            log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
         }
     }
 

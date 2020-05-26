@@ -7,6 +7,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.collection.MapGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -91,7 +92,13 @@ class MapGene<T>(
         return maxSize > 0
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            archiveMutation(randomness, apc, allGenes, additionalGeneMutationInfo)
+            return
+        }
 
         if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
             val gene = template.copy() as T
@@ -126,15 +133,15 @@ class MapGene<T>(
         else listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
+    private fun archiveMutation(randomness: Randomness,  apc: AdaptiveParameterControl, allGenes: List<Gene>, additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
         var add = elements.isEmpty()
         var delete = (elements.size == maxSize)
 
         val fmodifySize = if (add || delete) false
-        else if (archiveMutator.applyArchiveSelection()
-                && impact != null
-                && impact is MapGeneImpact
-                && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+        else if (additionalGeneMutationInfo.archiveMutator.applyArchiveSelection()
+                && additionalGeneMutationInfo.impact != null
+                && additionalGeneMutationInfo.impact is MapGeneImpact
+                && additionalGeneMutationInfo.impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
         ){
             randomness.nextBoolean(0.3)
         }else {
@@ -164,7 +171,8 @@ class MapGene<T>(
             }
             else -> {
                 val gene = randomness.choose(elements)
-                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
+                //gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
+                gene.standardMutation(randomness, apc, allGenes, true, additionalGeneMutationInfo.copyFoInnerGene(null))
             }
         }
     }

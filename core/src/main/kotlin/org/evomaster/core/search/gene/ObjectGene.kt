@@ -9,6 +9,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.ObjectGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URLEncoder
@@ -67,9 +68,15 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                 .forEach { it.randomize(randomness, forceNewValue, allGenes) }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
 
         if (fields.isEmpty()) {
+            return
+        }
+
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            archiveMutation(randomness,apc, allGenes, additionalGeneMutationInfo)
             return
         }
 
@@ -146,36 +153,27 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     /**
      * @param geneImpact null is only allowed when the gene is root.
      */
-    override fun archiveMutation(
+    private fun archiveMutation(
             randomness: Randomness,
-            allGenes: List<Gene>,
             apc: AdaptiveParameterControl,
-            selection: GeneMutationSelectionMethod,
-            impact: GeneImpact?,
-            geneReference: String,
-            archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>,
-            targets: Set<Int>) {
+            allGenes: List<Gene>,
+            additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
 
-        if (!archiveMutator.enableArchiveMutation()) {
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-
-        val canFields = fields.filter { !it.reachOptimal() || !archiveMutator.withinNormal() }.run {
+        val canFields = fields.filter { !it.reachOptimal() || !additionalGeneMutationInfo.archiveMutator.withinNormal() }.run {
             if (isEmpty())
                 fields
             else this
         }
         var genes: List<Pair<Gene, Impact>>? = null
-        val selects = if (impact != null && impact is ObjectGeneImpact && archiveMutator.applyArchiveSelection()) {
-            genes = canFields.map { Pair(it, impact.fields.getValue(it.name)) }
-            archiveMutator.selectGenesByArchive(genes, 1.0 / canFields.size, targets)
+        val selects = if (additionalGeneMutationInfo.impact != null
+                && additionalGeneMutationInfo.impact is ObjectGeneImpact && additionalGeneMutationInfo.archiveMutator.applyArchiveSelection()) {
+            genes = canFields.map { Pair(it, additionalGeneMutationInfo.impact.fields.getValue(it.name)) }
+            additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(genes, 1.0 / canFields.size, additionalGeneMutationInfo.targets)
         } else canFields
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else canFields)
         val selectedImpact = genes?.first { it.first == selected }?.second as? GeneImpact
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
+        selected.standardMutation(randomness,  apc, allGenes, true, additionalGeneMutationInfo.copyFoInnerGene(selectedImpact))
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

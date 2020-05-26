@@ -10,6 +10,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.sql.SqlUUIDGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -41,9 +42,15 @@ class SqlUUIDGene(
         leastSigBits.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        val gene = randomness.choose(listOf(mostSigBits, leastSigBits))
-        gene.standardMutation(randomness, apc, allGenes)
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+        if (!enableAdaptiveGeneMutation){
+            val gene = randomness.choose(listOf(mostSigBits, leastSigBits))
+            gene.standardMutation(randomness, apc, allGenes)
+        }else{
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            archiveMutation(randomness, allGenes, apc, additionalGeneMutationInfo)
+        }
+
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -79,26 +86,23 @@ class SqlUUIDGene(
                     .plus(leastSigBits.flatView(excludePredicate))
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
+    private fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl,
+                                additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
 
         var genes : List<Pair<Gene, GeneImpact>>? = null
 
-        val selects =  if (archiveMutator.applyArchiveSelection() && impact != null && impact is SqlUUIDGeneImpact){
+        val selects =  if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlUUIDGeneImpact){
             genes = listOf(
-                    Pair(leastSigBits, impact.leastSigBitsImpact),
-                    Pair(leastSigBits , impact.mostSigBitsImpact)
+                    Pair(leastSigBits, additionalGeneMutationInfo.impact.leastSigBitsImpact),
+                    Pair(leastSigBits , additionalGeneMutationInfo.impact.mostSigBitsImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
+            additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(genes, 1.0/2, additionalGeneMutationInfo.targets)
         }else
             listOf(leastSigBits, leastSigBits)
 
         val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(leastSigBits, leastSigBits))
         val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
+        selected.standardMutation(randomness,  apc,allGenes,true , additionalGeneMutationInfo.copyFoInnerGene(selectedImpact))
 
     }
 

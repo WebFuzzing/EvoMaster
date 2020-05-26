@@ -7,6 +7,7 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -61,29 +62,32 @@ open class DateTimeGene(
         time.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        val gene = randomness.choose(listOf(date, time))
-        gene.standardMutation(randomness, apc, allGenes)
-    }
-
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
+    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+        if (!enableAdaptiveGeneMutation){
+            val gene = randomness.choose(listOf(date, time))
+            gene.standardMutation(randomness, apc, allGenes)
             return
         }
+        additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+        archiveMutation(randomness, apc, allGenes, additionalGeneMutationInfo)
+
+    }
+
+    private fun archiveMutation(randomness: Randomness,  apc: AdaptiveParameterControl, allGenes: List<Gene>, additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
 
         var genes : List<Pair<Gene, GeneImpact>>? = null
-        val selects = if(impact != null && impact is DateTimeGeneImpact && archiveMutator.applyArchiveSelection()){
+        val selects = if(additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateTimeGeneImpact && additionalGeneMutationInfo.archiveMutator.applyArchiveSelection()){
             genes = listOf(
-                    Pair(date, impact.dateGeneImpact),
-                    Pair(time , impact.timeGeneImpact)
+                    Pair(date, additionalGeneMutationInfo.impact.dateGeneImpact),
+                    Pair(time , additionalGeneMutationInfo.impact.timeGeneImpact)
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
+            additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(genes, 1.0/2, additionalGeneMutationInfo.targets)
         }else listOf(date, time)
 
         val selected = randomness.choose(selects)
         val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
+        selected.standardMutation(randomness, apc, allGenes, true,
+                additionalGeneMutationInfo.copyFoInnerGene(selectedImpact))
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
