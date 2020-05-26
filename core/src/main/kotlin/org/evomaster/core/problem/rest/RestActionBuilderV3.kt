@@ -1,5 +1,6 @@
 package org.evomaster.core.problem.rest
 
+import io.swagger.parser.OpenAPIParser
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.media.ArraySchema
@@ -32,6 +33,12 @@ object RestActionBuilderV3 {
     private val idGenerator = AtomicInteger()
 
     private val refCache = mutableMapOf<String, Gene>()
+
+    /**
+     * Key -> schema in the form "name: {...}"
+     * Value -> object gene for it
+     */
+    private val dtoCache = mutableMapOf<String, Gene>()
 
 
     /**
@@ -104,6 +111,40 @@ object RestActionBuilderV3 {
 
         checkSkipped(skipped, endpointsToSkip, actionCluster)
     }
+
+
+    /**
+     * Create an [ObjectGene] based on schema info of a DTO, given in the format
+     * "name: {...}"
+     */
+    fun createObjectGeneForDTO(name: String, dtoSchema: String) : Gene{
+
+        if(! dtoSchema.startsWith("\"$name\"")){
+            throw IllegalArgumentException("Invalid name $name for schema $dtoSchema")
+        }
+
+        if(dtoCache.containsKey(dtoSchema)){
+            return dtoCache[dtoSchema]!!.copy()
+        }
+
+        //Note to simplify code, we just create a whole OpenAPI schema
+        val schema = """
+            {
+                "openapi": "3.0.0",
+                "components": {
+                    "schemas": {
+                        $dtoSchema
+                    }
+                }
+            }          
+        """.trimIndent()
+
+        val swagger = OpenAPIParser().readContents(schema,null,null).openAPI
+        val gene = createObjectGene(name, swagger.components.schemas[name]!!,swagger, ArrayDeque())
+        dtoCache[dtoSchema] = gene
+        return gene.copy()
+    }
+
 
     private fun handleOperation(
             actionCluster: MutableMap<String, Action>,

@@ -4,6 +4,8 @@ import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.FormParam
 import org.evomaster.core.search.Action
+import org.evomaster.core.search.gene.IntegerGene
+import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.gene.StringGene
 import org.junit.jupiter.api.Assertions.*
@@ -11,6 +13,46 @@ import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class RestActionBuilderV3Test{
+
+    @Test
+    fun testParseDto(){
+
+        val name = "com.FooBar"
+        val foo = "foo"
+        val bar = "bar"
+
+        val dtoSchema = """
+            "$name": {
+                 "type": "object",
+                 "properties": {
+                        "$foo": { 
+                            "type": "string"
+                        },
+                        "$bar": {
+                            "type": "integer"
+                        }
+                 },
+                 "required": [
+                    "$foo"
+                 ]
+            }     
+        """.trimIndent()
+
+        val gene = RestActionBuilderV3.createObjectGeneForDTO(name, dtoSchema) as ObjectGene
+        assertEquals(name, gene.name)
+        assertEquals(2, gene.fields.size)
+
+        val str = gene.fields.find { it is StringGene } as StringGene
+        assertEquals(foo, str.name)
+
+        val nr = gene.fields.find { it is OptionalGene } as OptionalGene
+        assertEquals(bar, nr.name)
+    }
+
+
+
+
+    //---------------------------------
 
     private fun loadAndAssertActions(resourcePath: String, expectedNumberOfActions: Int)
             : MutableMap<String, Action> {
