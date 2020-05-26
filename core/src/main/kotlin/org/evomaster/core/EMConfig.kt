@@ -980,8 +980,12 @@ class EMConfig {
     var SMdR: Double = 0.25
 
     @Experimental
-    @Cfg("Whether to enable an adaptive mutation rate")
-    var adaptiveMutationRate = false
+    @Cfg("Whether to enable a weight-based mutation rate")
+    var weightBasedMutationRate = false
+
+    @Experimental
+    @Cfg("Whether to specialize sql gene selection to mutation")
+    var specializeSQLGeneSelection = false
 
     @Experimental
     @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")

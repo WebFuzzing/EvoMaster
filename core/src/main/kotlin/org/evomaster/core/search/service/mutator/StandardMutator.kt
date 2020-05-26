@@ -52,36 +52,43 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        /*
-            filterN decides which genes contribute to involve its weight,
-            eg, sql genes will not used when NO_SQL is specified
-
-            From:
-            once we have something like “mr = d * (1/N) + (1-d) * (x(W))”, what to do with SQL genes?
-            Maybe we do not need to treat them specially if Hyper Mutation (HM) and Adaptive Control (AC) will work fine.
-            Ie, we can just use ONE_OVER_N and ignore ONE_OVER_N_BIASED_SQL
-         */
         val filterN = when (config.geneMutationStrategy) {
             ONE_OVER_N -> ALL
             ONE_OVER_N_BIASED_SQL -> NO_SQL
         }
+        val mutated = mutableListOf<Gene>()
 
-        val enableAPC = config.adaptiveMutationRate && archiveMutator.enableArchiveSelection()
+        if(!config.weightBasedMutationRate){
+            val p = 1.0/ max(1, individual.seeGenes(filterN).filter { genesToMutate.contains(it) }.size)
+            while (mutated.isEmpty()){
+                genesToMutate.forEach { g->
+                    if (randomness.nextBoolean(p))
+                        mutated.add(g)
+                }
+            }
+            return mutated
+        }else{
+            val enableAPC = config.weightBasedMutationRate && archiveMutator.enableArchiveSelection()
+            return if (config.specializeSQLGeneSelection){
+                val rest = !apc.doesFocusSearch() || randomness.nextBoolean()
+                val sql = !apc.doesFocusSearch() || !rest
 
-        val subGenes = if (enableAPC) genesToMutate else individual.seeGenes(filterN)
+                val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
+                val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
 
-        val t = if(config.adaptiveMutationRate)
-                    apc.getExploratoryValue(max(1, (config.startingPerOfGenesToMutate * genesToMutate.size).toInt()), 1)
-                else 1
-        return archiveMutator.selectGene(
-                genesToMutate,
-                subGenes,
-                targets,
-                t,
-                enableAPC,
-                individual,
-                evi
-        )
+                /**
+                 * when focus search starts, only one is enabled.
+                 */
+                if (rest)
+                    mutated.addAll(archiveMutator.selectSubGene(noSQLGenes, targets, enableAPC, individual, evi))
+                if (sql)
+                    mutated.addAll(archiveMutator.selectSubGene(sqlGenes, targets, enableAPC, individual, evi))
+
+                mutated
+            }else{
+                archiveMutator.selectSubGene(genesToMutate, targets, enableAPC, individual, evi)
+            }
+        }
     }
 
     private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
