@@ -24,7 +24,7 @@ public class TaintMultiEMTest extends SpringTestBase {
     @Test
     public void testDeterminism(){
 
-        runAndCheckDeterminism(500, (args) -> {
+        runAndCheckDeterminism(5_000, (args) -> {
             initAndRun(args);
         });
     }
