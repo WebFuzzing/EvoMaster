@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class CIUtils {
 
     public static boolean isRunningOnCircleCI(){
-        String ci = System.getProperty("CI_env");
+        String ci = System.getenv("CI_env");
         return ci != null && ci.trim().toLowerCase().equals("circleci");
     }
 
