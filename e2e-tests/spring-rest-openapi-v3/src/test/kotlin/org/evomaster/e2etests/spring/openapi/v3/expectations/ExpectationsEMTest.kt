@@ -1,9 +1,7 @@
 package org.evomaster.e2etests.spring.openapi.v3.examples.expectations
 
-import com.foo.rest.examples.spring.openapi.v3.double.DoubleController
 import com.foo.rest.examples.spring.openapi.v3.expectations.ExpectationsController
 import io.restassured.RestAssured.given
-import org.evomaster.core.EMConfig
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.e2etests.spring.openapi.v3.SpringTestBase
 import org.junit.jupiter.api.Assertions.assertTrue
