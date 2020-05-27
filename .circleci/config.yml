@@ -11,7 +11,7 @@ jobs: # a collection of steps
     working_directory: ~/evomaster-build
 
     docker: # run the steps with Docker
-      - image: circleci/openjdk:8-jdk-browsers
+      - image: circleci/openjdk:11
 
     steps: # a collection of executable commands
 
@@ -39,6 +39,8 @@ jobs: # a collection of steps
       - run:
           command: mvn clean verify --fae
           no_output_timeout: 20m
+          environment:
+            - CI_env: CircleCI
 
       - store_artifacts: # store the uberjar as an artifact
           path: core/target/evomaster.jar

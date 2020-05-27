@@ -42,7 +42,7 @@ public class JavaTypesEMTest extends JavaTypesTestBase {
         handleFlaky(() -> {
             String[] args = new String[]{
                     "--createTests", "true",
-                    "--seed", "42",
+                    "--seed",  "" + defaultSeed++,
                     "--sutControllerPort", "" + controllerPort,
                     "--maxActionEvaluations", "3000",
                     "--stoppingCriterion", "FITNESS_EVALUATIONS",

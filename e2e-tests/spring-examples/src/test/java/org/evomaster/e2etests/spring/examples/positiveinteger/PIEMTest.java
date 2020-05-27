@@ -46,6 +46,7 @@ public class PIEMTest extends PITestBase {
             List<String> args = getArgsWithCompilation(iterations, outputFolderName, className);
             args.add("--algorithm");
             args.add(alg.toString());
+            defaultSeed++;
 
             Solution<RestIndividual> solution = initAndRun(args);
 
