@@ -26,7 +26,7 @@ class Archive<T> where T : Individual {
     private lateinit var config: EMConfig
 
     @Inject
-    private lateinit var apc: AdaptiveParameterControl
+    private lateinit var dpc: AdaptiveParameterControl
 
     @Inject
     private lateinit var idMapper: IdMapper
@@ -381,7 +381,7 @@ class Archive<T> where T : Individual {
                 reportImprovement(k)
             }
 
-            val limit = apc.getArchiveTargetLimit()
+            val limit = dpc.getArchiveTargetLimit()
 
             /*
              individual can be added only if the target k is not covered.
@@ -431,7 +431,7 @@ class Archive<T> where T : Individual {
                 .thenComparator { a, b -> a.fitness.compareExtraToMinimize(target, b.fitness, config.secondaryObjectiveStrategy) }
                 .thenBy { -it.individual.size() })
 
-        val limit = apc.getArchiveTargetLimit()
+        val limit = dpc.getArchiveTargetLimit()
         while (list.size > limit) {
             //remove worst, ie the one with lowest heuristic value
             list.removeAt(0)

@@ -53,48 +53,10 @@ class ArchiveMutator {
 
     /**************************** gene selection ********************************************/
 
-    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Int> ,individual: Individual, evi: EvaluatedIndividual<*>, targets : Set<Int>){
-        TODO()
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Int> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
+        TODO()// when merge with archive-based branch
     }
 
-    fun selectSubGene(
-            candidateGenesToMutate: List<Gene>,
-            targets: Set<Int>,
-            enableAPCGeneSelection : Boolean,
-            individual : Individual,
-            evi: EvaluatedIndividual<*>) : List<Gene>{
-
-
-        val numToMutate = apc.getExploratoryValue(max(1, (config.startingPerOfGenesToMutate * candidateGenesToMutate.size).toInt()), 1)
-        val mutated = mutableListOf<Gene>()
-
-        //by default, weight of all mutable genes is 1
-        val weights = candidateGenesToMutate.map { Pair(it, 1) }.toMap().toMutableMap()
-
-        /*
-            mutation rate can be manipulated by different weight methods
-            eg, only depends on static weight, or impact derived based on archive (archive-based solution)
-         */
-        if(enableAPCGeneSelection)
-            calculateWeightByArchive(candidateGenesToMutate, weights, individual, evi, targets)
-        else{
-            candidateGenesToMutate.forEach {
-                weights[it] = it.mutationWeight()
-            }
-        }
-        val sw = weights.values.sum()
-
-        while (mutated.isEmpty()){
-            candidateGenesToMutate.forEach { g->
-                val mr = calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))
-                if (randomness.nextBoolean(mr))
-                    mutated.add(g)
-            }
-        }
-        return mutated
-    }
-
-    private fun calculatedAdaptiveMutationRate(n : Int, d : Double, t: Int, sw: Int, w : Int) = t * (d/n + (1.0-d) * w/sw)
 
     /**
      * Apply archive-based mutation to select [genes] from [individual] to mutate regarding their impacts saved in [evi],
@@ -222,9 +184,9 @@ class ArchiveMutator {
      * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
      */
     private fun decideArchiveGeneSelectionMethod(genes : List<Impact>) : GeneMutationSelectionMethod {
-        return when (config.geneSelectionMethod) {
+        return when (config.adaptiveGeneSelectionMethod) {
             GeneMutationSelectionMethod.ALL_FIXED_RAND -> randomGeneSelectionMethod()
-            else -> config.geneSelectionMethod
+            else -> config.adaptiveGeneSelectionMethod
         }
     }
 
@@ -596,7 +558,7 @@ class ArchiveMutator {
     fun applyArchiveSelection() = enableArchiveSelection()
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
-    fun enableArchiveSelection() = config.geneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
+    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
 

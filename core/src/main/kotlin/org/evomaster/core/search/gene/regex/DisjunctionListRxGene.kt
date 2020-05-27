@@ -5,7 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 class DisjunctionListRxGene(
@@ -47,15 +49,25 @@ class DisjunctionListRxGene(
         }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
+    // TODO Man need to check
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
         if(disjunctions.size > 1
                 && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(0.1))){
             //activate the next disjunction
-            activeDisjunction = (activeDisjunction + 1) % disjunctions.size
+            return emptyList()
         } else {
-            disjunctions[activeDisjunction].standardMutation(randomness, apc, allGenes)
+            return listOf(disjunctions[activeDisjunction])
         }
+    }
 
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+        TODO("NOT IMPLEMENTED")
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+        //activate the next disjunction
+        activeDisjunction = (activeDisjunction + 1) % disjunctions.size
+        return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

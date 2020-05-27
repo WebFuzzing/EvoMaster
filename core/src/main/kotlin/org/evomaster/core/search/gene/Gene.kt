@@ -1,13 +1,12 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 /**
@@ -85,22 +84,99 @@ abstract class Gene(var name: String) {
             allGenes: List<Gene> = listOf())
 
     /**
-     * Apply a mutation to the current gene.
      * A mutation is just a small change.
+     * Apply a mutation to the current gene.
+     * Regarding the gene,
+     * 1) there might exist multiple internal genes i.e.,[candidatesInternalGenes].
+     *  In this case, we first apply [selectSubset] to select a subset of internal genes.
+     *  then apply mutation on each of the selected genes.
+     * 2) When there is no need to do further selection, we apply [mutate] on the current gene.
      *
      *   @param randomness the source of non-determinism
+     *   @param apc parameter control
+     *   @param mwc mutation weight control
      *   @param allGenes if the gene depends on the other (eg a Foreign Key in SQL databases),
      *          we need to refer to them
-     *   @param enableAdaptiveMutation whether enable adaptive gene mutation, e.g., archive-based gene mutation
+     *   @param interalGeneSelectionStrategy a strategy to select internal genes to mutate
+     *   @param enableAdaptiveMutation whether apply adaptive gene mutation, e.g., archive-based gene mutation
      *   @param additionalGeneMutationInfo contains additional info for gene mutation
      */
-    abstract fun standardMutation(
+    fun standardMutation(
             randomness: Randomness,
             apc: AdaptiveParameterControl,
+            mwc: MutationWeightControl,
             allGenes: List<Gene> = listOf(),
+            internalGeneSelectionStrategy: SubsetGeneSelectionStrategy = SubsetGeneSelectionStrategy.DEFAULT,
             enableAdaptiveGeneMutation: Boolean = false,
-            additionalGeneMutationInfo: AdditionalGeneMutationInfo? = null
-    )
+            additionalGeneMutationInfo: AdditionalGeneSelectionInfo? = null
+    ){
+        val internalGenes = candidatesInternalGenes(randomness, apc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+        if (internalGenes.isEmpty()){
+            val mutated = mutate(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            if (!mutated) throw IllegalStateException("leaf mutation is not implemented")
+        }else{
+            val selected = selectSubset(internalGenes, randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, additionalGeneMutationInfo)
+            if (selected.isEmpty())
+                throw IllegalStateException("none is selected to mutate")
+
+            selected.forEach{
+                do {
+                    it.key.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.value)
+                }while (!mutationCheck())
+            }
+
+
+        }
+    }
+
+    /**
+     * mutated gene should pass the check if needed
+     */
+    open fun mutationCheck() : Boolean = true
+
+    /**
+     * @return whether to apply a subset selection for internal genes to mutate
+     */
+    open fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?)
+            = listOf<Gene>()
+
+    /**
+     * @return a subset of internal genes to apply mutations
+     */
+    open fun selectSubset(internalGenes: List<Gene>,
+                          randomness: Randomness,
+                          apc: AdaptiveParameterControl,
+                          mwc: MutationWeightControl,
+                          allGenes: List<Gene> = listOf(),
+                          selectionStrategy: SubsetGeneSelectionStrategy,
+                          enableAdaptiveGeneMutation: Boolean,
+                          additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Map<Gene, AdditionalGeneSelectionInfo?>{
+        return when(selectionStrategy){
+            SubsetGeneSelectionStrategy.DEFAULT -> mapOf(randomness.choose(internalGenes) to null)
+            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }.toMap()
+            SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
+                additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
+                adaptiveSelectSubset(internalGenes, mwc, additionalGeneMutationInfo)
+            }
+        }
+    }
+
+    open fun adaptiveSelectSubset(internalGenes: List<Gene>,
+                                  mwc: MutationWeightControl,
+                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo) = mapOf<Gene, AdditionalGeneSelectionInfo?>()
+
+    /**
+     * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty
+     *
+     * TODO Man if Specialization of String is handled properly, params might be simplified
+     */
+    open fun mutate(randomness: Randomness,
+                    apc: AdaptiveParameterControl,
+                    mwc: MutationWeightControl,
+                    allGenes: List<Gene> = listOf(),
+                    selectionStrategy: SubsetGeneSelectionStrategy,
+                    enableAdaptiveGeneMutation: Boolean,
+                    additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) = false
 
     /**
      * Return the value as a printable string.

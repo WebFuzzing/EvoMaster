@@ -1,6 +1,5 @@
 package org.evomaster.core.search.service.mutator
 
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -12,8 +11,8 @@ import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import kotlin.math.max
 
 /**
@@ -22,9 +21,6 @@ import kotlin.math.max
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
-
-    @Inject
-    private lateinit var archiveMutator: ArchiveMutator
 
     override fun doesStructureMutation(individual : T): Boolean {
         /**
@@ -80,13 +76,13 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                  * when focus search starts, only one is enabled.
                  */
                 if (rest)
-                    mutated.addAll(archiveMutator.selectSubGene(noSQLGenes, targets, enableAPC, individual, evi))
+                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi))
                 if (sql)
-                    mutated.addAll(archiveMutator.selectSubGene(sqlGenes, targets, enableAPC, individual, evi))
+                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi))
 
                 mutated
             }else{
-                archiveMutator.selectSubGene(genesToMutate, targets, enableAPC, individual, evi)
+                mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi)
             }
         }
     }
@@ -122,17 +118,22 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
             }
 
+            val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
+                        else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
+                        else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+
             val enableAdaptiveMutation = config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()
 
-            if (enableAdaptiveMutation){
+            if (enableAdaptiveMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
+                //root gene reference
                 val id = ImpactUtils.generateGeneId(copy, gene)
+                //root gene impact
                 val impact = individual.getImpactOfGenes()[id]
-                gene.standardMutation(randomness,  apc, allGenes, enableAdaptiveMutation, AdditionalGeneMutationInfo(config.geneSelectionMethod, impact, id, archiveMutator, individual,targets ))
+                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveMutation, AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets ))
             } else {
-                gene.standardMutation(randomness, apc, allGenes)
+                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy)
             }
         }
-
         return copy
     }
 

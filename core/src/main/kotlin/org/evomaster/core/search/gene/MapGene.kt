@@ -1,14 +1,13 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.collection.MapGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -92,27 +91,46 @@ class MapGene<T>(
         return maxSize > 0
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
-
-        if (enableAdaptiveGeneMutation){
-            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-            archiveMutation(randomness, apc, allGenes, additionalGeneMutationInfo)
-            return
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        if(!isMutable()){
+            throw IllegalStateException("Cannot mutate a immutable array")
         }
+        if ( elements.isEmpty() || elements.size > maxSize){
+            return listOf()
+        }
+        val p = when(selectionStrategy){
+            SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
+                if(additionalGeneMutationInfo?.impact != null
+                        && additionalGeneMutationInfo.impact is MapGeneImpact
+                        && additionalGeneMutationInfo.impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+                ){
+                    0.3 // increase probability to mutate size
+                }else MODIFY_SIZE
+            }
+            else ->{
+                MODIFY_SIZE
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
+            }
+        }
+        return if (randomness.nextBoolean(p)) listOf() else elements
+    }
+
+    /**
+     * leaf mutation for arrayGene is size mutation, i.e., 'remove' or 'add'
+     */
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
+
+        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
             gene.parent = this
             gene.randomize(randomness, false)
             gene.name = "key_${keyCounter++}"
             elements.add(gene)
-        } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
+        } else {
             log.trace("Removing gene in mutation")
             elements.removeAt(randomness.nextInt(elements.size))
-        } else {
-            val gene = randomness.choose(elements)
-            gene.standardMutation(randomness, apc, allGenes)
         }
+        return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -131,50 +149,6 @@ class MapGene<T>(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
-    }
-
-    private fun archiveMutation(randomness: Randomness,  apc: AdaptiveParameterControl, allGenes: List<Gene>, additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
-        var add = elements.isEmpty()
-        var delete = (elements.size == maxSize)
-
-        val fmodifySize = if (add || delete) false
-        else if (additionalGeneMutationInfo.archiveMutator.applyArchiveSelection()
-                && additionalGeneMutationInfo.impact != null
-                && additionalGeneMutationInfo.impact is MapGeneImpact
-                && additionalGeneMutationInfo.impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
-        ){
-            randomness.nextBoolean(0.3)
-        }else {
-            randomness.nextBoolean(MODIFY_SIZE)
-        }
-        if (fmodifySize){
-            val p = randomness.nextBoolean()
-            add = add || p
-            delete = delete || !p
-        }
-
-        if (add && (add == delete))
-            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
-
-        when{
-            add ->{
-                val gene = template.copy() as T
-                gene.randomize(randomness, false)
-                gene.name = "key_${keyCounter++}"
-                elements.add(gene)
-                return
-            }
-            delete ->{
-                log.trace("Deleting gene")
-                elements.removeAt(randomness.nextInt(elements.size))
-                return
-            }
-            else -> {
-                val gene = randomness.choose(elements)
-                //gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
-                gene.standardMutation(randomness, apc, allGenes, true, additionalGeneMutationInfo.copyFoInnerGene(null))
-            }
-        }
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

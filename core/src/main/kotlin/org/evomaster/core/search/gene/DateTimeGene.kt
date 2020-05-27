@@ -1,14 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -62,32 +62,19 @@ open class DateTimeGene(
         time.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
-        if (!enableAdaptiveGeneMutation){
-            val gene = randomness.choose(listOf(date, time))
-            gene.standardMutation(randomness, apc, allGenes)
-            return
-        }
-        additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-        archiveMutation(randomness, apc, allGenes, additionalGeneMutationInfo)
-
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        return listOf(date, time)
     }
 
-    private fun archiveMutation(randomness: Randomness,  apc: AdaptiveParameterControl, allGenes: List<Gene>, additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
-
-        var genes : List<Pair<Gene, GeneImpact>>? = null
-        val selects = if(additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateTimeGeneImpact && additionalGeneMutationInfo.archiveMutator.applyArchiveSelection()){
-            genes = listOf(
-                    Pair(date, additionalGeneMutationInfo.impact.dateGeneImpact),
-                    Pair(time , additionalGeneMutationInfo.impact.timeGeneImpact)
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateTimeGeneImpact){
+            val maps = mapOf(
+                    date to additionalGeneMutationInfo.impact.dateGeneImpact,
+                    time to additionalGeneMutationInfo.impact.timeGeneImpact
             )
-            additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(genes, 1.0/2, additionalGeneMutationInfo.targets)
-        }else listOf(date, time)
-
-        val selected = randomness.choose(selects)
-        val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.standardMutation(randomness, apc, allGenes, true,
-                additionalGeneMutationInfo.copyFoInnerGene(selectedImpact))
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }.toMap()
+        }
+        throw IllegalArgumentException("impact is null or not DateTimeGeneImpact")
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

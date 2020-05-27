@@ -16,15 +16,15 @@ import org.evomaster.core.search.impact.GeneMutationSelectionMethod
  *   @property targets are related to the mutation
  */
 
-data class AdditionalGeneMutationInfo (
+data class AdditionalGeneSelectionInfo (
         val selection: GeneMutationSelectionMethod,
-        val impact: GeneImpact?,
+        val impact: GeneImpact?, //null is only allowed when the gene is root.
         val geneReference: String,
         val archiveMutator: ArchiveMutator,
         val evi: EvaluatedIndividual<*>,
         val targets: Set<Int>
 ){
-    fun copyFoInnerGene(impact: GeneImpact?): AdditionalGeneMutationInfo{
-        return AdditionalGeneMutationInfo(selection, impact, geneReference, archiveMutator, evi, targets)
+    fun copyFoInnerGene(impact: GeneImpact?): AdditionalGeneSelectionInfo{
+        return AdditionalGeneSelectionInfo(selection, impact, geneReference, archiveMutator, evi, targets)
     }
 }

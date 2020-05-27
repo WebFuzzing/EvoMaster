@@ -1,14 +1,14 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneMutationInfo
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -65,28 +65,20 @@ class TimeGene(
         second.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneMutationInfo?) {
-
-        val gene = randomness.choose(listOf(hour, minute, second))
-        gene.standardMutation(randomness, apc, allGenes)
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        return listOf(hour, minute, second)
     }
 
-    private fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, additionalGeneMutationInfo: AdditionalGeneMutationInfo) {
-
-        var genes : List<Pair<Gene, GeneImpact>>? = null
-
-        val selects = if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is TimeGeneImpact && additionalGeneMutationInfo.archiveMutator.applyArchiveSelection()){
-            genes = listOf(
-                    Pair(hour, additionalGeneMutationInfo.impact.hourGeneImpact),
-                    Pair(minute , additionalGeneMutationInfo.impact.minuteGeneImpact),
-                    Pair(second, additionalGeneMutationInfo.impact.secondGeneImpact)
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is TimeGeneImpact){
+            val maps = mapOf<Gene,  GeneImpact>(
+                    hour to additionalGeneMutationInfo.impact.hourGeneImpact,
+                    minute to additionalGeneMutationInfo.impact.minuteGeneImpact,
+                    second to additionalGeneMutationInfo.impact.secondGeneImpact
             )
-            additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(genes, 1.0/3, additionalGeneMutationInfo.targets)
-        }else listOf(hour, minute, second)
-
-        val selected = randomness.choose(if (selects.isNotEmpty()) selects else listOf(hour, minute, second))
-        val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.standardMutation(randomness, apc, allGenes, additionalGeneMutationInfo = additionalGeneMutationInfo.copyFoInnerGene(selectedImpact))
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }.toMap()
+        }
+        throw IllegalArgumentException("impact is null or not TimeGeneImpact")
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {

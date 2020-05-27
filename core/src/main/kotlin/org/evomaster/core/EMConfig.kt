@@ -270,7 +270,7 @@ class EMConfig {
         }
 
         //archive-based mutation
-        if (geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
+        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
             throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
@@ -1023,7 +1023,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var geneSelectionMethod = GeneMutationSelectionMethod.NONE
+    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")
