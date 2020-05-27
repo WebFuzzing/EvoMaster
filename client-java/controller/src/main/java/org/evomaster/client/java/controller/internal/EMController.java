@@ -307,6 +307,8 @@ public class EMController {
                     info.queryParameters = new HashSet<>(a.getQueryParametersView());
                     info.headers = new HashSet<>(a.getHeadersView());
                     info.lastExecutedStatement = a.getLastExecutedStatement();
+                    info.rawAccessOfHttpBodyPayload = a.isRawAccessOfHttpBodyPayload();
+                    info.parsedDtoNames = new HashSet<>(a.getParsedDtoNamesView());
 
                     info.stringSpecializations = new HashMap<>();
                     for (Map.Entry<String, Set<StringSpecializationInfo>> entry :

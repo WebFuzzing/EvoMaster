@@ -24,15 +24,14 @@ import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
 import org.evomaster.core.problem.rest.param.HeaderParam
 import org.evomaster.core.problem.rest.param.QueryParam
+import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.OptionalGene
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.SearchTimeController
@@ -255,7 +254,8 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
      */
     open fun expandIndividual(
             individual: RestIndividual,
-            additionalInfoList: List<AdditionalInfoDto>
+            additionalInfoList: List<AdditionalInfoDto>,
+            actionResults: List<ActionResult>
     ) {
 
         if (individual.seeActions().size < additionalInfoList.size) {
@@ -277,10 +277,14 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 continue
             }
 
+            val result = actionResults[i] as RestCallResult
+
             /*
                 Those are OptionalGenes, which MUST be off by default.
                 We are changing the genotype, but MUST not change the phenotype.
                 Otherwise, the fitness value we just computed would be wrong.
+
+                TODO: should update default action templates in Sampler
              */
 
             info.headers
@@ -298,9 +302,90 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     .forEach { name ->
                         action.parameters.add(QueryParam(name, OptionalGene(name, StringGene(name), false)))
                     }
+
+            if(result.getStatusCode() == 415){
+                /*
+                    In theory, this should not happen.
+                    415 means the media type of the sent payload is wrong.
+                    There is no point for EvoMaster to do that, ie sending an XML to
+                    an endpoint that expects a JSON.
+                    Having such kind of test would be pretty pointless.
+
+                    However, a POST/PUT could expect a payload and, if that is not specified
+                    in OpenAPI, we could get a 415 when sending no data.
+                 */
+                if(action.parameters.none{ it is BodyParam}){
+
+                    val obj = ObjectGene("body", listOf())
+
+                    val body = BodyParam(obj,
+                             // TODO could look at "Accept" header instead of defaulting to JSON
+                            EnumGene("contentType", listOf("application/json")))
+
+                    val update = UpdateForBodyParam(body)
+
+                    action.parameters.add(update)
+                }
+            }
+
+
+            val dtoNames = info.parsedDtoNames;
+
+            val noBody = action.parameters.none{ it is BodyParam}
+            val emptyObject = !noBody &&
+                    // this is the case of 415 handling
+                    action.parameters.find { it is BodyParam }!!.let {
+                        it.gene is ObjectGene && it.gene.fields.isEmpty()
+                    }
+
+            if(info.rawAccessOfHttpBodyPayload
+                    && dtoNames.isNotEmpty()
+                    && (noBody || emptyObject)
+            ){
+                /*
+                    The SUT tried to read the HTTP body payload, but there is no info
+                    about it in the schema. This can happen when payloads are dynamically
+                    loaded directly in the business logic of the SUT, and automated tools
+                    like SpringDoc/SpringFox failed to infer what is read
+
+                    TODO could handle other types besides JSON
+                    TODO what to do if more than 1 DTO are registered?
+                         Likely need a new MultiOptionGene similar to DisjunctionListRxGene
+                 */
+                if(dtoNames.size > 1){
+                    LoggingUtil.uniqueWarn(log, "More than 1 DTO option: [${dtoNames.sorted().joinToString(", ")}]")
+                }
+                val name = dtoNames.first()
+                val obj = getObjectGeneForDto(name)
+
+                val body = BodyParam(obj, EnumGene("contentType", listOf("application/json")))
+                val update = UpdateForBodyParam(body)
+                action.parameters.add(update)
+            }
         }
     }
 
+    private fun getObjectGeneForDto(name: String) : Gene{
+
+        if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+            /*
+                parsedDto info is update throughout the search.
+                so, if info is missing, we re-fetch the whole data.
+                Would be more efficient to just fetch new data, but,
+                as this will happens seldom (at most N times for N dtos),
+                no much point in optimizing it
+             */
+            infoDto = rc.getSutInfo()!!
+
+            if(!infoDto.unitsInfoDto.parsedDtos.containsKey(name)){
+                throw RuntimeException("BUG: info for DTO $name is not available in the SUT driver")
+            }
+        }
+
+        val schema : String = infoDto.unitsInfoDto.parsedDtos.get(name)!!
+
+        return RestActionBuilderV3.createObjectGeneForDTO(name, schema)
+    }
 
     /**
      * Initializing Actions before evaluating its fitness if need
@@ -497,8 +582,6 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                 log.warn("Failed to parse HTTP response: ${e.message}")
             }
         }
-
-
 
         if (response.status == 401 && a.auth !is NoAuth) {
             //this would likely be a misconfiguration in the SUT controller

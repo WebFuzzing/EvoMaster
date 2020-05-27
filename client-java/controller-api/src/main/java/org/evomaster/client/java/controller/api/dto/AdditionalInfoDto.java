@@ -1,6 +1,7 @@
 package org.evomaster.client.java.controller.api.dto;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 public class AdditionalInfoDto {
 
@@ -40,4 +41,18 @@ public class AdditionalInfoDto {
      * The statement is represented with a descriptive unique id, like the class name and line number.
      */
     public String lastExecutedStatement = null;
+
+
+    /**
+     * Check if the business logic of the SUT (and not a third-party library) is
+     * accessing the raw bytes of HTTP body payload (if any) directly
+     */
+    public Boolean rawAccessOfHttpBodyPayload = null;
+
+
+    /**
+     * The name of all DTO that have been parsed (eg, with GSON and Jackson).
+     * Note: the actual content of schema is queried separately.
+     */
+    public Set<String> parsedDtoNames = new HashSet<>();
 }

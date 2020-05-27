@@ -110,6 +110,14 @@ public class ExecutionTracer {
         return additionalInfoList;
     }
 
+    public static void markRawAccessOfHttpBodyPayload(){
+        additionalInfoList.get(actionIndex).setRawAccessOfHttpBodyPayload(true);
+    }
+
+    public static void addParsedDtoName(String name){
+        additionalInfoList.get(actionIndex).addParsedDtoName(name);
+    }
+
     public static void addQueryParameter(String param){
         additionalInfoList.get(actionIndex).addQueryParameter(param);
     }
