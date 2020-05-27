@@ -1,5 +1,5 @@
 language: java
-dist: trusty
+dist: xenial
 os: linux
 
 
@@ -30,10 +30,16 @@ jobs:
       script:
         - cd e2e-tests/spring-examples
         - mvn verify
-    - stage: jdk11
-      script:
-        - jdk_switcher use openjdk11
-        - mvn compile -DskipTests
+#    - stage: jdk11
+#      script:
+#        - jdk_switcher use openjdk11
+#        - mvn compile -DskipTests
+
+### WARNING
+### Unfortunately, it looks like current support for switching JDKs in Travis is completely broken.
+### So, at least for the time being, here we build for JDK 8, and do JDK 11 on CircleCI
+
+
 
 # After build is finished, upload coverage results to CodeCov
 after_success:
