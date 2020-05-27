@@ -6,7 +6,7 @@ public class CIUtils {
 
     public static boolean isRunningOnCircleCI(){
         String ci = System.getProperty("CI_env");
-        return ci.trim().toLowerCase().equals("circleci");
+        return ci != null && ci.trim().toLowerCase().equals("circleci");
     }
 
     /**
