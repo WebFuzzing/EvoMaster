@@ -24,9 +24,20 @@ public class DbBaseEMTest extends DbBaseTestBase {
                     args.add("--generateSqlDataWithSearch");
                     args.add("false");
 
-                    //FIXME: need to study and fix the side effects of Taint here
-                    args.add("--baseTaintAnalysisProbability");
-                    args.add("0.0");
+                    /*
+                        FIXME: need to study and fix the side effects of Taint here.
+                        Looks like the issue might rather be in heuristicsForSQL, and TT
+                        for some reason just exacerbates the problem.
+                        The search seems to converge to a 1 single HTTP call on
+                        /entitiesByName/{name}.
+                        But any test with a POST on /entities should have had strictly better
+                        extra heuristics.
+
+                        After changes to TT, this seems to work now (so no need to disable TT).
+                        TODO But still need to look into SQL Heuristics issue
+                     */
+//                    args.add("--baseTaintAnalysisProbability");
+//                    args.add("0.0");
 
                     Solution<RestIndividual> solution = initAndRun(args);
 

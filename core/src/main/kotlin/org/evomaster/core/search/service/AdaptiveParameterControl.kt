@@ -29,8 +29,8 @@ class AdaptiveParameterControl {
         return getExploratoryValue(config.startNumberOfMutations, config.endNumberOfMutations )
     }
 
-    fun getBaseTaintAnalysisProbability() : Double {
-        return getExploratoryValue(config.baseTaintAnalysisProbability, 0.0)
+    fun getBaseTaintAnalysisProbability(end: Double = 0.0) : Double {
+        return getExploratoryValue(config.baseTaintAnalysisProbability, end)
     }
 
     /**
