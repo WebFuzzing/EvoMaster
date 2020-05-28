@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
+//@Disabled("Strangely, this does timeout on CircleCI, but works just fine in all other contexts")
 public class DbAuthEMTest extends DbAuthTestBase {
 
     @Test
