@@ -31,6 +31,8 @@ open class ExpectationsApplication {
     open fun timeout(@PathVariable("out") out: Boolean) : ResponseEntity<String> {
         if (out) return ResponseEntity.ok("And about!")
         else {
+            //TODO: The idea was to use this for assessing variable generation with timed out calls. Doesn't seem to work properly.
+            // Thread.sleep(6000)
             return ResponseEntity.status(408).build()
         }
     }
