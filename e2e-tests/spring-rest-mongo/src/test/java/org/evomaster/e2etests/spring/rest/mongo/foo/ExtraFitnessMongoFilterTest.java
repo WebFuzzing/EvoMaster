@@ -5,11 +5,12 @@ import com.foo.mongo.person.PersonDto;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
-import com.mongodb.client.FindIterable;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
-import org.bson.Document;
+import org.evomaster.client.java.controller.api.dto.mongo.DocumentDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 import org.evomaster.client.java.controller.internal.db.StandardOutputTracker;
+import org.evomaster.client.java.controller.mongo.DetailedFindResult;
 import org.evomaster.client.java.instrumentation.shared.ClassName;
 import org.evomaster.core.Main;
 import org.evomaster.core.problem.rest.*;
@@ -122,7 +123,6 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
     }
 
 
-
     @NotNull
     private String[] buildEvoMasterArguments(int maxActionEvaluations) {
         ClassName unusedTestClassName = new ClassName("org.UnusedTestClassName");
@@ -184,8 +184,11 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto findOperationDto = buildFindOperationDto("testdb", "person", "{}");
+        sutController.executeMongoFindOperation(findOperationDto);
+
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(findOperationDto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -196,6 +199,17 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
 //        FindIterable<Document> findIterable1 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
 //        assertFalse(findIterable1.iterator().hasNext());
 
+    }
+
+    @NotNull
+    private static FindOperationDto buildFindOperationDto(String databaseName, String collectionName, String queryAsJsonString) {
+        FindOperationDto findOperationDto = new FindOperationDto();
+        findOperationDto.databaseName = databaseName;
+        findOperationDto.collectionName = collectionName;
+        DocumentDto documentDto = new DocumentDto();
+        documentDto.documentAsJsonString = queryAsJsonString;
+        findOperationDto.queryDocumentDto = documentDto;
+        return findOperationDto;
     }
 
 
@@ -263,8 +277,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -292,7 +307,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 new LinkedList<>(),
                 new LinkedList<>(),
                 new IntMutationUpdate(Integer.MIN_VALUE, Integer.MAX_VALUE, 0, false),
-                new GeneIndependenceInfo( ArchiveMutator.WITHIN_NORMAL,0,0));
+                new GeneIndependenceInfo(ArchiveMutator.WITHIN_NORMAL, 0, 0));
 
         PathParam lastNameParam = new PathParam("lastName",
                 new DisruptiveGene<>(
@@ -327,8 +342,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -388,8 +404,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -449,8 +466,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -478,7 +496,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 new LinkedList<>(),
                 new LinkedList<>(),
                 new IntMutationUpdate(Integer.MIN_VALUE, Integer.MAX_VALUE, 0, false),
-                new GeneIndependenceInfo( ArchiveMutator.WITHIN_NORMAL,0,0));
+                new GeneIndependenceInfo(ArchiveMutator.WITHIN_NORMAL, 0, 0));
 
         PathParam nameParam = new PathParam("name",
                 new DisruptiveGene<>(
@@ -513,8 +531,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -560,8 +579,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -607,8 +627,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();
@@ -636,7 +657,7 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 new LinkedList<>(),
                 new LinkedList<>(),
                 new IntMutationUpdate(Integer.MIN_VALUE, Integer.MAX_VALUE, 0, false),
-                new GeneIndependenceInfo( ArchiveMutator.WITHIN_NORMAL,0,0));
+                new GeneIndependenceInfo(ArchiveMutator.WITHIN_NORMAL, 0, 0));
 
         PathParam nameParam = new PathParam("name",
                 new DisruptiveGene<>(
@@ -671,8 +692,9 @@ public class ExtraFitnessMongoFilterTest extends SpringRestMongoTestBase {
                 null,
                 null);
 
-        FindIterable<Document> findIterable0 = sutController.getMongoClient().getDatabase("testdb").getCollection("person").find();
-        assertFalse(findIterable0.iterator().hasNext());
+        FindOperationDto dto = buildFindOperationDto("testdb", "person", "{}");
+        DetailedFindResult findIterable0 = sutController.executeMongoFindOperation(dto);
+        assertFalse(findIterable0.hasOperationFoundAnyDocuments());
 
         EvaluatedIndividual ei = ff.calculateCoverage(individual);
         FitnessValue fv = ei.getFitness();

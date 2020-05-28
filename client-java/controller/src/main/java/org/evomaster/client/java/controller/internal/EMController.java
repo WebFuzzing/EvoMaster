@@ -1,20 +1,15 @@
 package org.evomaster.client.java.controller.internal;
 
-import com.mongodb.client.FindIterable;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import org.bson.Document;
 import org.evomaster.client.java.controller.api.ControllerConstants;
 import org.evomaster.client.java.controller.api.Formats;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 import org.evomaster.client.java.controller.api.dto.mongo.FindResultDto;
-import org.evomaster.client.java.controller.api.dto.database.operations.DatabaseCommandDto;
 import org.evomaster.client.java.controller.api.dto.problem.RestProblemDto;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.mongo.DetailedFindResult;
-import org.evomaster.client.java.controller.mongo.FindOperation;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.evomaster.client.java.instrumentation.AdditionalInfo;
@@ -31,7 +26,6 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * Note: usually a RESTful webservice would be stateless.
@@ -373,16 +367,7 @@ public class EMController {
         assert trackRequestSource(httpServletRequest);
 
         try {
-
-            FindOperation findOperation = FindOperation.fromDto(dto);
-            MongoDatabase database = this.sutController.getMongoClient().getDatabase(findOperation.getDatabaseName());
-            MongoCollection collection = database.getCollection(findOperation.getCollectionName());
-            //FindIterable<Document> findIterable = collection.find(findOperation.getQuery());
-            FindIterable<Document> findIterable = collection.find();
-
-            DetailedFindResult findResult = new DetailedFindResult();
-            StreamSupport.stream(findIterable.spliterator(), false).forEach(findResult::addDocument);
-
+            DetailedFindResult findResult = this.sutController.executeMongoFindOperation(dto);
             WrappedResponseDto<FindResultDto> wrappedResponse = WrappedResponseDto.withData(findResult.toDto());
             return Response.status(200).entity(wrappedResponse).build();
 

@@ -1,6 +1,5 @@
 package org.evomaster.client.java.controller.internal;
 
-import com.mongodb.MongoClient;
 import org.eclipse.jetty.server.AbstractNetworkConnector;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ErrorHandler;
@@ -9,11 +8,13 @@ import org.eclipse.jetty.servlet.ServletHolder;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.SutHandler;
 import org.evomaster.client.java.controller.api.dto.*;
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
 import org.evomaster.client.java.controller.api.dto.mongo.MongoExecutionDto;
 import org.evomaster.client.java.controller.db.SqlScriptRunner;
 import org.evomaster.client.java.controller.internal.db.mongo.MongoHandler;
 import org.evomaster.client.java.controller.internal.db.SchemaExtractor;
 import org.evomaster.client.java.controller.internal.db.SqlHandler;
+import org.evomaster.client.java.controller.mongo.DetailedFindResult;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.instrumentation.staticstate.UnitsInfoRecorder;
 import org.evomaster.client.java.utils.SimpleLogger;
@@ -379,15 +380,6 @@ public abstract class SutController implements SutHandler {
      */
     public abstract Connection getConnection();
 
-    /**
-     * If the system under test (SUT) uses a Mongo database, we need to have a
-     * configured client to access it.
-     *
-     * @return {@code null} if the SUT does not use any Mongo database
-     */
-    public MongoClient getMongoClient() {
-        return null;
-    }
 
     /**
      * If the system under test (SUT) uses a SQL database, we need to specify
@@ -443,5 +435,15 @@ public abstract class SutController implements SutHandler {
         Objects.requireNonNull(mongoOperation);
 
         mongoHandler.handle(mongoOperation);
+    }
+
+    /**
+     * If the system under test (SUT) uses a Mongo database, we need to have a
+     * configured client to access it.
+     *
+     * @return {@code null} if the SUT does not use any Mongo database
+     */
+    public DetailedFindResult executeMongoFindOperation(FindOperationDto dto) {
+        return null;
     }
 }

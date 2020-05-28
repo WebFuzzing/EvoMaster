@@ -12,4 +12,6 @@ public class MyMongoAppEmbeddedController extends SpringRestMongoController {
     public String getPackagePrefixesToCover() {
         return "com.foo.mongo";
     }
+
+
 }

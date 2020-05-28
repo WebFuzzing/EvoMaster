@@ -73,8 +73,5 @@ public class MongoFakeSutController extends EmbeddedSutController {
         return this.mongoHandler;
     }
 
-    @Override
-    public MongoClient getMongoClient() {
-        return this.mongoClient;
-    }
+
 }

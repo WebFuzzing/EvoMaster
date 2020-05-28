@@ -3,9 +3,16 @@ package com.foo.spring.rest.mongo;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.ServerAddress;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import org.bson.Document;
 import org.evomaster.client.java.controller.EmbeddedSutController;
 import org.evomaster.client.java.controller.api.dto.AuthenticationDto;
 import org.evomaster.client.java.controller.api.dto.SutInfoDto;
+import org.evomaster.client.java.controller.api.dto.mongo.FindOperationDto;
+import org.evomaster.client.java.controller.mongo.DetailedFindResult;
+import org.evomaster.client.java.controller.mongo.FindOperation;
 import org.evomaster.client.java.controller.problem.ProblemInfo;
 import org.evomaster.client.java.controller.problem.RestProblem;
 import org.springframework.boot.SpringApplication;
@@ -15,6 +22,7 @@ import org.testcontainers.containers.GenericContainer;
 import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 
 public abstract class SpringRestMongoController extends EmbeddedSutController {
 
@@ -79,7 +87,7 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
 
         ctx = SpringApplication.run(applicationClass,
                 "--server.port=0",
- //               "--spring.mongodb.embedded.version=3.2",
+                //               "--spring.mongodb.embedded.version=3.2",
                 "--spring.data.mongodb.host=" + host,
                 "--spring.data.mongodb.port=" + port,
                 "--spring.data.mongodb.database=testdb",
@@ -109,7 +117,13 @@ public abstract class SpringRestMongoController extends EmbeddedSutController {
     }
 
     @Override
-    public MongoClient getMongoClient() {
-        return this.mongoClient;
+    public DetailedFindResult executeMongoFindOperation(FindOperationDto dto) {
+        FindOperation findOperation = FindOperation.fromDto(dto);
+        MongoDatabase database = this.mongoClient.getDatabase(findOperation.getDatabaseName());
+        MongoCollection collection = database.getCollection(findOperation.getCollectionName());
+        FindIterable<Document> findIterable = collection.find(findOperation.getQuery());
+        DetailedFindResult findResult = new DetailedFindResult();
+        StreamSupport.stream(findIterable.spliterator(), false).forEach(findResult::addDocument);
+        return findResult;
     }
 }
