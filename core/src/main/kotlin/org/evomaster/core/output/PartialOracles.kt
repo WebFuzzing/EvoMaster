@@ -105,6 +105,12 @@ class PartialOracles {
         }
     }
 
+    fun generatesExpectation(call: RestCallAction, res: RestCallResult): Boolean{
+        return oracles.any { oracle ->
+            oracle.generatesExpectation( call, res)
+        }
+    }
+
     /**
      * [failByOracle] is an auxiliary method that generates a mutable map. The key for each entry in this
      * mutable map is the name of an [ImplementedOracle], and the value is a list of [EvaluatedIndividual]

@@ -291,7 +291,10 @@ class TestCaseWriter {
      */
     private fun needsResponseVariable(call: RestCallAction, res: RestCallResult) : Boolean{
 
-        return (configuration.expectationsActive && !res.failedCall()) || (call.saveLocation && !res.stopping)
+        return (configuration.expectationsActive
+                && !res.failedCall()
+                && partialOracles.generatesExpectation(call, res))
+                || (call.saveLocation && !res.stopping)
     }
 
     private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, resVarName: String) {
