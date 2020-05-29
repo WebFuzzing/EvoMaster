@@ -65,6 +65,8 @@ public abstract class RestTestBase {
         //in case it was modified in a previous test in the same class
         defaultSeed = STARTING_SEED;
 
+        StaticCounter.Companion.reset();
+
         assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
             boolean reset = remoteController.resetSUT();
             assertTrue(reset);
