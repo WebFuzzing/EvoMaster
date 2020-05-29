@@ -303,3 +303,27 @@ Current usage:
 ### MAKING A NEW RELEASE
 Only the project manager should make a new release, as it requires a password.
 Instructions can be found [here](./release.md).
+
+
+### JDK VERSIONS
+At this point, we only support JDK __8__ and JDK __11__.
+_EvoMaster_ must be built with JDK 8, but still must be able to run it with JDK 11.
+Can be useful to setup your machine to easily switch between the 2 versions.
+For example, if you are using a Mac, in your `~/.profile` configuration, you could have something 
+like:
+```
+export JAVA_HOME_8=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home/ 
+export JAVA_HOME_11=/Library/Java/JavaVirtualMachines/adoptopenjdk-11.jdk/Contents/Home/ 
+
+export JAVA_HOME=$JAVA_HOME_11 
+export PATH=$JAVA_HOME/bin:$PATH
+
+alias java8='$JAVA_HOME_8/bin/java'
+alias java11='$JAVA_HOME_11/bin/java'
+alias mvn8='JAVA_HOME=$JAVA_HOME_8 && mvn'
+alias mvn11='JAVA_HOME=$JAVA_HOME_11 && mvn'
+```
+
+
+
+ 
