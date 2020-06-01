@@ -53,7 +53,7 @@ class ArchiveMutator {
 
     /**************************** gene selection ********************************************/
 
-    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Int> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
         TODO()// when merge with archive-based branch
     }
 

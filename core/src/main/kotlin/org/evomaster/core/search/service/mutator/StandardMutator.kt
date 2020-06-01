@@ -65,25 +65,17 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
             return mutated
         }else{
             val enableAPC = config.weightBasedMutationRate && archiveMutator.enableArchiveSelection()
-            return if (config.specializeSQLGeneSelection){
-                val rest = !apc.doesFocusSearch() || randomness.nextBoolean()
-                val sql = !apc.doesFocusSearch() || !rest
-
-                val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
-                val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
-
-                /**
-                 * when focus search starts, only one is enabled.
-                 */
-                if (rest)
+            while (mutated.isEmpty()){
+                if (config.specializeSQLGeneSelection){
+                    val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
+                    val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
                     mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi))
-                if (sql)
                     mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi))
-
-                mutated
-            }else{
-                mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi)
+                }else{
+                    mutated.addAll(mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi))
+                }
             }
+            return mutated
         }
     }
 

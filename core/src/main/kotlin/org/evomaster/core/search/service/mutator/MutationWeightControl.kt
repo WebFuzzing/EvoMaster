@@ -34,17 +34,23 @@ class MutationWeightControl {
      */
     fun selectSubGene(
             candidateGenesToMutate: List<Gene>,
+            grouped : List<List<Gene>>? = null,
             adaptiveWeight: Boolean,
             targets: Set<Int>? = null,
             impacts: List<Impact>?= null,
             individual: Individual?= null,
             evi: EvaluatedIndividual<*>?= null) : List<Gene>{
 
-        val numToMutate = apc.getExploratoryValue(max(1, (config.startingPerOfGenesToMutate * candidateGenesToMutate.size).toInt()), 1)
+        if (grouped != null){
+            if (grouped.flatten().size != candidateGenesToMutate.size || !candidateGenesToMutate.containsAll(grouped.flatten()))
+                throw IllegalArgumentException("grouped and candidateGenesToMutate are mismatched")
+        }
+
+        val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0)
         val mutated = mutableListOf<Gene>()
 
         //by default, weight of all mutable genes is 1
-        val weights = candidateGenesToMutate.map { Pair(it, 1) }.toMap().toMutableMap()
+        val weights = candidateGenesToMutate.map { Pair(it, 1.0) }.toMap().toMutableMap()
 
         /*
             mutation rate can be manipulated by different weight methods
@@ -56,21 +62,31 @@ class MutationWeightControl {
             archiveMutator.calculateWeightByArchive(candidateGenesToMutate, weights, individual = individual, impacts = impacts, evi = evi, targets = targets)
         } else{
             candidateGenesToMutate.forEach {
-                weights[it] = it.mutationWeight()
+                weights[it] = it.mutationWeight().toDouble()
             }
         }
-        val sw = weights.values.sum()
 
         while (mutated.isEmpty()){
-            candidateGenesToMutate.forEach { g->
-                val mr = calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))
-                if (randomness.nextBoolean(mr))
-                    mutated.add(g)
+            if (grouped == null){
+                val sw = weights.values.sum()
+                candidateGenesToMutate.forEach { g->
+                    if (randomness.nextBoolean(calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))))
+                        mutated.add(g)
+                }
+            }else{
+                grouped.forEach { gr->
+                    val sw = gr.map { weights.getValue(it) }.sum()
+                    val t = numToMutate * gr.size / candidateGenesToMutate.size
+                    gr.forEach {g->
+                        if (randomness.nextBoolean(calculatedAdaptiveMutationRate(gr.size, config.d, t, sw, weights.getValue(g))))
+                            mutated.add(g)
+                    }
+                }
             }
         }
         return mutated
     }
 
-    private fun calculatedAdaptiveMutationRate(n : Int, d : Double, t: Int, sw: Int, w : Int) = t * (d/n + (1.0-d) * w/sw)
+    private fun calculatedAdaptiveMutationRate(n : Int, d : Double, t: Double, sw: Double, w : Double) = t * (d/n + (1.0-d) * w/sw)
 
 }

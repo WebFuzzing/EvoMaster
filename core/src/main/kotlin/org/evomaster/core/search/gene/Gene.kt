@@ -124,13 +124,11 @@ abstract class Gene(var name: String) {
                     it.key.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.value)
                 }while (!mutationCheck())
             }
-
-
         }
     }
 
     /**
-     * mutated gene should pass the check if needed
+     * mutated gene should pass the check if needed, eg, DateGene
      */
     open fun mutationCheck() : Boolean = true
 
