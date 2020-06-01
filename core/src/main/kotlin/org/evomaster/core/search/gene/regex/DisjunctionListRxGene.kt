@@ -22,6 +22,10 @@ class DisjunctionListRxGene(
         }
     }
 
+    companion object{
+        private const val PROB_NEXT = 0.1
+    }
+
 
     override fun copy(): Gene {
         val copy = DisjunctionListRxGene(disjunctions.map { it.copy() as DisjunctionRxGene })
@@ -52,7 +56,7 @@ class DisjunctionListRxGene(
     // TODO Man need to check
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
         if(disjunctions.size > 1
-                && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(0.1))){
+                && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(PROB_NEXT))){
             //activate the next disjunction
             return emptyList()
         } else {
@@ -107,5 +111,5 @@ class DisjunctionListRxGene(
         else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
     }
 
-    override fun mutationWeight(): Int = disjunctions.sumBy { it.mutationWeight() } + 1
+    override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() * PROB_NEXT + 1
 }

@@ -106,7 +106,7 @@ class SqlJSONGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fi
         return objectGene.reachOptimal()
     }
 
-    override fun mutationWeight(): Int {
+    override fun mutationWeight(): Double {
         return objectGene.mutationWeight()
     }
 }

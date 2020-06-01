@@ -91,5 +91,5 @@ class RegexGene(
     /**
      * use mutationweight of [disjunctions]
      */
-    override fun mutationWeight(): Int = disjunctions.mutationWeight()
+    override fun mutationWeight(): Double = disjunctions.mutationWeight()
 }

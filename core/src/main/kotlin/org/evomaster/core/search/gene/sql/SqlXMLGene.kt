@@ -108,7 +108,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
     }
 
 
-    override fun mutationWeight(): Int {
+    override fun mutationWeight(): Double {
         return  objectGene.mutationWeight()
     }
 

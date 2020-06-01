@@ -22,7 +22,7 @@ class QuantifierRxGene(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
-        private val MODIFY_LENGTH = 0.1
+        private const val MODIFY_LENGTH = 0.1
     }
 
 
@@ -194,7 +194,7 @@ class QuantifierRxGene(
         else listOf(this).plus(atoms.flatMap { it.flatView(excludePredicate) })
     }
 
-    override fun mutationWeight(): Int {
-        return atoms.filter { isMutable() }.sumBy { it.mutationWeight() } + 1
+    override fun mutationWeight(): Double {
+        return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
     }
 }

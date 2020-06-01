@@ -169,7 +169,7 @@ class OptionalGene(name: String,
         }
     }
 
-    override fun mutationWeight(): Int {
-        return 1 + gene.mutationWeight()
+    override fun mutationWeight(): Double {
+        return 1.0 + gene.mutationWeight()
     }
 }

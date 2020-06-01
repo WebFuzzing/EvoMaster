@@ -59,6 +59,8 @@ class StringGene(
 
         private const val NEVER_ARCHIVE_MUTATION = -2
         private const val CHAR_MUTATION_INITIALIZED = -1
+
+        private const val PROB_CHANGE_SPEC = 0.1
     }
 
     /*
@@ -152,7 +154,7 @@ class StringGene(
                     point is, switching is not always going to be beneficial
                  */
                 selectedSpecialization = specializationGenes.lastIndex
-            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
+            } else if(specializationGenes.size > 1 && randomness.nextBoolean(PROB_CHANGE_SPEC)){
                 //choose another specialization, but with low probability
                 selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
             } else{
@@ -584,7 +586,7 @@ class StringGene(
     }
 
     //TODO discuss with Andrea
-    override fun mutationWeight(): Int {
-        return if(specializationGenes.isEmpty()) 1 else specializationGenes.map { it.mutationWeight() }.max()?:1
+    override fun mutationWeight(): Double {
+        return if(specializationGenes.isEmpty()) 1.0 else (specializationGenes.map { it.mutationWeight() }.sum() * PROB_CHANGE_SPEC + 1.0)
     }
 }

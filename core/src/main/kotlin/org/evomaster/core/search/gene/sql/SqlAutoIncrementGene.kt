@@ -54,5 +54,5 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 
-    override fun mutationWeight(): Int = 0
+    override fun mutationWeight(): Double = 0.0
 }

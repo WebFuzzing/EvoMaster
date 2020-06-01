@@ -129,7 +129,7 @@ class DisjunctionRxGene(
         else listOf(this).plus(terms.flatMap { it.flatView(excludePredicate) })
     }
 
-    override fun mutationWeight(): Int {
-        return terms.filter { isMutable() }.sumBy { it.mutationWeight() }
+    override fun mutationWeight(): Double {
+        return terms.filter { isMutable() }.map { it.mutationWeight() }.sum()
     }
 }

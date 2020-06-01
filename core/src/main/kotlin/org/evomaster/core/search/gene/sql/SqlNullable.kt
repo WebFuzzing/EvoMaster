@@ -150,7 +150,7 @@ class SqlNullable(name: String,
             listOf(this).plus(gene.flatView(excludePredicate))
     }
 
-    override fun mutationWeight(): Int {
-        return 1 + gene.mutationWeight()
+    override fun mutationWeight(): Double {
+        return 1.0 + gene.mutationWeight()
     }
 }

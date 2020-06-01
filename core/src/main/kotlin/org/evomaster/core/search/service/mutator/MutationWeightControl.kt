@@ -30,21 +30,15 @@ class MutationWeightControl {
 
 
     /**
-     * @return a non-empty subset of [candidateGenesToMutate] to mutate.
+     * @return a subset of [candidateGenesToMutate] to mutate.
      */
     fun selectSubGene(
             candidateGenesToMutate: List<Gene>,
-            grouped : List<List<Gene>>? = null,
             adaptiveWeight: Boolean,
             targets: Set<Int>? = null,
             impacts: List<Impact>?= null,
             individual: Individual?= null,
             evi: EvaluatedIndividual<*>?= null) : List<Gene>{
-
-        if (grouped != null){
-            if (grouped.flatten().size != candidateGenesToMutate.size || !candidateGenesToMutate.containsAll(grouped.flatten()))
-                throw IllegalArgumentException("grouped and candidateGenesToMutate are mismatched")
-        }
 
         val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0)
         val mutated = mutableListOf<Gene>()
@@ -66,23 +60,10 @@ class MutationWeightControl {
             }
         }
 
-        while (mutated.isEmpty()){
-            if (grouped == null){
-                val sw = weights.values.sum()
-                candidateGenesToMutate.forEach { g->
-                    if (randomness.nextBoolean(calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))))
-                        mutated.add(g)
-                }
-            }else{
-                grouped.forEach { gr->
-                    val sw = gr.map { weights.getValue(it) }.sum()
-                    val t = numToMutate * gr.size / candidateGenesToMutate.size
-                    gr.forEach {g->
-                        if (randomness.nextBoolean(calculatedAdaptiveMutationRate(gr.size, config.d, t, sw, weights.getValue(g))))
-                            mutated.add(g)
-                    }
-                }
-            }
+        val sw = weights.values.sum()
+        candidateGenesToMutate.forEach { g->
+            if (randomness.nextBoolean(calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))))
+                mutated.add(g)
         }
         return mutated
     }

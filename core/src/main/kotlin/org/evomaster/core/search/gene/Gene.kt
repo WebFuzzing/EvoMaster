@@ -53,7 +53,7 @@ abstract class Gene(var name: String) {
     /**
      * weight for mutation
      */
-    open fun mutationWeight() : Int = 1
+    open fun mutationWeight() : Double = 1.0
 
     /**
      * Specify if this gene can be mutated during the search.
