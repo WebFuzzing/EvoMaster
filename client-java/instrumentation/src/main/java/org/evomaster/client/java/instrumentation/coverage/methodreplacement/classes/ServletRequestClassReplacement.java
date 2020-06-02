@@ -4,6 +4,7 @@ import org.evomaster.client.java.instrumentation.coverage.methodreplacement.Repl
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.ThirdPartyMethodReplacementClass;
 import org.evomaster.client.java.instrumentation.coverage.methodreplacement.UsageFilter;
 import org.evomaster.client.java.instrumentation.shared.ReplacementType;
+import org.evomaster.client.java.instrumentation.staticstate.ExecutionTracer;
 
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
@@ -23,7 +24,7 @@ public class ServletRequestClassReplacement extends ThirdPartyMethodReplacementC
     @Replacement(replacingStatic = false, type = ReplacementType.TRACKER, id = "getInputStream", usageFilter = UsageFilter.ONLY_SUT)
     public static ServletInputStream getInputStream(Object caller) throws IOException {
 
-        //TODO
+        ExecutionTracer.markRawAccessOfHttpBodyPayload();
 
         Method original = getOriginal(singleton, "getInputStream");
 

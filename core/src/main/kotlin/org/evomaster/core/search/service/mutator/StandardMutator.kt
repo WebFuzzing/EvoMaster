@@ -5,6 +5,9 @@ import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
@@ -78,19 +81,42 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return mutated
     }
 
-    private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
+    private fun copyIndividualWithTracking(individual: EvaluatedIndividual<T>) : T{
 
         val individualToMutate = individual.individual
-
-        if(doesStructureMutation(individualToMutate)){
-            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator, maxLength = config.maxLengthOfTraces) else individualToMutate.copy()) as T
-            structureMutator.mutateStructure(copy, mutatedGene)
-            return copy
-        }
 
         val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
             individualToMutate.next(this, maxLength = config.maxLengthOfTraces)
         else individualToMutate.copy()) as T
+
+        return copy
+    }
+
+    private fun mutationPreProcessing(individual: T){
+
+        for(a in individual.seeActions()){
+            if(a !is RestCallAction){
+                continue
+            }
+            val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
+            if(update != null){
+                a.parameters.removeIf{ it is BodyParam}
+                a.parameters.removeIf{ it is UpdateForBodyParam}
+                a.parameters.add(update.body)
+            }
+        }
+    }
+
+    private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
+
+        val copy = copyIndividualWithTracking(individual)
+
+        if(doesStructureMutation(individual.individual)){
+            structureMutator.mutateStructure(copy, mutatedGene)
+            return copy
+        }
+
+        mutationPreProcessing(copy)
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -130,7 +156,9 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun mutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): T {
 
-        // First mutate the individual
+
+
+        //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
         postActionAfterMutation(mutatedIndividual)

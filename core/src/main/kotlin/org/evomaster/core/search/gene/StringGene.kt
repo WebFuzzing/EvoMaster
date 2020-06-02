@@ -85,6 +85,10 @@ class StringGene(
 
     var selectionUpdatedSinceLastMutation = false
 
+    /**
+     * Check if we already tried to use this string for taint analysis
+     */
+    var tainted = false
 
     /**
      * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
@@ -106,6 +110,7 @@ class StringGene(
                     it.selectedSpecialization = this.selectedSpecialization
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
                     it.mutatedIndex = this.mutatedIndex
+                    it.tainted = this.tainted
                 }
         copy.specializationGenes.forEach { it.parent = copy }
         return copy
@@ -166,10 +171,32 @@ class StringGene(
             return true
         }
 
-        if (!TaintInputName.isTaintInput(value)
-                && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
+        val minPforTaint = 0.1
+
+        if (
+                ! apc.doesFocusSearch() &&
+                (
+                    (!tainted && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability(minPforTaint)))
+                    ||
+                /*
+                    if this has already be tainted, but that lead to no specialization,
+                    we do not want to reset with a new taint value, and so skipping all
+                    standard mutation on strings.
+                    but we might want to use a taint value at a later stage, in case its
+                    specialization depends on code paths executed depending on other inputs
+                    in the test case
+                 */
+                    (tainted && randomness.nextBoolean(minPforTaint) )
+                )
+        ) {
 
             value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
+            tainted = true
+            return true
+        }
+
+        if(tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)){
+            randomize(randomness, true, allGenes)
             return true
         }
 
@@ -186,7 +213,7 @@ class StringGene(
 
         val others = allGenes.flatMap { it.flatView() }
                 .filterIsInstance<StringGene>()
-                .map { it.value }
+                .map { it.getValueAsRawString() }
                 .filter { it != value }
 
         value = when {
@@ -425,6 +452,8 @@ class StringGene(
 
         this.specializationGenes.clear()
         this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
+
+        this.tainted = other.tainted
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {

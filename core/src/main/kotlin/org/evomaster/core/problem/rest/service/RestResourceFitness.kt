@@ -129,7 +129,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList)
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
 
         return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))

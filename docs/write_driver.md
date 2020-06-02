@@ -12,6 +12,7 @@ _EvoMaster_ Java client library. For example, in Maven:
 <dependency>
    <groupId>org.evomaster</groupId>
    <artifactId>evomaster-client-java-controller</artifactId>
+   <scope>test</scope>
    <version>LATEST</version>
 </dependency>
 ```
@@ -21,6 +22,10 @@ The latest version number should also appear at the top of the main readme page.
 If you are compiling directly from the _EvoMaster_ source code, make sure to use `mvn install` to 
 install the snapshot version of the Java client into your local Maven repository 
 (e.g., under *~/.m2*). 
+
+Note: the core application `evomaster.jar` is independent of the driver library, and it contains none of 
+the driver's classes.
+
 
 Once the client library is imported, you need to create a class that extends either
 `org.evomaster.client.java.controller.EmbeddedSutController`
@@ -34,7 +39,7 @@ The easiest approach (which we recommend) is to use the *embedded* version, espe
 frameworks like Spring and DropWizard. 
 However, when the presence of the _EvoMaster_ client library gives side-effects (although 
 its third-party libraries are shaded, side-effects might still happen),
-or when it is not possible (or too complicate) to start the SUT directly (e.g., JEE),
+or when it is not possible (or too complicated) to start the SUT directly (e.g., JEE),
 it is better to use the *external* version.
 The requirement is that there should be a single, self-executable uber/fat jar for the SUT 
 (e.g., Wildfly Swarm).
@@ -99,7 +104,7 @@ When writing an _EvoMaster_ driver, there are 2 TCP ports that you need to consi
   for this (e.g., by using the value 0, and then read back in the driver which port was actually 
   assigned to the server).   
 
-## SpringBoot Example
+## Starting The Application
 
 How to start/reset/stop the SUT depends on the chosen framework used to implement the SUT. 
 To implement an _EvoMaster Driver_ class, you need check the JavaDocs of the extended super class,
@@ -123,7 +128,7 @@ When starting the SUT, there are at least two configurations that you want to ch
 * the binding port, as you want to use 0 for ephemeral ports (to avoid port conflicts).
 * if the SUT is using a SQL database, you MUST wrap the SQL driver with _P6Spy_. 
   This is as simple as adding `:p6spy` in the connecting datasource URL and change the `driver-class-name`.
-  This is needed by _EvoMaster_ to be able intercept and analyse all the interactions with the database.
+  This is needed by _EvoMaster_ to be able to intercept and analyse all the interactions with the database.
   
 For a SUT like `features-service`, this can be done with:
 
@@ -150,6 +155,9 @@ protected int getSutPort() {
 
 Finally, the `startSut()` method must return the URL of where the SUT is listening on.
 When running tests locally, this is as simple as returning `"http://localhost:" + getSutPort()`.
+
+
+## SQL Databases
 
 If the application is using a SQL database, you must configure `getConnection()` and `getDatabaseDriverName()`,
 instead of leaving their returned values as `null`.
@@ -185,6 +193,8 @@ If your application uses some caches, those might be reset at each test executio
 However, an easier approach could be to just start the SUT without the caches, for example using
 the option `--spring.cache.type=NONE`.
 
+
+## Code Coverage  
  
 When _EvoMaster_ evolves test cases, it tries to maximize code coverage in the SUT.
 But there is no much point in trying to maximize code coverage of the third-party libraries,
@@ -194,22 +204,48 @@ business logic.
 In the case of the `features-service` SUT, this was `org.javiermf.features`.
 
 
+## REST OpenApi/Swagger Schema
+
 To test a RESTful API, in the the `getProblemInfo()`, you need to return an instance of the
 `RestProblem` class.
 Here, you need to specify where the _OpenApi_ schema is found, and whether any endpoint should be skipped,
 i.e., not generating test cases for.
 This latter option is useful for example to skip the _SpringBoot Actuator_ endpoints (if any is present).  
 If your RESTful API does not have an _OpenApi/Swagger_ schema, this can be automatically added by using
-libraries such as [SpringFox](https://github.com/springfox/springfox) 
-and [SpringDoc](https://github.com/springdoc/springdoc-openapi).
+libraries such as [SpringDoc](https://github.com/springdoc/springdoc-openapi).
 
 
+## Security
 
 The SUT might require authenticated requests (e.g., when _Spring Security_ is used).
 How to do it must be specified in the `getInfoForAuthentication()`.
 We support auth based on authentication headers and cookies.
+Unfortunately, at the moment we do not support OAuth (we will in the future).
+
 The `org.evomaster.client.java.controller.AuthUtils` can be used to simplify the creation of such
 configuration objects, e.g., by using methods like `getForDefaultSpringFormLogin()`.
+Consider the following example from the `proxyprint` case study 
+in the [EMB repository](https://github.com/EMResearch/EMB).
+
+```
+@Override
+public List<AuthenticationDto> getInfoForAuthentication() {
+        return Arrays.asList(
+                AuthUtils.getForBasic("admin","master","1234"),
+                AuthUtils.getForBasic("consumer","joao","1234"),
+                AuthUtils.getForBasic("manager","joaquim","1234"),
+                AuthUtils.getForBasic("employee","mafalda","1234")
+        );
+}
+```
+
+Here, auth is done with [RFC-7617](https://tools.ietf.org/html/rfc7617) _Basic_.
+Four different users are defined.
+When _EvoMaster_ generates test cases, it can decide to use some of those auth credentials, and
+generate the valid HTTP headers for them. 
+In case of cookies, _EvoMaster_ is able to first make a login request, store the cookie, and then use such
+cookie in the following HTTP calls in its generated tests.   
+
 
 Although _EvoMaster_ can read and analyze the content of a SQL database, it cannot reverse-engineer the
 hashed passwords. 
@@ -224,5 +260,6 @@ DbCleaner.clearDatabase_H2(connection);
 SqlScriptRunnerCached.runScriptFromResourceFile(connection,"/init_db.sql");
 ```     
 
-
+Note: at the moment _EvoMaster_ is not able to register new users on the fly with HTTP requests, 
+and use such info to authenticate its following requests. 
 
