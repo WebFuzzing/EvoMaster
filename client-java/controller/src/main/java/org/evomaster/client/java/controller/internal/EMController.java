@@ -287,6 +287,12 @@ public class EMController {
                 dto.targets.add(info);
             });
 
+            /*
+                Note: it is important that extra is computed before AdditionalInfo,
+                as heuristics on SQL might add new entries to String specializations
+             */
+            dto.extraHeuristics = sutController.getExtraHeuristics();
+
             List<AdditionalInfo> additionalInfos = sutController.getAdditionalInfoList();
             if (additionalInfos != null) {
                 additionalInfos.forEach(a -> {
@@ -321,7 +327,7 @@ public class EMController {
                 return Response.status(500).entity(WrappedResponseDto.withError(msg)).build();
             }
 
-            dto.extraHeuristics = sutController.getExtraHeuristics();
+
 
             return Response.status(200).entity(WrappedResponseDto.withData(dto)).build();
 
