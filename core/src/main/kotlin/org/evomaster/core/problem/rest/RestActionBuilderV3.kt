@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.media.ArraySchema
 import io.swagger.v3.oas.models.media.MediaType
+import io.swagger.v3.oas.models.media.ObjectSchema
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.Parameter
 import org.evomaster.core.logging.LoggingUtil
@@ -528,7 +529,11 @@ object RestActionBuilderV3 {
             return MapGene(name, StringGene(name + "_field"))
         }
 
-        return ObjectGene(name, fields)
+        /*
+            add refClass with title of SchemaObject
+            Man: shall we pop history here?
+         */
+        return ObjectGene(name, fields, if(schema is ObjectSchema) schema.title else null)
     }
 
 

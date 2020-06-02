@@ -155,7 +155,17 @@ class RestActionBuilderV3Test{
 
     @Test
     fun testNews() {
-        loadAndAssertActions("/swagger/sut/news.json", 7)
+        val map = loadAndAssertActions("/swagger/sut/news.json", 7)
+
+        val create = map["POST:/news"] as RestAction
+        assertEquals(2, create.seeGenes().size)
+        val bodyNews = create.seeGenes().find { it.name == "body" }
+        assertNotNull(bodyNews)
+        assertNotNull(bodyNews is OptionalGene)
+        assertNotNull((bodyNews as OptionalGene).gene is ObjectGene)
+        assertNotNull((bodyNews.gene as ObjectGene).refType)
+        assertEquals("NewsDto", (bodyNews.gene as ObjectGene).refType)
+
     }
 
 
