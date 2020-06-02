@@ -1,27 +1,19 @@
 package org.evomaster.core.search.mutationweight
 
 import com.google.inject.Injector
-import com.google.inject.Key
 import com.google.inject.Module
-import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
-import io.swagger.parser.OpenAPIParser
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.problem.rest.RestActionBuilderV3
-import org.evomaster.core.problem.rest.RestIndividual
-import org.evomaster.core.problem.rest.SampleType
-import org.evomaster.core.problem.rest.service.RestModule
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.mutationweight.individual.IndividualMutationweightTest
 import org.evomaster.core.search.service.AdaptiveParameterControl
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutationWeightControl
-import org.evomaster.core.search.service.mutator.Mutator
-import org.evomaster.core.search.service.mutator.StandardMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
@@ -35,6 +27,7 @@ class MutationWeightControlTest {
     private lateinit var time : SearchTimeController
     private lateinit var apc: AdaptiveParameterControl
     private lateinit var mwc: MutationWeightControl
+    private lateinit var randomness: Randomness
 
     @BeforeEach
     fun init(){
@@ -42,7 +35,7 @@ class MutationWeightControlTest {
         val injector: Injector = LifecycleInjector.builder()
                 .withModules(* arrayOf<Module>(BaseModule()))
                 .build().createInjector()
-
+        randomness = injector.getInstance(Randomness::class.java)
         config = injector.getInstance(EMConfig::class.java)
         time = injector.getInstance(SearchTimeController::class.java)
         apc = injector.getInstance(AdaptiveParameterControl::class.java)
@@ -54,7 +47,7 @@ class MutationWeightControlTest {
     }
 
     @Test
-    fun testSelectedGenesBasedWeight(){
+    fun testIndividual(){
         config.weightBasedMutationRate = true
         config.probOfArchiveMutation = 0.0 // disable adaptive mutation rate
         config.d = 0.0 //only based on weight
@@ -79,6 +72,36 @@ class MutationWeightControlTest {
             ))
         }
         assert(selected.count { it == obj } >= 1)
+    }
+
+    @Test
+    fun testObjectGene(){
+        config.d = 0.0
+
+        val individual = IndividualMutationweightTest.newRestIndividual()
+        val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).find { it is ObjectGene }
+
+        assertNotNull(obj)
+
+        val mutated = obj!!.copy()
+        mutated.standardMutation(
+                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+        )
+
+        var result = false
+        /*
+            3 fields, and their weights are 2, 2, 5
+            then, m of 3rd field are not less than 5/9 when d = 1.0.
+            thus when executing 2 times, we assume that 3rd field is selected at least one time
+         */
+        (0..1).forEach { _ ->
+            val mf = (mutated as ObjectGene).fields.zip( (obj as ObjectGene).fields ){ t, o ->
+                t.containsSameValueAs(o)
+            }
+            result = result || !mf[2]
+        }
+
+        assert(result)
     }
 
 
