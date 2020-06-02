@@ -62,21 +62,20 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                         mutated.add(g)
                 }
             }
-            return mutated
         }else{
             val enableAPC = config.weightBasedMutationRate && archiveMutator.enableArchiveSelection()
             while (mutated.isEmpty()){
                 if (config.specializeSQLGeneSelection){
                     val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
                     val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
-                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi))
-                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi))
+                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
+                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
                 }else{
-                    mutated.addAll(mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi))
+                    mutated.addAll(mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
                 }
             }
-            return mutated
         }
+        return mutated
     }
 
     private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{

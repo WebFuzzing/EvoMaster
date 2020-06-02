@@ -30,7 +30,7 @@ class MutationWeightControl {
 
 
     /**
-     * @return a subset of [candidateGenesToMutate] to mutate.
+     * @return a subset of [candidateGenesToMutate] to mutate with weight-based solution.
      */
     fun selectSubGene(
             candidateGenesToMutate: List<Gene>,
@@ -38,12 +38,13 @@ class MutationWeightControl {
             targets: Set<Int>? = null,
             impacts: List<Impact>?= null,
             individual: Individual?= null,
-            evi: EvaluatedIndividual<*>?= null) : List<Gene>{
+            evi: EvaluatedIndividual<*>?= null,
+            forceNotEmpty : Boolean = true) : List<Gene>{
 
         val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0)
         val mutated = mutableListOf<Gene>()
 
-        //by default, weight of all mutable genes is 1
+        //by default, weight of all mutable genes is 1.0
         val weights = candidateGenesToMutate.map { Pair(it, 1.0) }.toMap().toMutableMap()
 
         /*
@@ -60,14 +61,26 @@ class MutationWeightControl {
             }
         }
 
-        val sw = weights.values.sum()
-        candidateGenesToMutate.forEach { g->
-            if (randomness.nextBoolean(calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))))
-                mutated.add(g)
-        }
+        do {
+            val sw = weights.values.sum()
+            candidateGenesToMutate.forEach { g->
+                val m = calculatedAdaptiveMutationRate(candidateGenesToMutate.size, config.d, numToMutate, sw, weights.getValue(g))
+                if (randomness.nextBoolean(m))
+                    mutated.add(g)
+            }
+        }while (forceNotEmpty && mutated.isEmpty())
+
         return mutated
     }
 
-    private fun calculatedAdaptiveMutationRate(n : Int, d : Double, t: Double, sw: Double, w : Double) = t * (d/n + (1.0-d) * w/sw)
+    /**
+     * @return mutation rate for a given gene with
+     * @param n a total number of candidate genes to mutate
+     * @param d a tunable parameter [0,1]
+     * @param t average number of genes to mutate
+     * @param w a weight of the given gene
+     * @param sw a sum of weights of all of the candidates genes
+     */
+    private fun calculatedAdaptiveMutationRate(n : Int, d : Double, t: Double, sw: Double, w : Double) = t * (d/n + (1.0 - d) * w/sw)
 
 }

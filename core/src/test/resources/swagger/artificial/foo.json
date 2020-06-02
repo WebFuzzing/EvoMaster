@@ -53,6 +53,39 @@
         },
         "deprecated": false
       }
+    },
+    "/foo/{key}": {
+      "get": {
+        "summary": "get",
+        "operationId": "getFooByKey",
+        "produces": [
+          "application/json;charset=UTF-8"
+        ],
+        "parameters": [
+          {
+            "name": "key",
+            "in": "path",
+            "description": "key",
+            "required": true,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "description": "date",
+            "required": false,
+            "type": "string",
+            "format": "date-time"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "deprecated": false
+      }
     }
   },
   "definitions": {
