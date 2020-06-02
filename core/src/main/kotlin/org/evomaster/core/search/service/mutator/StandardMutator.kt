@@ -113,7 +113,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                         else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
                         else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
 
-            val enableAdaptiveMutation = config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()
+            val enableAdaptiveMutation = archiveMutator.enableArchiveGeneMutation()
 
             if (enableAdaptiveMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
                 //root gene reference
