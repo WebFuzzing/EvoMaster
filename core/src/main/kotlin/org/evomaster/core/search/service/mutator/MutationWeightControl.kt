@@ -39,9 +39,10 @@ class MutationWeightControl {
             impacts: List<Impact>?= null,
             individual: Individual?= null,
             evi: EvaluatedIndividual<*>?= null,
-            forceNotEmpty : Boolean = true) : List<Gene>{
+            forceNotEmpty : Boolean = true,
+            numOfGroup: Int = 1) : List<Gene>{
 
-        val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0)
+        val numToMutate = apc.getExploratoryValue(max(1.0, config.startingPerOfGenesToMutate * candidateGenesToMutate.size), 1.0/numOfGroup)
         val mutated = mutableListOf<Gene>()
 
         //by default, weight of all mutable genes is 1.0

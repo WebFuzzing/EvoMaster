@@ -54,15 +54,19 @@ class CompareAvgNumberToMutate {
 
         val candidates = listOf(ind_sql3_rest2, ind_sql15_rest2, ind_sql15_rest12)
 
-        candidates.forEach { ind->
-            ds.forEach { d->
-                compareAvgT(d, ind)
+
+        arrayOf(false, true).forEach { e->
+            println(">>>>>>>>>>>>>>>> enableNumOfGroup: $e")
+            candidates.forEach { ind->
+                ds.forEach { d->
+                    compareAvgT(d, ind, enableNumOfGroup = e)
+                }
             }
         }
 
 
     }
-    private fun compareAvgT(d : Double, individual: RestIndividual, sampleSize: Int = 30000){
+    private fun compareAvgT(d : Double, individual: RestIndividual, sampleSize: Int = 30000, enableNumOfGroup: Boolean){
 
         config.d = d
 
@@ -73,7 +77,7 @@ class CompareAvgNumberToMutate {
         val s11 = mutableListOf<Double>()
         val s12 = mutableListOf<Double>()
 
-        collectSelectedGenes(s11, s12, all, sql, rest, sampleSize)
+        collectSelectedGenes(s11, s12, all, sql, rest, sampleSize, enableNumOfGroup)
 
         val p1 = utest.mannWhitneyUTest(s11.toDoubleArray(), s12.toDoubleArray())
         val ration_avg = (0 until sampleSize).map { s11[it]/s12[it] }.sum()/sampleSize
@@ -87,7 +91,7 @@ class CompareAvgNumberToMutate {
     }
 
 
-    private fun collectSelectedGenes(specialSQL : MutableList<Double>, general : MutableList<Double>, all: List<Gene>, sql: List<Gene>, rest: List<Gene>, sampleSize : Int) {
+    private fun collectSelectedGenes(specialSQL : MutableList<Double>, general : MutableList<Double>, all: List<Gene>, sql: List<Gene>, rest: List<Gene>, sampleSize : Int, enableNumOfGroup : Boolean) {
 
         val tmp = mutableListOf<Gene>()
 
@@ -95,8 +99,8 @@ class CompareAvgNumberToMutate {
 
             //simulate special handling SQL
             while (tmp.isEmpty()){
-                tmp.addAll(mwc.selectSubGene(rest, false))
-                tmp.addAll(mwc.selectSubGene(sql, false))
+                tmp.addAll(mwc.selectSubGene(rest, false, numOfGroup = if (enableNumOfGroup) 2 else 1))
+                tmp.addAll(mwc.selectSubGene(sql, false, numOfGroup = if (enableNumOfGroup) 2 else 1))
             }
             specialSQL.add(tmp.size.toDouble())
             tmp.clear()
