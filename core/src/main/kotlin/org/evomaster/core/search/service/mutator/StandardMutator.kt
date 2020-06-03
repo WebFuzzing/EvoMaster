@@ -1,20 +1,21 @@
 package org.evomaster.core.search.service.mutator
 
-import com.google.inject.Inject
-import org.evomaster.core.EMConfig
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
-import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL_WITH_SIZE
 import org.evomaster.core.Lazy
 import org.evomaster.core.database.DbAction
 import org.evomaster.core.database.DbActionUtils
+import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.param.BodyParam
+import org.evomaster.core.problem.rest.param.UpdateForBodyParam
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import kotlin.math.max
 
 /**
@@ -23,9 +24,6 @@ import kotlin.math.max
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
-
-    @Inject
-    private lateinit var archiveMutator: ArchiveMutator
 
     override fun doesStructureMutation(individual : T): Boolean {
         /**
@@ -49,70 +47,76 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return mutable
     }
 
-    /**
-     * with a probability, select genes to mutate based on Archive
-     */
     override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        if(archiveMutator.applyArchiveSelection()){
-            return archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes)
+        val filterN = when (config.geneMutationStrategy) {
+            ONE_OVER_N -> ALL
+            ONE_OVER_N_BIASED_SQL -> NO_SQL
         }
+        val mutated = mutableListOf<Gene>()
 
-        return selectGenesByDefault(genesToMutate, individual)
-    }
-
-    private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{
-        val spaceSize = when (config.geneMutationStrategy) {
-            ONE_OVER_N -> individual.seeGenes(ALL).filter { it.isMutable() }.count()
-            ONE_OVER_N_BIASED_SQL ->  individual.seeGenes(NO_SQL).filter { it.isMutable() }.count()
-            ONE_OVER_N_BIASED_SQL_WITH_SIZE -> individual.seeGenes(NO_SQL).filter { it.isMutable() }.count() + individual.seeInitializingActions().size
-        }
-        val n = Math.max(1, spaceSize)
-        return selectGenesByOneDivNum(genesToMutate, n)
-    }
-
-    private fun selectGenesByOneDivNum(genesToMutate : List<Gene>, n : Int): List<Gene>{
-        val genesToSelect = mutableListOf<Gene>()
-
-        val p = 1.0 / n
-
-        var mutated = false
-
-        /*
-            no point in returning a copy that is not mutated,
-            as we do not use xover
-         */
-        while (!mutated) { //
-
-            for (gene in genesToMutate) {
-
-                if (!randomness.nextBoolean(p)) {
-                    continue
+        if(!config.weightBasedMutationRate){
+            val p = 1.0/ max(1, individual.seeGenes(filterN).filter { genesToMutate.contains(it) }.size)
+            while (mutated.isEmpty()){
+                genesToMutate.forEach { g->
+                    if (randomness.nextBoolean(p))
+                        mutated.add(g)
                 }
-
-                genesToSelect.add(gene)
-
-                mutated = true
+            }
+        }else{
+            val enableAPC = config.weightBasedMutationRate && archiveMutator.enableArchiveSelection()
+            while (mutated.isEmpty()){
+                if (config.specializeSQLGeneSelection){
+                    val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
+                    val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
+                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
+                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
+                }else{
+                    mutated.addAll(mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
+                }
             }
         }
-        return genesToSelect
+        return mutated
     }
 
-    private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
+    private fun copyIndividualWithTracking(individual: EvaluatedIndividual<T>) : T{
 
         val individualToMutate = individual.individual
-
-        if(doesStructureMutation(individualToMutate)){
-            val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual) individualToMutate.next(structureMutator, maxLength = config.maxLengthOfTraces) else individualToMutate.copy()) as T
-            structureMutator.mutateStructure(copy, mutatedGene)
-            return copy
-        }
 
         val copy = (if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual)
             individualToMutate.next(this, maxLength = config.maxLengthOfTraces)
         else individualToMutate.copy()) as T
+
+        return copy
+    }
+
+    private fun mutationPreProcessing(individual: T){
+
+        for(a in individual.seeActions()){
+            if(a !is RestCallAction){
+                continue
+            }
+            val update = a.parameters.find { it is UpdateForBodyParam } as? UpdateForBodyParam
+            if(update != null){
+                a.parameters.removeIf{ it is BodyParam}
+                a.parameters.removeIf{ it is UpdateForBodyParam}
+                a.parameters.add(update.body)
+            }
+        }
+    }
+
+    private fun innerMutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGene: MutatedGeneSpecification?) : T{
+
+        val copy = copyIndividualWithTracking(individual)
+
+        if(doesStructureMutation(individual.individual)){
+            structureMutator.mutateStructure(copy, mutatedGene)
+            return copy
+        }
+
+        mutationPreProcessing(copy)
 
         val allGenes = copy.seeGenes().flatMap { it.flatView() }
 
@@ -131,67 +135,33 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
             }
 
-            if (config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()){
+            val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
+                        else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
+                        else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+
+            val enableAdaptiveMutation = archiveMutator.enableArchiveGeneMutation()
+
+            if (enableAdaptiveMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
+                //root gene reference
                 val id = ImpactUtils.generateGeneId(copy, gene)
-                val impact = individual.getImpact(copy, gene)//individual.getImpactOfGenes()[id]
-                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual,targets )
+                //root gene impact
+                val impact = individual.getImpactOfGenes()[id]
+                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveMutation, AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets ))
             } else {
-                gene.standardMutation(randomness, apc, allGenes)
+                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy)
             }
         }
-
         return copy
     }
 
     override fun mutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): T {
 
-        // First mutate the individual
+
+
+        //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
-        val before = mutatedIndividual.seeInitializingActions().size
-
         postActionAfterMutation(mutatedIndividual)
-
-        val after = mutatedIndividual.seeInitializingActions().size
-
-
-        /*
-            postAction might change mutated genes
-         */
-        if (mutatedGenes != null){
-
-            val removed = mutableListOf<Gene>()
-            val added = mutableListOf<Gene>()
-
-            if (before != after){
-                mutatedGenes.mutatedDbActionPosition.forEachIndexed { index, i ->
-                    if (i >= after)
-                        removed.add(mutatedGenes.mutatedDbGenes[index])
-                }
-                mutatedGenes.mutatedDbGenes.removeAll(removed)
-                mutatedGenes.mutatedDbActionPosition.removeAll { it >= after }
-                removed.clear()
-
-                mutatedGenes.addedInitializationGenes.clear()
-
-                //TODO
-                mutatedGenes.addedInitializationGenes.addAll(mutatedIndividual.seeInitializingActions().flatMap { it.seeGenes() })
-            }
-            mutatedGenes.mutatedDbGenes.forEachIndexed { index, gene ->
-                if (!mutatedIndividual.seeGenes().contains(gene)){
-                    if (mutatedIndividual.seeInitializingActions().size <= mutatedGenes.mutatedDbActionPosition[index]){
-                        throw IllegalArgumentException("incorrectly collected index of InitializingActions or a structure of InitializingActions is changed")
-                    }
-                    val found = mutatedIndividual.seeInitializingActions()[mutatedGenes.mutatedDbActionPosition[index]].seeGenes().find { it.getVariableName() == gene.getVariableName() }
-                    if (found != null){
-                        removed.add(gene)
-                        added.add(found)
-                    }
-                }
-            }
-            mutatedGenes.mutatedDbGenes.removeAll(removed)
-            mutatedGenes.mutatedDbGenes.addAll(added)
-        }
 
         return mutatedIndividual
     }

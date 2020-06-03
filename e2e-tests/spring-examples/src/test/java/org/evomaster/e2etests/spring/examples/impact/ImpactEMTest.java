@@ -65,7 +65,7 @@ public class ImpactEMTest extends SpringTestBase {
                     args.add("--probOfArchiveMutation");
                     args.add("0.75");
 
-                    args.add("--geneSelectionMethod");
+                    args.add("--adaptiveGeneSelectionMethod");
                     args.add(method.toString());
 
                     args.add("--enableTrackEvaluatedIndividual");

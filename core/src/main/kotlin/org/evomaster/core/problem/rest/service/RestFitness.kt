@@ -104,7 +104,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
         handleResponseTargets(fv, individual.seeActions(), actionResults, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList)
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
 
         if (config.baseTaintAnalysisProbability > 0) {

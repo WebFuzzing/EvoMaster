@@ -10,9 +10,7 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.getDelta
-import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -20,6 +18,9 @@ import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 class StringGene(
@@ -58,6 +59,8 @@ class StringGene(
 
         private const val NEVER_ARCHIVE_MUTATION = -2
         private const val CHAR_MUTATION_INITIALIZED = -1
+
+        private const val PROB_CHANGE_SPEC = 0.1
     }
 
     /*
@@ -82,6 +85,10 @@ class StringGene(
 
     var selectionUpdatedSinceLastMutation = false
 
+    /**
+     * Check if we already tried to use this string for taint analysis
+     */
+    var tainted = false
 
     /**
      * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
@@ -89,17 +96,6 @@ class StringGene(
      */
     var mutatedIndex : Int = NEVER_ARCHIVE_MUTATION
 
-    /**
-     * degree of dependency of this [gene]
-     */
-//    var degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL
-//    private set
-//
-//    var mutatedtimes = 0
-//    private set
-//
-//    var resetTimes = 0
-//    private set
 
     fun charMutationInitialized(){
         mutatedIndex = CHAR_MUTATION_INITIALIZED
@@ -114,6 +110,7 @@ class StringGene(
                     it.selectedSpecialization = this.selectedSpecialization
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
                     it.mutatedIndex = this.mutatedIndex
+                    it.tainted = this.tainted
                 }
         copy.specializationGenes.forEach { it.parent = copy }
         return copy
@@ -139,15 +136,20 @@ class StringGene(
         selectedSpecialization = -1
     }
 
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+        if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            return archiveMutation(additionalGeneMutationInfo) //TODO Man need to consider specialization when taint analysis is enabled
+        }
 
         val specializationGene = getSpecializationGene()
 
         if (specializationGene == null && specializationGenes.isNotEmpty()) {
+            //Man: it might not make sense to apply static weight-based mutation on specializationGenes selection, but might apply archive-based one
             selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
             selectionUpdatedSinceLastMutation = false
-            return
+            return true
 
         } else if (specializationGene != null) {
             if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
@@ -157,22 +159,45 @@ class StringGene(
                     point is, switching is not always going to be beneficial
                  */
                 selectedSpecialization = specializationGenes.lastIndex
-            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
+            } else if(specializationGenes.size > 1 && randomness.nextBoolean(PROB_CHANGE_SPEC)){
                 //choose another specialization, but with low probability
                 selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
             } else{
+                //TODO MAN need to check regarding weight-based and archive-based solutions. for instance, when adaptive mutation
                 //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, allGenes)
+                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation)
             }
             selectionUpdatedSinceLastMutation = false
-            return
+            return true
         }
 
-        if (!TaintInputName.isTaintInput(value)
-                && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
+        val minPforTaint = 0.1
+
+        if (
+                ! apc.doesFocusSearch() &&
+                (
+                    (!tainted && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability(minPforTaint)))
+                    ||
+                /*
+                    if this has already be tainted, but that lead to no specialization,
+                    we do not want to reset with a new taint value, and so skipping all
+                    standard mutation on strings.
+                    but we might want to use a taint value at a later stage, in case its
+                    specialization depends on code paths executed depending on other inputs
+                    in the test case
+                 */
+                    (tainted && randomness.nextBoolean(minPforTaint) )
+                )
+        ) {
 
             value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            return
+            tainted = true
+            return true
+        }
+
+        if(tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)){
+            randomize(randomness, true, allGenes)
+            return true
         }
 
         val p = randomness.nextDouble()
@@ -188,7 +213,7 @@ class StringGene(
 
         val others = allGenes.flatMap { it.flatView() }
                 .filterIsInstance<StringGene>()
-                .map { it.value }
+                .map { it.getValueAsRawString() }
                 .filter { it != value }
 
         value = when {
@@ -231,6 +256,7 @@ class StringGene(
         }
 
         repair()
+        return true
     }
 
 
@@ -426,6 +452,8 @@ class StringGene(
 
         this.specializationGenes.clear()
         this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
+
+        this.tainted = other.tainted
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -452,73 +480,27 @@ class StringGene(
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
     }
-    override fun archiveMutation(
-            randomness: Randomness,
-            allGenes: List<Gene>,
-            apc: AdaptiveParameterControl,
-            selection: GeneMutationSelectionMethod,
-            geneImpact: GeneImpact?,
-            geneReference: String,
-            archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>,
-            targets: Set<Int>
-    ) {
-        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
-            standardMutation(randomness, apc, allGenes)
-            return
+
+    private fun archiveMutation(
+            additionalGeneMutationInfo: AdditionalGeneSelectionInfo
+    ) : Boolean{
+
+        dependencyInfo.mutatedtimes +=1
+        additionalGeneMutationInfo.archiveMutator.mutate(this)
+        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+            log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
         }
-
-        val specializationGene = getSpecializationGene()
-
-        if (specializationGene == null && specializationGenes.isNotEmpty()) {
-            selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
-            selectionUpdatedSinceLastMutation = false
-            return
-
-        } else if (specializationGene != null) {
-            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
-                /*
-                    selection of most recent added gene, but only with a given
-                    probability, albeit high.
-                    point is, switching is not always going to be beneficial
-                 */
-                selectedSpecialization = specializationGenes.lastIndex
-            } else if(specializationGenes.size > 1 && randomness.nextBoolean(0.1)){
-                //choose another specialization, but with low probability
-                selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
-            } else{
-                //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, allGenes)
-            }
-            selectionUpdatedSinceLastMutation = false
-            return
+        if (charsMutation.size != value.length){
+            log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
         }
-
-        if (!TaintInputName.isTaintInput(value)
-                && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability())) {
-
-            value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
-            return
-        }
-
-        if (archiveMutator.enableArchiveGeneMutation()){
-            dependencyInfo.mutatedtimes +=1
-            archiveMutator.mutate(this)
-            if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
-                log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
-            }
-            if (charsMutation.size != value.length){
-                log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
-            }
-        }else{
-            standardMutation(randomness, apc, allGenes)
-        }
+        return true
     }
 
     override fun reachOptimal() : Boolean{
        return lengthMutation.reached && (charsMutation.all { it.reached  }  || charsMutation.isEmpty())
     }
 
+    //TODO MAN: check regarding taint analysis
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         if (!archiveMutator.enableArchiveGeneMutation()) return
 
@@ -630,5 +612,10 @@ class StringGene(
     private fun initCharMutation(){
         charsMutation.clear()
         charsMutation.addAll((0 until value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
+    }
+
+    //TODO discuss with Andrea
+    override fun mutationWeight(): Double {
+        return if(specializationGenes.isEmpty()) 1.0 else (specializationGenes.map { it.mutationWeight() }.sum() * PROB_CHANGE_SPEC + 1.0)
     }
 }

@@ -6,10 +6,7 @@ import org.evomaster.core.problem.rest.util.ParamUtil
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
-import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.gene.GeneIndependenceInfo
-import org.evomaster.core.search.gene.GeneUtils
-import org.evomaster.core.search.gene.StringGene
+import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
@@ -59,6 +56,11 @@ class ArchiveMutator {
     }
 
     /**************************** gene selection ********************************************/
+
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
+        TODO()// when merge with archive-based branch
+    }
+
 
     /**
      * Apply archive-based mutation to select [genes] from [individual] to mutate regarding their impacts saved in [evi],
@@ -230,10 +232,10 @@ class ArchiveMutator {
     /**
      * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
      */
-    private fun decideArchiveGeneSelectionMethod(genes: List<Impact>): GeneMutationSelectionMethod {
-        return when (config.geneSelectionMethod) {
+    private fun decideArchiveGeneSelectionMethod(genes : List<Impact>) : GeneMutationSelectionMethod {
+        return when (config.adaptiveGeneSelectionMethod) {
             GeneMutationSelectionMethod.ALL_FIXED_RAND -> randomGeneSelectionMethod()
-            else -> config.geneSelectionMethod
+            else -> config.adaptiveGeneSelectionMethod
         }
     }
 
@@ -621,7 +623,7 @@ class ArchiveMutator {
 
     fun disableArchiveSelectionForGene() = !config.enableGeneSelectionMethodForGene
 
-    fun enableArchiveSelection() = config.geneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
+    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
 

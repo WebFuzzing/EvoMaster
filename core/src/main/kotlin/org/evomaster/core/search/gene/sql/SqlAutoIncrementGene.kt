@@ -1,13 +1,11 @@
 package org.evomaster.core.search.gene.sql
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 
 
@@ -21,9 +19,6 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        throw IllegalStateException("AutoIncrement fields are not part of the search")
-    }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
         throw IllegalStateException("AutoIncrement fields should never be printed")
@@ -55,11 +50,9 @@ class SqlAutoIncrementGene(name: String) : Gene(name) {
 
     override fun isPrintable() = false
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        throw IllegalStateException("AutoIncrement fields are not part of the search")
-    }
-
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         throw IllegalStateException("AutoIncrement fields are not part of the search")
     }
+
+    override fun mutationWeight(): Double = 0.0
 }

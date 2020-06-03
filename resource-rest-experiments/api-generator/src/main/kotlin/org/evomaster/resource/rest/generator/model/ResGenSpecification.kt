@@ -1,6 +1,7 @@
 package org.evomaster.resource.rest.generator.model
 
 import org.evomaster.resource.rest.generator.FormatUtil
+import org.evomaster.resource.rest.generator.implementation.java.dependency.ConditionalDependencyKind
 
 /**
  * created by manzh on 2019-08-19
@@ -10,11 +11,20 @@ class ResGenSpecification(
         val doesMapToATable: Boolean = true,
         val rootPackage : String,
         val outputFolder : String,
+        val resourceFolder : String,
         val restMethods : List<RestMethod>,
-        val idProperty : PropertySpecification = PropertySpecification("id", CommonTypes.OBJ_LONG.name, isId = true, autoGen = false, allowNull = false, impactful = true),
+        val createMethod: RestMethod,
+        val idProperty : PropertySpecification ,
         val defaultProperties : List<PropertySpecification> = listOf(),
-        val plusProperties: Boolean = true
+        val plusProperties: Boolean = true,
+        val dependencyKind: ConditionalDependencyKind,
+        val path : String,
+        val pathWithId : String,
+        val pathParams : List<String>
 ){
+    companion object{
+        const val TODTO_METHOD_NAME = "getDto"
+    }
     val name : String = resNode.name
     private val hideReferToOthers : MutableList<ResGenSpecification> = mutableListOf()
     private val obviousReferToOthers : MutableList<ResGenSpecification> = mutableListOf()
@@ -61,22 +71,39 @@ class ResGenSpecification(
                             isId = false,
                             autoGen = false,
                             allowNull = false,
-                            impactful = true
+                            impactful = true,
+                            dependency = dependencyKind
                     )
                 },
                 ownOthers = ownOthers.map {res ->
-                    PropertySpecification(
+                    ResNodeTypedPropertySpecification(
                             name = res.nameOwnedResNodePropertyOnDto(),
                             type = idProperty.type,
+                            itsIdProperty = res.idProperty,
                             isId = false,
                             autoGen = false,
                             allowNull = false,
                             impactful = true
                     )
                 },
+                ownOthersProperties = ownOthers.map { res ->
+                    res.namePropertiesResNodePropertyOnDto().map { p ->
+                        ResNodeTypedPropertySpecification(
+                                name = p.first,
+                                type = p.second.first,
+                                itsIdProperty = p.second.second,
+                                isId = false,
+                                autoGen = false,
+                                allowNull = false,
+                                multiplicity = RelationMultiplicity.ONE_TO_ONE
+                        )
+                    }
+                },
+                ownOthersTypes = ownOthers.map { it.nameDtoClass() },
                 rootPackage = nameDtoPackage(),
                 outputFolder =  outputFolder,
-                idFromSuperClazz = !plusProperties
+                idFromSuperClazz = !plusProperties,
+                resourceFolder = resourceFolder
                 )
         return dto!!
     }
@@ -97,7 +124,8 @@ class ResGenSpecification(
                             isId = false,
                             autoGen = false,
                             allowNull = false,
-                            multiplicity = RelationMultiplicity.ONE_TO_ONE
+                            multiplicity = RelationMultiplicity.ONE_TO_ONE,
+                            dependency = dependencyKind
                     )
                 },
                 ownOthers = ownOthers.map {res ->
@@ -108,14 +136,20 @@ class ResGenSpecification(
                             isId = false,
                             autoGen = false,
                             allowNull = false,
-                            multiplicity = RelationMultiplicity.ONE_TO_ONE
+                            multiplicity = RelationMultiplicity.ONE_TO_ONE,
+                            ownedBy = nameEntityClass()
                     )
                 },
+                //refer to properties of owned resources
+                ownOthersProperties = ownOthers.map { res ->
+                    res.defaultProperties
+                },
                 isATable = doesMapToATable,
-                getDto = if (doesMapToATable) MethodSpecification("getDto", nameDtoClass(), mapOf()) else null,
+                getDto = if (doesMapToATable) MethodSpecification(TODTO_METHOD_NAME, nameDtoClass(), mapOf()) else null,
                 dto = getDto(),
                 rootPackage = nameEntityPackage(),
                 outputFolder = outputFolder,
+                resourceFolder = resourceFolder,
                 idFromSuperClazz = !plusProperties)
         return entity!!
     }
@@ -131,7 +165,8 @@ class ResGenSpecification(
                 idType = idProperty.type,
                 properties = listOf(),
                 rootPackage = nameEntityPackage(),
-                outputFolder = outputFolder
+                outputFolder = outputFolder,
+                resourceFolder = resourceFolder
         )
         return repository
     }
@@ -141,7 +176,8 @@ class ResGenSpecification(
         if (apiService != null) return apiService!!
         apiService = ServiceClazz(
                 name = nameRestAPIClass(),
-                resourceOnPath = nameResNodeOnPath(),
+                resourceName = name,
+                resourceOnPath = FormatUtil.formatResourceOnPath(name),
                 entityRepository = PropertySpecification(
                         name = nameRepositoryClassVar(),
                         type = nameRepositoryClass(),
@@ -171,9 +207,37 @@ class ResGenSpecification(
                             impactful = true
                     ))
                 }.toMap(),
+                ownedEntityRepositories = ownOthers.map {r->
+                    Pair(r.nameEntityClass(), PropertySpecification(
+                            name = r.nameRepositoryClassVar(),
+                            type = r.nameRepositoryClass(),
+                            isId = false,
+                            autoGen = false,
+                            allowNull = false,
+                            impactful = true
+                    ))
+                }.toMap(),
+                ownedResourceService = ownOthers.map {r->
+                    Pair(r.nameDtoClass(), ResServiceTypedPropertySpecification(
+                            name = r.nameRestAPIClassVar(),
+                            type = r.nameRestAPIClass(),
+                            resourceName = r.name,
+                            isId = false,
+                            autoGen = false,
+                            allowNull = false,
+                            impactful = true
+                    ))
+                }.toMap(),
+                ownedCreation = ownOthers.map {r->
+                    Pair(r.nameDtoClass(), r.createMethod)
+                }.toMap(),
                 restMethods = restMethods,
                 rootPackage = nameApiServicePackage(),
-                outputFolder = outputFolder
+                outputFolder = outputFolder,
+                resourceFolder = resourceFolder,
+                path = path,
+                pathWithId = pathWithId,
+                pathParams = pathParams
         )
 
         return apiService!!
@@ -197,13 +261,17 @@ class ResGenSpecification(
 
     //for restAPI
     private fun nameRestAPIClass() = "${FormatUtil.upperFirst(name)}RestAPI"
-    private fun nameResNodeOnPath() = "${FormatUtil.lowerFirst(name)}"
+    private fun nameRestAPIClassVar() = "${FormatUtil.lowerFirst(name)}RestAPI"
 
     private fun nameReferResNodePropertyOnDto() = "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
 
     private fun nameReferResNodePropertyOnEntity() = FormatUtil.lowerFirst(name)
 
-    private fun nameOwnedResNodePropertyOnDto() = "owned${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
+    private fun nameOwnedResNodePropertyOnDto() = "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(idProperty.name)}"
+
+    private fun namePropertiesResNodePropertyOnDto() = defaultProperties.map {p->
+        "${FormatUtil.lowerFirst(name)}${FormatUtil.upperFirst(p.name)}" to Pair(p.type, p)
+    }
 
     private fun nameOwnedResNodePropertyOnEntity() = "owned${FormatUtil.upperFirst(name)}"
 

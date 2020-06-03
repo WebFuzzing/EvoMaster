@@ -39,7 +39,10 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     private lateinit var tracker : ArchiveMutationTrackService
 
     @Inject
-    private lateinit var archiveMutator : ArchiveMutator
+    protected lateinit var archiveMutator : ArchiveMutator
+
+    @Inject
+    protected lateinit var mwc : MutationWeightControl
 
     /**
      * @param mutatedGenes is used to record what genes are mutated within [mutate], which can be further used to analyze impacts of genes.

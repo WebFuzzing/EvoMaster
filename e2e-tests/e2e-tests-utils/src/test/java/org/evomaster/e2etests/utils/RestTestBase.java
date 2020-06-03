@@ -65,6 +65,8 @@ public abstract class RestTestBase {
         //in case it was modified in a previous test in the same class
         defaultSeed = STARTING_SEED;
 
+        StaticCounter.Companion.reset();
+
         assertTimeoutPreemptively(Duration.ofMinutes(2), () -> {
             boolean reset = remoteController.resetSUT();
             assertTrue(reset);
@@ -436,7 +438,8 @@ public abstract class RestTestBase {
         boolean ok = solution.getIndividuals().stream().anyMatch(
                 ind -> hasAtLeastOne(ind, verb, expectedStatusCode, path, inResponse));
 
-        String errorMsg = "Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n";
+        String errorMsg = "Seed " + (defaultSeed-1)+". ";
+        errorMsg += "Missing " + expectedStatusCode + " " + verb + " " + path + " " + inResponse + "\n";
 
         assertTrue(ok, errorMsg + restActions(solution));
     }

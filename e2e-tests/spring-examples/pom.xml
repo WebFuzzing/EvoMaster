@@ -155,4 +155,13 @@
         </plugins>
     </build>
 
+    <profiles>
+        <profile>
+            <id>skipE2E_V2</id>
+            <properties>
+                <maven.test.skip>true</maven.test.skip>
+            </properties>
+        </profile>
+    </profiles>
+
 </project>

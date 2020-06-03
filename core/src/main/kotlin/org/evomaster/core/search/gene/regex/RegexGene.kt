@@ -5,6 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 /**
  * A gene representing a regular expression (regex).
@@ -30,8 +33,17 @@ class RegexGene(
         return disjunctions.isMutable()
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        disjunctions.standardMutation(randomness, apc, allGenes)
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        return if (isMutable()) emptyList() else listOf(disjunctions)
+    }
+
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+        TODO()
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+        // do nothing since disjunctions is not mutable
+        return true
     }
 
     override fun getValueAsRawString(): String {
@@ -75,4 +87,9 @@ class RegexGene(
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(disjunctions.flatView(excludePredicate))
     }
+
+    /**
+     * use mutationweight of [disjunctions]
+     */
+    override fun mutationWeight(): Double = disjunctions.mutationWeight()
 }

@@ -1,6 +1,7 @@
 package org.evomaster.resource.rest.generator.implementation.java.app
 
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
+import org.evomaster.resource.rest.generator.implementation.java.service.IfSnippet
 import org.evomaster.resource.rest.generator.model.AppClazz
 import org.evomaster.resource.rest.generator.template.Boundary
 

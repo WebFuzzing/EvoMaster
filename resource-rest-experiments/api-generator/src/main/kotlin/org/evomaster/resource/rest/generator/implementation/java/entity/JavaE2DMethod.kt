@@ -1,8 +1,8 @@
 package org.evomaster.resource.rest.generator.implementation.java.entity
 
-import org.evomaster.resource.rest.generator.model.ResNodeTypedPropertySpecification
 import org.evomaster.resource.rest.generator.implementation.java.JavaMethod
 import org.evomaster.resource.rest.generator.model.EntityClazz
+import org.evomaster.resource.rest.generator.model.ResNodeTypedPropertySpecification
 import org.evomaster.resource.rest.generator.template.Boundary
 
 
@@ -47,6 +47,13 @@ class JavaE2DMethod(val specification: EntityClazz) : JavaMethod() {
                         (specification.ownOthers[index] as ResNodeTypedPropertySpecification).itsIdProperty
                     else throw IllegalArgumentException("${specification.ownOthers[index].name} is not ResNodeTypedPropertySpecification")
             content.add(assignValue("$dtoVar.${specification.dto.ownOthers[index].name}", "this.${specification.ownOthers[index].nameGetterName()}().${id.nameGetterName()}()"))
+
+            val ps = specification.dto.ownOthersProperties[index]
+            ps.forEach {p->
+                val op = (p as? ResNodeTypedPropertySpecification)?:throw IllegalArgumentException("${specification.ownOthers[index].name} is not ResNodeTypedPropertySpecification")
+                content.add(assignValue("$dtoVar.${op.name}", "this.${specification.ownOthers[index].nameGetterName()}().${op.itsIdProperty.nameGetterName()}()"))
+            }
+
         }
         content.add("return dto;")
         return content

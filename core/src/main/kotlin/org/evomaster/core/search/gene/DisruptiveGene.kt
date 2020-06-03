@@ -1,13 +1,13 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.DisruptiveGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 /**
@@ -43,19 +43,24 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         gene.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        if(randomness.nextBoolean(probability)){
-            gene.standardMutation(randomness, apc, allGenes)
-        }
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        return if(randomness.nextBoolean(probability)){
+           listOf(gene)
+        }else emptyList()
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation() || archiveMutator.disableArchiveSelectionForGene()){
-            standardMutation(randomness,apc, allGenes)
-            return
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DisruptiveGeneImpact){
+            if (internalGenes.size != 1 || !internalGenes.contains(gene))
+                throw IllegalStateException("mismatched input: the internalGenes should only contain gene")
+            return mapOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact))
         }
+        throw IllegalArgumentException("impact is null or not DisruptiveGeneImpact")
+    }
 
-        gene.archiveMutation(randomness, allGenes, apc, selection, if(impact == null || impact !is DisruptiveGeneImpact) null else impact.geneImpact, geneReference, archiveMutator, evi,targets )
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+        // do nothing due to rand() > probability
+        return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -107,5 +112,9 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
             }
             gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
         }
+    }
+
+    override fun mutationWeight(): Double {
+        return 1.0 + gene.mutationWeight() * probability
     }
 }

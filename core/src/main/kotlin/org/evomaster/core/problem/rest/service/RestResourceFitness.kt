@@ -119,7 +119,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
         handleResponseTargets(fv, individual.seeActions().toMutableList(), actionResults, dto.additionalInfoList)
 
         if (config.expandRestIndividuals) {
-            expandIndividual(individual, dto.additionalInfoList)
+            expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
 
         return EvaluatedIndividual(

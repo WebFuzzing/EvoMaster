@@ -59,7 +59,4 @@ experiments/target/
 
 /e2e-tests/spring-rest-openapi-v3/target
 /client-js/integration-tests/build/
-/coveredTargets.txt
-/client-java/instrumentation/src/test/java/org/evomaster/client/java/instrumentation/example/branches/BranchesTest.java
-/e2e-tests/spring-examples/src/test/java/org/evomaster/e2etests/spring/examples/impact/ObjectImpactEMTest.java.backup
-/experiments/src/main/kotlin/org/evomaster/experiments/archiveMutation.zip
+/core-it/target/

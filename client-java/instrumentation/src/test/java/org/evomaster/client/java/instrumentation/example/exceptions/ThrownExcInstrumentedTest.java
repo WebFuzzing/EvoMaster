@@ -18,8 +18,7 @@ public class ThrownExcInstrumentedTest {
 
         InstrumentingClassLoader cl = new InstrumentingClassLoader("com.foo");
 
-        return (ThrownExc)
-                cl.loadClass(ThrownExcImp.class.getName()).newInstance();
+        return (ThrownExc) cl.loadClass(ThrownExcImp.class.getName()).newInstance();
     }
 
     @BeforeAll

@@ -5,6 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalArgumentException
@@ -19,6 +22,7 @@ class QuantifierRxGene(
 
     companion object {
         private val log: Logger = LoggerFactory.getLogger(QuantifierRxGene::class.java)
+        private const val MODIFY_LENGTH = 0.1
     }
 
 
@@ -104,22 +108,31 @@ class QuantifierRxGene(
         return min != limitedMax || template.isMutable()
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
         val length = atoms.size
 
-        if( length > min  && randomness.nextBoolean(0.1)){
+        return if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
+            log.trace("Removing atom")
+            emptyList()
+        } else if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
+            emptyList()
+        } else {
+            atoms.filter { it.isMutable() }
+        }
+    }
+
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+        val length = atoms.size
+
+        if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
             log.trace("Removing atom")
             atoms.removeAt(randomness.nextInt(length))
-        } else if(length < limitedMax && randomness.nextBoolean(0.1)){
+        } else if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
             addNewAtom(randomness, false, listOf())
-        } else {
-            val atoms = atoms.filter { it.isMutable() }
-            if(atoms.isEmpty()){
-                return
-            }
-            val atom = randomness.choose(atoms)
-            atom.standardMutation(randomness, apc, allGenes)
         }
+
+        return true
     }
 
     fun addNewAtom(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>){
@@ -179,5 +192,9 @@ class QuantifierRxGene(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(atoms.flatMap { it.flatView(excludePredicate) })
+    }
+
+    override fun mutationWeight(): Double {
+        return atoms.filter { isMutable() }.map { it.mutationWeight() }.sum() + 1.0
     }
 }

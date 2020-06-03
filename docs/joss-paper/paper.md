@@ -44,7 +44,7 @@ Unfortunately, due to its high cost, software testing is often left incomplete, 
 
 
 To address this problem, in *Software Engineering* (SE) research a lot of effort has been spent in trying 
-to design and implement novel techniques aimed at automating several different tasks in SE.
+to design and implement novel techniques aimed at automating several different tasks, where software testing is among the most studied tasks. 
 *Search-Based Software Testing* (SBST) [@harman2012search] casts the problem of software testing as an optimization problem,
 aimed at, for example, maximizing code coverage and fault detection.   
 
@@ -58,8 +58,7 @@ The ``EvoMaster`` tool is aimed  at:
  
 * practitioners in industry that want to automatically test their software. 
 
-* researchers that need generated test cases to answer the research questions in the SE 
-  problems that they are investigating.  
+* researchers that need generated test cases for their studies.
 
 
 # Tool Summary
@@ -71,18 +70,42 @@ and *Dynamic Program Analysis*  to be able to generate effective test cases.
 The approach is to *evolve* test cases from an initial population of 
 random ones, using code coverage and fault detection as fitness function.
 
+
+Key features:
+
+* At the moment, *EvoMaster* targets RESTful APIs compiled to JVM **8** and **11** bytecode. 
+
+* The APIs must provide a schema in *OpenAPI/Swagger* format (either *v2* or *v3*).
+
+* The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
+
+* Fault detection: *EvoMaster* can generate tests cases that reveal faults/bugs in the tested applications. Different heuristics are employed, like checking for 500 status codes and mismatches from the API schemas.
+
+* Self-contained tests: the generated tests do start/stop the application, binding to an ephemeral port. This means that the generated tests can be used for *regression testing* (e.g., added to the *Git* repository of the application, and run with any build tool such as *Maven* and *Gradle*).
+
+* Advanced *whitebox* heuristics: *EvoMaster* analyses the bytecode of the tested applications, and uses several heuristics such as *testability transformations* and *taint analysis* to be able to generate more effective test cases.
+
+* SQL handling: *EvoMaster* can intercept and analyse all communications done with SQL databases, and use such information to generate higher code coverage test cases. Furthermore, it can generate data directly into the databases, and have such initialization automatically added in the generated tests. At the moment, *EvoMaster* supports *H2* and *Postgres* databases.
+
+* *Blackbox* testing mode: can run on any API (regardless of its programming language), as long as an *OpenAPI* schema is provided. However, results will be worse than *whitebox* testing (e.g., due to lack of bytecode analysis).
+
+
+# Published Results
+
 When addressing the testing of real-world web/enterprise applications, there are many challenges. 
-To face and overcome those challenges, ``EvoMaster`` has been used to experiment with several novel techniques.
-This led to several publications:
+The tested code can for example have complex execution flows, where the boolean predicates in *if* and *loop* statements depend on specific input data.
+Furthermore, the execution flow could depend on interactions with external entities, such as databases, GUIs and remote web services. 
+The search space of all possible test inputs is huge, where only a tiny subset lead to maximize code coverage and detect faults. 
+
+
+To face and overcome those challenges, *EvoMaster* has been used to experiment with several novel techniques.
+These techniques are now integrated in *EvoMaster*, where their best settings (based on empirical studies) are on by default.
+
+This research work led to several publications:
 novel search algorithms such as *MIO* [@mio2017][@arcuri2018test],
 addressing the white-box testing of RESTful APIs [@arcuri2017restful][@arcuri2019restful],
 resource-dependency handling [@zhang2019resource], accesses to SQL databases [@arcuri2019sql],
 and novel *testability transformations* [@arcuri2020testability].
-
-At the moment, ``EvoMaster`` targets RESTful APIs compiled to 
-JVM __8__ and __11__ bytecode.
-The APIs must provide a schema in *OpenAPI/Swagger* format (either _v2_ or _v3_).
-The tool generates JUnit (version 4 or 5) tests, written in either Java or Kotlin.
 
 
 # Related Work

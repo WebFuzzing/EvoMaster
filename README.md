@@ -94,11 +94,7 @@ case studies in [EMB](https://github.com/EMResearch/EMB).
 ### Hiring
 
 Each year we usually have funding for _postdoc_ and _PhD student_ positions to work on this project (in Oslo, Norway).
-When such positions are available, the job ads will be posted here (e.g., links to _LinkedIn_). 
-
-* 2020: PhD positions. Calls will be out later during spring/summer.
-
-* 2020: [Postdoc positions. Currently hiring.](https://www.linkedin.com/jobs/view/1771600197/)
+For more details on current vacancies, see our group page at [AISE Lab](https://emresearch.github.io/).
 
 ### Examples
 
