@@ -167,50 +167,66 @@ class ArchiveMutator {
 
     private fun impactBasedOnWeights(impacts : List<Impact>, targets: Set<Int>, properties: Array<ImpactProperty>) : Array<Double>{
 
-        val values : List<List<Double>> = impacts.map { impact ->
+        val values : List<MutableList<Double>> = impacts.map { impact ->
             properties.map { p->
                 when(config.geneWeightBasedOnImpactsBy){
                     EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER -> getCounterByProperty(impact, p, targets).toDouble()
                     EMConfig.GeneWeightBasedOnImpact.RATIO, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> getDegreeByProperty(impact, p, targets)
                 }
-            }
+            }.toMutableList()
         }
 
+        handleNotVisit(values, properties.size)
+
+        //Man: shall we normalize data?
         return when(config.geneWeightBasedOnImpactsBy){
             EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.RATIO -> values.map { it.sum() }.toTypedArray()
             EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> {
-                val weights = Array(impacts.size){0.0}
-                values.mapIndexed { index, list -> Pair(index, list.sum()) }.sortedBy { it.second }.forEachIndexed { s, pair ->
-                    weights[pair.first] = s + 1.0
+                val weights = Array(impacts.size){Array(properties.size){0.0}}
+                (0 until properties.size).map {pi->
+                    values.mapIndexed { index, list -> Pair(index, list[pi]) }.sortedBy { it.second }.forEachIndexed { index, pair ->
+                        weights[pair.first][pi] = index + 1.0
+                    }
                 }
-                weights
+                weights.map { it.average() }.toTypedArray()
             }
         }
     }
 
 
+    private fun handleNotVisit(values : List<MutableList<Double>>, sizeOfProperty: Int){
+
+        (0 until sizeOfProperty).forEach {pi->
+            val r = values.map { v->v[pi] }.max()?:0.0
+            values.forEachIndexed { index, list -> if (list[pi] < 0) values[pi][index] = r }
+        }
+    }
+
     /**
      * the more，the better
      */
     private fun getCounterByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Int {
-        val value = when (property) {
-            ImpactProperty.TIMES_IMPACT -> impact.getCounter(property, targets, By.MAX)
-            else -> impact.getTimesToManipulate() - impact.getCounter(property, targets, By.MIN)
+        val value = impact.getCounter(property, targets, By.MAX)
+
+        if (value < 0) return value
+
+        return when (property) {
+            ImpactProperty.TIMES_IMPACT -> value
+            else -> impact.getTimesToManipulate() - value
         }
-        //if (value < 0) return randomness.nextInt(0, impact.getTimesToManipulate())
-        return max(0, value)
     }
 
     /**
      * the more，the better
      */
     private fun getDegreeByProperty(impact: Impact, property: ImpactProperty, targets: Set<Int>): Double {
-        val value = when (property) {
-            ImpactProperty.TIMES_IMPACT -> impact.getDegree(property, targets, By.MAX)
-            else -> 1.0 - impact.getDegree(property, targets, By.MIN)
+        val value = impact.getDegree(property, targets, By.MAX)
+        if (value < 0) return value
+
+        return when (property) {
+            ImpactProperty.TIMES_IMPACT -> value
+            else -> 1.0 - value
         }
-        //if (value < 0) return randomness.nextDouble()
-        return max(0.0, value)
     }
 
 

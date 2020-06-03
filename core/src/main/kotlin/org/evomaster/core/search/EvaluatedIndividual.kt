@@ -8,7 +8,6 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -381,12 +380,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             improvedTargets: Set<Int>
     ){
 
-        /*
-        NOTE THAT if applying 1/n, a number of mutated genes may be more than 1 (e.g., n = 2).
-        This might have side effects to impact analysis, so we only collect no impact info and ignore to collect impacts info.
-        But times of manipulation should be updated.
-         */
-        val onlyManipulation = false//((mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size) > 1) && impactTargets.isNotEmpty()
         mutatedGenes.mutatedActionOrDb().forEach { db->
             val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(
                     mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous, fromInitialization = db)
@@ -398,12 +391,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
                         geneId = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, gc.current),
                         fromInitialization = db
                 )?:throw IllegalArgumentException("mismatched impact info")
+
                 impact.countImpactWithMutatedGeneWithContext(
                         gc,
                         noImpactTargets = noImpactTargets,
                         impactTargets = impactTargets,
                         improvedTargets = improvedTargets,
-                        onlyManipulation = onlyManipulation
+                        onlyManipulation = false
                 )
             }
         }
