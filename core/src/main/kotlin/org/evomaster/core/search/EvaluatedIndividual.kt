@@ -558,7 +558,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
     }
 
-    fun getSizeOfActionImpact(fromInitialization : Boolean) : Int{
+    fun getSizeOfImpact(fromInitialization : Boolean) : Int{
         impactInfo?: return -1
         return impactInfo.getSizeOfActionImpacts(fromInitialization)
     }

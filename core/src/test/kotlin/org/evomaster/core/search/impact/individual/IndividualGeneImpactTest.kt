@@ -50,7 +50,7 @@ class IndividualGeneImpactTest {
 
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividual()
 
-        assert(evi_ind1.getSizeOfActionImpact(fromInitialization = false) == 2)
+        assert(evi_ind1.getSizeOfImpact(fromInitialization = false) == 2)
         val mutatedIndex = 1
         val spec = MutatedGeneSpecification()
 
@@ -95,7 +95,7 @@ class IndividualGeneImpactTest {
                 impactTargets = impactTarget
         )
 
-        assert(tracked_evi_ind2.getSizeOfActionImpact(false) == 2)
+        assert(tracked_evi_ind2.getSizeOfImpact(false) == 2)
         val evi_ind1impactInfo = evi_ind1.getImpactByAction(mutatedIndex, false)
         assert(evi_ind1impactInfo!= null)
         val ind1impact = evi_ind1impactInfo!![mutatedGeneId]
@@ -129,7 +129,7 @@ class IndividualGeneImpactTest {
 
         val evi_ind1 = simulatedMutator.getFakeEvaluatedIndividual()
 
-        assert(evi_ind1.getSizeOfActionImpact(false) == 2)
+        assert(evi_ind1.getSizeOfImpact(false) == 2)
         val mutatedIndex = 1
         val spec = MutatedGeneSpecification()
 
@@ -168,7 +168,7 @@ class IndividualGeneImpactTest {
                 impactTargets = impactTarget
         )
 
-        assert(tracked_evi_ind2.getSizeOfActionImpact(false) == 1)
+        assert(tracked_evi_ind2.getSizeOfImpact(false) == 1)
 
 
     }

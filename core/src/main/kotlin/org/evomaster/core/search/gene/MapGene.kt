@@ -102,7 +102,7 @@ class MapGene<T>(
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 if(additionalGeneMutationInfo?.impact != null
                         && additionalGeneMutationInfo.impact is MapGeneImpact
-                        && additionalGeneMutationInfo.impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
+                        && additionalGeneMutationInfo.impact.sizeImpact.getNoImpactsFromImpactCounter().any { it.value < 2 } //if there is recent improvement by manipulating size
                 ){
                     0.3 // increase probability to mutate size
                 }else MODIFY_SIZE

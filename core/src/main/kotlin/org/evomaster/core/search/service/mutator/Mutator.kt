@@ -91,7 +91,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      */
     private fun getTargetForCoverageCalculation(archive: Archive<T>, mutatedGenes: MutatedGeneSpecification, evi: EvaluatedIndividual<T>) : Set<Int> {
 
-        if (!config.enablePrioritizeTargetsByImpact || config.geneSelectionMethod == GeneMutationSelectionMethod.NONE || mutatedGenes.geneSelectionStrategy == GeneMutationSelectionMethod.NONE) return setOf()
+        if (!config.enablePrioritizeTargetsByImpact || config.adaptiveGeneSelectionMethod == GeneMutationSelectionMethod.NONE || mutatedGenes.geneSelectionStrategy == GeneMutationSelectionMethod.NONE) return setOf()
 
         val all = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) }.toSet()
 

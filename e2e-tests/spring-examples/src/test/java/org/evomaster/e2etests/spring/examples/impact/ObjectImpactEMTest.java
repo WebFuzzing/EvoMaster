@@ -15,6 +15,7 @@ import org.evomaster.core.search.impact.ImpactUtils;
 import org.evomaster.core.search.impact.value.ObjectGeneImpact;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -31,26 +32,31 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ObjectImpactEMTest extends SpringTestBase {
 
+    @Disabled("Adaptive Gene Selection for Gene is disabled")
     @Test
     public void testAwayNoImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
+    @Disabled("Adaptive Gene Selection for Gene is disabled")
     @Test
     public void testImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
     }
 
+    @Disabled("Adaptive Gene Selection for Gene is disabled")
     @Test
     public void testLatestImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT);
     }
 
+    @Disabled("Adaptive Gene Selection for Gene is disabled")
     @Test
     public void testLatestImprovement() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT);
     }
 
+    @Disabled("Adaptive Gene Selection for Gene is disabled")
     @Test
     public void testBalance() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT);
@@ -115,7 +121,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
                     }
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
-                            s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noImpactIntField", s)
+                            s -> (s.getSizeOfImpact(false) + s.getSizeOfImpact(true)) > 0 && checkNoImpact("noImpactIntField", s)
                     );
 
                     assertTrue(impactInfoCollected);
@@ -136,7 +142,8 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
     private boolean checkNoImpact(String fieldName, EvaluatedIndividual<RestIndividual> ind){
 
-        if (ind.getImpactOfGenes().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
+        if (ind
+                .flattenAllGeneImpact().stream().map(s -> s.getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
 
         List<Gene> genes = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(s-> s instanceof ObjectGene).collect(Collectors.toList());
 
@@ -145,7 +152,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
         for (Gene obj : genes){
             String id = ImpactUtils.Companion.generateGeneId(ind.getIndividual(), obj);
-            GeneImpact impact = ind.getImpactOfGenes().get(id);
+            GeneImpact impact = ind.getImpact(ind.getIndividual(), obj); //.getImpactOfGenes().get(id);
 
             assert(impact instanceof ObjectGeneImpact);
 
@@ -159,7 +166,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
                             // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others
                            // (noImpactField.getTimesOfImpact() <= other.getTimesOfImpact()
                             (noImpactField.getMaxImpact() <=other.getMaxImpact()
-                                    || noImpactField.getTimesOfNoImpacts() >= other.getTimesOfNoImpacts())
+                                    || noImpactField.getTimesOfNoImpact() >= other.getTimesOfNoImpact())
                             &&
                             // ideally getTimesToManipulate should be less than any others
                             (noImpactField.getTimesToManipulate() <= other.getTimesToManipulate());

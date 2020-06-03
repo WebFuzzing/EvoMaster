@@ -88,17 +88,18 @@ class EnumGene<T : Comparable<T>>(
             return true
         }
 
-        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is EnumGeneImpact){
-            val candidates = (0 until values.size).filter { index != it }.map {
-                Pair(it, additionalGeneMutationInfo.impact.values[it])
-            }
-            val selects = additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), additionalGeneMutationInfo.targets)
-            index = randomness.choose(selects)
+//        archive-based mutation
+//        if (additionalGeneMutationInfo?.impact != null && additionalGeneMutationInfo.impact is EnumGeneImpact){
+//            val candidates = (0 until values.size).filter { index != it }.map {
+//                Pair(it, additionalGeneMutationInfo.impact.values[it])
+//            }
+//            val selects = additionalGeneMutationInfo.archiveMutator.selectGenesByArchive(candidates, 1.0/(values.size - 1), additionalGeneMutationInfo.targets)
+//            index = randomness.choose(selects)
+//
+//            return true
+//        }
 
-            return true
-        }
-
-        throw IllegalArgumentException("impact is null or not DisruptiveGeneImpact")
+        throw IllegalArgumentException("impact is null or not EnumGeneImpact")
     }
 
 

@@ -145,7 +145,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 //root gene reference
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 //root gene impact
-                val impact = individual.getImpactOfGenes()[id]
+                val impact = individual.getImpact(copy, gene)
                 gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveMutation, AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets ))
             } else {
                 gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy)
