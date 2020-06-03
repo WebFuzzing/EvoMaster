@@ -180,7 +180,6 @@ class IndividualGeneImpactTest {
         init {
             config.enableTrackEvaluatedIndividual = true
             config.probOfArchiveMutation = 0.5
-            config.impactGeneSelection = EMConfig.ImpactGeneSelection.PROBABILITY
         }
 
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification) : EvaluatedIndividual<Ind>{

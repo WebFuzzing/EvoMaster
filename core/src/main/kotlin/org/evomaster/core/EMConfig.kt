@@ -1009,40 +1009,24 @@ class EMConfig {
     var startArchiveMutation = 0.0
 
     @Experimental
-    @Cfg("Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability(false)
-    var startPerOfCandidateGenesToMutate = 0.9
-
-    @Experimental
-    @Cfg("Specify a percentage after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate")
-    @PercentageAsProbability(false)
-    var endPerOfCandidateGenesToMutate = 0.5
-
-    @Experimental
     @Cfg("Specify whether to prioritize targets to be evaluated regarding impacts")
     var enablePrioritizeTargetsByImpact = false
-
-    @Experimental
-    @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
-    var impactGeneSelection = ImpactGeneSelection.PROBABILITY
-
-    @Experimental
-    @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
-    var prioritizeNotVisit = true
 
     @Experimental
     @Cfg("whether to abstract genes that exist initialization actions to mutate")
     var abstractInitializationGeneToMutate = false
 
-    enum class ImpactGeneSelection{
-        PROBABILITY,
-        SUBSET_PROBABILITY,
-        ADAPTIVE_SUBSET_PROBABILITY
-    }
 
     @Experimental
-    @Cfg("Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset ")
-    var sortedByCounter = false
+    @Cfg("Specify a strategy to calculate a weight of a gene based on impacts")
+    var geneWeightBasedOnImpactsBy = GeneWeightBasedOnImpact.SORT_COUNTER
+
+    enum class GeneWeightBasedOnImpact{
+        SORT_COUNTER,
+        SORT_RATIO,
+        COUNTER,
+        RATIO
+    }
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
