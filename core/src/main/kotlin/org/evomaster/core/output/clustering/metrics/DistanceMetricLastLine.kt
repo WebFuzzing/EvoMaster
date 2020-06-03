@@ -15,6 +15,7 @@ import org.evomaster.core.problem.rest.RestCallResult
 
 class DistanceMetricLastLine : DistanceMetric<RestCallResult>() {
     private val name = "LastLine"
+    public var recommededEpsilon = 0.8
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
