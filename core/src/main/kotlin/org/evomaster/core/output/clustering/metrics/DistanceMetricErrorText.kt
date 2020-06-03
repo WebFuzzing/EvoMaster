@@ -20,6 +20,7 @@ import javax.ws.rs.core.MediaType
 
 class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
     private val name = "ErrorText"
+    private val recommendedEpsilon = 0.6
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val message1 = if (includeInClustering(first)){
             Gson().fromJson(first.getBody(), Map::class.java)?.get("message") ?: ""
@@ -34,6 +35,10 @@ class DistanceMetricErrorText : DistanceMetric<RestCallResult>() {
             "" //second.getBody()
         }
         return LevenshteinDistance.distance(message1.toString(), message2.toString())
+    }
+
+    override fun getRecommendedEpsilon(): Double {
+        return recommendedEpsilon
     }
 
     override fun getName(): String {

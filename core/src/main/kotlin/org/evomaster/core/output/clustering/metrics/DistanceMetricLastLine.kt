@@ -15,11 +15,15 @@ import org.evomaster.core.problem.rest.RestCallResult
 
 class DistanceMetricLastLine : DistanceMetric<RestCallResult>() {
     private val name = "LastLine"
-    public var recommededEpsilon = 0.8
+    private var recommendedEpsilon = 0.8
     override fun calculateDistance(first: RestCallResult, second: RestCallResult): Double {
         val lastLine1 = first.getLastStatementWhen500() ?: ""
         val lastLine2 = second.getLastStatementWhen500() ?: ""
         return LevenshteinDistance.distance(lastLine1, lastLine2)
+    }
+
+    override fun getRecommendedEpsilon(): Double{
+        return recommendedEpsilon
     }
 
     override fun getName(): String {

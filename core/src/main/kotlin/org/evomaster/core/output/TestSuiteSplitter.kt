@@ -88,7 +88,7 @@ object TestSuiteSplitter {
             clusters[metric.getName()] = Clusterer.cluster(
                     //Solution(errs, solution.testSuiteName, Termination.SUMMARY),
                     clusteringSol,
-                    epsilon = metric.recommendedEpsilon,
+                    epsilon = metric.getRecommendedEpsilon(),
                     oracles = oracles,
                     metric = metric)
         }
