@@ -198,11 +198,12 @@ class StringGene(
         }
 
         val minPforTaint = 0.1
+        val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
 
         if (
                 !apc.doesFocusSearch() &&
                 (
-                        (!tainted && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability(minPforTaint)))
+                        (!tainted && randomness.nextBoolean(tp))
                                 ||
                                 /*
                                     if this has already be tainted, but that lead to no specialization,
@@ -212,7 +213,7 @@ class StringGene(
                                     specialization depends on code paths executed depending on other inputs
                                     in the test case
                                  */
-                                (tainted && randomness.nextBoolean(minPforTaint))
+                                (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
                         )
         ) {
 
