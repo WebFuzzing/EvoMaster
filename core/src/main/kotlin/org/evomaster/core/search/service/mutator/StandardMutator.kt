@@ -71,8 +71,8 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 if (config.specializeSQLGeneSelection){
                     val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
                     val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
-                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
-                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
+                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false, numOfGroup = 2))
+                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false, numOfGroup = 2))
                 }else{
                     mutated.addAll(mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
                 }
