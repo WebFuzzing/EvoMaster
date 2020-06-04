@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
 /**
- * created by manzh on 2020-06-02
+ * created by manzh on 2020-06-03
  */
 class MutationWeightControlTest {
 
@@ -44,6 +44,7 @@ class MutationWeightControlTest {
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
         config.maxActionEvaluations = 10
+
     }
 
     @Test
@@ -76,33 +77,47 @@ class MutationWeightControlTest {
 
     @Test
     fun testObjectGene(){
-        config.d = 0.0
+        time.newActionEvaluation(5)
 
-        val individual = IndividualMutationweightTest.newRestIndividual()
+        val individual = IndividualMutationweightTest.newRestIndividual("POST:/efoo")
         val obj = individual.seeGenes(Individual.GeneFilter.NO_SQL).find { it is ObjectGene }
 
         assertNotNull(obj)
 
-        val mutated = obj!!.copy()
-        mutated.standardMutation(
-                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+        config.weightBasedMutationRate = true
+        config.d = 0.0
+        /*
+            7 fields, and their weights are 2, 2, 2, 2, 2, 2, 61
+            then, m of 7th field are not less than 61/73 when d = 0.0.
+            thus when executing 2 times, we assume that 7rd field is selected at least one time
+         */
+        val resultHW = selectField(obj as ObjectGene, 6, 2, SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT)
+        assert(resultHW)
+
+        config.weightBasedMutationRate = false
+        /*
+            7 fields, then m = 1/7
+         */
+        val result = selectField(obj, 6, 1, SubsetGeneSelectionStrategy.DEFAULT)
+        assertFalse(result)
+    }
+
+    private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneSelectionStrategy) : Boolean{
+        val mutatedWH = obj.copy()
+        mutatedWH.standardMutation(
+                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = selectionStrategy
         )
 
         var result = false
-        /*
-            3 fields, and their weights are 2, 2, 5
-            then, m of 3rd field are not less than 5/9 when d = 1.0.
-            thus when executing 2 times, we assume that 3rd field is selected at least one time
-         */
-        (0..1).forEach { _ ->
-            val mf = (mutated as ObjectGene).fields.zip( (obj as ObjectGene).fields ){ t, o ->
+
+        (0..times).forEach { _ ->
+            val mf = (mutatedWH as ObjectGene).fields.zip( obj.fields ){ t, o ->
                 t.containsSameValueAs(o)
             }
-            result = result || !mf[2]
+            result = result || !mf[indexOfField]
         }
 
-        assert(result)
+        return result
     }
-
 
 }
