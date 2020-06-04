@@ -74,6 +74,9 @@ public class ObjectImpactEMTest extends SpringTestBase {
                     args.add("--probOfArchiveMutation");
                     args.add("1.0");
 
+                    args.add("--weightBasedMutationRate");
+                    args.add("true");
+
                     args.add("--adaptiveGeneSelectionMethod");
                     args.add(method.toString());
 

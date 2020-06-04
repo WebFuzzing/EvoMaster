@@ -57,7 +57,6 @@ class ArchiveMutator {
 
     /**************************** gene selection ********************************************/
 
-
     /**
      * calculate weights of genes (ie, [map]) based on impacts
      */
@@ -81,6 +80,8 @@ class ArchiveMutator {
         }
     }
 
+
+
     /**
      * @return weights calculated based on [impacts]
      * @param impacts a list of impacts
@@ -101,38 +102,32 @@ class ArchiveMutator {
     }
 
     /**
-     * FIXME MAN
-     *
      * ideally, candidates should shrink with search for a focused mutation.
-     * but if there is no enough info for deciding whether the gene is impactful, we need expand the number of candidates to mutate.
+     * but if there is no enough info for deciding whether the gene is impactful, we need expand budget to explore.
      */
-    private fun expandPercentage(impacts: List<Impact>, targets: Set<Int>, method: GeneMutationSelectionMethod, percentage: Double): Double {
-        var modifyPercentage = percentage
-        val properties = mutableSetOf<ImpactProperty>()
-        when (method) {
-            GeneMutationSelectionMethod.AWAY_NOIMPACT -> properties.add(ImpactProperty.TIMES_NO_IMPACT)
+    private fun expandBudgetToExplore(impacts: List<Impact>, targets: Set<Int>, method: GeneMutationSelectionMethod): Boolean {
+        return getImpactPropertiesByMethod(method).map { ImpactUtils.getImpactDistribution(impacts, it, targets) }.any { it == ImpactPropertyDistribution.NONE || it == ImpactPropertyDistribution.FEW }
+    }
+
+    private fun getImpactPropertiesByMethod(method : GeneMutationSelectionMethod) : Array<ImpactProperty>{
+        return when (method) {
+            GeneMutationSelectionMethod.AWAY_NOIMPACT -> arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET)
             GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT -> {
-                properties.add(ImpactProperty.TIMES_NO_IMPACT)
-                properties.add(ImpactProperty.TIMES_IMPACT)
+                arrayOf(ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET, ImpactProperty.TIMES_IMPACT)
             }
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT -> {
-                properties.add(ImpactProperty.TIMES_IMPACT)
-                properties.add(ImpactProperty.TIMES_CONS_NO_IMPROVEMENT)
+                arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPROVEMENT)
             }
-            GeneMutationSelectionMethod.APPROACH_IMPACT -> properties.add(ImpactProperty.TIMES_IMPACT)
+            GeneMutationSelectionMethod.APPROACH_IMPACT -> arrayOf(ImpactProperty.TIMES_IMPACT)
 
             GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT -> {
-                properties.add(ImpactProperty.TIMES_IMPACT)
-                properties.add(ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT)
+                arrayOf(ImpactProperty.TIMES_IMPACT, ImpactProperty.TIMES_CONS_NO_IMPACT_FROM_IMPACT)
+            }else -> {
+                throw IllegalArgumentException("invalid gene selection method: method cannot be NONE or adaptive, but $method")
             }
         }
-        val rank = properties.map { ImpactUtils.getImpactDistribution(impacts, it, targets) }.sortedByDescending { it.rank }
-
-        if (rank.first() == ImpactPropertyDistribution.NONE) modifyPercentage = 1.0
-        if (rank.first() == ImpactPropertyDistribution.FEW && modifyPercentage < 0.7) modifyPercentage = 0.7
-
-        return modifyPercentage
     }
+
 
     /**
      * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
@@ -198,7 +193,7 @@ class ArchiveMutator {
 
         (0 until sizeOfProperty).forEach {pi->
             val r = values.map { v->v[pi] }.max()?:0.0
-            values.forEachIndexed { index, list -> if (list[pi] < 0) values[pi][index] = r }
+            values.forEachIndexed { index, list -> if (list[pi] < 0) values[index][pi] = r }
         }
     }
 

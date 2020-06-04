@@ -14,7 +14,6 @@ import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.impact.value.date.TimeGeneImpact
 import org.evomaster.core.search.impact.value.numeric.*
 import org.evomaster.core.Lazy
-import org.evomaster.core.database.DbAction
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -217,8 +216,11 @@ class ImpactUtils {
             }
         }
 
+        /**
+         * @return a degree to measure whether collect enough impact info regarding specified [property] and given [targets]
+         */
         fun getImpactDistribution(impacts : List<Impact>, property: ImpactProperty, targets : Set<Int>) : ImpactPropertyDistribution{
-            val specified = impacts.filter {
+            val available = impacts.filter {
                 when(property){
                     ImpactProperty.TIMES_NO_IMPACT -> it.getTimesOfNoImpact() > 0
                     ImpactProperty.TIMES_NO_IMPACT_WITH_TARGET -> it.getTimesOfNoImpactWithTargets().any { t -> (targets.isEmpty() || targets.contains(t.key)) && t.value > 0}
@@ -228,10 +230,10 @@ class ImpactUtils {
                 }
             }.size
             return when{
-                specified == 0 -> ImpactPropertyDistribution.NONE
-                specified == impacts.size -> ImpactPropertyDistribution.ALL
-                specified < impacts.size * 0.3 -> ImpactPropertyDistribution.FEW
-                specified > impacts.size * 0.7 -> ImpactPropertyDistribution.MOST
+                available == 0 -> ImpactPropertyDistribution.NONE
+                available == impacts.size -> ImpactPropertyDistribution.ALL
+                available < impacts.size * 0.3 -> ImpactPropertyDistribution.FEW
+                available > impacts.size * 0.7 -> ImpactPropertyDistribution.MOST
                 else -> ImpactPropertyDistribution.EQUAL
             }
         }
