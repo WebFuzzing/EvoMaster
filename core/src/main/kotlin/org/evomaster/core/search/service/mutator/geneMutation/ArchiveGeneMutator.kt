@@ -175,7 +175,7 @@ class ArchiveMutator {
 
         //Man: shall we normalize data?
         return when(config.geneWeightBasedOnImpactsBy){
-            EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.RATIO -> values.map { it.sum() }.toTypedArray()
+            EMConfig.GeneWeightBasedOnImpact.COUNTER, EMConfig.GeneWeightBasedOnImpact.RATIO -> values.map { it.sum() + 1.0 }.toTypedArray()
             EMConfig.GeneWeightBasedOnImpact.SORT_COUNTER, EMConfig.GeneWeightBasedOnImpact.SORT_RATIO -> {
                 val weights = Array(impacts.size){Array(properties.size){0.0}}
                 (0 until properties.size).map {pi->
@@ -192,7 +192,7 @@ class ArchiveMutator {
     private fun handleNotVisit(values : List<MutableList<Double>>, sizeOfProperty: Int){
 
         (0 until sizeOfProperty).forEach {pi->
-            val r = values.map { v->v[pi] }.max()?:0.0
+            val r = max(0.0,values.map { v->v[pi] }.max()?:0.0)
             values.forEachIndexed { index, list -> if (list[pi] < 0) values[index][pi] = r }
         }
     }
