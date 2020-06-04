@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Assertions.*
 /**
  * created by manzh on 2020-06-03
  */
-class MutationWeightControlTest {
+class ImpactMutationWeightControlTest {
 
     private lateinit var config: EMConfig
     private lateinit var time : SearchTimeController
@@ -44,13 +44,13 @@ class MutationWeightControlTest {
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
         config.focusedSearchActivationTime = 0.5
         config.maxActionEvaluations = 10
-
+        config.weightBasedMutationRate = true
     }
 
     @Test
     fun testIndividual(){
-        config.weightBasedMutationRate = true
-        config.probOfArchiveMutation = 0.0 // disable adaptive mutation rate
+
+        config.probOfArchiveMutation = 1.0 // disable adaptive mutation rate
         config.d = 0.0 //only based on weight
         time.newActionEvaluation(5)
 
