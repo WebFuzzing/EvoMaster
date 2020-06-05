@@ -98,5 +98,7 @@ class ObjectGenerator {
     fun getNamedReference(name: String): ObjectGene{
         return modelCluster.getValue(name)
     }
-
+    fun containsKey(name: String): Boolean{
+        return modelCluster.containsKey(name)
+    }
 }

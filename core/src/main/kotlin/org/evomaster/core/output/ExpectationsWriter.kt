@@ -3,6 +3,8 @@ package org.evomaster.core.output
 import io.swagger.v3.oas.models.OpenAPI
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 
 class ExpectationsWriter {
     private var format: OutputFormat = OutputFormat.JAVA_JUNIT_4
@@ -23,7 +25,10 @@ class ExpectationsWriter {
         this.partialOracles = partialOracles
     }
 
-    fun addDeclarations(lines: Lines){
+    fun addDeclarations(lines: Lines, individual: EvaluatedIndividual<RestIndividual>){
+        if(!this::partialOracles.isInitialized ||
+            !partialOracles.generatesExpectation(individual)) return
+
         lines.addEmpty()
         when{
             format.isJava() -> lines.append("ExpectationHandler expectationHandler = expectationHandler()")
@@ -34,13 +39,9 @@ class ExpectationsWriter {
 
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
-        when{
-            format.isKotlin() -> lines.add("val json_$name: JsonPath = $name")
-            format.isJava() -> lines.add("JsonPath json_$name = $name")
+        if(this::partialOracles.isInitialized){
+            partialOracles.addExpectations(call, lines, res, name, format)
         }
 
-        lines.append(".extract().response().jsonPath()")
-        lines.appendSemicolon(format)
-        partialOracles.addExpectations(call, lines, res, name, format)
     }
 }
