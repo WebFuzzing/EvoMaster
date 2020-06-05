@@ -193,6 +193,35 @@ If your application uses some caches, those might be reset at each test executio
 However, an easier approach could be to just start the SUT without the caches, for example using
 the option `--spring.cache.type=NONE`.
 
+Whenever possible, it would be best to use an embedded database such as _H2_.
+However, if you need to rely on a specific database such as _Postgres_, we recommend starting
+it with _Docker_.  
+In Java, this can be done with libraries such as [TestContainers](https://github.com/testcontainers/testcontainers-java/).
+In your driver, you can then have code like:
+
+```
+private static final GenericContainer postgres = new GenericContainer("postgres:9")
+            .withExposedPorts(5432)
+            .withTmpFs(Collections.singletonMap("/var/lib/postgresql/data", "rw"));
+```
+ 
+Then, the database can be started in `startSut()` with `postgres.start()`,
+and stopped in `stopSut()` with `postgres.stop()`.
+Then, the URL to connect to the database can be something like:
+
+```
+String host = postgres.getContainerIpAddress();
+int port = postgres.getMappedPort(5432);
+String url = "jdbc:p6spy:postgresql://"+host+":"+port+"/postgres
+```
+
+You can then tell Spring to use such URL with the parameter `--spring.datasource.url`.
+
+Note: the `withTmpFs` configuration is very important, and it is database dependent. 
+A database running in _Docker_ will still write on your hard-drive, which is an unnecessary,
+time-consuming overhead. 
+The idea then is to mount the folder, in which the database writes, directly in RAM.   
+ 
 
 ## Code Coverage  
  
