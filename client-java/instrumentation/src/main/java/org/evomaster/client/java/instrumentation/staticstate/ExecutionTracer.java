@@ -88,6 +88,40 @@ public class ExecutionTracer {
         return TaintInputName.isTaintInput(input) || inputVariables.contains(input);
     }
 
+    public static void handleTaintForStringEquals(String left, String right, boolean ignoreCase){
+
+        if(left == null || right == null){
+            //nothing to do?
+            return;
+        }
+
+        boolean taintedLeft = isTaintInput(left);
+        boolean taintedRight = isTaintInput(right);
+
+        if(taintedLeft && taintedRight){
+            if(ignoreCase ? left.equalsIgnoreCase(right) : left.equals(right)){
+                //tainted, but compared to itself. so shouldn't matter
+                return;
+            }
+
+            //TODO could have EQUAL_IGNORE_CASE
+            String id = left + "___" + right;
+            addStringSpecialization(left, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+            addStringSpecialization(right, new StringSpecializationInfo(StringSpecialization.EQUAL, id));
+            return;
+        }
+
+        StringSpecialization type = ignoreCase ? StringSpecialization.CONSTANT_IGNORE_CASE
+                : StringSpecialization.CONSTANT;
+
+        if (taintedLeft || taintedRight) {
+            if (taintedLeft) {
+                addStringSpecialization(left, new StringSpecializationInfo(type, right));
+            } else {
+                addStringSpecialization(right, new StringSpecializationInfo(type, left));
+            }
+        }
+    }
 
     public static TaintType getTaintType(String input){
 
