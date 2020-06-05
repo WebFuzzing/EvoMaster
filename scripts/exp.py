@@ -178,7 +178,7 @@ if CLUSTER:
     HOME = os.environ['HOME']
     EVOMASTER_DIR = HOME
     CASESTUDY_DIR = HOME + "/dist"
-    LOGS_DIR = os.environ['USERWORK']
+    LOGS_DIR = HOME + "/nobackup"
 
 
 ## Local configurations
@@ -470,6 +470,7 @@ def addJobBody(port, sut, seed, config):
     params += " --appendToStatisticsFile=true"
     params += " --writeStatistics=true"
     params += " --showProgress=false"
+    params += " --testSuiteSplitType=NONE"
 
     command = EVOMASTER + params + " >> " + em_log + " 2>&1"
 
