@@ -887,6 +887,9 @@ class EMConfig {
     @Cfg("Apply method replacement heuristics to smooth the search landscape")
     var useMethodReplacement = true
 
+    @Cfg("Apply non-integer numeric comparison heuristics to smooth the search landscape")
+    var useNonIntegerReplacement = true
+
     @Cfg("Enable to expand the genotype of REST individuals based on runtime information missing from Swagger")
     var expandRestIndividuals = true
 
