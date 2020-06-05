@@ -47,7 +47,7 @@ class PartialOracles {
      * The goal of this method is to ensure that only relevant variables are generated (i.e. to avoid
      * generating stub variables that are never used).
      */
-    fun variableDeclaration(lines: Lines, format: OutputFormat, active: MutableMap<String, Boolean>){
+    fun variableDeclaration(lines: Lines, format: OutputFormat, active: Map<String, Boolean>){
         for (oracle in oracles){
             if(active.get(oracle.getName()) == true) {
                         oracle.variableDeclaration(lines, format)

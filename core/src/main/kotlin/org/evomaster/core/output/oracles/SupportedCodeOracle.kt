@@ -47,9 +47,9 @@ class SupportedCodeOracle : ImplementedOracle() {
             val supportedCodes = getSupportedCode(call)
             //BMR: this will be a problem if supportedCode contains both codes and default...
             if(supportedCodes.contains("0")){
-                lines.add("// WARNING: the code list seems to contain an unsupported code. The issue has been logged.")
+                lines.add("// WARNING: the code list seems to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema. The issue has been logged.")
                 supportedCodes.remove("0")
-                log.warn("The list of supported codes appears to contain an unsupported code. This could indicate a problem with the schema.")
+                log.warn("The list of supported codes appears to contain an unsupported code (0 is not a valid HTTP code). This could indicate a problem with the schema.")
                 //TODO: if a need arises for more involved checks, refactor this
             }
             val supportedCode = supportedCodes.joinToString(", ")
