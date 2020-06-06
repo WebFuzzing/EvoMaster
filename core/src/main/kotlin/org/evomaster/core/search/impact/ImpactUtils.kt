@@ -179,5 +179,10 @@ class ImpactUtils {
             }
         }
 
+
+        fun recentImprovement(impact: Impact) : Boolean{
+            return impact.noImprovement.any { it.value < 2 }
+        }
+
     }
 }

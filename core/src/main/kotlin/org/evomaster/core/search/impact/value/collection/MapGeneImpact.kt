@@ -2,9 +2,7 @@ package org.evomaster.core.search.impact.value.collection
 
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.MapGene
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.Impact
-import org.evomaster.core.search.impact.MutatedGeneWithContext
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
 
 /**
@@ -27,7 +25,9 @@ class MapGeneImpact (
         timesOfImpact= timesOfImpact,
         noImpactFromImpact = noImpactFromImpact,
         noImprovement = noImprovement
-) {
+) , CollectionImpact {
+
+    override fun getSizeImpact(): Impact = sizeImpact
 
     override fun copy(): MapGeneImpact {
         return MapGeneImpact(
@@ -59,4 +59,7 @@ class MapGeneImpact (
     override fun flatViewInnerImpact(): Map<String, Impact> {
         return mutableMapOf("$id-sizeImpact" to sizeImpact)
     }
+
+
+
 }

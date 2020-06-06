@@ -18,7 +18,7 @@ class ArrayGene<T>(
         val template: T,
         var maxSize: Int = 5,
         var elements: MutableList<T> = mutableListOf()
-) : Gene(name)
+) : CollectionGene, Gene(name)
         where T : Gene {
 
     init {
@@ -39,8 +39,6 @@ class ArrayGene<T>(
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
-
-        private const val MODIFY_SIZE = 0.1
     }
 
 
@@ -110,20 +108,7 @@ class ArrayGene<T>(
         if ( elements.isEmpty() || elements.size > maxSize){
             return listOf()
         }
-        val p = when(selectionStrategy){
-            SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
-                if(additionalGeneMutationInfo?.impact != null
-                        && additionalGeneMutationInfo.impact is ArrayGeneImpact
-                        && additionalGeneMutationInfo.impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
-                ){
-                    0.3 // increase probability to mutate size
-                }else MODIFY_SIZE
-            }
-            else ->{
-                MODIFY_SIZE
-
-            }
-        }
+        val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
         return if (randomness.nextBoolean(p)) listOf() else elements
     }
 
