@@ -93,14 +93,13 @@ class TestCaseWriter {
         this.expectationsWriter = ExpectationsWriter()
         expectationsWriter.setFormat(this.format)
 
-        val objGenerator = ObjectGenerator()
-
         setupWriter(config, objectGenerator)
         counter = 0
 
         val lines = Lines()
 
-        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER){
+        if(config.testSuiteSplitType == EMConfig.TestSuiteSplitType.CLUSTER
+                && test.test.getClusters().size != 0){
             clusterComment(lines, test)
         }
         if (format.isJUnit()) {
@@ -115,14 +114,15 @@ class TestCaseWriter {
 
         lines.indented {
 
-            val ind = test.test.individual
+            val ind = test.test
 
-            if (ind is RestIndividual) {
+            if (ind.individual is RestIndividual) {
                 if (configuration.expectationsActive) {
-                    expectationsWriter.addDeclarations(lines)
+                    expectationsWriter.addDeclarations(lines, ind as EvaluatedIndividual<RestIndividual>)
+                    //TODO: -> also check expectation generation before adding declarations
                 }
-                if (ind.dbInitialization.isNotEmpty()) {
-                    SqlWriter.handleDbInitialization(format, ind.dbInitialization, lines)
+                if (ind.individual.dbInitialization.isNotEmpty()) {
+                    SqlWriter.handleDbInitialization(format, ind.individual.dbInitialization, lines)
                 }
             }
 
@@ -135,6 +135,7 @@ class TestCaseWriter {
                     TODO: rather declare variable first time we access it?
                  */
                 lines.addEmpty()
+
 
                 test.test.evaluatedActions().asSequence()
                         .map { it.action }
@@ -283,7 +284,6 @@ class TestCaseWriter {
         if (configuration.expectationsActive) {
             expectationsWriter.handleExpectationSpecificLines(call, lines, res, name)
         }
-        //TODO: BMR expectations from partial oracles here?
     }
 
     /**
@@ -291,7 +291,10 @@ class TestCaseWriter {
      */
     private fun needsResponseVariable(call: RestCallAction, res: RestCallResult) : Boolean{
 
-        return configuration.expectationsActive || (call.saveLocation && !res.stopping)
+        return (configuration.expectationsActive
+                && partialOracles.generatesExpectation(call, res))
+                || !res.failedCall()
+                || (call.saveLocation && !res.stopping)
     }
 
     private fun handleFirstLine(call: RestCallAction, lines: Lines, res: RestCallResult, resVarName: String) {

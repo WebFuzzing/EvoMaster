@@ -1,6 +1,7 @@
 package org.evomaster.e2etests.spring.examples.splitter;
 
 import org.evomaster.core.EMConfig;
+import org.evomaster.core.output.ObjectGenerator;
 import org.evomaster.core.output.TestSuiteSplitter;
 import org.evomaster.core.output.Termination;
 import org.evomaster.core.output.clustering.SplitResult;

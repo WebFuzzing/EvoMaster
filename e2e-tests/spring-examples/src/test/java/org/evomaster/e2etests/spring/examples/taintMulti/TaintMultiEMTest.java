@@ -38,8 +38,6 @@ public class TaintMultiEMTest extends SpringTestBase {
 
         CIUtils.skipIfOnCircleCI();
 
-        defaultSeed = 13;
-
         runTestHandlingFlakyAndCompilation(
                 "TaintMultiEM",
                 "org.bar.TaintMultiEM",

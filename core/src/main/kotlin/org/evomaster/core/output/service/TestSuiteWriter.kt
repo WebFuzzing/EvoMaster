@@ -6,6 +6,8 @@ import org.evomaster.client.java.controller.api.dto.database.operations.Insertio
 import org.evomaster.core.EMConfig
 import org.evomaster.core.output.*
 import org.evomaster.core.problem.rest.BlackBoxUtils
+import org.evomaster.core.problem.rest.RestIndividual
+import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.SearchTimeController
 import org.slf4j.Logger
@@ -30,6 +32,8 @@ class TestSuiteWriter {
     private lateinit var swagger: OpenAPI
     private lateinit var partialOracles: PartialOracles
     private lateinit var objectGenerator: ObjectGenerator
+
+    private var active = mutableMapOf<String, Boolean>()
 
     companion object {
         const val jsImport = "EM";
@@ -73,6 +77,7 @@ class TestSuiteWriter {
         partialOracles.setFormat(config.outputFormat)
         if (::swagger.isInitialized) testCaseWriter.setSwagger(swagger)
         testCaseWriter.setPartialOracles(partialOracles)
+        active = partialOracles.activeOracles(solution.individuals as MutableList<EvaluatedIndividual<RestIndividual>>)
 
         header(solution, testSuiteFileName, lines, controllerName)
 
@@ -82,7 +87,6 @@ class TestSuiteWriter {
              */
             lines.indent()
         }
-
 
         beforeAfterMethods(controllerName, lines)
 
@@ -259,20 +263,6 @@ class TestSuiteWriter {
             } else {
                 lines.add("private static String $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\";")
             }
-
-            if(config.expectationsActive){
-                lines.add("/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
-                        "individual test cases")
-                lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                lines.add("*/")
-                lines.add("private static boolean $expectationsMasterSwitch = false;")
-
-                //TODO: more control switches will be needed for partial oracles (or some other means of handling this)
-
-                //lines.add("private static boolean $responseStructureOracle = false;")
-
-            }
-
         } else if (config.outputFormat.isKotlin()) {
             if (!config.blackBox || config.bbExperiments) {
                 lines.add("private val $controller : SutHandler = $controllerName()")
@@ -280,17 +270,6 @@ class TestSuiteWriter {
             } else {
                 lines.add("private val $baseUrlOfSut = \"${BlackBoxUtils.restUrl(config)}\"")
             }
-
-            if (config.expectationsActive) {
-                lines.add("/**")
-                lines.add("* $expectationsMasterSwitch - expectations master switch - is the variable that activates/deactivates expectations " +
-                        "individual test cases")
-                lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
-                lines.add("*/")
-                lines.add("private val $expectationsMasterSwitch = false")
-
-            }
-
         } else if (config.outputFormat.isJavaScript()) {
 
             if (!config.blackBox || config.bbExperiments) {
@@ -304,7 +283,19 @@ class TestSuiteWriter {
         if(config.expectationsActive) {
             if (config.outputFormat.isJavaOrKotlin()) {
                 //TODO JS
-                partialOracles.variableDeclaration(lines, config.outputFormat)
+                if(active.any{it.value}) {
+                    lines.add("/** [$expectationsMasterSwitch] - expectations master switch - is the variable that activates/deactivates expectations " +
+                            "individual test cases")
+                    lines.add(("* by default, expectations are turned off. The variable needs to be set to [true] to enable expectations"))
+                    lines.add("*/")
+                    if(config.outputFormat.isJava()){
+                        lines.add("private static boolean $expectationsMasterSwitch = false;")
+                    }
+                    else if(config.outputFormat.isKotlin()){
+                        lines.add("private val $expectationsMasterSwitch = false")
+                    }
+                }
+                partialOracles.variableDeclaration(lines, config.outputFormat, active)
             }
         }
         //Note: ${config.expectationsActive} can be used to get the active setting, but the default

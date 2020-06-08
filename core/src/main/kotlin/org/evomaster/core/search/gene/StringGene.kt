@@ -10,7 +10,10 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
+import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
+import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
@@ -41,15 +44,15 @@ class StringGene(
         /**
          * collect info of mutation on its chars of [value]
          */
-        val charsMutation : MutableList<IntMutationUpdate> = mutableListOf(),
+        val charsMutation: MutableList<IntMutationUpdate> = mutableListOf(),
         /**
          * collect info of mutation on its length of [value]
          */
-        val lengthMutation : IntMutationUpdate = IntMutationUpdate(minLength, maxLength),
+        val lengthMutation: IntMutationUpdate = IntMutationUpdate(minLength, maxLength),
         /**
          * collect info regarding whether [this] gene is related to others
          */
-        val dependencyInfo :GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)
+        val dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)
 
 ) : Gene(name) {
 
@@ -61,6 +64,13 @@ class StringGene(
         private const val CHAR_MUTATION_INITIALIZED = -1
 
         private const val PROB_CHANGE_SPEC = 0.1
+
+        /**
+         * These are regex with no value, as they match everything.
+         * Note: we could have something more sophisticated, to check for any possible meaningless one.
+         * But this simple list should do for most cases.
+         */
+        private val meaninglesRegex = setOf(".*","(.*)","^(.*)","(.*)$","^(.*)$","^((.*))","((.*))$","^((.*))$")
     }
 
     /*
@@ -94,10 +104,19 @@ class StringGene(
      * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
      * when [mutatedIndex] = -1, it means that charsMutation of [this] is initialized
      */
-    var mutatedIndex : Int = NEVER_ARCHIVE_MUTATION
+    var mutatedIndex: Int = NEVER_ARCHIVE_MUTATION
 
+    /**
+     * During the search, we might discover (with TaintAnalysis) that 2 different
+     * string variables are compared for equality.
+     * In those cases, if we want to keep them in sync, each time we mutate one, we
+     * need to update the other.
+     * This is not trivial, as the strings might be subject to different constraints,
+     * and we would need to find their intersection.
+     */
+    var bindingIds = mutableSetOf<String>()
 
-    fun charMutationInitialized(){
+    fun charMutationInitialized() {
         mutatedIndex = CHAR_MUTATION_INITIALIZED
     }
 
@@ -111,20 +130,21 @@ class StringGene(
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
                     it.mutatedIndex = this.mutatedIndex
                     it.tainted = this.tainted
+                    it.bindingIds = this.bindingIds.map { id -> id }.toMutableSet()
                 }
         copy.specializationGenes.forEach { it.parent = copy }
         return copy
     }
 
-    fun getSpecializationGene() : Gene?{
-        if(selectedSpecialization >= 0 && selectedSpecialization < specializationGenes.size){
+    fun getSpecializationGene(): Gene? {
+        if (selectedSpecialization >= 0 && selectedSpecialization < specializationGenes.size) {
             return specializationGenes[selectedSpecialization]
         }
         return null
     }
 
-    override fun isMutable() : Boolean{
-        if(getSpecializationGene() != null){
+    override fun isMutable(): Boolean {
+        if (getSpecializationGene() != null) {
             return specializationGenes.size > 1 || getSpecializationGene()!!.isMutable()
         }
         return true
@@ -134,6 +154,7 @@ class StringGene(
         value = randomness.nextWordString(minLength, Math.min(maxLength, maxForRandomization))
         repair()
         selectedSpecialization = -1
+        handleBinding(allGenes)
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
@@ -145,49 +166,53 @@ class StringGene(
 
         val specializationGene = getSpecializationGene()
 
-        if (specializationGene == null && specializationGenes.isNotEmpty()) {
-            //Man: it might not make sense to apply static weight-based mutation on specializationGenes selection, but might apply archive-based one
-            selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1)
+        if (specializationGene == null && specializationGenes.isNotEmpty() && randomness.nextBoolean(0.5)) {
+            selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1)
             selectionUpdatedSinceLastMutation = false
-            return true
+            handleBinding(allGenes)
+            return
 
         } else if (specializationGene != null) {
-            if(selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)){
+            if (selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)) {
                 /*
                     selection of most recent added gene, but only with a given
                     probability, albeit high.
                     point is, switching is not always going to be beneficial
                  */
                 selectedSpecialization = specializationGenes.lastIndex
-            } else if(specializationGenes.size > 1 && randomness.nextBoolean(PROB_CHANGE_SPEC)){
+            } else if (specializationGenes.size > 1 && randomness.nextBoolean(0.1)) {
                 //choose another specialization, but with low probability
-                selectedSpecialization = randomness.nextInt(0, specializationGenes.size-1, selectedSpecialization)
-            } else{
-                //TODO MAN need to check regarding weight-based and archive-based solutions. for instance, when adaptive mutation
+                selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1, selectedSpecialization)
+            } else if(randomness.nextBoolean(0.1)){
+                //not all specializations are useful
+                selectedSpecialization = -1
+            } else {
                 //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation)
+                specializationGene.standardMutation(randomness, apc, allGenes)
             }
             selectionUpdatedSinceLastMutation = false
+            handleBinding(allGenes)
             return true
         }
 
         val minPforTaint = 0.1
+        val tp = apc.getBaseTaintAnalysisProbability(minPforTaint)
 
         if (
-                ! apc.doesFocusSearch() &&
+                !apc.doesFocusSearch() &&
                 (
-                    (!tainted && randomness.nextBoolean(apc.getBaseTaintAnalysisProbability(minPforTaint)))
-                    ||
-                /*
-                    if this has already be tainted, but that lead to no specialization,
-                    we do not want to reset with a new taint value, and so skipping all
-                    standard mutation on strings.
-                    but we might want to use a taint value at a later stage, in case its
-                    specialization depends on code paths executed depending on other inputs
-                    in the test case
-                 */
-                    (tainted && randomness.nextBoolean(minPforTaint) )
-                )
+                        (!tainted && randomness.nextBoolean(tp))
+                                ||
+                                /*
+                                    if this has already be tainted, but that lead to no specialization,
+                                    we do not want to reset with a new taint value, and so skipping all
+                                    standard mutation on strings.
+                                    but we might want to use a taint value at a later stage, in case its
+                                    specialization depends on code paths executed depending on other inputs
+                                    in the test case
+                                 */
+                                (tainted && randomness.nextBoolean(Math.max(tp/2, minPforTaint)))
+                        )
         ) {
 
             value = TaintInputName.getTaintName(StaticCounter.getAndIncrease())
@@ -195,7 +220,7 @@ class StringGene(
             return true
         }
 
-        if(tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)){
+        if (tainted && randomness.nextBoolean(0.5) && TaintInputName.isTaintInput(value)) {
             randomize(randomness, true, allGenes)
             return true
         }
@@ -215,6 +240,7 @@ class StringGene(
                 .filterIsInstance<StringGene>()
                 .map { it.getValueAsRawString() }
                 .filter { it != value }
+                .filter { !TaintInputName.isTaintInput(it) }
 
         value = when {
             //seeding: replace
@@ -256,11 +282,44 @@ class StringGene(
         }
 
         repair()
+        handleBinding(allGenes)
         return true
     }
 
+    /**
+     * This should be called after each mutation, to check if any other genes must be updated after
+     * this one has been mutated
+     */
+    private fun handleBinding(allGenes: List<Gene>){
 
-    fun addSpecializations(key: String, specs: Collection<StringSpecializationInfo>, randomness: Randomness){
+        if(bindingIds.isEmpty()){
+            return
+        }
+
+        val others = allGenes.filterIsInstance<StringGene>()
+                .filter { it != this }
+                .filter{ k ->  this.bindingIds.any { k.bindingIds.contains(it) }}
+
+        if(others.isEmpty()){
+            /*
+                this could happen if the structure mutator did remove the actions
+                containing these other genes
+             */
+            return
+        }
+
+        /*
+            TODO doing this "properly" will be a lot of work... for now, we keep it simple,
+            and remove the specialization in the others
+         */
+        val update = getValueAsRawString()
+        for (k in others){
+            k.selectedSpecialization = -1
+            k.value = update
+        }
+    }
+
+    fun addSpecializations(key: String, specs: Collection<StringSpecializationInfo>, randomness: Randomness) {
 
         val toAddSpecs = specs
                 //don't add the same specialization twice
@@ -273,13 +332,15 @@ class StringGene(
                         We allow constant larger than Max (as that should not be a problem),
                         but not smaller than Min (eg to avoid empty strings in PathParam)
                  */
-                .filter { s -> s.stringSpecialization != StringSpecialization.CONSTANT ||
-                            (invalidChars.none { c -> s.value.contains(c) } && s.value.length >= minLength)}
+                .filter { s ->
+                    s.stringSpecialization != CONSTANT ||
+                            (invalidChars.none { c -> s.value.contains(c) } && s.value.length >= minLength)
+                }
 
         val toAddGenes = mutableListOf<Gene>()
 
         //all constant values are merged in the same enum gene
-        if(toAddSpecs.any { it.stringSpecialization == CONSTANT}){
+        if (toAddSpecs.any { it.stringSpecialization == CONSTANT }) {
             /*
                 TODO partial matches
              */
@@ -289,7 +350,7 @@ class StringGene(
                             toAddSpecs.filter { it.stringSpecialization == CONSTANT }.map { it.value }))
         }
 
-        if(toAddSpecs.any { it.stringSpecialization == CONSTANT_IGNORE_CASE}){
+        if (toAddSpecs.any { it.stringSpecialization == CONSTANT_IGNORE_CASE }) {
             toAddGenes.add(RegexHandler.createGeneForJVM(
                     toAddSpecs.filter { it.stringSpecialization == CONSTANT_IGNORE_CASE }
                             .map { "^(${RegexUtils.ignoreCaseRegex(it.value)})$" }
@@ -298,27 +359,27 @@ class StringGene(
         }
 
 
-        if(toAddSpecs.any {it.stringSpecialization == DATE_YYYY_MM_DD}){
+        if (toAddSpecs.any { it.stringSpecialization == DATE_YYYY_MM_DD }) {
             toAddGenes.add(DateGene(name))
         }
 
-        if(toAddSpecs.any {it.stringSpecialization == BOOLEAN}){
+        if (toAddSpecs.any { it.stringSpecialization == BOOLEAN }) {
             toAddGenes.add(BooleanGene(name))
         }
 
-        if(toAddSpecs.any {it.stringSpecialization == INTEGER}){
+        if (toAddSpecs.any { it.stringSpecialization == INTEGER }) {
             toAddGenes.add(IntegerGene(name))
         }
 
-        if(toAddSpecs.any {it.stringSpecialization == LONG}){
+        if (toAddSpecs.any { it.stringSpecialization == LONG }) {
             toAddGenes.add(LongGene(name))
         }
 
-        if(toAddSpecs.any {it.stringSpecialization == FLOAT}){
+        if (toAddSpecs.any { it.stringSpecialization == FLOAT }) {
             toAddGenes.add(FloatGene(name))
         }
 
-        if(toAddSpecs.any {it.stringSpecialization == DOUBLE}){
+        if (toAddSpecs.any { it.stringSpecialization == DOUBLE }) {
             toAddGenes.add(DoubleGene(name))
         }
 
@@ -335,7 +396,7 @@ class StringGene(
               https://stackoverflow.com/questions/24102484/can-regex-match-intersection-between-two-regular-expressions
          */
 
-        if(toAddGenes.size > 0){
+        if (toAddGenes.size > 0) {
             selectionUpdatedSinceLastMutation = true
             toAddGenes.forEach {
                 it.randomize(randomness, false, listOf())
@@ -344,23 +405,33 @@ class StringGene(
             specializationGenes.addAll(toAddGenes)
             specializations.addAll(toAddSpecs)
         }
+
+        if (toAddSpecs.any { it.stringSpecialization == EQUAL }) {
+            /*
+                this treated specially. we do not create a new string specialization, but
+                rather update bindingIds
+             */
+            val ids = toAddSpecs.filter { it.stringSpecialization == EQUAL }.map { it.value }
+            bindingIds.addAll(ids)
+        }
     }
 
 
     private fun handleRegex(key: String, toAddSpecs: List<StringSpecializationInfo>, toAddGenes: MutableList<Gene>) {
 
-        val fullPredicate = {s : StringSpecializationInfo -> s.stringSpecialization == REGEX && s.type.isFullMatch}
-        val partialPredicate = {s : StringSpecializationInfo -> s.stringSpecialization == REGEX && s.type.isPartialMatch}
+        val fullPredicate = { s: StringSpecializationInfo -> s.stringSpecialization == REGEX && s.type.isFullMatch }
+        val partialPredicate = { s: StringSpecializationInfo -> s.stringSpecialization == REGEX && s.type.isPartialMatch }
 
         if (toAddSpecs.any(fullPredicate)) {
             val regex = toAddSpecs
                     .filter(fullPredicate)
+                    .filter{isMeaningfulRegex(it.value)}
                     .map { it.value }
                     .joinToString("|")
 
             try {
                 toAddGenes.add(RegexHandler.createGeneForJVM(regex))
-            } catch (e: Exception){
+            } catch (e: Exception) {
                 LoggingUtil.uniqueWarn(log, "Failed to handle regex: $regex")
             }
         }
@@ -377,6 +448,12 @@ class StringGene(
 //                    .joinToString("|")
 //            toAddGenes.add(RegexHandler.createGeneForJVM(regex))
 //        }
+    }
+
+
+    private fun isMeaningfulRegex(regex: String):  Boolean {
+
+        return ! meaninglesRegex.contains(regex)
     }
 
 
@@ -425,7 +502,7 @@ class StringGene(
                 (targetFormat == null) -> return "\"${rawValue}\""
                 //"\"${rawValue.replace("\"", "\\\"")}\""
                 (mode != null) -> return "\"${GeneUtils.applyEscapes(rawValue, mode, targetFormat)}\""
-                else -> return "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT ,targetFormat)}\""
+                else -> return "\"${GeneUtils.applyEscapes(rawValue, EscapeMode.TEXT, targetFormat)}\""
             }
 
         }
@@ -454,6 +531,9 @@ class StringGene(
         this.specializationGenes.addAll(other.specializationGenes.map { it.copy() })
 
         this.tainted = other.tainted
+
+        this.bindingIds.clear()
+        this.bindingIds.addAll(other.bindingIds)
     }
 
     override fun containsSameValueAs(other: Gene): Boolean {
@@ -476,7 +556,7 @@ class StringGene(
         return this.value == other.value
     }
 
-    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
+    override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene> {
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
     }
@@ -496,45 +576,46 @@ class StringGene(
         return true
     }
 
-    override fun reachOptimal() : Boolean{
-       return lengthMutation.reached && (charsMutation.all { it.reached  }  || charsMutation.isEmpty())
+
+    override fun reachOptimal(): Boolean {
+        return lengthMutation.reached && (charsMutation.all { it.reached } || charsMutation.isEmpty())
     }
 
-    //TODO MAN: check regarding taint analysis
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         if (!archiveMutator.enableArchiveGeneMutation()) return
 
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 
-        if (this != mutated){
-            dependencyInfo.mutatedtimes +=1
-            if (this.mutatedIndex == NEVER_ARCHIVE_MUTATION){
+        if (this != mutated) {
+            dependencyInfo.mutatedtimes += 1
+            if (this.mutatedIndex == NEVER_ARCHIVE_MUTATION) {
                 initCharMutation()
             }
             this.mutatedIndex = mutated.mutatedIndex
         }
-        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
+        if (mutatedIndex < CHAR_MUTATION_INITIALIZED) {
             log.warn("archiveMutationUpdate: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
         }
 
         val previous = original.value
         val current = mutated.value
 
-        if (previous.length != current.length){
-            if (this != mutated){
+        if (previous.length != current.length) {
+            if (this != mutated) {
                 this.lengthMutation.reached = mutated.lengthMutation.reached
             }
             lengthUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
-        }else{
+        } else {
             charUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
         }
     }
-    private fun charUpdate(previous:String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+
+    private fun charUpdate(previous: String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         val charUpdate = charsMutation[mutatedIndex]
-        if (this != mutated){
+        if (this != mutated) {
             charUpdate.reached =
-                mutated.charsMutation[mutatedIndex] .reached
+                    mutated.charsMutation[mutatedIndex].reached
         }
 
         val pchar = previous[mutatedIndex].toInt()
@@ -549,40 +630,40 @@ class StringGene(
                         charUpdate.reached
                 )
 
-        if (reset){
+        if (reset) {
             charUpdate.preferMax = Char.MAX_VALUE.toInt()
             charUpdate.preferMin = Char.MIN_VALUE.toInt()
             charUpdate.reached = false
-            dependencyInfo.resetTimes +=1
-            if(dependencyInfo.resetTimes >=2) dependencyInfo.degreeOfIndependence = 0.8
+            dependencyInfo.resetTimes += 1
+            if (dependencyInfo.resetTimes >= 2) dependencyInfo.degreeOfIndependence = 0.8
             return
         }
-        charUpdate.updateBoundary(pchar, cchar,doesCurrentBetter)
+        charUpdate.updateBoundary(pchar, cchar, doesCurrentBetter)
 
         val exclude = value[mutatedIndex].toInt()
         val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(exclude).toSet()
 
-        if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList() )){
+        if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList())) {
             charUpdate.reached = true
         }
     }
 
-    private fun lengthUpdate(previous:String, current: String, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    private fun lengthUpdate(previous: String, current: String, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         //update charsMutation regarding value
         val added = value.length - charsMutation.size
-        if (added != 0){
-            if (added > 0){
-                (0 until added).forEach { _->
+        if (added != 0) {
+            if (added > 0) {
+                (0 until added).forEach { _ ->
                     charsMutation.add(archiveMutator.createCharMutationUpdate())
                 }
-            }else{
+            } else {
                 (0 until -added).forEach { _ ->
                     charsMutation.removeAt(value.length)
                 }
             }
         }
 
-        if (value.length != charsMutation.size){
+        if (value.length != charsMutation.size) {
             throw IllegalArgumentException("invalid!")
         }
         /*
@@ -594,22 +675,22 @@ class StringGene(
                         lengthMutation.reached
                 )
 
-        if (reset){
+        if (reset) {
             lengthMutation.preferMin = minLength
             lengthMutation.preferMax = maxLength
             lengthMutation.reached = false
-            dependencyInfo.resetTimes +=1
-            if(dependencyInfo.resetTimes >=2) dependencyInfo.degreeOfIndependence = 0.8
+            dependencyInfo.resetTimes += 1
+            if (dependencyInfo.resetTimes >= 2) dependencyInfo.degreeOfIndependence = 0.8
             return
         }
         lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
 
-        if(0 == archiveMutator.validateCandidates(lengthMutation.preferMin, lengthMutation.preferMax, exclude = setOf(previous.length, current.length, value.length).toList())){
+        if (0 == archiveMutator.validateCandidates(lengthMutation.preferMin, lengthMutation.preferMax, exclude = setOf(previous.length, current.length, value.length).toList())) {
             lengthMutation.reached = true
         }
     }
 
-    private fun initCharMutation(){
+    private fun initCharMutation() {
         charsMutation.clear()
         charsMutation.addAll((0 until value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
     }

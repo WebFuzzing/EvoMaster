@@ -79,6 +79,12 @@ public enum StringSpecialization implements Serializable {
     /**
      * String parsed to float
      */
-    FLOAT
+    FLOAT,
 
+    /**
+     *  String should be equal to another string variable,
+     *  ie 2 (or more) different variables should be keep their
+     *  value in sync
+     */
+    EQUAL
 }
