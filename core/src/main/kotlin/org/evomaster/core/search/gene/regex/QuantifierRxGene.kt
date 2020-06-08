@@ -10,8 +10,6 @@ import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSele
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.lang.IllegalArgumentException
-
 
 class QuantifierRxGene(
         name: String,
@@ -125,10 +123,25 @@ class QuantifierRxGene(
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
         val length = atoms.size
 
-        if( length > min  && randomness.nextBoolean(MODIFY_LENGTH)){
+        if (length < min || length > limitedMax)
+            throw IllegalArgumentException("invalid length")
+
+        var remove = length == limitedMax
+        var add = length == min
+
+        if (remove == add){
+            if (add)
+                throw IllegalArgumentException("min == limitedMax")
+
+            remove = randomness.nextBoolean()
+            add = !remove
+        }
+
+        if(remove){
             log.trace("Removing atom")
             atoms.removeAt(randomness.nextInt(length))
-        } else if(length < limitedMax && randomness.nextBoolean(MODIFY_LENGTH)){
+        }
+        if(add){
             addNewAtom(randomness, false, listOf())
         }
 
