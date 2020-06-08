@@ -130,6 +130,13 @@ abstract class Gene(var name: String) {
 
     /**
      * mutated gene should pass the check if needed, eg, DateGene
+     *
+     * In some cases, we must have genes with 'valid' values.
+     * For example, a date with month 42 would be invalid.
+     * On the one hand, it can still be useful for robustness testing
+     * to provide such invalid values in a HTTP call. On the other hand,
+     * it would be pointless to try to add it directly into a database,
+     * as that SQL command would simply fail without any SUT code involved.
      */
     open fun mutationCheck() : Boolean = true
 
