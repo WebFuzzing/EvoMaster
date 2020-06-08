@@ -177,10 +177,10 @@ class StringGene(
                     point is, switching is not always going to be beneficial
                  */
                 selectedSpecialization = specializationGenes.lastIndex
-            } else if (specializationGenes.size > 1 && randomness.nextBoolean(0.1)) {
+            } else if (specializationGenes.size > 1 && randomness.nextBoolean(PROB_CHANGE_SPEC)) {
                 //choose another specialization, but with low probability
                 selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1, selectedSpecialization)
-            } else if(randomness.nextBoolean(0.1)){
+            } else if(randomness.nextBoolean(PROB_CHANGE_SPEC)){
                 //not all specializations are useful
                 selectedSpecialization = -1
             } else {
@@ -692,7 +692,6 @@ class StringGene(
         charsMutation.addAll((0 until value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
     }
 
-    //TODO discuss with Andrea
     override fun mutationWeight(): Double {
         return if(specializationGenes.isEmpty()) 1.0 else (specializationGenes.map { it.mutationWeight() }.sum() * PROB_CHANGE_SPEC + 1.0)
     }
