@@ -1,6 +1,5 @@
 package org.evomaster.core.search.service.mutator
 
-import com.google.inject.Inject
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N
 import org.evomaster.core.EMConfig.GeneMutationStrategy.ONE_OVER_N_BIASED_SQL
 import org.evomaster.core.Lazy
@@ -15,7 +14,9 @@ import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.ImpactUtils
-import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import kotlin.math.max
 
 /**
  * make the standard mutator open for extending the mutator,
@@ -23,9 +24,6 @@ import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
  * e.g., in order to handle resource rest individual
  */
 open class StandardMutator<T> : Mutator<T>() where T : Individual {
-
-    @Inject
-    private lateinit var archiveMutator: ArchiveMutator
 
     override fun doesStructureMutation(individual : T): Boolean {
         /**
@@ -49,56 +47,38 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         return mutable
     }
 
-    /**
-     * with a probability, select genes to mutate based on Archive
-     */
     override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
         val genesToMutate = genesToMutation(individual, evi)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
-        if(archiveMutator.applyArchiveSelection()){
-            archiveMutator.selectGenesByArchive(genesToMutate, individual, evi,targets, mutatedGenes).let {
-                if (it.isNotEmpty()) return it
-            }
-        }
-
-        return selectGenesByDefault(genesToMutate, individual)
-    }
-
-    private fun selectGenesByDefault(genesToMutate : List<Gene>,  individual: T) : List<Gene>{
         val filterN = when (config.geneMutationStrategy) {
             ONE_OVER_N -> ALL
             ONE_OVER_N_BIASED_SQL -> NO_SQL
         }
-        val n = Math.max(1, individual.seeGenes(filterN).filter { it.isMutable() }.count())
-        return selectGenesByOneDivNum(genesToMutate, n)
-    }
+        val mutated = mutableListOf<Gene>()
 
-    private fun selectGenesByOneDivNum(genesToMutate : List<Gene>, n : Int): List<Gene>{
-        val genesToSelect = mutableListOf<Gene>()
-
-        val p = 1.0 / n
-
-        var mutated = false
-
-        /*
-            no point in returning a copy that is not mutated,
-            as we do not use xover
-         */
-        while (!mutated) { //
-
-            for (gene in genesToMutate) {
-
-                if (!randomness.nextBoolean(p)) {
-                    continue
+        if(!config.weightBasedMutationRate){
+            val p = 1.0/ max(1, individual.seeGenes(filterN).filter { genesToMutate.contains(it) }.size)
+            while (mutated.isEmpty()){
+                genesToMutate.forEach { g->
+                    if (randomness.nextBoolean(p))
+                        mutated.add(g)
                 }
-
-                genesToSelect.add(gene)
-
-                mutated = true
+            }
+        }else{
+            val enableAPC = config.weightBasedMutationRate && archiveMutator.enableArchiveSelection()
+            while (mutated.isEmpty()){
+                if (config.specializeSQLGeneSelection){
+                    val noSQLGenes = individual.seeGenes(NO_SQL).filter { genesToMutate.contains(it) }
+                    val sqlGenes = genesToMutate.filterNot { noSQLGenes.contains(it) }
+                    mutated.addAll(mwc.selectSubGene(noSQLGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false, numOfGroup = 2))
+                    mutated.addAll(mwc.selectSubGene(sqlGenes, enableAPC, targets, null, individual, evi, forceNotEmpty = false, numOfGroup = 2))
+                }else{
+                    mutated.addAll(mwc.selectSubGene(genesToMutate, enableAPC, targets, null, individual, evi, forceNotEmpty = false))
+                }
             }
         }
-        return genesToSelect
+        return mutated
     }
 
     private fun copyIndividualWithTracking(individual: EvaluatedIndividual<T>) : T{
@@ -155,15 +135,22 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
             }
 
-            if (config.probOfArchiveMutation > 0.0 || archiveMutator.enableArchiveGeneMutation()){
+            val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
+                        else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
+                        else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
+
+            val enableAdaptiveMutation = archiveMutator.enableArchiveGeneMutation()
+
+            if (enableAdaptiveMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
+                //root gene reference
                 val id = ImpactUtils.generateGeneId(copy, gene)
+                //root gene impact
                 val impact = individual.getImpactOfGenes()[id]
-                gene.archiveMutation(randomness, allGenes, apc, config.geneSelectionMethod, impact, id, archiveMutator, individual,targets )
+                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveMutation, AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets ))
             } else {
-                gene.standardMutation(randomness, apc, allGenes)
+                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy)
             }
         }
-
         return copy
     }
 

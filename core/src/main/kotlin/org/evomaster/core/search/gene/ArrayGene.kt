@@ -1,13 +1,13 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.collection.ArrayGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.lang.IllegalStateException
@@ -18,7 +18,7 @@ class ArrayGene<T>(
         val template: T,
         var maxSize: Int = 5,
         var elements: MutableList<T> = mutableListOf()
-) : Gene(name)
+) : CollectionGene, Gene(name)
         where T : Gene {
 
     init {
@@ -39,8 +39,6 @@ class ArrayGene<T>(
 
     companion object{
         val log : Logger = LoggerFactory.getLogger(ArrayGene::class.java)
-
-        private const val MODIFY_SIZE = 0.1
     }
 
 
@@ -103,87 +101,34 @@ class ArrayGene<T>(
         }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
         if(!isMutable()){
             throw IllegalStateException("Cannot mutate a immutable array")
         }
+        if ( elements.isEmpty() || elements.size > maxSize){
+            return listOf()
+        }
+        val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
+        return if (randomness.nextBoolean(p)) listOf() else elements
+    }
 
-        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean(MODIFY_SIZE))){
+    /**
+     * leaf mutation for arrayGene is size mutation, i.e., 'remove' or 'add'
+     */
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Boolean{
+
+        if(elements.isEmpty() || (elements.size < maxSize && randomness.nextBoolean())){
             val gene = template.copy() as T
             gene.parent = this
             gene.randomize(randomness, false)
             elements.add(gene)
-        } else if(elements.size > 0 && randomness.nextBoolean(MODIFY_SIZE)){
+        }else{
             log.trace("Remvoving gene in mutation")
             elements.removeAt(randomness.nextInt(elements.size))
-        } else {
-            val gene = randomness.choose(elements)
-            gene.standardMutation(randomness, apc, allGenes)
         }
+        return true
     }
 
-    override fun archiveMutation(
-            randomness: Randomness,
-            allGenes: List<Gene>,
-            apc: AdaptiveParameterControl,
-            selection: GeneMutationSelectionMethod,
-            impact: GeneImpact?,
-            geneReference: String,
-            archiveMutator: ArchiveMutator,
-            evi: EvaluatedIndividual<*>,
-            targets: Set<Int>
-    ) {
-
-        if(!isMutable()){
-            throw IllegalStateException("Cannot mutate a immutable array")
-        }
-
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-
-        var add = elements.isEmpty()
-        var delete = elements.size == maxSize
-
-        val fmodifySize =
-                if (add || delete) false
-                else if (archiveMutator.applyArchiveSelection()
-                        && impact != null
-                        && impact is ArrayGeneImpact
-                        && impact.sizeImpact.noImprovement.any { it.value < 2 } //if there is recent improvement by manipulating size
-                ){
-                    randomness.nextBoolean(0.3)
-                }else {
-                    randomness.nextBoolean(MODIFY_SIZE)
-                }
-
-        if (fmodifySize){
-            val p = randomness.nextBoolean()
-            add = add || p
-            delete = delete || !p
-        }
-
-        if (add && add == delete)
-            log.warn("add and delete an element cannot happen in a mutation, and size of elements: {} and maxSize: {}", elements.size, maxSize)
-
-        when{
-            add ->{
-                val gene = template.copy() as T
-                gene.randomize(randomness, false)
-                elements.add(gene)
-            }
-            delete ->{
-                log.trace("Removing gene")
-                elements.removeAt(randomness.nextInt(elements.size))
-            }
-            else -> {
-                val gene = randomness.choose(elements)
-                gene.archiveMutation(randomness, allGenes, apc, selection, null, geneReference, archiveMutator, evi, targets)
-            }
-        }
-    }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
@@ -222,5 +167,13 @@ class ArrayGene<T>(
     override fun flatView(excludePredicate: (Gene) -> Boolean): List<Gene>{
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(elements.flatMap { g -> g.flatView(excludePredicate) })
+    }
+
+
+    /**
+     * 1 is for 'remove' or 'add' element
+     */
+    override fun mutationWeight(): Double {
+        return 1.0 + elements.map { it.mutationWeight() }.sum()
     }
 }

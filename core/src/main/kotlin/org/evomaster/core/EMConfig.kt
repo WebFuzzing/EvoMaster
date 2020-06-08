@@ -270,7 +270,7 @@ class EMConfig {
         }
 
         //archive-based mutation
-        if (geneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
+        if (adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && algorithm != Algorithm.MIO) {
             throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
@@ -983,6 +983,29 @@ class EMConfig {
     var SMdR: Double = 0.25
 
     @Experimental
+    @Cfg("Whether to enable a weight-based mutation rate")
+    var weightBasedMutationRate = false
+
+    @Experimental
+    @Cfg("Whether to specialize sql gene selection to mutation")
+    var specializeSQLGeneSelection = false
+
+    @Experimental
+    @Cfg("Specify a maximum mutation rate when enabling 'adaptiveMutationRate'")
+    @PercentageAsProbability(false)
+    var maxMutationRate = 0.9
+
+    @Experimental
+    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @PercentageAsProbability(false)
+    var startingPerOfGenesToMutate = 0.5
+
+    @Experimental
+    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @PercentageAsProbability(false)
+    var d = 0.5
+
+    @Experimental
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
     var probOfArchiveMutation = 0.0
@@ -1003,7 +1026,7 @@ class EMConfig {
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate")
-    var geneSelectionMethod = GeneMutationSelectionMethod.NONE
+    var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
 
     @Experimental
     @Cfg("Whether to enable archive-based gene mutation")

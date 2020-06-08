@@ -18,7 +18,6 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 /**
  *
@@ -53,6 +52,11 @@ class ArchiveMutator {
     }
 
     /**************************** gene selection ********************************************/
+
+    fun calculateWeightByArchive(genesToMutate : List<Gene>, map: MutableMap<Gene, Double> ,individual: Individual?, impacts: List<Impact>?, evi: EvaluatedIndividual<*>, targets : Set<Int>){
+        TODO()// when merge with archive-based branch
+    }
+
 
     /**
      * Apply archive-based mutation to select [genes] from [individual] to mutate regarding their impacts saved in [evi],
@@ -180,9 +184,9 @@ class ArchiveMutator {
      * decide an archive-based gene selection method when the selection is adaptive (i.e., [GeneMutationSelectionMethod.adaptive])
      */
     private fun decideArchiveGeneSelectionMethod(genes : List<Impact>) : GeneMutationSelectionMethod {
-        return when (config.geneSelectionMethod) {
+        return when (config.adaptiveGeneSelectionMethod) {
             GeneMutationSelectionMethod.ALL_FIXED_RAND -> randomGeneSelectionMethod()
-            else -> config.geneSelectionMethod
+            else -> config.adaptiveGeneSelectionMethod
         }
     }
 
@@ -554,7 +558,7 @@ class ArchiveMutator {
     fun applyArchiveSelection() = enableArchiveSelection()
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
-    fun enableArchiveSelection() = config.geneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
+    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
 

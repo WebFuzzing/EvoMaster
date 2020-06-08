@@ -15,6 +15,7 @@ import org.evomaster.core.search.impact.ImpactUtils;
 import org.evomaster.core.search.impact.value.ObjectGeneImpact;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -31,26 +32,31 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ObjectImpactEMTest extends SpringTestBase {
 
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testAwayNoImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
     }
 
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testLatestImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT);
     }
 
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testLatestImprovement() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT);
     }
 
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testBalance() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT);
@@ -68,7 +74,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
                     args.add("--probOfArchiveMutation");
                     args.add("1.0");
 
-                    args.add("--geneSelectionMethod");
+                    args.add("--adaptiveGeneSelectionMethod");
                     args.add(method.toString());
 
                     args.add("--enableTrackEvaluatedIndividual");

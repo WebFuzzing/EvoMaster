@@ -5,6 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 
 class DisjunctionListRxGene(
@@ -17,6 +20,10 @@ class DisjunctionListRxGene(
         for(d in disjunctions){
             d.parent = this
         }
+    }
+
+    companion object{
+        private const val PROB_NEXT = 0.1
     }
 
 
@@ -46,15 +53,25 @@ class DisjunctionListRxGene(
         }
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
+    // TODO Man need to check
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
         if(disjunctions.size > 1
-                && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(0.1))){
+                && (!disjunctions[activeDisjunction].isMutable() || randomness.nextBoolean(PROB_NEXT))){
             //activate the next disjunction
-            activeDisjunction = (activeDisjunction + 1) % disjunctions.size
+            return emptyList()
         } else {
-            disjunctions[activeDisjunction].standardMutation(randomness, apc, allGenes)
+            return listOf(disjunctions[activeDisjunction])
         }
+    }
 
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        TODO("NOT IMPLEMENTED")
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+        //activate the next disjunction
+        activeDisjunction = (activeDisjunction + 1) % disjunctions.size
+        return true
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -93,4 +110,6 @@ class DisjunctionListRxGene(
         return if (excludePredicate(this)) listOf(this)
         else listOf(this).plus(disjunctions.flatMap { it.flatView(excludePredicate) })
     }
+
+    override fun mutationWeight(): Double = disjunctions.map { it.mutationWeight() }.sum() * PROB_NEXT + 1
 }

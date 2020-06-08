@@ -1,13 +1,13 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.impact.GeneImpact
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.value.date.DateTimeGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
+import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -61,29 +61,19 @@ open class DateTimeGene(
         time.randomize(randomness, forceNewValue, allGenes)
     }
 
-    override fun standardMutation(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>) {
-        val gene = randomness.choose(listOf(date, time))
-        gene.standardMutation(randomness, apc, allGenes)
+    override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
+        return listOf(date, time)
     }
 
-    override fun archiveMutation(randomness: Randomness, allGenes: List<Gene>, apc: AdaptiveParameterControl, selection: GeneMutationSelectionMethod, impact: GeneImpact?, geneReference: String, archiveMutator: ArchiveMutator, evi: EvaluatedIndividual<*>, targets: Set<Int>) {
-        if (!archiveMutator.enableArchiveMutation()){
-            standardMutation(randomness, apc, allGenes)
-            return
-        }
-
-        var genes : List<Pair<Gene, GeneImpact>>? = null
-        val selects = if(impact != null && impact is DateTimeGeneImpact && archiveMutator.applyArchiveSelection()){
-            genes = listOf(
-                    Pair(date, impact.dateGeneImpact),
-                    Pair(time , impact.timeGeneImpact)
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
+        if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateTimeGeneImpact){
+            val maps = mapOf(
+                    date to additionalGeneMutationInfo.impact.dateGeneImpact,
+                    time to additionalGeneMutationInfo.impact.timeGeneImpact
             )
-            archiveMutator.selectGenesByArchive(genes, 1.0/2, targets)
-        }else listOf(date, time)
-
-        val selected = randomness.choose(selects)
-        val selectedImpact = genes?.first { it.first == selected }?.second
-        selected.archiveMutation(randomness, allGenes, apc, selection, selectedImpact, geneReference, archiveMutator, evi, targets)
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }
+        }
+        throw IllegalArgumentException("impact is null or not DateTimeGeneImpact")
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
@@ -148,4 +138,9 @@ open class DateTimeGene(
         return if (excludePredicate(this)) listOf(this) else
             listOf(this).plus(date.flatView(excludePredicate)).plus(time.flatView(excludePredicate))
     }
+
+    /*
+     override fun mutationWeight(): Int
+     weight for date time gene might be 1 as default since it is simple to solve
+    */
 }
