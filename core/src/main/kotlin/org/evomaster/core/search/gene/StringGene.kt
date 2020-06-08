@@ -10,17 +10,14 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.parser.RegexHandler
 import org.evomaster.core.parser.RegexUtils
-import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.gene.GeneUtils.getDelta
-import org.evomaster.core.search.impact.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
-import org.evomaster.core.search.gene.GeneUtils.EscapeMode
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
@@ -170,7 +167,7 @@ class StringGene(
             selectedSpecialization = randomness.nextInt(0, specializationGenes.size - 1)
             selectionUpdatedSinceLastMutation = false
             handleBinding(allGenes)
-            return
+            return true
 
         } else if (specializationGene != null) {
             if (selectionUpdatedSinceLastMutation && randomness.nextBoolean(0.5)) {
@@ -188,7 +185,7 @@ class StringGene(
                 selectedSpecialization = -1
             } else {
                 //just mutate current selection
-                specializationGene.standardMutation(randomness, apc, allGenes)
+                specializationGene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveGeneMutation)
             }
             selectionUpdatedSinceLastMutation = false
             handleBinding(allGenes)
