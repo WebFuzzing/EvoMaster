@@ -997,7 +997,9 @@ class EMConfig {
     var startingPerOfGenesToMutate = 0.5
 
     @Experimental
-    @Cfg("Specify a starting percentage of genes of an individual to mutate")
+    @Cfg("When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. " +
+            "For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, " +
+            "and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate.")
     @PercentageAsProbability(false)
     var d = 0.5
 

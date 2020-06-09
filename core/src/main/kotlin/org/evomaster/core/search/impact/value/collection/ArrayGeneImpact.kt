@@ -10,7 +10,7 @@ import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
  */
 class ArrayGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
                        val sizeImpact : IntegerGeneImpact
-) : , CollectionImpact, GeneImpact(sharedImpactInfo, specificImpactInfo){
+) : CollectionImpact, GeneImpact(sharedImpactInfo, specificImpactInfo){
     constructor(
             id : String,
             degree: Double = 0.0,

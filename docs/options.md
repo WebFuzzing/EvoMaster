@@ -106,7 +106,7 @@ There are 3 types of options:
 |`archiveGeneMutation`| __Enum__. Whether to enable archive-based gene mutation. *Valid values*: `NONE, SPECIFIED, ADAPTIVE`. *Default value*: `NONE`.|
 |`coveredTargetFile`| __String__. Specify a file which saves covered targets info regarding generated test suite. *Default value*: `coveredTargets.txt`.|
 |`coveredTargetSortedBy`| __Enum__. Specify a format to organize the covered targets by the search. *Valid values*: `NAME, TEST`. *Default value*: `NAME`.|
-|`d`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
+|`d`| __Double__. When weight-based mutation rate is enabled, specify a percentage of calculating mutation rate based on a number of candidate genes to mutate. For instance, d = 1.0 means that the mutation rate fully depends on a number of candidate genes to mutate, and d = 0.0 means that the mutation rate fully depends on weights of candidates genes to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`dependencyFile`| __String__. Specify a file that saves derived dependencies. *Default value*: `dependencies.csv`.|
 |`disableStructureMutationDuringFocusSearch`| __Boolean__. Specify whether to disable structure mutation during focus search. *Default value*: `false`.|
 |`doesApplyNameMatching`| __Boolean__. Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table. *Default value*: `false`.|
@@ -115,19 +115,17 @@ There are 3 types of options:
 |`enableProcessMonitor`| __Boolean__. Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
 |`enableTrackEvaluatedIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual. *Default value*: `false`.|
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
-|`endPerOfCandidateGenesToMutate`| __Double__. Specify a percentage after starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`executiveSummary`| __Boolean__. Generate an executive summary, containing an example of each category of potential fault found. *Default value*: `false`.|
 |`expectationsActive`| __Boolean__. Enable Expectation Generation. If enabled, expectations will be generated. A variable called expectationsMasterSwitch is added to the test suite, with a default value of false. If set to true, an expectation that fails will cause the test case containing it to fail. *Default value*: `false`.|
 |`exportCoveredTarget`| __Boolean__. Specify whether to export covered targets info. *Default value*: `false`.|
 |`exportDependencies`| __Boolean__. Specify whether to export derived dependencies among resources. *Default value*: `false`.|
 |`exportImpacts`| __Boolean__. Specify whether to export derived impacts among genes. *Default value*: `false`.|
+|`geneWeightBasedOnImpactsBy`| __Enum__. Specify a strategy to calculate a weight of a gene based on impacts. *Valid values*: `SORT_COUNTER, SORT_RATIO, COUNTER, RATIO`. *Default value*: `SORT_COUNTER`.|
 |`generateSqlDataWithDSE`| __Boolean__. Enable EvoMaster to generate SQL data with direct accesses to the database. Use Dynamic Symbolic Execution. *Default value*: `false`.|
 |`impactFile`| __String__. Specify a file that saves derived genes. *Default value*: `impact.csv`.|
-|`impactGeneSelection`| __Enum__. Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset. *Valid values*: `PROBABILITY, SUBSET_PROBABILITY, ADAPTIVE_SUBSET_PROBABILITY`. *Default value*: `PROBABILITY`.|
 |`maxLengthOfTraces`| __Int__. Specify a maxLength of tracking when enableTrackIndividual or enableTrackEvaluatedIndividual is true. Note that the value should be specified with a non-negative number or -1 (for tracking all history). *Constraints*: `min=-1.0`. *Default value*: `10`.|
 |`maxMutationRate`| __Double__. Specify a maximum mutation rate when enabling 'adaptiveMutationRate'. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.9`.|
 |`minRowOfTable`| __Int__. Specify a minimal number of rows in a table that enables selection (i.e., SELECT sql) to prepare resources for REST Action. In other word, if the number is less than the specified, insertion is always applied. *Constraints*: `min=0.0`. *Default value*: `10`.|
-|`prioritizeNotVisit`| __Boolean__. Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset. *Default value*: `true`.|
 |`probOfApplySQLActionToCreateResources`| __Double__. Specify a probability to apply SQL actions for preparing resources for REST Action. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfArchiveMutation`| __Double__. Specify a probability to enable archive-based mutation. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`probOfEnablingResourceDependencyHeuristics`| __Double__. Specify whether to enable resource dependency heuristics, i.e, probOfEnablingResourceDependencyHeuristics > 0.0. Note that the option is available to be enabled only if resource-based smart sampling is enable. This option has an effect on sampling multiple resources and mutating a structure of an individual. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
@@ -137,10 +135,8 @@ There are 3 types of options:
 |`resourceSampleStrategy`| __Enum__. Specify whether to enable resource-based strategy to sample an individual during search. Note that resource-based sampling is only applicable for REST problem with MIO algorithm. *Valid values*: `NONE, Customized, EqualProbability, Actions, TimeBudgets, Archive, ConArchive`. *Default value*: `NONE`.|
 |`saveMutatedGene`| __Boolean__. Specify whether to save mutated genes during search. *Default value*: `false`.|
 |`saveMutatedGeneFile`| __String__. Specify file path to save mutated genes. *Default value*: `mutatedGenes.csv`.|
-|`sortedByCounter`| __Boolean__. Specify a solution to prioritize gene selection by impacts, e.g., percentage or subset. *Default value*: `false`.|
 |`specializeSQLGeneSelection`| __Boolean__. Whether to specialize sql gene selection to mutation. *Default value*: `false`.|
 |`startArchiveMutation`| __Double__. Specify a percentage of used budget to start archive-based mutation when archive-based mutation is enabled. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
-|`startPerOfCandidateGenesToMutate`| __Double__. Specify a percentage (before starting a focus search) which is used by archived-based gene selection method (e.g., APPROACH_IMPACT) for selecting top percent of genes as potential candidates to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.9`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|
 |`testSuiteSplitType`| __Enum__. Instead of generating a single test file, it could be split in several files, according to different strategies. *Valid values*: `NONE, CLUSTER, SUMMARY_ONLY, CODE`. *Default value*: `NONE`.|
 |`weightBasedMutationRate`| __Boolean__. Whether to enable a weight-based mutation rate. *Default value*: `false`.|

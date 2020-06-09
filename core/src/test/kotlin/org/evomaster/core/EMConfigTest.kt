@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import java.lang.IllegalArgumentException
 
 internal class EMConfigTest{
 
@@ -115,7 +114,7 @@ internal class EMConfigTest{
     }
 
     @ParameterizedTest
-    @ValueSource(strings = ["probOfRandomSampling", "startPerOfCandidateGenesToMutate", "focusedSearchActivationTime"])
+    @ValueSource(strings = ["probOfRandomSampling", "focusedSearchActivationTime", "startingPerOfGenesToMutate", "d"])
     fun testProbability(name: String){
 
         val parser = EMConfig.getOptionParser()
