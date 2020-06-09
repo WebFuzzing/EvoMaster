@@ -23,7 +23,7 @@ class MapGene<T>(
         val template: T,
         val maxSize: Int = 5,
         var elements: MutableList<T> = mutableListOf()
-) : Gene(name)
+) : CollectionGene, Gene(name)
         where T : Gene {
 
     private var keyCounter = 0
@@ -41,7 +41,6 @@ class MapGene<T>(
 
     companion object{
         private val log: Logger = LoggerFactory.getLogger(MapGene::class.java)
-        private const val MODIFY_SIZE = 0.1
     }
 
     override fun copy(): Gene {
@@ -98,20 +97,9 @@ class MapGene<T>(
         if ( elements.isEmpty() || elements.size > maxSize){
             return listOf()
         }
-        val p = when(selectionStrategy){
-            SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
-                if(additionalGeneMutationInfo?.impact != null
-                        && additionalGeneMutationInfo.impact is MapGeneImpact
-                        && additionalGeneMutationInfo.impact.sizeImpact.getNoImpactsFromImpactCounter().any { it.value < 2 } //if there is recent improvement by manipulating size
-                ){
-                    0.3 // increase probability to mutate size
-                }else MODIFY_SIZE
-            }
-            else ->{
-                MODIFY_SIZE
 
-            }
-        }
+        val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
+
         return if (randomness.nextBoolean(p)) listOf() else elements
     }
 

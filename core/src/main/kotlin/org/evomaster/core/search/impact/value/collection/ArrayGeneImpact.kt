@@ -10,7 +10,7 @@ import org.evomaster.core.search.impact.value.numeric.IntegerGeneImpact
  */
 class ArrayGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: SpecificImpactInfo,
                        val sizeImpact : IntegerGeneImpact
-) : GeneImpact(sharedImpactInfo, specificImpactInfo){
+) : , CollectionImpact, GeneImpact(sharedImpactInfo, specificImpactInfo){
     constructor(
             id : String,
             degree: Double = 0.0,
@@ -23,6 +23,8 @@ class ArrayGeneImpact (sharedImpactInfo: SharedImpactInfo, specificImpactInfo: S
             sizeImpact : IntegerGeneImpact = IntegerGeneImpact("size")
 
     ) : this(SharedImpactInfo(id, degree, timesToManipulate, timesOfNoImpacts, timesOfNoImpactWithTargets, timesOfImpact), SpecificImpactInfo(noImpactFromImpact, noImprovement),sizeImpact)
+
+    override fun getSizeImpact(): Impact = sizeImpact
 
     override fun copy(): ArrayGeneImpact {
         return ArrayGeneImpact(

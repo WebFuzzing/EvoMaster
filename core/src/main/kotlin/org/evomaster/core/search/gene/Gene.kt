@@ -52,6 +52,7 @@ abstract class Gene(var name: String) {
 
     /**
      * weight for mutation
+     * For example, higher the weight, the higher the chances to be selected for mutation
      */
     open fun mutationWeight() : Double = 1.0
 
@@ -121,7 +122,7 @@ abstract class Gene(var name: String) {
 
             selected.forEach{
                 do {
-                    it.key.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.value)
+                    it.first.standardMutation(randomness, apc, mwc, allGenes, internalGeneSelectionStrategy, enableAdaptiveGeneMutation, it.second)
                 }while (!mutationCheck())
             }
         }
@@ -129,6 +130,13 @@ abstract class Gene(var name: String) {
 
     /**
      * mutated gene should pass the check if needed, eg, DateGene
+     *
+     * In some cases, we must have genes with 'valid' values.
+     * For example, a date with month 42 would be invalid.
+     * On the one hand, it can still be useful for robustness testing
+     * to provide such invalid values in a HTTP call. On the other hand,
+     * it would be pointless to try to add it directly into a database,
+     * as that SQL command would simply fail without any SUT code involved.
      */
     open fun mutationCheck() : Boolean = true
 
@@ -148,10 +156,10 @@ abstract class Gene(var name: String) {
                           allGenes: List<Gene> = listOf(),
                           selectionStrategy: SubsetGeneSelectionStrategy,
                           enableAdaptiveGeneMutation: Boolean,
-                          additionalGeneMutationInfo: AdditionalGeneSelectionInfo?) : Map<Gene, AdditionalGeneSelectionInfo?>{
+                          additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         return when(selectionStrategy){
-            SubsetGeneSelectionStrategy.DEFAULT -> mapOf(randomness.choose(internalGenes) to null)
-            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }.toMap()
+            SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), null))
+            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
                 adaptiveSelectSubset(internalGenes, mwc, additionalGeneMutationInfo)
@@ -161,7 +169,7 @@ abstract class Gene(var name: String) {
 
     open fun adaptiveSelectSubset(internalGenes: List<Gene>,
                                   mwc: MutationWeightControl,
-                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo) = mapOf<Gene, AdditionalGeneSelectionInfo?>()
+                                  additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> = listOf()
 
     /**
      * mutate the current gene if there is no need to apply selection, i.e., when [candidatesInternalGenes] is empty

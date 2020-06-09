@@ -148,7 +148,7 @@ object TaintAnalysis {
                             This can happen if the taint input is manipulated, but still with
                             same prefix and postfix
                          */
-                    log.debug("No taint input '$taintedInput'")
+                    log.debug("No taint input '{}'",taintedInput)
                 } else {
                     genes.forEach { it.addSpecializations(taintedInput, fullMatch, randomness) }
                 }
@@ -167,7 +167,7 @@ object TaintAnalysis {
                             This can happen if the taint input is manipulated, but still with
                             same prefix and postfix
                          */
-                    log.debug("No taint input '$taintedInput'")
+                    log.debug("No taint input '{}'", taintedInput)
                 } else {
                     genes.forEach { it.addSpecializations(taintedInput, partialMatch, randomness) }
                 }

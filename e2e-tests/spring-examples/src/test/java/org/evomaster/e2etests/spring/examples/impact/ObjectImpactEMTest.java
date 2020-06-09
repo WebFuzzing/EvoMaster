@@ -32,31 +32,31 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ObjectImpactEMTest extends SpringTestBase {
 
-    @Disabled("Adaptive Gene Selection for Gene is disabled")
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testAwayNoImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.AWAY_NOIMPACT);
     }
 
-    @Disabled("Adaptive Gene Selection for Gene is disabled")
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_IMPACT);
     }
 
-    @Disabled("Adaptive Gene Selection for Gene is disabled")
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testLatestImpact() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPACT);
     }
 
-    @Disabled("Adaptive Gene Selection for Gene is disabled")
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testLatestImprovement() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.APPROACH_LATEST_IMPROVEMENT);
     }
 
-    @Disabled("Adaptive Gene Selection for Gene is disabled")
+    @Disabled("enable when archive-based solution is merged")
     @Test
     public void testBalance() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.BALANCE_IMPACT_NOIMPACT);

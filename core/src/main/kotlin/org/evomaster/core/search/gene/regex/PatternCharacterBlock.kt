@@ -5,7 +5,9 @@ import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.GeneUtils
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
+import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
 
 /**
  * Immutable class
@@ -24,6 +26,10 @@ class PatternCharacterBlock(
     }
 
     override fun randomize(randomness: Randomness, forceNewValue: Boolean, allGenes: List<Gene>) {
+        throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
+    }
+
+    override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
         throw IllegalStateException("Not supposed to mutate " + this.javaClass.simpleName)
     }
 

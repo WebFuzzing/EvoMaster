@@ -68,14 +68,14 @@ class DateGene(
         return !onlyValidDates || isValidDate()
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is DateGeneImpact){
             val maps = mapOf<Gene, GeneImpact>(
                     year to additionalGeneMutationInfo.impact.yearGeneImpact,
                     month to additionalGeneMutationInfo.impact.monthGeneImpact,
                     day to additionalGeneMutationInfo.impact.dayGeneImpact
             )
-            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }.toMap()
+            return mwc.selectSubGene(internalGenes, adaptiveWeight = true, targets = additionalGeneMutationInfo.targets, impacts = internalGenes.map { i-> maps.getValue(i) }, individual = null, evi = additionalGeneMutationInfo.evi).map { it to additionalGeneMutationInfo.copyFoInnerGene(maps.getValue(it)) }
         }
 
         throw IllegalArgumentException("impact is null or not DateGeneImpact")

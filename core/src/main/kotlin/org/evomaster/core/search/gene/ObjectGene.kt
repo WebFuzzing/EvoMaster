@@ -132,7 +132,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             listOf(this).plus(fields.flatMap { g -> g.flatView(excludePredicate) })
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         val canFields = fields.filter { !it.reachOptimal() || !additionalGeneMutationInfo.archiveMutator.withinNormal() }.run {
             if (isEmpty())
                 fields
@@ -145,7 +145,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
                     canFields, true, additionalGeneMutationInfo.targets, individual = null, impacts = impacts, evi = additionalGeneMutationInfo.evi
             )
             val map = selected.map { canFields.indexOf(it) }
-            return map.map { canFields[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact) }.toMap()
+            return map.map { canFields[it] to additionalGeneMutationInfo.copyFoInnerGene(impact = impacts[it] as? GeneImpact) }
         }
         throw IllegalArgumentException("impact is null or not ObjectGeneImpact")
     }

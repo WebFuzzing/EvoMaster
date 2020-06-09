@@ -88,8 +88,10 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
 
             if (t.descriptiveId != null) {
 
-                if (!config.useMethodReplacement &&
-                        t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)) {
+                val noMethodReplacement = !config.useMethodReplacement && t.descriptiveId.startsWith(ObjectiveNaming.METHOD_REPLACEMENT)
+                val noNonIntegerReplacement = !config.useNonIntegerReplacement && t.descriptiveId.startsWith(ObjectiveNaming.NUMERIC_COMPARISON)
+
+                if (noMethodReplacement || noNonIntegerReplacement) {
                     return@forEach
                 }
 

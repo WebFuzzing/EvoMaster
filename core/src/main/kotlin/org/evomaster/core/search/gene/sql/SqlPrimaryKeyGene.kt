@@ -58,11 +58,11 @@ class SqlPrimaryKeyGene(name: String,
         return if (isMutable()) listOf(gene) else emptyList()
     }
 
-    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): Map<Gene, AdditionalGeneSelectionInfo?> {
+    override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         if (additionalGeneMutationInfo.impact != null && additionalGeneMutationInfo.impact is SqlPrimaryKeyGeneImpact){
             if (internalGenes.size != 1 || !internalGenes.contains(gene))
                 throw IllegalStateException("mismatched input: the internalGenes should only contain gene")
-            return mapOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact))
+            return listOf(gene to additionalGeneMutationInfo.copyFoInnerGene(additionalGeneMutationInfo.impact.geneImpact))
         }
         throw IllegalArgumentException("impact is null or not SqlPrimaryKeyGeneImpact")
 
