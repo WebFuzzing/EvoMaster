@@ -20,7 +20,8 @@ public class ImpactRest {
     @RequestMapping(
             value = "/intImpact",
             method = RequestMethod.POST,
-            consumes = MediaType.APPLICATION_JSON
+            consumes = MediaType.APPLICATION_JSON,
+            produces = MediaType.TEXT_PLAIN
     )
     public ResponseEntity create(@RequestBody NoImpactIntFieldsDto dto) {
         if (dto.name.isEmpty())
@@ -41,12 +42,13 @@ public class ImpactRest {
 
         data.add(dto);
 
-        return ResponseEntity.status(201).build();
+        return ResponseEntity.ok(response);
     }
 
     @RequestMapping(
             value = "/intImpact/{name}",
-            method = RequestMethod.POST
+            method = RequestMethod.POST,
+            produces = MediaType.TEXT_PLAIN
     )
     public ResponseEntity create(
             @PathVariable("name") String name,
@@ -71,6 +73,6 @@ public class ImpactRest {
 
         data.add(new NoImpactIntFieldsDto(name, impactIntField, noimpactIntField));
 
-        return ResponseEntity.status(201).build();
+        return ResponseEntity.ok(response);
     }
 }

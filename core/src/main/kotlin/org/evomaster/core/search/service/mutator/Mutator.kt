@@ -95,6 +95,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         val all = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) }.toSet()
 
+        //TODO collect how likely the size of targets are more than 100
         if (all.size <= 100) return all
         /*
             if the targets to be evaluated is more than 100,
@@ -161,6 +162,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             val reachNew = archive.wouldReachNewTarget(mutated)
             archiveMutator.saveMutatedGene(mutatedGenes, mutatedInd, time.evaluatedIndividuals, reachNew)
+            archive.saveSnapshot()
 
             /*
                 enable further actions for extracting
@@ -182,7 +184,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             impactTarget.addAll(newTarget)
             improvedTarget.addAll(newTarget)
 
-            if (archiveMutator.enableArchiveMutation()){
+            if (archiveMutator.doCollectImpact()){
                 if (improvedTarget.isNotEmpty())
                     impactTarget.addAll(improvedTarget.toSet())
 
@@ -201,15 +203,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             if (notWorse) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual){
                     trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent), config.maxLengthOfTraces)!!
-                }
-                else mutated
+                } else mutated
 
                 //if newly initialization actions were added (i.e., trackedCurrent does not include these), impacts should be updated accordingly
                 if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
                     trackedMutated.updateGeneDueToAddedInitializationGenes(current)
                 }
 
-                if(archiveMutator.enableArchiveSelection()){
+                if(archiveMutator.doCollectImpact()){
                     trackedMutated.updateImpactOfGenes(true,
                             impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
                 }
@@ -217,10 +218,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 current = trackedMutated
             }
 
-            if (!inArchive && archiveMutator.enableArchiveSelection()){
-                current.updateUndoTracking(mutated, config.maxLengthOfTraces)
-                current.updateImpactOfGenes(false, impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
+            if (!inArchive){
+                if (config.enableTrackEvaluatedIndividual)
+                    current.updateUndoTracking(mutated, config.maxLengthOfTraces)
+                if (archiveMutator.doCollectImpact())
+                    current.updateImpactOfGenes(false, impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
             }
+
+            archiveMutator.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,impactTargets = impactTarget, improvedTargets = improvedTarget, addedToArchive = inArchive, evaluatedIndividual = current)
 
             // gene mutation evaluation
             if (archiveMutator.enableArchiveGeneMutation()){

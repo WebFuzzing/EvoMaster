@@ -581,6 +581,17 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return impactInfo.getGeneImpact(geneId)
     }
 
+    fun exportImpactAsListString() : MutableList<String>{
+        impactInfo?: throw IllegalArgumentException("do not enable collecting impacts info")
+
+        val content = mutableListOf<String>()
+
+        impactInfo.exportImpactInfo(false, content)
+        impactInfo.exportImpactInfo(true, content)
+
+        return content
+    }
+
     fun assignToCluster(cluster : String) : EvaluatedIndividual<T>{
         clusterAssignments.add(cluster)
         return this

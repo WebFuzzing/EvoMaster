@@ -144,11 +144,12 @@ open class Impact(
     fun toCSVCell() : List<String> = listOf(
             getId(),
             getDegree().toString(),
-            getTimesToManipulate().toString(),
-            getTimesOfNoImpact().toString(),
-            getTimesOfImpacts().map { "${it.key}->${it.value}" }.joinToString(";"),
-            getNoImpactsFromImpactCounter().map { "${it.key}->${it.value}" }.joinToString(";"),
-            getNoImprovementCounter().map { "${it.key}->${it.value}" }.joinToString(";")
+            "CM:${getTimesToManipulate()}",
+            "CN:${getTimesOfNoImpact()}",
+            "I:${getTimesOfImpacts().map { "${it.key}->${it.value}" }.joinToString(";")}",
+            "NI:${getTimesOfNoImpactWithTargets().map { "${it.key}->${it.value}" }.joinToString(";")}",
+            "I->NI:${getNoImpactsFromImpactCounter().map { "${it.key}->${it.value}" }.joinToString(";")}",
+            "NV:${getNoImprovementCounter().map { "${it.key}->${it.value}" }.joinToString(";")}"
     )
 
     fun getMaxImpact() : Int = shared.timesOfImpact.values.max()?:0

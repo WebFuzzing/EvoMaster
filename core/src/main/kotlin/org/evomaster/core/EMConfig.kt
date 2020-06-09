@@ -274,6 +274,9 @@ class EMConfig {
             throw IllegalArgumentException("GeneMutationSelectionMethod is only applicable with MIO algorithm (but current is $algorithm)")
         }
 
+        if (probOfArchiveMutation > 0 && !enableTrackEvaluatedIndividual)
+            throw IllegalArgumentException("archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
+
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
@@ -1038,12 +1041,16 @@ class EMConfig {
     var adaptiveGeneSelectionMethod = GeneMutationSelectionMethod.NONE
 
     @Experimental
-    @Cfg("Specify whether to save mutated genes during search")
-    var saveMutatedGene = false
+    @Cfg("Specify file path to save mutated genes, only useful for debugging")
+    var saveMutatedGeneFile = ""
 
     @Experimental
-    @Cfg("Specify file path to save mutated genes")
-    var saveMutatedGeneFile = "mutatedGenes.csv"
+    @Cfg("Specify whether to save archive after each mutation during search, only useful for debugging")
+    var saveArchiveAfterMutationFile = ""
+
+    @Experimental
+    @Cfg("Specify whether to save collected impact info after each mutation during search, only useful for debugging")
+    var saveImpactAfterMutationFile = ""
 
     @Experimental
     @Cfg("Specify whether to enable archive-based selection for selecting genes to mutate inside a gene, e.g., ObjectGene")

@@ -16,6 +16,9 @@ import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
 import java.lang.Integer.min
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardOpenOption
 
 
 class Archive<T> where T : Individual {
@@ -459,6 +462,13 @@ class Archive<T> where T : Individual {
     }
 
     /**
+     * useful for debugging
+     */
+    fun getReachedTargetHeuristics(target: Int) : Double?{
+        return populations[target]?.map { v-> v.fitness.getHeuristic(target) }?.max()
+    }
+
+    /**
      * @return current population
      */
     fun getSnapshotOfBestIndividuals(): Map<Int, MutableList<EvaluatedIndividual<T>>>{
@@ -497,5 +507,19 @@ class Archive<T> where T : Individual {
             else
                 find{i -> i.individual.sameActions(other)}!!.impactInfo?.clone()
         }
+    }
+
+
+    fun saveSnapshot(){
+        if (config.saveArchiveAfterMutationFile.isBlank()) return
+
+        val index = time.evaluatedIndividuals
+        val archiveContent = notCoveredTargets().filter { it >= 0 }.map { "$index,${it to getReachedTargetHeuristics(it)},${idMapper.getDescriptiveId(it)}" }
+
+        val apath = Paths.get(config.saveArchiveAfterMutationFile)
+        if (apath.parent != null) Files.createDirectories(apath.parent)
+        if (Files.notExists(apath)) Files.createFile(apath)
+
+        if (archiveContent.isNotEmpty()) Files.write(apath, archiveContent, StandardOpenOption.APPEND)
     }
 }

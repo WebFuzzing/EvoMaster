@@ -156,8 +156,6 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
     override fun mutate(individual: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): T {
 
-
-
         //  mutate the individual
         val mutatedIndividual = innerMutate(individual, targets, mutatedGenes)
 
