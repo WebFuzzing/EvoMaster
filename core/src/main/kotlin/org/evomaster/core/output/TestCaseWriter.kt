@@ -439,7 +439,7 @@ class TestCaseWriter {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class ->  return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> return NOT_COVERED_YET
+                ArrayList::class -> return "hasItems(${(resContentsItem as ArrayList<String>).joinToString{"\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""}})"
                 else -> return NOT_COVERED_YET
             }
         }
@@ -512,7 +512,19 @@ class TestCaseWriter {
                                     }
                                 }
                             }
-                            if(longArray) lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
+                            if(longArray) {
+                                val printableTh = handleFieldValues(resContents)
+                                if (printableTh != "null"
+                                        && printableTh != NOT_COVERED_YET
+                                        && !printableTh.contains("logged")
+                                        && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                                ) {
+                                    //lines.add(".body(\"get($test_index)\", $printableTh)")
+                                    lines.add(".body(\"\", $printableTh)")
+                                }
+                                //lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
+                            }
+                            //if(longArray) lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
                         }
                         else{
                             // the object is empty

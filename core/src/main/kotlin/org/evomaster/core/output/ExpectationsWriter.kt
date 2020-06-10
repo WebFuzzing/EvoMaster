@@ -39,7 +39,8 @@ class ExpectationsWriter {
 
     fun handleExpectationSpecificLines(call: RestCallAction, lines: Lines, res: RestCallResult, name: String){
         lines.addEmpty()
-        if(this::partialOracles.isInitialized){
+        if(this::partialOracles.isInitialized
+                && partialOracles.generatesExpectation(call, res)){
             partialOracles.addExpectations(call, lines, res, name, format)
         }
 
