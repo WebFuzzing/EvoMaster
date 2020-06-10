@@ -123,7 +123,7 @@ MINUTES_PER_RUN = int(sys.argv[7])
 
 # How many scripts M we want the N jobs to be divided into.
 # Note: on cluster we can at most submit 400 scripts.
-# Also not that in the same .sh script there can be experiments only for a single SUT.
+# Also note that, in the same .sh script, there can be experiments only for a single SUT.
 NJOBS = int(sys.argv[8])
 
 
