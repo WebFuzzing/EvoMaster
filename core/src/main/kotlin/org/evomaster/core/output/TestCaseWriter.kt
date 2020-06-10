@@ -276,7 +276,7 @@ class TestCaseWriter {
             }
         }
 
-        handleResponse(lines, res)
+        handleResponse(call, res, lines)
         handleLastLine(call, res, lines, name)
 
         //BMR should expectations be here?
@@ -407,7 +407,7 @@ class TestCaseWriter {
         lines.append(")")
     }
 
-    private fun handleResponse(lines: Lines, res: RestCallResult) {
+    private fun handleResponse(call: RestCallAction, res: RestCallResult, lines: Lines) {
         if (!res.failedCall()) {
 
             val code = res.getStatusCode()
@@ -429,6 +429,8 @@ class TestCaseWriter {
                 handleResponseContents(lines, res)
             }
         }
+        else if(partialOracles.generatesExpectation(call, res)
+                && format.isJavaOrKotlin()) lines.add(".then()")
     }
 
     private fun handleFieldValues(resContentsItem: Any?): String {
