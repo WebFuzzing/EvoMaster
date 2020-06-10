@@ -186,7 +186,7 @@ else:
     # These SUTs requires Docker
     SUTS = [
         Sut("ind0", 1, JDK_8),
-        Sut("ocvn-rest", 1, JDK_8),
+        # Sut("ocvn-rest", 1, JDK_8),
         # Sut("ncs-js", 1, JS),
         # Sut("scs-js", 1, JS)
     ]
@@ -212,9 +212,17 @@ else:
 
     LOGS_DIR = BASE_DIR
 
+    JAVA_HOME_8 = os.environ.get("JAVA_HOME_8", "")
+    if JAVA_HOME_8 == "":
+        raise Exception("You must specify a JAVA_HOME_8 env variable specifying where JDK 8 is installed")
+
+    JAVA_HOME_11 = os.environ.get("JAVA_HOME_11", "")
+    if JAVA_HOME_11 == "":
+        raise Exception("You must specify a JAVA_HOME_11 env variable specifying where JDK 11 is installed")
+
 
 # How to run EvoMaster
-EVOMASTER = "java  -Xms2G -Xmx4G  -jar evomaster.jar"
+EVOMASTER_JAVA_OPTIONS = " -Xms2G -Xmx4G  -jar evomaster.jar "
 AGENT = "evomaster-agent.jar"
 EM_POSTFIX = "-evomaster-runner.jar"
 SUT_POSTFIX = "-sut.jar"
@@ -359,7 +367,8 @@ def createJobHead(port, sut, timeoutMinutes):
     if sut.platform == JDK_8 or sut.platform == JDK_11:
         params = " " + controllerPort + " " + sutPort + " " + sut.name + SUT_POSTFIX + " " + str(timeoutStart)
         jvm = " -Xms1G -Xmx4G -Dem.muteSUT=true -Devomaster.instrumentation.jar.path="+AGENT
-        command = "java " + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
+        JAVA = getJavaCommand(sut)
+        command = JAVA + jvm + " -jar " + sut.name + EM_POSTFIX + " " + params + " > " + sut_log + " 2>&1 &"
 
     elif sut.platform == JS:
         # TODO sutPort
@@ -448,6 +457,16 @@ def createOneJob(state, sut, seed, config):
     return code
 
 
+def getJavaCommand(sut):
+        JAVA = "java "
+        if not CLUSTER:
+             if sut.platform == JDK_8:
+                    JAVA = "\"" + JAVA_HOME_8 +"\"/bin/java "
+             elif sut.platform == JDK_11:
+                    JAVA = "\"" + JAVA_HOME_11 +"\"/bin/java "
+        return JAVA
+
+
 def addJobBody(port, sut, seed, config):
     script = io.StringIO()
 
@@ -472,7 +491,8 @@ def addJobBody(port, sut, seed, config):
     params += " --showProgress=false"
     params += " --testSuiteSplitType=NONE"
 
-    command = EVOMASTER + params + " >> " + em_log + " 2>&1"
+    JAVA = getJavaCommand(sut)
+    command = JAVA + EVOMASTER_JAVA_OPTIONS + params + " >> " + em_log + " 2>&1"
 
     if not CLUSTER:
         script.write("\n\necho \"Starting EvoMaster with: " + command + "\"\n")
@@ -549,10 +569,12 @@ def createJobs():
 
 
 class Config:
-    def __init__(self, blackBox, algorithm):
-        self.blackBox = blackBox
-        self.bbExperiments = blackBox
-        self.algorithm = algorithm
+     def __init__(self, useMethodReplacement, useNonIntegerReplacement, expandRestIndividuals, baseTaintAnalysisProbability):
+            self.useMethodReplacement = useMethodReplacement
+            self.useNonIntegerReplacement = useNonIntegerReplacement
+            self.expandRestIndividuals = expandRestIndividuals
+            self.baseTaintAnalysisProbability = baseTaintAnalysisProbability
+
 
 
 
@@ -560,13 +582,15 @@ def customParameters(seed, config):
 
     params = ""
 
-    label = str(config.algorithm)
+    label = str(config.useMethodReplacement) + "_" + str(int(config.baseTaintAnalysisProbability * 10))
 
     ### Custom for these experiments
     params += " --testSuiteFileName=EM_" + label + "_" + str(seed) + "_Test"
-    params += " --blackBox=" + str(config.blackBox)
-    params += " --bbExperiments=" + str(config.blackBox)
-    params += " --algorithm=" + str(config.algorithm)
+    params += " --useMethodReplacement=" + str(config.useMethodReplacement)
+    params += " --useNonIntegerReplacement=" + str(config.useNonIntegerReplacement)
+    params += " --expandRestIndividuals=" + str(config.expandRestIndividuals)
+    params += " --baseTaintAnalysisProbability=" + str(config.baseTaintAnalysisProbability)
+
 
     return params
 
@@ -575,12 +599,20 @@ def getConfigs():
 
     # array of configuration objects. We will run experiments for each of
     # these configurations
-    CONFIGS = []
+   CONFIGS = []
 
-    CONFIGS.append(Config(False, "RANDOM"))
-    CONFIGS.append(Config(False, "MIO"))
+   if CLUSTER:
+           CONFIGS.append(Config(False, False, False, 0))
+           CONFIGS.append(Config(True, True, True, 0))
+#            CONFIGS.append(Config(True, True, True, 0.1))
+#            CONFIGS.append(Config(True, True, True, 0.5))
+           CONFIGS.append(Config(True, True, True, 0.9))
+   else:
+           CONFIGS.append(Config(False, False, False, 0))
+           CONFIGS.append(Config(True, True, True, 0))
+           CONFIGS.append(Config(True, True, True, 0.9))
 
-    return CONFIGS
+   return CONFIGS
 
 
 ############################################################################
