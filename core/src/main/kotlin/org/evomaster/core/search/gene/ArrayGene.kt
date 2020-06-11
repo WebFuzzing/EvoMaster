@@ -105,11 +105,12 @@ class ArrayGene<T>(
         if(!isMutable()){
             throw IllegalStateException("Cannot mutate a immutable array")
         }
-        if ( elements.isEmpty() || elements.size > maxSize){
+        val mutable = elements.filter { it.isMutable() }
+        if ( mutable.isEmpty() || mutable.size > maxSize){
             return listOf()
         }
         val p = probabilityToModifySize(selectionStrategy, additionalGeneMutationInfo?.impact)
-        return if (randomness.nextBoolean(p)) listOf() else elements
+        return if (randomness.nextBoolean(p)) listOf() else mutable
     }
 
     /**
