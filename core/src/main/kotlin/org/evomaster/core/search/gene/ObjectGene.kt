@@ -68,7 +68,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
-        return fields
+        return fields.filter { it.isMutable() }
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {
@@ -76,7 +76,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
         val buffer = StringBuffer()
 
         val includedFields = fields.filter {
-            it !is CycleObjectGene && (it !is OptionalGene || it.isActive)
+            it !is CycleObjectGene && (it !is OptionalGene || (it.isActive && it.gene !is CycleObjectGene))
         }
 
         //by default, return in JSON format

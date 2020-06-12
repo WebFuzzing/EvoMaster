@@ -92,7 +92,7 @@ class OptionalGene(name: String,
 
     override fun candidatesInternalGenes(randomness: Randomness, apc: AdaptiveParameterControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Gene> {
 
-        if (!isActive) return emptyList()
+        if (!isActive || !gene.isMutable()) return emptyList()
 
         if (!enableAdaptiveGeneMutation){
             return if (randomness.nextBoolean(INACTIVE)) emptyList() else listOf(gene)
