@@ -52,7 +52,7 @@ class OptionalGene(name: String,
     }
 
     override fun isMutable(): Boolean {
-        return selectable
+        return selectable && gene.isMutable()
     }
 
     override fun copyValueFrom(other: Gene) {
