@@ -82,7 +82,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             : EvaluatedIndividual<T> {
 
         var current = individual
-        val targets = archive.notCoveredTargets()
+        val targets = archive.notCoveredTargets().toMutableSet()
 
         for (i in 0 until upToNTimes) {
 
@@ -164,6 +164,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                         savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
                 }
             }
+            targets.addAll(archive.notCoveredTargets())
         }
         return current
     }
