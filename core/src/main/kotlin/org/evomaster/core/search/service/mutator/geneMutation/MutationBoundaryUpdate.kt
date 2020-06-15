@@ -11,6 +11,12 @@ abstract class MutationBoundaryUpdate<T> (var preferMin : T, var preferMax : T, 
         if (improved) counter = 0
         else counter++
     }
+
+    fun reset(min : T, max: T){
+        preferMin = min
+        preferMax = max
+        reached = false
+    }
 }
 
 interface UpdateBoundary<T> where T : Number{

@@ -158,8 +158,8 @@ abstract class Gene(var name: String) {
                           enableAdaptiveGeneMutation: Boolean,
                           additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
         return when(selectionStrategy){
-            SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), null))
-            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to null }
+            SubsetGeneSelectionStrategy.DEFAULT -> listOf(Pair(randomness.choose(internalGenes), additionalGeneMutationInfo))
+            SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT -> mwc.selectSubGene(candidateGenesToMutate = internalGenes, adaptiveWeight = false).map { it to additionalGeneMutationInfo }
             SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT -> {
                 additionalGeneMutationInfo?: throw IllegalArgumentException("additionalGeneSelectionInfo should not be null")
                 adaptiveSelectSubset(internalGenes, mwc, additionalGeneMutationInfo)
@@ -241,12 +241,17 @@ abstract class Gene(var name: String) {
      * For instance, an enum has four items. If all values evaluated used during search, its 'Optimal' may be identified. But there may exist dependency among the genes
      * in an individual, 'Optimal' can be reset.
      */
-    open fun reachOptimal() = false
+    open fun reachOptimal(targets: Set<Int>) = false
 
     /**
      * based on evaluated results, update a preferred boundary for the gene
+     * @param original the gene before mutation
+     * @param mutated the mutated gene
+     * @param targetsEvaluated updated targets after the gene is mutated. the key is target and the value indicates 0 -- no change, -1 -- become worse, 1 -- become better
+     * @param archiveMutator archive mutator
      */
-    open fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator){
+    open fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator){
         //do nothing
     }
 }
+

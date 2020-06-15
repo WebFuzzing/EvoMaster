@@ -146,12 +146,12 @@ class OptionalGene(name: String,
             listOf(this).plus(gene.flatView(excludePredicate))
     }
 
-    override fun reachOptimal(): Boolean {
-        return (activeMutationInfo.reached && activeMutationInfo.preferMin == 0 && activeMutationInfo.preferMax == 0) ||  gene.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return (activeMutationInfo.reached && activeMutationInfo.preferMin == 0 && activeMutationInfo.preferMax == 0) ||  gene.reachOptimal(targets)
 
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is OptionalGene){
                 log.warn("original ({}) should be OptionalGene", original::class.java.simpleName)
@@ -162,7 +162,7 @@ class OptionalGene(name: String,
                 return
             }
             if (original.isActive == mutated.isActive && mutated.isActive)
-                gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+                gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
             /**
              * may handle Boolean Mutation in the future
              */

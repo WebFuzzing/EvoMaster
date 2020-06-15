@@ -36,19 +36,19 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                 randomness.nextBoolean(config.structureMutationProbability)
     }
 
-    override fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene> {
+    override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
         if (!archiveMutator.enableArchiveMutation())
             return mutable
-        mutable.filter { !it.reachOptimal() || !archiveMutator.withinNormal()}.let {
+        mutable.filter { !it.reachOptimal(targets) || !archiveMutator.withinNormal()}.let {
             if (it.isNotEmpty()) return it
         }
         return mutable
     }
 
     override fun selectGenesToMutate(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?) : List<Gene>{
-        val genesToMutate = genesToMutation(individual, evi)
+        val genesToMutate = genesToMutation(individual, evi, targets)
         if(genesToMutate.isEmpty()) return mutableListOf()
 
         val filterN = when (config.geneMutationStrategy) {

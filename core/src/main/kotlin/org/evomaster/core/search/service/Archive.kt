@@ -273,12 +273,14 @@ class Archive<T> where T : Individual {
                 .any { populations[it]?.isEmpty() ?: true }
     }
 
-    fun wouldReachNewTarget(ei: EvaluatedIndividual<T>, improved: MutableSet<Int>) {
+    fun wouldReachNewTarget(ei: EvaluatedIndividual<T>, targetInfo: MutableMap<Int, Int>) {
 
-        improved.addAll(ei.fitness.getViewOfData()
+        ei.fitness.getViewOfData()
                 .filter { it.value.distance > 0.0 }
                 .map { it.key }
-                .filter { populations[it]?.isEmpty() ?: true }.toSet())
+                .filter { populations[it]?.isEmpty() ?: true }.forEach { t->
+                    targetInfo.merge(t, 1){ _, _ -> 1}
+                }
     }
 
     /**

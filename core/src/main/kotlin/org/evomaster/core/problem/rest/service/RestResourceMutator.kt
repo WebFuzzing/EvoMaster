@@ -41,7 +41,7 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     /**
      * TODO : support with SQL-related strategy
      */
-    override fun genesToMutation(individual: RestIndividual, evi : EvaluatedIndividual<RestIndividual>): List<Gene> {
+    override fun genesToMutation(individual: RestIndividual, evi: EvaluatedIndividual<RestIndividual>, targets: Set<Int>): List<Gene> {
         //if data of resource call is existing from db, select other row
         val selectAction = individual.getResourceCalls().filter { it.dbActions.isNotEmpty() && it.dbActions.last().representExistingData }
         if(selectAction.isNotEmpty())

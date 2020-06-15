@@ -133,7 +133,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
     override fun adaptiveSelectSubset(internalGenes: List<Gene>, mwc: MutationWeightControl, additionalGeneMutationInfo: AdditionalGeneSelectionInfo): List<Pair<Gene, AdditionalGeneSelectionInfo?>> {
-        val canFields = fields.filter { !it.reachOptimal() || !additionalGeneMutationInfo.archiveMutator.withinNormal() }.run {
+        val canFields = fields.filter { !it.reachOptimal(additionalGeneMutationInfo.targets) || !additionalGeneMutationInfo.archiveMutator.withinNormal() }.run {
             if (isEmpty())
                 fields
             else this
@@ -151,7 +151,7 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()) {
             original as? ObjectGene ?: throw IllegalStateException("$original should be ObjectGene")
             mutated as? ObjectGene ?: throw IllegalStateException("$mutated should be ObjectGene")
@@ -161,13 +161,13 @@ open class ObjectGene(name: String, val fields: List<out Gene>, val refType: Str
             }.filter { !it.second }.map { it.first }.forEach { g ->
                 val current = fields.find { it.name == g.first.name }
                         ?: throw IllegalArgumentException("mismatched field")
-                current.archiveMutationUpdate(original = g.second, mutated = g.first, doesCurrentBetter = doesCurrentBetter, archiveMutator = archiveMutator)
+                current.archiveMutationUpdate(original = g.second, mutated = g.first, targetsEvaluated = targetsEvaluated, archiveMutator = archiveMutator)
             }
         }
     }
 
-    override fun reachOptimal(): Boolean {
-        return fields.all { it.reachOptimal() }
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return fields.all { it.reachOptimal(targets) }
     }
 
     override fun mutationWeight(): Double = fields.map { it.mutationWeight() }.sum()

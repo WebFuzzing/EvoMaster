@@ -6,8 +6,10 @@ import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
+import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.geneMutation.archive.GeneArchieMutationInfo
+import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
 
 
 class IntegerGene(
@@ -17,11 +19,12 @@ class IntegerGene(
         val min: Int = Int.MIN_VALUE,
         /** Inclusive */
         val max: Int = Int.MAX_VALUE,
-        val valueMutation :IntMutationUpdate = IntMutationUpdate(min, max)
+
+        val mutationInfo : GeneArchieMutationInfo = GeneArchieMutationInfo()
 ) : NumberGene<Int>(name, value) {
 
     override fun copy(): Gene {
-        return IntegerGene(name, value, min, max, valueMutation.copy())
+        return IntegerGene(name, value, min, max, mutationInfo.copy())
     }
 
     override fun copyValueFrom(other: Gene) {
@@ -68,10 +71,15 @@ class IntegerGene(
         } else {
             randomness.nextInt(a, b)
         }
-
     }
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
+
+//        if (enableAdaptiveGeneMutation){
+//            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+//            additionalGeneMutationInfo.archiveMutator.mutate(this)
+//            return true
+//        }
 
         //check maximum range. no point in having a delta greater than such range
         val range: Long = max.toLong() - min.toLong()
@@ -102,7 +110,47 @@ class IntegerGene(
         return value.toString()
     }
 
-    override fun reachOptimal(): Boolean {
-        return valueMutation.reached
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
+        if (!archiveMutator.enableArchiveGeneMutation()) return
+
+        original as? IntegerGene ?: throw IllegalStateException("$original should be IntegerGene")
+        mutated as? IntegerGene ?: throw IllegalStateException("$mutated should be IntegerGene")
+
+
+        val previous = original.value
+        val current = mutated.value
+
+        val isMutated = this == mutated
+
+        targetsEvaluated.forEach { (t, u) ->
+            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
+            val marchiveMutationInfo = mutated.mutationInfo.getArchiveMutationInfo(this, t) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
+
+            if (!isMutated)
+                archiveMutationInfo.valueMutation.reached = marchiveMutationInfo.valueMutation.reached
+
+            /*
+                1) current.length is not in min..max, but current is better -> reset
+                2) lengthMutation is optimal, but current is better -> reset
+            */
+            val becomeBetter = u == 1
+            if (becomeBetter && (
+                            current !in archiveMutationInfo.valueMutation.preferMin..archiveMutationInfo.valueMutation.preferMax
+                            )) {
+                archiveMutationInfo.valueMutation.reset(min, max)
+                archiveMutationInfo.plusDependencyInfo()
+                return
+            }
+            archiveMutationInfo.valueMutation.updateBoundary(original.value, mutated.value, becomeBetter)
+
+            if (0 == archiveMutator.validateCandidates(archiveMutationInfo.valueMutation.preferMin, archiveMutationInfo.valueMutation.preferMax, exclude = setOf(previous, current).toList())) {
+                archiveMutationInfo.valueMutation.reached = true
+            }
+        }
+
+    }
+
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return mutationInfo.reachOptimal(targets)
     }
 }

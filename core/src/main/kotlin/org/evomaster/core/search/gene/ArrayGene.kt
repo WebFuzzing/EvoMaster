@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.value.collection.ArrayGeneImpact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.MutationWeightControl
@@ -130,7 +129,7 @@ class ArrayGene<T>(
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is ArrayGene<*>){
                 log.warn("original ({}) should be ArrayGene", original::class.java.simpleName)
@@ -153,7 +152,7 @@ class ArrayGene<T>(
                 log.warn("cannot find element at index {}", index)
                 return
             }
-            elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], doesCurrentBetter, archiveMutator)
+            elements[index].archiveMutationUpdate(original.elements[index], mutated.elements[index], targetsEvaluated, archiveMutator)
         }
     }
 

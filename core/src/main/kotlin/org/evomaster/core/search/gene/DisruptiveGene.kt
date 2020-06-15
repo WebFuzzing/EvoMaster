@@ -100,7 +100,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
         return if(excludePredicate(this)) listOf(this) else listOf(this).plus(gene.flatView(excludePredicate))
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is DisruptiveGene<*>){
                 log.warn("original ({}) should be DisruptiveGene", original::class.java.simpleName)
@@ -110,7 +110,7 @@ class DisruptiveGene<out T>(name: String, val gene: T, var probability: Double) 
                 log.warn("mutated ({}) should be DisruptiveGene", mutated::class.java.simpleName)
                 return
             }
-            gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+            gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
         }
     }
 

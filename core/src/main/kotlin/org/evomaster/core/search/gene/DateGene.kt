@@ -82,7 +82,7 @@ class DateGene(
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is DateGene){
                 log.warn("original ({}) should be DateGene", original::class.java.simpleName)
@@ -94,12 +94,12 @@ class DateGene(
             }
 
             if (!mutated.year.containsSameValueAs(original.year)){
-                year.archiveMutationUpdate(original.year, mutated.year, doesCurrentBetter, archiveMutator)
+                year.archiveMutationUpdate(original.year, mutated.year, targetsEvaluated, archiveMutator)
             }
             if (!mutated.month.containsSameValueAs(original.month))
-                month.archiveMutationUpdate(original.month, mutated.month, doesCurrentBetter, archiveMutator)
+                month.archiveMutationUpdate(original.month, mutated.month, targetsEvaluated, archiveMutator)
             if (!mutated.day.containsSameValueAs(original.day))
-                day.archiveMutationUpdate(original.day, mutated.day, doesCurrentBetter, archiveMutator)
+                day.archiveMutationUpdate(original.day, mutated.day, targetsEvaluated, archiveMutator)
         }
     }
 
@@ -156,8 +156,8 @@ class DateGene(
                     .plus(day.flatView(excludePredicate))
     }
 
-    override fun reachOptimal(): Boolean {
-        return year.reachOptimal() && month.reachOptimal() && day.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return year.reachOptimal(targets) && month.reachOptimal(targets) && day.reachOptimal(targets)
     }
 
     /*

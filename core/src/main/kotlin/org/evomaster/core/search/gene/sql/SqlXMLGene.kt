@@ -89,7 +89,7 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
             listOf(this).plus(objectGene.flatView(excludePredicate))
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is SqlXMLGene){
                 log.warn("original ({}) should be SqlXMLGene", original::class.java.simpleName)
@@ -99,12 +99,12 @@ class SqlXMLGene(name: String, val objectGene: ObjectGene = ObjectGene(name, fie
                 log.warn("mutated ({}) should be SqlXMLGene", mutated::class.java.simpleName)
                 return
             }
-            objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, doesCurrentBetter, archiveMutator)
+            objectGene.archiveMutationUpdate(original.objectGene, mutated.objectGene, targetsEvaluated, archiveMutator)
         }
     }
 
-    override fun reachOptimal(): Boolean {
-        return objectGene.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return objectGene.reachOptimal(targets)
     }
 
 

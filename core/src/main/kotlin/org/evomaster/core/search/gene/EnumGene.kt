@@ -132,7 +132,7 @@ class EnumGene<T : Comparable<T>>(
     }
 
     //TODO when archive-based mutation is enabled
-    override fun reachOptimal(): Boolean {
+    override fun reachOptimal(targets: Set<Int>): Boolean {
         return values.size == 1
     }
 }

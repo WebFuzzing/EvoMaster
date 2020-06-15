@@ -275,8 +275,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
     fun updateImpactOfGenes(
             inTrack : Boolean,
             mutatedGenes : MutatedGeneSpecification,
-            impactTargets : MutableSet<Int>,
-            improvedTargets: MutableSet<Int>){
+            targetsInfo : MutableMap<Int, Int>
+    ){
 
         Lazy.assert{mutatedGenes.mutatedIndividual != null}
         Lazy.assert{getTracking() != null}
@@ -290,7 +290,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         updateReachedTargets(fitness)
 
-        compareWithLatest(next, previous, improvedTargets, impactTargets, mutatedGenes)
+        compareWithLatest(next, previous, improvedTargets = targetsInfo.filter { it.value == 1 }.keys, impactTargets = targetsInfo.filter { it.value >=0 }.keys, mutatedGenes = mutatedGenes)
     }
 
 

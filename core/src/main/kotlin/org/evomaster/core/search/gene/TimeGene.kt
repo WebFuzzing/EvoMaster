@@ -81,7 +81,7 @@ class TimeGene(
         throw IllegalArgumentException("impact is null or not TimeGeneImpact")
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is TimeGene){
                 log.warn("original ({}) should be TimeGene", original::class.java.simpleName)
@@ -93,17 +93,17 @@ class TimeGene(
             }
 
             if (!mutated.hour.containsSameValueAs(original.hour)){
-                hour.archiveMutationUpdate(original.hour, mutated.hour, doesCurrentBetter, archiveMutator)
+                hour.archiveMutationUpdate(original.hour, mutated.hour, targetsEvaluated, archiveMutator)
             }
             if (!mutated.minute.containsSameValueAs(original.minute))
-                minute.archiveMutationUpdate(original.minute, mutated.minute, doesCurrentBetter, archiveMutator)
+                minute.archiveMutationUpdate(original.minute, mutated.minute, targetsEvaluated, archiveMutator)
             if (!mutated.second.containsSameValueAs(original.second))
-                second.archiveMutationUpdate(original.second, mutated.second, doesCurrentBetter, archiveMutator)
+                second.archiveMutationUpdate(original.second, mutated.second, targetsEvaluated, archiveMutator)
         }
     }
 
-    override fun reachOptimal(): Boolean {
-        return hour.reachOptimal() && minute.reachOptimal() && second.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return hour.reachOptimal(targets) && minute.reachOptimal(targets) && second.reachOptimal(targets)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

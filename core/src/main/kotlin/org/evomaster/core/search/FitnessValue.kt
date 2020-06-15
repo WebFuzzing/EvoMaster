@@ -238,8 +238,9 @@ class FitnessValue(
     fun isDifferent(
             other: FitnessValue,
             targetSubset: Set<Int>,
-            improved : MutableSet<Int>,
-            different : MutableSet<Int>,
+//            improved : MutableSet<Int>,
+//            different : MutableSet<Int>,
+            targetInfo: MutableMap<Int, Int>,
             withExtra : Boolean = false,
             strategy: EMConfig.SecondaryObjectiveStrategy,
             bloatControlForSecondaryObjective: Boolean)  {
@@ -260,9 +261,9 @@ class FitnessValue(
                 continue
 
             if (v != z) {
-                different.add(k)
+                targetInfo.merge(k, -1){_,_->-1}//different.add(k)
                 if (v > z)
-                    improved.add(k)
+                    targetInfo.merge(k, 1){_,_->1}//improved.add(k)
                 continue
             }
 
@@ -270,16 +271,16 @@ class FitnessValue(
                 val extra = compareExtraToMinimize(k, other, strategy)
 
                 if (this.size != other.size || extra != 0) {
-                    different.add(k)
+                    targetInfo.merge(k, -1){_,_->-1}//different.add(k)
 
                     if(bloatControlForSecondaryObjective){
                         if (this.size < other.size || (this.size == other.size && extra > 0)) {
-                            improved.add(k)
+                            targetInfo.merge(k, 1){_,_->1}//improved.add(k)
                         }
                     } else {
                         if (extra > 0 ||
                                 (extra == 0 && this.size < other.size)) {
-                            improved.add(k)
+                            targetInfo.merge(k, 1){_,_->1}//improved.add(k)
                         }
                     }
                 }

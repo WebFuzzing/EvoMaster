@@ -1,7 +1,6 @@
 package org.evomaster.core.search.gene
 
 import org.apache.commons.lang3.StringEscapeUtils
-import org.evomaster.client.java.instrumentation.shared.StringSpecialization
 import org.evomaster.client.java.instrumentation.shared.StringSpecialization.*
 import org.evomaster.client.java.instrumentation.shared.StringSpecializationInfo
 import org.evomaster.client.java.instrumentation.shared.TaintInputName
@@ -17,10 +16,11 @@ import org.evomaster.core.search.service.Randomness
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
-import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.evomaster.core.search.service.mutator.MutationWeightControl
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import org.evomaster.core.search.service.mutator.geneMutation.archive.GeneArchieMutationInfo
+import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
 
 
 class StringGene(
@@ -38,27 +38,13 @@ class StringGene(
          */
         val invalidChars: List<Char> = listOf(),
 
-        /**
-         * collect info of mutation on its chars of [value]
-         */
-        val charsMutation: MutableList<IntMutationUpdate> = mutableListOf(),
-        /**
-         * collect info of mutation on its length of [value]
-         */
-        val lengthMutation: IntMutationUpdate = IntMutationUpdate(minLength, maxLength),
-        /**
-         * collect info regarding whether [this] gene is related to others
-         */
-        val dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)
+        val mutationInfo : GeneArchieMutationInfo = GeneArchieMutationInfo()
 
 ) : Gene(name) {
 
     companion object {
 
         private val log: Logger = LoggerFactory.getLogger(StringGene::class.java)
-
-        private const val NEVER_ARCHIVE_MUTATION = -2
-        private const val CHAR_MUTATION_INITIALIZED = -1
 
         private const val PROB_CHANGE_SPEC = 0.1
 
@@ -97,11 +83,6 @@ class StringGene(
      */
     var tainted = false
 
-    /**
-     * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
-     * when [mutatedIndex] = -1, it means that charsMutation of [this] is initialized
-     */
-    var mutatedIndex: Int = NEVER_ARCHIVE_MUTATION
 
     /**
      * During the search, we might discover (with TaintAnalysis) that 2 different
@@ -113,19 +94,16 @@ class StringGene(
      */
     var bindingIds = mutableSetOf<String>()
 
-    fun charMutationInitialized() {
-        mutatedIndex = CHAR_MUTATION_INITIALIZED
-    }
+
 
     override fun copy(): Gene {
-        val copy = StringGene(name, value, minLength, maxLength, invalidChars, charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy())
+        val copy = StringGene(name, value, minLength, maxLength, invalidChars, mutationInfo.copy())
                 .also {
                     it.specializationGenes = this.specializationGenes.map { g -> g.copy() }.toMutableList()
                     it.specializations.addAll(this.specializations)
                     it.validChar = this.validChar
                     it.selectedSpecialization = this.selectedSpecialization
                     it.selectionUpdatedSinceLastMutation = this.selectionUpdatedSinceLastMutation
-                    it.mutatedIndex = this.mutatedIndex
                     it.tainted = this.tainted
                     it.bindingIds = this.bindingIds.map { id -> id }.toMutableSet()
                 }
@@ -562,134 +540,60 @@ class StringGene(
             additionalGeneMutationInfo: AdditionalGeneSelectionInfo
     ) : Boolean{
 
-        dependencyInfo.mutatedtimes +=1
-        additionalGeneMutationInfo.archiveMutator.mutate(this)
-        if (mutatedIndex < CHAR_MUTATION_INITIALIZED){
-            log.warn("archiveMutation: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
-        }
-        if (charsMutation.size != value.length){
-            log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, charsMutation.size)
+        additionalGeneMutationInfo.targets.forEach {
+            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, it) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
+            //archiveMutationInfo.plusMutatedTimes()
+            additionalGeneMutationInfo.archiveMutator.mutate(this, additionalGeneMutationInfo.targets)
+            if (archiveMutationInfo.doInitMutationIndex()){
+                log.warn("archiveMutation: mutatedIndex {} of this gene should be initialized for the target {}", archiveMutationInfo.mutatedIndex, it)
+            }
+            if (archiveMutationInfo.charsMutation.size != value.length){
+                log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, archiveMutationInfo.charsMutation.size)
+            }
         }
         return true
     }
 
 
-    override fun reachOptimal(): Boolean {
-        return lengthMutation.reached && (charsMutation.all { it.reached } || charsMutation.isEmpty())
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return mutationInfo.reachOptimal(targets)
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (!archiveMutator.enableArchiveGeneMutation()) return
 
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
 
-        if (this != mutated) {
-            dependencyInfo.mutatedtimes += 1
-            if (this.mutatedIndex == NEVER_ARCHIVE_MUTATION) {
-                initCharMutation()
-            }
-            this.mutatedIndex = mutated.mutatedIndex
-        }
-        if (mutatedIndex < CHAR_MUTATION_INITIALIZED) {
-            log.warn("archiveMutationUpdate: mutatedIndex {} of this gene should be more than {}", mutatedIndex, NEVER_ARCHIVE_MUTATION)
-        }
-
         val previous = original.value
         val current = mutated.value
 
-        if (previous.length != current.length) {
-            if (this != mutated) {
-                this.lengthMutation.reached = mutated.lengthMutation.reached
-            }
-            lengthUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
-        } else {
-            charUpdate(previous, current, mutated, doesCurrentBetter, archiveMutator)
-        }
-    }
+        val isMutated = (this == mutated)
 
-    private fun charUpdate(previous: String, current: String, mutated: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        val charUpdate = charsMutation[mutatedIndex]
-        if (this != mutated) {
-            charUpdate.reached =
-                    mutated.charsMutation[mutatedIndex].reached
-        }
+        targetsEvaluated.forEach { (t, u) ->
+            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
+            val marchiveMutationInfo = mutated.mutationInfo.getArchiveMutationInfo(this, t) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
 
-        val pchar = previous[mutatedIndex].toInt()
-        val cchar = current[mutatedIndex].toInt()
-
-        /*
-            1) current char is not in min..max, but current is better -> reset
-            2) cmutation is optimal, but current is better -> reset
-         */
-        val reset = doesCurrentBetter && (
-                cchar !in charUpdate.preferMin..charUpdate.preferMax ||
-                        charUpdate.reached
-                )
-
-        if (reset) {
-            charUpdate.preferMax = Char.MAX_VALUE.toInt()
-            charUpdate.preferMin = Char.MIN_VALUE.toInt()
-            charUpdate.reached = false
-            dependencyInfo.resetTimes += 1
-            if (dependencyInfo.resetTimes >= 2) dependencyInfo.degreeOfIndependence = 0.8
-            return
-        }
-        charUpdate.updateBoundary(pchar, cchar, doesCurrentBetter)
-
-        val exclude = value[mutatedIndex].toInt()
-        val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(exclude).toSet()
-
-        if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList())) {
-            charUpdate.reached = true
-        }
-    }
-
-    private fun lengthUpdate(previous: String, current: String, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        //update charsMutation regarding value
-        val added = value.length - charsMutation.size
-        if (added != 0) {
-            if (added > 0) {
-                (0 until added).forEach { _ ->
-                    charsMutation.add(archiveMutator.createCharMutationUpdate())
+            if (!isMutated) {
+                archiveMutationInfo.plusMutatedTimes()
+                if (archiveMutationInfo.neverArchiveMutate()) {
+                    archiveMutator.initCharMutation(archiveMutationInfo.charsMutation, value.length)
                 }
+                archiveMutationInfo.mutatedIndex = marchiveMutationInfo.mutatedIndex //archiveMutationInfo.mutatedIndex
+            }
+            if (archiveMutationInfo.doInitMutationIndex()){
+                log.warn("archiveMutation: mutatedIndex {} of this gene should be initialized for the target {}", archiveMutationInfo.mutatedIndex, t)
+            }
+
+            if (previous.length != current.length) {
+                if (!isMutated) {
+                    archiveMutationInfo.lengthMutation.reached = marchiveMutationInfo.lengthMutation.reached
+                }
+                archiveMutationInfo.lengthUpdate(previous = previous, current = current, mutated = mutated, thisGene = this, doesCurrentBetter = (u==1), archiveMutator = archiveMutator)
             } else {
-                (0 until -added).forEach { _ ->
-                    charsMutation.removeAt(value.length)
-                }
+                archiveMutationInfo.charUpdate(previous = previous, current = current, thisValue = value, invalidChars = invalidChars, isMutated = isMutated, mutatedArchiveMutationInfo = marchiveMutationInfo, doesCurrentBetter = (u == 1), archiveMutator = archiveMutator)
             }
         }
-
-        if (value.length != charsMutation.size) {
-            throw IllegalArgumentException("invalid!")
-        }
-        /*
-            1) current.length is not in min..max, but current is better -> reset
-            2) lengthMutation is optimal, but current is better -> reset
-         */
-        val reset = doesCurrentBetter && (
-                current.length !in lengthMutation.preferMin..lengthMutation.preferMax ||
-                        lengthMutation.reached
-                )
-
-        if (reset) {
-            lengthMutation.preferMin = minLength
-            lengthMutation.preferMax = maxLength
-            lengthMutation.reached = false
-            dependencyInfo.resetTimes += 1
-            if (dependencyInfo.resetTimes >= 2) dependencyInfo.degreeOfIndependence = 0.8
-            return
-        }
-        lengthMutation.updateBoundary(previous.length, current.length, doesCurrentBetter)
-
-        if (0 == archiveMutator.validateCandidates(lengthMutation.preferMin, lengthMutation.preferMax, exclude = setOf(previous.length, current.length, value.length).toList())) {
-            lengthMutation.reached = true
-        }
-    }
-
-    private fun initCharMutation() {
-        charsMutation.clear()
-        charsMutation.addAll((0 until value.length).map { IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt()) })
     }
 
     override fun mutationWeight(): Double {

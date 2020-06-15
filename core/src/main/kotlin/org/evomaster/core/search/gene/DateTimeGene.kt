@@ -76,7 +76,7 @@ open class DateTimeGene(
         throw IllegalArgumentException("impact is null or not DateTimeGeneImpact")
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is DateTimeGene){
                 log.warn("original ({}) should be DateTimeGene", original::class.java.simpleName)
@@ -88,10 +88,10 @@ open class DateTimeGene(
             }
 
             if (!mutated.date.containsSameValueAs(original.date)){
-                date.archiveMutationUpdate(original.date, mutated.date, doesCurrentBetter, archiveMutator)
+                date.archiveMutationUpdate(original.date, mutated.date, targetsEvaluated, archiveMutator)
             }
             if (!mutated.time.containsSameValueAs(original.time))
-                time.archiveMutationUpdate(original.time, mutated.time, doesCurrentBetter, archiveMutator)
+                time.archiveMutationUpdate(original.time, mutated.time, targetsEvaluated, archiveMutator)
         }
     }
 

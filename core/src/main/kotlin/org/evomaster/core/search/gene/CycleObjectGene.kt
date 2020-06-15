@@ -34,7 +34,7 @@ class CycleObjectGene(name: String) : ObjectGene(name, listOf()) {
         return true
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         //nothing to do?
     }
 

@@ -9,7 +9,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.impact.GeneMutationSelectionMethod
-import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
@@ -55,7 +54,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
      * @param evi a reference of the individual to mutate
      * @return a list of genes that are allowed to mutate
      */
-    abstract fun genesToMutation(individual : T, evi: EvaluatedIndividual<T>) : List<Gene>
+    abstract fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene>
 
     /**
      * @param individual an individual to mutate
@@ -175,24 +174,21 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     config.secondaryObjectiveStrategy,
                     config.bloatControlForSecondaryObjective)
 
+            /*
+                key is target
+                value is impactful info, i.e., 0 -- no any impact, -1 -- become worse, 1 -- become better
+             */
+            val targetsEvaluated = targets.map { it to 0 }.toMap().toMutableMap()
 
-            val improvedTarget = mutableSetOf<Int>()
-            val impactTarget = mutableSetOf<Int>()
-            val newTarget = mutableSetOf<Int>()
+            archive.wouldReachNewTarget(mutated, targetsEvaluated)
 
-            archive.wouldReachNewTarget(mutated, newTarget)
-            impactTarget.addAll(newTarget)
-            improvedTarget.addAll(newTarget)
 
             if (archiveMutator.doCollectImpact()){
-                if (improvedTarget.isNotEmpty())
-                    impactTarget.addAll(improvedTarget.toSet())
 
                 mutated.fitness.isDifferent(
                         current.fitness,
                         targetSubset = targets,
-                        improved = improvedTarget,
-                        different = impactTarget,
+                        targetInfo = targetsEvaluated,
                         withExtra = false,
                         strategy = config.secondaryObjectiveStrategy,
                         bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective
@@ -212,7 +208,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
                 if(archiveMutator.doCollectImpact()){
                     trackedMutated.updateImpactOfGenes(true,
-                            impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
+                            targetsInfo = targetsEvaluated, mutatedGenes = mutatedGenes)
                 }
                 inArchive = archive.addIfNeeded(trackedMutated)
                 current = trackedMutated
@@ -222,35 +218,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 if (config.enableTrackEvaluatedIndividual)
                     current.updateUndoTracking(mutated, config.maxLengthOfTraces)
                 if (archiveMutator.doCollectImpact())
-                    current.updateImpactOfGenes(false, impactTargets = impactTarget, improvedTargets = improvedTarget, mutatedGenes = mutatedGenes)
+                    current.updateImpactOfGenes(false, mutatedGenes = mutatedGenes, targetsInfo = targetsEvaluated)
             }
 
-            archiveMutator.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,impactTargets = impactTarget, improvedTargets = improvedTarget, addedToArchive = inArchive, evaluatedIndividual = current)
+            archiveMutator.saveImpactSnapshot(time.evaluatedIndividuals, checkedTargets = targets,targetsInfo = targetsEvaluated, addedToArchive = inArchive, evaluatedIndividual = current)
 
             // gene mutation evaluation
             if (archiveMutator.enableArchiveGeneMutation()){
-                /*
-                 if len(mutatedGenes.mutatedGenes) + len(mutatedGenes.mutatedDbGenes) > 1, shall we evaluate this mutation?
-                 */
-                mutatedGenes.mutatedGenes.forEachIndexed { index, s->
-                    val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
-                    val actionIndex = if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[index] else -1
-                    val previousValue = (trackedCurrent.findGeneById(id, actionIndex) ?: throw IllegalStateException("cannot find mutated gene with id ($id) in current individual"))
-                    val savedGene = (current.findGeneById(id, actionIndex) ?: throw IllegalStateException("cannot find mutated gene with id ($id) in its original individual"))
-                    savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = notWorse, archiveMutator = archiveMutator)
-                }
-
-                mutatedGenes.mutatedDbGenes.forEachIndexed { index, s->
-                    val id = ImpactUtils.generateGeneId(mutatedGenes.mutatedIndividual!!, s)
-                    val actionIndex = if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[index] else -1
-                    val savedGene = (current.findGeneById(id, actionIndex, isDb = true) ?: throw IllegalStateException("SQLGene: cannot find mutated Sql- gene with id ($id) in current individual"))
-                    /*
-                    it may happen, i.e., a gene may be added during 'structureMutator.addInitializingActions(current, mutatedGenes)'
-                     */
-                    val previousValue = trackedCurrent.findGeneById(id, actionIndex, isDb = true)
-                    if (previousValue != null)
-                        savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = notWorse, archiveMutator = archiveMutator)
-                }
+                archiveMutator.updateArchiveMutationInfo(trackedCurrent, current, mutatedGenes, targetsEvaluated)
             }
         }
         return current

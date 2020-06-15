@@ -91,7 +91,7 @@ class SqlUUIDGene(
     }
 
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is SqlUUIDGene){
                 log.warn("original ({}) should be SqlUUIDGene", original::class.java.simpleName)
@@ -103,16 +103,16 @@ class SqlUUIDGene(
             }
 
             if (!mutated.leastSigBits.containsSameValueAs(original.leastSigBits)){
-                leastSigBits.archiveMutationUpdate(original.leastSigBits, mutated.leastSigBits, doesCurrentBetter, archiveMutator)
+                leastSigBits.archiveMutationUpdate(original.leastSigBits, mutated.leastSigBits, targetsEvaluated, archiveMutator)
             }
             if (!mutated.mostSigBits.containsSameValueAs(original.mostSigBits)){
-                mostSigBits.archiveMutationUpdate(original.mostSigBits, mutated.mostSigBits, doesCurrentBetter, archiveMutator)
+                mostSigBits.archiveMutationUpdate(original.mostSigBits, mutated.mostSigBits, targetsEvaluated, archiveMutator)
             }
         }
     }
 
-    override fun reachOptimal(): Boolean {
-        return leastSigBits.reachOptimal() && mostSigBits.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return leastSigBits.reachOptimal(targets) && mostSigBits.reachOptimal(targets)
     }
 
 

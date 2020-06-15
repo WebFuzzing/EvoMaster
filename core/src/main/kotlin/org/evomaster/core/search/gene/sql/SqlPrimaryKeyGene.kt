@@ -73,7 +73,7 @@ class SqlPrimaryKeyGene(name: String,
         return true
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is SqlPrimaryKeyGene){
                 log.warn("original ({}) should be SqlPrimaryKeyGene", original::class.java.simpleName)
@@ -83,12 +83,12 @@ class SqlPrimaryKeyGene(name: String,
                 log.warn("mutated ({}) should be SqlPrimaryKeyGene", mutated::class.java.simpleName)
                 return
             }
-            gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+            gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
         }
     }
 
-    override fun reachOptimal(): Boolean {
-        return gene.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return gene.reachOptimal(targets)
     }
 
     override fun copyValueFrom(other: Gene) {

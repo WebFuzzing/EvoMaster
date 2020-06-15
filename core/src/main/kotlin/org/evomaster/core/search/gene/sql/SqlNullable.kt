@@ -98,7 +98,7 @@ class SqlNullable(name: String,
         return true
     }
 
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is SqlNullable){
                 log.warn("original ({}) should be SqlNullable", original::class.java.simpleName)
@@ -109,15 +109,15 @@ class SqlNullable(name: String,
                 return
             }
             if (original.isPresent == mutated.isPresent && mutated.isPresent)
-                gene.archiveMutationUpdate(original.gene, mutated.gene, doesCurrentBetter, archiveMutator)
+                gene.archiveMutationUpdate(original.gene, mutated.gene, targetsEvaluated, archiveMutator)
             /**
              * may handle Boolean Mutation in the future
              */
         }
     }
 
-    override fun reachOptimal(): Boolean {
-        return (presentMutationInfo.reached && presentMutationInfo.preferMin == 0 && presentMutationInfo.preferMax == 0) ||  gene.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return (presentMutationInfo.reached && presentMutationInfo.preferMin == 0 && presentMutationInfo.preferMax == 0) ||  gene.reachOptimal(targets)
     }
 
     override fun getValueAsPrintableString(previousGenes: List<Gene>, mode: GeneUtils.EscapeMode?, targetFormat: OutputFormat?): String {

@@ -39,10 +39,10 @@ class Base64StringGene(
         TODO()
     }
 
-    override fun reachOptimal(): Boolean {
-        return data.reachOptimal()
+    override fun reachOptimal(targets: Set<Int>): Boolean {
+        return data.reachOptimal(targets)
     }
-    override fun archiveMutationUpdate(original: Gene, mutated: Gene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
         if (archiveMutator.enableArchiveGeneMutation()){
             if (original !is Base64StringGene){
                 log.warn("original ({}) should be Base64StringGene", original::class.java.simpleName)
@@ -52,7 +52,7 @@ class Base64StringGene(
                 log.warn("mutated ({}) should be Base64StringGene", mutated::class.java.simpleName)
                 return
             }
-            data.archiveMutationUpdate(original.data, mutated.data, doesCurrentBetter, archiveMutator)
+            data.archiveMutationUpdate(original.data, mutated.data, targetsEvaluated, archiveMutator)
         }
     }
 
