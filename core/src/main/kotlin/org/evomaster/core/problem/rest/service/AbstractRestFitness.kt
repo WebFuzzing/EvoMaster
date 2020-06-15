@@ -438,12 +438,17 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                     client.close() //make sure to release any resource
                     client = ClientBuilder.newClient()
 
-                    val seconds = 30
-                    log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection")
-                    Thread.sleep(seconds * 1000L)
+                    TcpUtils.handleEphemeralPortIssue()
 
                     createInvocation(a, chainState, cookies).invoke()
-
+                }
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                    /*
+                        This should not really happen... but it does :( at least on Windows...
+                     */
+                    log.warn("TCP connection to SUT problem: ${e.cause!!.message}")
+                    rcr.setTcpProblem(true)
+                    return false
                 }
                 else -> throw e
             }

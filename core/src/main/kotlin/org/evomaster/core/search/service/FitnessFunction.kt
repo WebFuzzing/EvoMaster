@@ -5,6 +5,8 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import kotlin.system.measureTimeMillis
 
 
@@ -34,6 +36,10 @@ abstract class FitnessFunction<T>  where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
+    companion object{
+        private val log : Logger = LoggerFactory.getLogger(FitnessFunction::class.java)
+    }
+
     /**
      * @return [null] if there were problems in calculating the coverage
      */
@@ -52,7 +58,12 @@ abstract class FitnessFunction<T>  where T : Individual {
                 try again, once. Working with TCP connections and remote servers,
                 it is not impossible that sometimes things fail
              */
+            log.warn("Failed to evaluate individual. Restarting the SUT before trying again")
             reinitialize()
+
+            //let's wait a little, just in case...
+            Thread.sleep(5_000)
+
             ei = time.measureTimeMillis(
                     {time.reportExecutedIndividualTime(it, a)},
                     {doCalculateCoverage(individual)}
@@ -60,11 +71,10 @@ abstract class FitnessFunction<T>  where T : Individual {
 
             if(ei == null){
                 //give up, but record it
+                log.warn("Failed twice in a row to evaluate individual. Giving up on it.")
                 statistics.reportCoverageFailure()
             }
         }
-
-
 
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()

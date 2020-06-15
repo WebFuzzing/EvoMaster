@@ -1,14 +1,16 @@
 package org.evomaster.core.remote
 
-import java.net.BindException
-import java.net.ConnectException
-import java.net.ProtocolException
-import java.net.SocketTimeoutException
+import org.evomaster.core.problem.rest.service.AbstractRestFitness
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.io.IOException
+import java.net.*
 import javax.ws.rs.ProcessingException
 
 
 object TcpUtils {
 
+    private val log : Logger = LoggerFactory.getLogger(TcpUtils::class.java)
 
     fun isTooManyRedirections(e: ProcessingException): Boolean {
 
@@ -40,6 +42,43 @@ object TcpUtils {
                 //seen on Linux
                 (e.cause is ConnectException && checkText(e.cause!!, "Cannot assign requested address"))
 
+    }
+
+    fun handleEphemeralPortIssue(){
+        val seconds = 60
+        log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection." +
+                " You might want to check the 'Troubleshooting' section in the documentation to see how" +
+                " to change your OS settings to avoid this kind of problems.")
+        Thread.sleep(seconds * 1000L)
+    }
+
+    /**
+     *  This is a weird one... in theory, a server should never close a connection while
+     *  a client is making a request.
+     *  But we have seen this happening on Windows... sporadically.
+     *  Maybe it is just a glitch, but, even in that case, we still need to handle it
+     *  without crashing the whole EM process.
+     */
+    fun isStreamClosed(e: ProcessingException) : Boolean{
+
+        return e.cause is IOException && checkText(e.cause!!, "Stream closed")
+    }
+
+    /**
+     * Yet another weird exception...
+     */
+    fun isEndOfFile(e: ProcessingException) : Boolean{
+
+        return  e.cause is SocketException && checkText(e.cause!!, "end of file")
+    }
+
+    /**
+     * This does happen when we connect to a TCP socket at a given IP:port, but nothing
+     * is listening there
+     */
+    fun isRefusedConnection(e: ProcessingException) : Boolean{
+
+        return e.cause is ConnectException && checkText(e.cause!!, "Connection refused")
     }
 
     private fun checkText(e: Throwable, text: String) =
