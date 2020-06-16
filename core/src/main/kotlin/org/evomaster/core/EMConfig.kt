@@ -1017,10 +1017,6 @@ class EMConfig {
     var startArchiveMutation = 0.0
 
     @Experimental
-    @Cfg("Specify whether to prioritize targets to be evaluated regarding impacts")
-    var enablePrioritizeTargetsByImpact = false
-
-    @Experimental
     @Cfg("whether to abstract genes that exist initialization actions to mutate")
     var abstractInitializationGeneToMutate = false
 

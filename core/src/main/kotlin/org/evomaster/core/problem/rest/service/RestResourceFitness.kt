@@ -36,7 +36,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     /*
         add db check in term of each abstract resource
      */
-    override fun doCalculateCoverage(individual: RestIndividual, targetIds: Set<Int>): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -93,7 +93,17 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
                 break
         }
 
-        val dto = rc.getTestResults(targetIds)
+        /*
+            We cannot request all non-covered targets, because:
+            1) performance hit
+            2) might not be possible to have a too long URL
+         */
+        //TODO prioritized list
+        val ids = randomness.choose(
+                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
+                100).toSet()
+
+        val dto = rc.getTestResults(ids)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null

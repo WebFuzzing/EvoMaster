@@ -74,59 +74,6 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
     open fun update(previous: EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?){}
 
     /**
-     * decide what targets for coverage calculation
-     *
-     * @param archive contains info of targets
-     * @param mutatedGenes mutated genes info in this mutation
-     * @param evi evaluated individual. 'this' mutation is built on the individual of [evi]
-     *
-     * there may exist many targets, and all of them cannot be evaluated at one time,
-     *
-     * in the context of impact analysis, instead of e.g., randomly selected 100 not covered targets, we prefer to
-     * select those (not covered) which have been impacted by this individual during its evolution
-     *
-     * TODO we need to find a place (e.g., EMConfig) where to set maximum number (e.g., 100 for REST problem) of targets to evaluate
-     * talk to andrea about this.
-     */
-    private fun getTargetForCoverageCalculation(archive: Archive<T>, mutatedGenes: MutatedGeneSpecification, evi: EvaluatedIndividual<T>) : Set<Int> {
-
-        if (!config.enablePrioritizeTargetsByImpact || config.adaptiveGeneSelectionMethod == GeneMutationSelectionMethod.NONE || mutatedGenes.geneSelectionStrategy == GeneMutationSelectionMethod.NONE) return setOf()
-
-        val all = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) }.toSet()
-
-        //TODO collect how likely the size of targets are more than 100
-        if (all.size <= 100) return all
-        /*
-            if the targets to be evaluated is more than 100,
-            we would like to prioritize targets regarding impact info, i.e.,
-            1) p1 - prioritize impactful targets regarding mutated genes with 1.0, but no more than 50
-            2) p2 - prioritize impactful targets regarding entire individual with 0.8
-            3) p3 - avoid targets which are not related to mutated genes with 0.9
-            4) p4 - avoid targets which are not related to the individual with 0.7
-         */
-
-        val impacts = evi.getImpactsRelatedTo(mutatedGenes)
-
-        val p1 = impacts.flatMap { p->p.shared.timesOfImpact.keys }
-        val p2 = setOf<Int>()//evi.getRelatedNotCoveredTarget().run { if (size < 50) this else this.filter { randomness.nextBoolean(0.8) } }
-        val p3 = impacts.flatMap { p->p.shared.timesOfNoImpactWithTargets.keys }.filter { randomness.nextBoolean(0.9) }
-        val p4 = setOf<Int>()//evi.getNotRelatedNotCoveredTarget().filter { randomness.nextBoolean(0.7) }
-
-        val part1 = all.filter { p1.contains(it) || p2.contains(it) }.run {
-            if (size > 80) randomness.choose(this, 80)
-            else this
-        }
-        val selected = part1.plus(all.filter { !part1.contains(it)  && !p3.contains(it) && !p4.contains(it)}.run {
-            if (this.isNotEmpty()) randomness.choose(this, 100 - part1.size)
-            else this
-        })
-
-        if (selected.size < all.size && selected.size < 100)
-            return selected.plus(randomness.choose(all.filterNot { selected.contains(it) }, 100 - selected.size)).toSet()
-        return selected.toSet()
-    }
-
-    /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
      * @param individual which will be mutated
      * @param archive where to save newly mutated individuals (if needed, eg covering new targets)
@@ -157,7 +104,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutated = ff.calculateCoverage(mutatedInd, getTargetForCoverageCalculation(archive, mutatedGenes, current))
+            val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
             val reachNew = archive.wouldReachNewTarget(mutated)

@@ -5,6 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
+import kotlin.system.measureTimeMillis
 
 
 abstract class FitnessFunction<T>  where T : Individual {
@@ -35,20 +36,14 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     /**
      * @return [null] if there were problems in calculating the coverage
-     *
-     * @param targetIds do calculate coverage regarding [targetIds]
      */
-    fun calculateCoverage(individual: T, targetIds: Set<Int> = setOf()) : EvaluatedIndividual<T>?{
+    fun calculateCoverage(individual: T) : EvaluatedIndividual<T>?{
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
-        val ids = if (targetIds.isEmpty()) defaultTargetForCoverageCalculation() else targetIds
-
-
-
         var ei = time.measureTimeMillis(
                 {time.reportExecutedIndividualTime(it, a)},
-                {doCalculateCoverage(individual, ids)}
+                {doCalculateCoverage(individual)}
         )
         processMonitor.eval = ei
 
@@ -60,7 +55,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             reinitialize()
             ei = time.measureTimeMillis(
                     {time.reportExecutedIndividualTime(it, a)},
-                    {doCalculateCoverage(individual, ids)}
+                    {doCalculateCoverage(individual)}
             )
 
             if(ei == null){
@@ -68,8 +63,6 @@ abstract class FitnessFunction<T>  where T : Individual {
                 statistics.reportCoverageFailure()
             }
         }
-
-
 
         time.newActionEvaluation(maxOf(1, a))
         time.newIndividualEvaluation()
@@ -81,30 +74,12 @@ abstract class FitnessFunction<T>  where T : Individual {
 
     /**
      * @return [null] if there were problems in calculating the coverage
-     *
-     * @param evaluatedIndividual evaluated [individual] if it exists
-     * this param can be used to evaluate individual after mutation. At this phase, [evaluatedIndividual] is available that
-     * may help to select targets for fitness evaluation with additional info, e.g., impact.
-     *
-     * */
-    protected abstract fun doCalculateCoverage(individual: T, targetIds: Set<Int>) : EvaluatedIndividual<T>?
+     */
+    protected abstract fun doCalculateCoverage(individual: T) : EvaluatedIndividual<T>?
 
     /**
      * Try to reinitialize the SUT. This is done when there are issues
      * in calculating coverage
      */
     protected open fun reinitialize() = false
-
-
-    /**
-     * there may exist many targets, and all of them cannot be evaluated at one time,
-     *
-     * in the context of impact analysis, instead of randomly selected 100 targets, we prefer to
-     * select not covered targets which have been impacted by this individual during its evolution
-     *
-     * @param evaluatedIndividual evaluated individual if exists
-     *
-     * TODO shall we need targets specific to mutated genes?
-     */
-    open fun defaultTargetForCoverageCalculation() : Set<Int> = setOf()
 }

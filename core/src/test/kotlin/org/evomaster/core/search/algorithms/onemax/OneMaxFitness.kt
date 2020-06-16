@@ -12,7 +12,7 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
     @Inject
     private lateinit var sampler: OneMaxSampler
 
-    override fun doCalculateCoverage(individual: OneMaxIndividual, targetIds : Set<Int>)
+    override fun doCalculateCoverage(individual: OneMaxIndividual)
             : EvaluatedIndividual<OneMaxIndividual>? {
 
         val fv = FitnessValue(individual.size().toDouble())
