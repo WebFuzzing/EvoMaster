@@ -18,7 +18,7 @@ abstract class  ArchiveMutationInfo(
          * collect info regarding whether [this] gene is related to others
          */
         val dependencyInfo: GeneIndependenceInfo
-){
+): Comparable<ArchiveMutationInfo>{
     abstract fun copy() : ArchiveMutationInfo
 
     abstract fun reachOptimal() : Boolean

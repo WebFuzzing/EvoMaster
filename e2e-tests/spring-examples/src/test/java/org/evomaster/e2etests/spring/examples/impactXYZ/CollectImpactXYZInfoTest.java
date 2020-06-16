@@ -1,17 +1,15 @@
 package org.evomaster.e2etests.spring.examples.impactXYZ;
 
-import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
 import org.evomaster.core.problem.rest.RestIndividual;
 import org.evomaster.core.problem.rest.util.ParamUtil;
 import org.evomaster.core.search.EvaluatedIndividual;
 import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
 import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.impact.GeneImpact;
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod;
-import org.evomaster.core.search.impact.ImpactUtils;
+import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact;
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod;
+import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -31,7 +29,7 @@ public class CollectImpactXYZInfoTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "none",
                 "none",
-                500,
+                1000,
                 false,
                 (args) -> {
 
@@ -125,9 +123,6 @@ public class CollectImpactXYZInfoTest extends SpringTestBase {
         return impacts;
     }
 
-    @BeforeAll
-    public static void initClass() throws Exception {
-        SpringTestBase.initClass(new ImpactXYZRestController());
-    }
+
 
 }

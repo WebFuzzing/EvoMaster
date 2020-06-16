@@ -19,7 +19,7 @@ class StringGeneArchiveMutationInfo(
         val lengthMutation: IntMutationUpdate,
 
 
-        dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)) : ArchiveMutationInfo(dependencyInfo), Comparable<StringGeneArchiveMutationInfo>{
+        dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)) : ArchiveMutationInfo(dependencyInfo){
 
     /**
      * when [mutatedIndex] = -2, it means that chars of [this] have not be mutated yet
@@ -41,57 +41,67 @@ class StringGeneArchiveMutationInfo(
     }
 
     override fun copy(): StringGeneArchiveMutationInfo {
-        return StringGeneArchiveMutationInfo(charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy()).also { this.mutatedIndex = mutatedIndex }
+        return StringGeneArchiveMutationInfo(charsMutation.map { it.copy() }.toMutableList(), lengthMutation.copy(), dependencyInfo.copy()).also {
+            it.mutatedIndex = this.mutatedIndex
+        }
     }
 
-    override fun compareTo(other: StringGeneArchiveMutationInfo): Int {
+    override fun compareTo(other: ArchiveMutationInfo): Int {
+        if (other !is StringGeneArchiveMutationInfo)
+            throw IllegalArgumentException("should compare with same type")
         // mutation index
-        if (other.mutatedIndex != mutatedIndex)
+        if (mutatedIndex != other.mutatedIndex)
             return mutatedIndex - other.mutatedIndex
         // length range
-        if ((lengthMutation.preferMax - lengthMutation.preferMin) != (other.lengthMutation.preferMax - other.lengthMutation.preferMin))
-            return (lengthMutation.preferMax - lengthMutation.preferMin) - (other.lengthMutation.preferMax - other.lengthMutation.preferMin)
-        if (mutatedIndex == NEVER_ARCHIVE_MUTATION)
+        if (lengthMutation != other.lengthMutation)
+            return lengthMutation.compareTo(other.lengthMutation)
+        if (mutatedIndex < 0)
             return 0
         // char range
-        return (charsMutation[mutatedIndex].preferMax - charsMutation[mutatedIndex].preferMin) - (other.charsMutation[mutatedIndex].preferMax - other.charsMutation[mutatedIndex].preferMin)
+        return charsMutation[mutatedIndex].compareTo(other.charsMutation[mutatedIndex])
     }
 
-    fun charUpdate(previous: String, current: String, thisValue: String, invalidChars: List<Char>,isMutated : Boolean, mutatedArchiveMutationInfo : StringGeneArchiveMutationInfo, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
-        val charUpdate = charsMutation[mutatedIndex]
-        if (!isMutated) {
-            charUpdate.reached =
-                    mutatedArchiveMutationInfo.charsMutation[mutatedIndex].reached
-        }
+    fun charUpdate(previous: String, current: String, thisValue: String, diffIndex : List<Int>, invalidChars: List<Char>,isMutated : Boolean, mutatedArchiveMutationInfo : StringGeneArchiveMutationInfo, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
 
-        val pchar = previous[mutatedIndex].toInt()
-        val cchar = current[mutatedIndex].toInt()
+        diffIndex.forEach {
+            val charUpdate = charsMutation[it]
+            if (!isMutated && mutatedArchiveMutationInfo.charsMutation.getOrNull(it)?.reached == true) {
+                charUpdate.reached =
+                        mutatedArchiveMutationInfo.charsMutation[it].reached
+            }
+            if (!doInitMutationIndex() && it == 0){
+                mutatedIndex = it
+            }
 
-        /*
-            1) current char is not in min..max, but current is better -> reset
-            2) cmutation is optimal, but current is better -> reset
-         */
-        val reset = doesCurrentBetter && (
-                cchar !in charUpdate.preferMin..charUpdate.preferMax ||
-                        charUpdate.reached
-                )
+            val pchar = previous[it].toInt()
+            val cchar = current[it].toInt()
 
-        if (reset) {
-            charUpdate.reset(archiveMutator.getDefaultCharMin(), archiveMutator.getDefaultCharMax())
-            plusDependencyInfo()
-            return
-        }
-        charUpdate.updateBoundary(pchar, cchar, doesCurrentBetter)
+            /*
+                1) current char is not in min..max, but current is better -> reset
+                2) cmutation is optimal, but current is better -> reset
+             */
+            val reset = doesCurrentBetter && (
+                    cchar !in charUpdate.preferMin..charUpdate.preferMax ||
+                            charUpdate.reached
+                    )
 
-        val exclude = thisValue[mutatedIndex].toInt()
-        val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(exclude).toSet()
+            if (reset) {
+                charUpdate.reset(archiveMutator.getDefaultCharMin(), archiveMutator.getDefaultCharMax())
+                plusDependencyInfo()
+                return
+            }
+            charUpdate.updateBoundary(pchar, cchar, doesCurrentBetter)
 
-        if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList())) {
-            charUpdate.reached = true
+            //val exclude = thisValue[it].toInt()
+            val excludes = invalidChars.map { it.toInt() }.plus(cchar).plus(pchar).toSet()
+
+            if (0 == archiveMutator.validateCandidates(charUpdate.preferMin, charUpdate.preferMax, exclude = excludes.toList())) {
+                charUpdate.reached = true
+            }
         }
     }
 
-    fun lengthUpdate(previous: String, current: String, mutated: StringGene, thisGene: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
+    fun lengthUpdate(previous: String, current: String, thisGene: StringGene, doesCurrentBetter: Boolean, archiveMutator: ArchiveMutator) {
         //update charsMutation regarding value
         val added = thisGene.value.length - charsMutation.size
         if (added != 0) {
@@ -137,8 +147,10 @@ class StringGeneArchiveMutationInfo(
     }
 
     fun doInitMutationIndex() : Boolean{
-        return mutatedIndex < CHAR_MUTATION_INITIALIZED
+        return mutatedIndex >= 0
     }
+
+    fun doAnyMutation() : Boolean = mutatedIndex >= CHAR_MUTATION_INITIALIZED
 
     fun neverArchiveMutate() : Boolean = mutatedIndex == NEVER_ARCHIVE_MUTATION
 

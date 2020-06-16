@@ -136,7 +136,8 @@ class StringGene(
 
         if (enableAdaptiveGeneMutation){
             additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-            return archiveMutation(additionalGeneMutationInfo) //TODO Man need to consider specialization when taint analysis is enabled
+            additionalGeneMutationInfo.archiveMutator.mutate(this, additionalGeneMutationInfo.targets) //TODO Man need to consider specialization when taint analysis is enabled
+            return true
         }
 
         val specializationGene = getSpecializationGene()
@@ -536,31 +537,12 @@ class StringGene(
         else listOf(this).plus(specializationGenes.flatMap { it.flatView(excludePredicate) })
     }
 
-    private fun archiveMutation(
-            additionalGeneMutationInfo: AdditionalGeneSelectionInfo
-    ) : Boolean{
-
-        additionalGeneMutationInfo.targets.forEach {
-            val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, it) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
-            //archiveMutationInfo.plusMutatedTimes()
-            additionalGeneMutationInfo.archiveMutator.mutate(this, additionalGeneMutationInfo.targets)
-            if (archiveMutationInfo.doInitMutationIndex()){
-                log.warn("archiveMutation: mutatedIndex {} of this gene should be initialized for the target {}", archiveMutationInfo.mutatedIndex, it)
-            }
-            if (archiveMutationInfo.charsMutation.size != value.length){
-                log.warn("regarding string gene, a length {} of a value {} of the gene should be always same with a size {} of its charMutation", value.length, value, archiveMutationInfo.charsMutation.size)
-            }
-        }
-        return true
-    }
-
-
     override fun reachOptimal(targets: Set<Int>): Boolean {
         return mutationInfo.reachOptimal(targets)
     }
 
     override fun archiveMutationUpdate(original: Gene, mutated: Gene, targetsEvaluated: Map<Int, Int>, archiveMutator: ArchiveMutator) {
-        if (!archiveMutator.enableArchiveGeneMutation()) return
+        if (!archiveMutator.enableArchiveGeneMutation() || targetsEvaluated.isEmpty()) return
 
         original as? StringGene ?: throw IllegalStateException("$original should be StringGene")
         mutated as? StringGene ?: throw IllegalStateException("$mutated should be StringGene")
@@ -570,28 +552,51 @@ class StringGene(
 
         val isMutated = (this == mutated)
 
+        val diffIndex = mutableListOf<Int>()
+
+        val doLengthMutation = previous.length != current.length
+
+        if (!doLengthMutation){
+            current.toCharArray().forEachIndexed { index, c ->
+                if (c != previous[index])
+                    diffIndex.add(index)
+            }
+        }
+        if (!doLengthMutation && diffIndex.isEmpty())
+            log.warn("charMutation (applied = {}) and lengthMutation (applied{}) are not recommended to apply at same time.", diffIndex.isNotEmpty(), doLengthMutation)
+
+
         targetsEvaluated.forEach { (t, u) ->
             val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
             val marchiveMutationInfo = mutated.mutationInfo.getArchiveMutationInfo(this, t) as? StringGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be StringGeneArchiveMutationInfo")
 
+            /*
+                if mutated is not added to archive, then update 'this' based on mutated.
+             */
             if (!isMutated) {
                 archiveMutationInfo.plusMutatedTimes()
+                // check whether archivemutation is initialized
                 if (archiveMutationInfo.neverArchiveMutate()) {
                     archiveMutator.initCharMutation(archiveMutationInfo.charsMutation, value.length)
+                    archiveMutationInfo.charMutationInitialized()
                 }
-                archiveMutationInfo.mutatedIndex = marchiveMutationInfo.mutatedIndex //archiveMutationInfo.mutatedIndex
-            }
-            if (archiveMutationInfo.doInitMutationIndex()){
-                log.warn("archiveMutation: mutatedIndex {} of this gene should be initialized for the target {}", archiveMutationInfo.mutatedIndex, t)
+                if (marchiveMutationInfo > archiveMutationInfo){
+                    archiveMutationInfo.mutatedIndex = marchiveMutationInfo.mutatedIndex
+                }
             }
 
-            if (previous.length != current.length) {
-                if (!isMutated) {
+            if (doLengthMutation) {
+                if (!isMutated && marchiveMutationInfo.lengthMutation.reached) {
                     archiveMutationInfo.lengthMutation.reached = marchiveMutationInfo.lengthMutation.reached
                 }
-                archiveMutationInfo.lengthUpdate(previous = previous, current = current, mutated = mutated, thisGene = this, doesCurrentBetter = (u==1), archiveMutator = archiveMutator)
+                archiveMutationInfo.lengthUpdate(previous = previous, current = current, thisGene = this, doesCurrentBetter = (u==1), archiveMutator = archiveMutator)
             } else {
-                archiveMutationInfo.charUpdate(previous = previous, current = current, thisValue = value, invalidChars = invalidChars, isMutated = isMutated, mutatedArchiveMutationInfo = marchiveMutationInfo, doesCurrentBetter = (u == 1), archiveMutator = archiveMutator)
+                if (diffIndex.isEmpty()){
+                    log.info("nothing to mutate for the gene {}", current)
+                }else if (diffIndex.size > 1){
+                    log.info("multiple chars are mutated from {} to {}", previous, current)
+                }
+                archiveMutationInfo.charUpdate(previous = previous, current = current, diffIndex = diffIndex, thisValue = value, invalidChars = invalidChars, isMutated = isMutated, mutatedArchiveMutationInfo = marchiveMutationInfo, doesCurrentBetter = (u == 1), archiveMutator = archiveMutator)
             }
         }
     }

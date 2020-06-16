@@ -24,7 +24,11 @@ interface UpdateBoundary<T> where T : Number{
 }
 
 
-class IntMutationUpdate(preferMin: Int, preferMax: Int, counter: Int = 0, reached: Boolean = false) : MutationBoundaryUpdate<Int>(preferMin, preferMax, counter, reached), UpdateBoundary<Int>{
+class IntMutationUpdate(preferMin: Int, preferMax: Int, counter: Int = 0, reached: Boolean = false) : MutationBoundaryUpdate<Int>(preferMin, preferMax, counter, reached), UpdateBoundary<Int>, Comparable<IntMutationUpdate>{
+
+    override fun compareTo(other: IntMutationUpdate): Int {
+        return -(preferMax - preferMin) + (other.preferMax - other.preferMin)
+    }
 
     override fun copy(): IntMutationUpdate = IntMutationUpdate(preferMin, preferMax, counter, reached)
 

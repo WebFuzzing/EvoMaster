@@ -75,14 +75,13 @@ class IntegerGene(
 
     override fun mutate(randomness: Randomness, apc: AdaptiveParameterControl, mwc: MutationWeightControl, allGenes: List<Gene>, selectionStrategy: SubsetGeneSelectionStrategy, enableAdaptiveGeneMutation: Boolean, additionalGeneMutationInfo: AdditionalGeneSelectionInfo?): Boolean {
 
-//        if (enableAdaptiveGeneMutation){
-//            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
-//            additionalGeneMutationInfo.archiveMutator.mutate(this)
-//            return true
-//        }
-
         //check maximum range. no point in having a delta greater than such range
-        val range: Long = max.toLong() - min.toLong()
+        val range: Long = if (enableAdaptiveGeneMutation){
+            additionalGeneMutationInfo?:throw IllegalArgumentException("additionalGeneMutationInfo should not be null when enable adaptive gene mutation")
+            (additionalGeneMutationInfo.archiveMutator.identifyMutation(this, additionalGeneMutationInfo.targets) as IntegerGeneArchiveMutationInfo).run {
+                this.valueMutation.preferMax.toLong() - this.valueMutation.preferMin.toLong()
+            }
+        } else max.toLong() - min.toLong()
 
         //choose an i for 2^i modification
         val delta = getDelta(randomness, apc, range)
@@ -126,7 +125,7 @@ class IntegerGene(
             val archiveMutationInfo = mutationInfo.getArchiveMutationInfo(this, t) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
             val marchiveMutationInfo = mutated.mutationInfo.getArchiveMutationInfo(this, t) as? IntegerGeneArchiveMutationInfo ?: throw IllegalStateException("mutation info for StringGene should be IntegerGeneArchiveMutationInfo")
 
-            if (!isMutated)
+            if (!isMutated && marchiveMutationInfo.valueMutation.reached)
                 archiveMutationInfo.valueMutation.reached = marchiveMutationInfo.valueMutation.reached
 
             /*

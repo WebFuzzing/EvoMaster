@@ -13,6 +13,7 @@ class IntegerGeneArchiveMutationInfo(
         val valueMutation : IntMutationUpdate,
         dependencyInfo: GeneIndependenceInfo = GeneIndependenceInfo(degreeOfIndependence = ArchiveMutator.WITHIN_NORMAL)) : ArchiveMutationInfo(dependencyInfo){
 
+
     constructor(minValue : Int, maxValue : Int) : this(valueMutation = IntMutationUpdate(minValue, maxValue))
     constructor(gene: IntegerGene) : this(valueMutation = IntMutationUpdate(gene.min, gene.max))
 
@@ -23,5 +24,12 @@ class IntegerGeneArchiveMutationInfo(
 
     override fun reachOptimal(): Boolean {
         return valueMutation.reached
+    }
+
+    override fun compareTo(other: ArchiveMutationInfo): Int {
+        if (other !is IntegerGeneArchiveMutationInfo)
+            throw IllegalArgumentException("should compare with same type")
+
+        return valueMutation.compareTo(other.valueMutation)
     }
 }

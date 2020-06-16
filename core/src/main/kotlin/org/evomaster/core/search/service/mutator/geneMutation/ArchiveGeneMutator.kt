@@ -10,13 +10,14 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Solution
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.*
+import org.evomaster.core.search.impact.impactInfoCollection.*
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.geneMutation.archive.ArchiveMutationInfo
+import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.StringGeneArchiveMutationInfo
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -237,15 +238,16 @@ class ArchiveMutator {
     }
 
     fun mutate(gene: Gene, targets: Set<Int>) {
+        val employedTargets = targets.filter { it >= 0 }.toSet()
         val p = gene.copy()
         when (gene) {
-            is StringGene -> mutate(gene, probOfModifyChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene), targets = targets)
-//            is IntegerGene -> mutate(gene)
+            is StringGene -> mutate(gene, probOfModifyChar = probabilityToMutateChar(gene), priorLengthMutation = priorLengthMutation(gene), targets = employedTargets)
+//            is IntegerGene -> mutate(gene, employedTargets)
 //            is EnumGene<*> -> mutate(gene)
             else -> {
                 if (ParamUtil.getValueGene(gene) is StringGene) {
                     val g = ParamUtil.getValueGene(gene) as StringGene
-                    mutate(g, probOfModifyChar = probabilityToMutateChar(g), priorLengthMutation = priorLengthMutation(g), targets = targets)
+                    mutate(g, probOfModifyChar = probabilityToMutateChar(g), priorLengthMutation = priorLengthMutation(g), targets = employedTargets)
                 } else {
                     log.warn("not implemented error")
                 }
@@ -255,11 +257,18 @@ class ArchiveMutator {
             log.warn("value of gene shouldn't be same with previous")
     }
 
-    /**
-     * mutate IntegerGene [gene] using archive-based method
-     */
-//    private fun mutate(gene: IntegerGene){
-//       gene.value = randomFromCurrentAdaptively(gene.value, gene.archiveMutationInfo.valueMutation.preferMin, gene.archiveMutationInfo.valueMutation.preferMax, gene.min, gene.max, 6, 3)
+    fun identifyMutation(gene: Gene, targets: Set<Int>) : ArchiveMutationInfo{
+        return when (gene) {
+            is StringGene -> gene.mutationInfo.sort(targets).lastOrNull() as? StringGeneArchiveMutationInfo ?: StringGeneArchiveMutationInfo(gene)
+            is IntegerGene -> gene.mutationInfo.sort(targets).lastOrNull() as? IntegerGeneArchiveMutationInfo ?: IntegerGeneArchiveMutationInfo(gene)
+            else -> throw IllegalArgumentException("don't support to get archiveMutationInfo for the gene")
+        }
+    }
+
+//    private fun mutate(gene: IntegerGene, targets: Set<Int>){
+//        // identify ArchiveMutationInfo
+//        val mutationInfo = gene.mutationInfo.sort(targets).lastOrNull() as? IntegerGeneArchiveMutationInfo ?: IntegerGeneArchiveMutationInfo(gene)
+//        gene.value = randomFromCurrentAdaptively(gene.value,mutationInfo.valueMutation.preferMin, mutationInfo.valueMutation.preferMax, gene.min, gene.max, 6, 3)
 //    }
 
     /**
@@ -272,11 +281,8 @@ class ArchiveMutator {
      */
     private fun mutate(gene: StringGene, probOfModifyChar: Double, priorLengthMutation: Boolean, targets: Set<Int>) {
         // identify ArchiveMutationInfo
-        val mutationInfo = gene.mutationInfo.sort(targets).firstOrNull() as? StringGeneArchiveMutationInfo ?: StringGeneArchiveMutationInfo(gene)
+        val mutationInfo = identifyMutation(gene, targets) as StringGeneArchiveMutationInfo
 
-        /*
-          init charsMutation
-         */
         if (mutationInfo.neverArchiveMutate()) {
             if (mutationInfo.charsMutation.isNotEmpty()) {
                 log.warn("duplicated Initialized")
@@ -286,8 +292,6 @@ class ArchiveMutator {
                 }
             } else
                 mutationInfo.charsMutation.addAll((0 until gene.value.length).map { createCharMutationUpdate() })
-
-            mutationInfo.charMutationInitialized()
         }
 
         /*
@@ -298,6 +302,10 @@ class ArchiveMutator {
             return
         }
 
+        /*
+            if enable priorLengthMutation
+            char mutation would be applied until length mutation reaches its optimal
+         */
         if (priorLengthMutation) {
             if (!mutationInfo.lengthMutation.reached) {
                 modifyLength(gene, mutationInfo=mutationInfo, strictAfter = -1, modifyCharMutation = true)
@@ -325,8 +333,12 @@ class ArchiveMutator {
         }
 
         if (doCharMutation) {
+            // ensure size of charMutation equals with value.length
+            if (gene.value.length != mutationInfo.charsMutation.size){
+                log.warn("need to fix!")
+            }
+
             val index = decideIndex(gene, mutationInfo = mutationInfo)
-            mutationInfo.mutatedIndex = index
             modify(gene,  mutationInfo = mutationInfo,
                     index = index, charMutation = mutationInfo.charsMutation[index])
         } else if (doLenMutation) {
@@ -431,7 +443,6 @@ class ArchiveMutator {
                         getDefaultCharMax(),//Char.MAX_VALUE.toInt(),
                         start = 6,
                         end = 3)
-                validateChar(char)
                 gene.value = modifyIndex(gene.value, index, char = char.toChar())
             }
             1 -> gene.value = modifyIndex(gene.value, index, (charMutation.preferMin..charMutation.preferMax).toMutableList().first { it != current }.toChar())
@@ -448,7 +459,6 @@ class ArchiveMutator {
                                     end = 3)
                         else
                             preferMiddle(charMutation.preferMin, charMutation.preferMax, current)
-                validateChar(char)
                 gene.value = modifyIndex(gene.value, index, char = char.toChar())
             }
         }
@@ -544,7 +554,7 @@ class ArchiveMutator {
         if (max == min && exclude.contains(min)) return 0
         if (max == min)
             return 1
-        return max - min + 1 - exclude.filter { it >= min || it <= max }.size
+        return max - min + 1 - exclude.filter { it in min..max }.size
     }
 
 
@@ -606,7 +616,7 @@ class ArchiveMutator {
                     log.warn("cannot find gene{} at {} of (is newly added?{}) initializationActions", id, index, addedInitializingActions)
                 }
             }else{
-                savedGene.archiveMutationUpdate(original = previousValue, mutated = s, targetsEvaluated = targetsEvaluated.filterValues { it != 0 }, archiveMutator = this)
+                savedGene.archiveMutationUpdate(original = previousValue, mutated = s, targetsEvaluated = targetsEvaluated.filter { it.key >=0 && it.value != 0 }, archiveMutator = this)
             }
         }
 
@@ -745,6 +755,7 @@ class ArchiveMutator {
     }
 
     fun getDefaultCharMax() = when(getCharPool()){
+
         CharPool.ALL -> Char.MAX_VALUE.toInt()
         CharPool.WORD -> randomness.wordCharPool().last()
     }
@@ -761,8 +772,7 @@ class ArchiveMutator {
             CharPool.WORD -> randomness.wordCharPool().contains(char)
         }
         if (!r){
-            //throw IllegalArgumentException("invalid char")
-            log.warn(char.toString())
+            throw IllegalArgumentException("invalid char")
         }
     }
 

@@ -48,7 +48,32 @@ class MutationWeightControlTest {
     }
 
     @Test
-    fun testIndividual(){
+    fun testGeneSelectionForIndividualBeforeFS(){
+        config.weightBasedMutationRate = true
+        config.probOfArchiveMutation = 0.0 // disable adaptive mutation rate
+        config.d = 0.0 //only based on weight
+        config.startingPerOfGenesToMutate = 0.5
+
+        val individual = IndividualMutationweightTest.newRestIndividual(numSQLAction = 0, numRestAction = 8)
+        val all = individual.seeGenes().filter { it.isMutable() }
+        assertEquals(8, all.size)
+
+        /*
+            with 8 genes, avg. of mutated gene = 8 * 0.5
+            it is likely to select more than 2 genes to mutate.
+         */
+        val selected = mutableListOf<Gene>()
+        selected.addAll(mwc.selectSubGene(
+                candidateGenesToMutate = all,
+                adaptiveWeight = false,
+                forceNotEmpty = true
+        ))
+
+        assert(selected.size > 2)
+    }
+
+    @Test
+    fun testGeneSelectionForIndividualWhenFS(){
         config.weightBasedMutationRate = true
         config.probOfArchiveMutation = 0.0 // disable adaptive mutation rate
         config.d = 0.0 //only based on weight
@@ -76,7 +101,7 @@ class MutationWeightControlTest {
     }
 
     @Test
-    fun testObjectGene(){
+    fun testGeneSelectionForObjectGeneWhenFS(){
         time.newActionEvaluation(5)
 
         val individual = IndividualMutationweightTest.newRestIndividual("POST:/efoo")

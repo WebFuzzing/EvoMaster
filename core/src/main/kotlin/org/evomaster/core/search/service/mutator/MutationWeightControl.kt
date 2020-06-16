@@ -5,7 +5,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.Impact
+import org.evomaster.core.search.impact.impactInfoCollection.Impact
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator

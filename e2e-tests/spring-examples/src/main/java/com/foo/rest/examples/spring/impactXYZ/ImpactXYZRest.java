@@ -1,9 +1,9 @@
 package com.foo.rest.examples.spring.impactXYZ;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -17,22 +17,22 @@ public class ImpactXYZRest {
     @RequestMapping(
             value = "/{x}",
             method = RequestMethod.POST,
-            produces = MediaType.TEXT_PLAIN
+            produces = MediaType.APPLICATION_JSON_VALUE
     )
-    public ResponseEntity create(
+    public String create(
             @PathVariable("x") int x,
             @RequestParam("y") String y,
             @RequestParam("z") String z) {
 
         if (x < 1000)
-            return ResponseEntity.status(400).build();
+            throw new IllegalArgumentException("invalid inputs");
         if (!y.equals("foo"))
-            return ResponseEntity.status(400).build();
+            return "NOT_MATCHED";
+
+        if (data.size() == 4)
+            return "EXCEED";
 
         int response = 0;
-        if (data.size() > 100)
-            return ResponseEntity.ok(response);
-
         if (x < 10000)
             response = 1;
         else if (x < 20000)
@@ -44,6 +44,6 @@ public class ImpactXYZRest {
         }
         data.add(new XYZDto(x, y, z));
 
-        return ResponseEntity.ok(response);
+        return "CREATED_"+response;
     }
 }

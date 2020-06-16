@@ -21,7 +21,6 @@ import org.evomaster.core.search.ActionResult
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.ExtraHeuristicsLogger
 import org.evomaster.core.search.service.FitnessFunction
 import org.evomaster.core.search.service.IdMapper

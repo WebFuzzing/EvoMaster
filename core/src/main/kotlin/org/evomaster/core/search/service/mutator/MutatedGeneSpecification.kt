@@ -4,8 +4,8 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
-import org.evomaster.core.search.impact.ImpactUtils
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils
 
 /**
  * created by manzh on 2019-09-10

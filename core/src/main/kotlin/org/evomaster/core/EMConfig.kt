@@ -6,7 +6,7 @@ import joptsimple.OptionParser
 import joptsimple.OptionSet
 import org.evomaster.client.java.controller.api.ControllerConstants
 import org.evomaster.core.output.OutputFormat
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
 import java.net.MalformedURLException
 import java.net.URL
 import java.nio.file.Files

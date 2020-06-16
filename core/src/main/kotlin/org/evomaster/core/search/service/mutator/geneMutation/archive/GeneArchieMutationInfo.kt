@@ -40,8 +40,8 @@ class GeneArchieMutationInfo(
 
     fun sort(targets: Set<Int>) : List<ArchiveMutationInfo>{
         return when{
-            map.values.all { it is StringGeneArchiveMutationInfo } ->{
-                map.filterKeys { targets.contains(it) }.values.sortedBy {  it as StringGeneArchiveMutationInfo }
+            map.values.all { it is StringGeneArchiveMutationInfo} || map.values.all { it is IntegerGeneArchiveMutationInfo } ->{
+                map.filterKeys { targets.contains(it) }.values.sortedBy {  it }
             }
             else -> {
                 TODO()

@@ -2,7 +2,7 @@ package org.evomaster.core.search
 
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
-import org.evomaster.core.search.impact.*
+import org.evomaster.core.search.impact.impactInfoCollection.*
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter

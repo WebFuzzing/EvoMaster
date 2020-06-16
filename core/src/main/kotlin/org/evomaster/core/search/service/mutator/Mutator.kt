@@ -8,7 +8,7 @@ import org.evomaster.core.database.DbActionUtils
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.service.*
 import org.evomaster.core.search.service.mutator.geneMutation.ArchiveMutator
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
@@ -135,7 +135,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             : EvaluatedIndividual<T> {
 
         var current = individual
-        val targets = archive.notCoveredTargets()
+        val targets = archive.notCoveredTargets().toMutableSet()
 
         for (i in 0 until upToNTimes) {
 
@@ -151,7 +151,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutatedInd = mutate(current, targets, mutatedGenes)
+            // should only use notcovered targets
+            val mutatedInd = mutate(individual = current, targets = archive.notCoveredTargets(), mutatedGenes = mutatedGenes)
             mutatedGenes.setMutatedIndividual(mutatedInd)
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
@@ -227,6 +228,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             if (archiveMutator.enableArchiveGeneMutation()){
                 archiveMutator.updateArchiveMutationInfo(trackedCurrent, current, mutatedGenes, targetsEvaluated)
             }
+
+            targets.addAll(archive.notCoveredTargets())
         }
         return current
     }

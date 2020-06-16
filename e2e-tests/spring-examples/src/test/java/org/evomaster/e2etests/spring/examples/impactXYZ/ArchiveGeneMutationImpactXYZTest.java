@@ -1,33 +1,18 @@
 package org.evomaster.e2etests.spring.examples.impactXYZ;
 
-import com.foo.rest.examples.spring.impactXYZ.ImpactXYZRestController;
+import org.evomaster.core.problem.rest.HttpVerb;
 import org.evomaster.core.problem.rest.RestIndividual;
-import org.evomaster.core.problem.rest.util.ParamUtil;
-import org.evomaster.core.search.EvaluatedIndividual;
-import org.evomaster.core.search.Individual;
 import org.evomaster.core.search.Solution;
-import org.evomaster.core.search.gene.Gene;
-import org.evomaster.core.search.impact.GeneImpact;
-import org.evomaster.core.search.impact.GeneMutationSelectionMethod;
-import org.evomaster.core.search.impact.ImpactUtils;
-import org.evomaster.e2etests.spring.examples.SpringTestBase;
-import org.junit.jupiter.api.BeforeAll;
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
-public class ArchiveGeneMutationImpactXYZTest extends SpringTestBase {
+public class ArchiveGeneMutationImpactXYZTest extends ImpactXYZTestBase {
 
     private final String folder = "AGM-ImpactXYZ";
+
     @Test
-    public void testOnlyCollectImpact() throws Throwable {
+    public void testOnlyArchiveMutation() throws Throwable {
         testRunEM(GeneMutationSelectionMethod.NONE);
     }
 
@@ -36,7 +21,7 @@ public class ArchiveGeneMutationImpactXYZTest extends SpringTestBase {
         runTestHandlingFlakyAndCompilation(
                 "none",
                 "none",
-                500,
+                1000,
                 false,
                 (args) -> {
 
@@ -81,61 +66,13 @@ public class ArchiveGeneMutationImpactXYZTest extends SpringTestBase {
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
-                    assertTrue(solution.getIndividuals().size() >= 1);
-
-                    solution.getIndividuals().stream().allMatch(
-                            s -> s.anyImpactInfo() && checkImpactOfxyz(s)
-                    );
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 500, "/api/impactxyz/{x}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/impactxyz/{x}", "NOT_MATCHED");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/impactxyz/{x}", "CREATED_1");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/impactxyz/{x}", "CREATED_2");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/impactxyz/{x}", "CREATED_3");
+                    assertHasAtLeastOne(solution, HttpVerb.POST, 200, "/api/impactxyz/{x}", "CREATED_4");
 
                 }, 3);
     }
-
-    private String getGeneIdByName(String geneName, EvaluatedIndividual<RestIndividual> ind){
-
-        Gene gene = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(g -> ParamUtil.Companion.getValueGene(g).getName().equals(geneName))
-                .findAny()
-                .orElse(null);
-
-        assertNotNull(gene);
-
-        return ImpactUtils.Companion.generateGeneId(ind.getIndividual(), gene);
-    }
-
-    private boolean checkImpactOfxyz(EvaluatedIndividual<RestIndividual> ind){
-
-        Set<Integer> targets = new HashSet<>();
-        Map<Integer, Double> ximpacts = extract(ind, "x");
-        Map<Integer, Double> yimpacts = extract(ind, "y");
-        Map<Integer, Double> zimpacts = extract(ind, "z");
-        targets.addAll(ximpacts.keySet());
-        targets.addAll(yimpacts.keySet());
-        targets.addAll(zimpacts.keySet());
-        //impact x > y > z
-        return targets.stream().allMatch(
-                s-> getValue(ximpacts, s) >= getValue(yimpacts, s) && getValue(ximpacts, s) >= getValue(zimpacts, s) && getValue(yimpacts, s) >= getValue(zimpacts, s)
-        );
-    }
-
-    private double getValue(Map<Integer, Double> map, int key){
-        return map.get(key) == null? 0.0: map.get(key);
-    }
-
-    private Map<Integer, Double> extract(EvaluatedIndividual<RestIndividual> ind, String name){
-        Map<Integer, Double> impacts = new HashMap<>();
-        String id = getGeneIdByName(name, ind);
-        for (GeneImpact gi : ind.getGeneImpact(id)){
-            int m = gi.getTimesToManipulate();
-            for (Map.Entry<Integer, Integer> e : gi.getTimesOfImpacts().entrySet()){
-                double d = (e.getValue() * 1.0)/m;
-                impacts.merge(e.getKey(), d, (prev, one) -> Math.max(prev, one));
-            }
-        }
-        return impacts;
-    }
-
-    @BeforeAll
-    public static void initClass() throws Exception {
-        SpringTestBase.initClass(new ImpactXYZRestController());
-    }
-
 }
