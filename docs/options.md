@@ -111,7 +111,6 @@ There are 3 types of options:
 |`disableStructureMutationDuringFocusSearch`| __Boolean__. Specify whether to disable structure mutation during focus search. *Default value*: `false`.|
 |`doesApplyNameMatching`| __Boolean__. Whether to apply text/name analysis with natural language parser to derive relationships between name entities, e.g., a resource identifier with a name of table. *Default value*: `false`.|
 |`enableGeneSelectionMethodForGene`| __Boolean__. Specify whether to enable archive-based selection for selecting genes to mutate inside a gene, e.g., ObjectGene. *Default value*: `true`.|
-|`enablePrioritizeTargetsByImpact`| __Boolean__. Specify whether to prioritize targets to be evaluated regarding impacts. *Default value*: `false`.|
 |`enableProcessMonitor`| __Boolean__. Whether or not enable a search process monitor for archiving evaluated individuals and Archive regarding an evaluation of search. This is only needed when running experiments with different parameter settings. *Default value*: `false`.|
 |`enableTrackEvaluatedIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals with its fitness values (i.e., evaluated individual) during the search. Note that we enforced that set enableTrackIndividual false when enableTrackEvaluatedIndividual is true since information of individual is part of evaluated individual. *Default value*: `false`.|
 |`enableTrackIndividual`| __Boolean__. Whether to enable tracking the history of modifications of the individuals during the search. *Default value*: `false`.|
@@ -133,8 +132,9 @@ There are 3 types of options:
 |`processFiles`| __String__. Specify a folder to save results when a search monitor is enabled. *Default value*: `process_data`.|
 |`processInterval`| __Int__. Specify how often to save results when a search monitor is enabled. *Default value*: `100`.|
 |`resourceSampleStrategy`| __Enum__. Specify whether to enable resource-based strategy to sample an individual during search. Note that resource-based sampling is only applicable for REST problem with MIO algorithm. *Valid values*: `NONE, Customized, EqualProbability, Actions, TimeBudgets, Archive, ConArchive`. *Default value*: `NONE`.|
-|`saveMutatedGene`| __Boolean__. Specify whether to save mutated genes during search. *Default value*: `false`.|
-|`saveMutatedGeneFile`| __String__. Specify file path to save mutated genes. *Default value*: `mutatedGenes.csv`.|
+|`saveArchiveAfterMutationFile`| __String__. Specify whether to save archive after each mutation during search, only useful for debugging. *Default value*: `""`.|
+|`saveImpactAfterMutationFile`| __String__. Specify whether to save collected impact info after each mutation during search, only useful for debugging. *Default value*: `""`.|
+|`saveMutatedGeneFile`| __String__. Specify file path to save mutated genes, only useful for debugging. *Default value*: `""`.|
 |`specializeSQLGeneSelection`| __Boolean__. Whether to specialize sql gene selection to mutation. *Default value*: `false`.|
 |`startArchiveMutation`| __Double__. Specify a percentage of used budget to start archive-based mutation when archive-based mutation is enabled. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.0`.|
 |`startingPerOfGenesToMutate`| __Double__. Specify a starting percentage of genes of an individual to mutate. *Constraints*: `probability 0.0-1.0`. *Default value*: `0.5`.|

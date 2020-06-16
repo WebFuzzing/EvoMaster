@@ -51,8 +51,6 @@ class ImpactsOfIndividual private constructor(
         }
     }
 
-//    constructor(abstractInitializationGeneToMutate: Boolean) : this(InitializationActionImpacts(abstractInitializationGeneToMutate), mutableListOf(), maxSqlInitActionsPerMissingData = 0)
-
     companion object {
         private val log: Logger = LoggerFactory.getLogger(ImpactsOfIndividual::class.java)
     }
@@ -84,7 +82,7 @@ class ImpactsOfIndividual private constructor(
      * @param actionIndex is null when there is no action in the individual, then return the first GeneImpact
      */
     fun getGene(actionName: String?, geneId: String, actionIndex: Int?, fromInitialization: Boolean): GeneImpact? {
-        actionIndex ?: return actionGeneImpacts.first().geneImpacts[geneId]
+        if (actionIndex == null || (actionIndex == -1 && noneActionIndividual())) return actionGeneImpacts.first().geneImpacts[geneId]
         val impactsOfAction =
                 if (fromInitialization) initializationGeneImpacts.getImpactOfAction(actionName, actionIndex)
                 else getImpactsAction(actionName, actionIndex)
@@ -105,6 +103,8 @@ class ImpactsOfIndividual private constructor(
         return list
     }
 
+    private fun noneActionIndividual() : Boolean = actionGeneImpacts.size == 1 && actionGeneImpacts.first().actionName == null
+
     fun syncBasedOnIndividual(individual: Individual, mutatedGene: MutatedGeneSpecification) {
         //for initialization due to db action fixing
         val diff = individual.seeInitializingActions().size - mutatedGene.addedExistingDataInitialization.size - initializationGeneImpacts.getOriginalSize()
@@ -114,8 +114,10 @@ class ImpactsOfIndividual private constructor(
         }
 
         //for action
-        if (individual.seeActions().size != actionGeneImpacts.size)
+        if ((individual.seeActions().isNotEmpty() && individual.seeActions().size != actionGeneImpacts.size) ||
+                (individual.seeActions().isEmpty() && !noneActionIndividual()))
             throw IllegalArgumentException("inconsistent size of actions and impacts")
+
         individual.seeActions().forEach { action ->
             val actionName = action.getName()
             val index = individual.seeActions().indexOf(action)

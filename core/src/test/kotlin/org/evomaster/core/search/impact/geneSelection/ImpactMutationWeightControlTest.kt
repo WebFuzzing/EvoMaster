@@ -17,6 +17,7 @@ import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectio
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Disabled
 
 /**
  * created by manzh on 2020-06-03
@@ -47,6 +48,7 @@ class ImpactMutationWeightControlTest {
         config.weightBasedMutationRate = true
     }
 
+    @Disabled("TODO ")
     @Test
     fun testIndividual(){
 
@@ -60,25 +62,6 @@ class ImpactMutationWeightControlTest {
         assertEquals(4, all.size)
 
         TODO()
-    }
-
-
-    private fun selectField(obj: ObjectGene, indexOfField : Int, times : Int, selectionStrategy: SubsetGeneSelectionStrategy) : Boolean{
-        val mutatedWH = obj.copy()
-        mutatedWH.standardMutation(
-                randomness, apc = apc, mwc = mwc, allGenes = listOf(), internalGeneSelectionStrategy = selectionStrategy
-        )
-
-        var result = false
-
-        (0..times).forEach { _ ->
-            val mf = (mutatedWH as ObjectGene).fields.zip( obj.fields ){ t, o ->
-                t.containsSameValueAs(o)
-            }
-            result = result || !mf[indexOfField]
-        }
-
-        return result
     }
 
 }

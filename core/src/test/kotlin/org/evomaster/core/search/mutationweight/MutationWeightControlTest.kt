@@ -8,6 +8,7 @@ import org.evomaster.core.EMConfig
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.Gene
 import org.evomaster.core.search.gene.ObjectGene
+import org.evomaster.core.search.gene.OptionalGene
 import org.evomaster.core.search.mutationweight.individual.IndividualMutationweightTest
 import org.evomaster.core.search.service.AdaptiveParameterControl
 import org.evomaster.core.search.service.Randomness
@@ -120,10 +121,13 @@ class MutationWeightControlTest {
         assert(resultHW)
 
         config.weightBasedMutationRate = false
+
+        val einfoObj = (obj.fields.find { it.name == "einfo" } as? OptionalGene)?.gene as? ObjectGene
+        assertNotNull(einfoObj)
         /*
-            7 fields, then m = 1/7
+              30 fields for einfoObj, it is unlikely to select a specific field at the first attempt, eg, 5th field
          */
-        val result = selectField(obj, 6, 1, SubsetGeneSelectionStrategy.DEFAULT)
+        val result = selectField(einfoObj!!, 5, 1, SubsetGeneSelectionStrategy.DEFAULT)
         assertFalse(result)
     }
 
