@@ -293,7 +293,7 @@ class TestCaseWriter {
 
         return (configuration.expectationsActive
                 && partialOracles.generatesExpectation(call, res))
-                || !res.failedCall()
+               // || !res.failedCall()
                 || (call.saveLocation && !res.stopping)
     }
 
@@ -441,7 +441,12 @@ class TestCaseWriter {
                 Double::class -> return "numberMatches(${resContentsItem as Double})"
                 String::class ->  return "containsString(\"${GeneUtils.applyEscapes(resContentsItem as String, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\")"
                 Map::class -> return NOT_COVERED_YET
-                ArrayList::class -> return "hasItems(${(resContentsItem as ArrayList<String>).joinToString{"\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""}})"
+                ArrayList::class -> if((resContentsItem as ArrayList<*>).all { it is String }) {
+                    return "hasItems(${(resContentsItem as ArrayList<String>).joinToString{"\"${GeneUtils.applyEscapes(it, mode = GeneUtils.EscapeMode.ASSERTION, format = format)}\""}})"
+                }
+                else {
+                    return NOT_COVERED_YET
+                }
                 else -> return NOT_COVERED_YET
             }
         }
