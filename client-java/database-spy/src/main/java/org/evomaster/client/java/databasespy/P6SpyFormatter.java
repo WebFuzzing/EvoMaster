@@ -17,7 +17,8 @@ public class P6SpyFormatter implements MessageFormattingStrategy {
                                 long elapsed,
                                 String category,
                                 String prepared,
-                                String sql) {
+                                String sql,
+                                String url) {
 
         boolean hasPrepared = (prepared != null && !prepared.trim().isEmpty());
         boolean hasSQL = (sql != null && !sql.trim().isEmpty());
