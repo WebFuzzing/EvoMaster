@@ -634,22 +634,17 @@ class ArchiveMutator {
     /**
      * @return whether archive-based gene selection is enabled based on the configuration, ie, EMConfig
      */
-    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && doCollectImpact()
+    fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     /**
      * @return whether archive-based gene mutation is enabled based on the configuration, ie, EMConfig
      */
-    fun enableArchiveGeneMutation() = doCollectImpact() && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
-
-    /**
-     * @return whether archive-based solution (ie, gene selection or gene mutation) is enabled based on the configuration, ie, EMConfig
-     */
-    fun enableArchiveMutation() = enableArchiveGeneMutation() || enableArchiveSelection()
+    fun enableArchiveGeneMutation() = config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE && config.probOfArchiveMutation > 0.0
 
     /**
      * @return whether collect impacts info after each mutation during search
      */
-    fun doCollectImpact() = config.probOfArchiveMutation > 0.0
+    fun doCollectImpact() = enableArchiveSelection() || config.doCollectImpact
 
     //FIXME MAN
     fun createCharMutationUpdate() = IntMutationUpdate(getDefaultCharMin(), getDefaultCharMax())
@@ -689,7 +684,7 @@ class ArchiveMutator {
     }
 
     fun saveImpactSnapshot(index : Int, checkedTargets: Set<Int>, targetsInfo : MutableMap<Int, Int>, addedToArchive: Boolean, evaluatedIndividual: EvaluatedIndividual<*>) {
-
+        if (!doCollectImpact()) return
         if(config.saveImpactAfterMutationFile.isBlank()) return
 
         val path = Paths.get(config.saveImpactAfterMutationFile)

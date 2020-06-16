@@ -181,7 +181,8 @@ class IndividualGeneImpactTest {
 
         init {
             config.enableTrackEvaluatedIndividual = true
-            config.probOfArchiveMutation = 0.5
+            //config.probOfArchiveMutation = 0.5
+            config.doCollectImpact = true
         }
 
         fun fakeMutator(evaluatedIndividual: EvaluatedIndividual<Ind>, mutatedIndex : Int, mutatedGeneSpecification: MutatedGeneSpecification) : EvaluatedIndividual<Ind>{

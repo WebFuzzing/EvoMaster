@@ -130,8 +130,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             archive.wouldReachNewTarget(mutated, targetsEvaluated)
 
-
-            if (archiveMutator.doCollectImpact()){
+            if (config.probOfArchiveMutation > 0.0){
 
                 mutated.fitness.isDifferent(
                         current.fitness,

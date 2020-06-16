@@ -70,7 +70,7 @@ class MutationWeightControlTest {
                 forceNotEmpty = true
         ))
 
-        assert(selected.size > 2)
+        assert(selected.size >= 2)
     }
 
     @Test

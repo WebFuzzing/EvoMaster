@@ -13,6 +13,7 @@ import org.evomaster.core.search.Individual
 import org.evomaster.core.search.Individual.GeneFilter.ALL
 import org.evomaster.core.search.Individual.GeneFilter.NO_SQL
 import org.evomaster.core.search.gene.*
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
 import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
@@ -39,7 +40,7 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
     override fun genesToMutation(individual: T, evi: EvaluatedIndividual<T>, targets: Set<Int>) : List<Gene> {
         val filterMutate = if (config.generateSqlDataWithSearch) ALL else NO_SQL
         val mutable = individual.seeGenes(filterMutate).filter { it.isMutable() }
-        if (!archiveMutator.enableArchiveMutation())
+        if (!archiveMutator.enableArchiveGeneMutation())
             return mutable
         mutable.filter { !it.reachOptimal(targets) || !archiveMutator.withinNormal()}.let {
             if (it.isNotEmpty()) return it
@@ -139,17 +140,16 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
                         else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT
                         else SubsetGeneSelectionStrategy.DETERMINISTIC_WEIGHT
 
-            val enableAdaptiveMutation = archiveMutator.enableArchiveGeneMutation()
-
-            if (enableAdaptiveMutation || selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
-                //root gene reference
+            val additionInfo = if(selectionStrategy == SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT){
                 val id = ImpactUtils.generateGeneId(copy, gene)
                 //root gene impact
                 val impact = individual.getImpact(copy, gene)
-                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, enableAdaptiveMutation, AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets ))
-            } else {
-                gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy)
-            }
+                AdditionalGeneSelectionInfo(config.adaptiveGeneSelectionMethod, impact, id, archiveMutator, individual,targets)
+            }else if(archiveMutator.enableArchiveGeneMutation()){
+                AdditionalGeneSelectionInfo(GeneMutationSelectionMethod.NONE, null, null, archiveMutator, individual,targets)
+            }else null
+
+            gene.standardMutation(randomness, apc, mwc, allGenes, selectionStrategy, archiveMutator.enableArchiveGeneMutation(), additionalGeneMutationInfo = additionInfo)
         }
         return copy
     }

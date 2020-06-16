@@ -277,6 +277,9 @@ class EMConfig {
         if (probOfArchiveMutation > 0 && !enableTrackEvaluatedIndividual)
             throw IllegalArgumentException("archive-based solution is only applicable when enable of tracking of EvaluatedIndividual.")
 
+        if (doCollectImpact && !enableTrackEvaluatedIndividual)
+            throw IllegalArgumentException("collecting impact innfo is only applicable when enable of tracking of EvaluatedIndividual.")
+
         if (baseTaintAnalysisProbability > 0 && !useMethodReplacement) {
             throw IllegalArgumentException("Base Taint Analysis requires 'useMethodReplacement' option")
         }
@@ -1010,6 +1013,10 @@ class EMConfig {
     @Cfg("Specify a probability to enable archive-based mutation")
     @Probability
     var probOfArchiveMutation = 0.0
+
+    @Experimental
+    @Cfg("Specify whether to collect impact info that provides an option to enable of collecting impact info when archive-based gene selection is disable. ")
+    var doCollectImpact = false
 
     @Experimental
     @Cfg("Specify a percentage of used budget to start archive-based mutation when archive-based mutation is enabled")

@@ -174,8 +174,8 @@ class MioAlgorithmOnTrackOneMaxTest {
                 "false",
                 "--enableTrackEvaluatedIndividual",
                 "true",
-                "--probOfArchiveMutation",
-                "0.5",
+                "--doCollectImpact",
+                "true",
                 "--maxLengthOfTraces",
                 "-1"
         )

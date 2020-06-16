@@ -3,6 +3,7 @@ package org.evomaster.core.search.tracer
 import com.google.inject.Inject
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.EvaluatedIndividual
+import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod
 import javax.annotation.PostConstruct
 
 /**
@@ -20,7 +21,7 @@ class ArchiveMutationTrackService : TrackService(){
             initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_INDIVIDUAL)
         }
 
-        if (config.enableTrackEvaluatedIndividual && config.probOfArchiveMutation > 0.0){
+        if (config.enableTrackEvaluatedIndividual && ( (config.probOfArchiveMutation > 0.0 && config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE) || config.doCollectImpact)){
             initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_CLONE_IMPACT)
             initTraceableElementCopyFilter(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT)
         }
@@ -34,7 +35,7 @@ class ArchiveMutationTrackService : TrackService(){
 
 
     fun getCopyFilterForEvalInd(chosen: EvaluatedIndividual<*>, deepCopyForImpacts : Boolean = false) : TraceableElementCopyFilter {
-        return if (config.enableTrackEvaluatedIndividual && config.probOfArchiveMutation > 0.0){
+        return if (config.enableTrackEvaluatedIndividual && ((config.probOfArchiveMutation > 0.0 && config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE) || config.doCollectImpact)){
             if (deepCopyForImpacts){
                 if (!exists(EvaluatedIndividual.WITH_TRACK_WITH_COPY_IMPACT)){
                     throw IllegalStateException("WITH_TRACK_WITH_CLONE_IMPACT should be registered.")

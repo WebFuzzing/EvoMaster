@@ -47,25 +47,17 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         }
     }
 
-//    constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>,
-//                enableTracking: Boolean, trackOperator: TrackOperator?, enableImpact: Boolean,
-//                abstractInitializationGeneToMutate : Boolean,
-//                maxSqlInitActionsPerMissingData : Int):
-//            this(fitness, individual, results,
-//                    trackOperator = trackOperator, tracking = if (enableTracking) mutableListOf() else null, undoTracking = if (enableTracking) mutableListOf() else null,
-//                    impactInfo = if (enableImpact) ImpactsOfIndividual(individual, abstractInitializationGeneToMutate, maxSqlInitActionsPerMissingData, fitness) else null
-//            ){
-//    }
-
     constructor(fitness: FitnessValue, individual: T, results: List<out ActionResult>,
                 trackOperator: TrackOperator?, config : EMConfig?=null):
             this(fitness, individual, results,
                     trackOperator = trackOperator,
                     tracking = if (config != null && config.enableTrackEvaluatedIndividual) mutableListOf() else null,
                     undoTracking = if (config != null && config.enableTrackEvaluatedIndividual) mutableListOf() else null,
-                    impactInfo = if (config != null && config.probOfArchiveMutation > 0.0) ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness) else null
+                    impactInfo = if (config != null && ((config.probOfArchiveMutation > 0.0 && config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE) || config.doCollectImpact))
+                        ImpactsOfIndividual(individual, config.abstractInitializationGeneToMutate, config.maxSqlInitActionsPerMissingData, fitness)
+                    else
+                        null
             )
-
     fun copy(): EvaluatedIndividual<T> {
         return EvaluatedIndividual(
                 fitness.copy(),

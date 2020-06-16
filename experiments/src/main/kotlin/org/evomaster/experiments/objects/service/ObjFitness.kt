@@ -95,7 +95,7 @@ class ObjFitness : FitnessFunction<ObjIndividual>() {
         return true
     }
 
-    override fun doCalculateCoverage(individual: ObjIndividual, targetIds : Set<Int>): EvaluatedIndividual<ObjIndividual>? {
+    override fun doCalculateCoverage(individual: ObjIndividual): EvaluatedIndividual<ObjIndividual>? {
 
         rc.resetSUT()
 

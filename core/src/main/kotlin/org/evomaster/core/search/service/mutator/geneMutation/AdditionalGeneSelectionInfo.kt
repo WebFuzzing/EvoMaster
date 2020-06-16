@@ -19,7 +19,7 @@ import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelecti
 data class AdditionalGeneSelectionInfo (
         val selection: GeneMutationSelectionMethod,
         val impact: GeneImpact?, //null is only allowed when the gene is root.
-        val geneReference: String,
+        val geneReference: String?, // null is only allowed when selection is NONE
         val archiveMutator: ArchiveMutator,
         val evi: EvaluatedIndividual<*>,
         val targets: Set<Int>

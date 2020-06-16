@@ -9,7 +9,6 @@ import org.evomaster.core.search.gene.Gene;
 import org.evomaster.core.search.impact.impactInfoCollection.GeneImpact;
 import org.evomaster.core.search.impact.impactInfoCollection.GeneMutationSelectionMethod;
 import org.evomaster.core.search.impact.impactInfoCollection.ImpactUtils;
-import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -17,7 +16,7 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class CollectImpactXYZInfoTest extends SpringTestBase {
+public class CollectImpactXYZInfoTest extends ImpactXYZTestBase {
 
     @Test
     public void testOnlyCollectImpact() throws Throwable {
@@ -33,8 +32,8 @@ public class CollectImpactXYZInfoTest extends SpringTestBase {
                 false,
                 (args) -> {
 
-                    args.add("--probOfArchiveMutation");
-                    args.add("1.0");
+                    args.add("--doCollectImpact");
+                    args.add("true");
 
                     args.add("--adaptiveGeneSelectionMethod");
                     args.add(method.toString());

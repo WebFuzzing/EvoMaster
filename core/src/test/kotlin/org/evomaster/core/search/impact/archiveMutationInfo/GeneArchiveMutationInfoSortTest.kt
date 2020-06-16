@@ -1,5 +1,6 @@
 package org.evomaster.core.search.impact.archiveMutationInfo
 
+import org.evomaster.core.search.service.Randomness
 import org.evomaster.core.search.service.mutator.geneMutation.IntMutationUpdate
 import org.evomaster.core.search.service.mutator.geneMutation.archive.GeneArchieMutationInfo
 import org.evomaster.core.search.service.mutator.geneMutation.archive.IntegerGeneArchiveMutationInfo
