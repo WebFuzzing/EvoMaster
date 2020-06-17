@@ -12,7 +12,7 @@ e.g., details on the Many Independent Objective (MIO) algorithm.
 * A. Arcuri, J.P. Galeotti.
   *Handling SQL Databases in Automated System Test Generation*. 
   ACM Transactions on Software Engineering and Methodology (TOSEM).
-  To appear.   
+  [[PDF](publications/2020_tosem.pdf)].   
 
 * A. Arcuri, J.P. Galeotti.
   *Testability Transformations For Existing APIs*.
