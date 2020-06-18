@@ -109,21 +109,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             val mutated = ff.calculateCoverage(mutatedInd)
                     ?: continue
 
-            val reachNew = archive.wouldReachNewTarget(mutated)
-
             /*
                 enable further actions for extracting
              */
             update(trackedCurrent, mutated, mutatedGenes)
 
-            val doesImproved = reachNew || !current.fitness.subsumes(
-                    mutated.fitness,
-                    targets,
-                    config.secondaryObjectiveStrategy,
-                    config.bloatControlForSecondaryObjective,
-                    config.minimumSizeControl)
+            val effective = evaluateMutation(mutated, current, targets, archive)
 
-            if (doesImproved) {
+            if (effective) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual)
                     trackedCurrent.next(this, mutated,tracker.getCopyFilterForEvalInd(trackedCurrent), config.maxLengthOfTraces)!!
                 else mutated
@@ -150,7 +143,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     val actionIndex = if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[index] else -1
                     val previousValue = (trackedCurrent.findGeneById(id, actionIndex) ?: throw IllegalStateException("cannot find mutated gene with id ($id) in current individual"))
                     val savedGene = (current.findGeneById(id, actionIndex) ?: throw IllegalStateException("cannot find mutated gene with id ($id) in its original individual"))
-                    savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
+                    savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = effective, archiveMutator = archiveMutator)
                 }
 
                 mutatedGenes.mutatedDbGenes.forEachIndexed { index, s->
@@ -162,7 +155,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                      */
                     val previousValue = trackedCurrent.findGeneById(id, actionIndex, isDb = true)
                     if (previousValue != null)
-                        savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = doesImproved, archiveMutator = archiveMutator)
+                        savedGene.archiveMutationUpdate(original = previousValue, mutated = s, doesCurrentBetter = effective, archiveMutator = archiveMutator)
                 }
             }
         }
@@ -176,6 +169,17 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         return ff.calculateCoverage(mutate(individual))
                 ?.also { archive.addIfNeeded(it) }
+    }
+
+    /**
+     * @return whether mutated individual [mutated] is not worse than before [current] regarding [targets]
+     */
+    fun evaluateMutation(mutated : EvaluatedIndividual<T>, current : EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>) : Boolean{
+        // global check
+        if (archive.wouldReachNewTarget(mutated)) return true
+
+        // current is not better than mutated
+        return !current.fitness.subsumes(other = mutated.fitness, targetSubset = targets, strategy = config.secondaryObjectiveStrategy, bloatControlForSecondaryObjective = config.bloatControlForSecondaryObjective, minimumSize = config.minimumSizeControl)
     }
 
 }
