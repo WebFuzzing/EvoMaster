@@ -3,7 +3,6 @@ package org.evomaster.core.search
 import org.evomaster.core.EMConfig
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.impact.*
-import org.evomaster.core.search.service.Archive
 import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
@@ -114,14 +113,6 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
             TraceableElementCopyFilter.DEEP_TRACK -> {
                 throw IllegalArgumentException("${copyFilter.name} should be not applied for EvaluatedIndividual")
-//                return EvaluatedIndividual(
-//                        fitness.copy(),
-//                        individual.copy(TraceableElementCopyFilter.DEEP_TRACK) as T,
-//                        results.map(ActionResult::copy),
-//                        trackOperator?:individual.trackOperator,
-//                        getTracking()?.map { it.copy() }?.toMutableList()?: mutableListOf(),
-//                        getUndoTracking()?.map { it.copy()}?.toMutableList()?: mutableListOf()
-//                )
             }
             else ->{
                 when {
