@@ -507,31 +507,34 @@ class TestCaseWriter {
                                     (value is Map<*, *>) -> handleMapLines(test_index, value, lines)
                                     (value is String) -> longArray = true
                                     else -> {
-                                        val printableTh = handleFieldValues(value)
-                                        if (printableTh != "null"
-                                                && printableTh != NOT_COVERED_YET
-                                                && !printableTh.contains("logged")
-                                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                                        val printableFieldValue = handleFieldValues(value)
+                                        if (printableFieldValue != "null"
+                                                && printableFieldValue != NOT_COVERED_YET
+                                                && !printableFieldValue.contains("logged")
+                                                /*removing "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
+                                                Such information can cause failures upon re-run, as object references and timestamps will differ.
+                                                 */
+
+                                                && !printableFieldValue.contains("""\w+:\d{4,5}""".toRegex())
                                         ) {
-                                            //lines.add(".body(\"get($test_index)\", $printableTh)")
-                                            lines.add(".body(\"\", $printableTh)")
+                                            lines.add(".body(\"\", $printableFieldValue)")
                                         }
                                     }
                                 }
                             }
                             if(longArray) {
-                                val printableTh = handleFieldValues(resContents)
-                                if (printableTh != "null"
-                                        && printableTh != NOT_COVERED_YET
-                                        && !printableTh.contains("logged")
-                                        && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                                val printableContent = handleFieldValues(resContents)
+                                if (printableContent != "null"
+                                        && printableContent != NOT_COVERED_YET
+                                        && !printableContent.contains("logged")
+                                        /*removing "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
+                                        Such information can cause failures upon re-run, as object references and timestamps will differ.
+                                        */
+                                        && !printableContent.contains("""\w+:\d{4,5}""".toRegex())
                                 ) {
-                                    //lines.add(".body(\"get($test_index)\", $printableTh)")
-                                    lines.add(".body(\"\", $printableTh)")
+                                    lines.add(".body(\"\", $printableContent)")
                                 }
-                                //lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
                             }
-                            //if(longArray) lines.add(".body(\"\", hasItems(${resContents.joinToString{"\"$it\""}}))")
                         }
                         else{
                             // the object is empty
@@ -586,18 +589,20 @@ class TestCaseWriter {
                     val stringKey = it.joinToString(prefix = "\'", postfix = "\'", separator = "\'.\'")
                     val actualValue = flatContent[it]
                     if (actualValue != null) {
-                        val printableTh = handleFieldValues(actualValue)
-                        if (printableTh != "null"
-                                && printableTh != NOT_COVERED_YET
-                                && !printableTh.contains("logged")
-                                && !printableTh.contains("""\w+:\d{4,5}""".toRegex())
+                        val printableFieldValue = handleFieldValues(actualValue)
+                        if (printableFieldValue != "null"
+                                && printableFieldValue != NOT_COVERED_YET
+                                && !printableFieldValue.contains("logged")
+                                /*removing "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
+                                Such information can cause failures upon re-run, as object references and timestamps will differ.
+                                */
+                                && !printableFieldValue.contains("""\w+:\d{4,5}""".toRegex())
                         ) {
-                            //lines.add(".body(\"\'${it}\'\", ${printableTh})")
                             /*
                                 There are some fields like "id" which are often non-deterministic,
                                 which unfortunately would lead to flaky tests
                              */
-                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableTh})")
+                            if (stringKey != "\'id\'") lines.add(".body(\"${stringKey}\", ${printableFieldValue})")
                         }
                     }
                 }

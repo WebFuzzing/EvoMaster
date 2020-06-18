@@ -159,7 +159,7 @@ class SchemaOracle : ImplementedOracle() {
 
     fun getSupportedResponse(call: RestCallAction): MutableMap<String, String>{
         val verb = call.verb
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString())
+        val path = objectGenerator.getSwagger().paths.get(call.resolvedPath().removePrefix("/api"))
         val specificPath = when(verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
