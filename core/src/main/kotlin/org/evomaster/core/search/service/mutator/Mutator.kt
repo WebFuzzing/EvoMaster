@@ -120,7 +120,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                     mutated.fitness,
                     targets,
                     config.secondaryObjectiveStrategy,
-                    config.bloatControlForSecondaryObjective)
+                    config.bloatControlForSecondaryObjective,
+                    config.minimumSizeControl)
 
             if (doesImproved) {
                 val trackedMutated = if(config.enableTrackEvaluatedIndividual)

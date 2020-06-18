@@ -761,6 +761,10 @@ class EMConfig {
     @Cfg("Whether secondary objectives are less important than test bloat control")
     var bloatControlForSecondaryObjective = false
 
+    @Cfg("Specify minimum size when bloatControlForSecondaryObjective")
+    @Min(0.0)
+    var minimumSizeControl = 2
+
     @Cfg("Probability of applying a mutation that can change the structure of a test")
     @Probability
     var structureMutationProbability = 0.5

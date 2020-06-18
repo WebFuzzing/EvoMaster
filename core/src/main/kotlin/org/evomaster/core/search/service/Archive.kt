@@ -354,26 +354,19 @@ class Archive<T> where T : Individual {
                 as the population are internally sorted by fitness, the individual
                 at position [0] would be the worst
              */
-            val currh = current[0].fitness.getHeuristic(k)
-            val currsize = current[0].individual.size()
-            val copySize = copy.individual.size()
-            val extra = copy.fitness.compareExtraToMinimize(k, current[0].fitness, config.secondaryObjectiveStrategy)
 
-            val better = if(config.bloatControlForSecondaryObjective
-                    /*
-                        Avoid reducing tests to size 1 if extra was better.
-                        With at least 2 actions, we can have a WRITE followed by a READ
-                     */
-                    && min(copySize, currsize) >= 2){
-                v.distance > currh ||
-                        (v.distance == currh && copySize < currsize) ||
-                        (v.distance == currh &&  copySize == currsize && extra > 0)
-            } else {
-                v.distance > currh ||
-                        (v.distance == currh && extra > 0) ||
-                        (v.distance == currh && extra == 0 && copySize < currsize)
+            val curr = current[0]
+            Lazy.assert {
+                curr.fitness.size == curr.individual.size().toDouble()
+                copy.fitness.size == copy.individual.size().toDouble()
             }
 
+            /*
+              config.minimumSizeControl = 2 is to
+                avoid reducing tests to size 1 if extra was better.
+                With at least 2 actions, we can have a WRITE followed by a READ
+            */
+            val better = copy.fitness.betterThan(k, curr.fitness, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
             anyBetter = anyBetter || better
 
             if (better) {
@@ -396,7 +389,7 @@ class Archive<T> where T : Individual {
                 continue
             }
 
-            val equivalent = (v.distance == currh && extra == 0 && copySize == currsize)
+            val equivalent = copy.fitness.equivalent(k, curr.fitness, config.secondaryObjectiveStrategy)
 
             if (better || equivalent) {
                 /*
