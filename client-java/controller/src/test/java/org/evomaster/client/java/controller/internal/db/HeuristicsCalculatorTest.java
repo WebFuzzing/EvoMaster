@@ -4,8 +4,13 @@ import org.evomaster.client.java.controller.db.DataRow;
 import org.evomaster.client.java.controller.db.QueryResult;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -13,7 +18,19 @@ import static org.junit.jupiter.api.Assertions.*;
 public class HeuristicsCalculatorTest {
 
 
-
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "2012-02-22T02:06:58.147Z",
+            "2012-02-22T02:06:58.147+02:00",
+            "2012-02-22T02:06:58.147+0200",
+            "2020-05-19T14:58:38.552+02:00",
+            "2020-05-19T14:58:38.552+0200",
+    })
+    public void testTimeZoneIssue(String date){
+        HeuristicsCalculator hc = new HeuristicsCalculator(Mockito.mock(SqlNameContext.class));
+        Instant instant = hc.getAsInstant(date);
+        assertNotNull(instant);
+    }
 
     @Test
     public void testEmpty() {
