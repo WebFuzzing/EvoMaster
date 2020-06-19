@@ -12,10 +12,8 @@ import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.remote.NoRemoteConnectionException
 import org.evomaster.core.remote.SutProblemException
 import org.evomaster.core.remote.TcpUtils
-import org.glassfish.jersey.client.ClientConfig
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.net.BindException
 import javax.annotation.PostConstruct
 import javax.annotation.PreDestroy
 import javax.ws.rs.ProcessingException
@@ -84,22 +82,40 @@ class RemoteController() : DatabaseExecutor {
         return  try{
             lambda.invoke()
         } catch (e: ProcessingException){
-            if(TcpUtils.isOutOfEphemeralPorts(e)){
-                /*
+            when {
+                TcpUtils.isOutOfEphemeralPorts(e) -> {
+                    /*
                     This could happen if for any reason we run out of ephemeral ports.
                     In such a case, we wait X seconds, and try again, as OS might have released ports
                     meanwhile.
                     And while we are at it, let's release any hanging network resource
-                 */
-                client.close() //make sure to release any resource
-                client = ClientBuilder.newClient()
+                    */
+                    client.close() //make sure to release any resource
+                    client = ClientBuilder.newClient()
 
-                val seconds = 30
-                log.warn("Running out of ephemeral ports. Waiting $seconds seconds before re-trying connection")
-                Thread.sleep(seconds * 1000L)
-                lambda.invoke()
+                    TcpUtils.handleEphemeralPortIssue()
+
+                    lambda.invoke()
+                }
+                TcpUtils.isRefusedConnection(e) -> {
+                    //this is BAD!!! There isn't really much we can do here... :(
+                    log.error("EvoMaster Driver process is no longer responding, refusing TCP connections." +
+                            " Check if its process might have crashed. Also look at its logs")
+                    throw e
+                }
+                TcpUtils.isStreamClosed(e) || TcpUtils.isEndOfFile(e) -> {
+                    /*
+                        TODO: there might be a potential issue here.
+                        The GET on targets is not idempotent, as we collect the "first-seen" targets
+                        only once. This should be handled here, somehow...
+                     */
+                    log.warn("EvoMaster Driver TCP connection is having issues: '${e.cause!!.message}'." +
+                            " Let's wait a bit and try again.")
+                    Thread.sleep(5_000)
+                    lambda.invoke()
+                }
+                else -> throw e
             }
-            throw e
         }
     }
 
@@ -107,7 +123,7 @@ class RemoteController() : DatabaseExecutor {
         client.close()
     }
 
-    private fun checkResponse(response: Response, msg: String) : Boolean{
+    private fun readAndCheckResponse(response: Response, msg: String) : Boolean{
 
         val dto = try {
             response.readEntity(object : GenericType<WrappedResponseDto<*>>() {})
@@ -136,7 +152,7 @@ class RemoteController() : DatabaseExecutor {
          return dto.data
     }
 
-    private fun <T> getDto(response: Response, type: GenericType<WrappedResponseDto<T>>) : WrappedResponseDto<T>?{
+    private fun <T> getDtoFromResponse(response: Response, type: GenericType<WrappedResponseDto<T>>) : WrappedResponseDto<T>?{
 
         if(response.mediaType == MediaType.TEXT_PLAIN_TYPE){
             //something weird is going on... possibly a bug in the Driver?
@@ -167,7 +183,7 @@ class RemoteController() : DatabaseExecutor {
                     .get()
         }
 
-        val dto = getDto(response, object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
+        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<SutInfoDto>>() {})
 
         if(!checkResponse(response, dto, "Failed to retrieve SUT info")){
             return null
@@ -186,7 +202,7 @@ class RemoteController() : DatabaseExecutor {
                     .get()
         }
 
-        val dto = getDto(response, object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
+        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<ControllerInfoDto>>() {})
 
         if(!checkResponse(response, dto, "Failed to retrieve EM controller info")){
             return null
@@ -209,7 +225,7 @@ class RemoteController() : DatabaseExecutor {
             return false
         }
 
-        val dto = getDto(response, object : GenericType<WrappedResponseDto<Any>>() {})
+        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<Any>>() {})
 
         return checkResponse(response, dto, "Failed to change running state of the SUT")
     }
@@ -235,6 +251,7 @@ class RemoteController() : DatabaseExecutor {
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .get()
         } catch (e: Exception) {
+            //FIXME proper exception checking
             throw NoRemoteConnectionException(port, host)
         }
 
@@ -250,22 +267,24 @@ class RemoteController() : DatabaseExecutor {
                     .post(Entity.entity("{\"newSearch\":true}", MediaType.APPLICATION_JSON_TYPE))
         }
 
-        return checkResponse(response, "Failed to inform SUT of new search")
+        return readAndCheckResponse(response, "Failed to inform SUT of new search")
     }
 
     fun getTestResults(ids: Set<Int> = setOf()): TestResultsDto? {
 
         val queryParam = ids.joinToString(",")
 
-        val response = getWebTarget()
-                .path(ControllerConstants.TEST_RESULTS)
-                .queryParam("ids", queryParam)
-                .request(MediaType.APPLICATION_JSON_TYPE)
-                .get()
+        val response = makeHttpCall {
+            getWebTarget()
+                    .path(ControllerConstants.TEST_RESULTS)
+                    .queryParam("ids", queryParam)
+                    .request(MediaType.APPLICATION_JSON_TYPE)
+                    .get()
+        }
 
-        val dto = getDto(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
+        val dto = getDtoFromResponse(response, object : GenericType<WrappedResponseDto<TestResultsDto>>() {})
 
-        if(!checkResponse(response, dto, "Failed to retrieve target coverage")){
+        if(!checkResponse(response, dto, "Failed to retrieve target coverage for $queryParam")){
             return null
         }
 
@@ -281,7 +300,7 @@ class RemoteController() : DatabaseExecutor {
                     .put(Entity.entity(actionDto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        return checkResponse(response, "Failed to register new action")
+        return readAndCheckResponse(response, "Failed to register new action")
     }
 
     override fun executeDatabaseCommand(dto: DatabaseCommandDto): Boolean {
@@ -344,7 +363,7 @@ class RemoteController() : DatabaseExecutor {
                     .post(Entity.entity(dto, MediaType.APPLICATION_JSON_TYPE))
         }
 
-        val dto = getDto(response, type)
+        val dto = getDtoFromResponse(response, type)
 
         if (!checkResponse(response, dto, "Failed to execute database command")) {
             return null
