@@ -10,6 +10,7 @@ import org.evomaster.core.search.Action
 import org.evomaster.core.search.Individual
 import org.evomaster.core.search.gene.*
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 
@@ -30,7 +31,7 @@ class RestIndividual(
             sampleType: SampleType,
             dbInitialization: MutableList<DbAction> = mutableListOf(),
             trackOperator: TrackOperator? = null,
-            index : Int = -1) :
+            index : Int = TraceableElement.DEFAULT_INDEX) :
             this(
                     actions.map { RestResourceCalls(actions= mutableListOf(it as RestAction)) }.toMutableList(),
                     sampleType,

@@ -101,7 +101,7 @@ public class ImpactEMTest extends SpringTestBase {
                     }
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
-                            s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noimpactIntField", s)
+                            s -> s.getImpactInfo().size() > 0 && checkNoImpact("noimpactIntField", s)
                     );
 
                     assertTrue(impactInfoCollected);
@@ -122,16 +122,16 @@ public class ImpactEMTest extends SpringTestBase {
 
     private boolean checkNoImpact(String geneName, EvaluatedIndividual<RestIndividual> ind){
 
-        if (ind.getImpactOfGenes().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
+        if (ind.getImpactInfo().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
 
         String id = getGeneIdByName(geneName, ind);
 
         boolean last = true;
 
-        GeneImpact noimpactGene = ind.getImpactOfGenes().get(id);
-        for (String keyId : ind.getImpactOfGenes().keySet()){
+        GeneImpact noimpactGene = ind.getImpactInfo().get(id);
+        for (String keyId : ind.getImpactInfo().keySet()){
             if (keyId != id){
-                GeneImpact other = ind.getImpactOfGenes().get(keyId);
+                GeneImpact other = ind.getImpactInfo().get(keyId);
 
                 last = last &&
                         // getTimesOfImpact should be less than any others OR getTimesOfNoImpact should be more than any others

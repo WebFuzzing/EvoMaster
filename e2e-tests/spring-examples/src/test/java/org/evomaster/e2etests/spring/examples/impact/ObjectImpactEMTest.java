@@ -121,7 +121,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
                     }
 
                     boolean impactInfoCollected = solution.getIndividuals().stream().allMatch(
-                            s -> s.getImpactOfGenes().size() > 0 && checkNoImpact("noImpactIntField", s)
+                            s -> s.getImpactInfo().size() > 0 && checkNoImpact("noImpactIntField", s)
                     );
 
                     assertTrue(impactInfoCollected);
@@ -142,7 +142,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
     private boolean checkNoImpact(String fieldName, EvaluatedIndividual<RestIndividual> ind){
 
-        if (ind.getImpactOfGenes().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
+        if (ind.getImpactInfo().values().stream().map(s -> ((GeneImpact) s).getTimesToManipulate()).mapToInt(Integer::intValue).sum() == 0 ) return true;
 
         List<Gene> genes = ind.getIndividual().seeGenes(Individual.GeneFilter.NO_SQL).stream().filter(s-> s instanceof ObjectGene).collect(Collectors.toList());
 
@@ -151,7 +151,7 @@ public class ObjectImpactEMTest extends SpringTestBase {
 
         for (Gene obj : genes){
             String id = ImpactUtils.Companion.generateGeneId(ind.getIndividual(), obj);
-            GeneImpact impact = ind.getImpactOfGenes().get(id);
+            GeneImpact impact = ind.getImpactInfo().get(id);
 
             assert(impact instanceof ObjectGeneImpact);
 
