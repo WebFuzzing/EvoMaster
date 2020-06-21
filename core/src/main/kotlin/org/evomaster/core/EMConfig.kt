@@ -1123,4 +1123,6 @@ class EMConfig {
         return (hours * 60 * 60) + (minutes * 60) + seconds
     }
 
+    fun trackingEnabled() = enableTrackEvaluatedIndividual || enableTrackIndividual
+
 }

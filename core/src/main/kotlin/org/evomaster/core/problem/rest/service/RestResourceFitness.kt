@@ -24,7 +24,7 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
     private lateinit var rc: RemoteController
 
     @Inject
-    private lateinit var sampler : RestResourceSampler
+    private lateinit var sampler : ResourceSampler
 
     @Inject
     private lateinit var dm: ResourceDepManageService
@@ -132,7 +132,8 @@ class RestResourceFitness : AbstractRestFitness<RestIndividual>() {
             expandIndividual(individual, dto.additionalInfoList, actionResults)
         }
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, enableTracking = config.enableTrackEvaluatedIndividual, trackOperator = if(config.enableTrackEvaluatedIndividual) sampler else null, enableImpact = (config.probOfArchiveMutation > 0.0))
+        return EvaluatedIndividual(
+                fv, individual.copy() as RestIndividual, actionResults, config = config, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals)
 
         /*
             TODO when dealing with seeding, might want to extend EvaluatedIndividual

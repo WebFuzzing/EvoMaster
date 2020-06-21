@@ -209,6 +209,15 @@ class FitnessValue(
         return atLeastOneBetter
     }
 
+    fun subsumes(
+            other: FitnessValue,
+            targetSubset: Set<Int>,
+            config : EMConfig)
+            : Boolean {
+
+        return subsumes(other, targetSubset, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective, config.minimumSizeControl)
+    }
+
     /**
      * @return [this] is better than [other] for [target].
      */

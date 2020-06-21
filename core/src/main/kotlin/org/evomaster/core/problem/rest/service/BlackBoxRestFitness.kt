@@ -62,7 +62,7 @@ class BlackBoxRestFitness : RestFitness() {
 
         handleResponseTargets(fv, individual.seeActions(), actionResults)
 
-        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults)
+        return EvaluatedIndividual(fv, individual.copy() as RestIndividual, actionResults, trackOperator = individual.trackOperator, index = time.evaluatedIndividuals, config = config)
     }
 
     protected fun handleResponseTargets(

@@ -61,9 +61,12 @@ class ResourceManageService {
 
     private var sqlInsertBuilder : SqlInsertBuilder? = null
     /**
-     * init resource nodes based on [actionCluster]
+     * init resource nodes based on [actionCluster] and [sqlInsertBuilder]
+     *
      */
     fun initResourceNodes(actionCluster : MutableMap<String, Action>, sqlInsertBuilder: SqlInsertBuilder? = null) {
+        if (resourceCluster.isNotEmpty()) return
+        if (this.sqlInsertBuilder!= null) return
 
         this.sqlInsertBuilder = sqlInsertBuilder
 

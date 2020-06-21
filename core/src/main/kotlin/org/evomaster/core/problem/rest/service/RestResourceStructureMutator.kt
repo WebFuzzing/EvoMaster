@@ -25,6 +25,7 @@ class RestResourceStructureMutator : StructureMutator() {
             throw IllegalArgumentException("Invalid individual type")
 
         mutateRestResourceCalls(individual, mutatedGenes = mutatedGenes)
+        if (config.trackingEnabled()) tag(individual, time.evaluatedIndividuals)
     }
 
     fun mutateRestResourceCalls(ind: RestIndividual, specified : MutationType?=null, mutatedGenes: MutatedGeneSpecification? = null) {

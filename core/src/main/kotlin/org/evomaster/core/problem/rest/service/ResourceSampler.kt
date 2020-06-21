@@ -1,18 +1,14 @@
 package org.evomaster.core.problem.rest.service
 
 import com.google.inject.Inject
-import org.evomaster.core.EMConfig
-import org.evomaster.core.database.DbAction
+import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.core.database.SqlInsertBuilder
 import org.evomaster.core.problem.rest.*
-import org.evomaster.core.problem.rest.auth.AuthenticationInfo
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.resource.RestResourceCalls
 import org.evomaster.core.problem.rest.resource.SamplerSpecification
-import org.evomaster.core.search.Action
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.service.Randomness
-import org.evomaster.core.search.service.Sampler
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -20,7 +16,7 @@ import org.slf4j.LoggerFactory
  * resource-based sampler
  * the sampler handles resource-based rest individual
  */
-abstract class ResourceSampler : Sampler<RestIndividual>() {
+abstract class ResourceSampler : AbstractRestSampler() {
 
     companion object {
         val log: Logger = LoggerFactory.getLogger(ResourceSampler::class.java)
@@ -35,34 +31,30 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
     @Inject
     private lateinit var dm : ResourceDepManageService
 
-    private val authentications: MutableList<AuthenticationInfo> = mutableListOf()
+    override fun initSqlInfo(infoDto: SutInfoDto) {
+        if (infoDto.sqlSchemaDto != null && (configuration.shouldGenerateSqlData() || config.probOfApplySQLActionToCreateResources > 0.0 )) {
 
-    private val adHocInitialIndividuals: MutableList<RestIndividual> = mutableListOf()
-
-    private var sqlInsertBuilder: SqlInsertBuilder? = null
-    var existingSqlData : List<DbAction> = listOf()
-        private set
-
-    protected fun initialize(authenticationsInfo: MutableList<AuthenticationInfo>, actions : MutableMap<String, Action>, sqlBuilder: SqlInsertBuilder?) {
-
-        assert(config.resourceSampleStrategy != EMConfig.ResourceSamplingStrategy.NONE)
-
-        actionCluster.clear()
-        actionCluster.putAll(actions)
-
-        authentications.clear()
-        authentications.addAll(authenticationsInfo)
-
-        sqlInsertBuilder = sqlBuilder
-        if(sqlInsertBuilder != null && config.shouldGenerateSqlData()) {
+            sqlInsertBuilder = SqlInsertBuilder(infoDto.sqlSchemaDto, rc)
             existingSqlData = sqlInsertBuilder!!.extractExistingPKs()
         }
-
-        initAbstractResources()
-        initAdHocInitialIndividuals()
-        ssc.initialize()
     }
 
+    override fun initAdHocInitialIndividuals() {
+
+        rm.initResourceNodes(actionCluster, sqlInsertBuilder)
+
+        adHocInitialIndividuals.clear()
+
+        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
+
+        authentications.forEach { auth ->
+            rm.createAdHocIndividuals(auth, adHocInitialIndividuals)
+        }
+    }
+
+    override fun postInits() {
+        ssc.initialize()
+    }
 
     override fun sampleAtRandom() : RestIndividual {
         return sampleAtRandom(randomness.nextInt(1, config.maxTestSize))
@@ -79,7 +71,8 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
             left -= call.actions.size
             restCalls.add(call)
         }
-        return RestIndividual(restCalls, SampleType.RANDOM)
+        return RestIndividual(
+                resourceCalls = restCalls, sampleType = SampleType.RANDOM, dbInitialization = mutableListOf(), trackOperator = this, index = time.evaluatedIndividuals)
     }
 
 
@@ -94,24 +87,13 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
         return rc
     }
 
-    private fun getRandomAuth(noAuthP: Double): AuthenticationInfo {
-        if (authentications.isEmpty() || randomness.nextBoolean(noAuthP)) {
-            return NoAuth()
-        } else {
-            //if there is auth, should have high probability of using one,
-            //as without auth we would do little.
-            return randomness.choose(authentications)
-        }
-    }
-
     override fun smartSample(): RestIndividual {
 
         /*
             At the beginning, sampleAll from this set, until it is empty
          */
-        if (!adHocInitialIndividuals.isEmpty()) {
-            val ind = adHocInitialIndividuals.removeAt(0)
-            return ind
+        if (adHocInitialIndividuals.isNotEmpty()) {
+            return adHocInitialIndividuals.removeAt(0)
         }
 
         val withDependency = config.probOfEnablingResourceDependencyHeuristics > 0.0
@@ -149,13 +131,9 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
             }
         }
 
-        if (!restCalls.isEmpty()) {
-            val individual= if(config.enableTrackIndividual || config.enableTrackEvaluatedIndividual){
-                RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency), trackOperator = this,
-                        traces = if(config.enableTrackIndividual) mutableListOf() else null)
-            }else
-                RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency))
-
+        if (restCalls.isNotEmpty()) {
+            val individual =  RestIndividual(restCalls, SampleType.SMART_RESOURCE, sampleSpec = SamplerSpecification(sampleMethod.toString(), withDependency),
+                    trackOperator = if(config.trackingEnabled()) this else null, index = if (config.trackingEnabled()) time.evaluatedIndividuals else -1)
             individual.repairDBActions(sqlInsertBuilder)
             return individual
         }
@@ -190,30 +168,8 @@ abstract class ResourceSampler : Sampler<RestIndividual>() {
         }
     }
 
-
     private fun selectAIndResourceHasNonInd(randomness: Randomness) : String{
         return randomness.choose(rm.getResourceCluster().filter { r -> r.value.isAnyAction() && !r.value.isIndependent() }.keys)
-    }
-
-    private fun initAdHocInitialIndividuals() {
-        adHocInitialIndividuals.clear()
-
-        rm.createAdHocIndividuals(NoAuth(),adHocInitialIndividuals)
-        authentications.forEach { auth ->
-            rm.createAdHocIndividuals(auth, adHocInitialIndividuals)
-        }
-    }
-
-    private fun initAbstractResources(){
-        rm.initResourceNodes(actionCluster, sqlInsertBuilder)
-    }
-
-    override fun hasSpecialInit(): Boolean {
-        return adHocInitialIndividuals.isNotEmpty() && config.probOfSmartSampling > 0
-    }
-
-    override fun resetSpecialInit() {
-        initAdHocInitialIndividuals()
     }
 
     override fun feedback(evi : EvaluatedIndividual<RestIndividual>) {

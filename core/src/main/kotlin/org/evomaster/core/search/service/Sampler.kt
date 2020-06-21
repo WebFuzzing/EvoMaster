@@ -16,6 +16,9 @@ abstract class Sampler<T> : TrackOperator where T : Individual {
     @Inject
     protected lateinit var config: EMConfig
 
+    @Inject
+    protected lateinit var time : SearchTimeController
+
     /**
      * Set of available actions that can be used to define a test case
      *

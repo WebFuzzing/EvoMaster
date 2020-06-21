@@ -18,6 +18,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.system.exitProcess
 
 /**
  *
@@ -200,7 +201,7 @@ class ArchiveMutator {
      */
     fun <T : Individual> selectIndividual(individuals : List<EvaluatedIndividual<T>>) : EvaluatedIndividual<T>{
         if (randomness.nextBoolean(0.1)) return randomness.choose(individuals)
-        val impacts = individuals.filter { it.getImpactOfGenes().any { i->i.value.timesToManipulate > 0 } }
+        val impacts = individuals.filter { it.getImpactInfo().any { i->i.value.timesToManipulate > 0 } }
         if (impacts.isNotEmpty()) return randomness.choose(impacts)
         return randomness.choose(individuals)
     }
@@ -558,6 +559,9 @@ class ArchiveMutator {
     fun applyArchiveSelection() = enableArchiveSelection()
             && randomness.nextBoolean(config.probOfArchiveMutation)
 
+    /**
+     * @return whether the archive-based gene selection for the mutation is enabled
+     */
     fun enableArchiveSelection() = config.adaptiveGeneSelectionMethod != GeneMutationSelectionMethod.NONE && config.probOfArchiveMutation > 0.0
 
     fun enableArchiveGeneMutation() = config.probOfArchiveMutation > 0 && config.archiveGeneMutation != EMConfig.ArchiveGeneMutation.NONE
@@ -565,6 +569,8 @@ class ArchiveMutator {
     fun enableArchiveMutation() = enableArchiveGeneMutation() || enableArchiveSelection()
 
     fun createCharMutationUpdate() = IntMutationUpdate(Char.MIN_VALUE.toInt(), Char.MAX_VALUE.toInt())
+
+    fun doCollectImpact() : Boolean = config.probOfArchiveMutation > 0
 
     /**
      * export impact info collected during search that is normally used for experiment
@@ -576,7 +582,7 @@ class ArchiveMutator {
         val content = mutableListOf<String>()
         content.add(mutableListOf("test","rootGene").plus(Impact.toCSVHeader()).joinToString(","))
         solution.individuals.forEachIndexed { index, e->
-            e.getImpactOfGenes().forEach { (t, geneImpact) ->
+            e.getImpactInfo().forEach { (t, geneImpact) ->
                 content.add(mutableListOf(index.toString(), t).plus(geneImpact.toCSVCell()).joinToString(","))
                 geneImpact.flatViewInnerImpact().forEach{ (name, impact) ->
                     content.add(mutableListOf(index.toString(), "$t-$name").plus(impact.toCSVCell()).joinToString(","))

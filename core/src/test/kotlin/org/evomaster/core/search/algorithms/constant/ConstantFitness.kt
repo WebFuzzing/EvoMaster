@@ -25,6 +25,6 @@ class ConstantFitness : FitnessFunction<ConstantIndividual>() {
         val fv = FitnessValue(individual.size().toDouble())
         fv.updateTarget(0, h)
 
-        return EvaluatedIndividual(fv, individual.copy() as ConstantIndividual, listOf())
+        return EvaluatedIndividual(fv, individual.copy() as ConstantIndividual, listOf(), index = time.evaluatedIndividuals, config = config, trackOperator = individual.trackOperator)
     }
 }

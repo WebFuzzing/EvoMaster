@@ -20,10 +20,6 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
     @Inject
     private lateinit var dm : ResourceDepManageService
 
-    @Inject
-    private lateinit var archive: Archive<RestIndividual>
-
-
     override fun postActionAfterMutation(mutatedIndividual: RestIndividual) {
         super.postActionAfterMutation(mutatedIndividual)
         mutatedIndividual.getResourceCalls().forEach { rm.repairRestResourceCalls(it) }
@@ -49,19 +45,13 @@ class ResourceRestMutator : StandardMutator<RestIndividual>() {
         return individual.getResourceCalls().flatMap { it.seeGenes() }.filter(Gene::isMutable)
     }
 
-    override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes : MutatedGeneSpecification?) {
+    override fun update(previous: EvaluatedIndividual<RestIndividual>, mutated: EvaluatedIndividual<RestIndividual>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: Int) {
         /*
             update resource dependency after mutating structure of the resource-based individual
             NOTE THAT [this] can be only applied with MIO. In MIO, [mutatedGenes] must not be null.
          */
         if(mutatedGenes!!.mutatedGenes.isEmpty() && (previous.individual.getResourceCalls().size > 1 || mutated.individual.getResourceCalls().size > 1) && config.probOfEnablingResourceDependencyHeuristics > 0){
-            val isWorse = previous.fitness.subsumes(
-                    mutated.fitness,
-                    archive.notCoveredTargets(),
-                    config.secondaryObjectiveStrategy,
-                    config.bloatControlForSecondaryObjective)
-            val isBetter = archive.wouldReachNewTarget(mutated) || !isWorse
-            dm.detectDependencyAfterStructureMutation(previous, mutated, if(isBetter) 1 else if(isWorse) -1 else 0)
+            dm.detectDependencyAfterStructureMutation(previous, mutated, mutationEvaluated)
         }
 
         /*

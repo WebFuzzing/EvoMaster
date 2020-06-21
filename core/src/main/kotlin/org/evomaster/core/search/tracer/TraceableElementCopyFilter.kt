@@ -26,6 +26,12 @@ abstract class TraceableElementCopyFilter (val name : String) {
         }
 
         /**
+         * with tracking
+         */
+        val WITH_ONLY_EVALUATED_RESULT = object :  TraceableElementCopyFilter("WITH_ONLY_EVALUATED_RESULT"){
+        }
+
+        /**
          * with deep tracking, i.e., tracking nested TraceableElement
          */
         val DEEP_TRACK = object : TraceableElementCopyFilter("DEEP_TRACK"){
