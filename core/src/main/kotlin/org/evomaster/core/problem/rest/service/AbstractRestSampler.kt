@@ -49,7 +49,7 @@ abstract class AbstractRestSampler : Sampler<RestIndividual>() {
     private lateinit var swagger: OpenAPI
 
     @PostConstruct
-    private fun initialize() {
+    open fun initialize() {
 
         log.debug("Initializing {}", AbstractRestSampler::class.simpleName)
 
