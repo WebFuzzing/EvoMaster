@@ -7,6 +7,7 @@ import org.evomaster.core.database.DbActionTransformer
 import org.evomaster.core.logging.LoggingUtil
 import org.evomaster.core.problem.rest.RestAction
 import org.evomaster.core.problem.rest.RestCallAction
+import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.RestIndividual
 import org.evomaster.core.remote.service.RemoteController
 import org.evomaster.core.search.ActionResult
@@ -66,6 +67,19 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             if (!ok) {
                 break
             }
+        }
+
+        if(actionResults.any { it is RestCallResult && it.getTcpProblem() }){
+            /*
+                If there are socket issues, we avoid trying to compute any coverage.
+                The caller might restart the SUT and try again.
+                Hopefully, this should be just a glitch...
+                TODO if we see this happening often, we need to find a proper solution.
+                For example, we could re-run the test, and see if this one always fails,
+                while others in the archive do pass.
+                It could be handled specially in the archive.
+             */
+            return null
         }
 
         /*

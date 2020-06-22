@@ -11,10 +11,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import javax.ws.rs.core.MediaType;
 import java.sql.Connection;
 import java.util.List;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -80,7 +82,7 @@ public class SutControllerTest {
     private static EmbeddedSutController restController = new FakeRestController();
 
     @BeforeAll
-    public static void initClass(){
+    public static void initClass() {
         restController.setControllerPort(0);
         restController.startTheControllerServer();
 
@@ -91,21 +93,21 @@ public class SutControllerTest {
     }
 
     @AfterAll
-    public static void tearDown(){
+    public static void tearDown() {
         restController.stopSut();
     }
 
     @BeforeEach
-    public void initTest(){
-        if(restController.isSutRunning()){
+    public void initTest() {
+        if (restController.isSutRunning()) {
             restController.stopSut();
         }
     }
 
 
     @Test
-    public void testNotRunning(){
-        assertTrue(! restController.isSutRunning());
+    public void testNotRunning() {
+        assertTrue(!restController.isSutRunning());
 
         given().accept(Formats.JSON_V1)
                 .get("/infoSUT")
@@ -115,7 +117,7 @@ public class SutControllerTest {
     }
 
     @Test
-    public void testStartDirect(){
+    public void testStartDirect() {
 
         restController.startSut();
         assertTrue(restController.isSutRunning());
@@ -128,7 +130,7 @@ public class SutControllerTest {
     }
 
     @Test
-    public void testStartRest(){
+    public void testStartRest() {
 
         restController.startSut();
 
@@ -143,12 +145,24 @@ public class SutControllerTest {
 
 
     @Test
-    public void testGetSwaggerUrl(){
+    public void testGetSwaggerUrl() {
 
         given().accept(Formats.JSON_V1)
                 .get("/infoSUT")
                 .then()
                 .statusCode(200)
                 .body("data.restProblem.swaggerJsonUrl", is(SWAGGER_URL));
+    }
+
+    @Test
+    public void testWarning() {
+
+        String body = given().get("/")
+                .then()
+                .statusCode(400)
+                .contentType(MediaType.TEXT_HTML)
+                .extract().htmlPath().getString("");
+
+        assertTrue(body.contains("WARNING"), "ERROR, received text:\n\n" + body);
     }
 }
