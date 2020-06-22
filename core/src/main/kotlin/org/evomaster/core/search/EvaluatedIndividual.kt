@@ -8,6 +8,7 @@ import org.evomaster.core.search.tracer.TraceableElement
 import org.evomaster.core.search.tracer.TraceableElementCopyFilter
 import org.evomaster.core.search.tracer.TrackOperator
 import org.evomaster.core.Lazy
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 
 /**
  * EvaluatedIndividual allows to tracking its evolution.
@@ -175,7 +176,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return (impactsOfGenes?: throw IllegalStateException("impact info is not initialized"))[geneId]
     }
 
-    fun nextForIndividual(next: TraceableElement, evaluatedResult: Int): EvaluatedIndividual<T>? {
+    fun nextForIndividual(next: TraceableElement, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
 
         val nextIndividual = individual.next(next.individual, TraceableElementCopyFilter.WITH_TRACK, evaluatedResult)!!
@@ -196,7 +197,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
         return new
     }
 
-    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: Int): EvaluatedIndividual<T>? {
+    override fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation): EvaluatedIndividual<T>? {
 
         tracking?: throw IllegalStateException("cannot create next due to unavailable tracking info")
         (next as? EvaluatedIndividual<T>) ?: throw IllegalArgumentException("mismatched tracking element")
@@ -285,7 +286,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
      *  TODO refactor with archive-mutation
      */
     private fun compareWithLatest(next : EvaluatedIndividual<T>, previous : EvaluatedIndividual<T>, improvedTargets : Set<Int>, impactTargets: Set<Int>, mutatedGenes: MutatedGeneSpecification){
-        val better = (next.evaluatedResult == 1)
+        val better = (next.evaluatedResult == EvaluatedMutation.BETTER_THAN)
         /**
          * genes of individual might be added with additionalInfoList
          */

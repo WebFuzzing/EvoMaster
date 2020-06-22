@@ -12,7 +12,7 @@ class LinearFitness : FitnessFunction<LinearIndividual>() {
     lateinit var lpd: LinearProblemDefinition
 
 
-    override fun doCalculateCoverage(individual: LinearIndividual): EvaluatedIndividual<LinearIndividual> {
+    override fun doCalculateCoverage(individual: LinearIndividual, targets: Set<Int>): EvaluatedIndividual<LinearIndividual> {
 
         val fv = FitnessValue(individual.size().toDouble())
 

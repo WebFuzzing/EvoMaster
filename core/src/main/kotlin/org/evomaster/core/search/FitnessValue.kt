@@ -110,6 +110,7 @@ class FitnessValue(
 
     fun getHeuristic(target: Int): Double = targets[target]?.distance ?: 0.0
 
+    fun reachedTargets() : Set<Int> = getViewOfData().filter { it.value.distance > 0.0 }.keys
 
     fun computeFitnessScore(): Double {
 

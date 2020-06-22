@@ -14,7 +14,6 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.FitnessValue
 import org.evomaster.core.search.gene.StringGene
 import org.evomaster.core.search.gene.regex.RegexGene
-import org.evomaster.core.search.service.IdMapper
 import org.evomaster.core.taint.TaintAnalysis
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -31,7 +30,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
     @Inject
     private lateinit var sampler: RestSampler
 
-    override fun doCalculateCoverage(individual: RestIndividual): EvaluatedIndividual<RestIndividual>? {
+    override fun doCalculateCoverage(individual: RestIndividual, targets: Set<Int>): EvaluatedIndividual<RestIndividual>? {
 
         rc.resetSUT()
 
@@ -68,17 +67,7 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             }
         }
 
-        /*
-            We cannot request all non-covered targets, because:
-            1) performance hit
-            2) might not be possible to have a too long URL
-         */
-        //TODO prioritized list
-        val ids = randomness.choose(
-                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
-                100).toSet()
-
-        val dto = rc.getTestResults(ids)
+        val dto = rc.getTestResults(targets)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null

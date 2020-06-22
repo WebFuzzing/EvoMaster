@@ -25,6 +25,7 @@ import org.evomaster.core.problem.util.StringSimilarityComparator
 import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.gene.ObjectGene
 import org.evomaster.core.search.service.Randomness
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 import java.nio.file.Files
 import java.nio.file.Paths
 import kotlin.math.max
@@ -407,7 +408,7 @@ class ResourceDepManageService {
     /**
      * detect possible dependencies by comparing a mutated (i.e., swap) individual with its previous regarding fitness
      */
-    private fun detectAfterSwap(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: Int) {
+    private fun detectAfterSwap(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: EvaluatedMutation) {
         val seqPre = previous.individual.getResourceCalls()
         val seqCur = current.individual.getResourceCalls()
         /*
@@ -436,7 +437,7 @@ class ResourceDepManageService {
         val swapB = seqCur.getOrNull(swapsloc[1])
                 ?: throw IllegalArgumentException("detect wrong mutator!")
 
-        if (isBetter != 0) {
+        if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             val locOfF = swapsloc[0]
             val distance = swapF.actions.size - swapB.actions.size
 
@@ -528,7 +529,7 @@ class ResourceDepManageService {
     /**
      * detect possible dependencies by comparing a mutated (i.e., modify) individual with its previous regarding fitness
      */
-    private fun detectAfterModify(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: Int) {
+    private fun detectAfterModify(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: EvaluatedMutation) {
         val seqPre = previous.individual.getResourceCalls()
         val seqCur = current.individual.getResourceCalls()
 
@@ -536,7 +537,7 @@ class ResourceDepManageService {
             For instance, ABCDEFG, if we replace B with another resource instance, then check CDEFG.
             if C is worse/better, C rely on B, else C may not rely on B, i.e., the changes of B cannot affect C.
          */
-        if (isBetter != 0) {
+        if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             val locOfModified = (0 until seqCur.size).find { seqPre[it].template!!.template != seqCur[it].template!!.template }
                     ?: return
             //throw IllegalArgumentException("mutator does not change anything.")
@@ -567,7 +568,7 @@ class ResourceDepManageService {
     /**
      * detect possible dependencies by comparing a mutated (i.e., replace) individual with its previous regarding fitness
      */
-    private fun detectAfterReplace(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: Int) {
+    private fun detectAfterReplace(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: EvaluatedMutation) {
         val seqPre = previous.individual.getResourceCalls()
         val seqCur = current.individual.getResourceCalls()
 
@@ -582,7 +583,7 @@ class ResourceDepManageService {
         val replaced = seqCur[mutatedIndex]
         val replace = seqPre[mutatedIndex]
 
-        if (isBetter != 0) {
+        if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             val locOfReplaced = seqCur.indexOf(replaced)
             val distance = locOfReplaced - seqPre.indexOf(replace)
 
@@ -644,7 +645,7 @@ class ResourceDepManageService {
     /**
      * detect possible dependencies by comparing a mutated (i.e., add) individual with its previous regarding fitness
      */
-    private fun detectAfterAdd(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: Int) {
+    private fun detectAfterAdd(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: EvaluatedMutation) {
         val seqPre = previous.individual.getResourceCalls()
         val seqCur = current.individual.getResourceCalls()
 
@@ -658,7 +659,7 @@ class ResourceDepManageService {
 
         val locOfAdded = seqCur.indexOf(added)
 
-        if (isBetter != 0) {
+        if (isBetter != EvaluatedMutation.EQUAL_WITH) {
             var actionIndex = seqCur.mapIndexed { index, restResourceCalls ->
                 if (index <= locOfAdded) restResourceCalls.actions.size
                 else 0
@@ -702,7 +703,7 @@ class ResourceDepManageService {
     /**
      * detect possible dependencies by comparing a mutated (i.e., delete) individual with its previous regarding fitness
      */
-    private fun detectAfterDelete(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: Int) {
+    private fun detectAfterDelete(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: EvaluatedMutation) {
         val seqPre = previous.individual.getResourceCalls()
         val seqCur = current.individual.getResourceCalls()
 
@@ -721,7 +722,7 @@ class ResourceDepManageService {
 
         val locOfDelete = seqPre.indexOf(delete)
 
-        if (isBetter != 0) {
+        if (isBetter != EvaluatedMutation.EQUAL_WITH) {
 
             var actionIndex = seqPre.mapIndexed { index, restResourceCalls ->
                 if (index < locOfDelete) restResourceCalls.actions.size
@@ -771,7 +772,7 @@ class ResourceDepManageService {
      *
      * [isBetter] 1 means current is better than previous, 0 means that they are equal, and -1 means current is worse than previous
      */
-    fun detectDependencyAfterStructureMutation(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: Int) {
+    fun detectDependencyAfterStructureMutation(previous: EvaluatedIndividual<RestIndividual>, current: EvaluatedIndividual<RestIndividual>, isBetter: EvaluatedMutation) {
         val seqPre = previous.individual.getResourceCalls()
         val seqCur = current.individual.getResourceCalls()
 

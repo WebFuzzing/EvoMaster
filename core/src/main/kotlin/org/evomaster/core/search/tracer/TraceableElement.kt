@@ -1,6 +1,6 @@
 package org.evomaster.core.search.tracer
 
-import org.evomaster.core.EMConfig
+import org.evomaster.core.search.service.mutator.EvaluatedMutation
 
 /**
  * TraceableElement represents an element whose history can be tracked.
@@ -24,7 +24,7 @@ abstract class TraceableElement {
         this.index = index
     }
 
-    var evaluatedResult : Int? = null
+    var evaluatedResult: EvaluatedMutation? = null
         private set(value) { field = value }
 
     var tracking: TrackingHistory<out TraceableElement>? = null
@@ -39,19 +39,19 @@ abstract class TraceableElement {
     }
 
 
-    fun <T: TraceableElement> wrapWithTracking(evaluatedResult: Int?, maxLength: Int, history: MutableList<T>){
+    fun <T: TraceableElement> wrapWithTracking(evaluatedResult: EvaluatedMutation?, maxLength: Int, history: MutableList<T>){
         wrapped()
         this.evaluatedResult = evaluatedResult
         this.tracking = TrackingHistory(maxLength, history)
     }
 
-    fun <T: TraceableElement> wrapWithTracking(evaluatedResult: Int?, trackingHistory: TrackingHistory<T>?){
+    fun <T: TraceableElement> wrapWithTracking(evaluatedResult: EvaluatedMutation?, trackingHistory: TrackingHistory<T>?){
         wrapped()
         this.evaluatedResult = evaluatedResult
         this.tracking = trackingHistory
     }
 
-    fun wrapWithEvaluatedResults(evaluatedResult: Int?){
+    fun wrapWithEvaluatedResults(evaluatedResult: EvaluatedMutation?){
         this.evaluatedResult == evaluatedResult
     }
 
@@ -68,7 +68,7 @@ abstract class TraceableElement {
      *
      * @return an newly created TraceableElement regarding [next]
      */
-    abstract fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: Int) : TraceableElement?
+    abstract fun next(next: TraceableElement, copyFilter: TraceableElementCopyFilter, evaluatedResult: EvaluatedMutation) : TraceableElement?
 
     /**
      * @param options indicates the option to copy the element in the tracking
@@ -84,7 +84,7 @@ abstract class TraceableElement {
     }
 
     fun <T : TraceableElement> getLast(n : Int, resultRange: IntRange? = null) : List<T>{
-        return (tracking as? TrackingHistory<T>)?.history?.filter { resultRange == null ||  (it.evaluatedResult?.run { this in resultRange } ?: true)}?.
+        return (tracking as? TrackingHistory<T>)?.history?.filter { resultRange == null ||  (it.evaluatedResult?.run { this.value in resultRange } ?: true)}?.
                 run {
             if (size < n)
                 this

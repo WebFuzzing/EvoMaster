@@ -10,7 +10,7 @@ import org.evomaster.core.search.service.FitnessFunction
 class ConstantFitness : FitnessFunction<ConstantIndividual>() {
 
 
-    override fun doCalculateCoverage(individual: ConstantIndividual): EvaluatedIndividual<ConstantIndividual>? {
+    override fun doCalculateCoverage(individual: ConstantIndividual, targets: Set<Int>): EvaluatedIndividual<ConstantIndividual>? {
 
         val target = 123
         val res = individual.gene.value
@@ -27,4 +27,5 @@ class ConstantFitness : FitnessFunction<ConstantIndividual>() {
 
         return EvaluatedIndividual(fv, individual.copy() as ConstantIndividual, listOf(), index = time.evaluatedIndividuals, config = config, trackOperator = individual.trackOperator)
     }
+
 }

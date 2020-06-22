@@ -103,7 +103,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
                 new TypeLiteral<FitnessFunction<RestIndividual>>() {
                 }));
-        EvaluatedIndividual ei = ff.calculateCoverage(ind);
+        EvaluatedIndividual ei = ff.calculateCoverage(ind, Collections.emptySet());
         assertNotNull(ei);
 
         FitnessValue noDataFV = ei.getFitness();
@@ -146,7 +146,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
 
         RestIndividual withSQL = new RestIndividual(ind.seeActions(), ind.getSampleType(), insertions, null, TraceableElement.DEFAULT_INDEX);
 
-        ei = ff.calculateCoverage(withSQL);
+        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
         assertNotNull(ei);
 
         //should have better heuristic
@@ -177,7 +177,7 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
                     }
                 });
 
-        ei = ff.calculateCoverage(withSQL);
+        ei = ff.calculateCoverage(withSQL, Collections.emptySet());
         assertNotNull(ei);
 
         //As SQL data is returned, we get no heuristic, and so worst value

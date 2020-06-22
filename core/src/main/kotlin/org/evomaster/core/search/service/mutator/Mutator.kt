@@ -71,7 +71,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
     open fun postActionAfterMutation(individual: T){}
 
-    open fun update(previous: EvaluatedIndividual<T>, mutated : EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: Int){}
+    open fun update(previous: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>, mutatedGenes: MutatedGeneSpecification?, mutationEvaluated: EvaluatedMutation){}
 
     /**
      * @param upToNTimes how many mutations will be applied. can be less if running out of time
@@ -82,10 +82,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             : EvaluatedIndividual<T> {
 
         var current = individual
-        val targets = archive.notCoveredTargets()
 
+        // tracking might be null if the current is never mutated
         if (config.trackingEnabled()){
-            // tracking might be null if the current is never mutated
             if (config.enableTrackEvaluatedIndividual && current.tracking == null){
                 current.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())
                 current.pushLatest(current.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
@@ -95,6 +94,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 current.individual.pushLatest(current.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
             }
         }
+
+        val targets = archive.notCoveredTargets().toMutableSet()
 
         for (i in 0 until upToNTimes) {
 
@@ -117,9 +118,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             Lazy.assert{DbActionUtils.verifyActions(mutatedInd.seeInitializingActions().filterIsInstance<DbAction>())}
 
-            val mutated = ff.calculateCoverage(mutatedInd)
+            //Shall we prioritize the targets based on mutation sampling strategy eg, feedbackDirectedSampling?
+            val mutated = ff.calculateCoverage(mutatedInd, setOf())
                     ?: continue
 
+            //evaluated mutated by comparing with current using employed targets
             val result = evaluateMutation(mutated, current, targets, archive)
 
             //enable further actions for extracting
@@ -140,19 +143,15 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 mutatedWithTraces.updateImpactOfGenes(mutatedGenes, targets, config.secondaryObjectiveStrategy, config.bloatControlForSecondaryObjective)
             }
 
-            var added = if (result >=0) archive.addIfNeeded(mutatedWithTraces) else false
-
-            if (added){
-                current = mutatedWithTraces
-            }else{
-                current = currentWithTraces
-            }
-
+            current = saveMutation(result, archive, currentWithTraces, mutatedWithTraces)
 
             // gene mutation evaluation
             if (archiveMutator.enableArchiveGeneMutation()){
                 //TODO feedback archive-based gene mutation
             }
+
+            targets.addAll(archive.notCoveredTargets())
+
         }
         return current
     }
@@ -162,25 +161,38 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
         structureMutator.addInitializingActions(individual,null)
 
-        return ff.calculateCoverage(mutate(individual))
+        return ff.calculateCoverage(mutate(individual), setOf())
                 ?.also { archive.addIfNeeded(it) }
     }
 
     /**
      * @return a result by comparing mutated individual [mutated] with before [current] regarding [targets].
-     *      1 means better
-     *      0 means equal
-     *      -1 means worse
      */
-    fun evaluateMutation(mutated : EvaluatedIndividual<T>, current : EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>) : Int{
+    fun evaluateMutation(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>, archive: Archive<T>): EvaluatedMutation {
         // global check
-        if (archive.wouldReachNewTarget(mutated)) return 1
+        if (archive.wouldReachNewTarget(mutated)) return EvaluatedMutation.BETTER_THAN
 
-        // current is better than mutated
-        val beforeBetter = current.fitness.subsumes(other = mutated.fitness, targetSubset = targets, config = config)
-        if (beforeBetter) return -1
-        if (mutated.fitness.subsumes(current.fitness, targets, config)) return 1
-        return 0
+        val notCovered = targets.filterNot { archive.isCovered(it) }.toSet()
+        val resultN = compare(mutated, current, notCovered)
+
+        if (resultN != EvaluatedMutation.EQUAL_WITH) return resultN
+
+        val covered = targets.filterNot { notCovered.contains(it) }.toSet()
+        if (covered.isEmpty()) return resultN
+
+        return compare(mutated, current, covered)
     }
 
+    private fun compare(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>): EvaluatedMutation {
+        // current is better than mutated
+        val beforeBetter = current.fitness.subsumes(other = mutated.fitness, targetSubset = targets, config = config)
+        if (beforeBetter) return EvaluatedMutation.WORSE_THAN
+        if (mutated.fitness.subsumes(current.fitness, targets, config)) return EvaluatedMutation.BETTER_THAN
+        return EvaluatedMutation.EQUAL_WITH
+    }
+
+    fun saveMutation(evaluatedMutation: EvaluatedMutation, archive: Archive<T>, current: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>) : EvaluatedIndividual<T>{
+        val added =  archive.addIfNeeded(mutated)
+        return if (evaluatedMutation.isEffective() && added) mutated else current
+    }
 }
