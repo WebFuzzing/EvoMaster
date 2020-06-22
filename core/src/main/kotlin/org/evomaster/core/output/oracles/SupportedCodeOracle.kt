@@ -81,7 +81,8 @@ class SupportedCodeOracle : ImplementedOracle() {
     fun getSupportedCode(call: RestCallAction): MutableSet<String>{
         val verb = call.verb
         //val path = objectGenerator.getSwagger().paths.get(call.path.toString())
-        val path = objectGenerator.getSwagger().paths.get(call.resolvedPath().removePrefix("/api"))
+        val path = objectGenerator.getSwagger().paths.get(call.path.toString()) ?:
+                                objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api"))
         val result = when (verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
