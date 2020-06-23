@@ -1094,6 +1094,9 @@ class EMConfig {
          */
     }
 
+    @Cfg("Only for debugging. Concentrate search on only one single REST endpoint")
+    var endpointFocus : String? = null
+
 
     fun timeLimitInSeconds(): Int {
         if (maxTimeInSeconds > 0) {
