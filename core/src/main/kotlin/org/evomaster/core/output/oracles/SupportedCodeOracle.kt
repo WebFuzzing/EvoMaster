@@ -1,9 +1,9 @@
 package org.evomaster.core.output.oracles
 
+import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
-import org.evomaster.core.output.TestCase
 import org.evomaster.core.problem.rest.HttpVerb
 import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
@@ -80,9 +80,7 @@ class SupportedCodeOracle : ImplementedOracle() {
 
     fun getSupportedCode(call: RestCallAction): MutableSet<String>{
         val verb = call.verb
-        //val path = objectGenerator.getSwagger().paths.get(call.path.toString())
-        val path = objectGenerator.getSwagger().paths.get(call.path.toString()) ?:
-                                objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api"))
+        val path = retrievePath(objectGenerator, call)
         val result = when (verb){
             HttpVerb.GET -> path?.get
             HttpVerb.POST -> path?.post
@@ -128,5 +126,4 @@ class SupportedCodeOracle : ImplementedOracle() {
     override fun getName(): String {
         return "CodeOracle"
     }
-
 }

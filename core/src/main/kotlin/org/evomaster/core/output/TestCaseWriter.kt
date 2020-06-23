@@ -508,15 +508,7 @@ class TestCaseWriter {
                                     (value is String) -> longArray = true
                                     else -> {
                                         val printableFieldValue = handleFieldValues(value)
-                                        if (printableFieldValue != "null"
-                                                && printableFieldValue != NOT_COVERED_YET
-                                                && !printableFieldValue.contains("logged")
-                                                /*removing "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
-                                                Such information can cause failures upon re-run, as object references and timestamps will differ.
-                                                 */
-
-                                                && !printableFieldValue.contains("""\w+:\d{4,5}""".toRegex())
-                                        ) {
+                                        if (printSuitable(printableFieldValue)) {
                                             lines.add(".body(\"\", $printableFieldValue)")
                                         }
                                     }
@@ -524,14 +516,7 @@ class TestCaseWriter {
                             }
                             if(longArray) {
                                 val printableContent = handleFieldValues(resContents)
-                                if (printableContent != "null"
-                                        && printableContent != NOT_COVERED_YET
-                                        && !printableContent.contains("logged")
-                                        /*removing "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
-                                        Such information can cause failures upon re-run, as object references and timestamps will differ.
-                                        */
-                                        && !printableContent.contains("""\w+:\d{4,5}""".toRegex())
-                                ) {
+                                if (printSuitable(printableContent)) {
                                     lines.add(".body(\"\", $printableContent)")
                                 }
                             }
@@ -590,14 +575,7 @@ class TestCaseWriter {
                     val actualValue = flatContent[it]
                     if (actualValue != null) {
                         val printableFieldValue = handleFieldValues(actualValue)
-                        if (printableFieldValue != "null"
-                                && printableFieldValue != NOT_COVERED_YET
-                                && !printableFieldValue.contains("logged")
-                                /*removing "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
-                                Such information can cause failures upon re-run, as object references and timestamps will differ.
-                                */
-                                && !printableFieldValue.contains("""\w+:\d{4,5}""".toRegex())
-                        ) {
+                        if (printSuitable(printableFieldValue)) {
                             /*
                                 There are some fields like "id" which are often non-deterministic,
                                 which unfortunately would lead to flaky tests
@@ -791,5 +769,19 @@ class TestCaseWriter {
             lines.add("* $c")
         }
         lines.add("*/")
+    }
+
+    /**
+     * Some content may be lead to problems in the resultant test case.
+     * Null values, or content that is not yet handled are can lead to un-compilable generated tests.
+     * Removing strings that contain "logged" is a stopgap: Some fields mark that particular issues have been logged and will often provide object references and timestamps.
+     * Such information can cause failures upon re-run, as object references and timestamps will differ.
+     */
+
+    private fun printSuitable(printableContent: String): Boolean{
+        return (printableContent != "null"
+                && printableContent != NOT_COVERED_YET
+                && !printableContent.contains("logged")
+                && !printableContent.contains("""\w+:\d{4,5}""".toRegex()))
     }
 }

@@ -1,5 +1,6 @@
 package org.evomaster.core.output.oracles
 
+import io.swagger.v3.oas.models.PathItem
 import org.evomaster.core.output.Lines
 import org.evomaster.core.output.OutputFormat
 import org.evomaster.core.output.ObjectGenerator
@@ -66,5 +67,17 @@ abstract class ImplementedOracle {
      */
     open fun adjustName(): String?{
         return null
+    }
+
+    /**
+     * Some OpenAPI paths are called inconsistently (e.g. with or without "/api" appended as a prefix).
+     *
+     * This is a workaround (ScoutAPI only sees paths without the prefix, others with the prefix).
+     * Longer term, this could also be a place to handle any additional peculiarities with SUT specific
+     * OpenAPI standards.
+     */
+    fun retrievePath(objectGenerator: ObjectGenerator, call: RestCallAction): PathItem? {
+        return objectGenerator.getSwagger().paths.get(call.path.toString()) ?:
+        objectGenerator.getSwagger().paths.get(call.path.toString().removePrefix("/api"))
     }
 }
