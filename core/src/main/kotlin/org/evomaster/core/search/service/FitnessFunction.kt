@@ -40,7 +40,7 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
-        val usedTargets = targetsToEvaluate(targets)
+        val usedTargets = targetsToEvaluate(targets, individual)
 
         var ei = time.measureTimeMillis(
                 {time.reportExecutedIndividualTime(it, a)},
@@ -91,7 +91,7 @@ abstract class FitnessFunction<T>  where T : Individual {
     /**
      * decide what targets to evaluate during fitness evaluation
      */
-    open fun targetsToEvaluate(targets : Set<Int>) : Set<Int>{
+    open fun targetsToEvaluate(targets: Set<Int>, individual: T) : Set<Int>{
         return targets
     }
 }

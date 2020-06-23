@@ -69,6 +69,13 @@ class Archive<T> where T : Individual {
 
 
     /**
+     * Key -> id of the target
+     *
+     * Value -> latest evaluated individual there was an improvement for this target.
+     */
+    //private val latestImprovement = mutableMapOf<Int, Int>()
+
+    /**
      * Id of last target used for sampling
      */
     private var lastChosen: Int? = null
@@ -206,6 +213,8 @@ class Archive<T> where T : Individual {
         val counter = samplingCounter.getOrDefault(target, 0)
         lastImprovement.put(target, counter)
         samplingCounter.put(target, 0)
+
+        //latestImprovement[target] = time.evaluatedIndividuals
     }
 
     /**
@@ -235,6 +244,8 @@ class Archive<T> where T : Individual {
     fun numberOfReachedButNotCoveredTargets(): Int {
         return populations.keys.stream().filter { ! isCovered(it) }.count().toInt()
     }
+
+    fun numberOfReachedTargets() : Int = populations.size
 
     fun averageTestSizeForReachedButNotCovered() : Double {
         return populations.entries
@@ -468,4 +479,11 @@ class Archive<T> where T : Individual {
                     Pair(idMapper.getDescriptiveId(t), solution.individuals.mapIndexed { index, f-> if (f.fitness.doesCover(t)) index else -1 }.filter { it != -1 })
                 }.toList()
     }
+
+//    fun chooseLatestImprovedTargets(size : Int) : Set<Int>{
+//        return latestImprovement.asSequence().sortedByDescending { it.value }.toList().subList(0, min(size, latestImprovement.size)).map { it.key }.toSet()
+//    }
+//
+//    fun chooseImproveTargetsAfter(index : Int) : Set<Int> = latestImprovement.filterValues { it >= index }.keys
+
 }

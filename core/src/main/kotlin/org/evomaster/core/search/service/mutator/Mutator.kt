@@ -172,15 +172,16 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         // global check
         if (archive.wouldReachNewTarget(mutated)) return EvaluatedMutation.BETTER_THAN
 
-        val notCovered = targets.filterNot { archive.isCovered(it) }.toSet()
-        val resultN = compare(mutated, current, notCovered)
+        // compare mutated with current with the targets they both reached
+        val intersection = targets.filter { mutated.fitness.getHeuristic(it) > 0.0 && current.fitness.getHeuristic(it) > 0.0 }.toSet()
+        val resultL = compare(mutated, current, intersection)
+        if (targets.size == intersection.size || (intersection.isNotEmpty() && resultL != EvaluatedMutation.EQUAL_WITH)) return resultL
 
-        if (resultN != EvaluatedMutation.EQUAL_WITH) return resultN
+        // prefer the individual that reaches more targets?
+        val resultR = compareReachedTargets(mutated, current)
+        if(resultR != EvaluatedMutation.EQUAL_WITH) resultR
 
-        val covered = targets.filterNot { notCovered.contains(it) }.toSet()
-        if (covered.isEmpty()) return resultN
-
-        return compare(mutated, current, covered)
+        return compare(mutated, current, targets.filter { intersection.contains(it) }.toSet())
     }
 
     private fun compare(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>): EvaluatedMutation {
@@ -191,8 +192,17 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         return EvaluatedMutation.EQUAL_WITH
     }
 
+    private fun compareReachedTargets(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>): EvaluatedMutation {
+        if (current.fitness.reachMoreTargets(mutated.fitness)) return EvaluatedMutation.WORSE_THAN
+        if (mutated.fitness.reachMoreTargets(current.fitness)) return EvaluatedMutation.BETTER_THAN
+        return EvaluatedMutation.EQUAL_WITH
+    }
+
+
     fun saveMutation(evaluatedMutation: EvaluatedMutation, archive: Archive<T>, current: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>) : EvaluatedIndividual<T>{
-        val added =  archive.addIfNeeded(mutated)
-        return if (evaluatedMutation.isEffective() && added) mutated else current
+        archive.addIfNeeded(mutated)
+
+        // if mutated is not worse than current, we emply the mutated for next mutation
+        return if (evaluatedMutation.isEffective()) mutated else current
     }
 }

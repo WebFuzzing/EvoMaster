@@ -10,26 +10,29 @@ import org.evomaster.core.search.EvaluatedIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
 import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
 import org.evomaster.core.search.algorithms.onemax.OneMaxModule
+import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
 import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.assertEquals
-import kotlin.math.max
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import kotlin.math.min
 
 /**
- * created by manzh on 2020-06-18
+ * during mutation, an individual may be mutated multiple times.
+ * the tests are to test whether better individual is identified for next mutation
  */
 class MutatorWithOneMaxTest {
 
     private lateinit var archive: Archive<OneMaxIndividual>
     private lateinit var ff : OneMaxFitness
     private lateinit var config: EMConfig
-    private lateinit var randomness: Randomness
 
     private lateinit var mutator : StandardMutator<OneMaxIndividual>
-
+    private lateinit var sampler: OneMaxSampler
+    private lateinit var time : SearchTimeController
     @BeforeEach
     fun init(){
 
@@ -46,26 +49,80 @@ class MutatorWithOneMaxTest {
         ff =  injector.getInstance(OneMaxFitness::class.java)
         config = injector.getInstance(EMConfig::class.java)
 
-        randomness = injector.getInstance(Randomness::class.java)
-
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+        sampler = injector.getInstance(OneMaxSampler::class.java)
+        time = injector.getInstance(SearchTimeController::class.java)
     }
 
-    // whether identify better individual for next mutation
     @Test
-    fun evaluateMutationTest() {
-        // 6 targets
-        val n = 100
-        val first = OneMaxIndividual(n)
-        first.setValue(0, 0.25)
-        var current = ff.calculateCoverage(first)!!
+    fun testMutatorWith6Targets(){
+        config.maxActionEvaluations = 1000
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
+        mutatorTest(6, 5000, 1)
+    }
+
+    @Test
+    fun testMutatorWith100Targets(){
+        config.maxActionEvaluations = 1000
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
+        mutatorTest(100, 5000, 1)
+    }
+
+    @Test
+    fun testMutatorWith200Targets(){
+        config.maxActionEvaluations = 1000
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
+        mutatorTest(200, 5000, 1)
+    }
+
+    @Test
+    fun testMutatorWith500Targets(){
+        config.maxActionEvaluations = 1000
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
+        mutatorTest(500, 5000, 1)
+    }
+
+    @Test
+    fun testMutatorWith1000Targets(){
+        config.maxActionEvaluations = 1000
+        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
+
+        mutatorTest(1000, 5000, 1)
+    }
+
+    private fun mutatorTest(n: Int, maxEvaluation: Int, sample: Int) {
+        sampler.n = n
+
+        var current = ff.calculateCoverage(sampler.sample())!!
         archive.addIfNeeded(current)
 
+        var sampleCounter = 1
+        while (sampleCounter < sample){
+            sampleCounter += 1
+            current = ff.calculateCoverage(sampler.sample())!!
+            archive.addIfNeeded(current)
+        }
+
+        var fpCounter = 0
+        var counter = 0
+
         val targets = archive.notCoveredTargets().toMutableSet()
-        while (!isBest(current)){
-            val mutated = improve(current, 0.25)?:break
+
+        while (!isBest(current) && counter < maxEvaluation){
+            counter += 1
+
+            val mutatedGeneSpecification = MutatedGeneSpecification()
+            val mutated = improve(current, 0.25, setOf(), mutatedGeneSpecification)?:break
+            assertEquals(1, mutatedGeneSpecification.mutatedPosition.size)
+
             val result = mutator.evaluateMutation(mutated, current, targets, archive)
-            assertEquals(EvaluatedMutation.BETTER_THAN, result)
+            if (n <= 100)
+                assertEquals(EvaluatedMutation.BETTER_THAN, result)
+            else
+                assertNotEquals(EvaluatedMutation.WORSE_THAN,result)
 
             current = mutator.saveMutation(
                     current = current,
@@ -73,20 +130,28 @@ class MutatorWithOneMaxTest {
                     archive = archive,
                     evaluatedMutation = result
             )
-            assertEquals(mutated, current,
-                    "targets: ${targets.joinToString(",")}, mutated: ${ (0 until n).map { mutated.individual.getValue(it) }.joinToString(",") }")
+
+            val tp = (mutated == current)
+            if (n <= 100)
+                assert(tp)
+            else if (!tp)
+                fpCounter += 1
 
             targets.addAll(archive.notCoveredTargets())
         }
+
+        if (n > 100)
+            assert((fpCounter * 1.0)/counter < 0.1)
     }
 
     private fun isBest(evaluatedIndividual: EvaluatedIndividual<OneMaxIndividual>) = (0 until evaluatedIndividual.individual.n).all { evaluatedIndividual.individual.getValue(it) == 1.0}
 
-    private fun improve(mutated: EvaluatedIndividual<OneMaxIndividual>, degree : Double) : EvaluatedIndividual<OneMaxIndividual>?{
+    private fun improve(mutated: EvaluatedIndividual<OneMaxIndividual>, degree : Double, targets : Set<Int>, mutatedGeneSpecification: MutatedGeneSpecification) : EvaluatedIndividual<OneMaxIndividual>?{
         val ind = mutated.individual.copy() as OneMaxIndividual
         val index = (0 until ind.n).firstOrNull{ind.getValue(it)  < 1.0}
         index?:return null
         ind.setValue(index, min(1.0, ind.getValue(index) + degree))
-        return ff.calculateCoverage(ind)
+        mutatedGeneSpecification.mutatedPosition.add(index)
+        return ff.calculateCoverage(ind, targets)
     }
 }

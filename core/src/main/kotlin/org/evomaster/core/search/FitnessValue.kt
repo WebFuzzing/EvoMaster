@@ -244,7 +244,7 @@ class FitnessValue(
         return extra == 0 && this.size == other.size
     }
 
-    fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
+    private fun betterThan(target: Int, heuristics: Double, size: Double, extra: Int, bloatControlForSecondaryObjective: Boolean, minimumSize: Int) : Boolean{
         val v = getHeuristic(target)
         if (v < heuristics) return false
 
@@ -260,6 +260,8 @@ class FitnessValue(
                     (v == heuristics && extra == 0 && this.size <  size)
         }
     }
+
+    fun reachMoreTargets(other: FitnessValue) = targets.size > other.getViewOfData().size
 
 
     /**

@@ -1,5 +1,6 @@
 package org.evomaster.e2etests.utils;
 
+import com.google.inject.Injector;
 import kotlin.Unit;
 import org.apache.commons.io.FileUtils;
 import org.evomaster.client.java.controller.EmbeddedSutController;
@@ -76,6 +77,10 @@ public abstract class RestTestBase {
 
     protected Solution<RestIndividual> initAndRun(List<String> args){
         return (Solution<RestIndividual>) Main.initAndRun(args.toArray(new String[0]));
+    }
+
+    protected Injector init(List<String> args) {
+        return Main.init(args.toArray(new String[0]));
     }
 
     protected String outputFolderPath(String outputFolderName){

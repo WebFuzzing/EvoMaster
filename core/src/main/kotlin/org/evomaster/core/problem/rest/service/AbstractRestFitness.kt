@@ -717,7 +717,7 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
         return map
     }
 
-    override fun targetsToEvaluate(targets: Set<Int>): Set<Int> {
+    override fun targetsToEvaluate(targets: Set<Int>, individual: T): Set<Int> {
         /*
             We cannot request all non-covered targets, because:
             1) performance hit
@@ -728,9 +728,11 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 //                archive.notCoveredTargets().filter { !IdMapper.isLocal(it) },
 //                100).toSet()
         val ts = targets.filter { !IdMapper.isLocal(it) }.toMutableSet()
-        val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) }
-        return if (ts.size < 100)
-            ts.plus(randomness.choose(nc, 100 - ts.size))
-        else randomness.choose(ts,100)
+        val nc = archive.notCoveredTargets().filter { !IdMapper.isLocal(it) && !ts.contains(it)}
+        return when {
+            ts.size > 100 -> randomness.choose(ts, 100)
+            nc.isEmpty() -> ts
+            else -> ts.plus(randomness.choose(nc, 100 - ts.size))
+        }
     }
 }
