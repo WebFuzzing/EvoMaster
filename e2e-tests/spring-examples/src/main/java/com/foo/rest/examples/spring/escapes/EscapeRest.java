@@ -3,6 +3,7 @@ package com.foo.rest.examples.spring.escapes;
 import org.springframework.web.bind.annotation.*;
 
 import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 @RestController
@@ -15,17 +16,14 @@ public class EscapeRest {
             produces = MediaType.APPLICATION_JSON
     )
     public EscapeResponseDto containsDollar(
-            @PathVariable("s") String s
+            @PathVariable("s") Boolean s
     ){
         EscapeResponseDto dto = new EscapeResponseDto();
-        if(s == null || s.isEmpty()){
-            dto.response = "Nope";
-            dto.valid = false;
-        }
-        else if(s.contains("$") || s.contains("%24")){
+        if(s){
             dto.response = "This contains $";
             dto.valid = true;
-        } else {
+        }
+        else{
             dto.response = "Nope";
             dto.valid = false;
         }
@@ -38,14 +36,10 @@ public class EscapeRest {
             produces = MediaType.APPLICATION_JSON
     )
     public EscapeResponseDto containsQuote(
-            @PathVariable("s") String s
+            @PathVariable("s") Boolean s
     ){
         EscapeResponseDto dto = new EscapeResponseDto();
-        if(s == null || s.isEmpty()){
-            dto.response = "Nope";
-            dto.valid = false;
-        }
-        else if(s.contains("\"") || s.contains("%22")){
+        if(s){
             dto.response = "This contains \"";
             dto.valid = true;
         } else {
@@ -91,38 +85,17 @@ public class EscapeRest {
         return dto;
     }
 
-
-
-    /*
-
-    @PostMapping(
-            value = "/api/jsonBody",
-            consumes = {"application/merge-patch+json", "application/json"})
-    public int jsonBody( @RequestBody EscapeResponseDto dto){
-        if (dto.valid) {
-            return 2;
-        }
-        else
-        {
-            return 0;
-        }
-    }
-
     @RequestMapping(
             value = "/containsSlash/{s}",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
     public EscapeResponseDto containsSlash(
-            @PathVariable("s") String s
+            @PathVariable("s") Boolean s
     ){
         EscapeResponseDto dto = new EscapeResponseDto();
-        if(s == null || s.isEmpty()){
-            dto.response = "Nope";
-            dto.valid = false;
-        }
-        else if(s.contains("%5C")){
-            dto.response = "This contains \\ aka %5C";
+        if(s){
+            dto.response = "This contains \\";
             dto.valid = true;
         } else {
             dto.response = "Nope";
@@ -132,27 +105,18 @@ public class EscapeRest {
     }
 
     @RequestMapping(
-            value = "/containsSingleQuote/{s}",
+            value = "/escapesJson/{s}",
             method = RequestMethod.GET,
             produces = MediaType.APPLICATION_JSON
     )
-    public EscapeResponseDto containsSingleQuote(
-            @PathVariable("s") String s
+    public ArrayList<String> escapesJson(
+            @PathVariable("s") Boolean s
     ){
-        EscapeResponseDto dto = new EscapeResponseDto();
-        if(s == null || s.isEmpty()){
-            dto.response = "Nope";
-            dto.valid = false;
-        }
-        else if(s.contains("%27")){
-            dto.response = "This contains \' aka %27";
-            dto.valid = true;
-        } else {
-            dto.response = "Nope";
-            dto.valid = false;
-        }
+        ArrayList dto = new ArrayList<String>();
+        dto.add("$-test");
+        dto.add("\\-test");
+        dto.add("\"-test");
         return dto;
     }
-    */
 
 }
