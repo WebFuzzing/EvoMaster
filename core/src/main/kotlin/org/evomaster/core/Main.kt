@@ -145,6 +145,8 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
+            val writer = setupPartialOracles(injector, config, controllerInfo)
+
             val solution = run(injector)
             val faults = solution.overall.potentialFoundFaults(idMapper)
 
