@@ -145,7 +145,7 @@ class Main {
             val config = injector.getInstance(EMConfig::class.java)
             val idMapper = injector.getInstance(IdMapper::class.java)
 
-            val writer = setupPartialOracles(injector, config, controllerInfo)
+            val writer = setupPartialOracles(injector, config)
 
             val solution = run(injector)
             val faults = solution.overall.potentialFoundFaults(idMapper)
@@ -340,7 +340,7 @@ class Main {
 
             LoggingUtil.getInfoLogger().info("Going to save $tests to ${config.outputFolder}")
 
-            val writer = setupPartialOracles(injector, config, controllerInfoDto)
+            val writer = setupPartialOracles(injector, config)
 
             val splitResult = TestSuiteSplitter.split(solution, config, writer.getPartialOracles())
 
@@ -354,7 +354,13 @@ class Main {
             }
         }
 
-        private fun setupPartialOracles(injector: Injector, config: EMConfig, controllerInfoDto: ControllerInfoDto?): TestSuiteWriter{
+        @JvmStatic
+        fun initPartialOracles(injector: Injector){
+            val config = injector.getInstance(EMConfig::class.java)
+            val writer = setupPartialOracles(injector, config)
+        }
+
+        private fun setupPartialOracles(injector: Injector, config: EMConfig): TestSuiteWriter{
             val writer = injector.getInstance(TestSuiteWriter::class.java)
             if(config.problemType == EMConfig.ProblemType.REST){
                 // Some initialization to handle test suite splitting and relevant partial oracles
@@ -364,7 +370,7 @@ class Main {
                 objGenerator.setSwagger(swagger)
                 partialOracles.setGenerator(objGenerator)
                 partialOracles.setFormat(config.outputFormat)
-                assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
+                //assert(controllerInfoDto==null || controllerInfoDto.fullName != null)
                 writer.setSwagger(swagger)
                 writer.setPartialOracles(partialOracles)
                 writer.setObjectGenerator(objGenerator)
