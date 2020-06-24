@@ -15,7 +15,7 @@ class OneMaxFitness : FitnessFunction<OneMaxIndividual>() {
 
         val fv = FitnessValue(individual.size().toDouble())
 
-        targets
+        targetsToEvaluate(targets, individual)
                 .forEach { fv.updateTarget(it, individual.getValue(it)) }
 
         return EvaluatedIndividual(

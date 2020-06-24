@@ -967,6 +967,19 @@ class EMConfig {
     var doesApplyNameMatching = false
 
     @Experimental
+    @Cfg("Specify a path to save mutation details which is useful for debugging mutation")
+    var saveMutatedGeneFile = ""
+
+    @Experimental
+    @Cfg("Specify a strategy to select targets for evaluating mutation")
+    var mutationTargetsSelectionStrategy = MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET
+
+    enum class MutationTargetsSelectionStrategy{
+        FIRST_NOT_COVERED_TARGET,
+        REALTIME_NOT_COVERED_TARGET
+    }
+
+    @Experimental
     @Cfg("Specify a probability to apply S1iR when resource sampling strategy is 'Customized'")
     @Probability(false)
     var S1iR: Double = 0.25

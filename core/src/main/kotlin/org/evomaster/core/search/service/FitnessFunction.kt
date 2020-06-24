@@ -40,11 +40,9 @@ abstract class FitnessFunction<T>  where T : Individual {
 
         val a = individual.seeActions().filter { a -> a.shouldCountForFitnessEvaluations() }.count()
 
-        val usedTargets = targetsToEvaluate(targets, individual)
-
         var ei = time.measureTimeMillis(
                 {time.reportExecutedIndividualTime(it, a)},
-                {doCalculateCoverage(individual, usedTargets)}
+                {doCalculateCoverage(individual, targets)}
         )
         processMonitor.eval = ei
 
@@ -56,7 +54,7 @@ abstract class FitnessFunction<T>  where T : Individual {
             reinitialize()
             ei = time.measureTimeMillis(
                     {time.reportExecutedIndividualTime(it, a)},
-                    {doCalculateCoverage(individual, usedTargets)}
+                    {doCalculateCoverage(individual, targets)}
             )
 
             if(ei == null){
@@ -92,6 +90,7 @@ abstract class FitnessFunction<T>  where T : Individual {
      * decide what targets to evaluate during fitness evaluation
      */
     open fun targetsToEvaluate(targets: Set<Int>, individual: T) : Set<Int>{
+        if (targets.isEmpty()) throw IllegalArgumentException("none of the targets to evaluate")
         return targets
     }
 }

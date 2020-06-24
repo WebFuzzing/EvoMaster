@@ -7,7 +7,8 @@ package org.evomaster.core.search.service.mutator
 enum class EvaluatedMutation(val value : Int){
     BETTER_THAN(1),
     EQUAL_WITH(0),
-    WORSE_THAN(-1);
+    WORSE_THAN(-1),
+    UNSURE(-2);
 
     fun isEffective() = value >=0
 

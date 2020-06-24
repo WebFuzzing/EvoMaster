@@ -111,6 +111,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
             if(mutatedGenes.addedInitializationGenes.isNotEmpty() && archiveMutator.enableArchiveSelection()){
                 current.updateDbActionGenes(current.individual, mutatedGenes.addedInitializationGenes)
             }
+
             Lazy.assert{DbActionUtils.verifyActions(current.individual.seeInitializingActions().filterIsInstance<DbAction>())}
 
             val mutatedInd = mutate(current, targets, mutatedGenes)
@@ -127,6 +128,8 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
             //enable further actions for extracting
             update(currentWithTraces, mutated, mutatedGenes, result)
+
+            archiveMutator.saveMutatedGene(mutatedGenes, index = time.evaluatedIndividuals, individual = mutatedInd, evaluatedMutation = result, targets = targets)
 
             val mutatedWithTraces = when{
                 config.enableTrackEvaluatedIndividual-> currentWithTraces.next(
@@ -150,8 +153,9 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 //TODO feedback archive-based gene mutation
             }
 
-            targets.addAll(archive.notCoveredTargets())
-
+            if (config.mutationTargetsSelectionStrategy == EMConfig.MutationTargetsSelectionStrategy.REALTIME_NOT_COVERED_TARGET){
+                targets.addAll(archive.notCoveredTargets())
+            }
         }
         return current
     }
@@ -172,16 +176,14 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         // global check
         if (archive.wouldReachNewTarget(mutated)) return EvaluatedMutation.BETTER_THAN
 
-        // compare mutated with current with the targets they both reached
-        val intersection = targets.filter { mutated.fitness.getHeuristic(it) > 0.0 && current.fitness.getHeuristic(it) > 0.0 }.toSet()
-        val resultL = compare(mutated, current, intersection)
-        if (targets.size == intersection.size || (intersection.isNotEmpty() && resultL != EvaluatedMutation.EQUAL_WITH)) return resultL
+        /*
+            to compare mutated with current,
+            targets for this comparision, employ targets to evaluate individual (i.e., targets in their fitness) can lead to different results.
 
-        // prefer the individual that reaches more targets?
-        val resultR = compareReachedTargets(mutated, current)
-        if(resultR != EvaluatedMutation.EQUAL_WITH) resultR
-
-        return compare(mutated, current, targets.filter { intersection.contains(it) }.toSet())
+            e.g., A1 is mutated to A2 by manipulating gene [a], and gene [a] affects target Ta
+            1) fitness of A1 includes heuristic for Tb, Tc, fitness of A2 includes heuristic for Ta
+         */
+        return compare(mutated, current, targets)
     }
 
     private fun compare(mutated: EvaluatedIndividual<T>, current: EvaluatedIndividual<T>, targets: Set<Int>): EvaluatedMutation {
@@ -200,9 +202,11 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
 
 
     fun saveMutation(evaluatedMutation: EvaluatedMutation, archive: Archive<T>, current: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>) : EvaluatedIndividual<T>{
-        archive.addIfNeeded(mutated)
-
-        // if mutated is not worse than current, we emply the mutated for next mutation
-        return if (evaluatedMutation.isEffective()) mutated else current
+        // if mutated is not worse than current, we employ the mutated for next mutation
+        if (evaluatedMutation.isEffective()){
+            archive.addIfNeeded(mutated)
+            return mutated
+        }
+        return current
     }
 }

@@ -67,7 +67,9 @@ open class RestFitness : AbstractRestFitness<RestIndividual>() {
             }
         }
 
-        val dto = rc.getTestResults(targets)
+        val ids = targetsToEvaluate(targets, individual)
+
+        val dto = rc.getTestResults(ids)
         if (dto == null) {
             log.warn("Cannot retrieve coverage")
             return null

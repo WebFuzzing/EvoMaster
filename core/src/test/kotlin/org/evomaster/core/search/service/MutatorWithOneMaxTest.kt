@@ -6,19 +6,13 @@ import com.google.inject.TypeLiteral
 import com.netflix.governator.guice.LifecycleInjector
 import org.evomaster.core.BaseModule
 import org.evomaster.core.EMConfig
-import org.evomaster.core.search.EvaluatedIndividual
-import org.evomaster.core.search.algorithms.onemax.OneMaxFitness
-import org.evomaster.core.search.algorithms.onemax.OneMaxIndividual
-import org.evomaster.core.search.algorithms.onemax.OneMaxModule
-import org.evomaster.core.search.algorithms.onemax.OneMaxSampler
+import org.evomaster.core.search.algorithms.MioAlgorithm
+import org.evomaster.core.search.algorithms.onemax.*
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
-import org.evomaster.core.search.service.mutator.MutatedGeneSpecification
-import org.evomaster.core.search.service.mutator.StandardMutator
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotEquals
-import kotlin.math.min
+import java.nio.file.Files
+import java.nio.file.Paths
 
 /**
  * during mutation, an individual may be mutated multiple times.
@@ -27,131 +21,172 @@ import kotlin.math.min
 class MutatorWithOneMaxTest {
 
     private lateinit var archive: Archive<OneMaxIndividual>
-    private lateinit var ff : OneMaxFitness
     private lateinit var config: EMConfig
 
-    private lateinit var mutator : StandardMutator<OneMaxIndividual>
+    private lateinit var mutator : ManipulatedOneMaxMutator
     private lateinit var sampler: OneMaxSampler
-    private lateinit var time : SearchTimeController
+
+
+    private lateinit var mio : MioAlgorithm<OneMaxIndividual>
     @BeforeEach
     fun init(){
 
         val injector: Injector = LifecycleInjector.builder()
-                .withModules(OneMaxModule(), BaseModule())
+                .withModules(ManipulatedOneMaxModule(), BaseModule())
                 .build().createInjector()
 
 
         archive = injector.getInstance(Key.get(
                 object : TypeLiteral<Archive<OneMaxIndividual>>() {}))
         mutator = injector.getInstance(Key.get(
-                object : TypeLiteral<StandardMutator<OneMaxIndividual>>() {}))
+                object : TypeLiteral<ManipulatedOneMaxMutator>() {}))
 
-        ff =  injector.getInstance(OneMaxFitness::class.java)
+        mio = injector.getInstance(Key.get(
+                object : TypeLiteral<MioAlgorithm<OneMaxIndividual>>() {}))
+
         config = injector.getInstance(EMConfig::class.java)
 
         sampler = injector.getInstance(OneMaxSampler::class.java)
-        time = injector.getInstance(SearchTimeController::class.java)
-    }
 
-    @Test
-    fun testMutatorWith6Targets(){
-        config.maxActionEvaluations = 1000
         config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
 
-        mutatorTest(6, 5000, 1)
     }
 
-    @Test
-    fun testMutatorWith100Targets(){
-        config.maxActionEvaluations = 1000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
 
-        mutatorTest(100, 5000, 1)
+
+    private fun reportFP(path : String, improve : Boolean) : Double{
+        val contents = Files.readAllLines(Paths.get(config.saveMutatedGeneFile))
+
+        val tp = contents.count {
+            val result = it.split(",")[1]
+            if (improve) result.equals(EvaluatedMutation.WORSE_THAN.name) else !result.equals(EvaluatedMutation.WORSE_THAN.name)
+        }
+
+        return tp * 1.0 / contents.size
     }
 
-    @Test
-    fun testMutatorWith200Targets(){
-        config.maxActionEvaluations = 1000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        mutatorTest(200, 5000, 1)
-    }
-
-    @Test
-    fun testMutatorWith500Targets(){
-        config.maxActionEvaluations = 1000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        mutatorTest(500, 5000, 1)
-    }
-
-    @Test
-    fun testMutatorWith1000Targets(){
-        config.maxActionEvaluations = 1000
-        config.stoppingCriterion = EMConfig.StoppingCriterion.FITNESS_EVALUATIONS
-
-        mutatorTest(1000, 5000, 1)
-    }
-
-    private fun mutatorTest(n: Int, maxEvaluation: Int, sample: Int) {
+    private fun setting(n : Int, improve: Boolean, first : Boolean, budget : Int){
+        mutator.improve = improve
         sampler.n = n
+        config.mutationTargetsSelectionStrategy = if (first) EMConfig.MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET else EMConfig.MutationTargetsSelectionStrategy.REALTIME_NOT_COVERED_TARGET
 
-        var current = ff.calculateCoverage(sampler.sample())!!
-        archive.addIfNeeded(current)
+        config.maxActionEvaluations = budget
 
-        var sampleCounter = 1
-        while (sampleCounter < sample){
-            sampleCounter += 1
-            current = ff.calculateCoverage(sampler.sample())!!
-            archive.addIfNeeded(current)
-        }
-
-        var fpCounter = 0
-        var counter = 0
-
-        val targets = archive.notCoveredTargets().toMutableSet()
-
-        while (!isBest(current) && counter < maxEvaluation){
-            counter += 1
-
-            val mutatedGeneSpecification = MutatedGeneSpecification()
-            val mutated = improve(current, 0.25, setOf(), mutatedGeneSpecification)?:break
-            assertEquals(1, mutatedGeneSpecification.mutatedPosition.size)
-
-            val result = mutator.evaluateMutation(mutated, current, targets, archive)
-            if (n <= 100)
-                assertEquals(EvaluatedMutation.BETTER_THAN, result)
-            else
-                assertNotEquals(EvaluatedMutation.WORSE_THAN,result)
-
-            current = mutator.saveMutation(
-                    current = current,
-                    mutated = mutated,
-                    archive = archive,
-                    evaluatedMutation = result
-            )
-
-            val tp = (mutated == current)
-            if (n <= 100)
-                assert(tp)
-            else if (!tp)
-                fpCounter += 1
-
-            targets.addAll(archive.notCoveredTargets())
-        }
-
-        if (n > 100)
-            assert((fpCounter * 1.0)/counter < 0.1)
+        config.saveMutatedGeneFile = "target/MutatorWithOneMaxTest/targets${n}And${improve}ImproveMutationAnd${first}First.csv"
+        Files.deleteIfExists(Paths.get(config.saveMutatedGeneFile))
     }
 
-    private fun isBest(evaluatedIndividual: EvaluatedIndividual<OneMaxIndividual>) = (0 until evaluatedIndividual.individual.n).all { evaluatedIndividual.individual.getValue(it) == 1.0}
+    @Test
+    fun testWith100FT(){
+        val n = 100
+        val improve = false
+        setting(n, improve, true, 100)
 
-    private fun improve(mutated: EvaluatedIndividual<OneMaxIndividual>, degree : Double, targets : Set<Int>, mutatedGeneSpecification: MutatedGeneSpecification) : EvaluatedIndividual<OneMaxIndividual>?{
-        val ind = mutated.individual.copy() as OneMaxIndividual
-        val index = (0 until ind.n).firstOrNull{ind.getValue(it)  < 1.0}
-        index?:return null
-        ind.setValue(index, min(1.0, ind.getValue(index) + degree))
-        mutatedGeneSpecification.mutatedPosition.add(index)
-        return ff.calculateCoverage(ind, targets)
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
     }
+
+    @Test
+    fun testWith100TT(){
+        val n = 100
+        val improve = true
+        setting(n, improve, true, 100)
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
+    @Test
+    fun testWith100FF(){
+        val n = 100
+        val improve = false
+        setting(n, improve, false, 100)
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
+    @Test
+    fun testWith100TF(){
+        val n = 100
+        val improve = true
+        setting(n, improve, false, 100)
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
+    @Test
+    fun testWith1000FT(){
+        val n = 1000
+        val improve = false
+        setting(n, improve, true, 100)
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
+    @Test
+    fun testWith1000TT(){
+        val n = 1000
+        val improve = true
+        setting(n, improve, true, 100)
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
+    @Test
+    fun testWith1000FF(){
+        val n = 1000
+        val improve = false
+        setting(n, improve, false, 100)
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
+    @Test
+    fun testWith1000TF(){
+        val n = 1000
+        val improve = true
+        setting(n, improve, false, 100)
+
+
+        mio.search()
+
+        val result = reportFP(config.saveMutatedGeneFile, improve)
+
+        println(result)
+
+    }
+
 }
