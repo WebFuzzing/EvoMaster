@@ -18,6 +18,7 @@ import org.evomaster.core.search.impact.ImpactUtils
 import org.evomaster.core.search.service.SearchTimeController
 import org.evomaster.core.search.service.mutator.geneMutation.AdditionalGeneSelectionInfo
 import org.evomaster.core.search.service.mutator.geneMutation.SubsetGeneSelectionStrategy
+import java.lang.Exception
 import kotlin.math.max
 
 /**
@@ -120,7 +121,11 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
         for (gene in selectGeneToMutate){
             val isDb = copy.seeInitializingActions().any { it.seeGenes().contains(gene) }
 
-            val value = gene.getValueAsPrintableString()
+            val value = try {
+                if(gene.isPrintable()) gene.getValueAsPrintableString() else "null"
+            } catch (e: Exception){
+                "exception"
+            }
             val position = if (isDb){
                 copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
             } else{
