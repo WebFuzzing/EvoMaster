@@ -29,6 +29,9 @@ class ManipulatedOneMaxModule : AbstractModule() {
                 .to(object : TypeLiteral<ManipulatedOneMaxMutator>() {})
                 .asEagerSingleton()
 
+        bind(ManipulatedOneMaxMutator::class.java)
+                .asEagerSingleton()
+
         bind(object : TypeLiteral<Archive<OneMaxIndividual>>() {})
                 .asEagerSingleton()
 

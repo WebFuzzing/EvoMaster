@@ -607,22 +607,24 @@ class ArchiveMutator {
         if (Files.notExists(path)) Files.createFile(path)
 
         val content = mutableListOf<String>()
-        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, gene -> listOf(
+        content.addAll(mutatedGenes.mutatedGenes.mapIndexed { gindex, geneInfo -> listOf(
                 index,
                 evaluatedMutation,
-                gene.name,
-                gene.getValueAsPrintableString(),
+                geneInfo.gene.name,
+                geneInfo.previousValue,
+                geneInfo.gene.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
                 if (mutatedGenes.mutatedPosition.isNotEmpty()) mutatedGenes.mutatedPosition[gindex] else "",
                 if (mutatedGenes.mutatedPosition.isNotEmpty() && individual.seeActions().isNotEmpty())
                     getActionInfo(individual.seeActions()[mutatedGenes.mutatedPosition[gindex]])
                 else "").joinToString(",")} )
 
-        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, gene -> listOf(
+        content.addAll(mutatedGenes.mutatedDbGenes.mapIndexed { gindex, geneInfo -> listOf(
                 index,
                 evaluatedMutation,
-                gene.name,
-                gene.getValueAsPrintableString(),
+                geneInfo.gene.name,
+                geneInfo.previousValue,
+                geneInfo.gene.getValueAsPrintableString(),
                 "#${targets.joinToString("#")}",
                 if (mutatedGenes.mutatedDbActionPosition.isNotEmpty()) mutatedGenes.mutatedDbActionPosition[gindex] else "",
                 if (mutatedGenes.mutatedDbActionPosition.isNotEmpty() && individual.seeInitializingActions().isNotEmpty())

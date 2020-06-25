@@ -975,8 +975,30 @@ class EMConfig {
     var mutationTargetsSelectionStrategy = MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET
 
     enum class MutationTargetsSelectionStrategy{
+        /**
+         * employ not covered target obtained by archive at first for all upTimesMutations
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is still {A, B}
+         */
         FIRST_NOT_COVERED_TARGET,
-        REALTIME_NOT_COVERED_TARGET
+        /**
+         * expand targets with updated not covered targets
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {A, B, C}
+         */
+        EXPANDED_UPDATED_NOT_COVERED_TARGET,
+        /**
+         * only employ current not covered targets obtainedby archive
+         *
+         * e.g., mutate an individual with 10times, at first, the current not covered target is {A, B}
+         * after the 2nd mutation, A is covered, C is newly reached,
+         * for next mutation, that target employed for the comparison is {B, C}
+         */
+        UPDATED_NOT_COVERED_TARGET
     }
 
     @Experimental

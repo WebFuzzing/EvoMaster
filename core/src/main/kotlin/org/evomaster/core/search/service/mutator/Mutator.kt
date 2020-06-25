@@ -153,8 +153,15 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
                 //TODO feedback archive-based gene mutation
             }
 
-            if (config.mutationTargetsSelectionStrategy == EMConfig.MutationTargetsSelectionStrategy.REALTIME_NOT_COVERED_TARGET){
-                targets.addAll(archive.notCoveredTargets())
+            when(config.mutationTargetsSelectionStrategy){
+                EMConfig.MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET ->{}
+                EMConfig.MutationTargetsSelectionStrategy.EXPANDED_UPDATED_NOT_COVERED_TARGET ->{
+                    targets.addAll(archive.notCoveredTargets())
+                }
+                EMConfig.MutationTargetsSelectionStrategy.UPDATED_NOT_COVERED_TARGET ->{
+                    targets.clear()
+                    targets.addAll(archive.notCoveredTargets())
+                }
             }
         }
         return current

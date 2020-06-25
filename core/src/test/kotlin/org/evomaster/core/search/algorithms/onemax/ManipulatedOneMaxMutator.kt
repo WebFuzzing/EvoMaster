@@ -29,15 +29,15 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
     private fun manipulate(mutated: EvaluatedIndividual<OneMaxIndividual>, degree : Double, targets : Set<Int>, improve: Boolean ,mutatedGeneSpecification: MutatedGeneSpecification?) : OneMaxIndividual{
         val ind = mutated.individual.copy() as OneMaxIndividual
 
+
         val index = if(improve)(0 until ind.n).firstOrNull{ind.getValue(it)  < 1.0} else (0 until ind.n).filter{ind.getValue(it)  >= 0.25}.run { if (isEmpty()) null else randomness.choose(this)}
         index?:return ind
 
-
+        val previousValue = ind.getValue(index)
         ind.setValue(index, if(improve) min(1.0, ind.getValue(index) + degree) else min(0.0, ind.getValue(index) - degree))
 
-        mutatedGeneSpecification?.mutatedGenes?.add(ind.seeGenes()[index])
+        mutatedGeneSpecification?.addMutatedGene(isDb = false, valueBeforeMutation = previousValue.toString(), gene = ind.seeGenes()[index], position = null)
 
-       // mutatedGeneSpecification?.mutatedPosition?.add(index)
         return ind
     }
 }

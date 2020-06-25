@@ -314,7 +314,7 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
          */
         val onlyManipulation = mutatedGenes.mutatedGenes.size + mutatedGenes.mutatedDbGenes.size > 1 && impactTargets.isNotEmpty()
 
-        val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
+        val mutatedGenesWithContext = ImpactUtils.extractMutatedGeneWithContext(mutatedGenes.mutatedGeneInfo(), mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
 
         mutatedGenesWithContext.forEach { (t, u) ->
             val impact = impactsOfGenes!!.getValue(t)
@@ -324,7 +324,8 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             }
         }
 
-        val mutatedDBGenesWithContext = ImpactUtils.extractMutatedDbGeneWithContext(mutatedGenes.mutatedDbGenes, mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
+        val mutatedDBGenesWithContext = ImpactUtils.extractMutatedDbGeneWithContext(
+                mutatedGenes.mutatedDbGeneInfo(), mutatedGenes.mutatedIndividual!!, previousIndividual = previous.individual)
         mutatedDBGenesWithContext.forEach { (t, u) ->
             val impact = impactsOfGenes!!.getValue(t)
 

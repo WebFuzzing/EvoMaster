@@ -119,13 +119,14 @@ open class StandardMutator<T> : Mutator<T>() where T : Individual {
 
         for (gene in selectGeneToMutate){
             val isDb = copy.seeInitializingActions().any { it.seeGenes().contains(gene) }
-            if (isDb){
-                mutatedGene?.mutatedDbGenes?.add(gene)
-                mutatedGene?.mutatedDbActionPosition?.add(copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) })
+
+            val value = gene.getValueAsPrintableString()
+            val position = if (isDb){
+                copy.seeInitializingActions().indexOfFirst { it.seeGenes().contains(gene) }
             } else{
-                mutatedGene?.mutatedGenes?.add(gene)
-                mutatedGene?.mutatedPosition?.add(copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) })
+                copy.seeActions().indexOfFirst { it.seeGenes().contains(gene) }
             }
+            mutatedGene?.addMutatedGene(isDb, valueBeforeMutation = value, gene = gene, position = position)
 
             val selectionStrategy = if (!config.weightBasedMutationRate) SubsetGeneSelectionStrategy.DEFAULT
                         else if (archiveMutator.applyArchiveSelection()) SubsetGeneSelectionStrategy.ADAPTIVE_WEIGHT

@@ -90,7 +90,7 @@ class OneMaxMutator {
         mutator.improve = improve
         sampler.n = n
         config.showProgress = false
-        config.mutationTargetsSelectionStrategy = if (first) EMConfig.MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET else EMConfig.MutationTargetsSelectionStrategy.REALTIME_NOT_COVERED_TARGET
+        config.mutationTargetsSelectionStrategy = if (first) EMConfig.MutationTargetsSelectionStrategy.FIRST_NOT_COVERED_TARGET else EMConfig.MutationTargetsSelectionStrategy.EXPANDED_UPDATED_NOT_COVERED_TARGET
         config.maxActionEvaluations = budget
 
         val expId = listOf("${config.mutationTargetsSelectionStrategy}", "budget-$budget","#targets-$n", "improvingMutator-$improve").joinToString("_")
