@@ -29,7 +29,7 @@ jobs:
     - stage: e2e
       script:
         - cd e2e-tests/spring-examples
-        - mvn verify
+        - mvn verify --fae
 #    - stage: jdk11
 #      script:
 #        - jdk_switcher use openjdk11
