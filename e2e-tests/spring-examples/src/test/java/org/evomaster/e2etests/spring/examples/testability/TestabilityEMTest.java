@@ -52,7 +52,7 @@ public class TestabilityEMTest extends SpringTestBase {
                 10);
     }
 
-    //@Disabled("check testability binding")
+    @Disabled("check testability binding")
     @Test
     public void testRunEMWithUpdatedTargets() throws Throwable {
 
