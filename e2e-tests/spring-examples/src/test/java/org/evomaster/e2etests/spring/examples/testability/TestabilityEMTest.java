@@ -56,4 +56,37 @@ public class TestabilityEMTest extends SpringTestBase {
                 },
                 10);
     }
+
+    @Disabled("check testability binding")
+    @Test
+    public void testRunEMWithUpdatedTargets() throws Throwable {
+
+        CIUtils.skipIfOnCircleCI();
+
+        runTestHandlingFlakyAndCompilation(
+                "TestabilityEM",
+                "org.bar.TestabilityEM",
+                15_000,
+                true,
+                (args) -> {
+
+                    args.add("--baseTaintAnalysisProbability");
+                    args.add("0.9");
+
+                    args.add("--mutationTargetsSelectionStrategy");
+                    args.add("UPDATED_NOT_COVERED_TARGET");
+
+                    args.add("--saveMutatedGeneFile");
+                    args.add("target/testability/targetsUpdate.csv");
+
+                    Solution<RestIndividual> solution = initAndRun(args);
+
+                    assertTrue(solution.getIndividuals().size() >= 1);
+
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 500, "/api/testability/{date}/{number}/{setting}", null);
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "ERROR");
+                    assertHasAtLeastOne(solution, HttpVerb.GET, 200, "/api/testability/{date}/{number}/{setting}", "OK");
+                },
+                10);
+    }
 }
