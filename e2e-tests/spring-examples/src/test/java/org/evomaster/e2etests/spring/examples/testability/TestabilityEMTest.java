@@ -7,7 +7,6 @@ import org.evomaster.core.search.Solution;
 import org.evomaster.e2etests.spring.examples.SpringTestBase;
 import org.evomaster.e2etests.utils.CIUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +26,8 @@ public class TestabilityEMTest extends SpringTestBase {
     public void testRunEM() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
+
+        defaultSeed = 0;
 
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
@@ -52,12 +53,13 @@ public class TestabilityEMTest extends SpringTestBase {
                 10);
     }
 
-    @Disabled("check testability binding")
     @Test
     public void testRunEMWithUpdatedTargets() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
 
+        defaultSeed = 0;
+        
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
                 "org.bar.TestabilityEM",
@@ -89,6 +91,8 @@ public class TestabilityEMTest extends SpringTestBase {
     public void testRunEMWithExpandedUpdatedTargets() throws Throwable {
 
         CIUtils.skipIfOnCircleCI();
+
+        defaultSeed = 0;
 
         runTestHandlingFlakyAndCompilation(
                 "TestabilityEM",
