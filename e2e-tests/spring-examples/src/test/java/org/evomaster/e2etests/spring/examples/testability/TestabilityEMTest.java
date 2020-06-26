@@ -37,14 +37,6 @@ public class TestabilityEMTest extends SpringTestBase {
 
                     args.add("--baseTaintAnalysisProbability");
                     args.add("0.9");
-//
-//                    args.add("--mutationTargetsSelectionStrategy");
-//                    args.add("UPDATED_NOT_COVERED_TARGET");
-
-
-                    args.add("--saveMutatedGeneFile");
-                    args.add("target/testability/targetsFirst.csv");
-
 
                     Solution<RestIndividual> solution = initAndRun(args);
 
