@@ -94,12 +94,15 @@ abstract class Individual(trackOperator: TrackOperator? = null, index : Int = DE
         val nextInTracking = (next.copy(copyFilter) as Individual).also { this.wrapWithEvaluatedResults(evaluatedResult) }
         pushLatest(nextInTracking)
 
-        //if (evaluatedResult < 0) return this
-
         val new = (next as Individual).copy()
+//        new.wrapWithTracking(
+//                evaluatedResult = evaluatedResult,
+//                trackingHistory = tracking?.copy(copyFilter)
+//        )
+
         new.wrapWithTracking(
                 evaluatedResult = evaluatedResult,
-                trackingHistory = tracking?.copy(copyFilter)
+                trackingHistory = tracking
         )
 
         return new

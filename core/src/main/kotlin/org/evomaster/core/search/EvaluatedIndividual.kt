@@ -133,11 +133,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
             TraceableElementCopyFilter.DEEP_TRACK -> throw IllegalArgumentException("there is no need to track individual when evaluated indivdual is tracked")
             TraceableElementCopyFilter.WITH_TRACK ->{
                 // the copy includes tracking info, but it is no need to include tracking info for the element in the tracking.
-                copy.wrapWithTracking(evaluatedResult, trackingHistory = tracking?.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
+                //copy.wrapWithTracking(evaluatedResult, trackingHistory = tracking?.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
+                copy.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
             }
             else -> {
                 if (copyFilter.name == WITH_TRACK_WITH_IMPACT){
-                    copy.wrapWithTracking(evaluatedResult, trackingHistory = tracking?.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
+                    //copy.wrapWithTracking(evaluatedResult, trackingHistory = tracking?.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
+                    copy.wrapWithTracking(evaluatedResult, trackingHistory = tracking)
                     copy.wrapWithImpactInfo(
                             impactsOfGenes = impactsOfGenes?.map { it.key to it.value.copy()}?.toMap()?.toMutableMap(),
                             impactsOfStructure = impactsOfStructure?.copy(),
@@ -207,7 +209,13 @@ class EvaluatedIndividual<T>(val fitness: FitnessValue,
 
         //if (evaluatedResult < 0) return this
         val new = next.copy()
-        new.wrapWithTracking(evaluatedResult, tracking?.copy(copyFilter))
+
+//        new.wrapWithTracking(evaluatedResult, tracking?.copy(copyFilter))
+
+        // tracking is shared with all mutated individual originated from same sampled ind
+        new.wrapWithTracking(evaluatedResult, tracking)
+
+        //TODO revise after archive-mutation merged into master
         // if there exists impact info, next should be wrapped with them
         new.wrapWithImpactInfo(
                 impactsOfGenes = impactsOfGenes?.map { it.key to it.value.copy() }?.toMap()?.toMutableMap(),

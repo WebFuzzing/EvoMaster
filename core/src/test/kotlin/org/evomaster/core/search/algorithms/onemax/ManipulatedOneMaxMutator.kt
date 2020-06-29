@@ -13,7 +13,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
     var improve = false
 
     override fun mutate(individual: EvaluatedIndividual<OneMaxIndividual>, targets: Set<Int>, mutatedGenes: MutatedGeneSpecification?): OneMaxIndividual {
-        return manipulate(individual, 0.25, targets = targets, improve = improve, mutatedGeneSpecification = mutatedGenes)
+        return manipulate(individual, 0.25, improve = improve, mutatedGeneSpecification = mutatedGenes)
     }
 
     override fun genesToMutation(individual: OneMaxIndividual, evi: EvaluatedIndividual<OneMaxIndividual>): List<Gene> {
@@ -26,7 +26,7 @@ class ManipulatedOneMaxMutator : Mutator<OneMaxIndividual>() {
 
     override fun doesStructureMutation(individual: OneMaxIndividual): Boolean  = false
 
-    private fun manipulate(mutated: EvaluatedIndividual<OneMaxIndividual>, degree : Double, targets : Set<Int>, improve: Boolean ,mutatedGeneSpecification: MutatedGeneSpecification?) : OneMaxIndividual{
+    private fun manipulate(mutated: EvaluatedIndividual<OneMaxIndividual>, degree: Double, improve: Boolean, mutatedGeneSpecification: MutatedGeneSpecification?) : OneMaxIndividual{
         val ind = mutated.individual.copy() as OneMaxIndividual
 
 

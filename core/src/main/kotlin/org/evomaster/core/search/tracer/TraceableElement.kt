@@ -1,6 +1,7 @@
 package org.evomaster.core.search.tracer
 
 import org.evomaster.core.search.service.mutator.EvaluatedMutation
+import kotlin.math.max
 
 /**
  * TraceableElement represents an element whose history can be tracked.

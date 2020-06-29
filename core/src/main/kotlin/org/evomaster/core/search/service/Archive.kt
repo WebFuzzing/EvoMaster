@@ -14,8 +14,6 @@ import org.evomaster.core.search.Solution
 import org.evomaster.core.search.service.monitor.SearchProcessMonitor
 import org.evomaster.core.search.tracer.ArchiveMutationTrackService
 
-import java.lang.Integer.min
-
 
 class Archive<T> where T : Individual {
 

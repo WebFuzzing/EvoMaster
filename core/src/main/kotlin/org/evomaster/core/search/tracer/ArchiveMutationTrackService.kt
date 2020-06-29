@@ -14,7 +14,7 @@ class ArchiveMutationTrackService : TrackService(){
     private lateinit var config: EMConfig
 
     @PostConstruct
-    private fun postConstruct(){
+    fun postConstruct(){
 
         if (config.trackingEnabled()) {
             initTraceableElementCopyFilter(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED)
@@ -42,7 +42,7 @@ class ArchiveMutationTrackService : TrackService(){
             TraceableElementCopyFilter.WITH_TRACK
         else if (config.enableTrackIndividual) {
             if (!exists(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED)){
-                throw IllegalStateException("ONLY_INDIVIDUAL should be registered.")
+                throw IllegalStateException("ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED should be registered.")
             }
             getTraceableElementCopyFilter(EvaluatedIndividual.ONLY_TRACKING_INDIVIDUAL_OF_EVALUATED, chosen)
         }

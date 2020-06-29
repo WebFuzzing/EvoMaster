@@ -84,16 +84,7 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         var current = individual
 
         // tracking might be null if the current is never mutated
-        if (config.trackingEnabled()){
-            if (config.enableTrackEvaluatedIndividual && current.tracking == null){
-                current.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())
-                current.pushLatest(current.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
-            }
-            if (config.enableTrackIndividual && current.individual.tracking == null){
-                current.individual.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())
-                current.individual.pushLatest(current.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
-            }
-        }
+        preHandlingTrackedIndividual(current)
 
         val targets = archive.notCoveredTargets().toMutableSet()
 
@@ -207,10 +198,27 @@ abstract class Mutator<T> : TrackOperator where T : Individual {
         return EvaluatedMutation.EQUAL_WITH
     }
 
+    private fun preHandlingTrackedIndividual(current: EvaluatedIndividual<T>){
+        if (config.trackingEnabled()){
+            if (config.enableTrackEvaluatedIndividual && current.tracking == null){
+                current.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())
+                current.pushLatest(current.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
+            }
+            if (config.enableTrackIndividual && current.individual.tracking == null){
+                current.individual.wrapWithTracking(null, config.maxLengthOfTraces, mutableListOf())
+                current.individual.pushLatest(current.copy(TraceableElementCopyFilter.WITH_ONLY_EVALUATED_RESULT))
+            }
+        }
+    }
+
 
     fun saveMutation(evaluatedMutation: EvaluatedMutation, archive: Archive<T>, current: EvaluatedIndividual<T>, mutated: EvaluatedIndividual<T>) : EvaluatedIndividual<T>{
         // if mutated is not worse than current, we employ the mutated for next mutation
         if (evaluatedMutation.isEffective()){
+            /*
+                worse mutated might be added into archive if there exist space in population.
+                in this case, we only attempt to add individual into archive when it is not worse than current
+             */
             archive.addIfNeeded(mutated)
             return mutated
         }
