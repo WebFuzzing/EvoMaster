@@ -20,6 +20,7 @@
     <modules>
         <module>dbconstraint</module>
         <module>core</module>
+        <module>core-driver-it</module>
         <module>core-it</module>
         <module>client-java</module>
         <module>e2e-tests</module>
@@ -136,6 +137,13 @@
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.evomaster</groupId>
+                <artifactId>evomaster-core</artifactId>
+                <scope>test</scope>
+                <type>test-jar</type>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -633,6 +641,19 @@
                         <!-- Needed for some weird bug in JDK used in CircleCI-->
                         <useSystemClassLoader>false</useSystemClassLoader>
                     </configuration>
+                </plugin>
+
+                <!-- To run integration tests -->
+                <plugin>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>3.0.0-M4</version>
+                    <configuration>
+                        <forkCount>1</forkCount>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <rerunFailingTestsCount>2</rerunFailingTestsCount>
+                        <argLine>@{argLine} -Xms1024m -Xmx2048m -Djdk.attach.allowAttachSelf=true</argLine>
+                        <useSystemClassLoader>false</useSystemClassLoader>
+                    </configuration>
 
                 </plugin>
 
@@ -837,6 +858,21 @@
                         </execution>
                     </executions>
                 </plugin>
+
+                <plugin>
+                    <!-- Need to create self-executable uber/fat jars for Spring-->
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <version>${springboot.version}</version>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>repackage</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
             </plugins>
         </pluginManagement>
 

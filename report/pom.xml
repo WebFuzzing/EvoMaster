@@ -53,6 +53,11 @@
         </dependency>
         <dependency>
             <groupId>org.evomaster</groupId>
+            <artifactId>evomaster-core-driver-it</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.evomaster</groupId>
             <artifactId>evomaster-core-it</artifactId>
             <version>${project.version}</version>
         </dependency>
