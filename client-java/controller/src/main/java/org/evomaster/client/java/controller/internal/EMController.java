@@ -47,6 +47,9 @@ public class EMController {
      */
     private static final Set<String> connectedClientsSoFar = new CopyOnWriteArraySet<>();
 
+    private static final String htmlWarning =
+            //ah! the beauty and elegance of Java when one just wants read a text resource as a string...
+            new Scanner(EMController.class.getResourceAsStream("/warning.html"), "UTF-8").useDelimiter("\\A").next();
 
     public EMController(SutController sutController) {
         this.sutController = Objects.requireNonNull(sutController);
@@ -72,6 +75,13 @@ public class EMController {
      */
     public static void resetConnectedClientsSoFar(){
         connectedClientsSoFar.clear();
+    }
+
+    @Path("/")
+    @GET
+    @Produces(MediaType.TEXT_HTML)
+    public Response getWarning(){
+        return Response.status(400).entity(htmlWarning).build();
     }
 
     @Path(ControllerConstants.INFO_SUT_PATH)

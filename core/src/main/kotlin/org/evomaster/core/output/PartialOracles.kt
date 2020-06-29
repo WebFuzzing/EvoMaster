@@ -158,6 +158,14 @@ class PartialOracles {
         return active
     }
 
+    fun activeOracles(call: RestCallAction, res: RestCallResult): MutableMap<String, Boolean>{
+        val active = mutableMapOf<String, Boolean>()
+        oracles.forEach { oracle ->
+            active.put(oracle.getName(), oracle.generatesExpectation(call, res))
+        }
+        return active
+    }
+
     fun adjustName(): MutableList<ImplementedOracle>{
         return oracles.filter { !it.adjustName().isNullOrBlank() }.toMutableList()
     }
