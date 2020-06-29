@@ -1055,15 +1055,12 @@ class EMConfig {
     @Probability
     var baseTaintAnalysisProbability = 0.9
 
-
     @Cfg("Only used when running experiments for black-box mode, where an EvoMaster Driver would be present, and can reset state after each experiment")
     var bbExperiments = false
 
-    @Experimental
     @Cfg("Specify whether to export covered targets info")
     var exportCoveredTarget = false
 
-    @Experimental
     @Cfg("Specify a file which saves covered targets info regarding generated test suite")
     @FilePath
     var coveredTargetFile = "coveredTargets.txt"
@@ -1093,6 +1090,9 @@ class EMConfig {
          * but we need to follow rules to encode and decode regarding id.
          */
     }
+
+    @Cfg("Only for debugging. Concentrate search on only one single REST endpoint")
+    var endpointFocus : String? = null
 
 
     fun timeLimitInSeconds(): Int {

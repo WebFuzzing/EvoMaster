@@ -26,6 +26,8 @@ public class TestabilityEMTest extends SpringTestBase {
     @Test
     public void testRunEM() throws Throwable {
 
+        defaultSeed = 0;
+
         CIUtils.skipIfOnCircleCI();
 
         runTestHandlingFlakyAndCompilation(

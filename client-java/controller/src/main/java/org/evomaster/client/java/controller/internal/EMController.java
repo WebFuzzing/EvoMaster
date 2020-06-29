@@ -226,8 +226,22 @@ public class EMController {
                         want to do it
                      */
                     if (dto.resetState != null && dto.resetState) {
-                        sutController.resetStateOfSUT();
-                        sutController.newTest();
+                        try{
+                            /*
+                                This should not fail... but, as it is user code, it might fail...
+                                When it does, it is a major issue, as it can leave the system in
+                                an inconsistent state for the following fitness evaluations.
+                                So, we always force a newTest, even when reset fails.
+
+                                TODO: a current problem is in Proxyprint, in which after REST calls
+                                it seems there are locks on the DB (this might happen if a transaction
+                                is started but then not committed). Ideally, in the reset of DBs we should
+                                force all lock releases, and possibly point any left lock as a potential bug
+                             */
+                            sutController.resetStateOfSUT();
+                        } finally {
+                            sutController.newTest();
+                        }
                     }
 
                     /*
