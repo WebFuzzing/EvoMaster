@@ -3,6 +3,8 @@ package org.evomaster.core.search.service
 import com.google.inject.Inject
 import org.evomaster.client.java.instrumentation.shared.ObjectiveNaming
 import org.evomaster.core.EMConfig
+import org.evomaster.core.output.service.TestSuiteWriter
+import org.evomaster.core.problem.rest.RestCallAction
 import org.evomaster.core.problem.rest.RestCallResult
 import org.evomaster.core.problem.rest.service.RestSampler
 import org.evomaster.core.remote.service.RemoteController
@@ -40,6 +42,9 @@ class Statistics : SearchListener {
 
     @Inject(optional = true)
     private var remoteController: RemoteController? = null
+
+    @Inject
+    private lateinit var writer: TestSuiteWriter
 
     /**
      * How often test executions did timeout
@@ -176,6 +181,7 @@ class Statistics : SearchListener {
             add(Pair("covered2xx", "" + covered2xxEndpoints(solution)))
             add(Pair("errors5xx", "" + errors5xx(solution)))
             add(Pair("potentialFaults", "" + solution.overall.potentialFoundFaults(idMapper).size))
+            add(Pair("FailedOracleExpectations", "" + failedOracle(solution)))
 
             add(Pair("numberOfBranches", "" + (unitsInfo?.numberOfBranches ?: 0)))
             add(Pair("numberOfLines", "" + (unitsInfo?.numberOfLines ?: 0)))
@@ -226,6 +232,22 @@ class Statistics : SearchListener {
                 .flatMap { it.evaluatedActions() }
                 .filter {
                     it.result is RestCallResult && it.result.hasErrorCode()
+                }
+                .map { it.action.getName() }
+                .distinct()
+                .count()
+    }
+
+    private fun failedOracle(solution: Solution<*>): Int {
+
+        val oracles = writer.getPartialOracles()
+        //count the distinct number of API paths for which we have a failed oracle
+        return solution.individuals
+                .flatMap { it.evaluatedActions() }
+                .filter {
+                    it.result is RestCallResult
+                            && it.action is RestCallAction
+                            && oracles.activeOracles(it.action, it.result).any { or -> or.value }
                 }
                 .map { it.action.getName() }
                 .distinct()

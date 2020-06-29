@@ -8,6 +8,8 @@ import org.evomaster.client.java.controller.api.dto.SutInfoDto
 import org.evomaster.client.java.controller.api.dto.TestResultsDto
 import org.evomaster.core.database.DatabaseExecution
 import org.evomaster.core.logging.LoggingUtil
+import org.evomaster.core.output.ObjectGenerator
+import org.evomaster.core.output.service.TestSuiteWriter
 import org.evomaster.core.problem.rest.*
 import org.evomaster.core.problem.rest.auth.NoAuth
 import org.evomaster.core.problem.rest.param.BodyParam
@@ -56,6 +58,9 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
 
     @Inject
     private lateinit var searchTimeController: SearchTimeController
+
+    @Inject
+    private lateinit var writer: TestSuiteWriter
 
     private val clientConfiguration = ClientConfig()
             .property(ClientProperties.CONNECT_TIMEOUT, 10_000)
@@ -349,6 +354,16 @@ abstract class AbstractRestFitness<T> : FitnessFunction<T>() where T : Individua
                         val bugId = idMapper.handleLocalTarget(descriptiveId)
                         fv.updateTarget(bugId, 1.0, it)
                         result.setLastStatementWhen500(source)
+                    }
+                    /*
+                        Objectives for the two partial oracles implemented thus far.
+                    */
+                    val call = actions[it] as RestCallAction
+                    val oracles = writer.getPartialOracles().activeOracles(call, result)
+                    oracles.filter { it.value }.forEach { entry ->
+                        val oracleId = idMapper.getFaultDescriptiveId("${entry.key} $name")
+                        val bugId = idMapper.handleLocalTarget(oracleId)
+                        fv.updateTarget(bugId, 1.0, it)
                     }
                 }
     }

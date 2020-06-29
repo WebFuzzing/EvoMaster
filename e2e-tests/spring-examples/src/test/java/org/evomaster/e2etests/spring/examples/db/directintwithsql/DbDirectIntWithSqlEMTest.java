@@ -93,11 +93,10 @@ public class DbDirectIntWithSqlEMTest extends DbDirectIntWithSqlTestBase {
         };
 
         Injector injector = Main.init(args);
-
         //start from creating and evaluating a random individual
         RestSampler sampler = injector.getInstance(RestSampler.class);
         RestIndividual ind = sampler.sampleAtRandom();
-
+        Main.initPartialOracles(injector);
 
         FitnessFunction<RestIndividual> ff = injector.getInstance(Key.get(
                 new TypeLiteral<FitnessFunction<RestIndividual>>() {
