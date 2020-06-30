@@ -61,35 +61,35 @@ class BaseIT {
         remote.registerNewAction(ActionDto().apply { index = 0 })
 
         val results = remote.getTestResults()
-        Assertions.assertNotNull(results)
-        Assertions.assertEquals(0, results!!.targets.size)
+        assertNotNull(results)
+        assertEquals(0, results!!.targets.size)
     }
 
     @Test
     fun testRestart(){
 
         //make sure it is started
-        remote.startSUT()
+        assertTrue(remote.startSUT())
         var info = remote.getSutInfo()
         assertNotNull(info)
 
         //stop it
-        remote.stopSUT()
+        assertTrue(remote.stopSUT())
         info = remote.getSutInfo()
         assertNull(info)
 
         //start it again
-        remote.startSUT()
+        assertTrue(remote.startSUT())
         info = remote.getSutInfo()
         assertNotNull(info)
 
         //stop it
-        remote.stopSUT()
+        assertTrue(remote.stopSUT())
         info = remote.getSutInfo()
         assertNull(info)
 
         //start it again
-        remote.startSUT()
+        assertTrue(remote.startSUT())
         info = remote.getSutInfo()
         assertNotNull(info)
     }
