@@ -367,6 +367,7 @@ public abstract class ExternalSutController extends SutController {
         }
 
         if (process != null) {
+            process.destroy();
             try {
                 //be sure streamers are closed, otherwise process might hang on Windows
                 process.getOutputStream().close();
@@ -375,7 +376,7 @@ public abstract class ExternalSutController extends SutController {
             } catch (Exception t) {
                 SimpleLogger.error("Failed to close process stream: " + t.toString());
             }
-            process.destroy();
+
             process = null;
         }
     }
