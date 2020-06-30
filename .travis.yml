@@ -27,10 +27,10 @@ jdk:
 # So, we override this behavior.
 # We just force the downloading of dependencies here to reduce the clutter in the logs.
 
-install: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+install: mvn de.qaware.maven:go-offline-maven-plugin:1.2.5:resolve-dependencies
 
 ## Unfortunately, the official Maven plugin is completely broken...
-## ie most of its options do not work at all, and bugs been opened for years...
+## ie most of its options do not work at all, and bug reports have been opened for years...
 ## https://github.com/apache/maven-dependency-plugin/pull/2
 #install: mvn dependency:resolve -DexcludeGroupIds=org.evomaster
 
