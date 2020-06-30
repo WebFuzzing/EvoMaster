@@ -26,7 +26,13 @@ jdk:
 # This is annoying, and unnecessarily time consuming when using multiple run-scripts.
 # So, we override this behavior.
 # We just force the downloading of dependencies here to reduce the clutter in the logs.
-install: mvn dependency:resolve
+
+install: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
+
+## Unfortunately, the official Maven plugin is completely broken...
+## ie most of its options do not work at all, and bugs been opened for years...
+## https://github.com/apache/maven-dependency-plugin/pull/2
+#install: mvn dependency:resolve -DexcludeGroupIds=org.evomaster
 
 
 # As Travis has a 50 minute limit per script, we need to split the build in different stages.
