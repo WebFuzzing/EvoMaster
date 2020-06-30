@@ -59,6 +59,7 @@
             <artifactId>evomaster-core</artifactId>
             <scope>test</scope>
             <type>test-jar</type>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

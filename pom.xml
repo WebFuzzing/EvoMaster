@@ -139,6 +139,7 @@
                 <artifactId>evomaster-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <!--  Note: adding here also the one for  <type>test-jar</type> gives a lot of problems -->
             <dependency>
                 <groupId>org.evomaster</groupId>
                 <artifactId>evomaster-dbconstraint</artifactId>
