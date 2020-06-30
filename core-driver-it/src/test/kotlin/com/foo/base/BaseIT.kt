@@ -3,6 +3,7 @@ package com.foo.base
 import org.evomaster.client.java.controller.InstrumentedSutStarter
 import org.evomaster.client.java.controller.api.dto.ActionDto
 import org.evomaster.core.remote.service.RemoteController
+import org.evomaster.e2etests.utils.CIUtils
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
@@ -35,6 +36,9 @@ class BaseIT {
         @JvmStatic
         @BeforeAll
         fun beforeAll() {
+            //Travis does not like spawn processes... :(
+            CIUtils.skipIfOnTravis()
+
             setupJarAgent()
             driver.controllerPort = 0
             starter.start()

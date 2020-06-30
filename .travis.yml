@@ -35,6 +35,10 @@ install: mvn de.qaware.maven:go-offline-maven-plugin:1.2.5:resolve-dependencies
 #install: mvn dependency:resolve -DexcludeGroupIds=org.evomaster
 
 
+env:
+  CI_env: Travis
+
+
 # As Travis has a 50 minute limit per script, we need to split the build in different stages.
 jobs:
   include:
